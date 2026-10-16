@@ -6,7 +6,7 @@ export function cellInfo(map, row, col) {
     throw new Error("Cell position is outside the map.");
   }
   const bounds = map.bounds;
-  const centerLatitude = (bounds.minLatitude + bounds.maxLatitude) / 2;
+  const centerLatitude = map.projectionLatitude ?? (bounds.minLatitude + bounds.maxLatitude) / 2;
   const latitudeStep = map.cellSizeMeters / EARTH_RADIUS_METERS * 180 / Math.PI;
   const longitudeStep = latitudeStep / Math.cos(centerLatitude * Math.PI / 180);
   const north = bounds.maxLatitude - row * latitudeStep;

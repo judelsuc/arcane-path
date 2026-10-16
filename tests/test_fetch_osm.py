@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from fetch_osm import _request_map, download_region
+from fetch_osm import _request_map, _request_sources, _COOLDOWNS, OVERPASS_URLS, download_region
 
 OSM_RESPONSE = b"""<osm version="0.6" copyright="OpenStreetMap and contributors">
   <bounds minlat="0" minlon="0" maxlat="0.009" maxlon="0.009"/>
@@ -20,6 +20,41 @@ OSM_RESPONSE = b"""<osm version="0.6" copyright="OpenStreetMap and contributors"
 
 
 class FetchOsmTests(unittest.TestCase):
+    def setUp(self):
+        _COOLDOWNS.clear()
+
+    def tearDown(self):
+        _COOLDOWNS.clear()
+
+    def test_throttle_uses_overpass_and_honors_server_cooldown(self):
+        error = urllib.error.HTTPError(
+            "https://api.openstreetmap.org", 509, "Throttled", {},
+            io.BytesIO(b"Please try again in 42 seconds."),
+        )
+        xml = OSM_RESPONSE.replace(
+            b'<bounds minlat="0" minlon="0" maxlat="0.009" maxlon="0.009"/>', b""
+        )
+        with patch("fetch_osm.time.monotonic", return_value=100), \
+                patch("fetch_osm.urllib.request.urlopen", side_effect=[
+                    error, io.BytesIO(xml), io.BytesIO(xml),
+                ]) as request:
+            root, urls = _request_sources([0, 0, 0.009, 0.009])
+            self.assertEqual(urls, [OVERPASS_URLS[0]])
+            self.assertEqual(root.find("bounds").attrib["maxlon"], "0.009")
+            self.assertEqual(_COOLDOWNS["https://api.openstreetmap.org"], 142)
+            _request_sources([0, 0, 0.009, 0.009])
+            self.assertEqual(request.call_count, 3)
+            query = request.call_args.args[0].data.decode()
+            self.assertIn("data=", query)
+
+    def test_incomplete_overpass_is_not_cached_and_next_source_is_used(self):
+        with patch("fetch_osm.urllib.request.urlopen", side_effect=[
+            OSError("Offline"), io.BytesIO(b"<osm><remark>timeout</remark></osm>"),
+            io.BytesIO(OSM_RESPONSE),
+        ]):
+            _, urls = _request_sources([0, 0, 0.009, 0.009])
+        self.assertEqual(urls, [OVERPASS_URLS[1]])
+
     def test_splits_node_limited_requests_and_deduplicates_osm_ids(self):
         error = urllib.error.HTTPError(
             "https://api.openstreetmap.org", 400, "Bad Request", {},
@@ -74,7 +109,7 @@ class FetchOsmTests(unittest.TestCase):
             output = Path(directory) / "test.osm"
             output.write_bytes(OSM_RESPONSE)
             with patch("fetch_osm.urllib.request.urlopen", side_effect=OSError("Unavailable")):
-                with self.assertRaisesRegex(OSError, "Unavailable"):
+                with self.assertRaisesRegex(ValueError, "All OSM sources unavailable"):
                     download_region([0, 0, 0.009, 0.009], "Test", output, refresh=True)
             self.assertEqual(output.read_bytes(), OSM_RESPONSE)
 

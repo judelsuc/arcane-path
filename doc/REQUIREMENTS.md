@@ -13,8 +13,9 @@ This file records additions to the design without modifying the source PDF,
 - **Status:** Implemented for a selected cell: click or keyboard-focus the
   cell, then press P or use the Photo button. A modal displays the cached photo,
   credits, license and geographic association. Escape closes it.
-- **Layer 2 integration:** The selected cell is the temporary position until
-  player movement exists; no player movement was added here.
+- **Layer 2 integration:** In walking mode, descriptions and photos follow the
+  player's cell rather than the hovered/clicked cell. Static-map inspection
+  remains available outside walking mode.
 - **Priority:** OSM-linked Commons file (`wikimedia_commons`, or `image` with
   a Commons file/page reference), then geolocated Commons images inside the
   cell, then Commons-hosted images from Wikipedia articles inside the cell.
@@ -210,3 +211,74 @@ This file records additions to the design without modifying the source PDF,
 - **Limits:** No live pan/zoom/resize-triggered download, no guarantee of
   pixel-exact framing across future OSM embed changes, and no completion of
   missing multipolygon members.
+
+## R-015 — Non-blocking walking, effort and simulated calendar
+
+- **Requirement:** At 250 m per cell, no terrain type blocks movement. Walking
+  speed depends on ground and slope; accumulate fatigue and energy expenditure
+  for future food mechanics. Show date and time advancing by travel duration.
+- **Status:** Implemented as turn-based cardinal steps with a player marker,
+  following camera and a short input/animation delay. A journey starts at the
+  region center with the current UTC timestamp. Walking/rest update simulated
+  time, including day rollover, not wall-clock waiting.
+- **Model:** Tunable gameplay approximation in `../travel.mjs`: base 4.5 km/h,
+  average origin/destination terrain factor, slope speed factor, fatigue
+  slowdown, min/max speed 0.5/6 km/h. Track distance, ascent/descent, fatigue
+  0-100, and cumulative kcal using a 40 kg gameplay mass. No safety/medical
+  accuracy is claimed. Rest advances 30 minutes, recovers up to 20 fatigue,
+  and consumes basal energy. No food inventory or motorized mode yet.
+- **Height:** Real per-cell center elevation from Open-Meteo / Copernicus
+  DEM GLO-90, credited CC BY 4.0 and cached with retrieval/source metadata.
+  Missing elevation is explicit; flat-slope cost is an estimate and affected
+  steps remain counted visibly. It is not silently invented.
+- **Limits:** The travel model uses dominant OSM classes, not route topology.
+  No terrain is blocked; unknown chunks wait for downloads with explicit
+  retryable failures and no cost charged on failure. Journeys currently reset
+  when returning to the fixed map, changing region or reloading the page.
+  Trains/buses are deferred; walking is the only travel mode.
+- **Layout:** Travel controls, clock and statistics are in a right sidebar on
+  desktop and below the map on narrow screens. Model/keyboard explanations are
+  collapsed by default; the map remains the primary viewing area.
+  The entire 24 x 24 travel grid fits its panel using responsive square cells,
+  without an internal scrolling crop. The travel header is compact, and the
+  grid size accounts for viewport height as well as available width.
+- **OSM comparison:** The closed drawer remains lazy-loaded. Opening it centers
+  on the player's current cell with a marker and matching external-map link.
+
+## R-016 — Background neighbor preparation and streaming
+
+- **Requirement:** Download neighboring cells in the background to smooth travel.
+- **Status:** A local standard-library Python backend prepares aligned chunks
+  of 8 x 8 cells, reusing included OSM coverage or downloading genuine neighboring
+  extracts. Four cardinal neighbors are prefetched, prioritizing movement
+  direction, then side boundaries by proximity, then behind. Turning reorders
+  queued work without interrupting active requests or discarding cached data.
+  Evicted memory chunks can be loaded again from the persistent server cache.
+  The camera shows a 24 x 24
+  window; unloaded areas are explicitly `?`. Crossing chunk edges, including
+  negative indices, preserves geographic alignment.
+- **Bounds:** Two client requests and two backend workers at once, ten backend
+  jobs maximum, deduplicated chunk requests, foreground priority within the
+  client queue, and 25 resident client chunks. Download failure is explicit.
+- **Persistence:** Local `.cache/travel/` stores compressed OSM, sampled
+  elevation and checksummed grid payloads with source metadata and atomic
+  replacement. Fully cached chunks require no provider calls after restart.
+  Missing elevation is retried rather than permanently cached as valid data.
+- **Source resilience:** The official map API has two read-only Overpass
+  fallbacks. Provider failures are logged, throttled sources have individual
+  cooldowns, and network source requests are serialized across workers.
+  Overpass responses with runtime errors are rejected, not cached as valid maps.
+  Actual source URLs are retained. Public sources offer no availability guarantee.
+- **Scope:** This local prototype backend does not implement the future
+  multiplayer server or remote photo/description/cache synchronization.
+
+## R-017 — Player inspection and Look mode
+
+- **Requirement:** Information normally follows the player. L enables an
+  independent keyboard inspection cursor, without mouse-hover effects.
+- **Status:** L or the Look button toggles inspection within the visible grid.
+  Arrow keys and direction buttons move the cursor without spending journey
+  time, energy or fatigue. Descriptions, POIs and P follow the inspected cell.
+  Escape or L returns to the player; Escape closes an open dialog first.
+  Unknown cells are labelled and do not request invented cell content.
+  Mouse hover neither highlights cells nor changes information or shows tooltips.

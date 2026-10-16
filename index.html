@@ -45,6 +45,35 @@
             <button id="open-osm" type="button" aria-haspopup="dialog" aria-controls="osm-drawer" disabled data-i18n="openReference"></button>
           </div>
         </div>
+        <div id="map-workspace">
+        <section class="travel-panel" aria-labelledby="travel-title">
+          <h3 id="travel-title" data-i18n="travelTitle"></h3>
+          <button id="start-travel" type="button" disabled data-i18n="travelStart"></button>
+          <div id="travel-controls" hidden>
+            <time id="travel-clock"></time>
+            <p id="travel-stats" role="status"></p>
+            <div class="travel-actions">
+              <div class="travel-directions">
+              <button data-move="0,-1" type="button" data-i18n="travelNorth"></button>
+              <button data-move="-1,0" type="button" data-i18n="travelWest"></button>
+              <button data-move="0,1" type="button" data-i18n="travelSouth"></button>
+              <button data-move="1,0" type="button" data-i18n="travelEast"></button>
+              </div>
+              <button id="rest-travel" type="button" data-i18n="travelRest"></button>
+              <button id="look-travel" type="button" aria-pressed="false" data-i18n="travelLook"></button>
+              <button id="retry-travel" type="button" data-i18n="travelRetry"></button>
+              <button id="stop-travel" type="button" data-i18n="travelStop"></button>
+            </div>
+            <p id="look-status" role="status"></p>
+            <div id="travel-elevation"></div>
+            <p id="travel-streaming" role="status"></p>
+            <details class="travel-help">
+              <summary data-i18n="travelHelp"></summary>
+              <p id="travel-note"></p>
+            </details>
+          </div>
+          <p id="travel-status" role="status"></p>
+        </section>
         <div class="map-comparison">
           <section class="comparison-panel" aria-labelledby="ascii-title">
             <h3 id="ascii-title" data-i18n="asciiTitle">Grille ASCII</h3>
@@ -69,6 +98,7 @@
               <p id="cache-status" role="status"></p>
             </section>
           </section>
+        </div>
         </div>
         <div class="map-meta">
           <span id="map-size"></span>

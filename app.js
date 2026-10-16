@@ -2,6 +2,7 @@ import { resolveLocale, translate } from "./i18n.mjs";
 import { osmReferenceUrls } from "./osm-reference.mjs";
 import { cellInfo } from "./cell-info.mjs";
 import { setupCellContent } from "./cell-content-ui.mjs";
+import { setupTravel } from "./travel-ui.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
 const viewport = document.querySelector("#map-viewport");
@@ -20,6 +21,19 @@ let loadFailed = false;
 let activeRequest;
 let inspectedTile;
 const cellContent = setupCellContent(t);
+const travel = setupTravel({
+  t, renderMap,
+  selectPlayer(data, tile) {
+    inspectTile(tile);
+    if (data.rows[Number(tile.dataset.row)][Number(tile.dataset.col)].unavailable) {
+      cellContent.reset();
+    } else {
+      cellContent.select(data, tile);
+    }
+  },
+  resetContent: () => cellContent.reset(),
+  onStop: () => loadRegion(),
+});
 
 osmDrawer.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
@@ -33,7 +47,7 @@ openOsm.addEventListener("click", () => {
   osmDrawer.showModal();
   const frame = document.querySelector("#osm-frame");
   if (!frame.hasAttribute("src")) {
-    frame.src = osmReferenceUrls(mapData.referenceBounds ?? mapData.bounds).embed;
+    frame.src = osmReferenceUrls(mapData.referenceBounds ?? mapData.bounds, mapData.player).embed;
   }
 });
 
@@ -67,11 +81,14 @@ function inspectTile(tile) {
   document.querySelector("#cell-info").textContent = tileDetails(tile, false);
 }
 
-for (const event of ["pointerover", "focusin", "click"]) {
-  mapElement.addEventListener(event, (event) => inspectTile(event.target));
-}
 for (const event of ["focusin", "click"]) {
-  mapElement.addEventListener(event, (event) => cellContent.select(mapData, event.target));
+  mapElement.addEventListener(event, (event) => {
+    if (travel.active) return;
+    inspectTile(event.target);
+    if (!mapData?.rows[Number(event.target.dataset.row)]?.[Number(event.target.dataset.col)]?.unavailable) {
+      cellContent.select(mapData, event.target);
+    }
+  });
 }
 
 function t(key, parameters) {
@@ -87,6 +104,7 @@ function localize() {
   });
   languageSelect.value = locale;
   cellContent.localize(locale);
+  travel.localize();
   mapElement.setAttribute("aria-label", t("mapLabel"));
   document.querySelector("#cell-info").textContent = t("cellHint");
 
@@ -135,7 +153,6 @@ function localize() {
   document.querySelector("#legend").replaceChildren(legend);
   mapElement.querySelectorAll(".tile").forEach((tile) => {
     const details = tileDetails(tile);
-    tile.title = details;
     tile.setAttribute("aria-label", details);
   });
   if (inspectedTile) {
@@ -154,7 +171,7 @@ function renderMap(data) {
     throw new Error("Incomplete or inconsistent map data.");
   }
   data.legend.forEach((entry) => t(`terrain.${entry.terrain}`));
-  const referenceUrls = osmReferenceUrls(data.referenceBounds ?? data.bounds);
+  const referenceUrls = osmReferenceUrls(data.referenceBounds ?? data.bounds, data.player);
 
   const map = document.createDocumentFragment();
   data.rows.forEach((row, rowIndex) => {
@@ -164,7 +181,7 @@ function renderMap(data) {
       tile.textContent = cell.glyph;
       tile.dataset.row = rowIndex;
       tile.dataset.col = colIndex;
-      tile.tabIndex = 0;
+      tile.tabIndex = travel.active ? -1 : 0;
       tile.setAttribute("aria-describedby", "cell-info");
       map.append(tile);
     });
@@ -173,8 +190,14 @@ function renderMap(data) {
     }
   });
   mapElement.replaceChildren(map);
+  mapElement.style.setProperty("--map-columns", data.width);
+  inspectedTile = undefined;
   viewport.replaceChildren(mapElement);
   mapData = data;
+  const referenceFrame = document.querySelector("#osm-frame");
+  if (referenceFrame.hasAttribute("src") && referenceFrame.src !== referenceUrls.embed) {
+    referenceFrame.removeAttribute("src");
+  }
   document.querySelector("#osm-link").href = referenceUrls.full;
   document.querySelector("#osm-reference").hidden = false;
   openOsm.disabled = false;
@@ -188,6 +211,8 @@ languageSelect.addEventListener("change", () => {
 localize();
 
 async function loadRegion() {
+  travel.reset();
+  travel.configure(regionSelect.value, undefined);
   activeRequest?.abort();
   const request = new AbortController();
   activeRequest = request;
@@ -216,6 +241,7 @@ async function loadRegion() {
     const data = await response.json();
     if (!request.signal.aborted) {
       renderMap(data);
+      travel.configure(regionSelect.value, data);
     }
   } catch (error) {
     if (request.signal.aborted) {

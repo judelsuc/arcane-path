@@ -46,6 +46,11 @@ export function setupCellContent(t) {
   previous.addEventListener("click", () => movePhoto(-1));
   next.addEventListener("click", () => movePhoto(1));
   dialog.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      dialog.close();
+      return;
+    }
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
@@ -208,7 +213,11 @@ export function setupCellContent(t) {
   function select(map, tile) {
     if (!map || !tile?.matches(".tile")) return;
     const info = cellInfo(map, Number(tile.dataset.row), Number(tile.dataset.col));
-    if (selected?.row === info.row && selected?.col === info.col) return;
+    if (selected?.latitude === info.latitude && selected?.longitude === info.longitude &&
+        selected?.meters === info.meters) {
+      tile.classList.add("tile--selected");
+      return;
+    }
     reset();
     selected = info;
     document.querySelector("#content-hint").hidden = true;

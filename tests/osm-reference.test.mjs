@@ -30,3 +30,10 @@ test("invalid bounds are reported rather than displaying a misleading reference"
     assert.throws(() => osmReferenceUrls(bounds), /Invalid geographic bounds/);
   }
 });
+test("travel reference centers on a valid player marker with matching full-map link", () => {
+  const bounds = { minLongitude: 2.3, maxLongitude: 2.32, minLatitude: 44.53, maxLatitude: 44.55 };
+  const urls = osmReferenceUrls(bounds, { latitude: 44.54, longitude: 2.31 });
+  assert.equal(new URL(urls.embed).searchParams.get("marker"), "44.54,2.31");
+  assert.equal(new URL(urls.full).searchParams.get("mlat"), "44.54");
+  assert.throws(() => osmReferenceUrls(bounds, { latitude: 90, longitude: 0 }), /Invalid player marker/);
+});

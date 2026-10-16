@@ -1,8 +1,9 @@
 # Les Arcanes du Chemin
 
-Prototype de la **couche 1 — Carte** : un extrait OSM local est rasterise en grille de cases de 250 m puis affiche en ASCII dans le navigateur. Cette version est volontairement fixe ; le deplacement commence a la couche 2.
+Prototype des **couches 1 — Carte et 2 — Voyage** : donnees OSM reelles,
+grille ASCII de 250 m, exploration a pied, horloge simulee, effort et streaming.
 
-Les ajouts au document de conception sont suivis dans [REQUIREMENTS.md](./REQUIREMENTS.md).
+Les ajouts au document de conception sont suivis dans [doc/REQUIREMENTS.md](./doc/REQUIREMENTS.md).
 
 ## Lancer le prototype
 
@@ -10,12 +11,122 @@ Depuis la racine du projet :
 
 ```sh
 python3 scripts/prepare_regions.py
-python3 -m http.server 8000
+python3 scripts/travel_server.py
 ```
 
-Ouvrir [http://localhost:8000](http://localhost:8000). Le serveur statique est necessaire pour charger le JSON de la carte. La grille ASCII utilise uniquement les fichiers locaux ; la vue OpenStreetMap de comparaison requiert une connexion Internet.
+Ouvrir [http://127.0.0.1:8766](http://127.0.0.1:8766). Le serveur local utilise
+uniquement la bibliotheque standard Python et ecoute sur la boucle locale.
+`--port` permet de choisir un autre port. Un serveur statique (`python3 -m
+http.server 8000`) conserve la consultation de couche 1 mais ne permet pas le
+streaming de voyage ; un message explicite indique la commande necessaire.
 
-Le selecteur de region affiche de vrais extraits OSM de Paris, des Alpes pres de Chamonix et de Firmi en Aveyron. Les snapshots compresses dans [data/regions/](./data/regions/) et leurs grilles generees sont inclus : aucun telechargement n'est necessaire pour jouer ou tester.
+Le selecteur de region affiche de vrais extraits OSM de Paris, des Alpes pres
+de Chamonix et de Firmi en Aveyron. Les snapshots compresses dans
+[data/regions/](./data/regions/) et leurs grilles sont inclus. La consultation
+fixe et les tests sont hors ligne ; le premier voyage telecharge les altitudes
+et les morceaux de carte situes hors des extraits inclus.
+
+## Couche 2 : voyage a pied
+
+- **Commencer le voyage** place le joueur `@` au centre de la region.
+- Les **fleches** du clavier ou les boutons cardinaux avancent d'une case.
+  Chaque pas vaut 250 m. Une courte animation ne represente pas le temps reel
+  de marche : le jeu est au tour par tour.
+- **R** ou le bouton de repos avance de 30 minutes et retire jusqu'a 20 points
+  de fatigue. Le repos consomme encore de l'energie de base.
+- La date et l'heure du jeu sont affichees en **UTC**, initialement a l'instant
+  de depart, puis avancent selon la duree calculee des pas et repos, y compris
+  lors du changement de jour. Le temps reel entre actions ne les fait pas avancer.
+- Le panneau indique distance, duree, vitesse du dernier pas, fatigue sur 100,
+  kcal cumulees et denivele positif/negatif. Les kcal preparent la future
+  mecanique de nourriture : aucun inventaire, faim ou repas n'est encore ajoute.
+- Les commandes, l'horloge et les statistiques occupent une barre laterale a
+  droite sur grand ecran, sous la carte sur mobile. Les explications du modele
+  sont repliees dans « Aide et modele de voyage ».
+- La fenetre de 24 x 24 cases tient integralement dans le panneau : cases
+  carrees redimensionnees selon la largeur, sans defilement interne coupant
+  la carte. Pendant le voyage, l'en-tete se limite a une barre de titre/langue
+  et aux commandes de region, sans grand titre ni introduction ; la page reste defilable.
+- Il n'y a **aucune case bloquee par son terrain** a cette echelle. Eau,
+  rochers, rails et batiments restent traversables dans le modele de jeu.
+  Une case non telechargee attend ses donnees ; une erreur permet de reessayer
+  sans deplacer le joueur ni consommer de temps ou d'energie.
+- La camera suit le joueur ; les descriptions et la touche **P** concernent
+  sa case, meme si la souris inspecte ailleurs. Les touches de marche ne sont
+  pas actives dans une fenetre photo ou le tiroir OSM.
+- La carte OSM du tiroir est recentree sur la case du joueur avec un marqueur,
+  et le lien externe reprend cette position. Fermee, elle n'est pas rechargee.
+- **Revenir a la carte fixe**, changer de region ou recharger la page termine
+  la partie courante. Les statistiques ne sont pas encore sauvegardees ; les
+  donnees geographiques, altitudes et contenus decouverts restent en cache.
+  Les trains et bus ne sont pas encore implementes.
+
+### Modele d'effort et altitude
+
+Les constantes du modele sont dans [travel.mjs](./travel.mjs). La vitesse
+de base est 4,5 km/h, divisee par le cout moyen des terrains de depart/arrivee
+et par `1 + fatigue/100`. Le facteur de pente est
+`exp(-3.5 * (abs(pente + 0.05) - 0.05))`, avec pente bornee a +/- 50 % ;
+la vitesse finale reste entre 0,5 et 6 km/h. Le terrain affecte le cout meme
+si la pente est inconnue. Il s'agit d'une approximation de jeu, pas d'un
+calcul de securite de randonnee ou d'une recommandation medicale.
+
+L'energie d'un pas est `40 * (0.75 * km * coutTerrain + 0.009 * monteeMetres
++ 0.002 * descenteMetres) * (1 + fatigue/200)` en kcal, pour une masse de jeu
+de 40 kg. La fatigue gagne `minutes * 0.08 * coutTerrain + montee/80 +
+descente/400`, bornee a 100 sans immobiliser le joueur. Le repos consomme
+40 kcal/heure. Ces coefficients sont ajustables ; les terrains utilisent les
+classes prioritaires OSM et ne deduisent pas de pont ni de passage reel.
+
+Les altitudes des centres proviennent de l'API
+[Open-Meteo / Copernicus DEM GLO-90](https://open-meteo.com/en/docs/elevation-api)
+avec attribution [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+Une requete groupe les 64 centres d'un morceau de carte. Le denivele est la
+difference entre centres, pas la somme des variations du chemin reel.
+Une altitude indisponible est explicitement signalee : le pas utilise une
+estimation de pente nulle, et le compteur de pas estimes reste visible.
+**Reessayer les telechargements** relance les altitudes manquantes.
+
+### Streaming et caches
+
+Pendant le voyage, les informations suivent le joueur, sans effet au survol
+de la souris. **L** (ou **Observer**) active un curseur d'observation :
+les fleches explorent les cases de la fenetre sans deplacement, temps ni fatigue.
+Descriptions, points d'interet et **P** suivent ce curseur. **Echap** ou **L**
+revient au joueur. Les cases `?` restent explicitement non cartographiees.
+
+Les morceaux de 8 x 8 cases suivent une grille geographique alignee par region,
+avec projection constante, y compris aux indices negatifs. La fenetre affiche
+24 x 24 cases autour du morceau courant. Les quatre voisins cardinaux sont
+precharges en arriere-plan : direction de marche en premier, cotes selon
+la proximite de leur frontiere, puis arriere. Un changement de direction
+reordonne les demandes en attente sans interrompre celles en cours ni
+retelecharger les morceaux en cache ; les diagonales inconnues apparaissent en `?`.
+Le client limite les demandes simultanees a deux et conserve au plus 25 morceaux
+en memoire. Les demandes de deplacement sont prioritaires devant celles encore
+en file d'attente. Le serveur limite lui aussi ses travailleurs a deux et
+sa file a dix travaux, avec deduplication des demandes identiques.
+
+Les OSM compresses, altitudes, provenance et grilles sont conserves dans
+[.cache/travel/](./.cache/travel/) (ignore par Git). Les extraits inclus sont
+reutilises lorsque le morceau est entierement couvert ; sinon le serveur
+telecharge OSM avec la subdivision existante. En cas d'indisponibilite,
+deux API Overpass peuvent prendre le relais
+de l'API OSM. Les delais HTTP et messages de limitation sont respectes par source
+(60 secondes par defaut), avec acces reseau serialise et erreurs journalisees.
+Les sources effectivement utilisees sont conservees dans le snapshot.
+Ces services publics ne garantissent pas la disponibilite ; les caches restent
+prioritaires. Les grilles terminees portent un
+checksum et leur identite depend du pipeline, du snapshot initial et de la
+resolution. Les remplacements sont atomiques. Les donnees deja en cache sont
+servies sans requete fournisseur, meme apres redemarrage du serveur.
+Une panne d'altitude ne fige pas une fausse altitude dans le cache final.
+
+Le serveur local est un outil de prototype, pas le serveur multijoueur :
+aucune synchronisation distante de cache ou autorite de jeu n'est implementee.
+Les photos/descriptions restent dans IndexedDB, separement du cache disque.
+Le cache navigateur depend du port : les contenus decouverts sur 8765 ne sont
+pas automatiquement visibles sur 8766.
 
 ### Comparaison avec OpenStreetMap
 
@@ -87,7 +198,8 @@ boutons precedent/suivant et touches fleche gauche/droite. Les fleches sont
 limitees a la premiere/derniere image, sans rebouclage. Chaque image conserve
 ses propres credits, licence et indication de proximite. Le plafond est defini
 par `MAX_CELL_PHOTOS` dans [cell-content.mjs](./cell-content.mjs).
-La case selectionnee sert de position provisoire avant le deplacement en couche 2.
+En carte fixe, le contenu suit la case selectionnee ; pendant le voyage, il
+suit automatiquement le joueur.
 Les indications d'utilisation sont visibles avant selection d'une case, puis
 masquees des qu'une case est selectionnee. Elles reapparaissent au changement
 de region ou lorsque la selection est effacee.
@@ -164,10 +276,10 @@ Les snapshots et cartes derivees sont des donnees [© les contributeurs OpenStre
 
 Un snapshot correspondant est reutilise sans appel reseau ; `--refresh` force son telechargement. Une grille deja generee est reutilisee sans rasterisation si les empreintes SHA-256 de la source et du pipeline, la version du cache, le nom et la taille des cases n'ont pas change. `--force` force la regeneration. L'integrite du contenu est verifiee avant reutilisation et les fichiers sont remplaces atomiquement.
 
-La synchronisation avec le futur serveur est suivie dans [REQUIREMENTS.md](./REQUIREMENTS.md#r-004--cache-generated-regions-and-synchronize-them-with-the-future-server). Elle n'est pas encore implementee ; le cache conserve les versions et empreintes necessaires a la comparaison des contenus.
+La synchronisation avec le futur serveur est suivie dans [doc/REQUIREMENTS.md](./doc/REQUIREMENTS.md#r-004--cache-generated-regions-and-synchronize-them-with-the-future-server). Elle n'est pas encore implementee ; le cache conserve les versions et empreintes necessaires a la comparaison des contenus.
 
 Les descriptions et photos decouvertes sont mises en cache dans le navigateur,
-avec leurs sources et licences. Voir [R-006](./REQUIREMENTS.md#r-006--web-sourced-cell-descriptions-and-cached-cell-content)
+avec leurs sources et licences. Voir [R-006](./doc/REQUIREMENTS.md#r-006--web-sourced-cell-descriptions-and-cached-cell-content)
 pour la politique de couverture, de cache et la future synchronisation.
 
 ## Traductions

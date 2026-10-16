@@ -256,7 +256,7 @@ def rasterize(
     if min_lon >= max_lon or min_lat >= max_lat:
         raise ValueError("Les limites geographiques de l'extrait OSM sont invalides.")
 
-    center_lat = (min_lat + max_lat) / 2
+    center_lat = float(root.attrib.get("projection_latitude", (min_lat + max_lat) / 2))
     min_x, min_y = project(min_lon, min_lat, center_lat)
     max_x, max_y = project(max_lon, max_lat, center_lat)
     width = max(1, math.ceil((max_x - min_x) / cell_size_meters))
@@ -456,6 +456,7 @@ def rasterize(
         }}
     return {
         "name": name,
+        **({"projectionLatitude": center_lat} if "projection_latitude" in root.attrib else {}),
         **reference_bounds,
         "cellSizeMeters": cell_size_meters,
         "width": width,

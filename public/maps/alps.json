@@ -5977,10 +5977,10 @@
   "cache": {
     "schemaVersion": 1,
     "sourceSha256": "038ce9ab3199f133836e82d93c0c7edce8af1fa3e37974ba5cc299dd45192117",
-    "pipelineSha256": "4240239544905d689f261639a3fa90be3a470208a51793607e2cc7b911dd2869",
+    "pipelineSha256": "797dd16a2500380870706f2e5da742da9eaac2b14f2af945d4fd0a85c019de51",
     "name": "Alpes — Chamonix",
     "cellSizeMeters": 250,
-    "key": "8b9566df7a2d9ec6016561aa5c9b9bfec35534bd8a24f7247ef8e61fadfef566",
+    "key": "27fbf1eeef04c62f190ca563bf4263babe7805b0d31a9a990e5ace6553ab42ab",
     "payloadSha256": "f267ad47ea31723c2e4df11608473b9538aa4ebba3181ce26a35711ede2cfe07"
   }
 }

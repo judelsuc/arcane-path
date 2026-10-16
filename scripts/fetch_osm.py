@@ -1,17 +1,41 @@
 #!/usr/bin/env python3
-"""Download a real, bounded OSM snapshot from the official map API."""
+"""Download and cache bounded OSM snapshots with read-only source fallback."""
 
 import argparse
 import gzip
 import json
 import math
+import re
 import sys
 import tempfile
+import threading
+import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
+
+OVERPASS_URLS = (
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+)
+_SOURCE_LOCK = threading.Lock()
+_COOLDOWNS = {}
+
+
+class SourceUnavailable(ValueError):
+    def __init__(self, message, retry_after=60):
+        super().__init__(message)
+        self.retry_after = retry_after
+
+
+def _http_failure(error, reason):
+    delay = error.headers.get("Retry-After", "") if error.headers else ""
+    match = re.search(r"try again in (\d+) seconds", reason, re.IGNORECASE)
+    seconds = int(delay) if delay.isdigit() else int(match[1]) if match else 60
+    return SourceUnavailable(f"OSM HTTP {error.code}: {reason}", max(1, seconds))
 
 
 def _map_url(bounds):
@@ -27,6 +51,8 @@ def _request_map(bounds, depth=0):
             root = ET.fromstring(response.read())
     except urllib.error.HTTPError as error:
         reason = error.read(4096).decode("utf-8", errors="replace")
+        if error.code in {408, 429, 500, 502, 503, 504, 509}:
+            raise _http_failure(error, reason) from error
         if error.code != 400 or "too many nodes" not in reason.lower() or depth >= 4:
             raise ValueError(f"OSM HTTP {error.code}: {reason}") from error
         print(f"OSM node limit reached; splitting bounds {bounds}.", file=sys.stderr)
@@ -59,6 +85,54 @@ def _request_map(bounds, depth=0):
     return root, [url]
 
 
+def _request_overpass(bounds, url):
+    west, south, east, north = bounds
+    bbox = ",".join(format(value, ".12g") for value in (south, west, north, east))
+    # Recursive descent includes way nodes and relation members for rasterization.
+    query = f"[out:xml][timeout:60];nwr({bbox});(._;>>;);out body;"
+    request = urllib.request.Request(
+        url, data=urllib.parse.urlencode({"data": query}).encode("ascii"),
+        headers={"User-Agent": "ArcanePath/0.1 (OSM map prototype)"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=75) as response:
+            root = ET.fromstring(response.read())
+    except urllib.error.HTTPError as error:
+        reason = error.read(4096).decode("utf-8", errors="replace")
+        raise _http_failure(error, reason) from error
+    if root.tag != "osm" or root.find("remark") is not None or root.find("node") is None:
+        raise SourceUnavailable("Overpass returned incomplete data or a runtime error.")
+    for element in list(root.findall("bounds")):
+        root.remove(element)
+    ET.SubElement(root, "bounds", {
+        "minlon": str(west), "minlat": str(south),
+        "maxlon": str(east), "maxlat": str(north),
+    })
+    return root, [url]
+
+
+def _request_sources(bounds):
+    failures = []
+    # Serialize provider access across chunk workers, including cooldown checks.
+    with _SOURCE_LOCK:
+        for source in ("https://api.openstreetmap.org", *OVERPASS_URLS):
+            remaining = _COOLDOWNS.get(source, 0) - time.monotonic()
+            if remaining > 0:
+                failures.append(f"{source}: cooldown ({math.ceil(remaining)} seconds)")
+                continue
+            try:
+                return (_request_map(bounds) if source == "https://api.openstreetmap.org"
+                        else _request_overpass(bounds, source))
+            except (SourceUnavailable, OSError, ET.ParseError) as error:
+                _COOLDOWNS[source] = time.monotonic() + (
+                    error.retry_after if isinstance(error, SourceUnavailable) else 60
+                )
+                message = f"{source}: {error}"
+                failures.append(message)
+                print(f"OSM source unavailable; trying fallback: {message}", file=sys.stderr)
+    raise SourceUnavailable("All OSM sources unavailable. " + " | ".join(failures))
+
+
 def download_region(bounds, name, output, refresh=False, reference_bounds=None):
     west, south, east, north = bounds
     if (
@@ -84,7 +158,7 @@ def download_region(bounds, name, output, refresh=False, reference_bounds=None):
             if cached.find("bounds") is None or cached.find("node") is None:
                 raise ValueError("Incomplete cached OSM snapshot; use --refresh to download again.")
             return url, output.stat().st_size, True
-    root, source_urls = _request_map(bounds)
+    root, source_urls = _request_sources(bounds)
     root.set("source_url", url)
     root.set("source_urls", json.dumps(source_urls))
     root.set("region_name", name)
