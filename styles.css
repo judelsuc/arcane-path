@@ -1,0 +1,355 @@
+:root {
+  color-scheme: dark;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  background: #101711;
+  color: #e5e7d9;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --muted: #96a18f;
+  --line: #354239;
+  --accent: #e6b767;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 50% -15%, #29372a 0, transparent 55%),
+    #101711;
+}
+
+.game-shell {
+  width: min(100% - 32px, 1040px);
+  margin: 0 auto;
+  padding: 54px 0 34px;
+}
+
+.masthead {
+  margin-bottom: 36px;
+}
+
+.masthead-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.language-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.language-picker select {
+  padding: 6px;
+  border: 1px solid var(--line);
+  background: #121a14;
+  color: #e5e7d9;
+  font: inherit;
+}
+
+.language-picker select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: var(--accent);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.eyebrow span {
+  color: var(--muted);
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  max-width: 700px;
+  margin-bottom: 10px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 6vw, 3.8rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.intro {
+  margin-bottom: 0;
+  color: #b8c0af;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.1rem;
+}
+
+.map-card,
+.legend-card {
+  border: 1px solid var(--line);
+  background: rgb(15 22 17 / 88%);
+  box-shadow: 0 18px 60px rgb(0 0 0 / 18%);
+}
+
+.map-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.map-heading .eyebrow {
+  margin-bottom: 7px;
+}
+
+.map-heading h2,
+.legend-card h2 {
+  margin-bottom: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+
+.map-scale {
+  margin: 0 0 2px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.map-viewport {
+  overflow: auto;
+  padding: clamp(14px, 4vw, 30px);
+  background-color: #121a14;
+  background-image: radial-gradient(#344239 0.7px, transparent 0.7px);
+  background-size: 5px 5px;
+}
+
+.map-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.comparison-panel {
+  min-width: 0;
+}
+
+.comparison-panel + .comparison-panel {
+  border-left: 1px solid var(--line);
+}
+
+.comparison-panel h3 {
+  margin: 0;
+  padding: 14px 24px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.map-comparison .map-viewport {
+  min-height: 360px;
+}
+
+#osm-frame {
+  display: block;
+  width: 100%;
+  height: 360px;
+  border: 0;
+  background: #e8e5dc;
+  color-scheme: light;
+}
+
+.reference-note,
+.reference-link {
+  margin: 12px 18px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.reference-link {
+  display: block;
+  color: var(--accent);
+}
+
+.ascii-map {
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+  color: #718170;
+  font-size: clamp(0.68rem, 1.55vw, 1rem);
+  line-height: 1.55;
+  letter-spacing: 0.16em;
+  text-align: center;
+  white-space: pre;
+}
+
+.tile--water { color: #61b7c1; }
+.tile--road { color: #c1bdab; }
+.tile--major_road { color: #f4cc80; font-weight: 700; }
+.tile--rail { color: #c6a581; }
+.tile--cable { color: #b9b4e3; }
+.tile--cable_station { color: #d4cbff; }
+.tile--mountain { color: #d5d7dc; }
+.tile--hill { color: #b4ce83; font-weight: 700; }
+.tile--building { color: #e6b767; }
+.tile--forest { color: #66b872; }
+.tile--grass { color: #a4c76c; }
+.tile--field { color: #8fbd64; }
+.tile--vineyard { color: #ca8cbd; }
+.tile--park { color: #8ba66c; }
+.tile--church { color: #f0d083; }
+.tile--station { color: #e9c54f; }
+.tile--place { color: #eef0dc; }
+
+.ascii-map .tile {
+  cursor: help;
+}
+
+.ascii-map .tile--inspected,
+.ascii-map .tile:focus-visible {
+  outline: 1px solid var(--accent);
+  background: #354239;
+}
+
+.cell-info {
+  min-height: 5em;
+  margin: 0;
+  padding: 14px 18px;
+  border-top: 1px solid var(--line);
+  color: #b8c0af;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.map-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.map-attribution {
+  margin: 0;
+  padding: 0 24px 12px;
+  font-size: 0.72rem;
+}
+
+.map-attribution a {
+  color: var(--muted);
+}
+
+.legend-card {
+  margin-top: 18px;
+  padding: 20px 24px;
+}
+
+.legend-card h2 {
+  margin-bottom: 18px;
+  font-size: 1.2rem;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #b8c0af;
+  font-size: 0.78rem;
+}
+
+.legend-glyph {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid var(--line);
+}
+
+.status-line {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #8ba66c;
+  box-shadow: 0 0 10px #8ba66c;
+}
+
+.map-error {
+  min-height: 180px;
+  padding: 40px 20px;
+  color: #f0a18d;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .map-comparison {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .comparison-panel + .comparison-panel {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 560px) {
+  .game-shell {
+    padding-top: 34px;
+  }
+
+  .map-heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px;
+  }
+
+  .map-meta {
+    flex-direction: column;
+    gap: 6px;
+    padding-inline: 18px;
+  }
+
+  .legend-card {
+    padding-inline: 18px;
+  }
+}

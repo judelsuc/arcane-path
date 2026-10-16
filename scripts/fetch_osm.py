@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+"""Download a real, bounded OSM snapshot from the official map API."""
+
+import argparse
+import gzip
+import json
+import math
+import sys
+import tempfile
+import urllib.error
+import urllib.request
+import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+def _map_url(bounds):
+    bbox = ",".join(format(value, ".12g") for value in bounds)
+    return f"https://api.openstreetmap.org/api/0.6/map?bbox={bbox}"
+
+
+def _request_map(bounds, depth=0):
+    url = _map_url(bounds)
+    request = urllib.request.Request(url, headers={"User-Agent": "ArcanePath/0.1 (OSM map prototype)"})
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            root = ET.fromstring(response.read())
+    except urllib.error.HTTPError as error:
+        reason = error.read(4096).decode("utf-8", errors="replace")
+        if error.code != 400 or "too many nodes" not in reason.lower() or depth >= 4:
+            raise ValueError(f"OSM HTTP {error.code}: {reason}") from error
+        print(f"OSM node limit reached; splitting bounds {bounds}.", file=sys.stderr)
+        west, south, east, north = bounds
+        middle = (west + east) / 2
+        if (east - west) * math.cos(math.radians((south + north) / 2)) >= north - south:
+            halves = ([west, south, middle, north], [middle, south, east, north])
+        else:
+            middle = (south + north) / 2
+            halves = ([west, south, east, middle], [west, middle, east, north])
+        first, first_urls = _request_map(halves[0], depth + 1)
+        second, second_urls = _request_map(halves[1], depth + 1)
+        root = ET.Element("osm", first.attrib)
+        ET.SubElement(root, "bounds", {
+            "minlon": str(west), "minlat": str(south),
+            "maxlon": str(east), "maxlat": str(north),
+        })
+        elements = {}
+        for part in (first, second):
+            for element in part:
+                if element.tag in {"node", "way", "relation"}:
+                    key = (element.tag, element.attrib["id"])
+                    previous = elements.get(key)
+                    if previous is None or int(element.attrib.get("version", "0")) > int(previous.attrib.get("version", "0")):
+                        elements[key] = element
+        root.extend(elements.values())
+        return root, first_urls + second_urls
+    if root.tag != "osm" or root.find("bounds") is None or root.find("node") is None:
+        raise ValueError("The OSM API did not return a bounded map with nodes.")
+    return root, [url]
+
+
+def download_region(bounds, name, output, refresh=False, reference_bounds=None):
+    west, south, east, north = bounds
+    if (
+        not all(math.isfinite(value) for value in bounds)
+        or not -180 <= west < east <= 180
+        or not -90 <= south < north <= 90
+        or (east - west) * (north - south) > 0.25
+    ):
+        raise ValueError("Invalid bounds: use west south east north, at most 0.25 square degrees.")
+    if reference_bounds:
+        rw, rs, re, rn = reference_bounds
+        if (not all(math.isfinite(value) for value in reference_bounds)
+                or not west <= rw < re <= east or not south <= rs < rn <= north):
+            raise ValueError("Reference bounds must be inside the downloaded region.")
+    url = _map_url(bounds)
+    if output.exists() and not refresh:
+        opener = gzip.open if output.suffix == ".gz" else open
+        with opener(output, "rb") as stream:
+            cached = ET.parse(stream).getroot()
+        reference_bbox = ",".join(map(str, reference_bounds)) if reference_bounds else None
+        if (cached.attrib.get("source_url") == url and cached.attrib.get("region_name") == name
+                and cached.attrib.get("reference_bbox") == reference_bbox):
+            if cached.find("bounds") is None or cached.find("node") is None:
+                raise ValueError("Incomplete cached OSM snapshot; use --refresh to download again.")
+            return url, output.stat().st_size, True
+    root, source_urls = _request_map(bounds)
+    root.set("source_url", url)
+    root.set("source_urls", json.dumps(source_urls))
+    root.set("region_name", name)
+    if reference_bounds:
+        root.set("reference_bbox", ",".join(map(str, reference_bounds)))
+    root.set("downloaded_at", datetime.now(timezone.utc).isoformat())
+    # Contributor-account metadata is not needed to rasterize the map. Preserve
+    # all OSM IDs, coordinates, tags, references, and license information.
+    for element in root:
+        if element.tag in {"node", "way", "relation"}:
+            for key in tuple(element.attrib):
+                if key not in {"id", "lat", "lon"}:
+                    del element.attrib[key]
+    data = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    if output.suffix == ".gz":
+        data = gzip.compress(data, mtime=0)
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=output.parent, delete=False) as stream:
+            temporary_path = Path(stream.name)
+            stream.write(data)
+        temporary_path.replace(output)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+    return url, len(data), False
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--bbox", type=float, nargs=4, required=True, metavar=("WEST", "SOUTH", "EAST", "NORTH"))
+    parser.add_argument("--name", required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--refresh", action="store_true", help="Download again even when a matching snapshot is cached")
+    parser.add_argument("--reference-bbox", type=float, nargs=4, help="Preserve a reference-map framing inside the downloaded bounds")
+    args = parser.parse_args()
+    try:
+        url, size, reused = download_region(args.bbox, args.name, args.output, args.refresh, args.reference_bbox)
+    except (OSError, ValueError, ET.ParseError, urllib.error.URLError) as error:
+        print(f"OSM download failed: {error}", file=sys.stderr)
+        return 1
+    print(f"{'Cached' if reused else 'Downloaded'} {args.name}: {url} -> {args.output} ({size} bytes)")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

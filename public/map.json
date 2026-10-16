@@ -1,0 +1,4904 @@
+{
+  "name": "Firmi",
+  "referenceBounds": {
+    "minLongitude": 2.29,
+    "minLatitude": 44.53,
+    "maxLongitude": 2.32,
+    "maxLatitude": 44.56
+  },
+  "cellSizeMeters": 250,
+  "width": 29,
+  "height": 20,
+  "bounds": {
+    "minLatitude": 44.522976,
+    "minLongitude": 2.2605397,
+    "maxLatitude": 44.5670196,
+    "maxLongitude": 2.3494603
+  },
+  "source": "firmi.osm.gz",
+  "sourceUrl": "https://api.openstreetmap.org/api/0.6/map?bbox=2.2605397,44.522976,2.3494603,44.5670196",
+  "sourceUrls": [
+    "https://api.openstreetmap.org/api/0.6/map?bbox=2.2605397,44.522976,2.305,44.5449978",
+    "https://api.openstreetmap.org/api/0.6/map?bbox=2.2605397,44.5449978,2.305,44.5670196",
+    "https://api.openstreetmap.org/api/0.6/map?bbox=2.305,44.522976,2.3494603,44.5670196"
+  ],
+  "downloadedAt": "2026-10-16T22:32:51.026028+00:00",
+  "copyright": "OpenStreetMap and contributors",
+  "license": "http://opendatacommons.org/licenses/odbl/1-0/",
+  "illustrative": false,
+  "rows": [
+    [
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/1222958246",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/106748625",
+            "category": "amenity",
+            "name": "École élémentaire publique La Bessenoits"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/12978317152",
+            "category": "tourism",
+            "name": "D 580 Fonteilles"
+          },
+          {
+            "osmId": "node/6479129820",
+            "category": "tourism",
+            "name": "GR 65 Firmi"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/12183795401",
+            "category": "amenity",
+            "name": "Camino gourmand - 15.04 au 15.09"
+          },
+          {
+            "osmId": "node/5844310603",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6479129582",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain",
+        "pois": [
+          {
+            "osmId": "way/371358827",
+            "category": "tourism",
+            "name": "Aire de Fonteilles"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain"
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      }
+    ],
+    [
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/9905808255",
+            "category": "tourism",
+            "name": "Decazeville"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Viviole"
+        ],
+        "pois": [
+          {
+            "osmId": "node/10159463117",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/10159463119",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/1226536791",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/12978307769",
+            "category": "tourism",
+            "name": "Vivioles"
+          },
+          {
+            "osmId": "node/3934037142",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/3934037143",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/13767121405",
+            "category": "summit"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "La Combe"
+        ],
+        "pois": [
+          {
+            "osmId": "node/12978327047",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9905727983",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Le Fromental"
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "n",
+        "terrain": "hill",
+        "names": [
+          "Puy de Fraysse"
+        ],
+        "pois": [
+          {
+            "osmId": "node/11646994133",
+            "category": "summit",
+            "name": "Puy de Fraysse"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      }
+    ],
+    [
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/9905808254",
+            "category": "tourism",
+            "name": "La Métamorphose d'une Terre de Fer et de Feu"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Laubarède"
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      }
+    ],
+    [
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Le Soulacre"
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/4163095205",
+            "category": "amenity",
+            "name": "Centre AFPA"
+          },
+          {
+            "osmId": "way/70108956",
+            "category": "amenity",
+            "name": "Autosur"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Saint-Michel"
+        ],
+        "pois": [
+          {
+            "osmId": "node/1222962691",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/4163135493",
+            "category": "amenity",
+            "name": "École primaire François Fabié"
+          },
+          {
+            "osmId": "node/6735904830",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9905738598",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/69732936",
+            "category": "amenity",
+            "name": "Église Saint-Michel"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/10579796027",
+            "category": "tourism",
+            "name": "Le Puy de Wolf"
+          },
+          {
+            "osmId": "node/6479104657",
+            "category": "tourism",
+            "name": "Carrefour GR 65 - 62B"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Lagarrigue"
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      }
+    ],
+    [
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/5988361496",
+            "category": "shop",
+            "name": "Pulsat"
+          },
+          {
+            "osmId": "node/5988361497",
+            "category": "shop",
+            "name": "Point P"
+          },
+          {
+            "osmId": "way/106364738",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/106375328",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/106375329",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/315724707",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/10129696581",
+            "category": "shop",
+            "name": "Pon-Pon"
+          },
+          {
+            "osmId": "node/10248949031",
+            "category": "shop"
+          },
+          {
+            "osmId": "node/10248949032",
+            "category": "shop"
+          },
+          {
+            "osmId": "node/12387457787",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/13058293528",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13058293529",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/1497216953",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/3327044584",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/4402488676",
+            "category": "amenity",
+            "name": "Centre technique intercommunal"
+          },
+          {
+            "osmId": "node/4402488678",
+            "category": "shop",
+            "name": "Peugeot"
+          },
+          {
+            "osmId": "node/846865298",
+            "category": "tourism",
+            "name": "Idéogrammes"
+          },
+          {
+            "osmId": "node/9757319452",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9905808190",
+            "category": "tourism",
+            "name": "Du Berceau de la Ville au Tremplin pour l'Avenir"
+          },
+          {
+            "osmId": "way/106364736",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/106618568",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1107374090",
+            "category": "shop",
+            "name": "Les Halles de la Découverte"
+          },
+          {
+            "osmId": "way/1418268472",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1418268473",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1418268474",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1418268475",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1420980993",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1436116491",
+            "category": "shop",
+            "name": "Aldi"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/1222964033",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/106618567",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/98608629",
+            "category": "shop"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "way/71887126",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/71887130",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Le Combal"
+        ],
+        "pois": [
+          {
+            "osmId": "node/11601631574",
+            "category": "shop"
+          },
+          {
+            "osmId": "node/1222962688",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9905774322",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1531000746",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/204637992",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/69736518",
+            "category": "amenity",
+            "name": "Pépinière d'Entreprises Chrysalis"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "La Buscalie",
+          "La Buscalie Haute"
+        ],
+        "pois": [
+          {
+            "osmId": "way/717200493",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/6479099710",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Mascles"
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Centrès"
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Le Cazals"
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      }
+    ],
+    [
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/10709947898",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/12068823263",
+            "category": "amenity",
+            "name": "Bleu Lavage"
+          },
+          {
+            "osmId": "node/12068846083",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/5988361494",
+            "category": "tourism",
+            "name": "gorille"
+          },
+          {
+            "osmId": "way/69735678",
+            "category": "shop",
+            "name": "Bricorama"
+          },
+          {
+            "osmId": "way/69739891",
+            "category": "historic",
+            "name": "Les Soufflantes"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Fontvergne"
+        ],
+        "pois": [
+          {
+            "osmId": "node/1448783813",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6502484366",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6715967629",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/204632515",
+            "category": "amenity",
+            "name": "Fontvergne"
+          },
+          {
+            "osmId": "way/69736892",
+            "category": "amenity",
+            "name": "Église Saint-Antoine"
+          },
+          {
+            "osmId": "way/69739088",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "L'Igue de Fontvergne"
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "La Lindardie"
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/1222961213",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6735904806",
+            "category": "tourism"
+          },
+          {
+            "osmId": "way/70139789",
+            "category": "shop",
+            "name": "Garage Grialou"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "n",
+        "terrain": "hill",
+        "names": [
+          "Puy de Wolf"
+        ],
+        "pois": [
+          {
+            "osmId": "node/3379534986",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/858156916",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/858156918",
+            "category": "summit",
+            "name": "Puy de Wolf"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain"
+      }
+    ],
+    [
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/11152507705",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/12538639628",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/12538639629",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/4349809626",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9905803957",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/9905803958",
+            "category": "tourism",
+            "name": "Le faon et l’enfant"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/4349807693",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6583691305",
+            "category": "tourism",
+            "name": "La Découverte"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Lassalle"
+        ],
+        "pois": [
+          {
+            "osmId": "node/9905761739",
+            "category": "tourism",
+            "name": "Fontvergne"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/838750198",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/9905761743",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "n",
+        "terrain": "hill",
+        "names": [
+          "Plan aérien"
+        ],
+        "pois": [
+          {
+            "osmId": "node/3355795746",
+            "category": "summit",
+            "name": "Plan aérien"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/1222961210",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/70132739",
+            "category": "amenity",
+            "name": "Station de Lavage"
+          },
+          {
+            "osmId": "way/70132822",
+            "category": "shop",
+            "name": "E.Leclerc Drive"
+          },
+          {
+            "osmId": "way/70134526",
+            "category": "amenity",
+            "name": "DEKRA"
+          },
+          {
+            "osmId": "way/70138435",
+            "category": "shop"
+          },
+          {
+            "osmId": "way/70139061",
+            "category": "shop",
+            "name": "Bassin boissons"
+          },
+          {
+            "osmId": "way/70139405",
+            "category": "shop",
+            "name": "abor"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "way/70136571",
+            "category": "shop",
+            "name": "Gédimat"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Wolf"
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      }
+    ],
+    [
+      {
+        "glyph": " ",
+        "terrain": "plain"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/9905761748",
+            "category": "tourism",
+            "name": "La Poudrière"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Tramont Village"
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/6739055120",
+            "category": "shop",
+            "name": "Carrosserie Rigal"
+          },
+          {
+            "osmId": "node/6739055130",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/1222957727",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/6479042980",
+            "category": "historic"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Sauterusque Le Haut"
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain"
+      }
+    ],
+    [
+      {
+        "glyph": " ",
+        "terrain": "plain",
+        "pois": [
+          {
+            "osmId": "node/12538639627",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain"
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain",
+        "pois": [
+          {
+            "osmId": "node/6366151978",
+            "category": "tourism",
+            "name": "Les Terrasses"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/6366151979",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6366151980",
+            "category": "tourism",
+            "name": "Les Bouleaux - Buddleïa"
+          }
+        ]
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "La Planconie"
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "way/71885843",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/1222959460",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Capendu"
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/6479207210",
+            "category": "historic"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Fualdes"
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      }
+    ],
+    [
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain",
+        "pois": [
+          {
+            "osmId": "node/5085778240",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/5085778242",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/6366151981",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/6366151982",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "La Gouzinie"
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Cité de la Forézie"
+        ],
+        "pois": [
+          {
+            "osmId": "way/71795552",
+            "category": "amenity",
+            "name": "Le Puy de Wolf"
+          },
+          {
+            "osmId": "way/71885842",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/13655038641",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1489735960",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/71794172",
+            "category": "shop",
+            "name": "Chaudel Pains et Plaisirs"
+          },
+          {
+            "osmId": "way/71884308",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "La Roque"
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "La Nau"
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Lacoste"
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Le Poux"
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      }
+    ],
+    [
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/6366151972",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/6366151977",
+            "category": "tourism",
+            "name": "Giratoire"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Peyrolles"
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Nauquière"
+        ],
+        "pois": [
+          {
+            "osmId": "node/6366129865",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6366151984",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Les Escabrins"
+        ],
+        "pois": [
+          {
+            "osmId": "node/6366154686",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/12036677441",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/12036677443",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/13654689540",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13654689541",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/13418564336",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13654689592",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13654689593",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13654689594",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13654694622",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13654694641",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13654694642",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13654694645",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6479043107",
+            "category": "historic"
+          },
+          {
+            "osmId": "node/8204934011",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/108446012",
+            "category": "tourism"
+          },
+          {
+            "osmId": "way/1489735976",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1489735977",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1489735978",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1489735979",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/445019882",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/6739054944",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/71791917",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Le Clauzel"
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      }
+    ],
+    [
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/6366129867",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6366129868",
+            "category": "tourism",
+            "name": "La Valseyrie"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/1597688293",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Pomaret"
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Le Bac"
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Lestrunie"
+        ],
+        "pois": [
+          {
+            "osmId": "node/1222956075",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/12236193801",
+            "category": "amenity",
+            "name": "Iguana"
+          },
+          {
+            "osmId": "node/13899898806",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13899898807",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13899898808",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13899898809",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13899898813",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13899898815",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13899898816",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13899898874",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13953740465",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13953740466",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13953740467",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13953740472",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/1727928645",
+            "category": "amenity",
+            "name": "Médiathèque"
+          },
+          {
+            "osmId": "node/4453080347",
+            "category": "amenity",
+            "name": "Hôtel de ville de Firmi"
+          },
+          {
+            "osmId": "way/100134020",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1489735975",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1524973260",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1524973261",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1524973274",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1531000745",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/445157378",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/71787748",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/71790834",
+            "category": "amenity",
+            "name": "Firmi"
+          },
+          {
+            "osmId": "way/71791561",
+            "category": "shop",
+            "name": "Boulangerie des Quatre Clochers"
+          },
+          {
+            "osmId": "way/71794481",
+            "category": "amenity",
+            "name": "Caisse d'Épargne"
+          },
+          {
+            "osmId": "way/71794606",
+            "category": "amenity",
+            "name": "EHPAD Paul Mouysset"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Firmi"
+        ],
+        "pois": [
+          {
+            "osmId": "way/1489735964",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/71787803",
+            "category": "amenity",
+            "name": "Crédit Agricole"
+          },
+          {
+            "osmId": "way/71793554",
+            "category": "amenity",
+            "name": "Collège Paul Ramadier"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Les Coulons"
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Massagal"
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      }
+    ],
+    [
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/2584777430",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/2584777431",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/2584777433",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/4349809570",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6258508142",
+            "category": "tourism",
+            "name": "Le Tabarin"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/9995707374",
+            "category": "historic"
+          },
+          {
+            "osmId": "way/70136258",
+            "category": "amenity",
+            "name": "Aubin Combes"
+          },
+          {
+            "osmId": "way/70678807",
+            "category": "amenity",
+            "name": "École Marcel Pagnol"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Combes"
+        ],
+        "pois": [
+          {
+            "osmId": "node/1222950019",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/2585265044",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/2585265050",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/2585265060",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/2585265063",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/2585265065",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/2585265066",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6258498558",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6258498560",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6258498562",
+            "category": "tourism"
+          },
+          {
+            "osmId": "way/446088849",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/70130684",
+            "category": "amenity",
+            "name": "Notre-Dame des Mines"
+          },
+          {
+            "osmId": "way/70972800",
+            "category": "amenity",
+            "name": "Salle Émile Zola"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/6258498563",
+            "category": "tourism",
+            "name": "La Buenhe"
+          },
+          {
+            "osmId": "node/6258498571",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6258498576",
+            "category": "tourism",
+            "name": "Le Tunnel"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/6366129878",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Les Rials"
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Les Acacias"
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/13633092951",
+            "category": "historic"
+          }
+        ]
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain",
+        "pois": [
+          {
+            "osmId": "way/1524918370",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1524918374",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/71787100",
+            "category": "amenity",
+            "name": "Église Saint-Saturnin"
+          },
+          {
+            "osmId": "way/71790046",
+            "category": "amenity",
+            "name": "École primaire Marie Curie"
+          },
+          {
+            "osmId": "way/71889779",
+            "category": "amenity",
+            "name": "École maternelle Jean Zay"
+          },
+          {
+            "osmId": "way/71894251",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/71894254",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain"
+      }
+    ],
+    [
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/6366163459",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6366184721",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/2586471310",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/2586471313",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/252597363",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/6258483576",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/838752105",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/6366129877",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/6258427308",
+            "category": "tourism",
+            "name": "Les Genets"
+          },
+          {
+            "osmId": "node/6815789497",
+            "category": "tourism",
+            "name": "Les Douglas"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "La Font"
+        ],
+        "pois": [
+          {
+            "osmId": "node/2943363644",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Ligue"
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Cité de Cerles"
+        ],
+        "pois": [
+          {
+            "osmId": "node/1222954464",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Les Pioles"
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain"
+      }
+    ],
+    [
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/6258521134",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6258565983",
+            "category": "tourism"
+          },
+          {
+            "osmId": "way/146451978",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "La Buenhe"
+        ],
+        "pois": [
+          {
+            "osmId": "node/6366129911",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6366129912",
+            "category": "tourism",
+            "name": "Le Montet"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/13992764069",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/13992764068",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6366129883",
+            "category": "tourism",
+            "name": "Le Robinier"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/2691230642",
+            "category": "tourism",
+            "name": "Le Rocher troué"
+          },
+          {
+            "osmId": "node/6258427299",
+            "category": "tourism",
+            "name": "La Martine Basse"
+          },
+          {
+            "osmId": "node/6258484298",
+            "category": "tourism",
+            "name": "Le Rocher Troué"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/13992764067",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/3198754253",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6258416962",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6258427309",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/6258416966",
+            "category": "tourism",
+            "name": "La Martine Haute"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/3327044573",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6715292415",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6739043074",
+            "category": "amenity",
+            "name": "Chez-nous"
+          },
+          {
+            "osmId": "node/6739043082",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6739043083",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6739043084",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6739054898",
+            "category": "amenity",
+            "name": "Pizza ChichiBelli"
+          },
+          {
+            "osmId": "way/1329386751",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/445047659",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      }
+    ],
+    [
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/4130380537",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/838750810",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/70679212",
+            "category": "amenity",
+            "name": "Déchèterie du Montet"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/13992764072",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/6258418100",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6366129891",
+            "category": "tourism",
+            "name": "Lou Caminol"
+          },
+          {
+            "osmId": "node/6815782494",
+            "category": "tourism",
+            "name": "La Tranchée"
+          },
+          {
+            "osmId": "node/6815808569",
+            "category": "tourism",
+            "name": "La Pyrite"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Sauguières"
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Les Cambouroux"
+        ],
+        "pois": [
+          {
+            "osmId": "way/71794924",
+            "category": "shop",
+            "name": "Garage Fayet"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      }
+    ],
+    [
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/1839843561",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6366129918",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Le Gua"
+        ],
+        "pois": [
+          {
+            "osmId": "way/1453568628",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/70134020",
+            "category": "amenity",
+            "name": "Église du Gua"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/6258391352",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass",
+        "pois": [
+          {
+            "osmId": "node/1597688292",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6815808568",
+            "category": "tourism",
+            "name": "Château du Montet"
+          },
+          {
+            "osmId": "node/838861345",
+            "category": "tourism",
+            "name": "Pt de vue"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/13053119980",
+            "category": "tourism",
+            "name": "Renaissance"
+          },
+          {
+            "osmId": "node/13418570687",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13992764066",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6258418106",
+            "category": "tourism",
+            "name": "Puech Que Ard"
+          },
+          {
+            "osmId": "node/846949393",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/846951405",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9125007954",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9125007959",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9251502442",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9251533133",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9251533147",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9251533148",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9252777225",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/71128878",
+            "category": "amenity",
+            "name": "Thermes"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/1597688291",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/4349809566",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6258418103",
+            "category": "tourism",
+            "name": "Les Thermes"
+          },
+          {
+            "osmId": "node/6258418104",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/9251533118",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9251533119",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9251533122",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/9251533123",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/9251533124",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/9251533126",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9251533131",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9251533132",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1002428304",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1002428305",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/593117642",
+            "category": "amenity",
+            "name": "Parking la Vaysse"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/838748252",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Le Puech"
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/9227603484",
+            "category": "historic"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/1222953560",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      }
+    ],
+    [
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/1222932386",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/12980225817",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/12980225818",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/12980225819",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/4181187669",
+            "category": "amenity",
+            "name": "École Jules Ferry"
+          },
+          {
+            "osmId": "node/4349809067",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/5659092368",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6492722235",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1412496511",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1412504110",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/445629229",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/70133302",
+            "category": "tourism"
+          },
+          {
+            "osmId": "way/71222081",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/10065254250",
+            "category": "historic"
+          },
+          {
+            "osmId": "node/11518407453",
+            "category": "amenity",
+            "name": "Le Grizou"
+          },
+          {
+            "osmId": "node/12980047920",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/12980047921",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/12980047922",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/12980047923",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/12980047943",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/12980145650",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/12980225841",
+            "category": "historic",
+            "name": "Ambroise Croizat"
+          },
+          {
+            "osmId": "node/12980225842",
+            "category": "tourism",
+            "name": "Bestiaire"
+          },
+          {
+            "osmId": "node/12980225844",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/1417176602",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/3201727259",
+            "category": "historic",
+            "name": "Mémorial des Fusillés des Forges"
+          },
+          {
+            "osmId": "node/4349809567",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/4349809628",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6258391381",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6258391492",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6815745276",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/6815745278",
+            "category": "tourism"
+          },
+          {
+            "osmId": "way/1239822330",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1420489265",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1453568627",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/70134682",
+            "category": "amenity",
+            "name": "Aubin Le Gua"
+          },
+          {
+            "osmId": "way/71224542",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/4181187664",
+            "category": "amenity",
+            "name": "Maison de santé d'Aubin"
+          },
+          {
+            "osmId": "node/7348393486",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "way/1239098541",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/9251533174",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1233283629",
+            "category": "amenity",
+            "name": "Parc de camping-car Cransac"
+          },
+          {
+            "osmId": "way/71501053",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/71501155",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Le Fraysse"
+        ],
+        "pois": [
+          {
+            "osmId": "node/12078589401",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9251533117",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/71129166",
+            "category": "shop",
+            "name": "Garage Da Costa"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "node/9265108687",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/71128502",
+            "category": "amenity",
+            "name": "École maternelle Jacques Prévert"
+          }
+        ]
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "La Rengade"
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Le Mas del Bosc"
+        ],
+        "pois": [
+          {
+            "osmId": "node/1222953569",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/9273220381",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/71792812",
+            "category": "historic",
+            "name": "Château du Claux"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      }
+    ],
+    [
+      {
+        "glyph": "=",
+        "terrain": "rail",
+        "pois": [
+          {
+            "osmId": "node/12980047839",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/70136498",
+            "category": "historic",
+            "name": "Cheminée ornementée de la Compagnie des forges et fonderies d'Aubin"
+          },
+          {
+            "osmId": "way/70139098",
+            "category": "historic",
+            "name": "Cheminée ornementée de la Compagnie des forges et fonderies d'Aubin"
+          },
+          {
+            "osmId": "way/71220577",
+            "category": "tourism",
+            "name": "Camping-car Park Aubin"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Cité Nouvelle"
+        ],
+        "pois": [
+          {
+            "osmId": "node/12980225843",
+            "category": "tourism",
+            "name": "Duologue"
+          },
+          {
+            "osmId": "node/4834984422",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water",
+        "pois": [
+          {
+            "osmId": "node/2613310609",
+            "category": "amenity",
+            "name": "Bistromarché"
+          },
+          {
+            "osmId": "node/2613310628",
+            "category": "shop"
+          },
+          {
+            "osmId": "node/2613310631",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/2613310635",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/2613310639",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/2613310642",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/6815745265",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/179785503",
+            "category": "shop",
+            "name": "Intermarché Super"
+          },
+          {
+            "osmId": "way/202386584",
+            "category": "amenity",
+            "name": "Intermarché"
+          },
+          {
+            "osmId": "way/202386603",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/2613310621",
+            "category": "shop"
+          },
+          {
+            "osmId": "way/179785504",
+            "category": "amenity",
+            "name": "Autovision"
+          },
+          {
+            "osmId": "way/179785506",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/202386581",
+            "category": "shop",
+            "name": "Garage Lignac"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/1222944390",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9224764201",
+            "category": "shop"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/13053119981",
+            "category": "tourism",
+            "name": "Révélation"
+          },
+          {
+            "osmId": "node/3950656902",
+            "category": "amenity",
+            "name": "Casino Jeux de Cransac"
+          },
+          {
+            "osmId": "node/890490857",
+            "category": "shop",
+            "name": "Secours Populaire"
+          },
+          {
+            "osmId": "node/9224764204",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9224764207",
+            "category": "shop",
+            "name": "L'Atelier de Patou"
+          },
+          {
+            "osmId": "way/71129693",
+            "category": "amenity",
+            "name": "Salle d'Accueil"
+          },
+          {
+            "osmId": "way/71192574",
+            "category": "amenity",
+            "name": "Place de la Treille"
+          },
+          {
+            "osmId": "way/71194684",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Cransac-les-Thermes"
+        ],
+        "pois": [
+          {
+            "osmId": "node/1222944356",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/1222944387",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/1223118358",
+            "category": "tourism",
+            "name": "Les mémoires de Cransac"
+          },
+          {
+            "osmId": "node/13053119985",
+            "category": "tourism",
+            "name": "Little Abstract and Bird"
+          },
+          {
+            "osmId": "node/13053119986",
+            "category": "tourism",
+            "name": "Little Abstract and Bird"
+          },
+          {
+            "osmId": "node/13053119987",
+            "category": "tourism",
+            "name": "Heart Love"
+          },
+          {
+            "osmId": "node/13395111822",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/1513977663",
+            "category": "amenity",
+            "name": "Brasserie de la Place"
+          },
+          {
+            "osmId": "node/1513977664",
+            "category": "amenity",
+            "name": "Crédit Agricole"
+          },
+          {
+            "osmId": "node/1513977665",
+            "category": "amenity",
+            "name": "Le Glacier"
+          },
+          {
+            "osmId": "node/1513977666",
+            "category": "amenity",
+            "name": "Pharmacie Mistral"
+          },
+          {
+            "osmId": "node/1516501023",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/4129769950",
+            "category": "amenity",
+            "name": "Le Tulipier"
+          },
+          {
+            "osmId": "node/4129769960",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/4202312997",
+            "category": "amenity",
+            "name": "Hôtel de Ville de Cransac"
+          },
+          {
+            "osmId": "node/853144856",
+            "category": "amenity",
+            "name": "Médiathèque de Cransac"
+          },
+          {
+            "osmId": "node/853144860",
+            "category": "tourism",
+            "name": "Office de tourisme de Cransac"
+          },
+          {
+            "osmId": "node/9125007932",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9178444538",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9178444539",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9178444540",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9178444543",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9178444545",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9178444552",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9178444554",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9178444555",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9178575352",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9178575353",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9178575354",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9178575355",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9178575372",
+            "category": "tourism",
+            "name": "Au coeur du bassin minier"
+          },
+          {
+            "osmId": "node/9223598703",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9223598705",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9223598706",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/1460496520",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/411261612",
+            "category": "amenity",
+            "name": "Rue du Général Louis Artous"
+          },
+          {
+            "osmId": "way/71189993",
+            "category": "amenity",
+            "name": "Collège Jean Jaurès"
+          },
+          {
+            "osmId": "way/71192578",
+            "category": "shop"
+          }
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "La Pélonie"
+        ],
+        "pois": [
+          {
+            "osmId": "node/10242842869",
+            "category": "tourism",
+            "name": "Eau de la Source Saint-Augustin"
+          },
+          {
+            "osmId": "node/13053119990",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/13395111823",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13395111824",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/1514141049",
+            "category": "shop",
+            "name": "Tabac Presse Loto"
+          },
+          {
+            "osmId": "node/4202312998",
+            "category": "amenity",
+            "name": "La Poste"
+          },
+          {
+            "osmId": "node/4202313001",
+            "category": "amenity",
+            "name": "École élémentaire Émile Zola"
+          },
+          {
+            "osmId": "node/5240009640",
+            "category": "historic"
+          },
+          {
+            "osmId": "node/9125007935",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9125007936",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9125010600",
+            "category": "amenity",
+            "name": "Crédit Agricole"
+          },
+          {
+            "osmId": "node/9178575374",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9178575376",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9223598707",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9223608118",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9223608126",
+            "category": "historic"
+          },
+          {
+            "osmId": "way/71129029",
+            "category": "amenity",
+            "name": "Église Saint-Julien"
+          },
+          {
+            "osmId": "way/71195986",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/1222944386",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/13053119988",
+            "category": "tourism",
+            "name": "Symbiose"
+          },
+          {
+            "osmId": "node/5659092105",
+            "category": "amenity"
+          },
+          {
+            "osmId": "way/71128156",
+            "category": "amenity",
+            "name": "Les Carillons"
+          },
+          {
+            "osmId": "way/71533857",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/12844988679",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9227603432",
+            "category": "amenity"
+          },
+          {
+            "osmId": "node/9227603433",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/5239970105",
+            "category": "tourism"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "\"",
+        "terrain": "grass"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Le Claux"
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      }
+    ],
+    [
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Les Baraques Perrier"
+        ]
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Les Baraques Delaure"
+        ]
+      },
+      {
+        "glyph": "=",
+        "terrain": "rail"
+      },
+      {
+        "glyph": "=",
+        "terrain": "rail"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "way/71506642",
+            "category": "tourism",
+            "name": "Camping Les Faysses"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "pois": [
+          {
+            "osmId": "way/1415862486",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/1602366502",
+            "category": "amenity",
+            "name": "Hôtel du Parc"
+          }
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Bézelgues"
+        ],
+        "pois": [
+          {
+            "osmId": "node/5239970120",
+            "category": "tourism"
+          },
+          {
+            "osmId": "node/5239971221",
+            "category": "amenity"
+          }
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "○",
+        "terrain": "place",
+        "names": [
+          "Cambrins"
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "pois": [
+          {
+            "osmId": "node/5406063827",
+            "category": "historic"
+          }
+        ]
+      },
+      {
+        "glyph": "~",
+        "terrain": "water"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      }
+    ]
+  ],
+  "legend": [
+    {
+      "terrain": "water",
+      "glyph": "~",
+      "label": "Eau"
+    },
+    {
+      "terrain": "major_road",
+      "glyph": "+",
+      "label": "Route principale"
+    },
+    {
+      "terrain": "rail",
+      "glyph": "=",
+      "label": "Voie ferree"
+    },
+    {
+      "terrain": "cable",
+      "glyph": "-",
+      "label": "Telepherique"
+    },
+    {
+      "terrain": "cable_station",
+      "glyph": "T",
+      "label": "Station de telepherique"
+    },
+    {
+      "terrain": "mountain",
+      "glyph": "^",
+      "label": "Montagne"
+    },
+    {
+      "terrain": "hill",
+      "glyph": "n",
+      "label": "Colline"
+    },
+    {
+      "terrain": "forest",
+      "glyph": "♣",
+      "label": "Foret"
+    },
+    {
+      "terrain": "grass",
+      "glyph": "\"",
+      "label": "Prairie"
+    },
+    {
+      "terrain": "field",
+      "glyph": ":",
+      "label": "Champ"
+    },
+    {
+      "terrain": "vineyard",
+      "glyph": "¥",
+      "label": "Vigne"
+    },
+    {
+      "terrain": "park",
+      "glyph": ",",
+      "label": "Parc"
+    },
+    {
+      "terrain": "church",
+      "glyph": "†",
+      "label": "Lieu de culte"
+    },
+    {
+      "terrain": "station",
+      "glyph": "≡",
+      "label": "Gare"
+    },
+    {
+      "terrain": "place",
+      "glyph": "○",
+      "label": "Localite"
+    }
+  ],
+  "cache": {
+    "schemaVersion": 1,
+    "sourceSha256": "ec6578c2f0ad33f60168d49680ed297afae3694254697cf7fe1db02e217788b0",
+    "pipelineSha256": "95986553e007c779f0267cf45d780463d217a0bb4eb4d79812cf41bffc8b4e97",
+    "name": "Firmi",
+    "cellSizeMeters": 250,
+    "key": "eeb3e13373a10b43053df1680e650b1d9abe49fb9d53989bee71ee84e16dc23e",
+    "payloadSha256": "e09ac328f01f2003e7d1c12ae4e4470fbeca3eec227c1a11733093329cbdefd6"
+  }
+}

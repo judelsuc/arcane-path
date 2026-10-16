@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101711">
+    <meta name="description" content="Prototype de cartographie ASCII pour Les Arcanes du Chemin.">
+    <title>Les Arcanes du Chemin — Carte</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="masthead">
+        <div class="masthead-tools">
+          <p class="eyebrow" data-i18n="prototype">Les Arcanes du Chemin · Prototype 01</p>
+          <label class="language-picker">
+            <span data-i18n="language">Langue</span>
+            <select id="language">
+              <option value="fr" lang="fr">Français</option>
+              <option value="en" lang="en">English</option>
+            </select>
+          </label>
+        </div>
+        <h1 data-i18n="headline">La route commence quelque part.</h1>
+        <p class="intro" data-i18n="intro">Une carte, un enfant, et toute l'Europe devant soi.</p>
+      </header>
+
+      <section class="map-card" aria-labelledby="map-title">
+        <div class="map-heading">
+          <div>
+            <p class="eyebrow" data-i18n="layer">Couche 01 · Cartographie</p>
+            <h2 id="map-title">Chargement de la région...</h2>
+          </div>
+          <div>
+            <label class="language-picker">
+              <span data-i18n="region">Région</span>
+              <select id="region">
+                <option value="firmi">Firmi (Aveyron)</option>
+                <option value="paris">Paris</option>
+                <option value="alps" data-i18n="region.alps">Alpes (Chamonix)</option>
+              </select>
+            </label>
+            <p class="map-scale" id="map-scale"></p>
+          </div>
+        </div>
+        <div class="map-comparison">
+          <section class="comparison-panel" aria-labelledby="ascii-title">
+            <h3 id="ascii-title" data-i18n="asciiTitle">Grille ASCII</h3>
+            <div class="map-viewport" id="map-viewport" aria-live="polite">
+              <pre class="ascii-map" id="ascii-map" aria-label="Carte fixe de la région"></pre>
+            </div>
+            <p class="cell-info" id="cell-info" role="status"></p>
+          </section>
+          <section class="comparison-panel" aria-labelledby="reference-title">
+            <h3 id="reference-title" data-i18n="referenceTitle">Carte OpenStreetMap</h3>
+            <div id="osm-reference" hidden>
+              <iframe id="osm-frame" title="Carte OpenStreetMap de comparaison" referrerpolicy="no-referrer"></iframe>
+              <p class="reference-note" data-i18n="referenceNote">Vue en ligne, initialement cadrée sur les mêmes limites. Le fond de carte actuel peut différer du snapshot téléchargé.</p>
+              <a class="reference-link" id="osm-link" target="_blank" rel="noopener noreferrer" data-i18n="referenceLink">Ouvrir sur OpenStreetMap (ou si la vue ne se charge pas)</a>
+            </div>
+          </section>
+        </div>
+        <div class="map-meta">
+          <span id="map-size"></span>
+          <span id="map-source"></span>
+        </div>
+        <p class="map-attribution" id="map-attribution" hidden></p>
+      </section>
+
+      <section class="legend-card" aria-labelledby="legend-title">
+        <h2 id="legend-title" data-i18n="legendTitle">Signes de la carte</h2>
+        <ul class="legend" id="legend"></ul>
+      </section>
+
+      <footer class="status-line">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span data-i18n="status">Carte fixe — le déplacement arrive à la couche 02.</span>
+      </footer>
+    </main>
+  </body>
+</html>

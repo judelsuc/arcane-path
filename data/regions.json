@@ -1,0 +1,23 @@
+{
+  "viewport": {"width": 518, "height": 360},
+  "regions": {
+    "firmi": {
+      "name": "Firmi",
+      "referenceBounds": [2.29, 44.53, 2.32, 44.56],
+      "snapshot": "data/regions/firmi.osm.gz",
+      "map": "public/map.json"
+    },
+    "paris": {
+      "name": "Paris",
+      "referenceBounds": [2.33, 48.85, 2.34, 48.86],
+      "snapshot": "data/regions/paris.osm.gz",
+      "map": "public/maps/paris.json"
+    },
+    "alps": {
+      "name": "Alpes — Chamonix",
+      "referenceBounds": [6.87, 45.89, 6.89, 45.91],
+      "snapshot": "data/regions/alps.osm.gz",
+      "map": "public/maps/alps.json"
+    }
+  }
+}

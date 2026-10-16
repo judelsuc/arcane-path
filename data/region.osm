@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6" generator="arcane-path-demo-fixture">
+  <bounds minlat="47.3000" minlon="4.9800" maxlat="47.3450" maxlon="5.1000"/>
+  <!-- Illustrative fixture geometry only; replace with a licensed regional OSM extract. -->
+  <node id="1" lat="47.3000" lon="4.9800"/>
+  <node id="2" lat="47.3450" lon="5.1000"/>
+  <node id="3" lat="47.3220" lon="4.9800"/>
+  <node id="4" lat="47.3220" lon="5.1000"/>
+  <node id="5" lat="47.3000" lon="5.0350"/>
+  <node id="6" lat="47.3450" lon="5.0350"/>
+  <node id="7" lat="47.3000" lon="5.0700"/>
+  <node id="8" lat="47.3450" lon="5.0700"/>
+  <node id="9" lat="47.3110" lon="4.9800"/>
+  <node id="10" lat="47.3370" lon="5.1000"/>
+  <node id="11" lat="47.3090" lon="5.0200"/>
+  <node id="12" lat="47.3120" lon="5.0450"/>
+  <node id="13" lat="47.3190" lon="5.0630"/>
+  <node id="14" lat="47.3280" lon="5.0780"/>
+  <node id="15" lat="47.3380" lon="5.0850"/>
+  <node id="16" lat="47.3080" lon="5.0100"/>
+  <node id="17" lat="47.3150" lon="5.0290"/>
+  <node id="18" lat="47.3250" lon="5.0500"/>
+  <node id="19" lat="47.3340" lon="5.0750"/>
+  <node id="20" lat="47.3040" lon="5.0930"/>
+  <node id="21" lat="47.3420" lon="5.0250"/>
+  <node id="22" lat="47.3390" lon="5.0180"/>
+  <node id="23" lat="47.3150" lon="5.0470"/>
+  <node id="24" lat="47.3170" lon="5.0520"/>
+  <node id="25" lat="47.3230" lon="5.0550"/>
+  <node id="26" lat="47.3270" lon="5.0600"/>
+  <node id="27" lat="47.3300" lon="5.0640"/>
+  <node id="28" lat="47.3160" lon="5.0450"/>
+  <node id="29" lat="47.3160" lon="5.0490"/>
+  <node id="30" lat="47.3200" lon="5.0450"/>
+  <node id="31" lat="47.3200" lon="5.0490"/>
+  <node id="32" lat="47.3170" lon="5.0570"/>
+  <node id="33" lat="47.3170" lon="5.0610"/>
+  <node id="34" lat="47.3210" lon="5.0570"/>
+  <node id="35" lat="47.3210" lon="5.0610"/>
+  <node id="36" lat="47.3260" lon="5.0440"/>
+  <node id="37" lat="47.3260" lon="5.0480"/>
+  <node id="38" lat="47.3300" lon="5.0440"/>
+  <node id="39" lat="47.3300" lon="5.0480"/>
+  <node id="40" lat="47.3200" lon="5.0570"/>
+  <node id="41" lat="47.3200" lon="5.0610"/>
+  <node id="42" lat="47.3240" lon="5.0570"/>
+  <node id="43" lat="47.3240" lon="5.0610"/>
+  <node id="44" lat="47.3260" lon="5.0770"/>
+  <node id="45" lat="47.3260" lon="5.0810"/>
+  <node id="46" lat="47.3300" lon="5.0770"/>
+  <node id="47" lat="47.3300" lon="5.0810"/>
+  <node id="48" lat="47.3180" lon="5.0320"><tag k="place" v="village"/></node>
+  <node id="49" lat="47.3280" lon="5.0670"><tag k="amenity" v="place_of_worship"/></node>
+  <node id="50" lat="47.3350" lon="5.0900"><tag k="railway" v="station"/></node>
+  <node id="51" lat="47.3020" lon="5.0860"/>
+  <node id="52" lat="47.3200" lon="5.0900"/>
+  <node id="53" lat="47.3440" lon="5.0940"/>
+  <node id="54" lat="47.3300" lon="4.9820"/>
+  <node id="55" lat="47.3430" lon="4.9820"/>
+  <node id="56" lat="47.3430" lon="5.0100"/>
+  <node id="57" lat="47.3300" lon="5.0100"/>
+  <node id="58" lat="47.3370" lon="4.9950"><tag k="natural" v="peak"/></node>
+  <node id="59" lat="47.3020" lon="4.9840"/>
+  <node id="60" lat="47.3070" lon="4.9840"/>
+  <node id="61" lat="47.3070" lon="5.0120"/>
+  <node id="62" lat="47.3020" lon="5.0120"/>
+
+  <way id="100">
+    <nd ref="3"/><nd ref="4"/>
+    <tag k="highway" v="primary"/><tag k="name" v="Route de la region"/>
+  </way>
+  <way id="101">
+    <nd ref="5"/><nd ref="6"/>
+    <tag k="highway" v="secondary"/>
+  </way>
+  <way id="102">
+    <nd ref="7"/><nd ref="8"/>
+    <tag k="highway" v="tertiary"/>
+  </way>
+  <way id="103">
+    <nd ref="9"/><nd ref="11"/><nd ref="12"/><nd ref="13"/><nd ref="14"/><nd ref="15"/><nd ref="10"/>
+    <tag k="waterway" v="stream"/>
+  </way>
+  <way id="104">
+    <nd ref="16"/><nd ref="17"/><nd ref="18"/><nd ref="19"/>
+    <tag k="highway" v="residential"/>
+  </way>
+  <way id="105">
+    <nd ref="20"/><nd ref="19"/><nd ref="21"/>
+    <tag k="highway" v="track"/>
+  </way>
+  <way id="106">
+    <nd ref="51"/><nd ref="52"/><nd ref="50"/><nd ref="53"/>
+    <tag k="railway" v="rail"/>
+  </way>
+  <way id="207">
+    <nd ref="54"/><nd ref="55"/><nd ref="56"/><nd ref="57"/><nd ref="54"/>
+    <tag k="natural" v="bare_rock"/>
+  </way>
+  <way id="208">
+    <nd ref="59"/><nd ref="60"/><nd ref="61"/><nd ref="62"/><nd ref="59"/>
+    <tag k="landuse" v="farmland"/>
+  </way>
+  <way id="200">
+    <nd ref="22"/><nd ref="23"/><nd ref="24"/><nd ref="12"/><nd ref="22"/>
+    <tag k="landuse" v="forest"/>
+  </way>
+  <way id="201">
+    <nd ref="25"/><nd ref="26"/><nd ref="27"/><nd ref="14"/><nd ref="25"/>
+    <tag k="landuse" v="meadow"/>
+  </way>
+  <way id="202">
+    <nd ref="28"/><nd ref="29"/><nd ref="30"/><nd ref="31"/><nd ref="28"/>
+    <tag k="leisure" v="park"/>
+  </way>
+  <way id="203">
+    <nd ref="32"/><nd ref="33"/><nd ref="34"/><nd ref="35"/><nd ref="32"/>
+    <tag k="building" v="yes"/>
+  </way>
+  <way id="204">
+    <nd ref="36"/><nd ref="37"/><nd ref="38"/><nd ref="39"/><nd ref="36"/>
+    <tag k="building" v="yes"/>
+  </way>
+  <way id="205">
+    <nd ref="40"/><nd ref="41"/><nd ref="42"/><nd ref="43"/><nd ref="40"/>
+    <tag k="natural" v="water"/>
+  </way>
+  <way id="206">
+    <nd ref="44"/><nd ref="45"/><nd ref="46"/><nd ref="47"/><nd ref="44"/>
+    <tag k="landuse" v="vineyard"/>
+  </way>
+</osm>
