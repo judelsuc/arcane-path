@@ -133,6 +133,15 @@
             "category": "tourism",
             "name": "GR 65 Firmi"
           }
+        ],
+        "contentSources": [
+          {
+            "osmId": "node/6479129820",
+            "tags": {
+              "description": "La Méridienne Verte",
+              "name": "GR 65 Firmi"
+            }
+          }
         ]
       },
       {
@@ -337,6 +346,14 @@
             "osmId": "node/11646994133",
             "category": "summit",
             "name": "Puy de Fraysse"
+          }
+        ],
+        "contentSources": [
+          {
+            "osmId": "node/669992389",
+            "tags": {
+              "description": "Borne en granit gravée IGN - Point vu en place en 2001"
+            }
           }
         ]
       },
@@ -936,6 +953,14 @@
             "osmId": "node/6479099710",
             "category": "tourism"
           }
+        ],
+        "contentSources": [
+          {
+            "osmId": "node/6479099710",
+            "tags": {
+              "description": "Site Natura 2000: Le Puy de Wolf"
+            }
+          }
         ]
       },
       {
@@ -1037,6 +1062,21 @@
             "category": "historic",
             "name": "Les Soufflantes"
           }
+        ],
+        "contentSources": [
+          {
+            "osmId": "node/10709947898",
+            "tags": {
+              "description": "Les Soufflantes"
+            }
+          },
+          {
+            "osmId": "node/5988361494",
+            "tags": {
+              "description": "oeuvre très deteriorée même si reparé par l'artiste en 2018",
+              "name": "gorille"
+            }
+          }
         ]
       },
       {
@@ -1071,6 +1111,14 @@
           {
             "osmId": "way/69739088",
             "category": "amenity"
+          }
+        ],
+        "contentSources": [
+          {
+            "osmId": "node/6502484366",
+            "tags": {
+              "description": "oeuvre pas mal endomage par le temps"
+            }
           }
         ]
       },
@@ -1309,6 +1357,14 @@
             "category": "summit",
             "name": "Plan aérien"
           }
+        ],
+        "contentSources": [
+          {
+            "osmId": "node/669992331",
+            "tags": {
+              "description": "Borne en granit gravée IGN - Point vu en place en 2001"
+            }
+          }
         ]
       },
       {
@@ -1321,7 +1377,16 @@
       },
       {
         "glyph": "~",
-        "terrain": "water"
+        "terrain": "water",
+        "contentSources": [
+          {
+            "osmId": "node/1226778831",
+            "tags": {
+              "description": "Centrale à Béton",
+              "name": "Ets Francois Industrie"
+            }
+          }
+        ]
       },
       {
         "glyph": "+",
@@ -2618,6 +2683,15 @@
             "category": "amenity",
             "name": "Salle Émile Zola"
           }
+        ],
+        "contentSources": [
+          {
+            "osmId": "way/70130684",
+            "tags": {
+              "name": "Notre-Dame des Mines",
+              "wikipedia": "fr:Église Notre-Dame-des-Mines d'Aubin"
+            }
+          }
         ]
       },
       {
@@ -3025,6 +3099,14 @@
             "category": "tourism",
             "name": "Le Montet"
           }
+        ],
+        "contentSources": [
+          {
+            "osmId": "node/6366129911",
+            "tags": {
+              "description": "La Forêt de la Vaysse"
+            }
+          }
         ]
       },
       {
@@ -3188,6 +3270,14 @@
             "osmId": "way/445047659",
             "category": "amenity"
           }
+        ],
+        "contentSources": [
+          {
+            "osmId": "node/12299528827",
+            "tags": {
+              "image": "https://panoramax.openstreetmap.fr/images/96/a1/92/ff/e869-4406-90dd-a19dda723c79.jpg"
+            }
+          }
         ]
       },
       {
@@ -3234,7 +3324,21 @@
     [
       {
         "glyph": "~",
-        "terrain": "water"
+        "terrain": "water",
+        "contentSources": [
+          {
+            "osmId": "node/669991493",
+            "tags": {
+              "description": "Pylône en béton No3,support de ligne électrique : Axe - Point vu en place en 2001"
+            }
+          },
+          {
+            "osmId": "node/669991494",
+            "tags": {
+              "description": "Borne en granit gravée IGN - Point vu en place en 2001"
+            }
+          }
+        ]
       },
       {
         "glyph": "♣",
@@ -3434,6 +3538,15 @@
             "osmId": "way/70134020",
             "category": "amenity",
             "name": "Église du Gua"
+          }
+        ],
+        "contentSources": [
+          {
+            "osmId": "way/70134020",
+            "tags": {
+              "name": "Église du Gua",
+              "wikipedia": "fr:Église Notre-Dame du Gua"
+            }
           }
         ]
       },
@@ -3673,7 +3786,15 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "contentSources": [
+          {
+            "osmId": "node/3319154596",
+            "tags": {
+              "description": "limite vitesse a 70Km/h Sortie de Firmi"
+            }
+          }
+        ]
       },
       {
         "glyph": "~",
@@ -3691,7 +3812,15 @@
       },
       {
         "glyph": "~",
-        "terrain": "water"
+        "terrain": "water",
+        "contentSources": [
+          {
+            "osmId": "way/71794853",
+            "tags": {
+              "description": "non visible sur ortho hr 2019 mais encore visible sur cadastre-fr 2021"
+            }
+          }
+        ]
       },
       {
         "glyph": "~",
@@ -3771,6 +3900,14 @@
           {
             "osmId": "way/71222081",
             "category": "amenity"
+          }
+        ],
+        "contentSources": [
+          {
+            "osmId": "way/70133302",
+            "tags": {
+              "wikipedia": "fr:École Jules-Ferry du Gua"
+            }
           }
         ]
       },
@@ -3879,6 +4016,21 @@
             "osmId": "way/71224542",
             "category": "amenity"
           }
+        ],
+        "contentSources": [
+          {
+            "osmId": "node/12980225841",
+            "tags": {
+              "image": "https://www.aubin-aveyron.fr/uploads/sites/75/2023/10/IMG_9023-900x1200.jpg",
+              "name": "Ambroise Croizat"
+            }
+          },
+          {
+            "osmId": "node/6815745276",
+            "tags": {
+              "description": "Mémorial des Fusillés des Forges"
+            }
+          }
         ]
       },
       {
@@ -3926,6 +4078,15 @@
           {
             "osmId": "way/71501155",
             "category": "amenity"
+          }
+        ],
+        "contentSources": [
+          {
+            "osmId": "way/1233283629",
+            "tags": {
+              "description": "Mininum 1 week. reservation at city hall",
+              "name": "Parc de camping-car Cransac"
+            }
           }
         ]
       },
@@ -4059,15 +4220,39 @@
       },
       {
         "glyph": "\"",
-        "terrain": "grass"
+        "terrain": "grass",
+        "contentSources": [
+          {
+            "osmId": "way/71787828",
+            "tags": {
+              "description": "non visible sur ortho hr 2019 mais encore sur cadastre-fr 2021"
+            }
+          }
+        ]
       },
       {
         "glyph": "~",
-        "terrain": "water"
+        "terrain": "water",
+        "contentSources": [
+          {
+            "osmId": "way/71791191",
+            "tags": {
+              "description": "non visible sur ortho hr 2019 mais encore sur cadastre-fr 2021"
+            }
+          }
+        ]
       },
       {
         "glyph": "~",
-        "terrain": "water"
+        "terrain": "water",
+        "contentSources": [
+          {
+            "osmId": "way/71789572",
+            "tags": {
+              "description": "non visible sur ortho hr 2019 mais encore sur cadastre-fr 2021"
+            }
+          }
+        ]
       },
       {
         "glyph": "~",
@@ -4102,6 +4287,15 @@
             "category": "tourism",
             "name": "Camping-car Park Aubin"
           }
+        ],
+        "contentSources": [
+          {
+            "osmId": "way/1412496462",
+            "tags": {
+              "image": "https://www.aubin-aveyron.fr/uploads/sites/75/2024/03/Boulodrome-Gua-768x576.jpg",
+              "name": "Boulodrome du Plateau des Forges"
+            }
+          }
         ]
       },
       {
@@ -4119,6 +4313,15 @@
           {
             "osmId": "node/4834984422",
             "category": "tourism"
+          }
+        ],
+        "contentSources": [
+          {
+            "osmId": "node/12980225843",
+            "tags": {
+              "image": "https://www.aubin-aveyron.fr/uploads/sites/75/2023/02/streat-art-atelier-900x1200.jpg",
+              "name": "Duologue"
+            }
           }
         ]
       },
@@ -4590,7 +4793,21 @@
       },
       {
         "glyph": "\"",
-        "terrain": "grass"
+        "terrain": "grass",
+        "contentSources": [
+          {
+            "osmId": "node/669992387",
+            "tags": {
+              "description": "Poteau en ciment No8, support de ligne électrique : Axe et sommet - Point vu en place en 2001"
+            }
+          },
+          {
+            "osmId": "node/669992388",
+            "tags": {
+              "description": "Borne en granit gravée IGN - Point vu en place en 2001"
+            }
+          }
+        ]
       },
       {
         "glyph": "+",
@@ -4614,7 +4831,15 @@
       },
       {
         "glyph": "\"",
-        "terrain": "grass"
+        "terrain": "grass",
+        "contentSources": [
+          {
+            "osmId": "node/9227603579",
+            "tags": {
+              "description": "croix en fer sur scole en pierre"
+            }
+          }
+        ]
       },
       {
         "glyph": "+",
@@ -4689,6 +4914,14 @@
           {
             "osmId": "way/1415862486",
             "category": "amenity"
+          }
+        ],
+        "contentSources": [
+          {
+            "osmId": "way/71128516",
+            "tags": {
+              "description": "demolition en 2023"
+            }
           }
         ]
       },
@@ -4777,6 +5010,14 @@
         "terrain": "place",
         "names": [
           "Cambrins"
+        ],
+        "contentSources": [
+          {
+            "osmId": "way/71789593",
+            "tags": {
+              "description": "non visible sur ortho hr 2019 mais encore sur cadastre-fr 2021"
+            }
+          }
         ]
       },
       {
@@ -4895,10 +5136,10 @@
   "cache": {
     "schemaVersion": 1,
     "sourceSha256": "ec6578c2f0ad33f60168d49680ed297afae3694254697cf7fe1db02e217788b0",
-    "pipelineSha256": "95986553e007c779f0267cf45d780463d217a0bb4eb4d79812cf41bffc8b4e97",
+    "pipelineSha256": "4240239544905d689f261639a3fa90be3a470208a51793607e2cc7b911dd2869",
     "name": "Firmi",
     "cellSizeMeters": 250,
-    "key": "eeb3e13373a10b43053df1680e650b1d9abe49fb9d53989bee71ee84e16dc23e",
-    "payloadSha256": "e09ac328f01f2003e7d1c12ae4e4470fbeca3eec227c1a11733093329cbdefd6"
+    "key": "9e6dcff9a4d5997e8dc6d89c2e9b9ca4b026749faf509a4909dcc31c5f97cb21",
+    "payloadSha256": "8214e6d4d63077120ea0b5b6d103ceb8798a27cddc26c0b6d00e35a4cea5a11e"
   }
 }

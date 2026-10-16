@@ -1,11 +1,14 @@
 import { resolveLocale, translate } from "./i18n.mjs";
 import { osmReferenceUrls } from "./osm-reference.mjs";
 import { cellInfo } from "./cell-info.mjs";
+import { setupCellContent } from "./cell-content-ui.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
 const viewport = document.querySelector("#map-viewport");
 const languageSelect = document.querySelector("#language");
 const regionSelect = document.querySelector("#region");
+const osmDrawer = document.querySelector("#osm-drawer");
+const openOsm = document.querySelector("#open-osm");
 const regionPaths = {
   firmi: "./public/map.json",
   paris: "./public/maps/paris.json",
@@ -16,8 +19,25 @@ let mapData;
 let loadFailed = false;
 let activeRequest;
 let inspectedTile;
+const cellContent = setupCellContent(t);
 
-function tileDetails(tile) {
+osmDrawer.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    osmDrawer.close();
+  }
+});
+
+openOsm.addEventListener("click", () => {
+  if (!mapData) return;
+  osmDrawer.showModal();
+  const frame = document.querySelector("#osm-frame");
+  if (!frame.hasAttribute("src")) {
+    frame.src = osmReferenceUrls(mapData.referenceBounds ?? mapData.bounds).embed;
+  }
+});
+
+function tileDetails(tile, includePois = true) {
   const info = cellInfo(mapData, Number(tile.dataset.row), Number(tile.dataset.col));
   const details = t("cellDetails", {
     ...info,
@@ -27,7 +47,7 @@ function tileDetails(tile) {
     latitude: info.latitude.toFixed(5),
     longitude: info.longitude.toFixed(5),
   });
-  if (!info.pois.length) {
+  if (!includePois || !info.pois.length) {
     return details;
   }
   const points = info.pois.map((poi) => {
@@ -44,11 +64,14 @@ function inspectTile(tile) {
   inspectedTile?.classList.remove("tile--inspected");
   inspectedTile = tile;
   tile.classList.add("tile--inspected");
-  document.querySelector("#cell-info").textContent = tileDetails(tile);
+  document.querySelector("#cell-info").textContent = tileDetails(tile, false);
 }
 
 for (const event of ["pointerover", "focusin", "click"]) {
   mapElement.addEventListener(event, (event) => inspectTile(event.target));
+}
+for (const event of ["focusin", "click"]) {
+  mapElement.addEventListener(event, (event) => cellContent.select(mapData, event.target));
 }
 
 function t(key, parameters) {
@@ -63,6 +86,7 @@ function localize() {
     element.textContent = t(element.dataset.i18n);
   });
   languageSelect.value = locale;
+  cellContent.localize(locale);
   mapElement.setAttribute("aria-label", t("mapLabel"));
   document.querySelector("#cell-info").textContent = t("cellHint");
 
@@ -115,7 +139,7 @@ function localize() {
     tile.setAttribute("aria-label", details);
   });
   if (inspectedTile) {
-    document.querySelector("#cell-info").textContent = tileDetails(inspectedTile);
+    document.querySelector("#cell-info").textContent = tileDetails(inspectedTile, false);
   }
 }
 
@@ -151,9 +175,9 @@ function renderMap(data) {
   mapElement.replaceChildren(map);
   viewport.replaceChildren(mapElement);
   mapData = data;
-  document.querySelector("#osm-frame").src = referenceUrls.embed;
   document.querySelector("#osm-link").href = referenceUrls.full;
   document.querySelector("#osm-reference").hidden = false;
+  openOsm.disabled = false;
   localize();
 }
 
@@ -168,6 +192,9 @@ async function loadRegion() {
   const request = new AbortController();
   activeRequest = request;
   mapData = undefined;
+  osmDrawer.close();
+  openOsm.disabled = true;
+  cellContent.reset();
   inspectedTile = undefined;
   loadFailed = false;
   document.querySelector("#osm-reference").hidden = true;

@@ -385,11 +385,18 @@ def rasterize(
                 named_points.setdefault((col, row), []).append((terrain, feature_name))
 
     cell_pois = {}
+    cell_content = {}
     for kind, elements in (("node", node_elements), ("way", ways.values())):
         for element in elements:
             tags = _tags(element)
             category = poi_category(tags)
-            if category is None:
+            content_tags = {
+                key: value for key, value in tags.items()
+                if key in ("wikimedia_commons", "wikipedia", "image", "description", "name")
+                or key.startswith("description:")
+            }
+            has_content = any(key != "name" for key in content_tags)
+            if category is None and not has_content:
                 continue
             if kind == "node":
                 point = nodes[element.attrib["id"]]
@@ -406,6 +413,13 @@ def rasterize(
             if not (min_x <= point[0] <= max_x and min_y <= point[1] <= max_y):
                 continue
             position = grid_position(point)
+            if has_content:
+                cell_content.setdefault(position, []).append({
+                    "osmId": f"{kind}/{element.attrib['id']}",
+                    "tags": content_tags,
+                })
+            if category is None:
+                continue
             poi = {"osmId": f"{kind}/{element.attrib['id']}", "category": category}
             if tags.get("name"):
                 poi["name"] = tags["name"]
@@ -428,6 +442,9 @@ def rasterize(
             pois = cell_pois.get((col_index, row_index))
             if pois:
                 output_cell["pois"] = sorted(pois, key=lambda poi: poi["osmId"])
+            content = cell_content.get((col_index, row_index))
+            if content:
+                output_cell["contentSources"] = sorted(content, key=lambda item: item["osmId"])
             output_row.append(output_cell)
         output_cells.append(output_row)
     reference_bounds = {}

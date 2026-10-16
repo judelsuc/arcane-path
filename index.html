@@ -42,6 +42,7 @@
               </select>
             </label>
             <p class="map-scale" id="map-scale"></p>
+            <button id="open-osm" type="button" aria-haspopup="dialog" aria-controls="osm-drawer" disabled data-i18n="openReference"></button>
           </div>
         </div>
         <div class="map-comparison">
@@ -51,14 +52,22 @@
               <pre class="ascii-map" id="ascii-map" aria-label="Carte fixe de la région"></pre>
             </div>
             <p class="cell-info" id="cell-info" role="status"></p>
-          </section>
-          <section class="comparison-panel" aria-labelledby="reference-title">
-            <h3 id="reference-title" data-i18n="referenceTitle">Carte OpenStreetMap</h3>
-            <div id="osm-reference" hidden>
-              <iframe id="osm-frame" title="Carte OpenStreetMap de comparaison" referrerpolicy="no-referrer"></iframe>
-              <p class="reference-note" data-i18n="referenceNote">Vue en ligne, initialement cadrée sur les mêmes limites. Le fond de carte actuel peut différer du snapshot téléchargé.</p>
-              <a class="reference-link" id="osm-link" target="_blank" rel="noopener noreferrer" data-i18n="referenceLink">Ouvrir sur OpenStreetMap (ou si la vue ne se charge pas)</a>
-            </div>
+            <section class="cell-content" aria-labelledby="content-title">
+              <h3 id="content-title" data-i18n="contentTitle">Découvrir cette case</h3>
+              <p id="content-hint" data-i18n="contentHint"></p>
+              <p id="content-position"></p>
+              <div id="cell-description" role="status"></div>
+              <details id="cell-pois" hidden>
+                <summary id="cell-pois-summary"></summary>
+                <ul id="cell-pois-list"></ul>
+              </details>
+              <div class="content-actions">
+                <button id="show-photo" type="button" disabled data-i18n="showPhoto"></button>
+                <button id="refresh-content" type="button" disabled data-i18n="refreshContent"></button>
+                <button id="clear-content" type="button" data-i18n="clearContent"></button>
+              </div>
+              <p id="cache-status" role="status"></p>
+            </section>
           </section>
         </div>
         <div class="map-meta">
@@ -78,5 +87,26 @@
         <span data-i18n="status">Carte fixe — le déplacement arrive à la couche 02.</span>
       </footer>
     </main>
+    <dialog id="osm-drawer" aria-labelledby="reference-title">
+      <div class="drawer-heading">
+        <h2 id="reference-title" data-i18n="referenceTitle">Carte OpenStreetMap</h2>
+        <form method="dialog"><button data-i18n="closeReference" autofocus></button></form>
+      </div>
+      <div id="osm-reference" hidden>
+        <iframe id="osm-frame" title="Carte OpenStreetMap de comparaison" referrerpolicy="no-referrer"></iframe>
+        <p class="reference-note" data-i18n="referenceNote"></p>
+        <a class="reference-link" id="osm-link" target="_blank" rel="noopener noreferrer" data-i18n="referenceLink"></a>
+      </div>
+    </dialog>
+    <dialog id="photo-dialog" aria-labelledby="photo-title">
+      <h2 id="photo-title" data-i18n="photoTitle"></h2>
+      <form method="dialog"><button data-i18n="closePhoto"></button></form>
+      <nav id="photo-navigation" class="content-actions" aria-label="Photos" hidden>
+        <button id="previous-photo" type="button" data-i18n="previousPhoto"></button>
+        <span id="photo-count" role="status"></span>
+        <button id="next-photo" type="button" data-i18n="nextPhoto"></button>
+      </nav>
+      <div id="cell-photo" role="status"></div>
+    </dialog>
   </body>
 </html>

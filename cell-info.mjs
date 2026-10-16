@@ -17,6 +17,8 @@ export function cellInfo(map, row, col) {
     terrain: map.rows[row][col].terrain,
     names: map.rows[row][col].names ?? [],
     pois: map.rows[row][col].pois ?? [],
+    contentSources: map.rows[row][col].contentSources ?? [],
+    bounds: { west, south, east, north },
     row: row + 1,
     col: col + 1,
     latitude: (south + north) / 2,

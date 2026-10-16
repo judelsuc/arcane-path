@@ -8,6 +8,24 @@ from build_map import rasterize
 
 
 class CellPoiTests(unittest.TestCase):
+    def test_content_tags_survive_without_a_poi_category(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "content.osm"
+            source.write_text("""<osm version="0.6">
+              <bounds minlat="0" minlon="0" maxlat="0.009" maxlon="0.009"/>
+              <node id="1" lat="0.0045" lon="0.0045">
+                <tag k="description:fr" v="Un lieu"/>
+                <tag k="wikimedia_commons" v="File:Lieu.jpg"/>
+                <tag k="wikipedia" v="fr:Lieu"/>
+              </node></osm>""", encoding="utf-8")
+            result = rasterize(source, "Region")
+        sources = [source for row in result["rows"] for cell in row
+                   for source in cell.get("contentSources", [])]
+        self.assertEqual(len(sources), 1)
+        self.assertEqual(sources[0]["osmId"], "node/1")
+        self.assertEqual(sources[0]["tags"]["description:fr"], "Un lieu")
+        self.assertEqual(sources[0]["tags"]["wikimedia_commons"], "File:Lieu.jpg")
+
     def test_hidden_building_pois_and_nodes_survive_without_changing_terrain(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "pois.osm"

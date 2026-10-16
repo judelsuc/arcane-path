@@ -10,12 +10,24 @@ This file records additions to the design without modifying the source PDF,
 - **Caching:** Cache the photo file itself, not only its URL, together with its
   source, attribution/license, geographic association, and retrieval metadata
   so it can be displayed again offline. See R-004 and R-006.
-- **Status:** Recorded; not implemented in layer 1.
-- **Dependency:** Requires a player position and movement, which are introduced
-  in layer 2.
-- **To decide during implementation:** Which key to use, which photo source to
-  query, how to verify a photo matches the cell, and what to show when the game
-  is offline or no photo is available.
+- **Status:** Implemented for a selected cell: click or keyboard-focus the
+  cell, then press P or use the Photo button. A modal displays the cached photo,
+  credits, license and geographic association. Escape closes it.
+- **Layer 2 integration:** The selected cell is the temporary position until
+  player movement exists; no player movement was added here.
+- **Priority:** OSM-linked Commons file (`wikimedia_commons`, or `image` with
+  a Commons file/page reference), then geolocated Commons images inside the
+  cell, then Commons-hosted images from Wikipedia articles inside the cell.
+  If none is usable, nearby Commons photos within 2 km may be used, explicitly
+  labelled with distance from the cell center. Unlicensed, unreadable or
+  unsupported files are rejected; source failures are shown, not concealed.
+- **Gallery:** Download up to 5 distinct usable photos in source-priority order,
+  filling remaining slots with nearby photos when needed. Cache every image's
+  bytes and individual provenance. Previous/next buttons and Left/Right keys
+  browse without network requests; the counter and disabled end buttons expose
+  the available range. Fewer than 5 images is valid when sources lack coverage.
+  The photo cache schema/limit distinguishes galleries from legacy one-photo
+  entries, whose bytes are reused during upgrade and retained during outages.
 
 ## R-002 — Railways, mountains, and fields
 
@@ -37,7 +49,8 @@ This file records additions to the design without modifying the source PDF,
   server is introduced, synchronize the local region cache with that server.
 - **Content scope:** The cache and future synchronization must also cover each
   cell's web-sourced description and photo assets, including source and license
-  metadata. Current cache implementation covers only OSM snapshots and grids.
+  metadata. Local caching covers OSM snapshots/grids plus discovered descriptions
+  and actual photo bytes in the browser's IndexedDB.
 - **Status:** Local snapshot and grid caching implemented. Matching OSM
   snapshots are reused without network access. Generated grids are reused
   without rasterization when source, pipeline, name, and resolution match.
@@ -65,8 +78,13 @@ This file records additions to the design without modifying the source PDF,
 - **Requirement:** Every map cell must have a short description sourced from
   the web. Cache descriptions and the photos required by R-001 for reuse and
   offline access.
-- **Status:** Recorded; web-description acquisition, photo acquisition, and
-  their caches are not implemented yet.
+- **Status:** Implemented on demand for clicked or keyboard-focused cells.
+  Description priority is localized OSM description tag (then the unqualified
+  tag), Wikipedia summary for a place inside the cell, then clearly labelled
+  nearby Wikipedia context within 2 km. Excerpts are at most 600 characters.
+  English/French requests are separate; unqualified OSM language is explicitly
+  unspecified. If no sourced text exists, an unavailable message is shown:
+  coverage is not guaranteed and no invented text is substituted.
 - **Provenance:** Retain source URLs, attribution/license, retrieval metadata,
   and the geographic area associated with each description and photo. A
   generated or invented description does not satisfy the web-source requirement.
@@ -76,18 +94,27 @@ This file records additions to the design without modifying the source PDF,
 - **Synchronization:** Include descriptions, photo files, and their metadata in
   the future server cache synchronization required by R-004, preserving offline
   access to previously downloaded content.
-- **To decide during implementation:** Sources and permissible reuse, how to
-  obtain accurate descriptions for cells with no direct web coverage, description
-  length, refresh policy, and cache storage limits. Missing content or failed
-  retrieval must be explicit, not disguised as successfully sourced content.
+- **Cache policy:** IndexedDB stores descriptions, image blobs, source/credit/
+  license metadata, geographic bounds, resolution, language, content schema
+  version and retrieval time. Keys include a geographic/source fingerprint,
+  not region names or row/column alone. Reopening cached content requires no
+  provider requests. Explicit refresh bypasses the cache; successful content is
+  cached even if a higher-priority provider failed, with warnings retained.
+  An outage without content is not cached as a definitive absence.
+- **Storage:** Images are limited to 12 MB each. A clear-cache button is
+  provided; there is no automatic eviction or refresh interval yet. Browser
+  quota/storage failures are explicit. Browser-managed storage can be evicted
+  and is specific to this site origin (including port); it is not server sync.
 
 ## R-007 — Compare the ASCII map with OpenStreetMap
 
 - **Requirement:** Show the actual OSM basemap beside the ASCII grid to check
   rasterization against real geography, especially excessive water coverage.
 - **Status:** Implemented for each selectable region using the official OSM
-  embed, initially fitted to the snapshot bounds, with a separate-map link.
-  Panels stack on small screens.
+  embed and stable reference bounds, with a separate-map link. The comparison
+  lives in a right-side drawer, closed by default, opened by a localized button
+  and closed by its close button or Escape. It adapts to narrow screens and
+  returns focus on close. The iframe loads only when opened for a region.
 - **Limitations:** The comparison requires Internet access and displays current
   OSM tiles rather than the cached snapshot. A narrow waterway can still mark
   an entire intersected cell as water unless a higher-priority symbol from
@@ -158,7 +185,9 @@ This file records additions to the design without modifying the source PDF,
   text whenever OSM supplies them.
 - **Status:** Implemented for node and way POIs: amenities, shops, tourism,
   heritage, rail/cable stations, and summits. POI names and localized categories
-  appear in both the tooltip and detail panel, independent of the terrain symbol.
+  appear in the tooltip and a collapsible list below the selected cell's
+  description, independent of the terrain symbol. The list includes a count,
+  scrolls for dense cells, and resets when the selected cell or region changes.
   POI IDs and metadata are cached with each generated cell.
 - **Positioning:** Nodes use their coordinates. Ways use the center of their
   bounding box as a representative position, not an inferred entrance.

@@ -19,7 +19,15 @@ Le selecteur de region affiche de vrais extraits OSM de Paris, des Alpes pres de
 
 ### Comparaison avec OpenStreetMap
 
-Le fond de carte OpenStreetMap est affiche a cote de la grille ASCII (en dessous sur petit ecran) et change avec la region. Les extraits de Firmi, Paris et Chamonix sont prepares automatiquement pour couvrir une vue standard de 518 x 360 pixels. Le cadrage de reference initial est conserve pour eviter qu'un nouvel ajustement fasse encore reculer le zoom. Un lien permet aussi de l'ouvrir separement si la vue integree ne se charge pas. Les titres et indications suivent la langue choisie.
+Le bouton « Voir OpenStreetMap » ouvre le fond de carte dans un tiroir a droite,
+ferme par defaut. « Fermer la carte » ou Echap le referme et rend le focus au
+bouton d'ouverture. La grille ASCII utilise toute la largeur disponible.
+Le tiroir s'adapte aux petits ecrans et suit la region choisie. L'iframe OSM
+n'est chargee qu'a la premiere ouverture pour cette region ; la refermer ne
+recharge pas les tuiles. Les extraits de Firmi, Paris et Chamonix sont prepares
+pour une vue standard de 518 x 360 pixels, conservee dans le tiroir sur grand
+ecran. Le cadrage de reference reste stable. Un lien ouvre aussi la carte
+separement si l'integration echoue. Les libelles suivent la langue choisie.
 
 Le deplacement, le zoom ou le redimensionnement du fond de carte ne lance pas automatiquement un nouveau telechargement. Le snapshot contient une couverture conservative preparee pour cette vue standard, pas une couverture illimitee de toute vue ulterieure.
 
@@ -63,7 +71,70 @@ Survoler une case affiche son terrain, sa ligne/colonne (a partir de 1), les coo
 
 L'infobulle et le panneau sous la grille montrent les memes informations ; le panneau conserve la derniere case inspectee. Le focus clavier (Tab) et le toucher/clic permettent aussi l'inspection. Un changement de region efface l'inspection, et un changement de langue traduit ses libelles sans traduire les noms propres.
 
-Ces informations utilisent les donnees locales ; elles ne sont pas les descriptions web encore prevues par R-006.
+Le survol utilise uniquement les donnees locales. Les descriptions et photos
+en ligne sont chargees separement, sur selection explicite.
+Les POI de la case selectionnee sont regroupes sous la description dans une
+liste repliable avec compteur et defilement pour les cases tres denses.
+L'infobulle de survol conserve aussi les POI, sans allonger le panneau de
+coordonnees au-dessus de la description.
+
+### Descriptions et photos des cases
+
+Cliquer une case ou lui donner le focus clavier charge une courte description.
+Appuyer sur **P** ou sur **Photo (P)** ouvre sa photo ; **Echap** ferme la fenetre.
+La fenetre propose jusqu'a **5 photos distinctes par case**, avec compteur,
+boutons precedent/suivant et touches fleche gauche/droite. Les fleches sont
+limitees a la premiere/derniere image, sans rebouclage. Chaque image conserve
+ses propres credits, licence et indication de proximite. Le plafond est defini
+par `MAX_CELL_PHOTOS` dans [cell-content.mjs](./cell-content.mjs).
+La case selectionnee sert de position provisoire avant le deplacement en couche 2.
+Les indications d'utilisation sont visibles avant selection d'une case, puis
+masquees des qu'une case est selectionnee. Elles reapparaissent au changement
+de region ou lorsque la selection est effacee.
+
+Sources par ordre de priorite :
+
+- **Description :** tag OSM `description:fr`/`description:en`, puis
+  `description` (langue non precisee), puis extrait Wikipedia d'un lieu dans
+  la case, puis contexte Wikipedia a proximite, dans un rayon de 2 km.
+- **Photo :** fichier Commons lie depuis OSM (`wikimedia_commons` ou reference
+  Commons dans `image`), photo Commons geolocalisee dans la case, puis image
+  Commons d'un article Wikipedia situe dans la case. A defaut, une photo
+  Commons a proximite peut etre proposee dans un rayon de 2 km.
+
+Le contenu hors de la case est explicitement marque « A proximite », avec la
+distance au centre. La position d'un article ou d'un objet OSM est une association
+geographique, pas une garantie du champ de vision de la photo. Les objets OSM
+portes par un chemin utilisent toujours son centre de boite englobante.
+Chaque contenu affiche sa source, ses credits et sa licence ; aucun texte ou
+image sans source n'est invente pour combler un manque. Les relations OSM ne
+fournissent pas encore de sources de contenu.
+
+**Le cache contient les fichiers photo eux-memes**, pas seulement leurs URLs.
+Toutes les images de la galerie sont telechargees et cachees lors de sa premiere
+ouverture ; changer de photo ne contacte pas les fournisseurs. Les caches
+historiques a une photo sont enrichis en galerie, avec reutilisation de leurs
+octets si la meme image est retrouvee. En cas de panne reseau, leur ancienne
+photo reste accessible avec un avertissement ; « Actualiser les sources »
+permet de relancer la recherche.
+Descriptions, blobs d'image, provenance, licences, date, langue et limites
+geographiques sont conserves dans IndexedDB sur cet appareil. Apres une premiere
+decouverte, ils sont reutilisables sans connexion aux fournisseurs, y compris
+apres rechargement du prototype servi localement. Cela ne met pas l'application
+entiere ni les tuiles de comparaison hors ligne.
+
+Les cles distinguent les limites de la case, sa resolution, ses sources OSM,
+la langue et la version du contenu. « Actualiser les sources » renouvelle
+le contenu de la case selectionnee (la photo lors de sa prochaine ouverture).
+« Vider le cache des contenus » supprime les descriptions et photos de cet
+origin ; cela ne supprime pas les snapshots/grilles sur disque.
+
+Le navigateur contacte Wikipedia et Wikimedia pour les recherches, et Wikimedia
+pour les images. Les images sont limitees a 12 Mo chacune. Le cache n'a pas
+d'expiration ni d'eviction automatique ; les limites et evictions du navigateur
+s'appliquent. Un autre port, navigateur ou appareil dispose d'un cache distinct.
+Les erreurs reseau et de stockage sont affichees ; un echec n'est pas memorise
+comme une absence definitive. La synchronisation serveur reste a implementer.
 
 `data/region.osm` est une fixture illustrative au format OSM XML, pas un releve geographique reel. Remplacez-la par un extrait regional OSM avant de vous fier aux lieux affiches. Pour toute redistribution de donnees reelles, respectez la licence ODbL et affichez l'attribution OpenStreetMap appropriee.
 
@@ -95,7 +166,9 @@ Un snapshot correspondant est reutilise sans appel reseau ; `--refresh` force so
 
 La synchronisation avec le futur serveur est suivie dans [REQUIREMENTS.md](./REQUIREMENTS.md#r-004--cache-generated-regions-and-synchronize-them-with-the-future-server). Elle n'est pas encore implementee ; le cache conserve les versions et empreintes necessaires a la comparaison des contenus.
 
-Les descriptions courtes de chaque case provenant du web et les photos doivent aussi etre mises en cache, avec leurs sources et licences. Ces exigences sont suivies dans [REQUIREMENTS.md](./REQUIREMENTS.md#r-006--web-sourced-cell-descriptions-and-cached-cell-content) ; leur acquisition et leur cache ne sont pas encore implementes.
+Les descriptions et photos decouvertes sont mises en cache dans le navigateur,
+avec leurs sources et licences. Voir [R-006](./REQUIREMENTS.md#r-006--web-sourced-cell-descriptions-and-cached-cell-content)
+pour la politique de couverture, de cache et la future synchronisation.
 
 ## Traductions
 
