@@ -25,12 +25,12 @@ REGIONS = {
     "alps": {
         "name": "Alpes — Chamonix",
         "size": (28, 20),
-        "minimums": {"mountain": 5, "grass": 10, "water": 5, "cable": 3, "cable_station": 1},
+        "minimums": {"mountain": 5, "grass": 10, "cable": 3, "cable_station": 1},
     },
     "firmi": {
         "name": "Firmi",
         "size": (29, 20),
-        "minimums": {"forest": 15, "grass": 15, "place": 1, "water": 5, "major_road": 8},
+        "minimums": {"forest": 15, "grass": 15, "place": 1, "major_road": 8},
     },
 }
 for region_id, expected in REGIONS.items():
@@ -41,6 +41,22 @@ for region_id, expected in REGIONS.items():
 
 
 class RealRegionTests(unittest.TestCase):
+    def test_tahiti_snapshot_and_cached_grid_are_real_and_in_southern_hemisphere(self):
+        region = CONFIG["regions"]["tahiti"]
+        data = json.loads((ROOT / region["map"]).read_text())
+        self.assertFalse(data["illustrative"])
+        self.assertEqual((data["width"], data["height"]), (38, 27))
+        self.assertLess(data["bounds"]["maxLatitude"], 0)
+        self.assertLess(data["bounds"]["maxLongitude"], 0)
+        self.assertTrue((ROOT / region["snapshot"]).exists())
+        self.assertTrue(any(cell["terrain"] == "major_road" for row in data["rows"] for cell in row))
+        with patch("fetch_osm.urllib.request.urlopen", side_effect=AssertionError("Cache only")):
+            _, _, reused = download_region(
+                viewport_bounds(region["referenceBounds"], CONFIG["viewport"]["width"], CONFIG["viewport"]["height"]),
+                region["name"], ROOT / region["snapshot"], reference_bounds=region["referenceBounds"],
+            )
+        self.assertTrue(reused)
+
     def test_puy_de_wolf_is_a_named_hill_in_expanded_firmi_map(self):
         result = rasterize(ROOT / "data" / "regions" / "firmi.osm.gz", "Firmi")
         self.assertEqual(result["name"], "Firmi")
@@ -120,6 +136,9 @@ class RealRegionTests(unittest.TestCase):
                     self.assertIn("opendatacommons.org/licenses/odbl", result["license"])
                     self.assertTrue(result["sourceUrl"].startswith("https://api.openstreetmap.org/api/0.6/map?bbox="))
                     self.assertTrue(result["downloadedAt"])
+                    for cell in (cell for row in result["rows"] for cell in row):
+                        if cell["terrain"] == "water":
+                            self.assertGreaterEqual(cell["waterCoveragePercent"], 50)
                     bounds = result["bounds"]
                     self.assertEqual(
                         [bounds["minLongitude"], bounds["minLatitude"],
@@ -136,6 +155,8 @@ class RealRegionTests(unittest.TestCase):
                         self.assertNotIn("building", {entry["terrain"] for entry in result["legend"]})
                         self.assertNotIn("road", {entry["terrain"] for entry in result["legend"]})
                         if region == "firmi":
+                            self.assertLess(counts["water"] / (result["width"] * result["height"]), 0.1)
+                            self.assertTrue(any(cell.get("waterways") for row in result["rows"] for cell in row))
                             green = sum(counts[terrain] for terrain in ("grass", "forest", "field", "park"))
                             self.assertGreaterEqual(green / (result["width"] * result["height"]), 0.35)
                             self.assertGreater(green, counts["major_road"])

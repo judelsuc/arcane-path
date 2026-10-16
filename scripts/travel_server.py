@@ -9,6 +9,7 @@ import logging
 import math
 import tempfile
 import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -20,6 +21,8 @@ from pathlib import Path
 
 from build_map import rasterize
 from fetch_osm import download_region
+from weather import fetch_climate
+from config import load_config
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_SIZE = 8
@@ -86,7 +89,8 @@ class ChunkStore:
         self.cache = cache or root / ".cache" / "travel"
         self.regions = json.loads((root / "data/regions.json").read_text())["regions"]
         self.pipeline = hashlib.sha256(
-            Path(__file__).read_bytes() + (ROOT / "scripts/build_map.py").read_bytes()
+            Path(__file__).read_bytes() + (ROOT / "scripts/build_map.py").read_bytes() +
+            json.dumps(load_config(), sort_keys=True).encode()
         ).hexdigest()
         self.bases = {
             key: json.loads((root / region["map"]).read_text())
@@ -215,7 +219,41 @@ class ChunkJobs:
             return 202, {"status": "loading"}
 
 
+class WeatherStore:
+    def __init__(self, cache):
+        self.cache = cache
+        self.lock = threading.Lock()
+        self.retry_at = 0
+
+    def get(self, latitude, longitude):
+        latitude, longitude = (math.floor(v * 10 + 0.5) / 10 for v in (latitude, longitude))
+        end_year = datetime.now(timezone.utc).year - 1
+        path = self.cache / f"v2_{latitude:.1f}_{longitude:.1f}_{end_year}.json"
+        with self.lock:
+            if path.exists():
+                envelope = json.loads(path.read_text())
+                data = envelope["data"]
+                if hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest() != envelope["sha256"]:
+                    raise ValueError("Corrupt weather cache; remove the affected weather cache file to rebuild.")
+                return data
+            if time.monotonic() < self.retry_at:
+                raise ValueError("Historical weather provider is cooling down; retry in one minute.")
+            try:
+                data = fetch_climate(latitude, longitude, end_year)
+            except (OSError, ValueError, KeyError) as error:
+                self.retry_at = time.monotonic() + 60
+                logging.warning("Historical weather unavailable: %s", error)
+                raise
+            data["retrievedAt"] = datetime.now(timezone.utc).isoformat()
+            atomic_write(path, json.dumps({
+                "data": data,
+                "sha256": hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest(),
+            }).encode())
+            return data
+
+
 def make_handler(store, jobs):
+    weather = WeatherStore(store.cache / "weather")
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, directory=str(store.root), **kwargs)
@@ -240,13 +278,21 @@ def make_handler(store, jobs):
                 try:
                     if url.path == "/api/travel":
                         return self.send_json(200, {"chunkSize": CHUNK_SIZE, "cellSizeMeters": CELL_METERS})
-                    if url.path != "/api/chunk":
+                    if url.path not in {"/api/chunk", "/api/weather"}:
                         return self.send_json(404, {"error": "Unknown API endpoint."})
                     query = urllib.parse.parse_qs(url.query, strict_parsing=True)
                     region = query["region"][0]
                     x, y = int(query["x"][0]), int(query["y"][0])
                     if region not in store.regions or abs(x) > 1000 or abs(y) > 1000:
                         raise ValueError("Invalid region or chunk coordinates.")
+                    if url.path == "/api/weather":
+                        bounds, _, _ = chunk_geometry(store.bases[region], x, y)
+                        try:
+                            return self.send_json(200, weather.get(
+                                (bounds[1] + bounds[3]) / 2, (bounds[0] + bounds[2]) / 2))
+                        except (OSError, ValueError, KeyError) as error:
+                            logging.warning("Weather request failed: %s", error)
+                            return self.send_json(502, {"error": str(error)})
                     status, payload = jobs.request(region, x, y)
                     return self.send_json(status, payload)
                 except (ValueError, KeyError) as error:

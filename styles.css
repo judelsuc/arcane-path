@@ -440,6 +440,42 @@ dialog p { margin: 12px 0; }
 .travel-panel h3 { margin: 0 0 10px; }
 .travel-panel a { color: var(--accent); }
 #travel-clock { display: block; color: var(--accent); font-size: 1rem; }
+.travel-sky { margin: 8px 0; text-align: center; }
+.travel-sky svg { display: block; width: 120px; max-width: 100%; margin: auto; overflow: visible; }
+.sky-circle, .sky-arc, .sky-horizon { fill: none; stroke: var(--line); }
+.sky-arc { stroke: var(--accent); stroke-dasharray: 3 5; }
+.sky-horizon { stroke-dasharray: 2 4; }
+#sky-sun { fill: #f4cc80; stroke: #f4cc80; stroke-width: 2; }
+#sky-moon { fill: #d4cbff; }
+#sky-phase { fill: var(--muted); font-size: 14px; }
+#sky-times { color: var(--muted); font-size: 0.65rem; }
+.travel-sky[data-phase="night"] .sky-arc { stroke: #b9b4e3; }
+.travel-weather { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 8px; }
+.travel-weather h4 { margin: 0; color: var(--accent); }
+.travel-weather p { margin: 6px 0; }
+.travel-weather a { font-size: 0.65rem; }
+.travel-atmosphere {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(145deg, #24312680, #101711);
+}
+.travel-atmosphere .travel-sky { margin: 0; }
+.travel-atmosphere .travel-weather { grid-column: 1 / -1; margin-top: 0; }
+.travel-weather summary { cursor: pointer; color: var(--muted); font-size: 0.65rem; }
+.weather-card { text-align: center; min-width: 0; }
+.weather-card h4 { margin: 0 0 6px; font-size: 0.65rem; color: var(--muted); font-weight: normal; }
+#weather-display:not([hidden]) { display: grid; justify-items: center; gap: 4px; }
+.weather-icon { width: 48px; height: 42px; fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+#weather-temperature { font-size: 1.4rem; line-height: 1.2; color: #f4cc80; white-space: nowrap; }
+#weather-condition { font-size: 0.75rem; }
+#weather-range, .weather-average { font-size: 0.6rem; color: var(--muted); }
+#weather-state { margin: 0; font-size: 0.65rem; }
 #travel-status { margin: 10px 0 0; color: #e6b767; overflow-wrap: anywhere; }
 #travel-note { margin-bottom: 0; color: var(--muted); }
 .map-comparison .travel-viewport {

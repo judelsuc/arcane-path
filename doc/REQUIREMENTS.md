@@ -282,3 +282,98 @@ This file records additions to the design without modifying the source PDF,
   Escape or L returns to the player; Escape closes an open dialog first.
   Unknown cells are labelled and do not request invented cell content.
   Mouse hover neither highlights cells nor changes information or shows tooltips.
+
+## R-018 — Layer 3: time and circular sky dial
+
+- **Requirement:** Show day/night using a sun or moon moving left to right
+  along a circular arc, rather than darkening the map.
+- **Status:** A compact circular sky dial follows simulated walking/rest time.
+  Approximate sunrise/sunset are calculated offline from the player's location
+  and game date using NOAA fractional-year solar equations. UTC labels match
+  the game clock. Terrain-dependent speed remains unchanged.
+- **Night:** The moon is a symbolic night-progress indicator between sunset and
+  next sunrise, not an astronomical lunar position or phase. Look mode and real
+  waiting do not advance the dial. Polar day/night are explicit.
+- **Limits:** Clear-horizon solar approximation, no mountain-horizon or weather
+  correction. No map dimming, fog, survival needs or night movement penalty.
+
+## R-019 — Cached historical seasonal weather
+
+- **Requirement:** Fetch and cache seasonal temperature/weather averages for
+  the location and simulated date, rather than a live forecast.
+- **Status:** Open-Meteo/ERA5 daily reanalysis for the last five complete civil
+  years is summarized by month. Display mean temperature, average daily min/max,
+  average daily precipitation, and most frequent weather group with frequency.
+  Label reference period, month, approximate area and source/license.
+- **Cache:** Twelve months per 0.1-degree area and reference period, atomic
+  checksummed disk storage, deduplicated serialized provider access, bounded
+  client memory. No provider call for cached areas, even after restart.
+  Missing/invalid data is rejected. Failures are visible with manual retry
+  and a one-minute provider cooldown; movement never waits for weather.
+- **Limits:** Recent historical means, not official 30-year climate normals
+  or actual conditions on the simulated day. Informational only; no effects
+  on speed, fatigue, needs or the solar calculation.
+
+## R-020 — Configurable water coverage threshold
+
+- **Requirement:** Water must cover at least 50% of a cell before it displays
+  as water; keep the threshold easily configurable in YAML.
+- **Status:** `config.yml` defines `map.water_coverage_percent`, validated in
+  (0, 100]. Static and streamed grids use the same configuration and include it
+  in rendered-cache identity, without invalidating source/elevation caches.
+- **Geometry:** Union coverage estimated with 20 x 20 samples per cell,
+  clipped to actual cell extent, excluding multipolygon holes. Water outlines
+  no longer paint whole cells. Linear waterways contribute only when mapped
+  with a numeric positive width in metres; unknown widths are not guessed.
+  Waterway presence and estimated coverage remain available in cell info.
+  Existing road/place priority remains unchanged.
+
+## R-021 — Estimated day/night temperature
+
+- **Requirement:** Vary temperature with game time using cached historical
+  daily lows/highs, without downloading historical hourly series.
+- **Status:** Smooth cosine warming from the monthly typical low at sunrise
+  to the typical high three hours after local solar noon, then cooling.
+  Solar times follow player coordinates; polar periods use a 06:00 solar low.
+  The temperature card is labelled as an estimate; historical means remain
+  in the details along with the model explanation.
+- **Scope:** No extra network calls or new cache format. Walking and rest
+  advance temperature, not real waiting or inspection. Weather condition icons
+  still represent the month's most common condition. Map lighting is unchanged.
+
+## R-022 — Temperature adjusted for elevation
+
+- **Requirement:** Player altitude influences estimated temperature.
+- **Status:** Apply -0.65 degrees Celsius per 100 m above the historical
+  weather reference elevation (warmer below). The card's estimated temperature
+  and low/high range receive the same correction; source averages remain raw.
+  Display reference/player elevations and correction in details.
+- **Reliability:** Reference elevation is validated and stored in weather
+  cache v2. Missing player/reference elevation is explicitly labelled and
+  skips adjustment, never assumed sea level. This is a lapse-rate estimate,
+  not a model of inversions, microclimates or actual weather.
+
+## R-023 — Additional key-free reusable photo sources
+
+- **Requirement:** Add photo providers without keys, accepting openly licensed
+  photos compatible with local image caching.
+- **Status:** iNaturalist and GBIF supply fallback nature-observation photos,
+  explicitly labelled as species observations, not general landscape views.
+  Existing OSM/Commons/Wikipedia priority is preserved.
+- **Validation:** Explicit CC0/CC BY/CC BY-SA media licenses, author, known
+  HTTPS image hosts, coordinates within 2 km and declared uncertainty <= 250 m.
+  Obscured/generalized positions are excluded. GBIF occurrence licenses do not
+  substitute for image licenses. Duplicate iNaturalist images are merged.
+- **Cache:** Same five-photo/12 MB limits, offline IndexedDB image bytes and
+  attribution. Photo cache v3 preserves prior v2/v1 images on source failures.
+  Provider errors remain visible; no API keys are required.
+
+## R-024 — Future user-contributed photos and descriptions
+
+- **Requirement:** Allow users to upload photos and contribute descriptions
+  associated with map cells/locations.
+- **Status:** Deferred; recorded for a later layer, not implemented.
+- **Design considerations:** Preserve contributor attribution and declared
+  usage rights, description language and geographic association. Define upload
+  validation, moderation, privacy controls, editing/removal and cache
+  invalidation before enabling shared contributions.

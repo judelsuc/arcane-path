@@ -1,3 +1,5 @@
+import { naturePhotos } from "./nature-photos.mjs";
+
 const COMMONS = "https://commons.wikimedia.org/w/api.php";
 const OSM_LICENSE = "https://opendatacommons.org/licenses/odbl/1-0/";
 const WIKI_LICENSE = "https://creativecommons.org/licenses/by-sa/4.0/";
@@ -32,7 +34,7 @@ function commonsTitle(value) {
 export async function contentKey(info, locale, kind) {
   const identity = JSON.stringify([info.bounds, info.meters, info.contentSources]);
   const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(identity));
-  return `${kind === "photo" ? "v2" : "v1"}:${kind}:${locale}:${Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, "0")).join("")}`;
+  return `${kind === "photo" ? "v3" : "v1"}:${kind}:${locale}:${Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, "0")).join("")}`;
 }
 
 export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_CELL_PHOTOS }) {
@@ -100,8 +102,11 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
     const key = `${await contentKey(info, locale, kind)}${kind === "photo" ? `:${maxPhotos}` : ""}`;
     const cached = await cache.get(key);
     if (cached && !refresh) return { ...cached, cached: true };
+    const previous = kind === "photo" && !refresh
+      ? await cache.get(key.replace(/^v3:/, "v2:")) : undefined;
     const legacy = kind === "photo" && !refresh
-      ? await cache.get(key.replace(/^v2:/, "v1:").replace(/:\d+$/, "")) : undefined;
+      ? await cache.get(key.replace(/^v3:/, "v1:").replace(/:\d+$/, "")) : undefined;
+    const savedPhotos = previous?.photos ?? (legacy?.content ? [legacy.content] : []);
     const errors = [];
     async function attempt(source, work) {
       try { return await work(); }
@@ -145,10 +150,11 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
       async function download(candidates) {
         for (const candidate of candidates ?? []) {
           if (photos.length >= maxPhotos) break;
-          if (tried.has(candidate.sourceUrl)) continue;
-          tried.add(candidate.sourceUrl);
-          const blob = legacy?.content?.sourceUrl === candidate.sourceUrl
-            ? legacy.content.blob : await attempt("Photo download", async () => {
+          const identity = candidate.dedupKey ?? candidate.sourceUrl;
+          if (tried.has(identity)) continue;
+          tried.add(identity);
+          const blob = savedPhotos.find(photo => photo.sourceUrl === candidate.sourceUrl)?.blob ??
+            await attempt("Photo download", async () => {
             const response = await fetcher(candidate.url, { signal: AbortSignal.timeout(20000) });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const bytes = await response.blob();
@@ -198,15 +204,22 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
         await download(images?.filter(p => !p.nearby));
       }
       await download(nearby.filter(p => p.distance <= 2000));
-      if (!photos.length && legacy?.content?.blob) {
-        photos.push(legacy.content);
+      for (const provider of ["iNaturalist", "GBIF"]) {
+        if (photos.length >= maxPhotos) break;
+        const nature = await attempt(provider, () => naturePhotos(provider, info, {
+          fetcher, insideCell, distanceMeters,
+        }));
+        await download(nature);
+      }
+      if (!photos.length) {
+        photos.push(...savedPhotos.filter(photo => photo.blob).slice(0, maxPhotos));
       }
       content = photos[0];
     } else {
       throw new Error(`Unknown content kind: ${kind}`);
     }
     const result = {
-      version: kind === "photo" ? 2 : 1,
+      version: kind === "photo" ? 3 : 1,
       ...(kind === "photo" ? { photos, maxPhotos } : {}),
       bounds: info.bounds, cellSizeMeters: info.meters, language: locale,
       content: content ?? null, errors, retrievedAt: new Date().toISOString(),

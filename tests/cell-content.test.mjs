@@ -303,7 +303,7 @@ test("gallery returns fewer photos when only a few unique usable photos exist", 
 
 test("old single-photo cache is preserved offline during gallery upgrade", async () => {
   const cache = memoryCache();
-  const legacyKey = (await contentKey(info, "fr", "photo")).replace(/^v2:/, "v1:");
+  const legacyKey = (await contentKey(info, "fr", "photo")).replace(/^v3:/, "v1:");
   await cache.put(legacyKey, {
     content: { title: "Old photo", blob: new Blob(["old bytes"], { type: "image/jpeg" }) },
     retrievedAt: "2026-10-01T00:00:00.000Z", errors: [],

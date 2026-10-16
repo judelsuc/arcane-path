@@ -39,6 +39,7 @@
                 <option value="firmi">Firmi (Aveyron)</option>
                 <option value="paris">Paris</option>
                 <option value="alps" data-i18n="region.alps">Alpes (Chamonix)</option>
+                <option value="tahiti">Tahiti (Papeete)</option>
               </select>
             </label>
             <p class="map-scale" id="map-scale"></p>
@@ -51,6 +52,55 @@
           <button id="start-travel" type="button" disabled data-i18n="travelStart"></button>
           <div id="travel-controls" hidden>
             <time id="travel-clock"></time>
+            <div class="travel-atmosphere">
+            <figure id="travel-sky" class="travel-sky" hidden>
+              <svg viewBox="0 0 200 190" role="img" aria-labelledby="sky-title">
+                <title id="sky-title"></title>
+                <circle class="sky-circle" cx="100" cy="100" r="76"/>
+                <path class="sky-arc" d="M24 100 A76 76 0 0 1 176 100"/>
+                <path class="sky-horizon" d="M14 100 H186"/>
+                <g id="sky-marker">
+                  <g id="sky-sun">
+                    <circle r="8"/>
+                    <path d="M0 -12 V-16 M0 12 V16 M-12 0 H-16 M12 0 H16 M-9 -9 L-12 -12 M9 9 L12 12 M9 -9 L12 -12 M-9 9 L-12 12"/>
+                  </g>
+                  <path id="sky-moon" d="M4 -10 A11 11 0 1 0 4 10 A10 10 0 0 1 4 -10"/>
+                </g>
+                <text id="sky-phase" x="100" y="133" text-anchor="middle"></text>
+              </svg>
+              <figcaption id="sky-times"></figcaption>
+            </figure>
+            <section class="weather-card" aria-labelledby="weather-title">
+              <h4 id="weather-title" data-i18n="weatherTitle"></h4>
+              <div id="weather-display" hidden>
+                <svg class="weather-icon" viewBox="0 0 64 56" aria-hidden="true">
+                  <g data-weather-icon="clear">
+                    <circle cx="32" cy="26" r="12"/>
+                    <path d="M32 6V1 M32 46V51 M12 26H7 M52 26H57 M18 12L14 8 M46 40L50 44 M46 12L50 8 M18 40L14 44"/>
+                  </g>
+                  <g data-weather-icon="cloudy rain snow storm fog">
+                    <path d="M15 35C2 35 4 19 15 19C17 3 40 3 43 19C60 16 63 35 49 35Z"/>
+                  </g>
+                  <path data-weather-icon="rain" d="M18 42L14 50 M32 42L28 50 M46 42L42 50"/>
+                  <path data-weather-icon="snow" d="M18 42V52 M13 47H23 M40 42V52 M35 47H45"/>
+                  <path data-weather-icon="storm" d="M34 37L25 47H35L29 55"/>
+                  <path data-weather-icon="fog" d="M8 43H56 M14 50H50"/>
+                </svg>
+                <strong id="weather-temperature"></strong>
+                <span id="weather-condition"></span>
+                <span id="weather-range"></span>
+                <span class="weather-average" data-i18n="weatherAverage"></span>
+              </div>
+              <p id="weather-state" role="status"></p>
+            </section>
+            <details class="travel-weather">
+              <summary data-i18n="weatherDetails"></summary>
+              <p id="weather-summary"></p>
+              <p data-i18n="weatherTemperatureNote"></p>
+              <p id="weather-altitude" role="status"></p>
+              <a id="weather-source" target="_blank" rel="noopener noreferrer" hidden></a>
+            </details>
+            </div>
             <p id="travel-stats" role="status"></p>
             <div class="travel-actions">
               <div class="travel-directions">

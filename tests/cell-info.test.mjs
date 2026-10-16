@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { cellInfo } from "../cell-info.mjs";
 
-for (const path of ["map.json", "maps/alps.json", "maps/paris.json"]) {
+for (const path of ["map.json", "maps/alps.json", "maps/paris.json", "maps/tahiti.json"]) {
   const map = JSON.parse(readFileSync(new URL(`../public/${path}`, import.meta.url), "utf8"));
   test(`cell centers stay within the downloaded bounds including partial edge cells: ${path}`, () => {
     for (let row = 0; row < map.height; row++) {

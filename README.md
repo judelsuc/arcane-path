@@ -1,6 +1,6 @@
 # Les Arcanes du Chemin
 
-Prototype des **couches 1 — Carte et 2 — Voyage** : donnees OSM reelles,
+Prototype des **couches 1 — Carte, 2 — Voyage et 3 — Temps** : donnees OSM reelles,
 grille ASCII de 250 m, exploration a pied, horloge simulee, effort et streaming.
 
 Les ajouts au document de conception sont suivis dans [doc/REQUIREMENTS.md](./doc/REQUIREMENTS.md).
@@ -10,21 +10,62 @@ Les ajouts au document de conception sont suivis dans [doc/REQUIREMENTS.md](./do
 Depuis la racine du projet :
 
 ```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 python3 scripts/prepare_regions.py
 python3 scripts/travel_server.py
 ```
 
 Ouvrir [http://127.0.0.1:8766](http://127.0.0.1:8766). Le serveur local utilise
-uniquement la bibliotheque standard Python et ecoute sur la boucle locale.
+la bibliotheque standard Python et PyYAML pour la configuration, et ecoute sur la boucle locale.
 `--port` permet de choisir un autre port. Un serveur statique (`python3 -m
 http.server 8000`) conserve la consultation de couche 1 mais ne permet pas le
 streaming de voyage ; un message explicite indique la commande necessaire.
 
 Le selecteur de region affiche de vrais extraits OSM de Paris, des Alpes pres
-de Chamonix et de Firmi en Aveyron. Les snapshots compresses dans
+de Chamonix, de Firmi en Aveyron et de Tahiti autour de Papeete.
+Tahiti permet aussi de tester latitude sud et longitude ouest avec le cadran
+solaire et les moyennes saisonnieres. Les snapshots compresses dans
 [data/regions/](./data/regions/) et leurs grilles sont inclus. La consultation
 fixe et les tests sont hors ligne ; le premier voyage telecharge les altitudes
 et les morceaux de carte situes hors des extraits inclus.
+
+## Sources photo supplementaires
+
+Les galeries photo disposent aussi de deux sources naturalistes sans cle API :
+iNaturalist puis GBIF, apres les sources OSM/Commons/Wikipedia. Ces photos sont
+explicitement identifiees comme observations d'especes, pas comme vues generales
+du paysage. Rayon maximal 2 km, precision geographique declaree <= 250 m,
+positions masquees/generalisees rejetees. Seules les licences photo explicites
+CC0, CC BY et CC BY-SA sont acceptees, avec auteur, lien source et licence.
+Les hebergeurs d'images sont limites aux domaines verifies iNaturalist,
+Naturalis et observation.org ; les autres sont ignores.
+
+Les memes limites de galerie (5 photos) et de taille (12 Mo/image) s'appliquent.
+Les octets sont caches dans IndexedDB ; les doublons iNaturalist/GBIF sont
+elimines. Le cache photo v3 recherche les nouvelles sources tout en reutilisant
+les octets des anciennes galeries v2/v1 et en les conservant en cas de panne.
+Les erreurs fournisseur restent visibles. Aucun jeton ou compte n'est requis.
+
+## Configuration et couverture d'eau
+
+[config.yml](./config.yml) contient `map.water_coverage_percent` (50 par defaut,
+valeur strictement positive jusqu'a 100). Une case ne peut devenir `~` que si
+la surface d'eau cartographiee atteint ce pourcentage ; les routes principales
+et lieux gardent leurs priorites existantes.
+
+La couverture est estimee par une grille de 20 x 20 echantillons par case :
+union des polygones et cours d'eau avec largeur OSM numerique en metres,
+sans compter deux fois les chevauchements et en excluant les iles/trous.
+Les petites surfaces ne sont plus agrandies en peignant leurs contours.
+Un cours d'eau sans largeur connue ne contribue pas a une surface inventee :
+il reste signale dans les informations de la case. Les surfaces sont des
+estimations des donnees OSM, pas des mesures hydrologiques exactes.
+
+Apres modification, executer `python3 scripts/prepare_regions.py` puis
+redemarrer le serveur. Les caches de grilles sont invalides automatiquement
+par la configuration ; les sources OSM et altitudes restent reutilisees.
 
 ## Couche 2 : voyage a pied
 
@@ -86,6 +127,58 @@ difference entre centres, pas la somme des variations du chemin reel.
 Une altitude indisponible est explicitement signalee : le pas utilise une
 estimation de pente nulle, et le compteur de pas estimes reste visible.
 **Reessayer les telechargements** relance les altitudes manquantes.
+
+### Couche 3 : temps et cadran du ciel
+
+Un cadran circulaire accompagne l'horloge pendant le voyage. Le soleil parcourt
+l'arc superieur de gauche a droite entre lever et coucher ; une lune symbolique
+fait de meme du coucher au lever suivant. La lune indique la progression de la
+nuit, pas sa position ou sa phase astronomique reelle.
+
+Les heures approximatives du soleil sont calculees localement selon la date
+du jeu et la position du joueur (approximation NOAA, horizon degage, sans relief
+ni meteo). Aucun service reseau n'est necessaire. Les heures sont affichees en
+UTC, comme l'horloge. Le cadran avance en marchant ou en se reposant, pas pendant
+l'attente ou l'observation. Les vitesses variables de la couche 2 sont conservees.
+Les jours et nuits polaires sont signales. La carte reste lisible la nuit ;
+aucun brouillard, besoin ou malus nocturne n'est ajoute a cette couche.
+
+La meteo habituelle vient des donnees historiques Open-Meteo/ERA5 (CC BY 4.0),
+avec une carte compacte a cote du cadran : icone, temperature et plage min/max.
+Les statistiques completes et credits restent dans « Moyennes et sources ».
+Il s'agit de moyennes historiques,
+pas d'une prevision en direct : les cinq dernieres annees civiles completes
+servent a calculer les moyennes par mois (temperature moyenne, moyenne des
+minima/maxima journaliers, precipitation moyenne en mm/jour et condition la
+plus frequente avec sa proportion). Le mois suit le calendrier du jeu.
+Ces moyennes recentes ne sont pas des normales climatiques officielles sur 30 ans.
+
+La grande temperature affichee suit une courbe jour/nuit estimee a partir
+des minima/maxima du mois : minimum au lever du soleil, maximum trois heures
+apres midi solaire, puis refroidissement jusqu'au prochain matin. Une courbe
+cosinus assure des transitions douces, sans appel reseau supplementaire.
+La position du joueur determine les heures solaires (y compris a Tahiti).
+En periode polaire, le minimum est fixe a 6 h solaires.
+Ce n'est pas une mesure ni une prevision horaire ; la moyenne historique
+reste dans les details. Marche et repos font evoluer la temperature,
+contrairement a l'attente reelle et au mode observation.
+
+La temperature et sa plage min/max sont aussi ajustees de -0,65 degre par
+100 m de difference entre l'altitude du joueur et l'altitude de reference
+renvoyee par Open-Meteo. Cette difference evite de compter deux fois l'altitude.
+C'est une approximation (sans inversions thermiques ni microclimats).
+Les details affichent correction et altitudes, ou l'absence explicite
+d'ajustement si l'une manque. Les statistiques historiques restent inchangees.
+Le cache meteo v2 conserve l'altitude de reference ; les anciens fichiers v1
+sont preserves mais necessitent une nouvelle requete pour obtenir cette donnee.
+
+Une zone arrondie a 0,1 degre (environ 10 km) partage ses donnees, avec cache
+disque controle par checksum dans `.cache/travel/weather/`. Les douze mois sont
+prepares ensemble et reutilisables apres redemarrage, sans nouvel appel au
+fournisseur ; une nouvelle periode de reference est prise chaque annee civile.
+Les erreurs sont affichees et peuvent etre relancees avec **Reessayer les
+telechargements**, apres un delai de protection d'une minute. La meteo est
+informative : aucun effet supplementaire sur le voyage pour l'instant.
 
 ### Streaming et caches
 

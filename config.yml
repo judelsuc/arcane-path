@@ -1,0 +1,3 @@
+map:
+  # Percentage of mapped cell area required before water can replace ground.
+  water_coverage_percent: 50

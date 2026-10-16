@@ -47,14 +47,17 @@ class BuildMapTests(unittest.TestCase):
         self.assertGreater(result["width"], 1)
         self.assertGreater(result["height"], 1)
         self.assertIn("rail", terrains)
-        self.assertIn("water", terrains)
+        self.assertNotIn("water", terrains)
         self.assertEqual(result["cellSizeMeters"], 250)
-        self.assertEqual(result["rows"][2][2]["terrain"], "water")
+        self.assertEqual(result["rows"][2][2]["terrain"], "rail")
+        self.assertGreater(result["rows"][2][2]["waterCoveragePercent"], 0)
+        self.assertLess(result["rows"][2][2]["waterCoveragePercent"], 50)
         self.assertEqual(result["rows"][2][0]["terrain"], "rail")
         self.assertEqual(result["rows"][1][0]["terrain"], "plain")
         self.assertNotIn("building", terrains)
         self.assertNotIn("building", {entry["terrain"] for entry in result["legend"]})
         detail = rasterize(self.source, "Test", cell_size_meters=50)
+        self.assertIn("water", {cell["terrain"] for row in detail["rows"] for cell in row})
         self.assertIn("building", {cell["terrain"] for row in detail["rows"] for cell in row})
         self.assertIn("building", {entry["terrain"] for entry in detail["legend"]})
         self.assertTrue(all(len(row) == result["width"] for row in result["rows"]))
@@ -204,7 +207,7 @@ class BuildMapTests(unittest.TestCase):
             </osm>"""
         )
         result = rasterize(self.source, "Test")
-        self.assertEqual(result["rows"][2][0], {"terrain": "major_road", "glyph": "+"})
+        self.assertEqual(result["rows"][2][0], {"terrain": "major_road", "glyph": "+", "waterways": ["stream"]})
         self.assertEqual(result["rows"][2][2]["terrain"], "place")
         for highway in ("motorway", "trunk", "primary", "secondary", "primary_link"):
             with self.subTest(highway=highway):

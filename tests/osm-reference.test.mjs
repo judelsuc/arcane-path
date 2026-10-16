@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { osmReferenceUrls } from "../osm-reference.mjs";
 
-for (const path of ["map.json", "maps/paris.json", "maps/alps.json"]) {
+for (const path of ["map.json", "maps/paris.json", "maps/alps.json", "maps/tahiti.json"]) {
   test(`reference map uses exact downloaded bounds for ${path}`, () => {
     const map = JSON.parse(readFileSync(new URL(`../public/${path}`, import.meta.url), "utf8"));
     const referenceBounds = map.referenceBounds ?? map.bounds;

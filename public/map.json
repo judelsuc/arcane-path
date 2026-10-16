@@ -7,6 +7,7 @@
     "maxLatitude": 44.56
   },
   "cellSizeMeters": 250,
+  "waterCoverageThresholdPercent": 50,
   "width": 29,
   "height": 20,
   "bounds": {
@@ -45,28 +46,46 @@
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
@@ -104,8 +123,11 @@
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -145,8 +167,11 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": " ",
+        "terrain": "plain",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/12183795401",
@@ -175,12 +200,18 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": " ",
+        "terrain": "plain",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": " ",
+        "terrain": "plain",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -195,8 +226,11 @@
         "terrain": "plain"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": " ",
+        "terrain": "plain",
+        "waterways": [
+          "stream"
+        ]
       }
     ],
     [
@@ -296,36 +330,57 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -362,36 +417,57 @@
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": " ",
+        "terrain": "plain",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": " ",
+        "terrain": "plain",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       }
     ],
     [
@@ -457,65 +533,98 @@
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Laubarède"
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
-      },
-      {
-        "glyph": "♣",
-        "terrain": "forest"
-      },
-      {
-        "glyph": "~",
-        "terrain": "water"
-      },
-      {
-        "glyph": "♣",
-        "terrain": "forest"
-      },
-      {
-        "glyph": "~",
-        "terrain": "water"
-      },
-      {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest"
+      },
+      {
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
@@ -526,6 +635,9 @@
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "river"
+        ],
         "names": [
           "Le Soulacre"
         ]
@@ -536,11 +648,17 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "river"
+        ]
       },
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/4163095205",
@@ -557,6 +675,9 @@
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "river"
+        ],
         "names": [
           "Saint-Michel"
         ],
@@ -570,6 +691,9 @@
       {
         "glyph": "\"",
         "terrain": "grass",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/4163135493",
@@ -616,16 +740,25 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
@@ -644,12 +777,18 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
@@ -660,49 +799,76 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Lagarrigue"
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "¥",
+        "terrain": "vineyard",
+        "waterways": [
+          "stream"
+        ]
       }
     ],
     [
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/5988361496",
@@ -735,6 +901,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10129696581",
@@ -836,6 +1005,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/1222964033",
@@ -852,8 +1024,9 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterCoveragePercent": 1.75,
         "pois": [
           {
             "osmId": "way/71887126",
@@ -872,6 +1045,9 @@
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "river"
+        ],
         "names": [
           "Le Combal"
         ],
@@ -906,6 +1082,9 @@
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "river"
+        ],
         "names": [
           "La Buscalie",
           "La Buscalie Haute"
@@ -922,8 +1101,11 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
@@ -934,20 +1116,29 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/6479099710",
@@ -964,20 +1155,32 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Mascles"
         ]
@@ -987,12 +1190,18 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
@@ -1008,25 +1217,40 @@
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Le Cazals"
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       }
     ],
     [
@@ -1146,11 +1370,18 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "river"
+        ]
       },
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river",
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/1222961213",
@@ -1169,7 +1400,10 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
@@ -1180,8 +1414,11 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
@@ -1214,56 +1451,86 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": " ",
@@ -1376,8 +1643,11 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "river"
+        ],
         "contentSources": [
           {
             "osmId": "node/1226778831",
@@ -1391,6 +1661,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/1222961210",
@@ -1439,12 +1712,18 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
@@ -1459,59 +1738,95 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Wolf"
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": " ",
+        "terrain": "plain",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -1562,16 +1877,26 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
-      },
-      {
-        "glyph": "+",
-        "terrain": "major_road"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "river"
+        ]
       },
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "waterways": [
+          "river",
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/6739055120",
@@ -1601,12 +1926,19 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterCoveragePercent": 0.75,
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/1222957727",
@@ -1615,8 +1947,11 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/6479042980",
@@ -1625,43 +1960,67 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Sauterusque Le Haut"
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -1742,11 +2101,17 @@
       },
       {
         "glyph": "♣",
-        "terrain": "forest"
+        "terrain": "forest",
+        "waterways": [
+          "river"
+        ]
       },
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "way/71885843",
@@ -1757,6 +2122,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/1222959460",
@@ -1769,12 +2137,17 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterCoveragePercent": 0.25
       },
       {
         "glyph": "○",
         "terrain": "place",
+        "waterCoveragePercent": 0.5,
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Capendu"
         ]
@@ -1792,16 +2165,25 @@
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -1829,22 +2211,32 @@
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       }
     ],
     [
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterCoveragePercent": 0.5
       },
       {
         "glyph": " ",
@@ -1918,6 +2310,9 @@
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "river"
+        ],
         "names": [
           "Cité de la Forézie"
         ],
@@ -1936,6 +2331,10 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river",
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/13655038641",
@@ -1957,12 +2356,18 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "La Roque"
         ]
@@ -1985,25 +2390,40 @@
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Lacoste"
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "○",
@@ -2017,16 +2437,25 @@
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       }
     ],
     [
@@ -2131,8 +2560,11 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/13654689540",
@@ -2147,6 +2579,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/13418564336",
@@ -2217,6 +2652,10 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river",
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/6739054944",
@@ -2244,32 +2683,50 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -2280,8 +2737,11 @@
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": " ",
+        "terrain": "plain",
+        "waterways": [
+          "stream"
+        ]
       }
     ],
     [
@@ -2298,16 +2758,25 @@
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/6366129867",
@@ -2321,8 +2790,11 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/1597688293",
@@ -2517,7 +2989,10 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
@@ -2528,39 +3003,63 @@
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Les Coulons"
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": " ",
+        "terrain": "plain",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Massagal"
         ]
@@ -2576,8 +3075,11 @@
     ],
     [
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/2584777430",
@@ -2603,8 +3105,11 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/9995707374",
@@ -2625,6 +3130,9 @@
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Combes"
         ],
@@ -2695,8 +3203,11 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/6258498563",
@@ -2729,24 +3240,39 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -2815,31 +3341,49 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -2850,12 +3394,18 @@
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -2904,8 +3454,8 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "\"",
+        "terrain": "grass",
         "pois": [
           {
             "osmId": "node/6258483576",
@@ -2918,8 +3468,9 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterCoveragePercent": 3.25
       },
       {
         "glyph": "\"",
@@ -2960,12 +3511,18 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -3001,11 +3558,17 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Cité de Cerles"
         ],
@@ -3017,23 +3580,35 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Les Pioles"
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -3044,16 +3619,25 @@
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": " ",
@@ -3110,8 +3694,9 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterCoveragePercent": 1.0,
         "pois": [
           {
             "osmId": "node/13992764069",
@@ -3120,8 +3705,9 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterCoveragePercent": 1.75,
         "pois": [
           {
             "osmId": "node/13992764068",
@@ -3201,8 +3787,11 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -3217,20 +3806,26 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterCoveragePercent": 1.0
       },
       {
-        "glyph": "~",
-        "terrain": "water"
-      },
-      {
-        "glyph": "+",
-        "terrain": "major_road"
+        "glyph": "\"",
+        "terrain": "grass"
       },
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 1.75
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "waterCoveragePercent": 4.25,
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/3327044573",
@@ -3282,49 +3877,77 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": " ",
+        "terrain": "plain",
+        "waterways": [
+          "stream"
+        ]
       }
     ],
     [
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterCoveragePercent": 0.75,
         "contentSources": [
           {
             "osmId": "node/669991493",
@@ -3360,8 +3983,9 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterCoveragePercent": 6.25
       },
       {
         "glyph": "\"",
@@ -3430,8 +4054,11 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
@@ -3446,24 +4073,37 @@
         "terrain": "grass"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterCoveragePercent": 0.75
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Les Cambouroux"
         ],
@@ -3476,24 +4116,39 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -3551,8 +4206,8 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "\"",
+        "terrain": "grass",
         "pois": [
           {
             "osmId": "node/6258391352",
@@ -3740,12 +4395,18 @@
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "○",
@@ -3769,6 +4430,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/9227603484",
@@ -3787,6 +4451,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ],
         "contentSources": [
           {
             "osmId": "node/3319154596",
@@ -3797,8 +4464,11 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/1222953560",
@@ -3807,12 +4477,18 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ],
         "contentSources": [
           {
             "osmId": "way/71794853",
@@ -3823,8 +4499,11 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -3835,18 +4514,28 @@
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       }
     ],
     [
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 16.75,
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/1222932386",
@@ -3914,6 +4603,10 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 11.75,
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/10065254250",
@@ -4036,6 +4729,10 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 0.25,
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/4181187664",
@@ -4194,6 +4891,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/9273220381",
@@ -4208,11 +4908,17 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
@@ -4231,8 +4937,11 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ],
         "contentSources": [
           {
             "osmId": "way/71791191",
@@ -4243,8 +4952,11 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ],
         "contentSources": [
           {
             "osmId": "way/71789572",
@@ -4255,12 +4967,18 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       }
     ],
     [
@@ -4326,8 +5044,12 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterCoveragePercent": 0.75,
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/2613310609",
@@ -4377,6 +5099,11 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 0.25,
+        "waterways": [
+          "drain",
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/2613310621",
@@ -4401,6 +5128,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/1222944390",
@@ -4415,6 +5145,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/13053119981",
@@ -4459,6 +5192,10 @@
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "canal",
+          "stream"
+        ],
         "names": [
           "Cransac-les-Thermes"
         ],
@@ -4635,6 +5372,9 @@
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "La Pélonie"
         ],
@@ -4722,6 +5462,10 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 7.75,
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/1222944386",
@@ -4750,6 +5494,10 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 4.25,
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/12844988679",
@@ -4768,6 +5516,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/5239970105",
@@ -4776,8 +5527,11 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -4822,12 +5576,18 @@
         "terrain": "forest"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "\"",
@@ -4843,34 +5603,55 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "stream"
+        ],
         "names": [
           "Le Claux"
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       }
     ],
     [
@@ -4967,15 +5748,24 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": " ",
@@ -4990,16 +5780,25 @@
         "terrain": "major_road"
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "♣",
+        "terrain": "forest",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -5021,12 +5820,18 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "stream"
+        ],
         "pois": [
           {
             "osmId": "node/5406063827",
@@ -5035,8 +5840,11 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water"
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": "♣",
@@ -5136,10 +5944,15 @@
   "cache": {
     "schemaVersion": 1,
     "sourceSha256": "ec6578c2f0ad33f60168d49680ed297afae3694254697cf7fe1db02e217788b0",
-    "pipelineSha256": "797dd16a2500380870706f2e5da742da9eaac2b14f2af945d4fd0a85c019de51",
+    "pipelineSha256": "576d1f5ef3fc39561ef694c6ff10c51794c752a77b07e1e7ee285660f62bafd4",
     "name": "Firmi",
     "cellSizeMeters": 250,
-    "key": "b8f3b91d615b9b398e1f865115691b6c52299d7dec25b7a7da72fbcb4d435de7",
-    "payloadSha256": "8214e6d4d63077120ea0b5b6d103ceb8798a27cddc26c0b6d00e35a4cea5a11e"
+    "configuration": {
+      "map": {
+        "water_coverage_percent": 50
+      }
+    },
+    "key": "44e19aa444aa5f8b03ad6c5fbf63a16564cd2a348cfda9bc21c95049c7e8375c",
+    "payloadSha256": "709b0de934e31bf1fdb8c0062a99764bf9d20312c5c5514ed6969d2b81d5ca2d"
   }
 }

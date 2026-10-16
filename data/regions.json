@@ -13,6 +13,12 @@
       "snapshot": "data/regions/paris.osm.gz",
       "map": "public/maps/paris.json"
     },
+    "tahiti": {
+      "name": "Tahiti — Papeete",
+      "referenceBounds": [-149.58, -17.565, -149.55, -17.535],
+      "snapshot": "data/regions/tahiti.osm.gz",
+      "map": "public/maps/tahiti.json"
+    },
     "alps": {
       "name": "Alpes — Chamonix",
       "referenceBounds": [6.87, 45.89, 6.89, 45.91],

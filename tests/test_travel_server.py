@@ -112,7 +112,17 @@ class TravelServerTests(unittest.TestCase):
             try:
                 with urllib.request.urlopen(url + "/api/travel") as response:
                     self.assertEqual(json.load(response)["chunkSize"], 8)
+                with patch("travel_server.WeatherStore.get", return_value={"months": []}) as weather:
+                    with urllib.request.urlopen(url + "/api/weather?region=firmi&x=1&y=1") as response:
+                        self.assertEqual(json.load(response), {"months": []})
+                    weather.assert_called_once()
+                    with patch("travel_server.WeatherStore.get", side_effect=OSError("Weather offline")):
+                        with self.assertRaises(urllib.error.HTTPError) as raised:
+                            urllib.request.urlopen(url + "/api/weather?region=firmi&x=1&y=1")
+                        self.assertEqual(raised.exception.code, 502)
+                        raised.exception.close()
                 for path, status in [
+                    ("/api/weather?region=unknown&x=0&y=0", 400),
                     ("/api/chunk?region=unknown&x=0&y=0", 400),
                     ("/api/chunk?region=firmi&x=1001&y=0", 400),
                     ("/api/chunk?region=firmi&x=a&y=0", 400),

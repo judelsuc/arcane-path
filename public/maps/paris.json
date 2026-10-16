@@ -7,6 +7,7 @@
     "maxLatitude": 48.86
   },
   "cellSizeMeters": 250,
+  "waterCoverageThresholdPercent": 50,
   "width": 14,
   "height": 10,
   "bounds": {
@@ -34,6 +35,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/11112345643",
@@ -326,6 +330,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/11992951641",
@@ -440,6 +447,10 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 1.75,
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10977973741",
@@ -640,8 +651,9 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": ",",
+        "terrain": "park",
+        "waterCoveragePercent": 5.5,
         "pois": [
           {
             "osmId": "node/10036679449",
@@ -1221,6 +1233,7 @@
       {
         "glyph": "≡",
         "terrain": "station",
+        "waterCoveragePercent": 2.0,
         "names": [
           "Tuileries"
         ],
@@ -1931,6 +1944,7 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 0.75,
         "pois": [
           {
             "osmId": "node/11007943141",
@@ -2723,8 +2737,9 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "=",
+        "terrain": "rail",
+        "waterCoveragePercent": 0.5,
         "pois": [
           {
             "osmId": "node/10035046048",
@@ -3778,8 +3793,8 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "=",
+        "terrain": "rail",
         "pois": [
           {
             "osmId": "node/10024435742",
@@ -11953,6 +11968,10 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 4.25,
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10036333654",
@@ -12119,6 +12138,10 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 12.75,
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10036357187",
@@ -12386,6 +12409,10 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 1.75,
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/11205321164",
@@ -13271,6 +13298,7 @@
       {
         "glyph": "≡",
         "terrain": "station",
+        "waterCoveragePercent": 4.25,
         "names": [
           "Palais Royal - Musée du Louvre"
         ],
@@ -16436,6 +16464,7 @@
       {
         "glyph": "≡",
         "terrain": "station",
+        "waterCoveragePercent": 0.5,
         "names": [
           "Les Halles"
         ],
@@ -24125,6 +24154,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/1079716208",
@@ -24565,6 +24597,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10025885407",
@@ -25092,6 +25127,10 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 0.25,
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10025885405",
@@ -25724,6 +25763,10 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 0.5,
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10141994907",
@@ -28326,6 +28369,7 @@
       {
         "glyph": "≡",
         "terrain": "station",
+        "waterCoveragePercent": 0.25,
         "names": [
           "Châtelet"
         ],
@@ -29938,6 +29982,7 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 1.25,
         "pois": [
           {
             "osmId": "node/10050959117",
@@ -32998,8 +33043,8 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "\"",
+        "terrain": "grass",
         "pois": [
           {
             "osmId": "node/10018758122",
@@ -35548,6 +35593,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10764529690",
@@ -35928,6 +35976,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10000627078",
@@ -36566,6 +36617,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10019638988",
@@ -37055,6 +37109,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10099270358",
@@ -45333,6 +45390,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10231685852",
@@ -45830,6 +45890,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10310751246",
@@ -46262,6 +46325,9 @@
       {
         "glyph": "≡",
         "terrain": "station",
+        "waterways": [
+          "river"
+        ],
         "names": [
           "Cité"
         ],
@@ -46750,6 +46816,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10088098375",
@@ -47198,6 +47267,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10093450727",
@@ -55871,6 +55943,10 @@
       {
         "glyph": "≡",
         "terrain": "station",
+        "waterCoveragePercent": 0.25,
+        "waterways": [
+          "river"
+        ],
         "names": [
           "Saint-Michel Notre-Dame"
         ],
@@ -57553,6 +57629,9 @@
       {
         "glyph": "○",
         "terrain": "place",
+        "waterways": [
+          "river"
+        ],
         "names": [
           "Paris"
         ],
@@ -58620,8 +58699,11 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": ",",
+        "terrain": "park",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10746322388",
@@ -59139,6 +59221,9 @@
       {
         "glyph": "≡",
         "terrain": "station",
+        "waterways": [
+          "river"
+        ],
         "names": [
           "Pont Marie"
         ],
@@ -59890,7 +59975,10 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "waterways": [
+          "river"
+        ]
       }
     ],
     [
@@ -60135,8 +60223,8 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "\"",
+        "terrain": "grass",
         "pois": [
           {
             "osmId": "node/10272923339",
@@ -64555,6 +64643,7 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 0.25,
         "pois": [
           {
             "osmId": "node/10011383774",
@@ -68409,6 +68498,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10083679401",
@@ -68982,6 +69074,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/10083679391",
@@ -69442,6 +69537,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterways": [
+          "river"
+        ],
         "pois": [
           {
             "osmId": "node/3544753196",
@@ -72728,8 +72826,9 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "\"",
+        "terrain": "grass",
+        "waterCoveragePercent": 0.25,
         "pois": [
           {
             "osmId": "node/11115036145",
@@ -73403,8 +73502,8 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": ",",
+        "terrain": "park",
         "pois": [
           {
             "osmId": "node/10139341822",
@@ -75657,6 +75756,7 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "waterCoveragePercent": 0.75,
         "pois": [
           {
             "osmId": "node/10009704408",
@@ -81286,6 +81386,7 @@
       {
         "glyph": "≡",
         "terrain": "station",
+        "waterCoveragePercent": 4.0,
         "names": [
           "Luxembourg"
         ],
@@ -83208,8 +83309,8 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "\"",
+        "terrain": "grass",
         "pois": [
           {
             "osmId": "node/10008292617",
@@ -85731,8 +85832,12 @@
         ]
       },
       {
-        "glyph": "~",
-        "terrain": "water",
+        "glyph": "†",
+        "terrain": "church",
+        "waterCoveragePercent": 0.25,
+        "names": [
+          "Chapelle du Lycée Henri IV"
+        ],
         "pois": [
           {
             "osmId": "node/10017125277",
@@ -88548,10 +88653,15 @@
   "cache": {
     "schemaVersion": 1,
     "sourceSha256": "b0144623dcb016345d1be24d2b728e2b2c09129955198367719a130047935c3d",
-    "pipelineSha256": "797dd16a2500380870706f2e5da742da9eaac2b14f2af945d4fd0a85c019de51",
+    "pipelineSha256": "576d1f5ef3fc39561ef694c6ff10c51794c752a77b07e1e7ee285660f62bafd4",
     "name": "Paris",
     "cellSizeMeters": 250,
-    "key": "dc50de2c2eeff227de4a5b3f60fbfb65afd6f19109bec14bb7ff15daef6ff66c",
-    "payloadSha256": "46bbf088f0b79dc129435d3bb498d7a46dbccc5bf313541f5f1ec1cec9751338"
+    "configuration": {
+      "map": {
+        "water_coverage_percent": 50
+      }
+    },
+    "key": "f59541cf28c5022ca5013c10678e2a115d5f052f4e9a2101875c7d634ac3ca5a",
+    "payloadSha256": "e4344044505bd0d00521a5c3e1c0503704f01ae58c078eef537d9698c6a2436f"
   }
 }

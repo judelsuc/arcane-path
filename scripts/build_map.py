@@ -13,6 +13,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
+from config import load_config
 
 EARTH_RADIUS_METERS = 6_371_008.8
 DEFAULT_CELL_SIZE_METERS = 250
@@ -265,6 +266,10 @@ def rasterize(
         [{"terrain": "plain", "priority": 0} for _ in range(width)]
         for _ in range(height)
     ]
+    water_samples = {}
+    water_features = {}
+    coverage_threshold = load_config()["map"]["water_coverage_percent"]
+    sample_count = 20
 
     def grid_position(point: tuple[float, float]) -> tuple[int, int]:
         x, y = point
@@ -285,6 +290,14 @@ def rasterize(
         max_col, max_row = grid_position(
             (max(point[0] for point in outer), max(point[1] for point in outer))
         )
+        if terrain == "water":
+            sample_water(
+                min(point[0] for point in outer), min(point[1] for point in outer),
+                max(point[0] for point in outer), max(point[1] for point in outer),
+                lambda x, y: _point_in_polygon(x, y, outer) and not any(
+                    _point_in_polygon(x, y, hole) for hole in holes),
+            )
+            return
         for row in range(min(min_row, max_row), max(min_row, max_row) + 1):
             y = max_y - (row + 0.5) * cell_size_meters
             for col in range(min(min_col, max_col), max(min_col, max_col) + 1):
@@ -294,15 +307,41 @@ def rasterize(
                 ):
                     paint(col, row, terrain)
 
+    def sample_water(west, south, east, north, contains):
+        first_col, first_row = grid_position((west, north))
+        last_col, last_row = grid_position((east, south))
+        for row in range(first_row, last_row + 1):
+            top = max_y - row * cell_size_meters
+            bottom = max(min_y, top - cell_size_meters)
+            for col in range(first_col, last_col + 1):
+                left = min_x + col * cell_size_meters
+                right = min(max_x, left + cell_size_meters)
+                samples = water_samples.setdefault((col, row), set())
+                for sy in range(sample_count):
+                    y = top - (sy + 0.5) / sample_count * (top - bottom)
+                    for sx in range(sample_count):
+                        x = left + (sx + 0.5) / sample_count * (right - left)
+                        if contains(x, y):
+                            samples.add(sy * sample_count + sx)
+
     for node in node_elements:
         nodes[node.attrib["id"]] = project(
             float(node.attrib["lon"]), float(node.attrib["lat"]), center_lat
         )
 
     ways = {way.attrib["id"]: way for way in root.findall("way")}
+    water_members = {
+        member.attrib["ref"]
+        for relation in root.findall("relation")
+        if _tags(relation).get("type") == "multipolygon" and classify(_tags(relation)) == "water"
+        for member in relation.findall("member") if member.attrib.get("type") == "way"
+    }
     for way in ways.values():
-        terrain = classify(_tags(way))
+        tags = _tags(way)
+        terrain = classify(tags)
         if terrain is None or not visible_at_scale(terrain, cell_size_meters):
+            continue
+        if terrain == "water" and way.attrib["id"] in water_members:
             continue
         refs = [ref.attrib["ref"] for ref in way.findall("nd")]
         missing_refs = [ref for ref in refs if ref not in nodes]
@@ -325,6 +364,38 @@ def rasterize(
         if is_area:
             fill_polygon(points, [], terrain)
 
+        if terrain == "water" and not is_area:
+            raw_width = tags.get("width")
+            water_width = None
+            if raw_width:
+                try:
+                    water_width = float(raw_width.removesuffix(" m"))
+                    if not math.isfinite(water_width) or water_width <= 0:
+                        raise ValueError("width must be positive and finite")
+                except ValueError:
+                    print(f"Attention : largeur d'eau OSM invalide : {raw_width!r}.", file=sys.stderr)
+                    water_width = None
+            for start, end in zip(points, points[1:]):
+                clipped = _clip_segment(start, end, min_x, min_y, max_x, max_y)
+                if clipped:
+                    a, b = clipped
+                    steps = max(1, math.ceil(math.dist(a, b) / cell_size_meters * 4))
+                    for step in range(steps + 1):
+                        point = tuple(a[i] + (b[i] - a[i]) * step / steps for i in (0, 1))
+                        water_features.setdefault(grid_position(point), set()).add(tags.get("waterway", "water"))
+                if water_width is not None:
+                    radius = water_width / 2
+                    dx, dy = end[0] - start[0], end[1] - start[1]
+                    length_squared = dx * dx + dy * dy
+                    def contains(x, y):
+                        fraction = max(0, min(1, ((x - start[0]) * dx + (y - start[1]) * dy) /
+                                              length_squared)) if length_squared else 0
+                        return math.hypot(x - start[0] - fraction * dx,
+                                          y - start[1] - fraction * dy) <= radius
+                    sample_water(min(start[0], end[0]) - radius, min(start[1], end[1]) - radius,
+                                 max(start[0], end[0]) + radius, max(start[1], end[1]) + radius, contains)
+        if terrain == "water":
+            continue
         for start, end in zip(points, points[1:]):
             clipped = _clip_segment(start, end, min_x, min_y, max_x, max_y)
             if clipped is None:
@@ -371,10 +442,14 @@ def rasterize(
         for outer in outers:
             fill_polygon(outer, holes, terrain)
 
+    for (col, row), samples in water_samples.items():
+        if len(samples) * 100 / sample_count ** 2 >= coverage_threshold:
+            paint(col, row, "water")
+
     named_points = {}
     for node in node_elements:
         terrain = classify(_tags(node), is_node=True)
-        if terrain is not None and visible_at_scale(terrain, cell_size_meters):
+        if terrain is not None and terrain != "water" and visible_at_scale(terrain, cell_size_meters):
             point = nodes[node.attrib["id"]]
             if not (min_x <= point[0] <= max_x and min_y <= point[1] <= max_y):
                 continue
@@ -433,6 +508,12 @@ def rasterize(
                 "glyph": TERRAINS[cell["terrain"]]["glyph"],
                 "terrain": cell["terrain"],
             }
+            samples = water_samples.get((col_index, row_index))
+            if samples:
+                output_cell["waterCoveragePercent"] = len(samples) * 100 / sample_count ** 2
+            waterways = water_features.get((col_index, row_index))
+            if waterways:
+                output_cell["waterways"] = sorted(waterways)
             names = sorted({
                 name for terrain, name in named_points.get((col_index, row_index), [])
                 if terrain == cell["terrain"]
@@ -459,6 +540,7 @@ def rasterize(
         **({"projectionLatitude": center_lat} if "projection_latitude" in root.attrib else {}),
         **reference_bounds,
         "cellSizeMeters": cell_size_meters,
+        "waterCoverageThresholdPercent": coverage_threshold,
         "width": width,
         "height": height,
         "bounds": {
@@ -500,6 +582,7 @@ def build_cached(source, output, name, cell_size_meters=DEFAULT_CELL_SIZE_METERS
         "pipelineSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "name": name,
         "cellSizeMeters": cell_size_meters,
+        "configuration": load_config(),
     }
     key = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode("utf-8")).hexdigest()
     if output.exists() and not force:

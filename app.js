@@ -14,6 +14,7 @@ const regionPaths = {
   firmi: "./public/map.json",
   paris: "./public/maps/paris.json",
   alps: "./public/maps/alps.json",
+  tahiti: "./public/maps/tahiti.json",
 };
 let locale = resolveLocale(navigator.languages);
 let mapData;
@@ -53,7 +54,7 @@ openOsm.addEventListener("click", () => {
 
 function tileDetails(tile, includePois = true) {
   const info = cellInfo(mapData, Number(tile.dataset.row), Number(tile.dataset.col));
-  const details = t("cellDetails", {
+  let details = t("cellDetails", {
     ...info,
     terrain: info.names.length
       ? `${info.names.join(", ")} — ${t(`terrain.${info.terrain}`)}`
@@ -61,6 +62,12 @@ function tileDetails(tile, includePois = true) {
     latitude: info.latitude.toFixed(5),
     longitude: info.longitude.toFixed(5),
   });
+  if (info.waterCoveragePercent > 0) {
+    details += `\n${t("cellWaterCoverage", { percent: info.waterCoveragePercent.toFixed(1) })}`;
+  }
+  if (info.waterways.length) {
+    details += `\n${t("cellWaterways")}`;
+  }
   if (!includePois || !info.pois.length) {
     return details;
   }

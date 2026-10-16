@@ -1,6 +1,7 @@
 import { initialJourney, moveJourney, restJourney, chunkPosition, journeyDate } from "./travel.mjs";
 import { createChunkStream, neighborDownloads } from "./travel-stream.mjs";
 import { cellInfo } from "./cell-info.mjs";
+import { skyState, estimatedTemperature, altitudeTemperatureOffset } from "./sky.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }) {
   const start = document.querySelector("#start-travel");
@@ -18,6 +19,44 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
   let transient = "", missingHeightMoves = 0;
   let heading = [0, 0];
   let cursor, cameraData;
+  const weatherCache = new Map();
+  let weatherKey, weatherData, weatherError = "", weatherController;
+
+  function updateWeather(chunk) {
+    if (!chunk || !state) return;
+    const b = chunk.bounds;
+    const key = [Math.floor((b.minLatitude + b.maxLatitude) / 2 * 10 + 0.5),
+      Math.floor((b.minLongitude + b.maxLongitude) / 2 * 10 + 0.5)].join(",");
+    if (key === weatherKey) return;
+    weatherKey = key;
+    weatherError = "";
+    weatherData = weatherCache.get(key);
+    weatherController?.abort();
+    if (weatherData) return;
+    const controller = new AbortController();
+    weatherController = controller;
+    const p = chunkPosition(state.col, state.row);
+    fetch(`/api/weather?${new URLSearchParams({ region, x: p.x, y: p.y })}`, {
+      signal: AbortSignal.any([controller.signal, AbortSignal.timeout(120_000)]),
+    }).then(async response => {
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
+      if (data.months?.length !== 12 || data.months.some(month =>
+        !["clear", "cloudy", "fog", "rain", "snow", "storm"].includes(month.condition) ||
+        !["meanC", "minC", "maxC", "rainMm", "frequency", "samples"].every(field =>
+          Number.isFinite(month[field])))) throw new Error("Invalid historical weather response.");
+      if (controller.signal.aborted) return;
+      weatherCache.set(key, data);
+      if (weatherCache.size > 25) weatherCache.delete(weatherCache.keys().next().value);
+      if (key === weatherKey) weatherData = data;
+    }).catch(reason => {
+      if (controller.signal.aborted) return;
+      console.error("Historical weather unavailable:", reason);
+      if (key === weatherKey) weatherError = reason.message;
+    }).finally(() => {
+      if (!controller.signal.aborted && active) localize();
+    });
+  }
   const reported = new Set();
 
   function localize() {
@@ -38,6 +77,50 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
     const position = state && chunkPosition(state.col, state.row);
     const chunk = position && stream?.get(position.x, position.y);
     const cell = chunk?.rows[position.row][position.col];
+    updateWeather(chunk);
+    const weatherSummary = document.querySelector("#weather-summary");
+    const weatherSource = document.querySelector("#weather-source");
+    weatherSource.hidden = !weatherData;
+    document.querySelector("#weather-display").hidden = !weatherData;
+    document.querySelector("#weather-state").textContent = weatherData ? "" : weatherError
+      ? t("weatherError", { error: weatherError }) : active ? t("weatherLoading") : "";
+    if (weatherData) {
+      const month = weatherData.months[journeyDate(state).getUTCMonth()];
+      const number = value => new Intl.NumberFormat(document.documentElement.lang, {
+        maximumFractionDigits: 1,
+      }).format(value);
+      const player = cellInfo(chunk, position.row, position.col);
+      const elevationKnown = Number.isFinite(cell?.elevationMeters) &&
+        Number.isFinite(weatherData.elevationMeters);
+      const offset = elevationKnown
+        ? altitudeTemperatureOffset(cell.elevationMeters, weatherData.elevationMeters) : 0;
+      const temperature = estimatedTemperature(journeyDate(state), player.latitude, player.longitude,
+        month.minC + offset, month.maxC + offset);
+      document.querySelector("#weather-temperature").textContent = `${number(temperature)} °C`;
+      document.querySelector("#weather-condition").textContent = t(`weather.${month.condition}`);
+      document.querySelector("#weather-range").textContent =
+        t("weatherRange", { min: number(month.minC + offset), max: number(month.maxC + offset) });
+      document.querySelector("#weather-altitude").textContent = elevationKnown
+        ? t("weatherAltitude", { player: Math.round(cell.elevationMeters),
+          reference: Math.round(weatherData.elevationMeters), offset: number(offset) })
+        : t("weatherAltitudeUnknown");
+      for (const icon of document.querySelectorAll("[data-weather-icon]")) {
+        icon.style.display = icon.dataset.weatherIcon.split(" ").includes(month.condition) ? "" : "none";
+      }
+      weatherSummary.textContent = t("weatherSummary", {
+        mean: month.meanC, min: month.minC, max: month.maxC, rain: month.rainMm,
+        condition: t(`weather.${month.condition}`), frequency: month.frequency,
+        start: weatherData.startYear, end: weatherData.endYear,
+        month: new Intl.DateTimeFormat(document.documentElement.lang, {
+          month: "long", timeZone: "UTC",
+        }).format(journeyDate(state)),
+      });
+      weatherSource.href = weatherData.sourceUrl;
+      weatherSource.textContent = `${weatherData.source} · ${weatherData.license}`;
+    } else {
+      weatherSummary.textContent = weatherError
+        ? t("weatherError", { error: weatherError }) : active ? t("weatherLoading") : "";
+    }
     for (const button of directions) button.disabled = busy || !cell;
     rest.disabled = busy || !cell || Boolean(cursor);
     look.disabled = busy || !cell;
@@ -79,6 +162,26 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       }).format(journeyDate(state)),
     }) : "";
     clock.dateTime = state ? journeyDate(state).toISOString() : "";
+    const sky = document.querySelector("#travel-sky");
+    sky.hidden = !cell;
+    if (cell) {
+      const player = cellInfo(chunk, position.row, position.col);
+      const cycle = skyState(journeyDate(state), player.latitude, player.longitude);
+      sky.dataset.phase = cycle.phase;
+      document.querySelector("#sky-marker").setAttribute("transform", `translate(${cycle.x} ${cycle.y})`);
+      document.querySelector("#sky-sun").style.display = cycle.phase === "day" ? "" : "none";
+      document.querySelector("#sky-moon").style.display = cycle.phase === "night" ? "" : "none";
+      document.querySelector("#sky-phase").textContent = t(cycle.phase === "day" ? "skyDay" : "skyNight");
+      const time = timestamp => new Intl.DateTimeFormat(document.documentElement.lang, {
+        hour: "2-digit", minute: "2-digit", timeZone: "UTC",
+      }).format(new Date(timestamp));
+      const text = cycle.polar
+        ? t(cycle.polar === "day" ? "skyPolarDay" : "skyPolarNight")
+        : t("skyTimes", { sunrise: time(cycle.sunrise), sunset: time(cycle.sunset) });
+      document.querySelector("#sky-times").textContent = text;
+      document.querySelector("#sky-title").textContent =
+        `${t(cycle.phase === "day" ? "skyDay" : "skyNight")} · ${text} · ${t("skyNote")}`;
+    }
   }
 
   function draw() {
@@ -255,6 +358,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
     stream = undefined;
     state = undefined;
     cursor = cameraData = undefined;
+    weatherController?.abort();
+    weatherKey = weatherData = undefined;
+    weatherError = "";
     active = busy = false;
     error = transient = "";
     missingHeightMoves = 0;
@@ -277,6 +383,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
   });
   retry.addEventListener("click", async () => {
     if (busy) return;
+    if (weatherError) weatherKey = undefined;
     if (!state || !stream) {
       active = false;
       return begin();
