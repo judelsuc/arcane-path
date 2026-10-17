@@ -1,5 +1,20 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - piste du parent sans navigation precise
+
+- **17 octobre 2026** : runtime `4b3c836`, tag
+  `deploy-2026-10-17-parent-reminders`, base live `ec80dd6`.
+  Developpement correspondant : `3f02bcd`.
+- Trois assets statiques et manifeste : rappel des indices et du lieu connu,
+  sans nombres de cases, distances, estimations de trajet ni lien cartographique
+  vers la cible. Historique avec texte des indices, sans fiche interne.
+- 277 tests JavaScript reussis ; cas Berchem et dialogue reel verifies en FR/EN.
+  Trois assets HTTPS compares octet par octet, manifeste et `/api/travel`
+  verifies. Services actifs sans restart ; sauvegardes et caches preserves.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-4b3c836.tar.gz`,
+  archive privee mode 0600 des trois anciens assets et du manifeste.
+- Hebergements et preparation automatique des parcours non inclus.
+
 ## Derniere livraison - erreurs musicales et charisme du tarot de depart
 
 - **17 octobre 2026** : runtime `ec80dd6`, tag
