@@ -150,8 +150,11 @@ def _request_map(bounds, depth=0, on_progress=None):
 def _request_overpass(bounds, url, on_progress=None):
     west, south, east, north = bounds
     bbox = ",".join(format(value, ".12g") for value in (south, west, north, east))
-    # Recursive descent includes way nodes and relation members for rasterization.
-    query = f"[out:xml][timeout:60];nwr({bbox});(._;>>;);out body;"
+    # Transport and administrative relations can span entire countries.
+    # Recurse only into the multipolygons used by the rasterizer.
+    query = (f"[out:xml][timeout:60];"
+             f"(node({bbox});way({bbox});rel({bbox})[type=multipolygon];);"
+             "(._;>>;);out body;")
     request = urllib.request.Request(
         url, data=urllib.parse.urlencode({"data": query}).encode("ascii"),
         headers={"User-Agent": "ArcanePath/0.1 (OSM map prototype)"},

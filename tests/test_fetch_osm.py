@@ -4,12 +4,13 @@ import sys
 import tempfile
 import unittest
 import urllib.error
+import urllib.parse
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from fetch_osm import (_request_map, _request_sources, _COOLDOWNS, OVERPASS_URLS,
+from fetch_osm import (_request_map, _request_overpass, _request_sources, _COOLDOWNS, OVERPASS_URLS,
                        download_region, incomplete_landcover)
 
 OSM_RESPONSE = b"""<osm version="0.6" copyright="OpenStreetMap and contributors">
@@ -21,6 +22,17 @@ OSM_RESPONSE = b"""<osm version="0.6" copyright="OpenStreetMap and contributors"
 
 
 class FetchOsmTests(unittest.TestCase):
+    def test_overpass_recurses_only_multipolygons_not_long_transport_or_admin_relations(self):
+        with patch("fetch_osm.urllib.request.urlopen", return_value=io.BytesIO(OSM_RESPONSE)) as fetch:
+            root, _ = _request_overpass([2.34, 48.88, 2.36, 48.90], OVERPASS_URLS[0])
+        query = urllib.parse.parse_qs(fetch.call_args.args[0].data.decode())["data"][0]
+        self.assertIn("node(48.88,2.34,48.9,2.36)", query)
+        self.assertIn("way(48.88,2.34,48.9,2.36)", query)
+        self.assertIn("rel(48.88,2.34,48.9,2.36)[type=multipolygon]", query)
+        self.assertIn("(._;>>;)", query)
+        self.assertNotIn("nwr(", query)
+        self.assertEqual(root.find("bounds").attrib["minlon"], "2.34")
+
     def test_primary_completes_landcover_members_before_caching(self):
         partial = OSM_RESPONSE.replace(b"</osm>", b"""
           <relation id="12"><member type="way" ref="20" role="outer"/>
