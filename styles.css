@@ -35,7 +35,18 @@ body {
 }
 
 [hidden] { display: none !important; }
-.is-title .map-intro { display: none; }
+body:not(.is-title) .game-shell { padding-top: 8px; }
+body:not(.is-title) .masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 20px;
+  margin-bottom: 8px;
+}
+body:not(.is-title) .masthead .eyebrow { display: none; }
+body:not(.is-title) .masthead-tools,
+body:not(.is-title) .audio-controls { margin-bottom: 0; }
 .is-title .game-shell { padding-top: 24px; }
 .is-title .masthead { margin-bottom: 20px; }
 #title-screen {

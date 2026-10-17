@@ -563,6 +563,8 @@ This file records additions to the design without modifying the source PDF,
 - **Flow:** Explicit Open the map button reveals existing region/profile/
   resume controls without starting or overwriting a journey. Language and
   music controls remain accessible; reload shows the title again.
+- **Play layout:** Title, branding and story stay on the title screen only.
+  After entry, keep just a compact language/audio toolbar above the map.
 - **Accessibility:** Decorative art is hidden from assistive technology,
   story is ordinary text, map controls are hidden until entry, and keyboard
   focus moves to region selection on entry. Layout fits narrow screens.
