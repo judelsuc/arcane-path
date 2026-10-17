@@ -3,7 +3,7 @@ import { createContentService } from "./cell-content.mjs";
 import { openContentCache } from "./content-cache.mjs";
 import { setFeedback } from "./feedback.mjs";
 
-export function setupCellContent(t) {
+export function setupCellContent(t, { pinPhoto } = {}) {
   const cache = openContentCache();
   let servicePromise;
   function contentService() {
@@ -144,6 +144,7 @@ export function setupCellContent(t) {
       link(container, content.sourceUrl, t("contentSource", { title: content.title }));
       paragraph(container, t("contentCredit", content));
       link(container, content.licenseUrl, t("contentLicense"));
+      if (content.blob) pinPhoto?.(container, content);
     } else {
       paragraph(container, t(result.errors.length ? "contentError" : "contentMissing"), "failure");
     }

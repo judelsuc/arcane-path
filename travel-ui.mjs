@@ -30,7 +30,7 @@ import { beginExploration, applyFieldSearch, askAboutClue } from "./trail-search
 import { setupNeedsNotices } from "./needs-notices.mjs";
 import { setupSaveFeedback } from "./save-feedback.mjs";
 
-export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio }) {
+export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, pinPhoto }) {
   const start = document.querySelector("#start-travel");
   const resume = document.querySelector("#resume-travel");
   const saveStatus = document.querySelector("#journey-save-status");
@@ -292,6 +292,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     },
   });
   const trailUI = setupTrail(t, {
+    pinPhoto,
     askDirections() {
       const current = economyContext();
       if (!current || current.blocked) return null;

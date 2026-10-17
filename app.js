@@ -8,6 +8,7 @@ import { setupButtonShortcuts } from "./button-shortcuts.mjs";
 import { setupStartingPoint, validateStartingMap } from "./starting-point-ui.mjs";
 import { setupCopyCoordinates } from "./copy-coordinates.mjs";
 import { setupShortcutHelp } from "./shortcut-help.mjs";
+import { setupPhotoJournal } from "./photo-journal.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
 const viewport = document.querySelector("#map-viewport");
@@ -27,13 +28,15 @@ let loadFailed = false;
 let activeRequest;
 let inspectedTile;
 let entered = false;
-const cellContent = setupCellContent(t);
+const photoJournal = setupPhotoJournal(t);
+const cellContent = setupCellContent(t, { pinPhoto: photoJournal.pinButton });
 const audio = setupAudio(t);
 const coordinates = setupCopyCoordinates(t, () => mapData && inspectedTile
   ? cellInfo(mapData, Number(inspectedTile.dataset.row), Number(inspectedTile.dataset.col)) : null);
 const controls = setupShortcutHelp(t);
 const travel = setupTravel({
   t, renderMap,
+  pinPhoto: photoJournal.pinButton,
   musicAudio: audio.busking,
   onAudioContext: context => audio.update(context),
   onStep: terrain => audio.step(terrain),
@@ -187,6 +190,7 @@ function localize() {
   languageSelect.value = locale;
   updateCountry([]);
   cellContent.localize(locale);
+  photoJournal.localize();
   audio.localize();
   travel.localize();
   startingPoint.localize();

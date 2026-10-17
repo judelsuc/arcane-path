@@ -22,6 +22,8 @@ test("directions, reveal, rhythm and photo controls retain meaningful bindings",
     [{ id: "use-location" }, "V"], [{ id: "back-title" }, "Escape"],
     [{ id: "cancel-place" }, "Z"],
     [{ id: "open-controls" }, "?"],
+    [{ id: "open-journal" }, "A"],
+    [{ id: "journal-previous" }, "ArrowLeft"], [{ id: "journal-next" }, "ArrowRight"],
   ]) assert.equal(buttonBindings([button])[0].key, expected);
   assert.throws(() => buttonBindings(Array.from({ length: 37 }, () => ({}))), /Too many/);
 });
@@ -61,4 +63,5 @@ test("cell services and clue forms keep stable, non-conflicting action keys", ()
   assert.equal(new Set(original.values()).size, clues.length);
   for (const id of clues) assert.equal(buttonBindings([{ id }])[0].key, original.get(id));
   assert.equal(buttonBindings([{ id: "clue-investigate" }])[0].key, "F");
+  assert.equal(buttonBindings([{ id: "clue-field-search" }])[0].key, "F");
 });

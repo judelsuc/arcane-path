@@ -658,6 +658,93 @@ dialog p { margin: 12px 0; }
 #trail-actions p { color: var(--muted); font-size: 0.85rem; line-height: 1.6; }
 #trail-discovery { padding: 20px; margin-top: 24px; border: 1px solid var(--line); }
 #trail-discovery blockquote { margin: 16px 0; white-space: pre-line; line-height: 1.7; }
+#photo-journal-dialog {
+  width: min(1120px, 96vw);
+  max-height: 94dvh;
+  overflow: auto;
+  background: #e5d3aa;
+  color: #352c24;
+  border: 1px solid #927b57;
+  border-radius: 10px;
+}
+.notebook-heading, .notebook-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.notebook-heading h2 { font-family: Georgia, "Times New Roman", serif; }
+.journal-storage-note, .journal-credit { font-size: 0.8rem; }
+.notebook-spread {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 22px;
+  margin: 20px 0;
+  padding: 10px;
+  background: #a18a65;
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgb(45 32 18 / 25%);
+}
+.notebook-spread::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  inset: 12px auto 12px 50%;
+  width: 40px;
+  transform: translateX(-50%);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='36'%3E%3Cellipse cx='20' cy='18' rx='18' ry='7' fill='none' stroke='%235e5d58' stroke-width='4'/%3E%3Cellipse cx='20' cy='17' rx='18' ry='7' fill='none' stroke='%23dedbd0' stroke-width='1.5'/%3E%3C/svg%3E") center top / 40px 36px repeat-y;
+  filter: drop-shadow(2px 2px 1px rgb(0 0 0 / 40%));
+}
+.notebook-page {
+  min-width: 0;
+  min-height: 420px;
+  padding: 26px;
+  background: repeating-linear-gradient(#fff9e9 0 29px, #ddd6c3 29px 30px);
+  box-shadow: inset 0 0 20px rgb(110 89 57 / 12%);
+}
+.journal-print {
+  margin: 0 0 20px;
+  padding: 12px 12px 18px;
+  background: #fff;
+  color: #282622;
+  box-shadow: 2px 5px 12px rgb(39 30 19 / 25%);
+  transform: rotate(-1deg);
+}
+.notebook-page:nth-child(2) .journal-print { transform: rotate(1deg); }
+.journal-print img { width: 100%; height: 240px; object-fit: contain; margin: 0 0 12px; }
+.journal-print label { display: block; font-size: 0.8rem; }
+.journal-print textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 6px 0 12px;
+  padding: 6px;
+  resize: vertical;
+  background: #fff;
+  color: #28374a;
+  border: 1px dashed #ccc5b8;
+  font: 1.3rem/1.5 "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
+}
+.journal-print span[role="status"] { display: block; font-size: 0.8rem; }
+#photo-journal-dialog a { color: #66502d; overflow-wrap: anywhere; }
+.notebook-empty { font: italic 1.2rem/1.8 Georgia, serif; }
+#photo-journal-dialog button { background: #f9f1df; color: #352c24; border-color: #a28b64; }
+#photo-journal-dialog button:focus-visible { outline: 3px solid #654b2b; }
+#photo-journal-dialog [data-feedback="success"] { color: #216232; }
+#photo-journal-dialog [data-feedback="failure"] { color: #a12727; }
+.pin-photo { display: block; margin-top: 12px; }
+@media (max-width: 640px) {
+  .notebook-page { padding: 12px; min-height: 300px; }
+  .notebook-spread { gap: 12px; padding: 5px; }
+  .notebook-spread::after { width: 22px; background-size: 22px 36px; }
+  .journal-print { padding: 6px 6px 14px; transform: none; }
+  .notebook-page:nth-child(2) .journal-print { transform: none; }
+  .journal-print img { height: 140px; }
+  .journal-print textarea { font-size: 1.05rem; }
+  .notebook-navigation { flex-wrap: wrap; }
+  .journal-credit { font-size: 0.7rem; }
+}
 #trail-clue-photo { margin: 16px 0; }
 #trail-clue-photo img { display: block; width: 100%; max-height: 360px; object-fit: contain; }
 #trail-clue-photo p { font-size: 0.8rem; color: var(--muted); }

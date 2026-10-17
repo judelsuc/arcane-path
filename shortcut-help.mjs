@@ -5,6 +5,7 @@ const ACTIONS = [
   ["eat-travel", "eat"], ["rest-travel", "rest"], ["sleep-travel", "sleep"],
   ["open-music", "music"], ["open-trail", "trail"], ["open-town", "town"],
   ["show-photo", "photo"], ["open-hint", "hint"], ["copy-coordinates", "coordinates"],
+  ["open-journal", "journal"],
   ["save-travel", "save"], ["retry-travel", "retry"], ["open-osm", "osm"],
   ["stop-travel", "stop"], ["start-travel", "new"], ["resume-travel", "resume"],
   ["open-options", "options"], ["open-controls", "help"],

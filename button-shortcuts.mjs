@@ -11,6 +11,8 @@ const KEYS = {
   "eat-travel": "E", "open-town": "T", "open-music": "B",
   "open-trail": "J", "save-travel": "S", "look-travel": "L",
   "open-hint": "I",
+  "open-journal": "A",
+  "journal-previous": "ArrowLeft", "journal-next": "ArrowRight",
   "copy-coordinates": "D",
   "needs-notice-cell": "F",
   "retry-travel": "Y", "stop-travel": "Q", "show-photo": "P",
