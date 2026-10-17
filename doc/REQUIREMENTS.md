@@ -1,5 +1,24 @@
 # Requirements tracked outside the design PDF
 
+## R-101 - More photo coverage without increasing the 2 km limit
+
+- **User request:** No photos near 43.992579, 2.397766. Investigate additional
+  sources, keep the existing 2 km limit, and use an explicitly identified
+  aerial photograph when ground-level images are missing.
+- Commons, Wikipedia, iNaturalist and GBIF remain the priority. Do not relax
+  license or positional-accuracy checks to fill an empty cell.
+- If no usable photos remain, request the exact cell bounds from IGN's open
+  orthophotography service, after confirming French coverage. Label it as an
+  aerial image, not a ground view, and disclose that imagery may be older.
+  Preserve IGN attribution and Licence Ouverte 2.0 in cache/notebook.
+- Retry cached photo absences so an old empty result cannot hide the new
+  source. Source failures remain explicit and are not cached as absence.
+- This fallback is mainland-France/Corsica only; it does not promise coverage
+  abroad. Never use aerial imagery as an uncaptioned quest-photo clue.
+- Google login does not grant Maps imagery rights or API billing. A future
+  Google viewer would require its own approved API/billing setup and terms;
+  do not persist Google imagery as notebook blobs.
+
 ## R-103 - Abandoned journals and independent side quests
 
 - **User request:** On a failed game over, leave the quest journal at the

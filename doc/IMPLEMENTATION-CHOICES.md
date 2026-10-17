@@ -6,6 +6,25 @@ All survival numbers below are gameplay approximations, not medical advice.
 Sections are chronological checkpoint records: later layers supersede earlier
 shortcuts, especially free meals and unrestricted outdoor sleep.
 
+## Exact-cell aerial photo fallback
+
+- R-101: IGN's public WMS `ORTHOIMAGERY.ORTHOPHOTOS` is a final photo
+  fallback only when Commons/Wikipedia/nature providers and retained photos
+  produce nothing. The request uses actual cell bounds with WMS 1.3.0
+  EPSG:4326 latitude/longitude axis order and a bounded 512-pixel JPEG.
+- French coverage must be confirmed by mapped country codes or the existing
+  country endpoint; a geographic rectangle alone is not treated as France.
+  Mainland France/Corsica bounds restrict this initial provider. Other
+  countries retain existing providers and the strict 2 km photo search limit.
+- Empty photo-cache records are retried, while actual images remain available
+  offline. Failed sources remain explicit and are not cached as empty success.
+  Aerial images carry the IGN source/license, an aerial-not-ground-view label,
+  and are excluded from parent-photo clues. Description lookup is unchanged.
+- Both reported coordinates, 43.992579/2.397766 and 43.778990/2.407230,
+  returned JPEG imagery from the actual provider. The latter returned 33,422
+  bytes. Targeted isolated validation: 63 tests, including both coordinate
+  bounds, cached absence retry, provider failure and clue compatibility.
+
 ## Clue reassurance follow-up
 
 - R-102 uses a gentler full-clue probability plus a separate small-sign outcome

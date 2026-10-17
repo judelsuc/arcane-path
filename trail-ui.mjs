@@ -96,7 +96,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     const result = await service.resolve(info, document.documentElement.lang, "photo");
     if (result.errors?.length) console.warn("Clue photo sources:", result.errors);
     const content = result.content;
-    if (!content?.blob || content.nature) return null;
+    if (!content?.blob || content.nature || content.aerial) return null;
     for (const url of [content.sourceUrl, content.licenseUrl]) {
       if (new URL(url).protocol !== "https:") throw new Error("Unsafe clue-photo source.");
     }

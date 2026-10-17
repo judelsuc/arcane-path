@@ -138,6 +138,7 @@ export function setupCellContent(t) {
       paragraph(container, content.nearby
         ? t("contentNearby", { distance: content.distance }) : t("contentLocal"));
       if (content.nature) paragraph(container, t("contentNature", { provider: content.provider }));
+      if (content.aerial) paragraph(container, t("contentAerial", { provider: content.provider }));
       link(container, content.sourceUrl, t("contentSource", { title: content.title }));
       paragraph(container, t("contentCredit", content));
       link(container, content.licenseUrl, t("contentLicense"));
