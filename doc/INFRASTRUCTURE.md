@@ -1,5 +1,20 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - prix et portions des repas
+
+- **17 octobre 2026** : runtime `2b5977e`, tag
+  `deploy-2026-10-17-meal-offers`, base live `dd1d6b9`.
+  Developpement correspondant : `1aebe52`.
+- Trois assets statiques et manifeste : offres de repas a 70-150% du tarif
+  local, stables par partie/case/repas/jour UTC, recuperation de faim
+  proportionnelle au prix. Les autres usages du prix local restent inchanges.
+- 272 tests JavaScript du runtime isole reussis ; menu navigateur avec prix
+  et calories differents, rerender stable et achat au prix affiche verifies.
+  Trois assets HTTPS compares octet par octet, manifeste et `/api/travel`
+  verifies. Services actifs sans restart ; configuration et caches preserves.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-2b5977e.tar.gz`,
+  archive privee des trois anciens assets et du manifeste.
+
 ## Derniere livraison - rythmes musicaux aleatoires
 
 - **17 octobre 2026** : runtime `dd1d6b9`, tag
