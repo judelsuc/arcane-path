@@ -1397,3 +1397,6 @@ The small release updates presentation only. It does not activate the pending
 server story generator or rewrite old beginnings: existing live journeys show
 varied discussion dialogue; dated memories and motive/visit presentation are
 available when a journey already carries story facts.
+Presentation runtime `7832ea9` is deployed, with exact HTTPS comparisons of
+all four changed assets and the manifest. The travel API and both services
+remain healthy without restart. The server generator remains unchanged.

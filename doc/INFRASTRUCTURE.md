@@ -427,6 +427,30 @@ joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
 - Rollback :
   `/home/ubuntu/arcane-path-before-deploy-5f9e70a.tar.gz`, mode 0600.
 
+### Checkpoint deploye : dialogues varies et presentation narrative legere
+
+- **17 octobre 2026** : runtime `7832ea9`, tag
+  `deploy-2026-10-17-easy-parent-dialogue`, integration `ea85d49`.
+  Base live `5f9e70a` ; aucun changement du generateur serveur.
+- Discussions : trois voix deterministes ; souvenirs plus flous a sept puis
+  trente jours seulement si des dates de recit existent. Le repere essentiel
+  reste exact ; une enquete en attente ne revele toujours pas la ville suivante.
+  Anciens voyages : voix variees, aucune date ni motivation inventee.
+- Presentation des motifs et sejours historiques prete pour les voyages
+  contenant deja un recit. Le moteur narratif Python reste non deploye ;
+  cette release ne cree donc pas encore ces nouveaux recits sur le serveur.
+- R-083 reporte les simulations terrain/survie et le routage selon motif :
+  ce ne sont plus des prerequis du jalon narratif leger.
+- 26 tests cibles et 243 tests JavaScript de release passes. Navigateur :
+  dialogue et historique FR/EN, visites decouvertes uniquement, masquage
+  pour anciens voyages et conservation du verrou de destination verifies.
+- Quatre assets et manifeste compares exactement en HTTPS. API et services
+  actifs, sans redemarrage ni modification de cache/configuration/sauvegardes.
+- Rollback :
+  `/home/ubuntu/arcane-path-before-deploy-7832ea9.tar.gz`, mode 0600.
+  Restaurer les quatre anciens fichiers archives ; le module ajoute
+  `parent-story.mjs` peut rester inerte ou etre retire separement.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026
