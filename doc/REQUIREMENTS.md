@@ -40,6 +40,8 @@
   freezing blue, cold blue-green, mild green, warm amber and hot red.
 - Show decorative water drops during rain or storms, remove them when dry
   or weather is unavailable; keep temperature and condition readable as text.
+- Put temperature/rain effects in a hover/keyboard-focus tooltip. Move the
+  sun/moon position into the panel background and remove the separate sky panel.
 
 - Arcane-object searches are also side quests. Their gameplay is explicitly
   deferred; do not implement it as part of abandoned-journal delivery.

@@ -130,6 +130,21 @@
           <p id="journey-play-save" role="status"></p>
           <div id="travel-controls" hidden>
             <section id="journey-atmosphere" class="journey-atmosphere" aria-labelledby="weather-title" data-temperature="unknown" data-raining="false">
+            <figure id="travel-sky" class="travel-sky" hidden>
+              <svg viewBox="0 0 200 110" preserveAspectRatio="none" aria-hidden="true">
+                <path class="sky-arc" d="M24 100 A76 76 0 0 1 176 100"/>
+                <path class="sky-horizon" d="M14 100 H186"/>
+              </svg>
+              <svg id="sky-marker" viewBox="-18 -18 36 36" role="img" aria-labelledby="sky-title">
+                <title id="sky-title"></title>
+                  <g id="sky-sun">
+                    <circle r="8"/>
+                    <path d="M0 -12 V-16 M0 12 V16 M-12 0 H-16 M12 0 H16 M-9 -9 L-12 -12 M9 9 L12 12 M9 -9 L12 -12 M-9 9 L-12 12"/>
+                  </g>
+                  <path id="sky-moon" d="M4 -10 A11 11 0 1 0 4 10 A10 10 0 0 1 4 -10"/>
+              </svg>
+              <figcaption id="sky-times" hidden></figcaption>
+            </figure>
             <svg class="climate-drops" viewBox="0 0 320 190" preserveAspectRatio="none" aria-hidden="true">
               <path d="M20 20q-8 12 0 12t0-12 M85 55q-8 12 0 12t0-12 M150 14q-8 12 0 12t0-12 M230 40q-8 12 0 12t0-12 M300 12q-8 12 0 12t0-12 M45 140q-8 12 0 12t0-12 M120 155q-8 12 0 12t0-12 M200 125q-8 12 0 12t0-12 M280 155q-8 12 0 12t0-12"/>
             </svg>
@@ -159,7 +174,7 @@
             </time>
             <section class="weather-card" aria-labelledby="weather-title">
               <h4 id="weather-title" data-i18n="weatherTitle"></h4>
-              <div id="weather-display" hidden>
+              <div id="weather-display" tabindex="0" aria-describedby="weather-effects" hidden>
                 <svg class="weather-icon" viewBox="0 0 64 56" aria-hidden="true">
                   <g data-weather-icon="clear">
                     <circle cx="32" cy="26" r="12"/>
@@ -179,8 +194,15 @@
                 <span class="weather-average" data-i18n="weatherAverage"></span>
               </div>
               <p id="weather-state" role="status"></p>
-              <p id="weather-effects" role="status"></p>
+              <p id="weather-effects" role="tooltip"></p>
             </section>
+            <details class="travel-weather">
+              <summary data-i18n="weatherDetails"></summary>
+              <p id="weather-summary"></p>
+              <p data-i18n="weatherTemperatureNote"></p>
+              <p id="weather-altitude" role="status"></p>
+              <a id="weather-source" target="_blank" rel="noopener noreferrer" hidden></a>
+            </details>
             </section>
             <section class="player-needs" aria-labelledby="needs-title">
               <h4 id="needs-title" data-i18n="needsTitle"></h4>
@@ -199,32 +221,6 @@
                 <button id="restart-travel" type="button" data-i18n="journeyRestart"></button>
               </div>
             </section>
-            <div class="travel-atmosphere">
-            <figure id="travel-sky" class="travel-sky" hidden>
-              <svg viewBox="0 0 200 190" role="img" aria-labelledby="sky-title">
-                <title id="sky-title"></title>
-                <circle class="sky-circle" cx="100" cy="100" r="76"/>
-                <path class="sky-arc" d="M24 100 A76 76 0 0 1 176 100"/>
-                <path class="sky-horizon" d="M14 100 H186"/>
-                <g id="sky-marker">
-                  <g id="sky-sun">
-                    <circle r="8"/>
-                    <path d="M0 -12 V-16 M0 12 V16 M-12 0 H-16 M12 0 H16 M-9 -9 L-12 -12 M9 9 L12 12 M9 -9 L12 -12 M-9 9 L-12 12"/>
-                  </g>
-                  <path id="sky-moon" d="M4 -10 A11 11 0 1 0 4 10 A10 10 0 0 1 4 -10"/>
-                </g>
-                <text id="sky-phase" x="100" y="133" text-anchor="middle"></text>
-              </svg>
-              <figcaption id="sky-times"></figcaption>
-            </figure>
-            <details class="travel-weather">
-              <summary data-i18n="weatherDetails"></summary>
-              <p id="weather-summary"></p>
-              <p data-i18n="weatherTemperatureNote"></p>
-              <p id="weather-altitude" role="status"></p>
-              <a id="weather-source" target="_blank" rel="noopener noreferrer" hidden></a>
-            </details>
-            </div>
             <p id="travel-stats" role="status"></p>
             <div class="travel-actions">
               <div class="travel-directions">

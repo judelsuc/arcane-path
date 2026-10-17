@@ -650,6 +650,9 @@ bleu jusqu'a 0 C, bleu-vert sous 10 C, vert jusqu'a 25 C, ambre jusqu'a 30 C
 et rouge au-dela, selon la temperature estimee a la position du joueur.
 Des gouttes decoratives apparaissent sous la pluie ou l'orage, sans animation.
 Sans donnees meteo, le fond reste neutre et les gouttes disparaissent.
+Le soleil ou la lune suit son arc en arriere-plan du meme panneau, sans
+cadran separe. Les effets de temperature et de pluie sont dans une infobulle
+au survol ou au focus clavier de la meteo, plutot qu'en texte permanent.
 L'agenda et le cadran affichent la date et l'heure simulees en UTC, avec
 libelles francais/anglais et texte accessible complet. Les aiguilles n'avancent
 pas en temps reel. **Copier les coordonnees** copie le centre de la case du joueur

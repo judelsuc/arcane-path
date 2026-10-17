@@ -696,10 +696,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       const player = cellInfo(chunk, position.row, position.col);
       const cycle = skyState(journeyDate(state), player.latitude, player.longitude);
       sky.dataset.phase = cycle.phase;
-      document.querySelector("#sky-marker").setAttribute("transform", `translate(${cycle.x} ${cycle.y})`);
+      document.querySelector("#sky-marker").style.left = `${cycle.x / 200 * 100}%`;
+      document.querySelector("#sky-marker").style.top = `${cycle.y / 110 * 100}%`;
       document.querySelector("#sky-sun").style.display = cycle.phase === "day" ? "" : "none";
       document.querySelector("#sky-moon").style.display = cycle.phase === "night" ? "" : "none";
-      document.querySelector("#sky-phase").textContent = t(cycle.phase === "day" ? "skyDay" : "skyNight");
       const time = timestamp => new Intl.DateTimeFormat(document.documentElement.lang, {
         hour: "2-digit", minute: "2-digit", timeZone: "UTC",
       }).format(new Date(timestamp));
