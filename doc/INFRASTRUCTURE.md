@@ -451,6 +451,23 @@ joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
   Restaurer les quatre anciens fichiers archives ; le module ajoute
   `parent-story.mjs` peut rester inerte ou etre retire separement.
 
+### Checkpoint deploye : demander son chemin avec I
+
+- **17 octobre 2026** : runtime `4c12274`, tag
+  `deploy-2026-10-17-vague-directions`, integration `6044695`.
+- I conserve son raccourci : reponse gratuite d'un passant imaginaire vers
+  l'objectif connu, huit directions generales et distance qualitative.
+  Aucun nombre de cases ni kilometres exacts dans cette reponse ; journal
+  numerique et bouton de preparation des chemins inchanges.
+- Arrivee et lieux non resolus restent utilisables sans devoiler la prochaine
+  ville. Aucun PNJ reel, appel fournisseur, temps ou argent necessaire.
+- 244 tests JavaScript de release passes ; navigateur FR/EN sur Bapaume :
+  direction nord-est, distance vague, aucune etape inconnue et touche I verifies.
+- Deux assets et manifeste compares exactement en HTTPS ; API et services
+  actifs, aucun redemarrage ni changement des caches/sauvegardes/configuration.
+- Rollback :
+  `/home/ubuntu/arcane-path-before-deploy-4c12274.tar.gz`, mode 0600.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026
