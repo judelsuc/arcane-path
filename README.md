@@ -689,6 +689,10 @@ et peuvent encore rencontrer des limites de leurs fournisseurs.
 
 **Piste du parent** ouvre gratuitement le carnet. Il indique la ville de
 l'etape actuelle, sa direction et sa distance ; les suivantes restent cachees.
+Pour les parcours de villes, l'enquete est accessible sur la case du point
+repere et ses huit voisines (250 m par axe), afin de ne pas exiger le pixel
+exact d'un centre GeoNames/OSM. A deux cases sur un axe, il faut encore avancer.
+Les anciens parcours locaux gardent leur regle de case exacte.
 Seule la **case exacte de l'etape prevue** propose des indices du parent,
 jamais une autre case de la meme ville ni le curseur Look.
 Quatre actions differentes sont proposees a chaque etape, selon une rotation :

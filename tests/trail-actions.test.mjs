@@ -6,6 +6,9 @@ import { startEconomy } from "../economy.mjs";
 import { createSave, validateSave } from "../journey-save.mjs";
 import { trailClue, clueActions, CLUE_ACTIONS } from "../trail-actions.mjs";
 import { interviewTrail } from "../trail.mjs";
+import { atTrailTarget } from "../trail.mjs";
+import { playerHint } from "../trail-ui.mjs";
+import { translate } from "../i18n.mjs";
 
 const json = path => JSON.parse(readFileSync(new URL(path, import.meta.url)));
 const survival = json("../public/config.json").survival;
@@ -28,11 +31,42 @@ function state() {
 }
 const save = s => createSave({ region: "firmi", map, state: s, survival, economy }, 1);
 
-test("each planned cell offers four varied clues, other cells cannot advance the story", () => {
+test("modern town arrivals accept all eight adjacent cells but never two cells away", () => {
+  for (let dc = -2; dc <= 2; dc++) {
+    for (let dr = -2; dr <= 2; dr++) {
+      const original = state(), expected = Math.abs(dc) <= 1 && Math.abs(dr) <= 1;
+      const s = { ...original, col: original.col + dc, row: original.row + dr };
+      assert.equal(atTrailTarget(s), expected, `offset ${dc},${dr}`);
+      assert.equal(clueActions(s).length > 0, expected);
+      for (const locale of ["fr", "en"]) {
+        const hint = playerHint(s, info, (key, args) => translate(locale, key, args));
+        if (expected) assert.equal(hint, translate(locale, "hintInvestigate", {
+          place: s.trail.stages[0].name,
+        }));
+        else assert.match(hint, locale === "fr" ? /case/ : /cell/i);
+      }
+      if (expected) {
+        const next = trailClue(s, "discuss", cell, info, survival, economy);
+        assert.equal(next.trail.index, 1);
+        assert.equal(next.col, s.col);
+        assert.equal(next.row, s.row);
+        assert.deepEqual(validateSave(save(next)).state, next);
+      }
+    }
+  }
+});
+
+test("legacy local trails keep exact-cell arrival without changing stored objectives", () => {
+  const original = state(), s = { ...original, trail: { ...original.trail, version: 1 } };
+  assert.equal(atTrailTarget(s), true);
+  assert.equal(atTrailTarget({ ...s, col: s.col + 1 }), false);
+});
+
+test("each town arrival offers four varied clues, cells beyond its arrival radius cannot advance", () => {
   const s = state();
   assert.equal(clueActions(s).length, 4);
-  assert.deepEqual(clueActions({ ...s, col: s.col + 1 }), []);
-  assert.throws(() => trailClue({ ...s, col: s.col + 1 }, "photo", cell, info, survival, economy), /unavailable/);
+  assert.deepEqual(clueActions({ ...s, col: s.col + 2 }), []);
+  assert.throws(() => trailClue({ ...s, col: s.col + 2 }, "photo", cell, info, survival, economy), /unavailable/);
   assert.throws(() => interviewTrail(s, info, survival, economy), /Choose a clue/);
 });
 
