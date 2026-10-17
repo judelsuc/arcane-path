@@ -404,6 +404,29 @@ joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
 - Rollback :
   `/home/ubuntu/arcane-path-before-deploy-371ddc4.tar.gz`, mode 0600.
 
+### Checkpoint deploye : plats europeens et abri fictif dans les lieux de culte
+
+- **17 octobre 2026** : commit runtime `5f9e70a`, tag
+  `deploy-2026-10-17-worship-european-food`. Integration developpement :
+  `6fd0426`. Base live `371ddc4` ; moteur narratif couche 9 exclu.
+- Catalogue de 19 plats : quinze ajouts couvrant quinze pays europeens,
+  pays confirme et bornes geographiques, distinction regional/national.
+  Les ajouts sont disponibles a la reprise sans remplacer les anciens plats
+  ni modifier le portefeuille ou la progression.
+- Lieux de culte actifs accessibles de la case : demande d'abri gratuite,
+  trente minutes, chance selon tarot puis sommeil protege si accepte.
+  Une tentative par lieu/jour de jeu UTC ; refus et accueil fictifs affiches
+  immediatement et conserves dans la sauvegarde.
+- 42 tests cibles, 242 tests JavaScript de la release isolee et 12 tests
+  Python de cartographie passes. Navigateur a 320 px : refus visible et
+  focalise, pas de sommeil accorde ; descriptions regionales/nationales
+  et liens documentaires verifies.
+- Six assets statiques et manifeste remplaces, chacun compare exactement en
+  HTTPS au commit ; API voyage et services actifs. Aucun redemarrage,
+  aucune modification des caches, genèses existantes ou configuration utilisateur.
+- Rollback :
+  `/home/ubuntu/arcane-path-before-deploy-5f9e70a.tar.gz`, mode 0600.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026

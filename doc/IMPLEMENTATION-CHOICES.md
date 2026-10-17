@@ -1357,3 +1357,6 @@ no sleep/time ambiguity, plus regional and national meal scope/source labels.
 The development worktree's wider tests remain blocked by the user's unrelated
 uncommitted configuration lacking its map section; it is left untouched.
 No unfinished Layer 9 narrative code is included in this isolated release.
+The twelve existing map-pipeline Python tests also pass with the clean release
+configuration. Static-only runtime `5f9e70a` is deployed and verified by exact
+HTTPS asset comparison; no server restart or map-cache invalidation was needed.
