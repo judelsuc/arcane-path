@@ -2,7 +2,7 @@ import { mealOffers, marketPrice, shelters, tarotEventChance } from "./economy.m
 import { HOSPITALITY_RULES, hospitalityStatus, worshipPlaces } from "./hospitality.mjs";
 import { setFeedback } from "./feedback.mjs";
 
-export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodations }) {
+export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodations, selectAccommodation }) {
   const dialog = document.querySelector("#economy-dialog");
   let mode = "eat";
   let resolving = false, countryError = "", generation = 0;
@@ -71,6 +71,18 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       license.target = "_blank";
       license.rel = "noopener noreferrer";
       item.append(text, credit, source, " ", license);
+      if (selectAccommodation) {
+        const go = document.createElement("button");
+        go.type = "button";
+        go.textContent = t("accommodationGo");
+        go.disabled = current.blocked;
+        go.addEventListener("click", () => {
+          if (context()?.blocked) return;
+          selectAccommodation(place);
+          dialog.close();
+        });
+        item.append(go);
+      }
       nearby.append(item);
     }
     const quote = marketPrice(cell, 1, data, info);

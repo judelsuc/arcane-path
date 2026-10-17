@@ -29,6 +29,7 @@ import { trailClue } from "./trail-actions.mjs";
 import { beginExploration, applyFieldSearch, askAboutClue } from "./trail-search.mjs";
 import { setupNeedsNotices } from "./needs-notices.mjs";
 import { setupSaveFeedback } from "./save-feedback.mjs";
+import { lodgingGuidance } from "./lodging-guidance.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, pinPhoto }) {
   const start = document.querySelector("#start-travel");
@@ -58,6 +59,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   let backgroundDownloads;
   const pricingCountries = new Map();
   let discoveredLodging = [];
+  let lodgingTarget;
   let transient = "", missingHeightMoves = 0;
   let heading = [0, 0];
   let cursor, cameraData;
@@ -204,6 +206,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
   const economyUI = setupEconomyUI(t, {
     context: economyContext, act: economyAction,
+    selectAccommodation(place) {
+      lodgingTarget = place;
+      draw();
+    },
     async findAccommodations(signal, onProgress) {
       const current = economyContext(), currentToken = token;
       if (!current || current.blocked) throw new Error("Accommodation lookup requires a loaded player cell.");
@@ -588,6 +594,13 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     look.textContent = t(cursor ? "travelLookExit" : "travelLook");
     look.setAttribute("aria-pressed", String(Boolean(cursor)));
     document.querySelector("#look-status").textContent = cursor ? t("travelLookHint") : "";
+    const lodgingStatus = document.querySelector("#lodging-target-status");
+    lodgingStatus.hidden = !lodgingTarget || !cell;
+    lodgingStatus.textContent = lodgingTarget && cell
+      ? lodgingGuidance(lodgingTarget, state, cellInfo(chunk, position.row, position.col), t) : "";
+    document.querySelector("#lodging-target-clear").hidden = !lodgingTarget;
+    setFeedback(lodgingStatus, lodgingTarget && state &&
+      lodgingTarget.col === state.col && lodgingTarget.row === state.row ? "success" : "");
     document.querySelector("#travel-streaming").textContent = active && stream
       ? t("travelStreaming", { count: stream.chunks.size }) : "";
     height.replaceChildren();
@@ -690,6 +703,15 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     data.projectionLatitude = center.projectionLatitude;
     cameraData = data;
     renderMap(data);
+    if (lodgingTarget) {
+      const row = lodgingTarget.row - (position.y - 1) * 8;
+      const col = lodgingTarget.col - (position.x - 1) * 8;
+      const destination = document.querySelector(`.tile[data-row="${row}"][data-col="${col}"]`);
+      if (destination) {
+        destination.classList.add("tile--lodging");
+        destination.title = lodgingTarget.name || t("mappedShelter");
+      }
+    }
     const tile = document.querySelector(`.tile[data-row="${position.row + 8}"][data-col="${position.col + 8}"]`);
     tile.classList.add("tile--player");
     tile.textContent = "@";
@@ -894,6 +916,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     parentPathStatus = parentPathError = "";
     pricingCountries.clear();
     discoveredLodging = [];
+    lodgingTarget = undefined;
     birthDialog.close();
     dailyTarotUI.reset();
     needsNotices.reset();
@@ -934,6 +957,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     begin(undefined, true);
   });
   look.addEventListener("click", toggleLook);
+  document.querySelector("#lodging-target-clear").addEventListener("click", () => {
+    lodgingTarget = undefined;
+    draw();
+  });
   stop.addEventListener("click", () => {
     reset();
     onStop();

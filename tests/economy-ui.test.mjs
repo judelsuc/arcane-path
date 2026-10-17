@@ -33,7 +33,7 @@ class Element {
   scrollIntoView(options) { this.scrolled = options; }
   setAttribute(name, value) { this[name] = value; }
 }
-function harness(t, language = "en", findAccommodations) {
+function harness(t, language = "en", findAccommodations, selectAccommodation) {
   const original = globalThis.document;
   const elements = new Map();
   const element = selector => {
@@ -55,6 +55,7 @@ function harness(t, language = "en", findAccommodations) {
   const actions = [];
   const ui = setupEconomyUI((key, args) => translate(language, key, args), {
     findAccommodations,
+    selectAccommodation,
     context: () => current,
     act: action => {
       actions.push(action);
@@ -91,6 +92,23 @@ for (const language of ["fr", "en"]) {
     assert.equal(h.element("#nearby-accommodation").hidden, true);
   });
 }
+
+test("travel to accommodation selects the actual lodging and closes without moving, paying or sleeping", async t => {
+  const place = { id: "node/42", name: "Hotel", col: 16, row: 10, distance: 500,
+    credit: "OpenStreetMap contributors", license: "ODbL", source: "OpenStreetMap",
+    sourceUrl: "https://www.openstreetmap.org/node/42", licenseUrl: "https://www.openstreetmap.org/copyright" };
+  let selected;
+  const h = harness(t, "en", async () => ({ places: [place], warnings: [] }), p => { selected = p; });
+  const before = structuredClone(h.current().state);
+  await h.ui.open("sleep");
+  const go = h.element("#accommodation-results").children[0].children.at(-1);
+  assert.match(go.textContent, /Travel to/);
+  go.click();
+  assert.equal(selected, place);
+  assert.equal(h.element("#economy-dialog").open, false);
+  assert.deepEqual(h.current().state, before);
+  assert.deepEqual(h.actions, []);
+});
 
 test("lodging lookup errors stay visible and the search can be retried", async t => {
   let calls = 0;

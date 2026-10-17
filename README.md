@@ -710,6 +710,13 @@ pas interpretee comme l'absence d'hotels. Un catalogue DATAtourisme francais
 peut etre importe par l'administrateur, mais il n'est pas installe par les
 joueurs et ne constitue pas une couverture internationale.
 
+Dans la liste des hebergements, **Aller a cet hebergement** choisit un repere :
+la carte signale sa case quand elle est visible, et la distance et la direction
+s'actualisent pendant la marche. Le bouton ne deplace pas le personnage.
+Les directions sont a vol d'oiseau, pas un itineraire garanti ; il faut rejoindre
+la case a pied puis ouvrir le sommeil avec H. Le repere peut etre annule et
+n'est pas conserve apres fermeture ou rechargement du voyage.
+
 ### Carnet de photos
 
 Le bouton **Mon carnet** dans l'en-tete (A) ouvre un carnet a deux pages

@@ -734,6 +734,7 @@ dialog p { margin: 12px 0; }
 #photo-journal-dialog [data-feedback="success"] { color: #216232; }
 #photo-journal-dialog [data-feedback="failure"] { color: #a12727; }
 .pin-photo { display: block; margin-top: 12px; }
+.tile--lodging { outline: 2px solid #e3bb69; outline-offset: -2px; }
 @media (max-width: 640px) {
   .notebook-page { padding: 12px; min-height: 300px; }
   .notebook-spread { gap: 12px; padding: 5px; }
