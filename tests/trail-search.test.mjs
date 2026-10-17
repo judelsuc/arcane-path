@@ -439,6 +439,8 @@ for (const locale of ["fr", "en"]) {
     await ask.events.click();
     assert.equal(state.elapsedMinutes, 40);
     assert.equal(state.trail.exploration.lastReport.town.name, "Seaside");
+    assert.match(element("#hint-guidance").textContent, /coordinates|coordonnées/);
+    assert.match(element("#hint-guidance").textContent, /unconfirmed|non confirmé/i);
     assert.equal(state.trail.index, 0);
     state = validateSave(JSON.parse(JSON.stringify(save(state)))).state;
     ui.reset();
