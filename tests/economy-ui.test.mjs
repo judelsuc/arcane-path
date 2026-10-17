@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { setupEconomyUI } from "../economy-ui.mjs";
 import { askHospitality } from "../hospitality.mjs";
 import { startSurvival } from "../survival.mjs";
-import { applyBirthTarot, startEconomy } from "../economy.mjs";
+import { applyBirthTarot, startEconomy, mealOffers } from "../economy.mjs";
 import { translate } from "../i18n.mjs";
 
 const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
@@ -64,6 +64,27 @@ function harness(t, language = "en") {
   });
   return { ui, element, actions, set: value => { current = { ...current, ...value }; },
     current: () => current, buttons: () => element("#economy-options").children.map(li => li.children[0]) };
+}
+
+for (const language of ["fr", "en"]) {
+  test(`${language} meal menu shows the actual daily prices and matching calorie recovery without rerolls`, async t => {
+    const h = harness(t, language);
+    await h.ui.open("eat");
+    const current = h.current();
+    const offers = mealOffers(current.state, current.cell, current.info, current.data);
+    const labels = h.buttons().map(button => button.textContent);
+    assert.equal(labels.length, offers.length);
+    offers.forEach((offer, i) => {
+      assert.ok(labels[i].includes((offer.cents / 100).toFixed(2)));
+      assert.ok(h.element("#economy-options").children[i].children[1].textContent.includes(
+        `+${offer.reserveKcal}`));
+    });
+    assert.match(h.element("#economy-pricing").textContent, /70–150/);
+    h.ui.localize();
+    assert.deepEqual(h.buttons().map(button => button.textContent), labels);
+    h.buttons()[0].click();
+    assert.deepEqual(h.actions[0], { kind: "meal", id: offers[0].id });
+  });
 }
 
 test("sleep menu explains missing OSM lodging, offers hospitality, and saves/displays the outcome in place", async t => {

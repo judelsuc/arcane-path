@@ -556,7 +556,13 @@ sans nouvelle dotation. Aucun tirage n'est payant.
 aligot autour de Firmi/Aveyron, croque-monsieur a Paris, tartiflette autour
 de Chamonix/Savoie, poisson cru au lait de coco a Tahiti. Sources touristiques
 et descriptions originales dans [public/economy.json](./public/economy.json).
-Chaque repas vaut pour le jeu 900 kcal de reserve et 20 minutes ; ce ne sont
+Chaque repas a une offre fictive stable par partie, case et jour UTC :
+prix tire entre 70 et 150 % de son tarif local et portion proportionnelle au
+prix (900 kcal pour une unite de repas locale). Les plats et etablissements
+peuvent donc avoir des prix et effets differents ; rouvrir le menu, acheter ou
+recharger la partie ne relance pas les offres. Un nouveau jour renouvelle les
+offres. Le menu affiche le prix exact et les kcal avant achat ; la recuperation
+ne depasse pas la reserve maximale. La duree reste de 20 minutes ; ce ne sont
 pas des mesures nutritionnelles. Les zones sont des boites de curation,
 pas des frontieres culinaires exactes. Un **repas simple** de jeu reste toujours
 propose sur une case de localite, y compris hors de ces quatre zones, au meme

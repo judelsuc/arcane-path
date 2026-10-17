@@ -1,5 +1,21 @@
 # Requirements tracked outside the design PDF
 
+## R-093 - Daily meal price and hunger-recovery variation
+
+- **User decision:** Moderate variation, 70-150% of the local price, stable
+  per location, meal and UTC game day. More expensive meals in the same menu
+  restore more hunger. Reopening, purchasing or reloading does not reroll.
+- Deterministically draw each offer using journey identity, cell, day and meal
+  ID; include specialty meals, generic meals and mapped restaurant offers.
+  Preserve existing national pricing and unknown-country fallback as the base.
+- Calculate reserve recovery proportionally to quoted cents relative to one
+  local meal unit (900 kcal at the base unit price). Keep normal capacity cap,
+  meal duration and metabolism. Prices/portions are fictional, not nutrition
+  facts or actual restaurant tariffs.
+- UI quote and purchase must use the same helper for exact price and effect.
+  Show daily-offer explanation and calories before purchase, including FR/EN.
+  No changes to lodging, music rewards, clue costs or saved wallet balances.
+
 ## R-092 - Random rhythm for each street performance
 
 - Draw a fresh 12-slot phrase at the start of each performance by uniformly

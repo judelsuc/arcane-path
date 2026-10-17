@@ -6,6 +6,26 @@ All survival numbers below are gameplay approximations, not medical advice.
 Sections are chronological checkpoint records: later layers supersede earlier
 shortcuts, especially free meals and unrestricted outdoor sleep.
 
+## Daily meal offers and price-proportional hunger recovery
+
+- R-093: shared mealOffers wraps the existing meal catalogue/venue filtering.
+  A deterministic per-journey/cell/day/meal draw with avalanche mixing gives
+  70-150% pricing over the existing country/fallback baseline. No stored offer
+  history or save migration is needed; reopening/reloading cannot reroll.
+- Calories derive from the actual quoted cents relative to the local unit
+  price, so a more expensive offer in one menu restores more reserve. Existing
+  capacity limits, metabolism and action finalization remain authoritative.
+- Meal UI and purchase both use mealOffers, including affordability. Other
+  marketPrice callers (lodging, clue costs and music income) remain unchanged.
+  FR/EN UI explains daily variation and capacity limits before buying.
+- Focused validation includes 30 days of bounded price draws, monotonic
+  recovery, location/day changes, save/resume stability, purchase/quote equality,
+  capacity/metabolism, exact affordability and FR/EN menu consistency.
+- Validation: 49 focused tests and all 272 isolated live-base JavaScript tests
+  pass. Browser menu showed 3.92/4.00/7.23 game euros for 630/643/1162 kcal;
+  rerender preserved offers and purchase charged exactly 392 cents with normal
+  meal metabolism. No real player save or config.yml was changed.
+
 ## Random street-performance rhythms
 
 - R-092: Fisher-Yates shuffle draws eight notes/four rests into twelve slots
