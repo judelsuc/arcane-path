@@ -1,5 +1,25 @@
 # Requirements tracked outside the design PDF
 
+## R-083 - Prioritize lightweight parent-story improvements
+
+- **User decision (17 October 2026):** Do the easy narrative improvements now;
+  advanced simulation is premature and should be kept for later.
+- Vary fictional witness dialogue deterministically without rerolling facts.
+- Make memories sound less precise as sightings age: recent (under seven
+  days), fading (seven to twenty-nine days), distant (thirty days or more).
+  Essential destination/venue clues always remain exact and usable.
+- Do not invent sighting dates for legacy journeys without a parent story.
+  Written/photo clues keep their existing wording and information gates.
+- Explain the parent's motive and distinguish discovered historical stays
+  from their current location. Show only discovered visits.
+- **Deferred, not removed:** whole-journey terrain/30-60 km validation,
+  survival-budget simulation, route-positioned nights/provisions and
+  motive-guided destination generation. These are later enhancements, not
+  prerequisites for finishing the current lightweight narrative milestone.
+- Existing basic correctness, save compatibility and clue-access tests remain
+  required. The full story engine still needs release verification before
+  deploying it; narrative consistency is not proof of terrain feasibility.
+
 ## R-082 - Fictional shelter requests at places of worship
 
 - Churches and other mapped places of worship, across religions, can provide
@@ -34,7 +54,8 @@
 
 ## R-080 - Layer 15 personal journey journal
 
-- **Priority:** Keep for Layer 15, after completing Layer 9. Requirements only;
+- **Priority:** Keep for Layer 15, after the lightweight Layer 9 milestone,
+  without waiting for deferred advanced simulation. Requirements only;
   journal implementation has not started.
 - **Pinned photos:** The player can pin a discovered photo in the journal and
   attach a personal note. Preserve its image, source, attribution/license,
@@ -67,7 +88,8 @@
 
 ## R-079 - Mobile parents may go beyond the original ten towns
 
-- Finish Layer 9 before starting Layer 15.
+- Finish the lightweight Layer 9 milestone before Layer 15; advanced route
+  and survival simulation is deferred by R-083.
 - The user explicitly allows extra towns when the parent keeps moving.
 - Current implementation under validation: up to three pre-generated, sourced
   continuation towns, still 30-60 km apart. The parent advances after seven,

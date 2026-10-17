@@ -2,7 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { parentStage, validateParentStory } from "../parent-story.mjs";
+import { parentStage, parentSighting, validateParentStory } from "../parent-story.mjs";
+import { parentClueText } from "../trail-ui.mjs";
+import { translate } from "../i18n.mjs";
 import { trailClue, clueActions } from "../trail-actions.mjs";
 import { createSave, validateSave } from "../journey-save.mjs";
 import { startEconomy } from "../economy.mjs";
@@ -39,6 +41,58 @@ print(json.dumps(build_parent_story(trail, "fixed", sys.argv[2], int(sys.argv[3]
   return { ...initial, ...stages[0], trail };
 }
 const save = s => createSave({ region: "firmi", map, state: s, survival, economy }, 1);
+
+test("witness memories age at seven and thirty days without mutating story facts or rerolling voice", () => {
+  const s = state(false), before = structuredClone(s);
+  const visit = s.trail.story.visits[0];
+  for (const [days, precision] of [[0, "recent"], [6.999, "recent"], [7, "weeks"],
+    [29.999, "weeks"], [30, "old"], [200, "old"]]) {
+    const at = { ...s, elapsedMinutes: (visit.departure - s.startedAt) / 60_000 + days * 1440 };
+    assert.equal(parentSighting(at, 0).precision, precision);
+    assert.equal(parentSighting(at, 0).variant, parentSighting(s, 0).variant);
+    assert.deepEqual(parentSighting(structuredClone(at), 0), parentSighting(at, 0));
+  }
+  assert.deepEqual(s, before);
+  const variants = new Set(s.trail.stages.map((_, i) => parentSighting(s, i).variant));
+  assert.equal(variants.size, 3);
+});
+
+test("localized testimony keeps precise leads, hides pending destinations and never invents legacy dates", () => {
+  const s = state(false);
+  const discovery = { kind: "discuss", step: 0, pending: false, nextName: "Known next town" };
+  for (const language of ["fr", "en"]) {
+    const t = (key, args) => translate(language, key, args);
+    for (const days of [0, 8, 40]) {
+      const at = { ...s, elapsedMinutes: (s.trail.story.visits[0].departure - s.startedAt) / 60_000 + days * 1440 };
+      const text = parentClueText(at, discovery, t);
+      assert.ok(text.includes(discovery.nextName));
+      assert.ok(text.includes(t(`parentStory.motive.${s.trail.story.motive}`)));
+      assert.ok(text.includes(t(`parentWitness.${parentSighting(at, 0).precision}`)));
+      assert.doesNotMatch(text, /parentWitness\.|undefined|\{hint\}/);
+      assert.equal(parentClueText(structuredClone(at), discovery, t), text);
+    }
+    const pending = parentClueText(s, { ...discovery, pending: true, venue: "Known venue" }, t);
+    assert.ok(pending.includes("Known venue"));
+    assert.ok(!pending.includes(discovery.nextName));
+    const legacy = structuredClone(s);
+    delete legacy.trail.story;
+    assert.equal(parentSighting(legacy, 0).precision, null);
+    const legacyText = parentClueText(legacy, discovery, t);
+    for (const key of ["recent", "weeks", "old"]) {
+      assert.ok(!legacyText.includes(t(`parentWitness.${key}`)));
+    }
+    assert.ok(!legacyText.includes(t("parentWitness.reason", {
+      motive: t(`parentStory.motive.${s.trail.story.motive}`),
+    })));
+    for (const kind of ["letter", "photo", "buy", "search", "ticket", "guestbook"]) {
+      assert.equal(parentClueText(s, { ...discovery, kind }, t),
+        t(`clueText.${kind}`, { parent: s.trail.parentName, hint: discovery.nextName }));
+    }
+    assert.equal(parentClueText(s, { ...discovery, nextName: null }, t),
+      t("trailReunion", { parent: s.trail.parentName }));
+  }
+});
+
 function encounter(s) {
   const target = s.trail.stages[s.trail.index];
   const fresh = { ...s, col: target.col, row: target.row, reserveKcal: survival.reserve_kcal,

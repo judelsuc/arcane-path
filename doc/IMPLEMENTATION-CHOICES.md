@@ -1360,3 +1360,40 @@ No unfinished Layer 9 narrative code is included in this isolated release.
 The twelve existing map-pipeline Python tests also pass with the clean release
 configuration. Static-only runtime `5f9e70a` is deployed and verified by exact
 HTTPS asset comparison; no server restart or map-cache invalidation was needed.
+
+### Lightweight Layer 9 narrative polish; advanced simulation deferred
+
+R-083 supersedes the earlier requirement to finish all advanced Layer 9
+simulation before moving on. Whole-route terrain validation, survival-budget
+simulation, route-positioned provisions/nights and motive-guided destinations
+are retained for later, not claimed complete or made current release gates.
+
+Discussion clues now use three deterministic witness voices based on journey
+start and witness identity. With existing story dates, memories become less
+precise at seven and thirty elapsed days since departure. This affects wording
+only: the known destination or pending venue is always explicit. Pending clues
+still hide the next town. Written/photo clues, costs, route facts and saves
+are unchanged. Legacy journeys receive voice variety but no invented dates,
+motives or visit history. Memory wording reflects the current game time when
+reading the trail; it is not presented as a verbatim timestamped transcript.
+
+Discussion results and their journal history share the same formatter. Story
+summaries explain why the parent left, and discovered visits clearly separate
+historical arrival/departure and provisions from a current parent location.
+Exact fictional story dates are not attributed to uncertain witness memories.
+Only discovered visits are shown; no future itinerary is exposed.
+
+Validation: all 26 focused story/trail/action tests pass, including exact aging
+thresholds, stable voices after reload, all three voices, FR/EN clues, legacy
+compatibility, document clues and pending-venue information gates. Browser
+checks exercised FR/EN testimony, discovered-only records, legacy section
+hiding and no premature next-town disclosure. The isolated release passes
+all 243 JavaScript tests with the clean live configuration.
+The development full run before the final portable regression test passes
+244 tests but its genesis file fails because
+the unrelated user configuration does not load; it is not modified here.
+
+The small release updates presentation only. It does not activate the pending
+server story generator or rewrite old beginnings: existing live journeys show
+varied discussion dialogue; dated memories and motive/visit presentation are
+available when a journey already carries story facts.

@@ -5,6 +5,23 @@ import { openContentCache } from "./content-cache.mjs";
 import { clueActions, CLUE_ACTIONS } from "./trail-actions.mjs";
 import { marketPrice } from "./economy.mjs";
 import { createParentPathLoader } from "./parent-path.mjs";
+import { parentSighting } from "./parent-story.mjs";
+
+export function parentClueText(state, discovery, t) {
+  if (!discovery.nextName) return t("trailReunion", { parent: state.trail.parentName });
+  const hint = discovery.pending ? discovery.venue : discovery.nextName;
+  if (discovery.kind !== "discuss") {
+    return t(`clueText.${discovery.kind}`, { hint, parent: state.trail.parentName });
+  }
+  const sighting = parentSighting(state, discovery.step);
+  const parts = [t(`parentWitness.${sighting.variant}`, { parent: state.trail.parentName })];
+  if (sighting.precision) parts.push(t(`parentWitness.${sighting.precision}`));
+  if (state.trail.story) parts.push(t("parentWitness.reason", {
+    motive: t(`parentStory.motive.${state.trail.story.motive}`),
+  }));
+  parts.push(t("parentWitness.lead", { hint }));
+  return parts.join(" ");
+}
 
 export function trailDirections(state, target, t) {
   const east = target.col - state.col, south = target.row - state.row;
@@ -201,11 +218,16 @@ export function setupTrail(t, { context, interview, discover }) {
     action.textContent = t(trail.index === trail.stages.length - 1 ? "trailMeet" : "trailInterview");
     const history = document.querySelector("#trail-history");
     history.replaceChildren();
-    for (const facts of trail.history) {
+    for (const [index, facts] of trail.history.entries()) {
       const item = document.createElement("li");
-      if (facts.next && modern) paragraph(item, `${t(`clueAction.${facts.clueKind}`)} — ${t("clueHistory", {
-        place: facts.place, next: facts.next.name,
-      })}`);
+      if (facts.next && modern) {
+        paragraph(item, `${t(`clueAction.${facts.clueKind}`)} — ${t("clueHistory", {
+          place: facts.place, next: facts.next.name,
+        })}`);
+        if (facts.clueKind === "discuss") paragraph(item, parentClueText(state, {
+          kind: facts.clueKind, step: index, nextName: facts.next.name, pending: false,
+        }, t));
+      }
       else if (facts.next) paragraph(item, t("trailDialogue", {
         parent: facts.parentName, place: facts.place, next: facts.next.name,
       }));
@@ -239,11 +261,7 @@ export function setupTrail(t, { context, interview, discover }) {
     document.querySelector("#trail-discovery").hidden = !discovery;
     if (discovery) {
       document.querySelector("#trail-discovery-title").textContent = t(`clueAction.${discovery.kind}`);
-      document.querySelector("#trail-discovery-text").textContent = discovery.nextName
-        ? t(`clueText.${discovery.kind}`, {
-          hint: discovery.pending ? discovery.venue : discovery.nextName,
-          parent: trail.parentName,
-        }) : t("trailReunion", { parent: trail.parentName });
+      document.querySelector("#trail-discovery-text").textContent = parentClueText(state, discovery, t);
       photo.hidden = discovery.kind !== "photo";
       if (discovery.kind === "photo") void renderPhoto(state, discovery);
       else clearPhoto();

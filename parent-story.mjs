@@ -21,6 +21,19 @@ export function parentClues(trail, index = trail.index) {
   return trail.story?.visits[index].clues ?? CLUES[index % CLUES.length];
 }
 
+export function parentSighting(state, index) {
+  const stage = state.trail.stages[index];
+  let hash = 2166136261;
+  for (const char of `${state.startedAt}:${stage.witnessId}`) {
+    hash = Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0;
+  }
+  const visit = state.trail.story?.visits[index];
+  if (!visit) return { variant: hash % 3, precision: null };
+  const ageDays = Math.max(0, Math.floor(
+    (state.startedAt + state.elapsedMinutes * 60_000 - visit.departure) / 86_400_000));
+  return { variant: hash % 3, precision: ageDays < 7 ? "recent" : ageDays < 30 ? "weeks" : "old" };
+}
+
 export function validateParentStory(trail) {
   const story = trail.story;
   if (story === undefined) return;

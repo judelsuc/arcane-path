@@ -42,9 +42,11 @@ verifiee, pas seulement du code prepare. Voir le
   - [x] Reessais idempotents, reprise locale et anciennes sauvegardes preserves.
   - [x] Moteur A* borne sur la grille, persistance, cache et demande volontaire dans le journal.
   - [ ] Recit factuel, chronologie, fausses pistes et poursuite mobile : en validation locale, non deployes.
-  - [ ] Validation en conditions reelles d'une etape distante complete (30–60 km).
-  - [ ] Algorithme complet du parent et validation de resolubilite.
-- [ ] Couche 15 juste apres la couche 9 : photos et carnet de voyage, export PDF.
+  - [x] Dialogues varies, souvenirs vieillissants sans perte des indices et presentation claire du motif/sejours (code).
+- [ ] Plus tard (R-083) : validation terrain 30–60 km, budget de survie,
+  nuits/achats sur le trajet et destinations guidees par le motif.
+- [ ] Couche 15 apres le jalon narratif leger : photos et carnet de voyage, export PDF,
+  sans attendre les simulations avancees reportees.
 - [ ] Autres couches du document de conception, avec checkpoints testes.
 - [ ] R-062 : caches d'objets persistantes, pour les autres joueurs et ses prochaines parties.
 - [ ] R-063 : indices d'arcanes plus precis avec la proximite ; habillage narratif LLM ulterieur.
