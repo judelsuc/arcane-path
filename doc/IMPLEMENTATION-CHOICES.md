@@ -48,6 +48,12 @@ shortcuts, especially free meals and unrestricted outdoor sleep.
 - A random-rhythm test now correctly treats rest slots after the last note's
   end time as inactive, avoiding an intermittent test-only failure. No change
   to musical scoring, timing, charisma or audio.
+- Released as isolated runtime 49ba8c7 (deploy-2026-10-17-layer-nine).
+  Authenticated HTTPS assets and backend hashes match the package. A real
+  production-generated story passes browser genesis/save validation and
+  idempotent replay. All thirteen pre-release server records remain exactly
+  identical; consistent SQLite backup taken first. Services/API are healthy.
+  This completes the lightweight milestone, not the deferred full simulation.
 
 ## Parent-trail clue reminders, without exact navigation
 

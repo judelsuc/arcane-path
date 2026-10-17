@@ -1,5 +1,37 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - couche 9, jalon narratif leger termine
+
+- **17 octobre 2026** : runtime `49ba8c7`, tag
+  `deploy-2026-10-17-layer-nine`, base live `4b3c836`.
+  Developpement correspondant : `f6bc5c4` et generateur deja present sur la
+  branche de developpement, auparavant exclu du runtime.
+- Onze fichiers runtime et manifeste : generateur de recit du parent pour les
+  nouvelles parties, chronologie, fausses pistes facultatives, poursuite mobile
+  finie ; preparation automatique de la seule etape de reference courante,
+  non bloquante, erreurs visibles et reessai hors du journal.
+- 290 tests JavaScript reussis. Python : 133/135 reussis ; les deux echecs
+  de configuration photo (10 dans YAML contre 5 exporte/attendu) ont ete
+  reproduits sur la base live inchangee. Aucun changement de config.yml.
+- Verifications navigateur FR/EN avec vraie creation serveur locale et
+  terrain/chemins explicitement simules : panne de reference non bloquante,
+  sauvegarde/reprise du recit, indice obtenu et visite decouverte preserves.
+  Tests narratifs jusqu'aux retrouvailles stationnaires, mobiles precoces et
+  treizieme ville, avec sauvegarde/relecture apres chaque transition.
+- Huit assets HTTPS compares octet par octet ; trois scripts Python compares
+  par SHA-256. Creation reelle HTTPS, replay idempotent et lecture verifies,
+  puis validation navigateur et sauvegarde/relecture du depart reel.
+- Backup SQLite coherent avant livraison :
+  `/var/lib/arcane-path/backups/journeys-before-49ba8c7.sqlite3` (0600).
+  Les treize departs precedents sont verifies strictement identiques apres
+  mise a jour. Le seul nouveau depart de controle est conserve comme les autres.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-49ba8c7.tar.gz`
+  (0600). Le nouveau script parent_story.py reste inerte si les anciens imports
+  sont restaures. Service arcane-path redemarre ; API disponible, Nginx valide,
+  services actifs, lien `.cache` et caches partages preserves.
+- Simulation avancee terrain/budget de survie toujours reportee (R-083).
+  Recherche d'hebergements et autres modifications en attente non incluses.
+
 ## Derniere livraison - piste du parent sans navigation precise
 
 - **17 octobre 2026** : runtime `4b3c836`, tag
