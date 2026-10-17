@@ -22,6 +22,7 @@ verifiee, pas seulement du code prepare. Voir le
 - [x] Huit voisins visibles precharges meme a l'arret, reessais temporaires espaces.
 - [x] Repas simple payant dans toutes les localites, restaurants OSM en contexte.
 - [x] Melodie, basse et retours de frappe synchronises au mini-jeu musical.
+- [x] Erreurs musicales : echec sans gain a 3-8 erreurs selon le charisme de la carte de depart.
 - [x] Popup des raccourcis et de leur usage a la preparation, rouvrable avec ?.
 - [x] Evanouissement a 100 fatigue : 8 h, retour a 40, risque de vol selon lieu/tarots.
 - [x] Acces OpenStack au bon projet et inventaire de Paris verifies.

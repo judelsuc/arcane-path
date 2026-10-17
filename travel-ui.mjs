@@ -11,7 +11,7 @@ import { setupDailyTarot } from "./daily-tarot-ui.mjs";
 import { survivalChoice } from "./survival-choices.mjs";
 import { setupSurvivalChoices } from "./survival-choices-ui.mjs";
 import { setupEconomyUI } from "./economy-ui.mjs";
-import { beginBusking, settleBusking } from "./music.mjs";
+import { beginBusking, settleBusking, musicMistakeLimit } from "./music.mjs";
 import { setupMusic } from "./music-ui.mjs";
 import { interviewTrail } from "./trail.mjs";
 import { createServerJourney } from "./server-journey.mjs";
@@ -209,6 +209,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     },
   });
   const musicUI = setupMusic(t, {
+    mistakeLimit: () => state ? musicMistakeLimit(state) : null,
     audio: musicAudio,
     available: () => {
       const current = economyContext();
@@ -227,10 +228,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         return false;
       }
     },
-    settle(hits) {
+    settle(hits, mistakes) {
       if (!state?.performancePending) return null;
       try {
-        state = settleBusking(state, hits);
+        state = settleBusking(state, hits, mistakes);
         autosave();
         localize();
         return state.lastEarningsCents;

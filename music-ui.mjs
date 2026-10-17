@@ -1,6 +1,6 @@
 import { MUSIC, rhythm, beatTime, rhythmEnd, tapRhythm } from "./music.mjs";
 
-export function setupMusic(t, { begin, settle, available, audio }) {
+export function setupMusic(t, { begin, settle, available, audio, mistakeLimit = () => MUSIC.minMistakes }) {
   const dialog = document.querySelector("#music-dialog");
   const play = document.querySelector("#music-start");
   const tap = document.querySelector("#music-tap");
@@ -16,6 +16,9 @@ export function setupMusic(t, { begin, settle, available, audio }) {
     play.textContent = t("musicStart");
     tap.disabled = !game;
     result.textContent = feedback;
+    const limit = game?.mistakeLimit ?? mistakeLimit();
+    document.querySelector("#music-card-effect").textContent = limit === null ? ""
+      : t("musicCardEffect", { charisma: limit - 2, limit });
   }
 
   function render(now) {
@@ -36,6 +39,7 @@ export function setupMusic(t, { begin, settle, available, audio }) {
       note++;
     }
     document.querySelector("#music-score").textContent = `${t("musicScore", { hits, total: MUSIC.beats })} — ${
+      t("musicMistakes", { mistakes: game.mistakes, limit: game.mistakeLimit })} — ${
       t("musicLoop", { loop: loop + 1, total: MUSIC.loops })}`;
     const cursor = Math.max(0, Math.min(100, (now - game.startedAt) /
       (rhythmEnd(game) - game.startedAt) * 100));
@@ -47,11 +51,13 @@ export function setupMusic(t, { begin, settle, available, audio }) {
     clearInterval(timer);
     timer = undefined;
     audio.stop();
-    const hits = cancelled ? 0 : game.hits.filter(Boolean).length;
+    const mistakes = game.mistakes, limit = game.mistakeLimit, failed = mistakes >= limit;
+    const hits = cancelled || failed ? 0 : game.hits.filter(Boolean).length;
     game = undefined;
-    settled = settle(hits);
-    feedback = settled === null ? t("musicFailed") : t(cancelled ? "musicCancelled" : "musicReward", {
-      hits, total: MUSIC.beats, money: (settled / 100).toFixed(2),
+    settled = settle(hits, mistakes);
+    feedback = settled === null ? t("musicFailed") : t(failed ? "musicTooManyMistakes"
+      : cancelled ? "musicCancelled" : "musicReward", {
+      hits, total: MUSIC.beats, money: (settled / 100).toFixed(2), limit,
     });
     localize();
   }
@@ -64,7 +70,7 @@ export function setupMusic(t, { begin, settle, available, audio }) {
       return;
     }
     feedback = "";
-    game = rhythm(performance.now());
+    game = rhythm(performance.now(), Math.random, mistakeLimit());
     void audio.start(game);
     track.replaceChildren();
     beats.length = 0;
@@ -89,9 +95,10 @@ export function setupMusic(t, { begin, settle, available, audio }) {
     const now = performance.now();
     if (now > rhythmEnd(game)) return finish();
     const next = tapRhythm(game, now);
-    audio.hit(next !== game);
+    audio.hit(next.hits !== game.hits);
     game = next;
     render(now);
+    if (game.mistakes >= game.mistakeLimit) finish();
   }
   function open() {
     if (!available() || document.querySelector("dialog[open]")) return;

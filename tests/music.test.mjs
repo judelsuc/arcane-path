@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { MUSIC, rhythm, beatTime, rhythmEnd, tapRhythm, beginBusking, settleBusking } from "../music.mjs";
+import { MUSIC, rhythm, beatTime, rhythmEnd, tapRhythm, beginBusking, settleBusking, musicMistakeLimit } from "../music.mjs";
 import { startEconomy, buyMeal, sleepEconomy, restEconomy } from "../economy.mjs";
 import { startSurvival } from "../survival.mjs";
 
@@ -17,11 +17,15 @@ test("rhythm counts each note once, including exact tolerance endpoints", () => 
   let game = tapRhythm(initial, beatTime(initial, 0) - MUSIC.windowMs);
   assert.equal(game.hits[0], true);
   assert.equal(initial.hits[0], false);
-  assert.equal(tapRhythm(game, beatTime(game, 0)), game);
+  game = tapRhythm(game, beatTime(game, 0));
+  assert.equal(game.mistakes, 1);
   game = tapRhythm(game, beatTime(game, 1) + MUSIC.windowMs);
   assert.equal(game.hits[1], true);
-  assert.equal(tapRhythm(game, beatTime(game, 2) + MUSIC.windowMs + 0.01), game);
-  assert.equal(tapRhythm(game, 0), game);
+  game = tapRhythm(game, beatTime(game, 2) + MUSIC.windowMs + 0.01);
+  assert.equal(game.mistakes, 2);
+  game = tapRhythm(game, 0);
+  assert.equal(game.mistakes, 3);
+  assert.equal(tapRhythm(game, beatTime(game, 3)), game);
   assert.equal(tapRhythm(game, rhythmEnd(game) + 1), game);
   assert.throws(() => tapRhythm(game, NaN));
 });
@@ -33,7 +37,10 @@ test("perfect sequence hits all 24 notes over three irregular loops; rests never
   const empty = rhythm(0);
   for (let loop = 0; loop < 3; loop++) {
     for (const slot of empty.pattern.flatMap((note, slot) => note ? [] : [slot])) {
-      assert.equal(tapRhythm(empty, MUSIC.leadMs + (loop * 12 + slot) * MUSIC.intervalMs), empty);
+      const missed = tapRhythm(empty, MUSIC.leadMs + (loop * 12 + slot) * MUSIC.intervalMs);
+      assert.equal(missed.hits, empty.hits);
+      assert.equal(missed.mistakes, 1);
+      assert.equal(empty.mistakes, 0);
     }
     assert.equal(beatTime(empty, loop * 8), MUSIC.leadMs +
       (loop * 12 + empty.pattern.indexOf(1)) * MUSIC.intervalMs);
@@ -42,6 +49,21 @@ test("perfect sequence hits all 24 notes over three irregular loops; rests never
   const first = beatTime(spam, 0);
   for (let i = 0; i < 50; i++) spam = tapRhythm(spam, first + i);
   assert.equal(spam.hits.filter(Boolean).length, 1);
+  assert.equal(spam.mistakes, MUSIC.minMistakes);
+});
+
+test("third wrong tap ends scoring; success never erases earlier mistakes", () => {
+  let game = rhythm(0, () => 0.99);
+  const rest = MUSIC.leadMs + game.pattern.indexOf(0) * MUSIC.intervalMs;
+  game = tapRhythm(game, rest);
+  game = tapRhythm(game, beatTime(game, 0));
+  assert.equal(game.mistakes, 1);
+  assert.equal(game.hits.filter(Boolean).length, 1);
+  game = tapRhythm(game, beatTime(game, 1) - MUSIC.windowMs - .01);
+  assert.equal(game.mistakes, 2);
+  game = tapRhythm(game, rest);
+  assert.equal(game.mistakes, 3);
+  assert.equal(tapRhythm(game, beatTime(game, 2)), game);
 });
 
 test("each performance draws its own eight-note four-rest phrase and retains it throughout all loops", () => {
@@ -83,6 +105,50 @@ test("rewards are score-proportional integer cents and settle exactly once", () 
     assert.throws(() => settleBusking(next, hits), /No active/);
   }
   for (const score of [-1, 25, 2.5]) assert.throws(() => settleBusking(state, score));
+  const limit = musicMistakeLimit(state);
+  const failed = settleBusking(state, 24, limit);
+  assert.equal(failed.walletCents, state.walletCents);
+  assert.equal(failed.lastEarningsCents, 0);
+  assert.equal(failed.performancePending, null);
+  assert.equal(failed.elapsedMinutes, state.elapsedMinutes);
+  assert.equal(failed.fatigue, state.fatigue);
+  assert.equal(settleBusking(state, 24, 2).lastEarningsCents, 1120);
+  for (const mistakes of [-1, limit + 1, 2.5, NaN]) {
+    assert.throws(() => settleBusking(state, 24, mistakes), /mistake/);
+  }
+});
+
+test("all 22 starting cards grant 3–8 mistakes based on charisma, never on the daily card", () => {
+  const limits = new Set();
+  for (const card of data.tarot) {
+    const state = { ...start(), birthCard: card.id };
+    const limit = musicMistakeLimit(state);
+    assert.ok(Number.isInteger(limit) && limit >= 3 && limit <= 8);
+    limits.add(limit);
+    for (const daily of data.tarot) {
+      assert.equal(musicMistakeLimit({ ...state, dailyCard: daily.id }), limit);
+    }
+    let game = rhythm(0, () => .99, limit);
+    const rest = MUSIC.leadMs + game.pattern.indexOf(0) * MUSIC.intervalMs;
+    const pending = beginBusking(state, cell, info, survival, data);
+    game = tapRhythm(game, beatTime(game, 0));
+    for (let errors = 1; errors <= limit; errors++) {
+      game = tapRhythm(game, rest);
+      assert.equal(game.mistakes, errors);
+      const paid = settleBusking(pending, 1, errors);
+      assert.equal(paid.lastEarningsCents > 0, errors < limit);
+    }
+    assert.equal(tapRhythm(game, beatTime(game, 1)), game);
+    assert.equal(game.hits.filter(Boolean).length, 1);
+  }
+  assert.deepEqual([...limits].sort(), [3, 4, 5, 6, 7, 8]);
+  assert.equal(musicMistakeLimit({ birthCard: "hermit" }), 3);
+  assert.equal(musicMistakeLimit({ birthCard: "magician" }), 8);
+  assert.throws(() => musicMistakeLimit({ birthCard: "unknown" }), /starting card/);
+  assert.throws(() => musicMistakeLimit({ birthCard: "constructor" }), /starting card/);
+  for (const limit of [2, 9, 3.5, NaN]) {
+    assert.throws(() => rhythm(0, Math.random, limit), /mistake limit/);
+  }
 });
 
 test("cancelled performance costs remain and exhausted or remote characters cannot earn", () => {

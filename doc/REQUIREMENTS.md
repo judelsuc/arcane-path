@@ -1,5 +1,19 @@
 # Requirements tracked outside the design PDF
 
+## R-094 - Music mistakes and starting-card charisma
+
+- Playing on a rest, outside the note's +/-150 ms window, before the phrase,
+  or on an already scored note counts as one mistake. Holding Space does not
+  generate extra mistakes. Missing a note still reduces the normal hit score.
+- **User decision:** The starting card alone determines a failure threshold
+  from 3 to 8 mistakes. More charismatic cards allow more mistakes; the daily
+  card does not affect this limit. Show charisma, limit and the live count.
+- Reaching the limit immediately ends the performance, stops audio and awards
+  nothing, even after successful notes. Time, energy and fatigue already spent
+  remain spent. Fewer mistakes preserve the existing hit-proportional reward.
+- Keep the drawn rhythm and tolerance fixed throughout the performance.
+  Old saves need no migration: derive charisma from their existing birthCard.
+
 ## R-093 - Daily meal price and hunger-recovery variation
 
 - **User decision:** Moderate variation, 70-150% of the local price, stable

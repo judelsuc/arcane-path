@@ -6,6 +6,38 @@ All survival numbers below are gameplay approximations, not medical advice.
 Sections are chronological checkpoint records: later layers supersede earlier
 shortcuts, especially free meals and unrestricted outdoor sleep.
 
+## Street-performance mistakes and starting-card charisma
+
+- R-094: rhythm state keeps an immutable per-performance mistake limit and a
+  cumulative wrong-tap count. A wrong tap never scores; reaching the limit
+  freezes scoring and immediately settles for zero. Settlement independently
+  checks the starting-card threshold, so prior hits cannot produce earnings
+  after failure. Successful taps never erase mistakes.
+- Charisma is a music-specific 1-6 rating, derived from the saved birthCard;
+  threshold = charisma + 2. It is not a new physical attribute or save field.
+  No daily-card effect, random tolerance draw or change to the existing timing.
+
+| Charisma | Failure at | Starting cards |
+| --- | --- | --- |
+| 1 | 3 mistakes | Hermit, Nameless Arcana, Tower |
+| 2 | 4 mistakes | High Priestess, Hanged Man, Moon |
+| 3 | 5 mistakes | Justice, Wheel of Fortune |
+| 4 | 6 mistakes | Fool, Emperor, Hierophant, Chariot, Temperance, Judgement |
+| 5 | 7 mistakes | Empress, Strength, Star, World |
+| 6 | 8 mistakes | Magician, Lovers, Devil, Sun |
+
+- FR/EN instructions and the card-effect line explain the threshold before
+  starting; live score includes mistakes/limit and the failure message explains
+  zero earnings and retained costs. Rest, early/late, duplicate and repeated-key
+  behavior are covered; all 22 cards and 484 birth/daily combinations are checked.
+- Validation: 22 focused music/audio/localization tests pass, including both
+  endpoint limits, immediate stop, one settlement only, zero payout after prior
+  hits and unchanged below-limit reward. All 274 isolated live-base JavaScript
+  tests pass. Browser checks in French and English verified Hermit (3) and
+  Magician (8): one successful note followed by wrong rest presses immediately
+  ended with zero earnings, an unchanged wallet, 30 minutes and four fatigue
+  spent, and the expected visible error count and card-effect explanation.
+
 ## Daily meal offers and price-proportional hunger recovery
 
 - R-093: shared mealOffers wraps the existing meal catalogue/venue filtering.
