@@ -645,6 +645,11 @@ Les futurs evenements nocturnes dangereux dependront du tarot du jour ;
 leurs mini-jeux ne sont pas encore actifs. Attendre reellement ou regarder
 la carte ne passe toujours pas de temps.
 
+L'agenda, le cadran et la meteo partagent un meme panneau. Son fond devient
+bleu jusqu'a 0 C, bleu-vert sous 10 C, vert jusqu'a 25 C, ambre jusqu'a 30 C
+et rouge au-dela, selon la temperature estimee a la position du joueur.
+Des gouttes decoratives apparaissent sous la pluie ou l'orage, sans animation.
+Sans donnees meteo, le fond reste neutre et les gouttes disparaissent.
 L'agenda et le cadran affichent la date et l'heure simulees en UTC, avec
 libelles francais/anglais et texte accessible complet. Les aiguilles n'avancent
 pas en temps reel. **Copier les coordonnees** copie le centre de la case du joueur
@@ -719,11 +724,15 @@ n'est pas conserve apres fermeture ou rechargement du voyage.
 
 La fenetre de la piste du parent (J) separe les consignes et le rappel de la
 piste dans une colonne laterale, des boutons d'enquete et des resultats dans
-la zone principale. Sur petit ecran, la colonne passe au-dessus des actions.
+la zone principale. Sur petit ecran, le contenu principal precede les consignes.
 Le bouton Nouveau voyage reste sur l'ecran principal, pas dans le journal J.
-Les indices et photos precedent les actions de recherche, y compris sur
-mobile. Les couts restent visibles ; les explications detaillees de la
-recherche se deploient a la demande.
+Le bouton de recherche et son cout resume restent en haut ; les longues
+explications se deploient a la demande. Les indices portent leur date de jeu
+(UTC), du plus recent au plus ancien, dans une page par etape. Une destination
+atteinte est marquee et ouvre immediatement une nouvelle page pour chercher
+la piste suivante, sans avancer la quete avant l'enquete sur place.
+Les pages precedentes restent consultables, sans devoiler les futures villes.
+Les anciennes entrees sans date le signalent, sans inventer un horodatage.
 Retrouver un indice deja connu ne cree pas de doublon : le resultat signale
 explicitement qu'aucun nouvel indice n'a ete ajoute, avec les couts payes.
 Lorsqu'un temoin propose un nom de ville dans I, son avis indique aussi la
@@ -733,6 +742,18 @@ bonne destination ; le temoin peut toujours se tromper.
 
 ### Carnet de photos
 
+Les tirages de naissance et du jour utilisent les scans du Tarot de Marseille
+de Jean Dodal (vers 1701, domaine public), servis localement avec leur source.
+Les 22 arcanes et le dos historique remplacent les dessins ASCII des tirages.
+Chaque tirage est automatiquement epingle dans le carnet avec son role,
+son nom, sa date de jeu et une interpretation modifiable comme note.
+Une meme carte tiree deux jours differents reste deux souvenirs distincts.
+Reprendre un voyage ajoute sa carte de naissance et sa carte du jour deja
+revelee si elles manquent, sans ecraser les notes. Les anciennes cartes
+des jours passes non conserves dans la sauvegarde ne sont pas reconstruites.
+Les erreurs d'image ou de stockage sont visibles ; l'epinglage propose
+de reessayer et n'empeche pas de poursuivre le voyage.
+
 Le bouton **Mon carnet** dans l'en-tete (A) ouvre un carnet a deux pages
 avec une reliure spirale centrale. Dans la fenetre d'une photo de carte,
 de nature ou d'indice, **Epingler dans mon carnet** conserve l'image affichee,
@@ -741,10 +762,30 @@ blancs, avec un champ de note a l'ecriture manuscrite sous l'image.
 La note est enregistree en quittant le champ ou avec **Garder ma note**.
 Les fleches tournent les doubles pages ; retirer une photo demande confirmation.
 
-Ce carnet est commun aux voyages de ce navigateur. Il est conserve dans une
-base IndexedDB separee du cache photo et des sauvegardes de voyage :
-effacer le cache photo ne le vide pas. Il n'est pas synchronise entre appareils ;
-effacer toutes les donnees du site dans le navigateur l'efface aussi.
+Chaque voyage possede son propre carnet IndexedDB, independant du cache photo.
+Un nouveau depart ne reprend pas les photos et notes du voyage precedent.
+Au deces ou avant de remplacer la sauvegarde, le carnet complet est laisse
+a la derniere position du personnage sur le serveur. Photos, notes, cartes
+et indices sont alors partageables : n'y inscrivez pas de donnees privees.
+Le nouveau depart avertit de ce partage et attend la confirmation du serveur ;
+en cas d'echec, l'ancien carnet et la sauvegarde restent conserves.
+Les depots complets attendent dans une file IndexedDB en cas de panne reseau.
+Les anciens carnets sans voyage sont rattaches au voyage repris ou remplace
+lors de la migration ; leur provenance entre anciennes parties est inconnue.
+Le partage accepte JPEG, PNG, WebP et GIF, 12 Mo par image et 48 Mio au total
+(1000 entrees maximum). Un depassement est signale sans publication partielle.
+
+Le panneau **SIDEQUEST - Journaux abandonnes** recherche a votre position
+(200 m), permet une prise exclusive puis la lecture du carnet recueilli.
+Il reste distinct du votre et n'est pas modifiable. Suivez ses etapes pour
+le rendre a son parent, sans modifier votre propre quete. Pour un parent
+mobile, cette livraison conserve sa position au moment du depot ; elle ne
+simule pas un second parent mobile. Les reclamations expirent apres sept
+jours d'inactivite ; les carnets portes sont relaches a la derniere position
+signalee du porteur a son deces ou nouveau depart, une fois connecte.
+La base serveur `abandoned-journals.sqlite3` est distincte des genese immuables
+et doit etre sauvegardee avec celles-ci. Les images et notes deposees restent
+sur le serveur meme si les donnees locales du navigateur sont effacees.
 Les photos d'indices vagues restent sans titre geographique dans le carnet,
 et les notes personnelles ne constituent pas des indices confirmes.
 

@@ -19,7 +19,10 @@ test("parent trail separates guidance from investigation while keeping action/re
   }
   assert.match(main, /id="trail-interview"[^>]*><\/button>\s*<p data-i18n="trailCost"/);
   assert.ok(main.indexOf('id="trail-discovery"') < main.indexOf('id="trail-history"'));
-  assert.ok(main.indexOf('id="trail-history"') < main.indexOf('id="trail-actions"'));
+  assert.ok(main.indexOf('id="trail-actions"') < main.indexOf('id="trail-history"'));
+  for (const id of ["trail-page-previous", "trail-page-next", "trail-page-current", "trail-page-status"]) {
+    assert.match(main, new RegExp(`id="${id}"`));
+  }
   const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
   assert.match(css, /\.trail-layout\s*\{[^}]*grid-template-columns:/);
   assert.match(css, /@media \(max-width: 760px\)\s*\{\s*\.trail-layout\s*\{ grid-template-columns: minmax\(0, 1fr\)/);

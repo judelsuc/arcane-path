@@ -24,18 +24,50 @@
 - **User request:** On a failed game over, leave the quest journal at the
   player's location and persist it on the server. Another player or a later
   run can find it, finish finding its owner's parent and return the journal.
-- Confirmed scope: publish quest clues and fictional journey history only,
-  not pinned photos or player-written notes. Publish automatically after failed
-  journeys, not after successful reunions.
+- Updated user decision: leave the entire notebook, including pinned photos,
+  handwritten notes, tarot and clues, at the player's last position on death
+  or starting over. A new journey gets an empty separate notebook. Warn that
+  the full abandoned content becomes readable by other players.
 - Finding a journal adds a delivery side quest and must not replace or alter
   the finder's own parent search.
 - Claim each journal atomically on the server for one finder at a time.
   Release after seven days without playing, and immediately when that finder
   dies. Persist progress and handle reloads, retries and concurrent pickups.
+## R-106 - Weather beside the agenda and clock
+
+- Display weather and temperature beside the agenda and clock in one panel.
+- Color its background with the estimated temperature at the player's position:
+  freezing blue, cold blue-green, mild green, warm amber and hot red.
+- Show decorative water drops during rain or storms, remove them when dry
+  or weather is unavailable; keep temperature and condition readable as text.
+
 - Arcane-object searches are also side quests. Their gameplay is explicitly
   deferred; do not implement it as part of abandoned-journal delivery.
-- Status: requirements agreed; server persistence, claims and delivery gameplay
-  are not implemented yet.
+- A separate capability-protected SQLite store retains immutable deposited
+  notebook snapshots; journey genesis is unchanged. Nearby journals (200 m)
+  can be claimed then read without editing in the SIDEQUEST panel. Visit each
+  remaining town (350 m) to return the journal, without changing the finder's quest.
+- Capabilities are generated and durably saved before creation requests; they
+  never appear in public journey lookups. Legacy saves receive a separate
+  random notebook-keeper identity and secret, not ownership of their public
+  genesis ID. Complete deposits use a durable IndexedDB outbox across reloads.
+  Starting over waits for successful publication; offline death release takes
+  effect on reconnection. Seven-day expiry is enforced by the next request.
+- Delivery uses the abandoned quest's fixed itinerary up to the parent's
+  position at abandonment, including mobile parents; it does not simulate a separate moving NPC
+  or generate another routed parent path. Coordinates and town names provide
+  manual navigation. Gameplay positions/outcomes remain client-reported, like
+  the rest of this unauthenticated prototype; capabilities prevent another
+  player using a public journey ID to mutate its journal or claims.
+
+## R-105 - Dated clue pages and top investigation button
+
+- Date clues in game UTC and order all clue types newest first.
+- Keep a page per stage; mark a physically reached destination, immediately
+  open a fresh page for the next lead without advancing the quest before
+  investigation, and retain navigable archives. Final reunion needs no further lead page.
+- Keep the investigation button and concise costs at the top. Long rules
+  stay collapsed. Unknown dates in older saves must be labeled, not invented.
 
 ## R-102 - Frequent narrative clues and protection against unlucky streaks
 
@@ -131,6 +163,35 @@
 - List at most 40 nearest results. A listed place only becomes a sleep action
   in its actual cell; existing prices, time costs and recovery still apply.
   Searching itself does not spend in-game time or money.
+
+## R-098 - Pin any photo into an open spiral notebook
+
+- **User request:** Any browsed photo, including map photos and clue photos,
+  can be pinned into a journal. Opening the journal should look like an open
+  notebook with a central spiral. Photos have a white frame with a handwritten
+  note underneath.
+- Add a persistent browser-local photo notebook, available from the header
+  with A. Two paper pages flank the central metal binding. Pinned photographs
+  appear as white prints; each has an editable handwritten-style caption.
+- Pin the actual displayed image, source, author and license. Keep vague clue
+  photos uncaptioned; do not reveal their geographic title in the notebook.
+  User-written notes do not count as confirmed quest evidence.
+- Store independent copies of pinned blobs/notes in a dedicated IndexedDB
+  database, not the disposable content cache or the journey's localStorage
+  save. Clearing the content cache must not erase the notebook. This notebook
+  is now scoped per journey (R-103); its full snapshot is shared only when
+  abandoned, while a new journey starts without the old photos or notes.
+- Deduplicate by source URL without overwriting existing notes. Save notes
+  when leaving their input or pressing the save button. Retain unsaved drafts
+  when turning pages and changing language. Removal requires confirmation.
+- Show only two photos at a time, release object URLs on page change/close,
+  and report storage, quota and image failures explicitly. Preserve keyboard
+  controls, credits and responsive layout in FR/EN.
+- Fix related field-photo visibility: the photo viewer must not live inside
+  the hidden town-discovery section when there is no town encounter yet.
+- A whole-tab freeze while loading photos was reported. Normal five-photo
+  browsing and clue-photo rendering did not reproduce it; do not claim that
+  the visibility fix proves the reported browser freeze is resolved.
 
 ## R-097 - Search anywhere, progressive clues and fallible recognition
 
@@ -431,8 +492,8 @@
   entries to show their local setting. Keep as a candidate feature; patch
   dimensions and exact presentation remain to be decided during Layer 15.
 - **Integration:** Include these requirements in Layer 15's photo/travel-journal
-  and PDF-export design. Personal notes do not introduce player-to-player
-  free-text sharing.
+  and PDF-export design. The later explicit R-103 decision permits free-text
+  notes to be shared as part of an abandoned notebook.
 
 ## R-078 - Music with rests and repeated phrases
 
@@ -1674,6 +1735,20 @@ This file records additions to the design without modifying the source PDF,
   reuse of arbitrarily old/incompatible grids.
 - A genuinely changed rasterizer still invalidates grids. Existing source and
   elevation caches remain reusable. Missing cells are not invented terrain.
+
+## R-104 - Historical tarot illustrations and automatic notebook pins
+
+- User chose historical public-domain Tarot de Marseille illustrations.
+- Replace birth/daily ASCII reveals with the complete Jean Dodal major
+  arcana deck and historical back; ship the images locally with provenance.
+- Automatically retain the birth draw and each revealed daily draw in the
+  notebook, recording role, name and game date with an editable interpretation.
+- Distinguish draws by journey, role and date, even when the same card returns;
+  retries and resume must not overwrite notes or duplicate a draw.
+- On resume, recover the birth card and currently acknowledged daily card.
+  Do not invent earlier daily draws missing from old saves.
+- Preserve tarot probabilities and character rules. Storage/image errors
+  must be visible, offer retry and not block gameplay.
 
 ## R-077 — Visible food-search and manual-save results
 

@@ -8,6 +8,7 @@ import { startSurvival } from "../survival.mjs";
 import { startEconomy } from "../economy.mjs";
 import { trailClue } from "../trail-actions.mjs";
 import { setupTrail, trailReminder, parentClueText, playerHint } from "../trail-ui.mjs";
+import { recordTrailArrival } from "../trail.mjs";
 import { createSave, validateSave } from "../journey-save.mjs";
 import { translate } from "../i18n.mjs";
 
@@ -487,6 +488,23 @@ for (const locale of ["fr", "en"]) {
     assert.match(element("#trail-target").textContent, /Secret Town 1/);
     assert.doesNotMatch(texts(element("#trail-history")).join(" "), /Secret Town 2/);
     assert.equal(state.trail.index, 0);
+    const dates = element("#trail-history").children.map(item => item.children.at(-1).dateTime);
+    assert.deepEqual(dates, [...dates].sort().reverse());
+    state = recordTrailArrival({ ...state, col: state.trail.stages[0].col });
+    ui.localize();
+    assert.equal(element("#trail-page-status").textContent,
+      translate(locale, "trailPageAwaiting", { page: 2, place: state.trail.stages[0].name }));
+    assert.equal(state.trail.index, 0);
+    state = trailClue(state, "letter", cell, info, survival, economy);
+    ui.localize();
+    assert.match(element("#trail-page-status").textContent, /2/);
+    assert.equal(element("#trail-page-current").disabled, true);
+    element("#trail-page-previous").events.click();
+    assert.match(element("#trail-page-status").textContent, /Secret Town 1/);
+    assert.equal(element("#trail-page-status").dataset.feedback, "success");
+    assert.equal(element("#trail-actions").hidden, true);
+    element("#trail-page-current").events.click();
+    assert.equal(element("#trail-actions").hidden, false);
     ui.reset();
   });
 }

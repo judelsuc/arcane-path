@@ -93,6 +93,8 @@ body:not(.is-title) .audio-controls { margin-bottom: 0; }
 }
 #title-heading span { color: #e5e7d9; }
 .birth-card-art { color: var(--accent); text-align: center; line-height: 1.2; }
+.tarot-card-image { display: block; width: auto; max-width: 100%; height: min(44dvh, 380px); object-fit: contain; margin: 0 auto 10px; border-radius: 6px; }
+.birth-card-art figcaption { font-size: 0.7rem; line-height: 1.5; }
 #birth-tarot-dialog, #daily-tarot-dialog { width: min(540px, 94vw); max-height: 90dvh; overflow: auto; }
 #birth-tarot-name, #daily-tarot-name { color: var(--accent); }
 #button-tooltip {
@@ -660,6 +662,8 @@ dialog p { margin: 12px 0; }
 .trail-guide { padding: 18px; background: #18251c; border: 1px solid var(--line); font-size: 0.85rem; line-height: 1.6; }
 .trail-guide h3, .trail-main > h3:first-child { margin-top: 0; }
 .trail-main { min-width: 0; }
+.trail-pages { display: flex; flex-wrap: wrap; gap: 8px; }
+.trail-entry-date { display: block; color: var(--muted); font-size: 0.75rem; margin-top: 8px; }
 #trail-history > li { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
 @media (max-width: 760px) {
   .trail-layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
@@ -794,15 +798,32 @@ dialog p { margin: 12px 0; }
 .travel-help summary { cursor: pointer; color: var(--accent); }
 .travel-panel h3 { margin: 0 0 10px; }
 .travel-panel a { color: var(--accent); }
-#travel-clock {
+.journey-atmosphere {
+  position: relative;
+  isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   padding: 12px;
   border: 1px solid #66583d;
   border-radius: 8px;
   background: linear-gradient(135deg, #2a3022, #121a14);
+  overflow: hidden;
+}
+.journey-atmosphere[data-temperature="freezing"] { background: linear-gradient(135deg, #294663, #101c2d); }
+.journey-atmosphere[data-temperature="cold"] { background: linear-gradient(135deg, #254448, #102529); }
+.journey-atmosphere[data-temperature="mild"] { background: linear-gradient(135deg, #30422b, #152214); }
+.journey-atmosphere[data-temperature="warm"] { background: linear-gradient(135deg, #584324, #2b2114); }
+.journey-atmosphere[data-temperature="hot"] { background: linear-gradient(135deg, #642f26, #301914); }
+.climate-drops { display: none; position: absolute; inset: 0; width: 100%; height: 100%; fill: #a3dcff; opacity: 0.25; pointer-events: none; z-index: -1; }
+.journey-atmosphere[data-raining="true"] .climate-drops { display: block; }
+#travel-clock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 .agenda-page {
   position: relative;
@@ -852,7 +873,7 @@ dialog p { margin: 12px 0; }
 .travel-weather a { font-size: 0.65rem; }
 .travel-atmosphere {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   margin-top: 10px;
@@ -872,6 +893,7 @@ dialog p { margin: 12px 0; }
 #weather-condition { font-size: 0.75rem; }
 #weather-range, .weather-average { font-size: 0.6rem; color: var(--muted); }
 #weather-state { margin: 0; font-size: 0.65rem; }
+#weather-effects { font-size: 0.65rem; line-height: 1.5; overflow-wrap: anywhere; }
 #travel-status { margin: 10px 0 0; color: #e6b767; overflow-wrap: anywhere; }
 #travel-note { margin-bottom: 0; color: var(--muted); }
 .map-comparison .travel-viewport {

@@ -49,17 +49,19 @@ for (const locale of ["fr", "en"]) {
     assert.equal(element("#trail-target").textContent,
       tr("trailKnownDestination", { place: "Known destination" }));
     assert.equal(element("#trail-discovery-text").textContent, parentClueText(state, state.trail.discovery, tr));
+    element("#trail-page-previous").events.click();
     const history = element("#trail-history").children[0].children.map(p => p.textContent).join(" ");
     assert.ok(history.includes(element("#trail-discovery-text").textContent));
     assert.ok(!history.includes("fictional-traveler-1"));
     assert.ok(!history.includes("SECRET FUTURE"));
+    element("#trail-page-current").events.click();
     assert.ok(!elements.has("#trail-map-link"));
     assert.ok(!elements.has("#parent-path-status"));
     assert.ok(!elements.has("#parent-path-prepare"));
-    const target = element("#trail-target").textContent;
     state = { ...state, col: -300, row: 10 };
     ui.localize();
-    assert.equal(element("#trail-target").textContent, target);
+    assert.equal(element("#trail-target").textContent,
+      tr("trailPageAwaiting", { page: 3, place: "Known destination" }));
     assert.deepEqual(before.trail, state.trail);
     state = { ...state, col: 0, row: 0, trail: { ...state.trail, index: 6,
       stages: Array.from({ length: 10 }, (_, i) => ({
@@ -79,7 +81,7 @@ for (const locale of ["fr", "en"]) {
     assert.doesNotMatch(element("#trail-discovery-text").textContent, /SECRET NEXT/);
     state = { ...state, startedAt: Date.UTC(2026, 9, 17), elapsedMinutes: 0,
       trail: { ...state.trail, story: { motive: "family", mode: "walk", orientation: "upright",
-        finalState: "mobile", lore: [], falseLeads: [],
+        finalState: "mobile", lore: [], falseLeads: [], movement: [],
         visits: [{ arrival: Date.UTC(2026, 9, 16), departure: Date.UTC(2026, 9, 18),
           nights: 2, purchases: 3 }],
       } } };

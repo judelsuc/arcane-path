@@ -129,6 +129,10 @@
           <h3 id="travel-title" data-i18n="travelTitle"></h3>
           <p id="journey-play-save" role="status"></p>
           <div id="travel-controls" hidden>
+            <section id="journey-atmosphere" class="journey-atmosphere" aria-labelledby="weather-title" data-temperature="unknown" data-raining="false">
+            <svg class="climate-drops" viewBox="0 0 320 190" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M20 20q-8 12 0 12t0-12 M85 55q-8 12 0 12t0-12 M150 14q-8 12 0 12t0-12 M230 40q-8 12 0 12t0-12 M300 12q-8 12 0 12t0-12 M45 140q-8 12 0 12t0-12 M120 155q-8 12 0 12t0-12 M200 125q-8 12 0 12t0-12 M280 155q-8 12 0 12t0-12"/>
+            </svg>
             <time id="travel-clock" class="journey-time">
               <span class="agenda-page" aria-hidden="true">
                 <span id="agenda-weekday" class="agenda-weekday"></span>
@@ -153,6 +157,31 @@
                 <span class="agenda-caption" data-i18n="travelWalking"></span>
               </span>
             </time>
+            <section class="weather-card" aria-labelledby="weather-title">
+              <h4 id="weather-title" data-i18n="weatherTitle"></h4>
+              <div id="weather-display" hidden>
+                <svg class="weather-icon" viewBox="0 0 64 56" aria-hidden="true">
+                  <g data-weather-icon="clear">
+                    <circle cx="32" cy="26" r="12"/>
+                    <path d="M32 6V1 M32 46V51 M12 26H7 M52 26H57 M18 12L14 8 M46 40L50 44 M46 12L50 8 M18 40L14 44"/>
+                  </g>
+                  <g data-weather-icon="cloudy rain snow storm fog">
+                    <path d="M15 35C2 35 4 19 15 19C17 3 40 3 43 19C60 16 63 35 49 35Z"/>
+                  </g>
+                  <path data-weather-icon="rain" d="M18 42L14 50 M32 42L28 50 M46 42L42 50"/>
+                  <path data-weather-icon="snow" d="M18 42V52 M13 47H23 M40 42V52 M35 47H45"/>
+                  <path data-weather-icon="storm" d="M34 37L25 47H35L29 55"/>
+                  <path data-weather-icon="fog" d="M8 43H56 M14 50H50"/>
+                </svg>
+                <strong id="weather-temperature"></strong>
+                <span id="weather-condition"></span>
+                <span id="weather-range"></span>
+                <span class="weather-average" data-i18n="weatherAverage"></span>
+              </div>
+              <p id="weather-state" role="status"></p>
+              <p id="weather-effects" role="status"></p>
+            </section>
+            </section>
             <section class="player-needs" aria-labelledby="needs-title">
               <h4 id="needs-title" data-i18n="needsTitle"></h4>
               <p id="player-name"></p>
@@ -188,30 +217,6 @@
               </svg>
               <figcaption id="sky-times"></figcaption>
             </figure>
-            <section class="weather-card" aria-labelledby="weather-title">
-              <h4 id="weather-title" data-i18n="weatherTitle"></h4>
-              <div id="weather-display" hidden>
-                <svg class="weather-icon" viewBox="0 0 64 56" aria-hidden="true">
-                  <g data-weather-icon="clear">
-                    <circle cx="32" cy="26" r="12"/>
-                    <path d="M32 6V1 M32 46V51 M12 26H7 M52 26H57 M18 12L14 8 M46 40L50 44 M46 12L50 8 M18 40L14 44"/>
-                  </g>
-                  <g data-weather-icon="cloudy rain snow storm fog">
-                    <path d="M15 35C2 35 4 19 15 19C17 3 40 3 43 19C60 16 63 35 49 35Z"/>
-                  </g>
-                  <path data-weather-icon="rain" d="M18 42L14 50 M32 42L28 50 M46 42L42 50"/>
-                  <path data-weather-icon="snow" d="M18 42V52 M13 47H23 M40 42V52 M35 47H45"/>
-                  <path data-weather-icon="storm" d="M34 37L25 47H35L29 55"/>
-                  <path data-weather-icon="fog" d="M8 43H56 M14 50H50"/>
-                </svg>
-                <strong id="weather-temperature"></strong>
-                <span id="weather-condition"></span>
-                <span id="weather-range"></span>
-                <span class="weather-average" data-i18n="weatherAverage"></span>
-              </div>
-              <p id="weather-state" role="status"></p>
-              <p id="weather-effects" role="status"></p>
-            </section>
             <details class="travel-weather">
               <summary data-i18n="weatherDetails"></summary>
               <p id="weather-summary"></p>
@@ -255,6 +260,12 @@
           </div>
           <p id="travel-status" role="status"></p>
           <p id="journey-path-status" role="status"></p>
+          <details id="abandoned-journals" hidden>
+            <summary data-i18n="abandoned.title"></summary>
+            <p id="abandoned-status" role="status"></p>
+            <button id="abandoned-refresh" type="button" data-i18n="abandoned.refresh"></button>
+            <ul id="abandoned-list"></ul>
+          </details>
           <button id="journey-path-retry" type="button" data-i18n="journeyPath.retry" hidden></button>
         </section>
         <div class="map-comparison">
@@ -342,9 +353,11 @@
       <p id="birth-character-name"></p>
       <p data-i18n="birthTarotIntro"></p>
       <p id="birth-tarot-save" role="status"></p>
-      <pre class="birth-card-art" aria-hidden="true"></pre>
+      <figure class="birth-card-art"></figure>
       <button id="birth-tarot-draw" type="button" data-i18n="birthTarotDraw"></button>
       <div id="birth-tarot-reveal" hidden>
+        <div id="birth-tarot-journal"></div>
+        <div id="birth-daily-tarot-journal"></div>
         <h3 id="birth-tarot-name"></h3>
         <p id="birth-tarot-meaning"></p>
         <p id="birth-tarot-budget"></p>
@@ -359,9 +372,10 @@
       <p id="daily-tarot-date"></p>
       <p data-i18n="dailyTarotIntro"></p>
       <p id="daily-tarot-save" role="status"></p>
-      <pre id="daily-tarot-art" class="birth-card-art" aria-hidden="true"></pre>
+      <figure id="daily-tarot-art" class="birth-card-art"></figure>
       <button id="daily-tarot-draw" type="button" data-i18n="birthTarotDraw"></button>
       <div id="daily-tarot-reveal" hidden>
+        <div id="daily-tarot-journal"></div>
         <h3 id="daily-tarot-name"></h3>
         <p id="daily-tarot-meaning"></p>
         <p id="daily-tarot-events"></p>
@@ -381,6 +395,7 @@
       </div>
     </dialog>
     <dialog id="photo-journal-dialog" aria-labelledby="journal-title">
+      <section id="journal-abandoned-clues"></section>
       <header class="notebook-heading">
         <h2 id="journal-title" data-i18n="journalTitle"></h2>
         <form method="dialog"><button data-i18n="closePhoto"></button></form>
@@ -518,20 +533,29 @@
           </section>
           <p id="trail-catalogue-credit" hidden><a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames contributors</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
           <p id="trail-save-status" role="status"></p>
+          <div id="restored-birth-tarot-journal"></div>
+          <div id="restored-daily-tarot-journal"></div>
         </aside>
         <section class="trail-main" aria-labelledby="trail-main-title">
-          <h3 id="trail-main-title" data-i18n="trailHistoryTitle"></h3>
-          <section id="trail-discovery" hidden>
-            <h3 id="trail-discovery-title"></h3>
-            <blockquote id="trail-discovery-text"></blockquote>
-          </section>
-          <figure id="trail-clue-photo" hidden></figure>
-          <ol id="trail-history"></ol>
-          <h3 data-i18n="trailMainTitle"></h3>
+          <h3 id="trail-main-title" data-i18n="trailMainTitle"></h3>
           <button id="trail-interview" type="button" disabled></button>
           <p data-i18n="trailCost"></p>
           <div id="trail-actions"></div>
           <p id="trail-action-error" role="alert"></p>
+          <div class="trail-pages" aria-label="Pages">
+            <button id="trail-page-previous" type="button" data-i18n="trailPagePrevious"></button>
+            <button id="trail-page-current" type="button" data-i18n="trailPageCurrent"></button>
+            <button id="trail-page-next" type="button" data-i18n="trailPageNext"></button>
+          </div>
+          <p id="trail-page-status" role="status"></p>
+          <h3 data-i18n="trailHistoryTitle"></h3>
+          <section id="trail-discovery" hidden>
+            <h3 id="trail-discovery-title"></h3>
+            <blockquote id="trail-discovery-text"></blockquote>
+            <time id="trail-discovery-date" class="trail-entry-date"></time>
+          </section>
+          <figure id="trail-clue-photo" hidden></figure>
+          <ol id="trail-history"></ol>
         </section>
       </div>
     </dialog>
