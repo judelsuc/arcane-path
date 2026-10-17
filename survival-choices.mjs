@@ -1,5 +1,5 @@
 import { restSurvival, sleepSurvival } from "./survival.mjs";
-import { finishAction, marketPrice, tarotEventChance } from "./economy.mjs";
+import { finishAction, marketPrice, tarotEventChance, didFaint } from "./economy.mjs";
 
 export const CHOICE_RULES = Object.freeze({
   forage: Object.freeze({ minutes: 30, fatigue: 5, failureChance: 0.35, foodKcal: 450 }),
@@ -35,15 +35,14 @@ export function survivalChoice(state, kind, cell, info, survival, economy, rando
   let next = restSurvival(state, { ...survival,
     rest_minutes: rule.minutes, rest_fatigue_recovery: 0 });
   next = { ...next, fatigue: Math.min(100, next.fatigue + rule.fatigue) };
-  next = finishAction(state, { ...next, ended: next.ended ?? (next.fatigue >= 100 ? "fatigue" : null) },
-    info, economy, { random });
-  let outcome = next.ended ? "exhausted" : failure ? "nothing" : "food";
+  next = finishAction(state, next, info, economy, { random, survival });
+  let outcome = next.ended ? "exhausted" : didFaint(state, next) ? "fainted" : failure ? "nothing" : "food";
   let foodKcal = 0, moneyCents = 0, detentionMinutes = 0;
-  if (!next.ended) {
+  if (!next.ended && outcome !== "fainted") {
     if (kind === "steal" && failure) {
       const detained = sleepSurvival({ ...next, reserveKcal: survival.reserve_kcal },
         { ...survival, sleep_hours: rule.detentionHours });
-      next = finishAction(next, detained, info, economy, { sheltered: true, random });
+      next = finishAction(next, detained, info, economy, { sheltered: true, random, survival });
       detentionMinutes = rule.detentionHours * 60;
       outcome = "detained";
     } else if (!failure && kind === "beg") {

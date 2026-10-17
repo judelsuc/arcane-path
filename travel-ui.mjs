@@ -605,10 +605,11 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       const fromCell = stream.get(from.x, from.y).rows[from.row][from.col];
       const previous = state;
       state = walkSurvival(state, dc, dr, fromCell, target.rows[to.row][to.col], survivalConfig);
-      state = finishAction(previous, state, cellInfo(target, to.row, to.col), economyData);
+      state = finishAction(previous, state, cellInfo(target, to.row, to.col), economyData,
+        { survival: survivalConfig });
       autosave();
       onStep?.(target.rows[to.row][to.col].terrain);
-      if (!state.lastMove.elevationKnown) missingHeightMoves++;
+      if (state.lastMove && !state.lastMove.elevationKnown) missingHeightMoves++;
       if (target.elevation.error) error = target.elevation.error;
       resetContent();
       draw();

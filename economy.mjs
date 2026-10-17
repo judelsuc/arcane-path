@@ -1,6 +1,6 @@
 import { journeyDate } from "./travel.mjs";
 import { skyState } from "./sky.mjs";
-import { eatSurvival, sleepSurvival, restSurvival, characterProfile, canEat } from "./survival.mjs";
+import { eatSurvival, sleepSurvival, restSurvival, faintSurvival, characterProfile, canEat } from "./survival.mjs";
 
 export function validateEconomy(data) {
   const positive = n => Number.isFinite(n) && n > 0;
@@ -160,16 +160,71 @@ export function nightMinutes(state, minutes, info) {
   return night;
 }
 
-export function finishAction(previous, next, info, data, { sheltered = false, random = Math.random } = {}) {
+export function faintingRisk(state, info, data, sheltered = false) {
+  return tarotEventChance(sheltered ? 0.05 : info.terrain === "place" ? 0.3 : 0.15, state, data);
+}
+
+function collapseDraw(state, label) {
+  const identity = JSON.stringify(["fainting-v1", state.serverJourney?.seed ?? state.startedAt,
+    state.birthCard, state.faints ?? 0, state.col, state.row, state.elapsedMinutes, label]);
+  let hash = 2166136261;
+  for (const char of identity) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0;
+  return hash / 2 ** 32;
+}
+
+export function didFaint(previous, next) {
+  return (next.faints ?? 0) > (previous.faints ?? 0);
+}
+
+export function finishAction(previous, next, info, data,
+  { sheltered = false, random = Math.random, survival } = {}) {
+  if (previous.ended) throw new Error("This journey has ended.");
   const minutes = next.elapsedMinutes - previous.elapsedMinutes;
-  const exposed = sheltered ? 0 : nightMinutes(previous, minutes, info);
+  let exposed = sheltered ? 0 : nightMinutes(previous, minutes, info);
   const fatigue = Math.min(100, next.fatigue + exposed / 60 * data.rules.outdoorFatiguePerNightHour);
+  next = { ...next, fatigue };
+  if (fatigue >= 100 && next.ended !== "hunger") {
+    const startedMinutes = next.elapsedMinutes;
+    const chance = faintingRisk(previous, info, data, sheltered);
+    const robbed = collapseDraw(next, "robbery") < chance;
+    const stolenCents = robbed
+      ? Math.min(Math.floor(next.walletCents / 2),
+        Math.ceil(next.walletCents * (0.25 + collapseDraw(next, "loss") * 0.25))) : 0;
+    const recovered = faintSurvival(next, survival);
+    if (!sheltered) exposed += nightMinutes(next, 8 * 60, info);
+    next = { ...recovered, walletCents: next.walletCents - stolenCents,
+      faints: (next.faints ?? 0) + 1,
+      lastFaint: { startedMinutes, finishedMinutes: recovered.elapsedMinutes,
+        col: next.col, row: next.row, sheltered, chance, robbed, stolenCents,
+        walletBeforeCents: next.walletCents } };
+  }
   const day = journeyDate(next).toISOString().slice(0, 10);
-  return { ...next, fatigue, ended: next.ended ?? (fatigue >= 100 ? "fatigue" : null),
+  return { ...next,
     outdoorNightMinutes: previous.outdoorNightMinutes + exposed,
     dailyCard: day === previous.tarotDay ? previous.dailyCard : drawTarot(data, random),
     dailyTarotSeenDay: previous.dailyTarotSeenDay ?? previous.tarotDay,
     tarotDay: day };
+}
+
+export function validateFainting(state) {
+  if (state.faints === undefined && state.lastFaint === undefined) return;
+  const f = state.lastFaint;
+  const integer = n => Number.isSafeInteger(n) && n >= 0;
+  if (!Number.isSafeInteger(state.faints) || state.faints < 1 ||
+      !f || !Number.isFinite(f.startedMinutes) || f.startedMinutes < 0 ||
+      !Number.isFinite(f.finishedMinutes) || f.finishedMinutes > state.elapsedMinutes ||
+      Math.abs(f.finishedMinutes - f.startedMinutes - 480) > 1e-6 ||
+      state.faints * 480 > state.elapsedMinutes + 1e-6 ||
+      !Number.isSafeInteger(f.col) || Math.abs(Math.floor(f.col / 8)) > 1000 ||
+      !Number.isSafeInteger(f.row) || Math.abs(Math.floor(f.row / 8)) > 1000 ||
+      typeof f.sheltered !== "boolean" || typeof f.robbed !== "boolean" ||
+      !Number.isFinite(f.chance) || f.chance <= 0 || f.chance > (f.sheltered ? 0.075 : 0.45) + 1e-9 ||
+      !integer(f.walletBeforeCents) || !integer(f.stolenCents) ||
+      (!f.robbed && f.stolenCents !== 0) ||
+      (f.robbed && (f.stolenCents < Math.min(Math.floor(f.walletBeforeCents / 2),
+        Math.ceil(f.walletBeforeCents / 4)) || f.stolenCents > Math.floor(f.walletBeforeCents / 2)))) {
+    throw new Error("Invalid fainting history in journey save.");
+  }
 }
 
 function charge(state, cents) {
@@ -185,7 +240,7 @@ export function buyMeal(state, cell, info, mealId, survival, data) {
   if (!meal) throw new Error("No local meal available in the player's cell.");
   const paid = charge(state, marketPrice(cell, meal.mealUnits, data, info).cents);
   const next = eatSurvival(paid, cell, { ...survival, meal_kcal: meal.reserveKcal });
-  return finishAction(state, next, info, data, { sheltered: true });
+  return finishAction(state, next, info, data, { sheltered: true, survival });
 }
 
 export function sleepEconomy(state, cell, info, shelterId, survival, data) {
@@ -197,7 +252,7 @@ export function sleepEconomy(state, cell, info, shelterId, survival, data) {
     sleep_fatigue_recovery_per_hour: 0,
     sleep_recovery_per_hour: survival.sleep_recovery_per_hour * data.rules.outdoorSleepRecoveryFactor };
   const next = sleepSurvival(paid, config);
-  return finishAction(state, next, info, data, { sheltered: Boolean(shelter) });
+  return finishAction(state, next, info, data, { sheltered: Boolean(shelter), survival });
 }
 
 export function restEffect(state, info, survival, data) {
@@ -210,5 +265,5 @@ export function restEffect(state, info, survival, data) {
 export function restEconomy(state, info, survival, data) {
   const next = restSurvival(state, { ...survival,
     rest_fatigue_recovery: restEffect(state, info, survival, data).recovery });
-  return finishAction(state, next, info, data);
+  return finishAction(state, next, info, data, { survival });
 }

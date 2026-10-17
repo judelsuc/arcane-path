@@ -1,6 +1,6 @@
 import { atTrailTarget, witnessFacts } from "./trail.mjs";
 import { restSurvival } from "./survival.mjs";
-import { finishAction, marketPrice } from "./economy.mjs";
+import { finishAction, marketPrice, didFaint } from "./economy.mjs";
 
 export const CLUE_ACTIONS = Object.freeze({
   discuss: { minutes: 15, fatigue: 1, kcal: 10 },
@@ -35,8 +35,8 @@ export function trailClue(state, kind, cell, info, survival, economy) {
   const fatigue = Math.min(100, rested.fatigue + rule.fatigue);
   let next = finishAction(state, { ...rested, reserveKcal, fatigue,
     energyKcal: rested.energyKcal + rule.kcal,
-    ended: rested.ended ?? (reserveKcal <= 0 ? "hunger" : fatigue >= 100 ? "fatigue" : null) }, info, economy);
-  if (next.ended) return next;
+    ended: rested.ended ?? (reserveKcal <= 0 ? "hunger" : null) }, info, economy, { survival });
+  if (next.ended || didFaint(state, next)) return next;
   const facts = witnessFacts(state);
   const target = facts.next;
   const pending = kind !== "directions" && Boolean(target?.venue);

@@ -1,6 +1,6 @@
 import { publicPlace } from "./towns.mjs";
 import { restSurvival } from "./survival.mjs";
-import { finishAction } from "./economy.mjs";
+import { finishAction, didFaint } from "./economy.mjs";
 import { distanceMeters } from "./cell-content.mjs";
 import { chunkPosition } from "./travel.mjs";
 
@@ -131,8 +131,8 @@ export function interviewTrail(state, info, survival, economy) {
     throw new Error("No new parent-trail encounter at the player's position.");
   }
   const next = finishAction(state, restSurvival(state, { ...survival,
-    rest_minutes: 5, rest_fatigue_recovery: 0 }), info, economy);
-  if (next.ended) return next;
+    rest_minutes: 5, rest_fatigue_recovery: 0 }), info, economy, { survival });
+  if (next.ended || didFaint(state, next)) return next;
   const facts = witnessFacts(state);
   const index = state.trail.index + 1;
   const completed = index === state.trail.stages.length;

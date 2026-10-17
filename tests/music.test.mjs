@@ -64,7 +64,9 @@ test("cancelled performance costs remain and exhausted or remote characters cann
   assert.equal(next.elapsedMinutes, 30);
   assert.throws(() => beginBusking(start(), { terrain: "forest" }, info, survival, data), /settlement/);
   const exhausted = beginBusking({ ...start(), fatigue: 98 }, cell, info, survival, data);
-  assert.equal(exhausted.ended, "fatigue");
+  assert.equal(exhausted.ended, null);
+  assert.equal(exhausted.fatigue, 40);
+  assert.equal(exhausted.faints, 1);
   assert.equal(exhausted.performancePending, null);
   assert.throws(() => beginBusking({ ...start(), ended: "hunger" }, cell, info, survival, data), /ended/);
 });

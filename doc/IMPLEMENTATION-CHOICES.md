@@ -1109,3 +1109,37 @@ not a second hardcoded key map. Explanations distinguish rest from sleep,
 Look from walking, and contextual actions. Dialogs keep their own printed
 shortcuts; typing does not trigger controls. No game time, save migration,
 persisted preference or larger tutorial system is added.
+
+## Fatigue collapse and next-layer priority
+
+Reaching 100 fatigue is no longer a terminal outcome for active journeys.
+All gameplay action finalizers resolve the collapse before saving: eight
+game hours in the same cell, exactly 40 fatigue afterwards, ordinary sleeping
+metabolism and sleep-pressure recovery, no meal or ordinary sleep count.
+Night exposure minutes remain counted; recovery to 40 includes that exposure
+fatigue. The game has no separate cold-death model. Hunger remains fatal,
+including during unconsciousness. Existing ended fatigue saves stay ended.
+
+Location and the existing birth/daily tarot risk multiplier determine
+fictional money theft (base 30% in settlements, 15% elsewhere, 5% sheltered).
+A deterministic draw keyed by journey, action time, position and collapse
+count prevents replaying a pre-action save to reroll theft. Loss is 25--50%
+of carried money, rounded to cents and capped at half. Save the latest event
+and count; validate duration, coordinates, probabilities and monetary bounds.
+No inventory theft or free resources. Collapse interrupts rewards, clue
+progression, performances and hospitality rather than finishing them after
+waking. FR/EN needs notices explain collapse and the resolved loss.
+
+The agreed Layer 9 routing direction is bounded A* on the existing game
+grid, preserving town selection and free exploration, with persistent hidden
+paths for later hints. This remains queued, not deployed or marked complete.
+After Layer 9 the user explicitly prioritizes Layer 15 (photos and journal),
+not sequential implementation of Layers 10--14.
+
+Validation: 212 JavaScript tests, including deterministic replay, monetary
+bounds, hunger during unconsciousness, night exposure, interrupted actions,
+legacy ended saves, strict saved-event validation and notices. Browser
+movement triggered a real collapse: 491 total minutes (11 walking + 480
+unconscious), fatigue 40, one persisted event and a displayed 10.32 EUR loss
+at 30% risk; no terminal state or movement-finalizer error. The notice waits
+for existing modals to close. The browser test's prior local save was restored.

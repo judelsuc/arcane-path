@@ -23,6 +23,7 @@ verifiee, pas seulement du code prepare. Voir le
 - [x] Repas simple payant dans toutes les localites, restaurants OSM en contexte.
 - [x] Melodie, basse et retours de frappe synchronises au mini-jeu musical.
 - [x] Popup des raccourcis et de leur usage a la preparation, rouvrable avec ?.
+- [x] Evanouissement a 100 fatigue : 8 h, retour a 40, risque de vol selon lieu/tarots.
 - [x] Acces OpenStack au bon projet et inventaire de Paris verifies.
 - [x] Tarif CPU verifie : 45,71 EUR TTC maximum pour 744 heures, hors extras.
 - [x] Terraform valide : une VM CPU, aucun GPU ni volume additionnel.
@@ -39,8 +40,9 @@ verifiee, pas seulement du code prepare. Voir le
 - [ ] Couche 9 : creation de partie serveur, parcours routables et validation.
   - [x] Depart cree et conserve cote serveur : identifiant, graine, tarot, etat initial, contenu versionne.
   - [x] Reessais idempotents, reprise locale et anciennes sauvegardes preserves.
-  - [ ] Itineraires pietons reels, algorithme complet du parent et validation de resolubilite.
-- [ ] Couches suivantes du document de conception, avec checkpoints testes.
+  - [ ] Chemins A* sur la grille du jeu, caches et bornes ; algorithme complet du parent et resolubilite.
+- [ ] Couche 15 juste apres la couche 9 : photos et carnet de voyage, export PDF.
+- [ ] Autres couches du document de conception, avec checkpoints testes.
 - [ ] R-062 : caches d'objets persistantes, pour les autres joueurs et ses prochaines parties.
 - [ ] R-063 : indices d'arcanes plus precis avec la proximite ; habillage narratif LLM ulterieur.
 - [ ] Notifications par mail : aucun service d'envoi configure.

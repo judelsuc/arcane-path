@@ -1146,3 +1146,45 @@ This file records additions to the design without modifying the source PDF,
   Do not stack over another modal or advance game time. Keep existing
   input-field exclusion and per-dialog printed shortcuts. No persisted
   onboarding setting or multi-step tutorial is added.
+
+## R-073 — Terrain-weighted parent paths
+
+- **Approved direction:** Keep existing town waypoints. Compute four-direction
+  A* paths on the 250 m game grid, using the same terrain/elevation movement
+  costs as the player, not a separate real-road routing service.
+- Bound search corridors, widen when needed, reuse terrain and completed
+  paths, and impose explicit work/download limits. Missing data or a limit
+  must not produce a straight-line path labelled as validated.
+- Persist completed paths with the server journey for later intermediate
+  parent clues. Keep paths hidden; free exploration remains unchanged.
+- **Status:** Implementation queued behind the approved fainting change.
+  This does not yet complete Layer 9 or implement additional hints.
+
+## R-074 — Fatigue collapse instead of game over
+
+- **User decision:** At 100 fatigue, faint rather than end the game. Advance
+  eight game hours in the same cell and recover to exactly 40 fatigue.
+  Apply normal unconscious/sleep metabolism and sleep-pressure recovery.
+  No meal, shelter or ordinary sleep count is granted.
+- Continue hunger and count unsheltered nighttime exposure. Recovery to 40
+  includes exposure fatigue; the current model has no separate cold-death
+  mechanic. Hunger can still end the journey during unconsciousness.
+- Fictional robbery risk depends on location and starting/daily tarot:
+  base 30% in settlements, 15% elsewhere, 5% during sheltered actions,
+  multiplied by the existing tarot risk helper. If robbed, lose 25–50%
+  of carried money, rounded to cents without exceeding 50%.
+- Deterministic collapse draws prevent rerolls from reloading the same
+  pre-action save. Save the collapse count and latest outcome, time,
+  location, risk and stolen amount. No item theft is introduced.
+- Interrupt clue/reward/music/hospitality actions when collapsing; do not
+  finish them after waking. Explain the event in a localized popup.
+- Preserve terminal hunger/sleep rules and already-ended legacy saves;
+  do not revive a previously ended fatigue journey.
+
+## R-075 — Layer 15 immediately after Layer 9
+
+- **User priority:** After completing Layer 9, proceed directly to Layer 15
+  (photos and travel journal: camera, ASCII conversion, town welcome image
+  and PDF export). Layers 10–14 are not the next sequential work.
+- Check actual dependencies before implementation; do not mark intervening
+  layers implemented or expand scope silently.

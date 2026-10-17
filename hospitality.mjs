@@ -1,6 +1,6 @@
 import { journeyDate } from "./travel.mjs";
 import { restSurvival, sleepSurvival } from "./survival.mjs";
-import { finishAction, tarotEventChance } from "./economy.mjs";
+import { finishAction, tarotEventChance, didFaint } from "./economy.mjs";
 
 export const HOSPITALITY_RULES = Object.freeze({ minutes: 30, failureChance: 0.5 });
 
@@ -36,11 +36,11 @@ export function askHospitality(state, cell, info, survival, economy, random = Ma
   const accepted = dailyDraw(state, town.osmId, day) >=
     tarotEventChance(HOSPITALITY_RULES.failureChance, state, economy);
   let next = finishAction(state, restSurvival(state, { ...survival,
-    rest_minutes: HOSPITALITY_RULES.minutes, rest_fatigue_recovery: 0 }), info, economy, { random });
-  let outcome = next.ended ? "exhausted" : accepted ? "hosted" : "refused";
+    rest_minutes: HOSPITALITY_RULES.minutes, rest_fatigue_recovery: 0 }), info, economy, { random, survival });
+  let outcome = didFaint(state, next) ? "fainted" : next.ended ? "exhausted" : accepted ? "hosted" : "refused";
   if (outcome === "hosted") {
     const sleeping = sleepSurvival({ ...next, lastExpenseCents: 0 }, survival);
-    next = finishAction(next, sleeping, info, economy, { sheltered: true, random });
+    next = finishAction(next, sleeping, info, economy, { sheltered: true, random, survival });
     if (next.ended) outcome = "exhausted";
   }
   return { ...next, hospitalityAttempts: [...(state.hospitalityAttempts ?? []), {
@@ -59,7 +59,7 @@ export function validateHospitality(state, survival) {
   for (const attempt of attempts) {
     if (!attempt || typeof attempt.townId !== "string" || !/^(node|way)\/\d+$/.test(attempt.townId) ||
         typeof attempt.townName !== "string" || !attempt.townName.trim() ||
-        !["hosted", "refused", "exhausted"].includes(attempt.outcome) ||
+        !["hosted", "refused", "exhausted", "fainted"].includes(attempt.outcome) ||
         !Number.isFinite(attempt.startedMinutes) || attempt.startedMinutes < previousEnd ||
         !Number.isFinite(attempt.finishedMinutes) || attempt.finishedMinutes > state.elapsedMinutes ||
         attempt.finishedMinutes < attempt.startedMinutes + HOSPITALITY_RULES.minutes ||
@@ -67,7 +67,9 @@ export function validateHospitality(state, survival) {
         !Number.isFinite(new Date(state.startedAt + attempt.startedMinutes * 60_000).getTime())) fail();
     const duration = attempt.finishedMinutes - attempt.startedMinutes;
     const night = HOSPITALITY_RULES.minutes + survival.sleep_hours * 60;
-    if (Math.abs(duration - (attempt.outcome === "hosted" ? night : HOSPITALITY_RULES.minutes)) > 1e-6 &&
+    const expected = attempt.outcome === "fainted" ? HOSPITALITY_RULES.minutes + 480
+      : attempt.outcome === "hosted" ? night : HOSPITALITY_RULES.minutes;
+    if (Math.abs(duration - expected) > 1e-6 &&
         !(attempt.outcome === "exhausted" && Math.abs(duration - night) < 1e-6)) fail();
     const day = new Date(state.startedAt + attempt.startedMinutes * 60_000).toISOString().slice(0, 10);
     const key = `${attempt.townId}:${day}`;

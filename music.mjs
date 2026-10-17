@@ -1,5 +1,5 @@
 import { restSurvival } from "./survival.mjs";
-import { finishAction, marketPrice } from "./economy.mjs";
+import { finishAction, marketPrice, didFaint } from "./economy.mjs";
 
 export const MUSIC = Object.freeze({ beats: 8, intervalMs: 700, leadMs: 1500, windowMs: 180 });
 
@@ -32,8 +32,8 @@ export function beginBusking(state, cell, info, survival, data) {
   const performing = restSurvival({ ...state, fatigue: Math.min(100,
     state.fatigue + data.rules.performanceFatigue) }, { ...survival,
     rest_minutes: data.rules.performanceMinutes, rest_fatigue_recovery: 0 });
-  const next = finishAction(state, performing, info, data);
-  return { ...next, performancePending: next.ended ? null : {
+  const next = finishAction(state, performing, info, data, { survival });
+  return { ...next, performancePending: next.ended || didFaint(state, next) ? null : {
     maxRewardCents: marketPrice(cell, 2, data, info).cents,
   } };
 }

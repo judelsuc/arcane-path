@@ -210,9 +210,12 @@ test("outdoor nights increase fatigue during sleep, walking and rest; daytime ha
   assert.equal(nightMinutes(state, 30, info), 30);
 });
 
-test("exposure can terminate a journey, shelter cannot bypass hunger, and invalid databases fail explicitly", () => {
+test("exposure can cause fainting, shelter cannot bypass hunger, and invalid databases fail explicitly", () => {
   const oldRules = { ...data, rules: { ...data.rules, nightRestRecoveryFactor: 0 } };
-  assert.equal(restEconomy({ ...start(22), fatigue: 99.5 }, info, survival, oldRules).ended, "fatigue");
+  const fainted = restEconomy({ ...start(22), fatigue: 99.5 }, info, survival, oldRules);
+  assert.equal(fainted.ended, null);
+  assert.equal(fainted.fatigue, 40);
+  assert.equal(fainted.faints, 1);
   assert.equal(sleepEconomy({ ...start(22), reserveKcal: 100 }, { pois: [shelter] },
     info, shelter.osmId, survival, data).ended, "hunger");
   for (const bad of [{}, { ...data, tarot: [] },

@@ -70,7 +70,7 @@ function ensureActive(state) {
 }
 
 function outcome(state) {
-  return state.reserveKcal <= 0 ? "hunger" : state.fatigue >= 100 ? "fatigue" : null;
+  return state.reserveKcal <= 0 ? "hunger" : null;
 }
 
 function consume(state, minutes, extraEnergy, config, sleeping = false) {
@@ -100,8 +100,14 @@ export function walkSurvival(state, dc, dr, from, to, config) {
   const next = consume(state, moved.lastMove.minutes, moved.lastMove.energyKcal, config);
   return { ...next, col: moved.col, row: moved.row, distanceMeters: moved.distanceMeters,
     ascentMeters: moved.ascentMeters, descentMeters: moved.descentMeters,
-    fatigue: moved.fatigue, lastMove: moved.lastMove,
-    ended: next.ended ?? (moved.fatigue >= 100 ? "fatigue" : null) };
+    fatigue: moved.fatigue, lastMove: moved.lastMove };
+}
+
+export function faintSurvival(state, config) {
+  validateSurvivalConfig(config);
+  if (state.ended === "hunger" || state.fatigue < 100) throw new Error("No fatigue collapse to resolve.");
+  return consume({ ...state, ended: null, fatigue: 40, lastMove: null },
+    8 * 60, 0, config, true);
 }
 
 export function restSurvival(state, config) {

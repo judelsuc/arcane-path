@@ -1,5 +1,5 @@
 import { validateSurvivalConfig, characterProfile, normalizeCharacterName } from "./survival.mjs";
-import { validateEconomy } from "./economy.mjs";
+import { validateEconomy, validateFainting } from "./economy.mjs";
 import { chunkPosition } from "./travel.mjs";
 import { validateTownTrail } from "./trail.mjs";
 import { CLUE_ACTIONS } from "./trail-actions.mjs";
@@ -61,7 +61,7 @@ export function validateSave(save) {
   if (s.lastSurvivalChoice !== undefined) {
     const result = s.lastSurvivalChoice;
     if (!result || !["forage", "beg", "steal"].includes(result.kind) ||
-        !["food", "money", "nothing", "detained", "exhausted"].includes(result.outcome) ||
+        !["food", "money", "nothing", "detained", "exhausted", "fainted"].includes(result.outcome) ||
         !["foodKcal", "moneyCents", "detentionMinutes", "minutes"].every(k => nonnegative(result[k])) ||
         !integer(result.moneyCents) || !s.choiceCounts?.[result.kind]) fail();
   }
@@ -110,6 +110,7 @@ export function validateSave(save) {
   if (s.ended === null && (s.reserveKcal <= 0 || s.fatigue >= 100 ||
       s.awakeHours >= save.survival.sleep_limit_hours)) fail();
   validateHospitality(s, save.survival);
+  validateFainting(s);
   return save;
 }
 
