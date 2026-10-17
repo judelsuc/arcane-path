@@ -6,6 +6,7 @@ import { clueActions, CLUE_ACTIONS, searchClueOptions, prepareClueSearch } from 
 import { marketPrice } from "./economy.mjs";
 import { parentSighting } from "./parent-story.mjs";
 import { DIRECTIONS_RULES, directionsChance } from "./directions.mjs";
+import { setFeedback } from "./feedback.mjs";
 import { fieldSearchAvailable, fieldSearchRules, prepareFieldSearch, fieldClueText, vagueLead,
   recognitionHint, prepareRecognition } from "./trail-search.mjs";
 
@@ -165,9 +166,10 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     }
   }
 
-  function paragraph(container, text) {
+  function paragraph(container, text, outcome = "") {
     const p = document.createElement("p");
     p.textContent = text;
+    setFeedback(p, outcome);
     container.append(p);
   }
   function reportText(report) {
@@ -247,6 +249,9 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         chance: Math.round(directionsChance(current.cell) * 100),
       });
       const report = current.state.trail.exploration?.lastReport;
+      setFeedback(document.querySelector("#hint-guidance"), report?.stage === current.state.trail.index
+        ? report.outcome === "suggestion" ? "" : "failure"
+        : directionsOutcome ? directionsOutcome === "helped" ? "success" : "failure" : "");
       document.querySelector("#hint-guidance").textContent = report?.stage === current.state.trail.index
         ? reportText(report)
         : directionsOutcome === "helped" ? playerHint(current.state, current.info, t)
@@ -290,7 +295,11 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     }
     for (const hint of trail.exploration?.hints ?? []) {
       const item = document.createElement("li");
+      paragraph(item, t("fieldEvidence"));
       paragraph(item, fieldClueText(state, hint, t));
+      paragraph(item, t("fieldRecordedAt", {
+        col: hint.col, row: hint.row, minutes: Math.round(hint.elapsedMinutes),
+      }));
       if (hint.kind === "photo") {
         const view = document.createElement("button");
         view.type = "button";
@@ -312,8 +321,18 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       }
       history.append(item);
     }
+    for (const sign of trail.exploration?.signs ?? []) {
+      const item = document.createElement("li");
+      paragraph(item, t("fieldSignTitle"));
+      paragraph(item, t("fieldSign", { parent: trail.parentName }), "success");
+      paragraph(item, t("fieldRecordedAt", {
+        col: sign.col, row: sign.row, minutes: Math.round(sign.elapsedMinutes),
+      }));
+      history.append(item);
+    }
     for (const report of trail.exploration?.reports ?? []) {
       const item = document.createElement("li");
+      paragraph(item, t("fieldSuggestionTitle"));
       paragraph(item, reportText(report));
       history.append(item);
     }
@@ -330,10 +349,13 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       button.textContent = t(searching ? "clueSearchLoading" : "clueSearch");
       button.disabled = blocked || searching || !state.serverJourney;
       paragraph(item, t("fieldSearchCosts", rules));
+      paragraph(item, t("fieldSearchSupport"));
       if (!state.serverJourney) paragraph(item, t("fieldSearchServer"));
       const last = trail.exploration.lastSearch;
       if (last?.stage === trail.index) {
-        paragraph(item, t(`fieldOutcome.${last.outcome}`, last));
+        paragraph(item, t(`fieldOutcome.${last.outcome}`, last),
+          ["found", "sign"].includes(last.outcome) ? "success" : "failure");
+        if (last.outcome === "nothing") paragraph(item, t("fieldNothingAdvice"));
         if (fieldPhotoUnavailable) paragraph(item, t("fieldPhotoFallback"));
       }
       button.addEventListener("click", async () => {

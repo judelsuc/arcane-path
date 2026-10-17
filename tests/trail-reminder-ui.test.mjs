@@ -11,6 +11,7 @@ for (const locale of ["fr", "en"]) {
     const original = globalThis.document;
     t.after(() => { globalThis.document = original; });
     class Element {
+      dataset = {};
       children = []; events = {}; textContent = ""; open = false;
       nextElementSibling = { hidden: false };
       addEventListener(type, listener) { this.events[type] = listener; }
