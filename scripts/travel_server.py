@@ -31,6 +31,7 @@ from journeys import JourneyStore, JourneyRequest, JourneyConflict, JourneyCapac
 from abandoned_journals import AbandonedJournals, JournalForbidden, capability_hash
 from parent_paths import ParentPaths
 from accommodations import Accommodations
+from journey_terrain import cached_terrain
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_SIZE = 8
@@ -473,11 +474,16 @@ def make_handler(store, jobs, path_pool=None):
                         if record is None:
                             return self.send_json(404, {"error": "Server journey not found."})
                         return self.send_json(200, record)
-                    if url.path not in {"/api/chunk", "/api/chunks-cached", "/api/weather", "/api/places", "/api/parent-path",
+                    if url.path not in {"/api/chunk", "/api/chunks-cached", "/api/journey-terrain", "/api/weather", "/api/places", "/api/parent-path",
                                         "/api/location", "/api/origin", "/api/origin-map", "/api/trail", "/api/pricing-country",
                                         "/api/accommodations"}:
                         return self.send_json(404, {"error": "Unknown API endpoint."})
                     query = urllib.parse.parse_qs(url.query, strict_parsing=True)
+                    if url.path == "/api/journey-terrain":
+                        if set(query) != {"region", "bounds"} or any(len(v) != 1 for v in query.values()):
+                            raise ValueError("Invalid journey terrain lookup.")
+                        return self.send_json(200, cached_terrain(store, query["region"][0],
+                                                                 json.loads(query["bounds"][0])))
                     if url.path == "/api/accommodations":
                         if set(query) != {"region", "latitude", "longitude"} or any(len(v) != 1 for v in query.values()):
                             raise ValueError("Invalid accommodation lookup.")

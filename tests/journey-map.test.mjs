@@ -104,41 +104,39 @@ for (const locale of ["fr", "en"]) {
     const cachedChunk = (x, y) => ({ chunk: { x, y, region: "firmi" }, width: 8, height: 8,
       rows: Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => ({ terrain: "forest" }))) });
 
-    test("overview requests only cached chunks in batches of nine, reuses memory, preserves negative cell positions", async () => {
+    test("overview requests the cache inventory rather than guessing chunk coordinates", async () => {
       const calls = [];
       const load = createJourneyTerrainLoader("firmi", new Map([["-1,-1", cachedChunk(-1, -1)]]), async url => {
         const parsed = new URL(url, "http://localhost");
-        assert.equal(parsed.pathname, "/api/chunks-cached");
+        assert.equal(parsed.pathname, "/api/journey-terrain");
         assert.equal(parsed.searchParams.get("region"), "firmi");
-        const positions = JSON.parse(parsed.searchParams.get("positions"));
-        assert.ok(positions.length <= 9);
-        assert.ok(!positions.some(([x, y]) => x === -1 && y === -1));
-        calls.push(positions);
-        return { ok: true, json: async () => ({ chunks: positions
-          .filter(([x, y]) => x === 0 && y === 0).map(([x, y]) => cachedChunk(x, y)) }) };
+        calls.push(JSON.parse(parsed.searchParams.get("bounds")));
+        return { ok: true, json: async () => ({
+          cells: [{ col: -8, row: -8, terrain: "forest" }], stride: 1, missing: true, sampled: false,
+        }) };
       });
       const view = journeyMapView({ col: -1, row: -1, distanceMeters: 0 });
       const terrain = await load(view);
-      assert.equal(terrain.cells.length, 128);
+      assert.equal(terrain.cells.length, 1);
       assert.ok(terrain.cells.some(cell => cell.col === -8 && cell.row === -8));
       assert.equal(terrain.missing, true);
       assert.equal(terrain.sampled, false);
-      await load(view);
+      assert.deepEqual(calls[0], [-9, -9, 7, 7]);
       assert.equal(calls.length, 1);
     });
 
     test("large cache-only views bound requests and visibly label sampled coverage", async () => {
       let batches = 0;
       const load = createJourneyTerrainLoader("firmi", new Map(), async url => {
-        assert.ok(url.startsWith("/api/chunks-cached?"));
+        assert.ok(url.startsWith("/api/journey-terrain?"));
         batches++;
-        return { ok: true, json: async () => ({ chunks: [] }) };
+        return { ok: true, json: async () => ({ cells: [], stride: 3, sampled: false, missing: true }) };
       });
       const view = journeyMapView({ col: 1000, row: 1000, distanceMeters: 1000,
         trail: { origin: { col: 0, row: 0 } } });
       const terrain = await load(view);
-      assert.ok(batches <= 29);
-      assert.equal(terrain.sampled, true);
+      assert.equal(batches, 1);
+      assert.equal(terrain.sampled, false);
       assert.equal(terrain.missing, true);
       const text = journeyMapDescription({ ...view, terrain }, key => translate("en", key));
       assert.match(text, /cache only/);
@@ -149,9 +147,11 @@ for (const locale of ["fr", "en"]) {
       const view = journeyMapView({ col: 0, row: 0, distanceMeters: 0 });
       for (const result of [
         { ok: false, status: 503 },
-        { ok: true, json: async () => ({ chunks: [cachedChunk(500, 500)] }) },
-        { ok: true, json: async () => ({ chunks: [{ ...cachedChunk(0, 0), rows: [] }] }) },
-        { ok: true, json: async () => ({ chunks: [cachedChunk(0, 0), cachedChunk(0, 0)] }) },
+        { ok: true, json: async () => ({ cells: [{ col: 500, row: 500, terrain: "forest" }],
+          stride: 1, sampled: false, missing: false }) },
+        { ok: true, json: async () => ({ cells: [], stride: 0, sampled: false, missing: false }) },
+        { ok: true, json: async () => ({ cells: [{ col: 0, row: 0, terrain: "fake" }],
+          stride: 1, sampled: false, missing: false }) },
       ]) {
         const load = createJourneyTerrainLoader("firmi", new Map(), async () => result);
         await assert.rejects(load(view), /Cached journey terrain|Invalid cached terrain/);
