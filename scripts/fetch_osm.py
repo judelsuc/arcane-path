@@ -226,6 +226,17 @@ def fetch_towns(latitude, longitude, venues=False, on_progress=None):
              f'{latitude:.6f},{longitude:.6f})' +
              ('["amenity"~"^(library|cafe|restaurant|theatre)$"]["name"];out body;'
               if venues else '["place"~"^(city|town)$"]["name"];out body;'))
+    return fetch_catalogue(query, on_progress)
+
+
+def fetch_accommodations(latitude, longitude):
+    query = ('[out:json][timeout:20];nwr(around:5000,'
+             f'{latitude:.6f},{longitude:.6f})'
+             '["tourism"~"^(hotel|hostel|guest_house|motel|alpine_hut)$"];out center tags;')
+    return fetch_catalogue(query)["elements"]
+
+
+def fetch_catalogue(query, on_progress=None):
     failures = []
     with _SOURCE_LOCK:
         for source in _rotating_sources(OVERPASS_URLS):

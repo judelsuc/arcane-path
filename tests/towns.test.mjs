@@ -53,6 +53,17 @@ test("town menu is bounded to five entries per category and deduplicated", () =>
   assert.deepEqual(settlementView(data, 0, 0), view);
 });
 
+test("accommodation has a separate bounded allowance and includes lodging relations and huts", () => {
+  const museum = poi(100, { category: "tourism", tags: { tourism: "museum" } });
+  const hotels = Array.from({ length: 25 }, (_, i) => poi(i, {
+    category: "tourism", osmId: `relation/${i + 1}`, tags: { tourism: i ? "hotel" : "alpine_hut" },
+  }));
+  const view = settlementView(map([museum, ...hotels]), 0, 0);
+  assert.equal(view.places.filter(p => p.tags.tourism === "museum").length, 1);
+  assert.equal(view.places.filter(p => p.tags.tourism !== "museum").length, 20);
+  assert.ok(view.places.some(p => p.tags.tourism === "alpine_hut"));
+});
+
 test("unloaded and non-settlement cells never open a town, and empty towns remain honest", () => {
   const data = map();
   assert.deepEqual(settlementView(data, 0, 0).places, []);

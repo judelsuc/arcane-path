@@ -1,0 +1,176 @@
+import csv
+import io
+import json
+import os
+import sys
+import tempfile
+import threading
+import unittest
+import urllib.error
+import urllib.request
+from concurrent.futures import ThreadPoolExecutor
+from http.server import ThreadingHTTPServer
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from accommodations import Accommodations, import_datatourisme
+from fetch_osm import fetch_accommodations
+from town_trail import grid_position
+from travel_server import ChunkStore, ChunkJobs, make_handler, atomic_write
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class AccommodationTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.base = json.loads((ROOT / "public/map.json").read_text())
+        self.chunks = SimpleNamespace(cache=Path(self.temp.name), bases={"firmi": self.base},
+                                      read=lambda *args: None)
+        self.store = Accommodations(self.chunks, atomic_write)
+
+    def element(self, identity=42, kind="node", latitude=44.54, longitude=2.3, **tags):
+        point = {"lat": latitude, "lon": longitude}
+        return {"id": identity, "type": kind, "tags": {"tourism": "hostel", "name": "Auberge", **tags},
+                **(point if kind == "node" else {"center": point})}
+
+    def build(self, elements, latitude=44.54, longitude=2.3):
+        with patch.object(self.store, "mapped", return_value=[]), \
+                patch.object(self.store, "osm", return_value=elements), \
+                patch.object(self.store, "datatourisme", return_value=([], None)):
+            return self.store.build("firmi", latitude, longitude)
+
+    def test_global_query_includes_nodes_ways_relations_and_bounded_radius(self):
+        with patch("fetch_osm.fetch_catalogue", return_value={"elements": []}) as fetch:
+            self.assertEqual(fetch_accommodations(50, 4), [])
+        query = fetch.call_args.args[0]
+        self.assertIn("nwr(around:5000,50.000000,4.000000)", query)
+        self.assertIn("hostel", query)
+        self.assertIn("out center tags", query)
+
+    def test_real_coordinates_filter_closed_private_and_far_places_and_are_cached(self):
+        result = self.build([self.element(), self.element(43, "way", longitude=2.31),
+                             self.element(44, "relation", longitude=2.32),
+                             self.element(45, access="private"), self.element(46, disused="yes"),
+                             self.element(47, abandoned="yes"), self.element(48, longitude=3)])
+        self.assertEqual([p["id"] for p in result["places"]], ["node/42", "way/43", "relation/44"])
+        first = result["places"][0]
+        self.assertEqual(first["distance"], 0)
+        self.assertEqual((first["col"], first["row"]), tuple(
+            grid_position(self.base, 44.54, 2.3)[k] for k in ("col", "row")))
+        self.assertEqual(first["sourceUrl"], "https://www.openstreetmap.org/node/42")
+        self.assertEqual(self.store.read("firmi", 44.54, 2.3), result)
+        path = self.store.path("firmi", 44.54, 2.3)
+        os.utime(path, (0, 0))
+        self.assertIsNone(self.store.read("firmi", 44.54, 2.3))
+        self.assertIsNone(self.store.read("firmi", 44.54, 2.301))
+        self.assertEqual(result["radiusMeters"], 5000)
+
+    def test_results_are_sorted_bounded_and_reject_invalid_coordinates(self):
+        result = self.build([self.element(i, longitude=2.3 + i * .00001) for i in range(1, 65)])
+        self.assertEqual(len(result["places"]), 40)
+        self.assertEqual([p["id"] for p in result["places"]], [f"node/{i}" for i in range(1, 41)])
+        for coordinate in [float("nan"), True, 200]:
+            with self.assertRaisesRegex(ValueError, "coordinates"):
+                self.build([self.element(latitude=coordinate)])
+
+    def test_unavailable_sources_warn_and_do_not_cache_empty_success(self):
+        with patch.object(self.store, "mapped", return_value=[]), \
+                patch.object(self.store, "osm", side_effect=ValueError("Provider offline")), \
+                patch.object(self.store, "datatourisme", return_value=([], "Catalogue not imported")):
+            result = self.store.build("firmi", 44.54, 2.3)
+        self.assertEqual(result["places"], [])
+        self.assertIn("OpenStreetMap live lookup unavailable", result["warnings"][0])
+        self.assertEqual(result["warnings"][1], "Catalogue not imported")
+        self.assertIsNone(self.store.read("firmi", 44.54, 2.3))
+        with patch.object(self.store, "osm", return_value=[]), \
+                patch.object(self.store, "datatourisme") as french:
+            self.store.build("firmi", 50, 20)
+            french.assert_not_called()
+
+    def catalogue(self, **changes):
+        row = {"Nom_du_POI": "Real hostel", "Categories_de_POI": "YouthHostelAndInternationalCenter",
+               "Latitude": "44.54", "Longitude": "2.3", "Createur_de_la_donnee": "Tourism office",
+               "Date_de_mise_a_jour": "2026-10-17", "URI_ID_du_POI": "https://data.datatourisme.fr/42",
+               **changes}
+        stream = io.StringIO()
+        writer = csv.DictWriter(stream, fieldnames=row)
+        writer.writeheader()
+        writer.writerow(row)
+        stream.seek(0)
+        return stream
+
+    def test_provider_outage_keeps_real_snapshot_and_cached_chunk_lodging(self):
+        poi = {"osmId": "relation/9876", "name": "Cached hostel", "latitude": 44.54,
+               "longitude": 2.3, "tags": {"tourism": "hostel"}}
+        chunk = {"rows": [[{"pois": [poi]}]]}
+        with patch.object(self.chunks, "read", return_value=chunk), \
+                patch.object(self.store, "osm", side_effect=ValueError("Offline")), \
+                patch.object(self.store, "datatourisme", return_value=([], None)):
+            found = self.store.build("firmi", 44.54, 2.3)
+        self.assertTrue(any(place["id"] == "relation/9876" for place in found["places"]))
+        self.assertEqual(len({p["id"] for p in found["places"]}), len(found["places"]))
+        self.assertTrue(found["warnings"])
+        self.assertIsNone(self.store.read("firmi", 44.54, 2.3))
+
+    def test_catalogue_import_is_atomic_credited_and_does_not_invent_mountain_resort_lodging(self):
+        database = self.store.cache / "datatourisme.sqlite"
+        self.assertEqual(import_datatourisme(database, self.catalogue()), 1)
+        rows, warning = self.store.datatourisme(44.54, 2.3)
+        self.assertIsNone(warning)
+        self.assertEqual(rows[0]["tags"], {"tourism": "hostel"})
+        self.assertEqual(rows[0]["credit"], "Tourism office")
+        with self.assertRaises(ValueError):
+            import_datatourisme(database, self.catalogue(Latitude="NaN"))
+        with self.assertRaisesRegex(ValueError, "no accommodations"):
+            import_datatourisme(database, self.catalogue(Categories_de_POI="MountainResort"))
+        self.assertEqual(len(self.store.datatourisme(44.54, 2.3)[0]), 1)
+        with patch.object(self.store, "osm", return_value=[]):
+            found = self.store.build("firmi", 44.54, 2.3)
+        self.assertEqual(found["places"][0]["source"], "DATAtourisme")
+        self.assertEqual(found["places"][0]["distance"], 0)
+
+    def test_http_reuses_cache_validates_arguments_and_does_not_expose_admin_operations(self):
+        chunks = ChunkStore(cache=self.chunks.cache)
+        # Prime the same coordinate-keyed cache used by the HTTP endpoint.
+        result = self.build([self.element()])
+        global_result = {"places": [], "warnings": [], "radiusMeters": 5000}
+        global_store = Accommodations(chunks, atomic_write)
+        atomic_write(global_store.path("tahiti", -17.55, -149.57), json.dumps(global_result).encode())
+        jobs = ChunkJobs(chunks)
+        paths = ThreadPoolExecutor(max_workers=1)
+        server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(chunks, jobs, path_pool=paths))
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        url = f"http://127.0.0.1:{server.server_port}"
+        try:
+            with patch("accommodations.fetch_accommodations", side_effect=AssertionError("Cache missed")):
+                with urllib.request.urlopen(url + "/api/accommodations?region=firmi&latitude=44.54&longitude=2.3") as response:
+                    self.assertEqual(json.load(response), result)
+                with urllib.request.urlopen(url + "/api/accommodations?region=tahiti&latitude=-17.55&longitude=-149.57") as response:
+                    self.assertEqual(json.load(response), global_result)
+            for suffix in ["region=unknown&latitude=44&longitude=2", "region=firmi&latitude=NaN&longitude=2",
+                           "region=firmi&latitude=44&longitude=2&clear=true",
+                           "region=firmi&latitude=44&longitude=2&longitude=3"]:
+                with self.assertRaises(urllib.error.HTTPError) as error:
+                    urllib.request.urlopen(url + "/api/accommodations?" + suffix)
+                self.assertEqual(error.exception.code, 400)
+                error.exception.close()
+            request = urllib.request.Request(url + "/api/accommodations", data=b"{}", method="POST")
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                urllib.request.urlopen(request)
+            self.assertEqual(error.exception.code, 404)
+            error.exception.close()
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()
+            jobs.pool.shutdown()
+            paths.shutdown()
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -8,12 +8,12 @@ const PUBLIC_AMENITIES = new Set([
 ]);
 const PUBLIC_TOURISM = new Set([
   "museum", "gallery", "attraction", "zoo", "theme_park", "hotel", "hostel",
-  "guest_house", "camp_site", "viewpoint", "information", "picnic_site",
+  "guest_house", "motel", "alpine_hut", "camp_site", "viewpoint", "information", "picnic_site",
 ]);
 
 export function publicPlace(poi) {
   const tags = poi.tags;
-  if (!poi.name?.trim() || !/^(node|way)\/\d+$/.test(poi.osmId) || !tags ||
+  if (!poi.name?.trim() || !/^(node|way|relation)\/\d+$/.test(poi.osmId) || !tags ||
       ["no", "private"].includes(tags.access) ||
       (tags.disused && tags.disused !== "no") || (tags.abandoned && tags.abandoned !== "no")) return false;
   if (poi.category === "station" || poi.category === "cable_station") return true;
@@ -44,9 +44,11 @@ export function settlementView(map, row, col) {
   const counts = new Map();
   const places = [...candidates.values()].sort((a, b) => a.distance - b.distance ||
     a.osmId.localeCompare(b.osmId)).filter(poi => {
-    const count = counts.get(poi.category) ?? 0;
-    counts.set(poi.category, count + 1);
-    return count < 5;
+    const category = ["hotel", "hostel", "guest_house", "motel", "alpine_hut"].includes(poi.tags?.tourism)
+      ? "accommodation" : poi.category;
+    const count = counts.get(category) ?? 0;
+    counts.set(category, count + 1);
+    return count < (category === "accommodation" ? 20 : 5);
   });
   return { ...info, settlement, settlements, places,
     identity: settlements.map(item => item.osmId).join(",") };

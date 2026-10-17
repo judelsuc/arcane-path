@@ -33,7 +33,7 @@ class Element {
   scrollIntoView(options) { this.scrolled = options; }
   setAttribute(name, value) { this[name] = value; }
 }
-function harness(t, language = "en") {
+function harness(t, language = "en", findAccommodations) {
   const original = globalThis.document;
   const elements = new Map();
   const element = selector => {
@@ -54,6 +54,7 @@ function harness(t, language = "en") {
   let current = { state: start(0), cell: town, info, survival, data: economy, blocked: false };
   const actions = [];
   const ui = setupEconomyUI((key, args) => translate(language, key, args), {
+    findAccommodations,
     context: () => current,
     act: action => {
       actions.push(action);
@@ -65,6 +66,60 @@ function harness(t, language = "en") {
   return { ui, element, actions, set: value => { current = { ...current, ...value }; },
     current: () => current, buttons: () => element("#economy-options").children.map(li => li.children[0]) };
 }
+
+for (const language of ["fr", "en"]) {
+  test(`${language} sleep automatically finds nearby real lodging without offering remote sleep`, async t => {
+    let calls = 0;
+    const h = harness(t, language, async () => {
+      calls++;
+      return { places: [{ id: "relation/51", name: "Nearby hostel", col: 16, row: 10,
+        distance: 500, credit: "OpenStreetMap contributors", license: "ODbL",
+        source: "OpenStreetMap", sourceUrl: "https://www.openstreetmap.org/relation/51",
+        licenseUrl: "https://www.openstreetmap.org/copyright" }], warnings: [] };
+    });
+    await h.ui.open("sleep");
+    assert.equal(calls, 1);
+    const item = h.element("#accommodation-results").children[0];
+    assert.match(item.children[0].textContent, /Nearby hostel/);
+    assert.match(item.children[0].textContent, /500 m/);
+    assert.match(item.children[0].textContent, language === "fr" ? /est/ : /east/);
+    assert.ok(h.buttons().every(button => !button.textContent.includes("Nearby hostel")));
+    assert.equal(h.element("#nearby-accommodation").hidden, false);
+    h.ui.reset();
+    await h.ui.open("eat");
+    assert.equal(calls, 1);
+    assert.equal(h.element("#nearby-accommodation").hidden, true);
+  });
+}
+
+test("lodging lookup errors stay visible and the search can be retried", async t => {
+  let calls = 0;
+  const h = harness(t, "en", async () => {
+    if (!calls++) throw new Error("Provider offline");
+    return { places: [], warnings: ["Catalogue not imported"] };
+  });
+  await h.ui.open("sleep");
+  assert.match(h.element("#accommodation-status").textContent, /Provider offline/);
+  assert.equal(h.element("#accommodation-search").disabled, false);
+  await h.element("#accommodation-search").events.click();
+  assert.match(h.element("#accommodation-status").textContent, /may be incomplete/);
+  assert.match(h.element("#accommodation-status").textContent, /Catalogue not imported/);
+});
+
+test("closing sleep cancels lookup and ignores late responses", async t => {
+  let complete, signal;
+  const h = harness(t, "en", currentSignal => {
+    signal = currentSignal;
+    return new Promise(resolve => { complete = resolve; });
+  });
+  const opening = h.ui.open("sleep");
+  h.element("#economy-dialog").close();
+  h.element("#economy-dialog").events.close();
+  assert.equal(signal.aborted, true);
+  complete({ places: [], warnings: ["Late result"] });
+  await opening;
+  assert.doesNotMatch(h.element("#accommodation-status").textContent, /Late result/);
+});
 
 for (const language of ["fr", "en"]) {
   test(`${language} meal menu shows the actual daily prices and matching calorie recovery without rerolls`, async t => {

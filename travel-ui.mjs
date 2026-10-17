@@ -16,6 +16,7 @@ import { setupMusic } from "./music-ui.mjs";
 import { interviewTrail } from "./trail.mjs";
 import { createServerJourney } from "./server-journey.mjs";
 import { prepareParentPaths } from "./parent-path.mjs";
+import { loadAccommodations, withDiscoveredAccommodations } from "./accommodations.mjs";
 import { askHospitality } from "./hospitality.mjs";
 import { agendaClock } from "./agenda-clock.mjs";
 import { setupTrail } from "./trail-ui.mjs";
@@ -55,6 +56,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   let parentPathController, parentPathKey, parentPathStatus = "", parentPathError = "";
   let backgroundDownloads;
   const pricingCountries = new Map();
+  let discoveredLodging = [];
   let transient = "", missingHeightMoves = 0;
   let heading = [0, 0];
   let cursor, cameraData;
@@ -193,13 +195,23 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     if (!chunk) return null;
     const mappedCell = chunk.rows[p.row][p.col];
     const country = pricingCountries.get(`${state.col},${state.row}`);
-    const cell = !(mappedCell.countryCodes?.length) && country
+    const pricedCell = !(mappedCell.countryCodes?.length) && country
       ? { ...mappedCell, countryCodes: [country] } : mappedCell;
+    const cell = withDiscoveredAccommodations(pricedCell, discoveredLodging, state.col, state.row);
     return { state, cell, info: exposureInfo(chunk, p.row, p.col),
       data: economyData, survival: survivalConfig, blocked: busy || Boolean(cursor) || Boolean(state.ended) };
   }
   const economyUI = setupEconomyUI(t, {
     context: economyContext, act: economyAction,
+    async findAccommodations(signal) {
+      const current = economyContext(), currentToken = token;
+      if (!current || current.blocked) throw new Error("Accommodation lookup requires a loaded player cell.");
+      const result = await loadAccommodations(region, current.info, signal);
+      signal.throwIfAborted();
+      if (currentToken !== token) throw new Error("Journey changed during accommodation lookup.");
+      discoveredLodging = result.places;
+      return result;
+    },
     async resolveCountry() {
       const current = economyContext();
       if (!current || current.cell.countryCodes?.length ||
@@ -858,6 +870,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     parentPathController = parentPathKey = undefined;
     parentPathStatus = parentPathError = "";
     pricingCountries.clear();
+    discoveredLodging = [];
     birthDialog.close();
     dailyTarotUI.reset();
     needsNotices.reset();

@@ -691,6 +691,22 @@ personnes ou etablissements ; ce n'est pas une autorisation de jouer sur place.
 
 ## Piste du parent : un long voyage de ville en ville
 
+### Hebergements a proximite
+
+Ouvrir **Sommeil et abri** lance une recherche des vrais hotels, auberges et
+autres hebergements dans un rayon de 5 km. Le menu de ville propose aussi
+**Hebergements a proximite**. Chaque resultat indique une distance a vol
+d'oiseau, une direction et sa source. Il faut rejoindre sa case de 250 m
+pour le choisir parmi les options de sommeil ; les tarifs et effets de
+sommeil habituels restent inchanges. La recherche ne coute pas de temps de jeu.
+
+La recherche OSM couvre les noeuds, batiments et relations, dans tous les pays
+pris en charge. Les cartes deja conservees par le serveur completent les
+resultats. Si une source est indisponible, la liste est signalee incomplete,
+pas interpretee comme l'absence d'hotels. Un catalogue DATAtourisme francais
+peut etre importe par l'administrateur, mais il n'est pas installe par les
+joueurs et ne constitue pas une couverture internationale.
+
 Les **nouveaux voyages europeens** preparent dix etapes dans de vraies
 localites du catalogue GeoNames, espacees de **30 a 60 km a vol d'oiseau**, y compris
 du depart a la premiere ville : 300 a 600 km au total, soit un voyage de
