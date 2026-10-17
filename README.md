@@ -48,6 +48,8 @@ reste possible, sans changer son tarot, ses caracteristiques ni sa progression.
 
 - **Rechercher** (Alt + Maj + G) : saisir un nom, eventuellement avec le pays,
   puis choisir le bon resultat. Aucune recherche automatique pendant la frappe.
+  Apres une recherche, Commencer/Reprendre restent bloques jusqu'au choix
+  effectif d'un resultat ; Annuler conserve explicitement le depart precedent.
 - **Utiliser ma position actuelle** (Alt + Maj + V) demande une seule position
   au navigateur, avec permission ; pas de suivi continu. Une position de moins
   d'une minute peut etre reutilisee. Apres 20 s sans position, un nouvel essai

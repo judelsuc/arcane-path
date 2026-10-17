@@ -50,17 +50,19 @@ export function setupStartingPoint(t, { select, addOrigin, setPreparing }) {
   const locate = document.querySelector("#use-location");
   const cancel = document.querySelector("#cancel-place");
   let controller, statusKey = "", detail = "", busy = false, matches = [];
+  let selectionPending = false;
 
   function localize() {
     status.textContent = statusKey ? t(statusKey, { error: detail }) : "";
     form.querySelector("button").disabled = locate.disabled = input.disabled = busy;
-    cancel.hidden = !busy;
+    cancel.hidden = !busy && !selectionPending;
     results.querySelectorAll("button").forEach(button => { button.disabled = busy; });
   }
   function reset() {
     controller?.abort();
     controller = undefined;
     busy = false;
+    selectionPending = false;
     setPreparing(false);
     statusKey = detail = "";
     matches = [];
@@ -86,7 +88,7 @@ export function setupStartingPoint(t, { select, addOrigin, setPreparing }) {
     } finally {
       if (controller === request && !request.signal.aborted) {
         busy = false;
-        setPreparing(false);
+        setPreparing(selectionPending);
         localize();
       }
     }
@@ -115,12 +117,16 @@ export function setupStartingPoint(t, { select, addOrigin, setPreparing }) {
     // Never start a partially generated journey where the existing story cannot run.
     validateStartingMap(map);
     await select(region, map);
+    selectionPending = false;
+    matches = [];
     statusKey = "placeReady";
     results.replaceChildren();
   }
   form.addEventListener("submit", event => {
     event.preventDefault();
     if (busy || !form.reportValidity()) return;
+    selectionPending = true;
+    results.replaceChildren();
     run("placeSearching", async signal => {
       const { data } = await placeRequest("/api/places", { q: input.value.trim() }, signal);
       if (signal.aborted) return;
@@ -142,6 +148,7 @@ export function setupStartingPoint(t, { select, addOrigin, setPreparing }) {
   });
   locate.addEventListener("click", () => {
     if (busy) return;
+    selectionPending = true;
     run("placeLocating", async signal => {
       if (!navigator.geolocation) throw new Error(t("placeNoGeolocation"));
       let position;

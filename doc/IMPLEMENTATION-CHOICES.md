@@ -799,3 +799,19 @@ loading does not silently rewrite names. No server/network name transmission,
 renaming flow or name-based gameplay modifiers were introduced. Tests cover
 normalization, accented/non-Latin names, invalid limits/control characters,
 action/save round-trip and unchanged nameless compatibility.
+
+## Unconfirmed place searches must not start the previous map
+
+The user reported the same first trail destination after searching different
+starts. Prepared Firmi and Marseille maps were checked directly: they contain
+different local destinations. The selection UI nevertheless allowed Start or
+Resume after search results arrived, before a result had actually been selected,
+which could launch the previously selected region.
+
+Search/location requests now keep a pending-selection gate after the network
+request finishes, including lookup/preparation errors. Only a successfully
+selected map, explicit Cancel, or region change releases the gate. Result text
+explains this step and Cancel stays visible while awaiting selection. Existing
+saved trails are never rerolled. Browser regression verified Start/Resume remain
+disabled while Marseille results are shown over selected Firmi, then become
+available only after the Marseille origin is selected.
