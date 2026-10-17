@@ -53,3 +53,12 @@ test("reports missing translations and parameters explicitly", () => {
   assert.throws(() => translate("de", "headline"), /Missing translation/);
   assert.throws(() => translate("en", "scale"), /Missing parameter/);
 });
+
+test("every starting tarot card has a symbolic reading in both languages", () => {
+  const economy = JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url), "utf8"));
+  for (const card of economy.tarot) {
+    for (const locale of ["fr", "en"]) {
+      assert.ok(translate(locale, `tarotMeaning.${card.id}`).length > 30);
+    }
+  }
+});

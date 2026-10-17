@@ -25,6 +25,12 @@ export function setupAudio(t) {
   toggle.addEventListener("click", () => {
     void player.enable(playback.status === "blocked" || !playback.enabled);
   });
+  function unlock(event) {
+    if (playback.status !== "blocked" || event.target.closest?.("#audio-toggle")) return;
+    void player.enable(true);
+  }
+  document.addEventListener("click", unlock);
+  document.addEventListener("keydown", unlock);
   volume.addEventListener("input", () => player.volume(Number(volume.value) / 100));
   document.addEventListener("visibilitychange", () => { void player.suspend(document.hidden); });
   player.suspend(document.hidden);
@@ -32,6 +38,7 @@ export function setupAudio(t) {
     subtree: true, attributes: true, attributeFilter: ["open"],
   });
   sync();
+  void player.enable(true);
   localize();
   return { localize, update(next) { context = next; sync(); } };
 }

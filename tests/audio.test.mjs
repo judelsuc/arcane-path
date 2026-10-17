@@ -42,6 +42,7 @@ test("music context follows map features, solar phase, menus and outcomes, never
     [{ sources: [{ tags: { natural: "water" } }] }, "music-road-day"],
     [{ night: true, region: "alps" }, "music-night"],
     [{ dialog: "trail-dialog" }, "music-tarot-trail"],
+    [{ dialog: "birth-tarot-dialog" }, "music-tarot-trail"],
     [{ dialog: "economy-dialog", sleeping: true }, "music-shelter"],
     [{ dialog: "town-dialog" }, "music-town"],
     [{ ended: "reunion", dialog: "trail-dialog" }, "music-reunion"],

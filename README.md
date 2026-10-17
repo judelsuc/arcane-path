@@ -316,10 +316,20 @@ acces au choix de region/profil et a la reprise ; cette transition ne cree
 aucune partie et ne remplace aucune sauvegarde. Langue et musique restent
 accessibles pendant l'introduction. L'ecran revient a chaque rechargement.
 
+## Profil et tarot de depart
+
+Au debut d'un nouveau voyage, apres le choix du profil, **Reveler ma carte**
+presente le tarot de depart, sa lecture symbolique et la bourse exacte.
+Un seul tirage par nouveau voyage : la revelation ne tire pas une autre carte.
+**Prendre la route** ouvre ensuite le journal. Une reprise garde sa carte,
+son profil et son budget ; elle ne repasse pas par un nouveau tirage.
+Dans cette version le tarot fixe le budget, pas les caracteristiques.
+
 ## Musique
 
 Telecharger les pistes dans [public/audio/music/](public/audio/music/) puis
-cliquer **Activer la musique** (desactivee a chaque chargement). Volume initial
+la musique est activee par defaut. Si le navigateur bloque la lecture automatique,
+le premier clic ou appui clavier la lance. Volume initial
 25 %, reglable et pouvant etre coupe depuis l'en-tete. WAV, MP3 et OGG sont acceptes ;
 les noms `music-title.wav`, `01-music-title.wav` ou `01 - music-title.wav`
 fonctionnent sans renommer les telechargements existants.

@@ -40,6 +40,42 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   let survivalConfig, economyData;
   let saveStore, savedJourney, slotOccupied = false, saveError = "", savedAt;
   let pendingRestore;
+  const birthDialog = document.querySelector("#birth-tarot-dialog");
+  const birthDraw = document.querySelector("#birth-tarot-draw");
+  const birthReveal = document.querySelector("#birth-tarot-reveal");
+  let birthPending = false;
+  function openJourneyIntro() {
+    if (birthPending) {
+      birthDraw.hidden = false;
+      birthReveal.hidden = true;
+      birthDialog.showModal();
+      birthDraw.focus();
+      birthPending = false;
+    } else {
+      trailUI.open();
+    }
+  }
+  function localizeBirthCard() {
+    if (!state || !economyData) return;
+    const card = economyData.tarot.find(card => card.id === state.birthCard);
+    const language = document.documentElement.lang === "en" ? "en" : "fr";
+    document.querySelector("#birth-tarot-name").textContent = card[language];
+    document.querySelector("#birth-tarot-meaning").textContent = t(`tarotMeaning.${card.id}`);
+    document.querySelector("#birth-tarot-budget").textContent = t("birthTarotBudget", {
+      money: (state.walletCents / 100).toFixed(2), units: card.mealUnits,
+    });
+  }
+  birthDraw.addEventListener("click", () => {
+    birthDraw.hidden = true;
+    birthReveal.hidden = false;
+    localizeBirthCard();
+    document.querySelector("#birth-tarot-continue").focus();
+  });
+  document.querySelector("#birth-tarot-continue").addEventListener("click", () => {
+    birthDialog.close();
+    trailUI.open();
+  });
+  birthDialog.addEventListener("cancel", event => event.preventDefault());
   function readJourney() {
     savedJourney = undefined;
     slotOccupied = false;
@@ -170,6 +206,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const reported = new Set();
 
   function localize() {
+    localizeBirthCard();
     towns.localize(document.documentElement.lang);
     economyUI.localize();
     musicUI.localize();
@@ -186,6 +223,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       : savedAt ? t("saveStored", {
         date: new Date(savedAt).toLocaleString(document.documentElement.lang),
       }) : t("saveNone");
+    document.querySelector("#birth-tarot-save").textContent = saveStatus.textContent;
     document.querySelector("#character-setup").hidden = active;
     retry.disabled = busy;
     stop.disabled = busy;
@@ -514,6 +552,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         state = startEconomy(startSurvival(Math.floor(base.width / 2), Math.floor(base.height / 2),
           Date.now(), profile.value, survivalConfig), economyData);
         state = { ...state, trail: createTrail(base, state.col, state.row) };
+        birthPending = true;
       }
       if (currentToken !== token) return;
       const p = chunkPosition(state.col, state.row);
@@ -525,10 +564,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       if (first.elevation.error) error = first.elevation.error;
       autosave();
       resetContent();
-      trailUI.open();
+      openJourneyIntro();
       draw();
       prefetch();
-      document.querySelector("#ascii-map").focus({ preventScroll: true });
+      if (!document.querySelector("dialog[open]")) document.querySelector("#ascii-map").focus({ preventScroll: true });
     } catch (reason) {
       if (currentToken === token) report(reason);
     } finally {
@@ -542,6 +581,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
 
   function reset() {
     token++;
+    birthDialog.close();
+    birthPending = false;
     musicUI.reset();
     trailUI.reset();
     towns.reset();
@@ -635,6 +676,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       if (currentToken !== token) return;
       if (chunk.elevation.error) error = chunk.elevation.error;
       autosave();
+      if (birthPending) openJourneyIntro();
       prefetch();
       draw();
     } catch (reason) {

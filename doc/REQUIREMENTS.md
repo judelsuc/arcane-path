@@ -519,7 +519,7 @@ This file records additions to the design without modifying the source PDF,
 
 - **User request:** Play the music being downloaded without requiring all
   tracks to be present.
-- **Status:** Opt-in background loops with mute and volume controls, accepting
+- **Status:** Default-enabled background loops with mute and volume controls, accepting
   canonical/numbered prompt filenames in WAV, MP3 or OGG.
 - **Context:** Title, actual player terrain/OSM features/solar night, town/shelter/
   journal menus, reunion and exhaustion. Inspection does not move the player.
@@ -538,7 +538,7 @@ This file records additions to the design without modifying the source PDF,
 - **User request/choice:** Add a song with English lyrics, title screen only.
 - **Delivery:** Original lyrics and vocal-generation prompt, optional
   `music-title-song` asset (number 16; 14/15 remain future tracks).
-- **Playback:** Same opt-in/volume/mute controls; static title screen only.
+- **Playback:** Same music/volume/mute controls; static title screen only.
   Missing song falls back to instrumental title then silence. Starting or
   resuming travel stops the vocal; travel fallbacks never select vocals.
 - Audio must be generated/downloaded separately; no claim that a prompt is
@@ -562,10 +562,29 @@ This file records additions to the design without modifying the source PDF,
   localized introduction to the parent search, clues, tarot and daily needs.
 - **Flow:** Explicit Open the map button reveals existing region/profile/
   resume controls without starting or overwriting a journey. Language and
-  opt-in music controls remain accessible; reload shows the title again.
+  music controls remain accessible; reload shows the title again.
 - **Accessibility:** Decorative art is hidden from assistive technology,
   story is ordinary text, map controls are hidden until entry, and keyboard
   focus moves to region selection on entry. Layout fits narrow screens.
+
+## R-039 — Visible starting tarot and interpretation
+
+- **User request/decision:** Character creation must visibly draw tarot and
+  offer meaning hints; one final draw per new journey, no redraw button.
+- **Status:** After profile selection and successful initial map load, show
+  a card-reveal step before the journal. Reveal the existing birth card,
+  localized symbolic interpretation and exact starting purse/reference meals.
+- **Persistence:** Autosave the already-generated journey before the reveal.
+  Resume never rerolls; storage failures remain visible inside the dialog.
+- **Scope:** All 22 cards have original FR/EN hints, not predictions. Budget
+  effects are explicit; profiles still set attributes independently.
+
+## R-040 — Music enabled by default
+
+- **User request:** Music should be activated by default.
+- Attempt playback at the existing 25% default. Browser autoplay policy is
+  respected; if blocked, retry on the first click/key or Retry music.
+  Mute, volume and hidden-tab pauses remain available.
 
 ## R-027 — Geocache-linked fictional dungeons
 

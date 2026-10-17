@@ -10,7 +10,7 @@ export function musicTrack({ active, ended, terrain, sources = [], night, dialog
   if (dialog === "music-dialog") return null;
   if (!active) return "music-title-song";
   if (ended) return ended === "reunion" ? "music-reunion" : "music-journey-ended";
-  if (dialog === "trail-dialog") return "music-tarot-trail";
+  if (dialog === "trail-dialog" || dialog === "birth-tarot-dialog") return "music-tarot-trail";
   if (dialog === "economy-dialog" && sleeping) return "music-shelter";
   if (dialog === "town-dialog" || dialog === "economy-dialog") return "music-town";
   if (night) return "music-night";

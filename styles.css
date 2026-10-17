@@ -50,6 +50,9 @@ body {
   font-size: clamp(2.8rem, 8vw, 5rem);
 }
 #title-heading span { color: #e5e7d9; }
+.birth-card-art { color: var(--accent); text-align: center; line-height: 1.2; }
+#birth-tarot-dialog { width: min(540px, 94vw); max-height: 90dvh; overflow: auto; }
+#birth-tarot-name { color: var(--accent); }
 .title-art {
   color: #b9c7a6;
   font-size: clamp(8px, 2vw, 13px);

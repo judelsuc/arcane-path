@@ -241,6 +241,28 @@
       </footer>
       </div>
     </main>
+    <dialog id="birth-tarot-dialog" aria-labelledby="birth-tarot-title">
+      <h2 id="birth-tarot-title" data-i18n="birthTarotTitle"></h2>
+      <p data-i18n="birthTarotIntro"></p>
+      <p id="birth-tarot-save" role="status"></p>
+      <pre class="birth-card-art" aria-hidden="true">+------------------+
+|        *         |
+|     . /|\ .      |
+|      / | \       |
+|     /  @  \      |
+|        |         |
+|       / \        |
+|     THE ROAD     |
++------------------+</pre>
+      <button id="birth-tarot-draw" type="button" data-i18n="birthTarotDraw"></button>
+      <div id="birth-tarot-reveal" hidden>
+        <h3 id="birth-tarot-name"></h3>
+        <p id="birth-tarot-meaning"></p>
+        <p id="birth-tarot-budget"></p>
+        <p data-i18n="birthTarotNote"></p>
+        <button id="birth-tarot-continue" type="button" data-i18n="birthTarotContinue"></button>
+      </div>
+    </dialog>
     <dialog id="osm-drawer" aria-labelledby="reference-title">
       <div class="drawer-heading">
         <h2 id="reference-title" data-i18n="referenceTitle">Carte OpenStreetMap</h2>

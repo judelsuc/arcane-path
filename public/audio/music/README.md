@@ -12,7 +12,8 @@ Download generated music here, using the IDs from
 
 WAV is preferred for editing; MP3 is fine if WAV is unavailable.
 Keep full-length originals until loop points have been edited and verified.
-Click **Enable music** in the game (off on each page load). Tracks loop at
+Music is enabled by default. If the browser blocks autoplay, the first click
+or keypress retries it; the Retry music button also works. Tracks loop at
 25% volume by default; use the volume slider or mute button at any time.
 The player accepts WAV, MP3 or OGG, with canonical or numbered prompt names:
 `music-title.wav`, `01-music-title.wav` and `01 - music-title.wav` all work.

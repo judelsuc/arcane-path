@@ -578,3 +578,25 @@ Validated 15 focused localization/audio tests, JS syntax and whitespace.
 Browser checks at 375 px confirmed no horizontal title overflow, translated
 entry button, hidden map before entry, revealed map afterward, region focus,
 unchanged saved data and no active journey created by entry.
+
+## Starting tarot reveal and default music
+
+The user requested a visible creation draw and chose one final card per new
+journey. Existing profile selection still sets attributes; no new tarot stat
+bonuses were invented. Once the initial chunk loads, autosave the full new
+journey, then open a modal card back. Reveal exposes the already-drawn birth
+card, an original localized symbolic reading and exact initial budget.
+Continue opens the existing trail journal. All 22 meanings are suggestions
+for the journey, explicitly not predictions or additional gameplay effects.
+The dialog also shows actual save success/error rather than promising storage.
+Initial chunk retry preserves the draw and opens the same reveal; normal
+resume retains the card and skips creation. No save schema change is needed.
+
+Browser validation revealed Judgement with its 37.14 game EUR purse and
+six reference meals; repeated reveal did not change the save, and Continue
+opened the journal. The existing user save was restored after the test.
+Translation coverage verifies readings for every economy card in FR/EN.
+
+The user also changed the music policy: default-enabled at 25%, superseding
+earlier opt-in notes. The browser played the real English title song at load.
+If autoplay is denied, a subsequent click/key retries; mute remains explicit.
