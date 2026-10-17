@@ -1300,3 +1300,25 @@ simulation, route-positioned parent nights/purchases, motive-guided destination
 selection, aging witness precision and richer witness/biography templates remain
 open. Existing manual path preparation remains opt-in to avoid competing with
 the player's live map downloads.
+
+Validation of the narrative checkpoint: 236 JavaScript tests passed, including
+Python-to-JavaScript genesis for all birth cards and exact save roundtrips.
+Python ran 134 tests: 132 passed, two existing photo-configuration assertions
+failed after the concurrent user commit changing max_per_cell to 10 while the
+exported browser config and assertions still expect 5. That configuration is
+not changed here. Browser validation created a real local mobile genesis
+with thirteen sourced towns and displayed the first three discovered visits
+in French and English, without downloading terrain. The narrative checkpoint
+remains undeployed and is not a full Layer 9 completion.
+
+### One-cell town arrival tolerance
+
+The Cuise-la-Motte screenshot showed one cell south remaining and 0.2 km to
+the geographic point, while the player was already in town. This was a strict
+cell-equality gate, not demonstrated numeric rounding corruption. Modern
+town trails now accept the target's 3 x 3 neighborhood (up to 250 m per axis).
+All clue access, free guidance and journal arrival messages use that same
+helper. Two-cell offsets remain outside; legacy local trails remain exact.
+No target or save coordinate is rewritten. Regression tests exercise every
+offset in a 5 x 5 square, successful clue save/resume at each accepted offset,
+both hint languages and the old exact-cell rule.

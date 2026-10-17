@@ -386,6 +386,24 @@ joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
 - Rollback :
   `/home/ubuntu/arcane-path-before-deploy-e28c7d8.tar.gz`, mode 0600.
 
+### Checkpoint deploye : arrivee en ville avec tolerance d'une case
+
+- **17 octobre 2026** : commit runtime `371ddc4`, tag pousse
+  `deploy-2026-10-17-town-arrival`. Correctif reporte sur la branche de
+  developpement par `ed916a7`.
+- Parcours de villes : case cible et huit voisines acceptent les enquetes.
+  A deux cases sur un axe, l'arrivee n'est pas encore validee. Meme helper
+  pour indice, journal, actions et bouton d'enquete ; parcours locaux inchanges.
+- 32 tests cibles passes, dont les 25 offsets d'un voisinage 5 x 5, sauvegarde
+  apres enquete sans teleporter le joueur et conservation des anciens parcours.
+  Navigateur : reproduction Cuise-la-Motte une case au nord, distance 0,2 km,
+  arrivee et quatre enquetes disponibles.
+- Seuls `trail.mjs` et manifeste remplaces, verifies en HTTPS. Services actifs,
+  aucune interruption des preparations ni modification de sauvegarde/cache.
+  Le moteur narratif en developpement n'est pas deploye avec ce correctif.
+- Rollback :
+  `/home/ubuntu/arcane-path-before-deploy-371ddc4.tar.gz`, mode 0600.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026
