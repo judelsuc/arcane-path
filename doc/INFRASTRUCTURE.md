@@ -1,5 +1,22 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - repere de marche vers un hebergement
+
+- **17 octobre 2026** : runtime `5ffd3c2`, tag
+  `deploy-2026-10-17-hotel-guidance`, developpement `810334e`,
+  base live `342b1e7`. Six assets et manifeste, sans redemarrage serveur.
+- Chaque resultat d'hebergement propose un bouton pour choisir sa case
+  comme repere. Direction, distance et coordonnees affichables pendant
+  la marche manuelle ; case encadree quand visible, arrivee confirmee.
+  Aucun deplacement automatique, paiement ni sommeil par ce bouton.
+  Repere annulable, conserve uniquement pendant le voyage ouvert.
+- 346 tests JS du runtime isole passent. Navigateur : choix des Carillons
+  depuis les resultats caches, dialogue ferme, direction affichee et
+  position du personnage inchangee. Manifeste, six assets HTTPS et API jeu
+  verifies octet par octet.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-5ffd3c2.tar.gz`
+  (0600). Le carnet photo reste disponible ; partage des journaux en cours.
+
 ## Derniere livraison - carnet photo a spirale
 
 - **17 octobre 2026** : runtime `342b1e7`, tag
