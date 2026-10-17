@@ -42,8 +42,12 @@ export function playerHint(state, info, t) {
   const meters = state.trail.version === 2
     ? distanceMeters(info, target.latitude, target.longitude)
     : Math.hypot(target.col - state.col, target.row - state.row) * 250;
-  return t("hintTravel", { place: target.name, directions: trailDirections(state, target, t),
-    km: (meters / 1000).toFixed(1) });
+  const east = target.col - state.col, north = state.row - target.row;
+  const compass = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
+  const sector = (Math.round(Math.atan2(east, north) / (Math.PI / 4)) + 8) % 8;
+  const distance = meters < 2000 ? "near" : meters < 10000 ? "short" : meters < 30000 ? "far" : "distant";
+  return t("hintTravel", { place: target.name, direction: t(`hintCompass.${compass[sector]}`),
+    distance: t(`hintDistance.${distance}`) });
 }
 
 export function setupTrail(t, { context, interview, discover }) {
