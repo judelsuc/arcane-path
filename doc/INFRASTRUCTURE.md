@@ -1,5 +1,26 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - meteo, indices, sommeil et audio du mini-jeu
+
+- **17 octobre 2026** : runtime `e86befe`, tag
+  `deploy-2026-10-17-weather-clues-sleep-audio`, issu de la base live
+  `ed19caa`. Developpement correspondant : `044c5f0`.
+- Douze assets statiques et manifeste livres : exposition froid/chaleur/pluie,
+  recherche aleatoire d'indice avec vraie photo, pression de sommeil nocturne
+  et sommeil force a barre pleine, mini-jeu musical lu en WAV PCM natif.
+  Aucun generateur Python de nouvelles histoires du parent n'est livre.
+- **Validation** : 265 tests JavaScript du runtime isole reussis ; photo
+  Commons reelle affichee dans le navigateur avec cout de 30 minutes,
+  credit/source/licence ; decodage/lecture audio natifs et depart/arret du
+  mini-jeu verifies. Confirmation auditive sur l'appareil du joueur encore
+  necessaire. Douze assets HTTPS compares octet par octet, manifeste et
+  `/api/travel` verifies ; services `arcane-path` et `nginx` actifs, sans restart.
+- Retour code :
+  `/home/ubuntu/arcane-path-before-deploy-e86befe.tar.gz`, mode 0600.
+  Le nouveau module `weather-effects.mjs` reste inerte apres restauration
+  des anciens imports. Le lien `.cache` vers `/var/lib/arcane-path/cache`,
+  la configuration et les donnees serveur ne sont pas modifies.
+
 ## Etat reel
 
 Region verifiee : **EU-WEST-PAR (Paris)**. Le jeton OpenStack correspond au
