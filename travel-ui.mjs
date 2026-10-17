@@ -35,6 +35,7 @@ import { setupAbandonedJournals } from "./abandoned-journals-ui.mjs";
 import { encodeNotebook } from "./notebook-transfer.mjs";
 import { updateWeatherPanel } from "./weather-panel.mjs";
 import { beginPressures, sympathy, policePresence, washingAvailable } from "./pressures.mjs";
+import { recordJourneyPosition } from "./journey-map.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, pinPhoto, pinTarot, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats }) {
   const start = document.querySelector("#start-travel");
@@ -199,7 +200,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
   function autosave() {
     saveFeedback.reset();
-    if (state) state = recordTrailArrival(state);
+    if (state) state = recordJourneyPosition(recordTrailArrival(state));
     try {
       if (!saveStore) throw new Error(t("saveStorageUnavailable"));
       const saved = saveStore.write({ region, map: base, state,
@@ -531,7 +532,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const cell = chunk?.rows[position.row][position.col];
     const ended = Boolean(state?.ended);
     if (state && survivalConfig && economyData) {
-      updateNotebookStats?.({ state, survival: survivalConfig, economy: economyData });
+      updateNotebookStats?.({ state, survival: survivalConfig, economy: economyData,
+        cellSizeMeters: base.cellSizeMeters });
     }
     if (ended) {
       backgroundDownloads?.stop();

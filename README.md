@@ -825,6 +825,17 @@ bonne destination ; le temoin peut toujours se tromper.
 
 ### Carnet de photos
 
+La page **Carte du voyage** propose une vue schematique sur papier vieilli :
+chemin reel en pointilles rouges, depart, destinations effectivement atteintes,
+position actuelle, nord et echelle. **Rejouer le trace** anime la ligne sans
+avancer le temps de jeu ; la preference de mouvement reduit est respectee.
+Ce n'est pas un fond de carte geographique ni le trajet secret du parent.
+Les deplacements sont enregistres dans la sauvegarde locale ; les anciennes
+sauvegardes commencent l'enregistrement a la reprise, sans inventer le chemin
+anterieur. Les tres longs parcours sont simplifies et explicitement signales.
+La carte et sa legende figurent aussi dans l'export PDF. Les carnets abandonnes
+ne montrent jamais la carte personnelle de leur lecteur.
+
 **Exporter en PDF** telecharge le carnet complet, pas seulement les deux pages
 visibles : photos, cartes de tarot, notes et credits avec leurs liens sources,
 ainsi que les statistiques du voyage. Les brouillons sont enregistres avant

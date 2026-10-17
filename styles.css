@@ -750,6 +750,9 @@ dialog p { margin: 12px 0; }
 .journal-stats-groups dl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 12px; }
 .journal-stats-groups dt, .journal-stats-groups dd { margin: 0; overflow-wrap: anywhere; }
 .journal-stats-groups dd { text-align: right; font-weight: bold; }
+.notebook-spread[data-mapping="true"] { display: block; }
+.journey-map-canvas { display: block; width: 100%; height: auto; border: 1px solid #c9b78f; }
+.journal-map ol { padding-inline-start: 1.5em; overflow-wrap: anywhere; }
 .journal-print img { width: 100%; height: 240px; object-fit: contain; margin: 0 0 12px; }
 .journal-print label { display: block; font-size: 0.8rem; }
 .journal-print textarea {

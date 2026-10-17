@@ -58,6 +58,10 @@ for (const locale of ["fr", "en"]) {
       addEventListener(event, callback) { this.events[event] = callback; }
       showModal() { this.open = true; }
       close() { this.open = false; this.events.close?.(); }
+      getContext() {
+        return { fillRect() {}, setLineDash() {}, beginPath() {}, moveTo() {}, lineTo() {},
+          stroke() {}, fillText() {}, arc() {}, fill() {} };
+      }
     }
     const elements = new Map(), element = selector => {
       if (!elements.has(selector)) elements.set(selector, new Element());
@@ -86,6 +90,11 @@ for (const locale of ["fr", "en"]) {
     assert.equal(writes, 0);
     ui.updateStats({ ...current, state: { ...current.state, walletCents: 9876 } });
     assert.match(text(element("#journal-pages")), /98\.76/);
+    element("#journal-map-page").events.click();
+    assert.equal(element("#journal-pages").dataset.mapping, "true");
+    assert.equal(element("#journal-next").disabled, true);
+    assert.ok(text(element("#journal-pages")).includes(t("journalMapNote")));
+    assert.doesNotMatch(text(element("#journal-pages")), /Hidden target|Secret parent/);
     element("#journal-photos-page").events.click();
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(element("#journal-pages").dataset.statistics, "false");
@@ -96,6 +105,8 @@ for (const locale of ["fr", "en"]) {
     element("#photo-journal-dialog").close();
     await ui.showAbandoned([], ["A shared clue"]);
     assert.equal(element("#journal-stats-page").hidden, true);
+    assert.equal(element("#journal-map-page").hidden, true);
+    element("#journal-map-page").events.click();
     element("#journal-stats-page").events.click();
     assert.doesNotMatch(text(element("#journal-pages")), /98\.76|12\.34 km/);
     assert.equal(writes, 0);
