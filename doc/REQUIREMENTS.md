@@ -1,5 +1,18 @@
 # Requirements tracked outside the design PDF
 
+## R-114 - Download the complete notebook as PDF
+
+- **User request:** Implement the missing notebook PDF generation now.
+- Provide a localized Export PDF action in the notebook. Download all stored
+  pages, including photos, tarot, notes and source/license credits, not only
+  the currently visible spread. Include live journey statistics when available.
+- Save current note drafts first. Generate locally without an external service;
+  show preparation and failures explicitly. Preserve journey ownership.
+- For an abandoned notebook, include its clues and pages, never the reader's
+  personal journey statistics. Export must not alter cards or game progress.
+- Initial export uses rasterized A4 pages with wrapped text and image fitting;
+  text is not selectable. Long notes and credits continue onto further pages.
+
 ## R-101 - More photo coverage without increasing the 2 km limit
 
 - **User request:** No photos near 43.992579, 2.397766. Investigate additional

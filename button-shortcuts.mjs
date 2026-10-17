@@ -13,6 +13,7 @@ const KEYS = {
   "open-hint": "I",
   "open-journal": "A",
   "journal-previous": "ArrowLeft", "journal-next": "ArrowRight",
+  "journal-export-pdf": "P",
   "copy-coordinates": "D",
   "needs-notice-cell": "F",
   "retry-travel": "Y", "stop-travel": "Q", "show-photo": "P",

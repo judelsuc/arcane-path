@@ -3,11 +3,97 @@ import assert from "node:assert/strict";
 import { setupPhotoJournal, validateJournalPhoto } from "../photo-journal.mjs";
 import { translate } from "../i18n.mjs";
 import { readFileSync } from "node:fs";
+import { startSurvival } from "../survival.mjs";
+import { startEconomy } from "../economy.mjs";
 
 const photo = (id = 1) => ({ blob: new Blob(["image fixture"], { type: "image/png" }),
   title: `Secret photo ${id}`, attribution: "Photographer", license: "CC BY 4.0",
   licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
   sourceUrl: `https://example.org/photo/${id}`, note: "", pinnedAt: `2026-10-17T12:00:0${id}Z` });
+
+for (const locale of ["fr", "en"]) {
+  test(`${locale} PDF exports every page, saves unblurred drafts, includes statistics and isolates found notebooks`, async test => {
+    const original = globalThis.document;
+    test.after(() => { globalThis.document = original; });
+    class Element {
+      dataset = {}; children = []; events = {}; open = false; textContent = "";
+      append(...children) { this.children.push(...children); }
+      replaceChildren(...children) { this.children = children; }
+      addEventListener(event, callback) { this.events[event] = callback; }
+      showModal() { this.open = true; }
+      close() { this.open = false; this.events.close?.(); }
+    }
+    const elements = new Map(), element = selector => {
+      if (!elements.has(selector)) elements.set(selector, new Element());
+      return elements.get(selector);
+    };
+    globalThis.document = { documentElement: { lang: locale }, createElement: () => new Element(),
+      querySelector: selector => selector === "dialog[open]"
+        ? [...elements.values()].find(e => e.open) ?? null : element(selector) };
+    const rows = new Map([1, 2, 3].map(id => [String(id), photo(id)]));
+    let failWrite = false, failPdf = false, calls = [], downloads = 0, finishPdf;
+    const ui = setupPhotoJournal((key, args) => translate(locale, key, args), { store: {
+      list: async () => [...rows.keys()].map(id => ({ id, pinnedAt: rows.get(id).pinnedAt })),
+      get: async id => rows.get(id),
+      note: async (id, note) => {
+        if (failWrite) throw new Error("Storage full");
+        rows.set(id, { ...rows.get(id), note });
+      },
+    }, makePdf: async input => {
+      calls.push(input);
+      if (failPdf) throw new Error("PDF encoding failed");
+      if (finishPdf) await finishPdf;
+      return new Blob(["PDF"]);
+    },
+    downloadPdf: () => { downloads++; } });
+    const survival = JSON.parse(readFileSync(new URL("../public/config.json", import.meta.url))).survival;
+    const economy = JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url)));
+    const state = { ...startEconomy(startSurvival(1, 2, Date.UTC(2026, 9, 17),
+      "balanced", survival), economy, () => 0), trail: { index: 0 } };
+    ui.updateStats({ state, survival, economy });
+    element("#open-journal").events.click();
+    await new Promise(resolve => setImmediate(resolve));
+    const note = element("#journal-pages").children[0].children[0].children[1].children[0].children[0];
+    note.value = "Unblurred PDF note";
+    note.events.input();
+    await element("#journal-export-pdf").events.click();
+    assert.equal(downloads, 1);
+    assert.equal(calls[0].photos.length, 3);
+    assert.equal(calls[0].photos[0].note, "Unblurred PDF note");
+    assert.ok(calls[0].groups.length);
+    assert.deepEqual(calls[0].clues, []);
+    assert.equal(element("#journal-export-pdf").disabled, false);
+    failWrite = true;
+    note.value = "Cannot save this draft";
+    note.events.input();
+    await element("#journal-export-pdf").events.click();
+    assert.equal(downloads, 1);
+    assert.match(element("#journal-status").textContent, /Storage full/);
+    failWrite = false;
+    element("#photo-journal-dialog").close();
+    await ui.showAbandoned([{ ...photo(4), id: "found" }], ["Previously collected clue"]);
+    await element("#journal-export-pdf").events.click();
+    assert.equal(downloads, 2);
+    assert.equal(calls[1].photos.length, 1);
+    assert.deepEqual(calls[1].groups, []);
+    assert.deepEqual(calls[1].clues, ["Previously collected clue"]);
+    failPdf = true;
+    await element("#journal-export-pdf").events.click();
+    assert.equal(downloads, 2);
+    assert.match(element("#journal-status").textContent, /PDF encoding failed/);
+    assert.equal(element("#journal-export-pdf").disabled, false);
+    failPdf = false;
+    let release;
+    finishPdf = new Promise(resolve => { release = resolve; });
+    const pending = element("#journal-export-pdf").events.click();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(element("#journal-export-pdf").disabled, true);
+    element("#photo-journal-dialog").close();
+    release();
+    await pending;
+    assert.equal(downloads, 2);
+  });
+}
 
 test("field clue photo viewer is not nested in the hidden town-discovery section", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
