@@ -721,6 +721,9 @@ La fenetre de la piste du parent (J) separe les consignes et le rappel de la
 piste dans une colonne laterale, des boutons d'enquete et des resultats dans
 la zone principale. Sur petit ecran, la colonne passe au-dessus des actions.
 Le bouton Nouveau voyage reste sur l'ecran principal, pas dans le journal J.
+Les indices et photos precedent les actions de recherche, y compris sur
+mobile. Les couts restent visibles ; les explications detaillees de la
+recherche se deploient a la demande.
 Lorsqu'un temoin propose un nom de ville dans I, son avis indique aussi la
 distance a vol d'oiseau, la direction depuis votre position actuelle et les
 coordonnees de la ville proposee. Cela ne confirme pas qu'il s'agit de la

@@ -664,8 +664,9 @@ dialog p { margin: 12px 0; }
 @media (max-width: 760px) {
   .trail-layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .trail-guide { padding: 12px; }
+  .trail-main { grid-row: 1; }
 }
-#trail-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+#trail-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 #trail-actions p { color: var(--muted); font-size: 0.85rem; line-height: 1.6; }
 #trail-discovery { padding: 20px; margin-top: 24px; border: 1px solid var(--line); }
 #trail-discovery blockquote { margin: 16px 0; white-space: pre-line; line-height: 1.7; }

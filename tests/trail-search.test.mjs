@@ -426,6 +426,14 @@ for (const locale of ["fr", "en"]) {
     });
     const texts = node => [node.textContent, ...node.children.flatMap(texts)];
     ui.open();
+    const searchItem = element("#trail-actions").children.find(c =>
+      c.children.some(b => b.id === "clue-field-search"));
+    assert.equal(searchItem.children[0].id, "clue-field-search");
+    const help = searchItem.children.find(c => c.children[0]?.textContent ===
+      translate(locale, "fieldSearchHelp"));
+    assert.ok(help);
+    assert.notEqual(help.open, true);
+    assert.match(searchItem.children[1].textContent, /min/);
     assert.doesNotMatch(element("#trail-target").textContent, /Secret/);
     await element("#trail-actions").children.find(c => c.children.some(b => b.id === "clue-field-search"))
       .children.find(b => b.id === "clue-field-search").events.click();
