@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { loadAccommodations, withDiscoveredAccommodations } from "../accommodations.mjs";
+import { loadAccommodations, cachedAccommodations, mergeAccommodations, withDiscoveredAccommodations } from "../accommodations.mjs";
 import { sleepEconomy, startEconomy, applyBirthTarot, shelters } from "../economy.mjs";
 import { startSurvival } from "../survival.mjs";
 
@@ -14,6 +14,39 @@ const info = { latitude: 50, longitude: 4 };
 const payload = (places = [place]) => ({ places, warnings: [], radiusMeters: 5000 });
 const response = (data, status = 200) => new Response(JSON.stringify(data), {
   status, headers: { "content-type": "application/json" },
+});
+
+test("loaded cells provide immediate bounded lodging without network and preserve exact chunk cells", () => {
+  const poi = { osmId: "node/42", name: "Loaded hostel", latitude: 50, longitude: 4,
+    tags: { tourism: "hostel" } };
+  const base = { rows: [[{ pois: [poi, { ...poi, osmId: "node/43", tags: { ...poi.tags, access: "private" } },
+    { ...poi, osmId: "node/44", longitude: 5 }] }]] };
+  const chunk = { chunk: { x: -2, y: 3 }, rows: [[{ pois: [poi] }]] };
+  const result = cachedAccommodations(base, [chunk], info);
+  assert.equal(result.places.length, 1);
+  assert.equal(result.places[0].col, -16);
+  assert.equal(result.places[0].row, 24);
+  assert.equal(result.places[0].distance, 0);
+  const combined = mergeAccommodations(result, payload([{ ...place, id: "node/42", osmId: "node/42", name: "Updated" }, place]));
+  assert.equal(combined.places.length, 2);
+  assert.equal(combined.places.find(p => p.id === "node/42").name, "Updated");
+  assert.equal(cachedAccommodations({ rows: [[{}]] }, [], info).places.length, 0);
+});
+
+test("cached server results are delivered during polling and unsafe provisional places are rejected", async t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let delivered, calls = 0;
+  const loading = loadAccommodations("firmi", info, new AbortController().signal, async () =>
+    ++calls === 1 ? response({ progress: { phase: "provider", cached: payload() } }, 202) : response(payload()),
+  progress => { if (progress.cached) delivered = progress.cached; });
+  for (let i = 0; i < 30 && !delivered; i++) await new Promise(resolve => setImmediate(resolve));
+  assert.equal(delivered.places[0].name, place.name);
+  assert.equal(calls, 1);
+  t.mock.timers.tick(1500);
+  await loading;
+  await assert.rejects(loadAccommodations("firmi", info, new AbortController().signal, async () =>
+    response({ progress: { phase: "osm", cached: payload([{ ...place, sourceUrl: "javascript:alert(1)" }]) } }, 202)),
+  /Invalid nearby accommodation/);
 });
 
 test("nearby lodging request uses exact player coordinates and accepts relation and supplementary sources", async () => {

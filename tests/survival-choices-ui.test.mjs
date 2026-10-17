@@ -10,6 +10,7 @@ const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
 const survival = json("../public/config.json").survival;
 const economy = json("../public/economy.json");
 class Element {
+  dataset = {};
   textContent = "";
   disabled = false;
   hidden = false;
@@ -55,6 +56,7 @@ for (const language of ["en", "fr"]) {
     h.get("#choice-forage").click();
     const result = h.get("#survival-choice-result");
     assert.equal(result.hidden, false);
+    assert.equal(result.dataset.feedback, "success");
     assert.match(result.textContent, /450/);
     assert.equal(result.focused, true);
     assert.deepEqual(result.scrolled, { block: "nearest" });

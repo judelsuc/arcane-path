@@ -106,7 +106,7 @@ test("directions dialog hides guidance until a paid successful attempt, permits 
   const original = globalThis.document;
   t.after(() => { globalThis.document = original; });
   class Element {
-    children = []; events = {}; textContent = ""; open = false;
+    children = []; events = {}; dataset = {}; textContent = ""; open = false;
     nextElementSibling = { hidden: false };
     addEventListener(type, listener) { this.events[type] = listener; }
     append(...children) { this.children.push(...children); }

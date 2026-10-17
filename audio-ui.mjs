@@ -1,6 +1,7 @@
 import { createMusicPlayer, musicTrack } from "./audio.mjs";
 import { createFootstepPlayer } from "./footsteps.mjs";
 import { createStreetMusicAudio } from "./street-music-audio.mjs";
+import { setFeedback } from "./feedback.mjs";
 
 export function setupAudio(t) {
   const toggle = document.querySelector("#audio-toggle");
@@ -24,8 +25,12 @@ export function setupAudio(t) {
     status.textContent = t(`audio.${playback.status}`, {
       track: playback.track ?? "", requested: playback.requested ?? "",
     });
+    setFeedback(status, ["blocked", "unavailable"].includes(playback.status) ? "failure"
+      : ["playing", "fallback"].includes(playback.status) ? "success" : "");
     document.querySelector("#footstep-status").textContent =
       footstepError ? t("footstepError", { error: footstepError }) : "";
+    setFeedback(document.querySelector("#footstep-status"), footstepError ? "failure" : "");
+    setFeedback(document.querySelector("#music-audio-status"), streetMusicError ? "failure" : "");
     document.querySelector("#music-audio-status").textContent = streetMusicError
       ? t("streetMusicAudioError", { error: streetMusicError })
       : t(playback.enabled ? "streetMusicAudioOn" : "streetMusicAudioOff");

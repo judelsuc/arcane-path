@@ -73,8 +73,9 @@ class AccommodationTests(unittest.TestCase):
                 self.assertTrue(entered.wait(5))
                 status, payload = jobs.request(*key)
                 self.assertEqual(status, 202)
-                self.assertEqual(payload["progress"],
-                                 {"phase": "provider", "provider": "overpass.example.org"})
+                self.assertEqual(payload["progress"]["phase"], "provider")
+                self.assertEqual(payload["progress"]["provider"], "overpass.example.org")
+                self.assertEqual(payload["progress"]["cached"]["places"], [])
                 release.set()
                 expected = jobs.jobs[key].result(timeout=5)
                 self.assertEqual(jobs.request(*key), (200, expected))
@@ -82,6 +83,25 @@ class AccommodationTests(unittest.TestCase):
         finally:
             release.set()
             jobs.pool.shutdown()
+
+    def test_cached_lodging_is_published_before_the_live_source_completes(self):
+        key = ("firmi", 44.54, 2.3)
+
+        def source(latitude, longitude, update):
+            cached = self.store.get_progress(*key)["cached"]
+            self.assertEqual([p["id"] for p in cached["places"]], ["node/42"])
+            self.assertEqual(cached["places"][0]["distance"], 0)
+            self.assertIsNone(self.store.read(*key))
+            update({"phase": "provider", "provider": "overpass.example.org"})
+            self.assertEqual(self.store.get_progress(*key)["cached"], cached)
+            return [self.element(43)]
+
+        with patch.object(self.store, "mapped", return_value=[self.element(),
+                self.element(44, access="private"), self.element(45, longitude=3)]), \
+                patch.object(self.store, "osm", side_effect=source), \
+                patch.object(self.store, "datatourisme", return_value=([], None)):
+            result = self.store.build(*key)
+        self.assertEqual(len(result["places"]), 2)
 
     def test_progress_reports_real_stages_and_cleans_up_on_success_and_failure(self):
         key = ("firmi", 44.54, 2.3)

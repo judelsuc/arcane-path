@@ -66,6 +66,18 @@
   witness, note and other small discoveries. Preserve broad directions and
   avoid revealing future town names or exact distances.
 
+## R-100 - Green success and red failure feedback
+
+- **User request:** Sentences indicating success should be green; failures red.
+- Classify from actual result state, never by matching translated text.
+  Apply to hospitality/worship, survival choices, music rewards/failures,
+  field searches/directions, saves, lodging lookup and photo-notebook actions.
+- Keep loading, instructions and unconfirmed clue suggestions neutral.
+  Errors and failed actions remain readable explicit messages/alerts: color
+  supplements the wording and is not the only indication of outcome.
+- Use accessible light green/red on the dark UI and darker green/red on the
+  notebook's light paper. Clear old outcome colors when messages reset.
+
 ## R-099 - Find real nearby accommodation before walking there
 
 - **User request:** Hotels/hostels are offered too rarely. Show real nearby
@@ -89,6 +101,13 @@
   provider when available, and elapsed search seconds. Update while polling,
   discard progress from cancelled/previous searches, and do not invent a
   completion percentage or imply that an unimported catalogue was queried.
+- Immediately scan the browser's loaded base map and surrounding chunks
+  without a network request, then show additional server-cached lodging as
+  soon as polling returns it. Label these lists provisional while the online
+  search continues; preserve them on cancellation or source errors. Apply
+  the same 5 km limit, real-place filters, credits and exact-cell sleep rule.
+  Final server results replace the provisional list; no cache deletion or
+  fresh chunk download is required for this first pass.
 - **Agreed follow-up, not active:** Only after the user confirms that nearby
   accommodation discovery works, reduce fictional hospitality acceptance.
   Use base refusal probabilities of 0.8 for locals and 0.7 for places of
