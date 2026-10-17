@@ -79,6 +79,43 @@ class FetchOsmTests(unittest.TestCase):
                 _request_map([0, 0, 0.009, 0.009])
             request.assert_called_once()
 
+    def test_exhausted_node_limit_splitting_uses_fallback_with_original_bounds(self):
+        errors = [
+            urllib.error.HTTPError("https://api.openstreetmap.org", 400, "Bad Request", {},
+                io.BytesIO(b"You requested too many nodes (limit is 50000)."))
+            for _ in range(5)
+        ]
+        with patch("fetch_osm.urllib.request.urlopen", side_effect=[
+            *errors, io.BytesIO(b"<osm><remark>timeout</remark></osm>"),
+            io.BytesIO(OSM_RESPONSE),
+        ]) as request:
+            root, urls = _request_sources([0, 0, 0.009, 0.009])
+        self.assertEqual(request.call_count, 7)
+        self.assertEqual(urls, [OVERPASS_URLS[1]])
+        self.assertEqual(root.find("bounds").attrib, {
+            "minlon": "0", "minlat": "0", "maxlon": "0.009", "maxlat": "0.009",
+        })
+        self.assertIn("https://api.openstreetmap.org", _COOLDOWNS)
+        self.assertIn(OVERPASS_URLS[0], _COOLDOWNS)
+
+    def test_invalid_primary_response_uses_fallback(self):
+        with patch("fetch_osm.urllib.request.urlopen", side_effect=[
+            io.BytesIO(b"<osm/>"), io.BytesIO(OSM_RESPONSE),
+        ]):
+            root, urls = _request_sources([0, 0, 0.009, 0.009])
+        self.assertEqual(urls, [OVERPASS_URLS[0]])
+        self.assertIsNotNone(root.find("node"))
+
+    def test_primary_http_rejection_uses_fallback_without_splitting(self):
+        error = urllib.error.HTTPError("https://api.openstreetmap.org", 403, "Forbidden", {},
+                                     io.BytesIO(b"Provider rejected request"))
+        with patch("fetch_osm.urllib.request.urlopen", side_effect=[
+            error, io.BytesIO(OSM_RESPONSE),
+        ]) as request:
+            _, urls = _request_sources([0, 0, 0.009, 0.009])
+        self.assertEqual(request.call_count, 2)
+        self.assertEqual(urls, [OVERPASS_URLS[0]])
+
     def test_refresh_replaces_cached_snapshot_and_preserves_osm_geometry(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "test.osm.gz"

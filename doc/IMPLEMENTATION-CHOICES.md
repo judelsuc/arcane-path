@@ -815,3 +815,18 @@ explains this step and Cancel stays visible while awaiting selection. Existing
 saved trails are never rerolled. Browser regression verified Start/Resume remain
 disabled while Marseille results are shown over selected Firmi, then become
 available only after the Marseille origin is selected.
+
+## Dense OSM areas must reach the fallback providers
+
+The user encountered the primary OSM API's HTTP 400 / 50,000-node limit.
+Requests already split recursively, but at the depth-four cap the error became
+a plain ValueError and escaped the provider fallback loop. HTTP failures at
+that cap now use SourceUnavailable, retaining status/body and cooldown, so
+the complete original bounds are retried through both existing Overpass
+providers. Other primary HTTP rejections and incomplete map payloads use the
+same provider-failure path; invalid user bounds still fail before networking.
+No additional providers or unlimited recursion were introduced.
+
+Regression tests exercise five consecutive node-limit responses, failure of
+the first Overpass and success of the second, exact original fallback bounds,
+provider cooldowns, primary HTTP rejection and incomplete primary payloads.

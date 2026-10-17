@@ -68,6 +68,12 @@ reste possible, sans changer son tarot, ses caracteristiques ni sa progression.
   C'est un filtre operationnel approximatif, pas une frontiere politique exacte.
   Les anciennes cartes de demonstration, dont Tahiti, restent disponibles.
 - La premiere preparation demande Internet et peut prendre plusieurs minutes.
+  Si l'API OSM depasse sa limite de noeuds, les requetes sont subdivisees ;
+  si quatre niveaux ne suffisent pas, le chargement essaie Overpass
+  (overpass-api.de, puis overpass.kumi.systems) sur la zone complete.
+  Les erreurs HTTP ou reponses incompletes du fournisseur primaire declenchent
+  aussi ces replis, avec delai de refroidissement et erreur explicite si
+  aucun fournisseur ne peut fournir la carte.
   L'interface interdit de lancer une autre partie pendant cette attente ;
   changer de region annule l'attente, sans supprimer le cache en preparation.
   Il faut dix cases avec lieux publics nommes pour la piste actuelle :

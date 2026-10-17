@@ -54,7 +54,7 @@ def _request_map(bounds, depth=0):
         if error.code in {408, 429, 500, 502, 503, 504, 509}:
             raise _http_failure(error, reason) from error
         if error.code != 400 or "too many nodes" not in reason.lower() or depth >= 4:
-            raise ValueError(f"OSM HTTP {error.code}: {reason}") from error
+            raise _http_failure(error, reason) from error
         print(f"OSM node limit reached; splitting bounds {bounds}.", file=sys.stderr)
         west, south, east, north = bounds
         middle = (west + east) / 2
@@ -81,7 +81,7 @@ def _request_map(bounds, depth=0):
         root.extend(elements.values())
         return root, first_urls + second_urls
     if root.tag != "osm" or root.find("bounds") is None or root.find("node") is None:
-        raise ValueError("The OSM API did not return a bounded map with nodes.")
+        raise SourceUnavailable("The OSM API did not return a bounded map with nodes.")
     return root, [url]
 
 
