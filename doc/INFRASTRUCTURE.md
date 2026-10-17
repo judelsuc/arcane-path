@@ -1,5 +1,29 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - cache immediat et couleurs des resultats
+
+- **17 octobre 2026** : runtime `7a24962`, tag
+  `deploy-2026-10-17-cached-lodging-feedback`, developpement `9f06f0c`,
+  base live `b2ebd65`. Dix modules client, un script serveur et manifeste ;
+  redemarrage Python, sans changement des probabilites d'accueil.
+- Les POI des cartes deja chargees dans le navigateur sont listes sans
+  reseau. Le job serveur transmet ensuite ses propres resultats de cartes
+  en cache pendant l'attente OSM. Listes provisoires identifiees, conservees
+  en cas d'annulation/erreur ; la liste serveur finale les remplace. Filtrage,
+  rayon de 5 km, credits et sommeil dans la case exacte sont conserves.
+- Feedback semantique vert/rouge : hospitalite et lieux de culte, choix de
+  survie, musique, sauvegardes, voyage, sources photo, localisation et audio.
+  Les recherches en cours restent neutres. Carnet photo toujours non livre.
+- 338 tests JavaScript du runtime isole passent et dix tests Python
+  hebergements passent. Navigateur : quatre hebergements caches visibles
+  avant reponse en ligne ; refus Paulhe rouge `rgb(255,155,155)`, accueil
+  vert `rgb(143,227,160)` verifies en style calcule.
+- Manifeste, dix modules HTTPS et hash du script serveur verifies.
+  L'API live transmet quatre resultats caches pendant `phase=provider`.
+  Services actifs et quinze journaux de depart existants inchanges.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-7a24962.tar.gz`
+  (0600). Ne pas restaurer une ancienne base joueur.
+
 ## Derniere livraison - progression reelle de recherche d'hebergements
 
 - **17 octobre 2026** : runtime `b2ebd65`, tag
