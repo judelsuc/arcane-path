@@ -178,6 +178,7 @@
               <button id="eat-travel" type="button" data-i18n="needsEatAction"></button>
               <button id="open-town" type="button" disabled data-i18n="townOpen"></button>
               <button id="open-music" type="button" disabled data-i18n="musicOpen"></button>
+              <button id="open-survival-choices" type="button" disabled data-i18n="survivalChoices"></button>
               <button id="open-trail" type="button" disabled data-i18n="trailTitle"></button>
               <button id="save-travel" type="button" disabled data-i18n="saveNow"></button>
               <button id="look-travel" type="button" aria-pressed="false" data-i18n="travelLook"></button>
@@ -300,6 +301,7 @@
       <button id="town-refresh" type="button" data-i18n="townRefresh"></button>
       <button id="town-services" type="button" data-i18n="mealTitle"></button>
       <button id="town-music" type="button" data-i18n="musicOpen"></button>
+      <button id="town-survival-choices" type="button" data-i18n="survivalChoices"></button>
       <button id="town-trail" type="button" data-i18n="trailTitle"></button>
       <h3 data-i18n="townPlacesTitle"></h3>
       <p id="town-empty" data-i18n="townEmpty"></p>
@@ -307,6 +309,20 @@
       <div id="town-place-detail" role="status"></div>
       <p data-i18n="townFiction"></p>
       <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" data-i18n="attribution"></a>
+    </dialog>
+    <dialog id="survival-choices-dialog" aria-labelledby="survival-choices-title">
+      <h2 id="survival-choices-title" data-i18n="survivalChoices"></h2>
+      <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
+      <p data-i18n="survivalChoicesFiction"></p>
+      <button id="choice-forage" type="button" data-i18n="choice.forage"></button>
+      <p id="choice-forage-note"></p>
+      <button id="choice-beg" type="button" data-i18n="choice.beg"></button>
+      <p id="choice-beg-note"></p>
+      <button id="choice-steal" type="button" data-i18n="choice.steal"></button>
+      <p id="choice-steal-note"></p>
+      <p id="survival-choice-result" role="status"></p>
+      <p id="survival-choice-save" role="status"></p>
+      <p id="survival-choice-error" role="alert"></p>
     </dialog>
     <dialog id="economy-dialog" aria-labelledby="economy-title">
       <h2 id="economy-title"></h2>

@@ -9,6 +9,8 @@ import {
 import { setupTowns } from "./towns-ui.mjs";
 import { validateEconomy, startEconomy, applyBirthTarot, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, finishAction } from "./economy.mjs";
 import { setupDailyTarot } from "./daily-tarot-ui.mjs";
+import { survivalChoice } from "./survival-choices.mjs";
+import { setupSurvivalChoices } from "./survival-choices-ui.mjs";
 import { setupEconomyUI } from "./economy-ui.mjs";
 import { beginBusking, settleBusking } from "./music.mjs";
 import { setupMusic } from "./music-ui.mjs";
@@ -139,6 +141,26 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       data: economyData, survival: survivalConfig, blocked: busy || Boolean(cursor) || Boolean(state.ended) };
   }
   const economyUI = setupEconomyUI(t, { context: economyContext, act: economyAction });
+  const choicesUI = setupSurvivalChoices(t, {
+    context: () => {
+      const current = economyContext();
+      return current ? { ...current, saveStatus: saveStatus.textContent } : null;
+    },
+    act(kind) {
+      const current = economyContext();
+      if (!current || current.blocked) return false;
+      try {
+        state = survivalChoice(state, kind, current.cell, current.info, survivalConfig, economyData);
+        autosave();
+        localize();
+        return true;
+      } catch (reason) {
+        report(reason);
+        document.querySelector("#survival-choice-error").textContent = reason.message;
+        return false;
+      }
+    },
+  });
   const musicUI = setupMusic(t, {
     available: () => {
       const current = economyContext();
@@ -245,6 +267,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         date: new Date(savedAt).toLocaleString(document.documentElement.lang),
       }) : t("saveNone");
     document.querySelector("#birth-tarot-save").textContent = saveStatus.textContent;
+    choicesUI.localize();
     document.querySelector("#character-setup").hidden = active;
     retry.disabled = busy;
     stop.disabled = busy;
@@ -614,6 +637,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     trailUI.reset();
     towns.reset();
     economyUI.reset();
+    choicesUI.reset();
     stream?.stop();
     stream = undefined;
     state = undefined;

@@ -669,3 +669,42 @@ terminal outcomes. Acknowledgment is saved; revealing adds no gameplay cost.
 revealed the Tower, confirmed matching art/meaning, then persisted the seen
 date without rerolling, spending extra time or changing money. The original
 save was restored after validation.
+
+## Alternative survival actions
+
+The user requested foraging, street donations and fictional food theft,
+approved immediate implementation, and selected temporary jail with basic
+needs recovery rather than game over/a fine. Added Other ways to get by from
+both the travel toolbar and town menu. Display availability, time, fatigue,
+tarot-adjusted failure risk, outcome and actual save status.
+
+First-pass constants in survival-choices.mjs:
+
+| Action | Location | Time | Fatigue | Base failure | Success |
+|---|---|---|---|---|---|
+| Forage | Forest cell | 30 min | 5 | 35% | Up to 450 reserve kcal |
+| Ask for money | Settlement cell | 30 min | 2 | 40% | Half a local meal price |
+| Steal food | Explicit food-shop POI in current cell | 10 min | 3 | 35% arrest | Up to 900 reserve kcal |
+
+The existing combined birth/daily modifier now affects these action risks;
+the random nighttime encounter/minigame layer remains deferred. No real
+foraging/theft advice or claims about mapped shopkeepers. Food is consumed,
+not stored. Food shops require explicit shop tags and exclude private/no,
+disused and abandoned entries; restaurants alone do not imply a shop.
+
+All attempts consume metabolism, fatigue and outdoor night exposure. If needs
+end the journey during the attempt, no reward or jail recovery can revive it.
+Arrest advances six additional hours under shelter using the existing sleep
+recovery model with basic food; it counts as one sleep, costs no fine and
+does not move the character. Daily tarot rolls normally across midnight and
+its popup waits for the action dialog to close. Results/counters round-trip
+in local saves; earlier saves omit these optional fields and remain valid.
+Action constants are first-version code rules, not new YAML settings.
+
+134 JavaScript tests pass, including map gating, costs/failure branches,
+food caps, zero-money donations, local pricing, both-card risk, detention
+recovery, night exposure, terminal precedence and exact saved results.
+Browser checks verified a 3.10 game EUR donation, a 370-minute arrest action
+with release in the same cell, and forest-only 450 kcal foraging. At 375 px,
+the dialog fits and unavailable town/shop actions stay disabled. Original
+saved progress was restored after each check.

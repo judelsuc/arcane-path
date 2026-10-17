@@ -43,6 +43,16 @@ export function validateSave(save) {
       !finite(Date.parse(`${s.dailyTarotSeenDay}T00:00:00Z`)) ||
       new Date(`${s.dailyTarotSeenDay}T00:00:00Z`).toISOString().slice(0, 10) !== s.dailyTarotSeenDay ||
       s.dailyTarotSeenDay > s.tarotDay)) fail();
+  if (s.choiceCounts !== undefined && (!s.choiceCounts || typeof s.choiceCounts !== "object" ||
+      Array.isArray(s.choiceCounts) || Object.entries(s.choiceCounts).some(([kind, count]) =>
+        !["forage", "beg", "steal"].includes(kind) || !integer(count) || count < 0))) fail();
+  if (s.lastSurvivalChoice !== undefined) {
+    const result = s.lastSurvivalChoice;
+    if (!result || !["forage", "beg", "steal"].includes(result.kind) ||
+        !["food", "money", "nothing", "detained", "exhausted"].includes(result.outcome) ||
+        !["foodKcal", "moneyCents", "detentionMinutes", "minutes"].every(k => nonnegative(result[k])) ||
+        !integer(result.moneyCents) || !s.choiceCounts?.[result.kind]) fail();
+  }
   const attributes = s.profileId === "tarot"
     ? save.economy.tarot.find(c => c.id === s.birthCard)?.attributes
     : save.survival.profiles[s.profileId];

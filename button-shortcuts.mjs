@@ -12,6 +12,8 @@ const KEYS = {
   "town-refresh": "U", "town-services": "E", "town-music": "B",
   "town-trail": "J", "music-start": "Enter", "music-tap": "Space",
   "trail-interview": "I", "trail-restart": "N",
+  "open-survival-choices": "F", "town-survival-choices": "F",
+  "choice-forage": "F", "choice-beg": "B", "choice-steal": "T",
 };
 const DIRECTIONS = { "0,-1": "ArrowUp", "1,0": "ArrowRight", "0,1": "ArrowDown", "-1,0": "ArrowLeft" };
 

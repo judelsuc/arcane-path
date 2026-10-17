@@ -633,6 +633,24 @@ This file records additions to the design without modifying the source PDF,
 - No extra time, money or attribute changes for revealing; terminal journeys
   keep their outcome without an intervening daily popup.
 
+## R-045 — Foraging, donations and fictional food theft
+
+- **User request:** Find food in woods, ask passers-by for money, and steal
+  food in stores with an arrest risk. Implement now.
+- **User jail choice:** Temporary detention with time loss, basic food/rest,
+  then return to the same cell; no fine or automatic game over.
+- **First-version rules:** Forage forest cells (30 min, 5 fatigue, 450 kcal);
+  ask in settlement cells (30 min, 2 fatigue, half a local meal in money);
+  steal at mapped food shops in the current cell (10 min, 3 fatigue, 900 kcal).
+  Base failure/arrest chances are 35%, 40%, 35%, modified by both tarot cards.
+  Six-hour sheltered detention supplies basic food and sleep.
+- Costs/metabolism/night exposure apply to attempts whether successful or not.
+  Exhaustion takes priority over rewards. No money needed to attempt.
+  Save outcomes/counters immediately; showing results never rolls again.
+- Show conditions, actual risks, results, save status and keyboard/tooltips.
+  Exclude inaccessible/disused/abandoned/non-food stores. No nearby-store
+  guessing, plant advice, theft instructions, inventory or real legal claims.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

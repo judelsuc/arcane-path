@@ -506,6 +506,9 @@ dialog p { margin: 12px 0; }
 #town-places button { width: 100%; text-align: left; overflow-wrap: anywhere; }
 #town-place-detail { padding-block: 10px; border-block: 1px solid var(--line); }
 #economy-dialog { width: min(700px, 94vw); max-height: 90dvh; overflow: auto; }
+#survival-choices-dialog { width: min(660px, 94vw); max-height: 90dvh; overflow: auto; overflow-wrap: anywhere; }
+#survival-choice-result { color: var(--accent); }
+#survival-choice-error { color: #f4cc80; }
 #economy-options { padding-left: 1.2em; }
 #economy-options li { margin-block: 16px; overflow-wrap: anywhere; }
 #economy-options button { max-width: 100%; white-space: normal; }

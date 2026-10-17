@@ -334,6 +334,29 @@ acces au choix de region/profil et a la reprise ; cette transition ne cree
 aucune partie et ne remplace aucune sauvegarde. Langue et musique restent
 accessibles pendant l'introduction. L'ecran revient a chaque rechargement.
 
+## Autres moyens de subsister
+
+En voyage ou dans le menu de ville, **Autres moyens de subsister**
+(Alt + Maj + F) presente trois actions fictives avec leur cout et risque :
+
+- **Chercher dans les bois** : foret uniquement, 30 min et +5 fatigue.
+  En cas de succes, jusqu'a 450 kcal consommees sur place.
+- **Faire la manche** : localite uniquement, 30 min et +2 fatigue.
+  Don possible d'un demi-repas au tarif local ; aucun argent initial requis.
+- **Voler de la nourriture** : uniquement si un magasin alimentaire OSM
+  est dans la case du joueur, 10 min et +3 fatigue. Succes : jusqu'a
+  900 kcal consommees. Arrestation : six heures de detention avec nourriture
+  et sommeil de base, puis liberation dans la meme case, sans amende.
+
+Les echecs coutent aussi du temps/metabolisme et de la fatigue ; la nuit
+expose les tentatives, mais pas la detention. Le tarot de depart et celui
+du jour modifient les probabilites affichees. Les resultats sont sauvegardes,
+sans gain repete au rechargement. Une fatigue/faim terminale pendant la
+tentative reste prioritaire sur le gain. Aucun inventaire alimentaire,
+conseil de cueillette/vol ni simulation juridique realiste n'est propose.
+Les dialogues n'accusent aucun commercant reel ; les donnees OSM ne servent
+qu'a rendre disponible l'action fictive.
+
 ## Profil et tarot de depart
 
 Au debut d'un nouveau voyage, apres le choix du profil, **Reveler ma carte**
