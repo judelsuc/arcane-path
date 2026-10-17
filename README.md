@@ -47,7 +47,7 @@ verifiee, pas seulement du code prepare. Voir le
 - [ ] Plus tard (R-083) : validation terrain 30–60 km, budget de survie,
   nuits/achats sur le trajet et destinations guidees par le motif.
 - [x] Couche 15, jalon accepte : photos, cartes historiques et carnet par voyage,
-  pages d'indices et carnets abandonnes. Export PDF et conversion ASCII restent reportes.
+  pages d'indices et carnets abandonnes. Conversion ASCII encore reportee.
 - [x] Couche 10 : vigilance, sympathie locale, hygiene, temoins vieillissants et
   deux placements recuperables avant une troisieme fin de voyage.
 - [x] Page Statistiques dans le carnet : besoins, chemin, argent, compteurs,
@@ -824,6 +824,15 @@ coordonnees de la ville proposee. Cela ne confirme pas qu'il s'agit de la
 bonne destination ; le temoin peut toujours se tromper.
 
 ### Carnet de photos
+
+**Exporter en PDF** telecharge le carnet complet, pas seulement les deux pages
+visibles : photos, cartes de tarot, notes et credits avec leurs liens sources,
+ainsi que les statistiques du voyage. Les brouillons sont enregistres avant
+l'export. Le PDF est genere localement dans le navigateur, sans envoi a un
+service tiers. Ses pages sont des images (texte non selectionnable). Un carnet
+abandonne exporte contient ses indices et ses pages, jamais les statistiques
+personnelles du joueur qui le consulte. Les erreurs restent visibles dans le
+carnet ; l'export ne modifie ni le voyage ni les tirages.
 
 Les tirages de naissance et du jour utilisent les scans du Tarot de Marseille
 de Jean Dodal (vers 1701, domaine public), servis localement avec leur source.

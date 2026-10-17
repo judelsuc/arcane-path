@@ -3,6 +3,7 @@ const STORE = "photos";
 import { setFeedback } from "./feedback.mjs";
 import { createTarotJournalPinner, tarotJournalEntry } from "./tarot-cards.mjs";
 import { journeyStats } from "./journey-stats.mjs";
+import { notebookPdf, downloadNotebookPdf } from "./notebook-pdf.mjs";
 
 export function validateJournalPhoto(photo) {
   if (!photo || typeof photo.sourceUrl !== "string" || typeof photo.licenseUrl !== "string" ||
@@ -119,7 +120,8 @@ export function createPhotoJournalStore(index = indexedDB) {
   return scoped("unassigned");
 }
 
-export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {}) {
+export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
+  makePdf = notebookPdf, downloadPdf = downloadNotebookPdf } = {}) {
   const rootStore = store;
   let liveStore = store, readOnly = false;
   const dialog = document.querySelector("#photo-journal-dialog");
@@ -129,6 +131,9 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
   const next = document.querySelector("#journal-next");
   const photosButton = document.querySelector("#journal-photos-page");
   const statsButton = document.querySelector("#journal-stats-page");
+  const exportButton = document.querySelector("#journal-export-pdf");
+  let exporting = false, exported = false, exportEpoch = 0;
+  let abandonedClues = [];
   let statsContext = null, statistics = false;
   let entries = [], spread = 0, generation = 0, loading = false, error = "";
   const urls = new Set();
@@ -156,13 +161,16 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
     photosButton.hidden = statsButton.hidden = readOnly;
     photosButton.disabled = !statistics;
     statsButton.disabled = statistics || !statsContext;
+    exportButton.textContent = t(exporting ? "journalPdfPreparing" : "journalExportPdf");
+    exportButton.disabled = exporting || loading;
     previous.disabled = statistics || loading || spread === 0;
     next.disabled = statistics || loading || (spread + 1) * 2 >= entries.length;
     document.querySelector("#journal-count").textContent =
       statistics ? t("journalStatsPage") :
         t("journalCount", { spread: spread + 1, total: Math.max(1, Math.ceil(entries.length / 2)) });
-    status.textContent = error ? t("journalError", { error }) : loading ? t("journalLoading") : "";
-    setFeedback(status, error ? "failure" : "");
+    status.textContent = error ? t("journalError", { error }) : exporting ? t("journalPdfPreparing") :
+      loading ? t("journalLoading") : exported ? t("journalPdfReady") : "";
+    setFeedback(status, error ? "failure" : exported ? "success" : "");
   }
   async function render() {
     const current = ++generation;
@@ -334,11 +342,58 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
     if (!statistics && !loading && (spread + 1) * 2 < entries.length) { spread++; void render(); }
   });
   document.querySelector("#journal-retry").addEventListener("click", () => { if (!loading) void load(); });
+  exportButton.addEventListener("click", async () => {
+    if (exporting || loading) return;
+    exporting = true;
+    exported = false;
+    error = "";
+    const target = store, owner = scope, foreign = readOnly, epoch = exportEpoch;
+    const noteDrafts = [...drafts];
+    const clues = [...abandonedClues];
+    const stillCurrent = () => exportEpoch === epoch && store === target &&
+      scope === owner && readOnly === foreign && dialog.open;
+    localize();
+    try {
+      const groups = !foreign && statsContext
+        ? journeyStats(statsContext, t, document.documentElement.lang) : [];
+      await Promise.all(pendingPins);
+      if (!stillCurrent()) return;
+      const failed = [...failedPins.values()].find(entry => entry.scope === owner);
+      if (!foreign && failed) throw new Error(failed.message);
+      if (!foreign) {
+        for (const [id, note] of noteDrafts) {
+          await target.note(id, note);
+          if (stillCurrent() && drafts.get(id) === note) drafts.delete(id);
+        }
+      }
+      const listed = await target.list();
+      const photos = [];
+      for (const entry of listed) {
+        const photo = await target.get(entry.id);
+        validateJournalPhoto(photo);
+        photos.push({ ...photo });
+      }
+      if (!stillCurrent()) return;
+      const pdf = await makePdf({ title: t(foreign ? "journalAbandonedTitle" : "journalTitle"),
+        photos, groups, clues, t });
+      if (!stillCurrent()) return;
+      downloadPdf(pdf);
+      exported = true;
+    } catch (reason) {
+      if (stillCurrent()) failure(reason);
+    } finally {
+      exporting = false;
+      localize();
+    }
+  });
   dialog.addEventListener("close", () => {
+    exportEpoch++;
     generation++; loading = false; revoke(); pages.replaceChildren();
     store = liveStore;
     readOnly = false;
     statistics = false;
+    abandonedClues = [];
+    exported = false;
     document.querySelector("#journal-abandoned-clues")?.replaceChildren();
   });
   return {
@@ -354,6 +409,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
     async useJourney(state, adoptLegacy = false) {
       const nextScope = notebookScope(state);
       if (nextScope === scope) return;
+      exportEpoch++;
       for (const [id, note] of drafts) await liveStore.note(id, note);
       const scoped = rootStore.scope ? await rootStore.scope(nextScope, { adoptLegacy }) : rootStore;
       generation++;
@@ -367,6 +423,8 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
       store = scoped;
       liveStore = scoped;
       readOnly = false;
+      abandonedClues = [];
+      exported = false;
       scope = nextScope;
       if (dialog.open) await load();
     },
@@ -380,8 +438,11 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
       return Promise.all(entries.map(async entry => ({ ...await target.get(entry.id), id: entry.id })));
     },
     async showAbandoned(notebook, clues) {
+      exportEpoch++;
       readOnly = true;
       statistics = false;
+      abandonedClues = [...clues];
+      exported = false;
       const evidence = document.querySelector("#journal-abandoned-clues");
       evidence.replaceChildren();
       const heading = document.createElement("h3");
