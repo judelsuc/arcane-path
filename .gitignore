@@ -2,3 +2,17 @@ __pycache__/
 *.py[cod]
 .cache/
 .venv/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+ovh.conf
+.env
+.env.*
+crash.log
+openrc.sh
+openstack-token
+clouds.yaml
+secure.yaml
