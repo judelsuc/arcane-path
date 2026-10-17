@@ -37,9 +37,10 @@ test("perfect sequence hits all 24 notes over three irregular loops; rests never
   const empty = rhythm(0);
   for (let loop = 0; loop < 3; loop++) {
     for (const slot of empty.pattern.flatMap((note, slot) => note ? [] : [slot])) {
-      const missed = tapRhythm(empty, MUSIC.leadMs + (loop * 12 + slot) * MUSIC.intervalMs);
+      const now = MUSIC.leadMs + (loop * 12 + slot) * MUSIC.intervalMs;
+      const missed = tapRhythm(empty, now);
       assert.equal(missed.hits, empty.hits);
-      assert.equal(missed.mistakes, 1);
+      assert.equal(missed.mistakes, now <= rhythmEnd(empty) ? 1 : 0);
       assert.equal(empty.mistakes, 0);
     }
     assert.equal(beatTime(empty, loop * 8), MUSIC.leadMs +

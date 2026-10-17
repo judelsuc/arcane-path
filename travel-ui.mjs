@@ -15,6 +15,7 @@ import { beginBusking, settleBusking, musicMistakeLimit } from "./music.mjs";
 import { setupMusic } from "./music-ui.mjs";
 import { interviewTrail } from "./trail.mjs";
 import { createServerJourney } from "./server-journey.mjs";
+import { prepareParentPaths } from "./parent-path.mjs";
 import { askHospitality } from "./hospitality.mjs";
 import { agendaClock } from "./agenda-clock.mjs";
 import { setupTrail } from "./trail-ui.mjs";
@@ -50,6 +51,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   let preparingOrigin = false;
   let trailController;
   let pendingCreation;
+  let parentPathController, parentPathKey, parentPathStatus = "", parentPathError = "";
   let backgroundDownloads;
   const pricingCountries = new Map();
   let transient = "", missingHeightMoves = 0;
@@ -158,6 +160,30 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       saveError = reason.message;
       console.error("Unable to save journey:", reason);
     }
+  }
+  function prepareCurrentParentPath(retry = false) {
+    if (!state?.serverJourney || state.ended || state.trail?.version !== 2 || state.trail.completed) {
+      parentPathController?.abort();
+      parentPathStatus = "";
+      return;
+    }
+    const key = `${state.serverJourney.id}:${state.trail.index}`;
+    if (!retry && key === parentPathKey) return;
+    parentPathController?.abort();
+    const controller = parentPathController = new AbortController();
+    parentPathKey = key;
+    parentPathStatus = "loading";
+    parentPathError = "";
+    void prepareParentPaths(state, { signal: controller.signal }).then(() => {
+      if (!controller.signal.aborted) parentPathStatus = "ready";
+    }).catch(reason => {
+      if (controller.signal.aborted) return;
+      console.error("Automatic parent path preparation failed:", reason);
+      parentPathStatus = "error";
+      parentPathError = reason.message;
+    }).finally(() => {
+      if (!controller.signal.aborted) localize();
+    });
   }
   function economyContext() {
     if (!state || !stream || !economyData) return null;
@@ -268,6 +294,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       try {
         state = trailClue(state, kind, current.cell, current.info, survivalConfig, economyData);
         autosave();
+        prepareCurrentParentPath();
         localize();
         return true;
       } catch (reason) {
@@ -282,6 +309,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       try {
         state = interviewTrail(state, current.info, survivalConfig, economyData);
         autosave();
+        prepareCurrentParentPath();
         localize();
         return true;
       } catch (reason) {
@@ -371,6 +399,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     retry.disabled = busy;
     stop.disabled = busy;
     status.textContent = error ? t("travelError", { error }) : transient ? t(transient) : "";
+    if (state?.ended) parentPathStatus = "";
+    document.querySelector("#journey-path-status").textContent = parentPathStatus
+      ? t(`journeyPath.${parentPathStatus}`, { error: parentPathError }) : "";
+    document.querySelector("#journey-path-retry").hidden = parentPathStatus !== "error";
     stats.textContent = state ? t("travelStats", {
       distance: (state.distanceMeters / 1000).toFixed(2),
       time: state.elapsedMinutes.toFixed(0), fatigue: state.fatigue.toFixed(1),
@@ -381,7 +413,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const chunk = position && stream?.get(position.x, position.y);
     const cell = chunk?.rows[position.row][position.col];
     const ended = Boolean(state?.ended);
-    if (ended) backgroundDownloads?.stop();
+    if (ended) {
+      backgroundDownloads?.stop();
+      parentPathController?.abort();
+    }
     document.querySelector("#journey-ended").hidden = !ended;
     if (state && survivalConfig) {
       document.querySelector("#player-wallet").textContent = t("wallet", {
@@ -741,6 +776,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         birthPending = true;
       }
       if (currentToken !== token) return;
+      prepareCurrentParentPath();
       const p = chunkPosition(state.col, state.row);
       stream = createChunkStream(region, { onUpdate: () => {
         if (currentToken === token) draw();
@@ -787,6 +823,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     token++;
     trailController?.abort();
     trailController = undefined;
+    parentPathController?.abort();
+    parentPathController = parentPathKey = undefined;
+    parentPathStatus = parentPathError = "";
     pricingCountries.clear();
     birthDialog.close();
     dailyTarotUI.reset();
@@ -870,6 +909,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   rest.addEventListener("click", () => survivalAction("rest"));
   sleep.addEventListener("click", () => survivalAction("sleep"));
   eat.addEventListener("click", () => survivalAction("eat"));
+  document.querySelector("#journey-path-retry").addEventListener("click", () => {
+    prepareCurrentParentPath(true);
+    localize();
+  });
   retry.addEventListener("click", async () => {
     if (busy) return;
     if (weatherError) weatherKey = undefined;

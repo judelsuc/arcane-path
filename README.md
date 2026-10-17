@@ -38,21 +38,24 @@ verifiee, pas seulement du code prepare. Voir le
 - [x] DNS arcane-path.eu : adresse A 57.130.85.251 verifiee localement et sur Cloudflare.
 - [x] Certificat HTTPS valide et acces de previsualisation protege par mot de passe.
 - [ ] Ouverture sans mot de passe : comptes, protections et sauvegardes a finaliser.
-- [ ] Couche 9 : creation de partie serveur, parcours routables et validation.
+- [x] Couche 9, jalon leger : creation serveur, recit coherent et poursuite finie.
   - [x] Depart cree et conserve cote serveur : identifiant, graine, tarot, etat initial, contenu versionne.
   - [x] Reessais idempotents, reprise locale et anciennes sauvegardes preserves.
-  - [x] Moteur A* borne sur la grille, persistance, cache et demande volontaire dans le journal.
-  - [ ] Validation en conditions reelles d'une etape distante complete (30–60 km).
-  - [ ] Algorithme complet du parent et validation de resolubilite.
-- [ ] Couche 15 juste apres la couche 9 : photos et carnet de voyage, export PDF.
+  - [x] Moteur A* borne sur la grille, persistance, cache et preparation automatique de l'etape courante.
+  - [x] Recit factuel, chronologie, fausses pistes et poursuite mobile : parcours narratifs et sauvegardes verifies.
+  - [x] Dialogues varies, souvenirs vieillissants sans perte des indices et presentation claire du motif/sejours (code).
+- [ ] Plus tard (R-083) : validation terrain 30–60 km, budget de survie,
+  nuits/achats sur le trajet et destinations guidees par le motif.
+- [ ] Couche 15 apres le jalon narratif leger : photos et carnet de voyage, export PDF,
+  sans attendre les simulations avancees reportees.
 - [ ] Autres couches du document de conception, avec checkpoints testes.
 - [ ] R-062 : caches d'objets persistantes, pour les autres joueurs et ses prochaines parties.
 - [ ] R-063 : indices d'arcanes plus precis avec la proximite ; habillage narratif LLM ulterieur.
 - [ ] Notifications par mail : aucun service d'envoi configure.
 
 Le DNS resout maintenant l'IP de la VM ; le site est accessible en HTTPS
-avec un mot de passe de previsualisation. La couche 9
-est en cours, pas terminee.
+avec un mot de passe de previsualisation. Le jalon leger de la couche 9 est
+termine ; la simulation avancee du terrain et du budget de survie reste reportee.
 Les couts sont des estimations, pas un plafond de facturation automatise.
 
 ## Infrastructure OVHcloud
@@ -152,10 +155,11 @@ creation pourrait remplacer la VM et est bloque par `prevent_destroy`.
 Les sauvegardes navigateur du port 8766 ne sont pas automatiquement presentes
 sur le port 18766 : chaque origine navigateur garde ses propres voyages.
 
-### Couche 9 : creation de partie (premier jalon)
+### Couche 9 : jalon narratif leger
 
 Une nouvelle partie passe par `POST /api/journeys`. Le serveur choisit une
-graine et un tarot, genere dix villes du catalogue europeen local et conserve
+graine et un tarot, genere dix villes du catalogue europeen local, le recit du
+parent et, si necessaire, trois villes de continuation. Il conserve
 le depart complet dans `.cache/travel/journeys.sqlite3`. Le meme identifiant
 de requete renvoie exactement le meme depart, meme apres redemarrage ou mise
 a jour des regles. Un changement de nom ou region avec cet identifiant est
@@ -183,18 +187,28 @@ dans une future sauvegarde ; le cache persistant seul n'est pas une sauvegarde.
 
 Les etapes restent choisies a **30–60 km a vol d'oiseau**. Le choix approuve
 pour les chemins est A* sur la grille du jeu, pas OSRM/GraphHopper. Cela ne
-revendique ni un vrai itineraire routier pieton ni le validateur complet de
-resolubilite de la couche 9.
+revendique ni un vrai itineraire routier pieton ni une validation du budget de
+survie. Le jalon leger valide la coherence du recit et l'acces aux indices.
+
+Le recit fixe motif, mode de voyage, chronologie, fausses pistes facultatives et
+souvenirs des temoins. Le parent attend ou poursuit sa route apres 7, 14 et 21
+jours de jeu, puis attend dans la treizieme ville au plus tard. On peut le
+rattraper des la dixieme. Chaque etape garde un indice accessible sans argent,
+photo externe, competence ni objet unique. Les anciennes parties conservent
+leur piste d'origine, sans recit ajoute retroactivement.
 
 ### Chemins du parent sur la grille
 
-Pendant une partie serveur, le bouton du journal prepare le chemin vers la
-prochaine etape en arriere-plan. Le lancement reste volontaire pendant les
-tests, pour ne pas charger davantage les fournisseurs cartographiques.
-Le journal affiche le travail reel, la distance sur la
-grille et les heures de marche de reference (personnage 4,5 km/h, sans fatigue,
-faim ni repos). Les couts terrain/pente et les quatre directions sont les memes
-que pour le joueur. L'eau reste traversable comme dans le jeu actuel ; aucune
+Pendant une partie serveur, la preparation du chemin de l'etape courante
+demarre automatiquement des la preparation/reprise et a chaque nouvel indice.
+Elle reste en arriere-plan, sans bloquer l'ouverture de la partie. Les
+etapes futures ne sont pas telechargees d'avance. Un statut et un bouton de
+reessai en cas d'erreur apparaissent hors du journal ; attente client bornee a
+cinq minutes et une relance automatique d'un echec serveur deja en cache.
+Le journal rappelle uniquement les indices obtenus, sans distances ou nombres
+de cases. Le calcul de reference (personnage 4,5 km/h, sans fatigue, faim ni
+repos) utilise les couts terrain/pente et les quatre directions du joueur.
+L'eau reste traversable comme dans le jeu actuel ; aucune
 precision de pont, cloture ou chemin pieton reel n'est inventee.
 
 `GET /api/parent-path?journey=IDENTIFIANT&stage=0` lance ou consulte la
@@ -487,8 +501,14 @@ reste la base ; le profil ajuste masse de jeu, allure et endurance.
   de prototype, pas une promesse de nourriture ou d'accueil dans le lieu reel.
   Les boutiques et l'argent viendront dans la couche economie.
 - Les avertissements expliquent les besoins eleves. Faim et manque de sommeil
-  ralentissent la marche. Reserve vide, fatigue a 100 ou 32 h d'eveil equivalent
-  terminent le voyage avec une explication et **Nouveau voyage**.
+  ralentissent la marche. La reserve vide termine le voyage. Fatigue a 100 ou
+  barre de sommeil pleine (32 h d'eveil equivalent) provoquent huit heures
+  d'inconscience, fatigue ramenee a 40 avant meteo et risque de vol d'argent.
+  La faim continue ; les anciennes parties deja terminees ne sont pas ranimees.
+  La pression de sommeil croit deux fois plus vite de 22:00 a 02:00, quatre fois
+  plus vite de 02:00 a 06:00, selon l'horloge UTC du jeu, meme a l'abri.
+  Dormir conserve sa recuperation habituelle. Passer 02:00 ne suffit pas a
+  provoquer le sommeil force si la barre n'est pas pleine.
 - Les actions de survie sont desactivees en observation et dans les dialogues.
   Attendre reellement ou telecharger ne consomme aucune ressource.
 
@@ -548,7 +568,13 @@ sans nouvelle dotation. Aucun tirage n'est payant.
 aligot autour de Firmi/Aveyron, croque-monsieur a Paris, tartiflette autour
 de Chamonix/Savoie, poisson cru au lait de coco a Tahiti. Sources touristiques
 et descriptions originales dans [public/economy.json](./public/economy.json).
-Chaque repas vaut pour le jeu 900 kcal de reserve et 20 minutes ; ce ne sont
+Chaque repas a une offre fictive stable par partie, case et jour UTC :
+prix tire entre 70 et 150 % de son tarif local et portion proportionnelle au
+prix (900 kcal pour une unite de repas locale). Les plats et etablissements
+peuvent donc avoir des prix et effets differents ; rouvrir le menu, acheter ou
+recharger la partie ne relance pas les offres. Un nouveau jour renouvelle les
+offres. Le menu affiche le prix exact et les kcal avant achat ; la recuperation
+ne depasse pas la reserve maximale. La duree reste de 20 minutes ; ce ne sont
 pas des mesures nutritionnelles. Les zones sont des boites de curation,
 pas des frontieres culinaires exactes. Un **repas simple** de jeu reste toujours
 propose sur une case de localite, y compris hors de ces quatre zones, au meme
@@ -758,10 +784,39 @@ autres dialogues pour ne pas interrompre une action en cours.
 Un arret pour faim, fatigue ou manque de sommeil ouvre egalement une explication.
 Ces changements n'ajoutent ni provisions ni reanimation d'une partie terminee.
 
-**Un coup de pouce (I)** donne gratuitement la prochaine action utile et la
-direction/distance vers l'objectif deja connu. Sur une etape, il rappelle
-comment enqueter ; pour un indice de lieu non resolu, il indique de demander
-son chemin sans devoiler la ville. Aucun temps, argent ou energie n'est depense.
+**Demander son chemin (I)** permet de chercher un passant
+imaginaire comment rejoindre l'objectif deja connu : direction generale parmi
+huit points cardinaux et distance vague (« encore assez loin »), sans nombre de
+cases, kilometres exacts ni itineraire garanti. Disponible sans chercher un PNJ
+reel. Sur une etape, il rappelle comment enqueter ; pour un indice de lieu non
+resolu, il indique comment le preciser sans devoiler la ville.
+Ouvrir le dialogue est gratuit ; chaque tentative coute 10 minutes et +2
+fatigue, plus metabolisme et exposition nocturne, sans argent. Reessayer
+relance le tirage et paie de nouveau. Chances : localites 90 %, gares 75 %,
+routes/batiments/lieux de culte 50 %, plaines/prairies/champs/parcs/vignes 25 %,
+forets/collines 15 %, montagnes/rails/cables 5 %, eau 0 %.
+
+Chaque pas de 250 m entrant dans une case d'eau ajoute 40 fatigue aux couts
+ordinaires, sans reduction par endurance. Les ponts cartographies comme route
+gardent leur cout normal ; a 100 fatigue, les regles d'evanouissement s'appliquent.
+
+La meteo estimee influence les actions exterieures : sous 10 C, +25 % de
+consommation calorique par tranche de dix degres (progressif, plafond +100 %) ;
+au-dessus de 30 C, +2 fatigue/heure par cinq degres (plafond +10/heure).
+Pluie : +2 fatigue/heure et vitesse de marche -15 % ; orage : +4/heure et
+vitesse -25 %, avec les limites de vitesse habituelles. Les effets s'ajoutent
+a l'exposition nocturne. Les actions abritees sont exemptees. Dormir dehors
+ne recupere pas de fatigue, mais conserve la recuperation reduite du sommeil.
+Sans donnees meteo chargees, le panneau indique explicitement que ces effets
+ne sont pas encore appliques. Il ne s'agit pas de meteo observee en direct.
+
+Sur une etape, **Chercher un indice (F)** choisit au hasard un type de
+decouverte accessible. Les couts possibles sont presentes avant l'action ;
+seul celui du resultat obtenu est facture. Les photos sont de vraies images
+geographiques du cache ou d'Internet avec source/licence, pas des illustrations
+generees. Si aucune image utilisable ne charge, un autre indice est choisi,
+avec une explication et son seul cout. Les lieux non resolus gardent leur
+action de demande de precision ; les indices futurs ne sont pas devoiles.
 
 Le journal de piste indique les directions depuis le joueur avec des nombres
 positifs et des fleches : est →, ouest ←, nord ↑, sud ↓. Par exemple, « 1 case
@@ -878,9 +933,11 @@ Les pistes bouclent, sans fondu ni correction automatique des raccords.
 L'onglet masque et le dialogue du minijeu de rythme mettent la musique en
 pause ; aucune piste Suno non synchronisee n'influence les notes/recompenses.
 Le mini-jeu a sa propre melodie originale avec basse et accompagnement,
-synthetisee par Web Audio sans fichier musical a telecharger. Les notes sont
-programmees sur les memes reperes visuels : une phrase de 12 cases (8 notes,
-4 silences), repetee trois fois. Les cases vides ne donnent aucun point.
+synthetisee localement en WAV PCM, lue par le meme lecteur audio natif que
+les musiques de fond (sans contexte Web Audio separe ni fichier externe).
+La lecture est recalee sur les memes reperes visuels : une phrase de 12 cases (8 notes,
+4 silences), tiree au hasard au debut de chaque prestation puis repetee trois
+fois pour permettre de l'apprendre. Les cases vides ne donnent aucun point.
 Le pas est de 400 ms, la tolerance de 150 ms ; les silences rendent les attaques
 irregulieres. Le compteur indique la boucle courante sur trois. Les 24 notes
 partagent le meme plafond de gain qu'avant, sans tripler le revenu.
