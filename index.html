@@ -14,7 +14,10 @@
       <header class="masthead">
         <div class="masthead-tools">
           <p class="eyebrow" data-i18n="prototype">Les Arcanes du Chemin · Prototype 01</p>
-          <button id="open-options" type="button" aria-haspopup="dialog" aria-controls="options-dialog" data-i18n="optionsTitle"></button>
+          <div class="masthead-actions">
+            <button id="open-controls" type="button" aria-haspopup="dialog" aria-controls="controls-dialog" data-i18n="controlsTitle"></button>
+            <button id="open-options" type="button" aria-haspopup="dialog" aria-controls="options-dialog" data-i18n="optionsTitle"></button>
+          </div>
         </div>
       </header>
 
@@ -293,6 +296,16 @@
       </footer>
       </div>
     </main>
+    <dialog id="controls-dialog" aria-labelledby="controls-title" aria-describedby="controls-intro">
+      <h2 id="controls-title" data-i18n="controlsTitle"></h2>
+      <form method="dialog"><button autofocus data-i18n="controlsClose"></button></form>
+      <p id="controls-intro" data-i18n="controlsIntro"></p>
+      <table>
+        <thead><tr><th scope="col" data-i18n="controlsKey"></th><th scope="col" data-i18n="controlsUsage"></th></tr></thead>
+        <tbody id="controls-list"></tbody>
+      </table>
+      <p data-i18n="controlsDialogs"></p>
+    </dialog>
     <dialog id="options-dialog" aria-labelledby="options-title">
       <h2 id="options-title" data-i18n="optionsTitle"></h2>
       <section class="option-group">

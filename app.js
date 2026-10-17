@@ -7,6 +7,7 @@ import { setupAudio } from "./audio-ui.mjs";
 import { setupButtonShortcuts } from "./button-shortcuts.mjs";
 import { setupStartingPoint, validateStartingMap } from "./starting-point-ui.mjs";
 import { setupCopyCoordinates } from "./copy-coordinates.mjs";
+import { setupShortcutHelp } from "./shortcut-help.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
 const viewport = document.querySelector("#map-viewport");
@@ -30,6 +31,7 @@ const cellContent = setupCellContent(t);
 const audio = setupAudio(t);
 const coordinates = setupCopyCoordinates(t, () => mapData && inspectedTile
   ? cellInfo(mapData, Number(inspectedTile.dataset.row), Number(inspectedTile.dataset.col)) : null);
+const controls = setupShortcutHelp(t);
 const travel = setupTravel({
   t, renderMap,
   musicAudio: audio.busking,
@@ -75,6 +77,7 @@ document.querySelector("#enter-world").addEventListener("click", () => {
   document.body.classList.remove("is-title");
   document.querySelector("#region").focus({ preventScroll: true });
   window.scrollTo({ top: 0, behavior: "instant" });
+  controls.welcome();
 });
 document.querySelector("#back-title").addEventListener("click", () => {
   startingPoint.reset();
@@ -188,6 +191,7 @@ function localize() {
   travel.localize();
   startingPoint.localize();
   coordinates.update();
+  controls.localize();
   document.querySelector("#starting-map-status").textContent = mapData
     ? t("setupSelected", { name: mapData.origin ? mapData.name.split(",")[0] : mapData.name })
     : t(loadFailed ? "loadError" : "loading");

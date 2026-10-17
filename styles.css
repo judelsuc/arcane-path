@@ -272,6 +272,13 @@ h1 {
 }
 #place-results { list-style: none; padding: 0; }
 #place-results button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: left; margin: 4px 0; }
+.masthead-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+#controls-dialog { width: min(700px, 94vw); max-height: 90dvh; overflow: auto; }
+#controls-dialog h2 { font: inherit; font-size: 1.5rem; }
+#controls-dialog table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+#controls-dialog th, #controls-dialog td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+#controls-dialog tbody th { width: 90px; color: var(--accent); white-space: nowrap; }
+#controls-dialog p { color: var(--muted); line-height: 1.6; }
 #options-dialog { width: min(560px, 94vw); max-height: 90dvh; overflow: auto; }
 #options-dialog h2 { font: inherit; font-size: 1.5rem; }
 #options-dialog h3 { font: inherit; font-weight: 600; }

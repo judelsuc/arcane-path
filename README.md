@@ -22,6 +22,7 @@ verifiee, pas seulement du code prepare. Voir le
 - [x] Huit voisins visibles precharges meme a l'arret, reessais temporaires espaces.
 - [x] Repas simple payant dans toutes les localites, restaurants OSM en contexte.
 - [x] Melodie, basse et retours de frappe synchronises au mini-jeu musical.
+- [x] Popup des raccourcis et de leur usage a la preparation, rouvrable avec ?.
 - [x] Acces OpenStack au bon projet et inventaire de Paris verifies.
 - [x] Tarif CPU verifie : 45,71 EUR TTC maximum pour 744 heures, hors extras.
 - [x] Terraform valide : une VM CPU, aucun GPU ni volume additionnel.
@@ -729,6 +730,14 @@ Les boutons caches/desactives et les appuis repetes sont ignores. Aucun
 raccourci ne s'active pendant l'utilisation d'un champ ou selecteur.
 Les commandes existantes restent disponibles sans modificateurs : fleches,
 L observation, R repos, P photo, Espace rythme et Echap pour fermer.
+Une fenetre **Commandes** presente les touches et leur utilisation a la premiere
+preparation de chaque visite (sans stocker de preference). Elle explique
+notamment la difference entre repos et sommeil et l'observation sans avancer
+le temps. Bouton **Commandes (?)** en haut ou touche **?** pour la rouvrir ;
+**Echap** ou **Compris, continuer** pour fermer. Liste et touches partagent les
+memes liaisons clavier, en francais/anglais. Dans les autres menus, les touches
+disponibles restent affichees sur les boutons ; aucun raccourci ne s'active
+pendant la saisie d'un texte.
 
 ## Ecran titre
 

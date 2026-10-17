@@ -1132,3 +1132,17 @@ This file records additions to the design without modifying the source PDF,
   actual portion, price or guarantee of service.
 - Legacy saved economies immediately gain the generic option without replacing
   their pinned specialty catalogue or rules. No remote restaurant interaction.
+
+## R-072 — Simple keyboard-shortcut onboarding
+
+- **User decision:** Prefer a simple popup listing shortcuts and their usage,
+  rather than implementing a guided tutorial.
+- **Implemented:** Show Controls at first journey preparation in each page
+  visit; a Controls (?) button and the question-mark key reopen it. List
+  movement, Look, cell actions, food, rest versus sleep, music, trail, towns,
+  photos, hints, coordinates, saving, map retries, OSM, leaving/resuming and
+  Options. Derive keys from the actual bindings; localize descriptions FR/EN.
+- Use a focusable native modal, close button and Escape, scrollable on mobile.
+  Do not stack over another modal or advance game time. Keep existing
+  input-field exclusion and per-dialog printed shortcuts. No persisted
+  onboarding setting or multi-step tutorial is added.

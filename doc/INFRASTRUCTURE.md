@@ -193,6 +193,22 @@ joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
   permissions 0600. Cette archive exclut le cache et n'est pas une sauvegarde
   des voyages. Aucun nouvel abonnement ni ressource payante.
 
+### Checkpoint deploye : repas et musique
+
+- **17 octobre 2026** : commit `7100f2bbe3caae68e28d9adeaeb3b55abf399e25`,
+  tag pousse `deploy-2026-10-17-food-music`.
+- Repas simple dans toutes les localites, restaurants OSM actuels proposes
+  avec source et limites explicites ; melodie et accompagnement synchronises
+  du mini-jeu musical, retours des frappes justes/fausses.
+- 203 tests JavaScript passes, suite Python de 109 tests toujours valide
+  (aucune modification Python dans ce checkpoint). Verification navigateur :
+  contexte Web Audio running, 24 voix programmees ; achat du repas simple.
+- Services distants actifs et API voyage 200. Manifeste HTTPS authentifie egal
+  au commit attendu ; module musical et module economie avec repas simple
+  effectivement servis en 200.
+- Archive de retour code, hors cache :
+  `/home/ubuntu/arcane-path-before-deploy-7100f2b.tar.gz`, mode 0600.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026

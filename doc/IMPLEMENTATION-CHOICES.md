@@ -1098,3 +1098,14 @@ leave visual play possible. Browser validation observed a running real audio
 context and all 24 scheduled melody/accompaniment voices; basic meal purchase
 updated wallet, reserves and game time. Automated checks cover exact beat
 times, latency, cancellation, silence controls and food/venue validation.
+
+## Simple controls popup
+
+User chose a shortcut/usage popup instead of guided onboarding. Controls
+opens at the first preparation in each page visit; the header button or ?
+reopens it. Native modal semantics provide focus and Escape/close behavior;
+20 rows remain scrollable at mobile width. Keys come from buttonBindings,
+not a second hardcoded key map. Explanations distinguish rest from sleep,
+Look from walking, and contextual actions. Dialogs keep their own printed
+shortcuts; typing does not trigger controls. No game time, save migration,
+persisted preference or larger tutorial system is added.

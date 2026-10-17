@@ -5,6 +5,7 @@ const KEYS = {
   "cancel-journey-start": "A",
   "back-title": "Escape",
   "open-options": "K",
+  "open-controls": "?",
   "start-travel": "N", "resume-travel": "C", "open-osm": "O",
   "restart-travel": "N", "rest-travel": "R", "sleep-travel": "H",
   "eat-travel": "E", "open-town": "T", "open-music": "B",
@@ -48,6 +49,7 @@ export function buttonBindings(buttons) {
 
 export function shortcutCode(event) {
   if (event.ctrlKey || event.metaKey || event.isComposing || (event.altKey && !event.shiftKey)) return null;
+  if (event.key === "?") return "?";
   if (!event.altKey && /^[a-z0-9]$/i.test(event.key)) return event.key.toUpperCase();
   if (/^Key[A-Z]$/.test(event.code)) return event.code.slice(3);
   if (/^Digit[0-9]$/.test(event.code)) return event.code.slice(5);

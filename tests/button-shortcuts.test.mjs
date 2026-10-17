@@ -21,6 +21,7 @@ test("directions, reveal, rhythm and photo controls retain meaningful bindings",
     [{ id: "open-options" }, "K"], [{ id: "search-place" }, "G"],
     [{ id: "use-location" }, "V"], [{ id: "back-title" }, "Escape"],
     [{ id: "cancel-place" }, "Z"],
+    [{ id: "open-controls" }, "?"],
   ]) assert.equal(buttonBindings([button])[0].key, expected);
   assert.throws(() => buttonBindings(Array.from({ length: 37 }, () => ({}))), /Too many/);
 });
@@ -40,6 +41,9 @@ test("single keys follow the keyboard layout and retain the legacy Alt+Shift ali
   assert.equal(shortcutCode({ key: "ArrowUp", code: "ArrowUp" }), "ArrowUp");
   assert.equal(shortcutCode({ key: "j", code: "KeyJ", ctrlKey: true }), null);
   assert.equal(shortcutCode({ key: "j", code: "KeyJ", isComposing: true }), null);
+  assert.equal(shortcutCode({ key: "?", code: "Slash", shiftKey: true }), "?");
+  assert.equal(shortcutCode({ key: "?", code: "Comma", shiftKey: true }), "?");
+  assert.equal(shortcutCode({ key: "?", code: "Slash", ctrlKey: true }), null);
 });
 
 test("cell services and clue forms keep stable, non-conflicting action keys", () => {
