@@ -1,5 +1,13 @@
 import { trailTarget, atTrailTarget } from "./trail.mjs";
 
+export function trailDirections(state, target, t) {
+  const east = target.col - state.col, south = target.row - state.row;
+  const parts = [];
+  if (east) parts.push(t(east > 0 ? "trailEast" : "trailWest", { count: Math.abs(east) }));
+  if (south) parts.push(t(south > 0 ? "trailSouth" : "trailNorth", { count: Math.abs(south) }));
+  return parts.length ? parts.join(t("trailDirectionJoin")) : t("trailAlreadyHere");
+}
+
 export function setupTrail(t, { context, interview }) {
   const dialog = document.querySelector("#trail-dialog");
   const action = document.querySelector("#trail-interview");
@@ -21,8 +29,7 @@ export function setupTrail(t, { context, interview }) {
     document.querySelector("#trail-intro").textContent = t("trailIntro", { parent: trail.parentName, total: trail.stages.length });
     document.querySelector("#trail-target").textContent = target
       ? t("trailTarget", { step: trail.index + 1, total: trail.stages.length, place: target.name,
-        row: target.row + 1, col: target.col + 1,
-        east: target.col - state.col, south: target.row - state.row })
+        directions: trailDirections(state, target, t) })
       : t("trailReunion", { parent: trail.parentName });
     const mapLink = document.querySelector("#trail-map-link");
     mapLink.hidden = !target;

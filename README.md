@@ -367,6 +367,12 @@ parcours complets de la couche 9 ne sont pas encore implementes.
 
 ## Boutons et raccourcis
 
+Le journal de piste indique les directions depuis le joueur avec des nombres
+positifs et des fleches : est →, ouest ←, nord ↑, sud ↓. Par exemple, « 1 case
+vers l'est et 1 vers le nord » signifie une case a droite et une vers le haut.
+Les axes sans deplacement sont omis ; sur place, le journal invite a parler
+au temoin plutot qu'afficher des coordonnees regionales.
+
 Survoler un bouton ou lui donner le focus avec Tab affiche son action et son
 raccourci **Alt + Maj + touche** (Option + Maj sur Mac). Chaque bouton dispose
 aussi de `title` et `aria-keyshortcuts`. Exemples : M musique, N nouveau

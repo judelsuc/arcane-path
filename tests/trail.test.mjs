@@ -4,6 +4,26 @@ import { readFileSync } from "node:fs";
 import { createTrail, trailTarget, atTrailTarget, witnessFacts, interviewTrail } from "../trail.mjs";
 import { startEconomy } from "../economy.mjs";
 import { startSurvival } from "../survival.mjs";
+import { trailDirections } from "../trail-ui.mjs";
+import { translate } from "../i18n.mjs";
+
+test("trail directions name the correct compass direction without negative or zero offsets", () => {
+  const state = { col: 14, row: 10 };
+  for (const locale of ["fr", "en"]) {
+    const t = (key, params) => translate(locale, key, params);
+    for (const east of [-2, 0, 2]) for (const south of [-1, 0, 1]) {
+      const text = trailDirections(state, { col: 14 + east, row: 10 + south }, t);
+      const expected = [];
+      if (east) expected.push(t(east > 0 ? "trailEast" : "trailWest", { count: Math.abs(east) }));
+      if (south) expected.push(t(south > 0 ? "trailSouth" : "trailNorth", { count: Math.abs(south) }));
+      assert.equal(text, expected.length ? expected.join(t("trailDirectionJoin")) : t("trailAlreadyHere"));
+      assert.doesNotMatch(text, /-\d|\b0\b/);
+    }
+  }
+  assert.equal(trailDirections(state, { col: 15, row: 9 },
+    (key, params) => translate("fr", key, params)),
+  "1 case(s) vers l'est (→) et 1 case(s) vers le nord (↑)");
+});
 
 const survival = JSON.parse(readFileSync(new URL("../public/config.json", import.meta.url))).survival;
 const economy = JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url)));
