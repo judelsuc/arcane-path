@@ -190,6 +190,9 @@ h1 {
 .map-heading .eyebrow {
   margin-bottom: 7px;
 }
+.map-heading > div { min-width: 0; max-width: 100%; }
+#region { width: 240px; max-width: 100%; min-width: 0; flex-shrink: 1; }
+#map-title, #ascii-title { overflow-wrap: anywhere; }
 
 .map-heading h2,
 .legend-card h2 {
@@ -219,6 +222,47 @@ h1 {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.journey-setup {
+  padding: clamp(18px, 4vw, 40px);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+.journey-setup h1 { font: inherit; font-size: 1.5rem; margin: 0 0 20px; }
+.journey-setup h2 { font: inherit; font-weight: 600; color: var(--accent); margin: 0 0 20px; }
+.journey-setup > p { color: var(--muted); max-width: 66ch; margin: 0; }
+.setup-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 48px; margin: 40px 0; }
+.setup-presets, #starting-point { min-width: 0; }
+.journey-setup p { overflow-wrap: anywhere; color: var(--muted); }
+.journey-setup .language-picker { display: grid; gap: 12px; font: inherit; }
+.journey-setup #region { width: 100%; }
+#starting-map-status { margin-top: 20px; }
+.journey-setup button, .journey-setup select { font: inherit; padding: 10px 14px; }
+.setup-departure { padding-top: 28px; margin-bottom: 32px; border-top: 1px solid var(--line); }
+.setup-departure button { margin: 0 12px 12px 0; }
+#character-setup > label { display: block; margin-bottom: 12px; }
+#character-name {
+  display: block; width: min(100%, 360px); padding: 10px 14px;
+  background: #121a14; color: inherit; border: 1px solid var(--line); font: inherit;
+  margin-bottom: 20px;
+}
+#player-name { color: var(--accent); }
+.place-privacy { margin-top: 24px; color: var(--muted); }
+#starting-point a { color: var(--muted); }
+#place-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; margin-bottom: 16px; }
+#place-search label { grid-column: 1 / -1; }
+#place-name {
+  min-width: 0; max-width: 100%; flex: 1 1 180px; padding: 9px;
+  background: #121a14; color: inherit; border: 1px solid var(--line); font: inherit;
+}
+#place-results { list-style: none; padding: 0; }
+#place-results button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: left; margin: 4px 0; }
+#options-dialog { width: min(560px, 94vw); max-height: 90dvh; overflow: auto; }
+#options-dialog h2 { font: inherit; font-size: 1.5rem; }
+#options-dialog h3 { font: inherit; font-weight: 600; }
+#options-dialog .language-picker, #options-dialog .audio-controls { font-size: 1rem; }
+.option-group { padding: 20px 0; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+#options-dialog .audio-controls { margin-bottom: 0; }
+#options-dialog #audio-status { flex-basis: 100%; }
 .comparison-panel {
   min-width: 0;
 }
@@ -523,7 +567,7 @@ dialog p { margin: 12px 0; }
 #music-progress { width: 100%; }
 #trail-dialog { width: min(680px, 94vw); max-height: 90dvh; overflow: auto; overflow-wrap: anywhere; }
 #trail-history { padding-left: 1.3em; }
-#journey-save-status { color: var(--muted); font-size: 0.65rem; overflow-wrap: anywhere; }
+#journey-save-status { color: var(--muted); font-size: inherit; overflow-wrap: anywhere; }
 
 .travel-panel {
   padding: 16px 24px;
@@ -653,6 +697,7 @@ dialog p { margin: 12px 0; }
 }
 
 @media (max-width: 760px) {
+  .setup-grid { grid-template-columns: minmax(0, 1fr); gap: 36px; margin: 32px 0; }
   .travel-active { grid-template-columns: minmax(0, 1fr); }
   .travel-active .travel-panel {
     grid-column: 1;

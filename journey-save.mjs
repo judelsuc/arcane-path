@@ -1,4 +1,4 @@
-import { validateSurvivalConfig, characterProfile } from "./survival.mjs";
+import { validateSurvivalConfig, characterProfile, normalizeCharacterName } from "./survival.mjs";
 import { validateEconomy } from "./economy.mjs";
 import { chunkPosition } from "./travel.mjs";
 
@@ -15,12 +15,13 @@ export function validateSave(save) {
   const nonnegative = value => finite(value) && value >= 0;
   const integer = value => Number.isSafeInteger(value);
   if (!save || save.version !== SAVE_VERSION || typeof save.region !== "string" ||
-      !/^[a-z]+$/.test(save.region) || typeof save.mapIdentity !== "string" ||
+      !/^(?:[a-z]+|origin-[a-f0-9]{20})$/.test(save.region) || typeof save.mapIdentity !== "string" ||
       !integer(save.revision) || save.revision < 1 || typeof save.savedAt !== "string" ||
       !finite(Date.parse(save.savedAt))) fail();
   validateSurvivalConfig(save.survival);
   validateEconomy(save.economy);
   const s = save.state;
+  if (s?.name !== undefined && normalizeCharacterName(s.name) !== s.name) fail();
   if (!s || !integer(s.col) || !integer(s.row) ||
       Math.abs(chunkPosition(s.col, s.row).x) > 1000 ||
       Math.abs(chunkPosition(s.col, s.row).y) > 1000 || s.mode !== "walk" ||

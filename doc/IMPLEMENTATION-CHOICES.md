@@ -708,3 +708,94 @@ Browser checks verified a 3.10 game EUR donation, a 370-minute arrest action
 with release in the same cell, and forest-only 450 kcal foraging. At 375 px,
 the dialog fits and unavailable town/shop actions stay disabled. Original
 saved progress was restored after each check.
+
+## Custom European origins and a separate setup/options flow
+
+The user requested place-name/current-location starts, confirmed Europe-only
+lookup and online service use, then requested a less cramped intermediate
+screen, separate language/music options and simpler typography.
+
+Nominatim lookup is server-side, explicit-submit only, identified and globally
+serialized with >=1.1 s between requests. A bounded in-memory cache reuses
+recent lookups; persisted prepared origins need no new geocoding. Country
+allowlist plus documented geographic bounds filters overseas and unsupported
+matches. It approximates coverage, not a claim of exact continental borders.
+Geolocation is a single permission-based browser call, never an automatic
+read or watch; invalid/foreign positions fail visibly.
+
+An origin job prepares a bounded 24x24 OSM map and original source under the
+existing private travel cache. Six-decimal coordinate hashes provide stable
+origin IDs without names/path input. Cell (12,12) is centred on the requested
+point; chunk geometry now respects explicit projection latitude. Restarting
+loads the same geometry/source identity for save compatibility. The original
+four maps and alphabetic save IDs remain supported, while custom save IDs
+have a strict origin-plus-20-hex grammar. No save schema/version bump.
+
+Initial map jobs reuse the bounded worker pool, deduplicate coordinate
+requests and expose pending/failure states. Start/Resume are disabled during
+selection; switching regions aborts client waiting, not already running server
+work. A sparse map without the ten real named public story cells is rejected
+before starting, including when selected after reload. No invented clues,
+silent origin relocation, or partial saved journey.
+
+Title now leads to an intermediate preparation screen, not the gameplay map.
+Presets/custom origins, name search, location, tarot explanation and Start/
+Resume live here. Gameplay retains the save status but no setup controls;
+returning reloads the selected origin and keeps saved progress. Options is an
+accessible native dialog available from all screens, containing the original
+language/audio controls. It does not redraw tarot or advance game time.
+Existing music defaults and in-session settings are preserved.
+
+Setup typography is one monospace family with exactly two sizes: 24 px for
+the main heading and 16 px for other content/controls, including save status.
+Location result disambiguation remains full-length, while selected labels are
+short. Desktop uses two well-spaced columns; mobile stacks naturally and
+privacy/source detail can be expanded. The shared preview viewport was restored
+to desktop size after mobile validation rather than left at 375 px.
+
+Tests cover European filters, provider identification/caching/throttling,
+reverse lookup preserving the requested coordinates, exact origin/chunk
+centres, persistent restart/offline snapshot reuse, strict custom save IDs,
+lookup errors/pending responses and insufficient story locations. Browser
+validation used real Firmi geocoding/OSM, mocked location success/permission
+denial, a ten-stage new journey and exact resume. Original browser saves were
+restored after testing. Options language/music/volume, setup/game transitions,
+desktop/mobile overflow and computed typography sizes were checked directly.
+Final validation: all 141 JavaScript tests and 12 focused Python tests pass.
+The region label/control gap is 12 px and selected-origin status starts 20 px
+below the dropdown; these distances were measured in the browser.
+
+The user's real geolocation attempt timed out despite granted permission.
+Browser diagnostics confirmed a secure context, available geolocation API,
+granted permission and an Electron host. Permission and provider availability
+are separate: [Electron documents a host-level geolocation service requirement](https://www.electronjs.org/docs/latest/api/environment-variables#google_api_key).
+The game cannot configure VS Code's host or guarantee a position from it.
+No IP-location service or guessed coordinate was added.
+
+Acquisition now permits a browser position up to one minute old, retries a
+provider timeout/unavailability once with higher accuracy for up to 60 s, and
+never retries denied permission. Progress and a Cancel lookup action remain
+visible. Cancellation rejects promptly, prevents retry and ignores late
+callbacks; the underlying one-shot browser request cannot be forcibly stopped.
+Final provider errors explicitly suggest system Location Services, a standalone
+browser, or name search rather than reporting the permission as denied.
+Both retry/cancel model tests and browser UI checks passed. Real position
+acquisition in the embedded host remains unverified; simulated success is not
+claimed as a fix for that host's provider.
+
+## Character names
+
+The user requested a named character. Preparation now requires a name for a
+new journey before confirmation/creation. The shared survival helper trims
+and collapses whitespace, normalizes NFC and accepts 1–40 UTF-16 code units
+(matching the HTML input limit), excluding control characters. The initial
+tarot dialog and player panel use textContent to show the name. It is stored
+in state.name and preserved by existing immutable reducers/autosave.
+
+The field is optional only in saved data for compatibility: nameless older
+journeys resume without prompting or redrawing and show an explicit unnamed
+traveller label. Named saves must contain an already canonical valid value;
+loading does not silently rewrite names. No server/network name transmission,
+renaming flow or name-based gameplay modifiers were introduced. Tests cover
+normalization, accented/non-Latin names, invalid limits/control characters,
+action/save round-trip and unchanged nameless compatibility.

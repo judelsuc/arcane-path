@@ -40,6 +40,15 @@ export function characterProfile(attributes) {
   };
 }
 
+export function normalizeCharacterName(value) {
+  if (typeof value !== "string" || /[\u0000-\u001f\u007f-\u009f]/.test(value)) {
+    throw new Error("Invalid character name.");
+  }
+  const name = value.normalize("NFC").trim().replace(/\s+/g, " ");
+  if (!name || name.length > 40) throw new Error("Character name must contain 1 to 40 characters.");
+  return name;
+}
+
 export function startSurvival(col, row, startedAt, profileId, config) {
   validateSurvivalConfig(config);
   if (!Object.hasOwn(config.profiles, profileId)) throw new Error("Unknown character profile.");

@@ -14,19 +14,7 @@
       <header class="masthead">
         <div class="masthead-tools">
           <p class="eyebrow" data-i18n="prototype">Les Arcanes du Chemin · Prototype 01</p>
-          <label class="language-picker">
-            <span data-i18n="language">Langue</span>
-            <select id="language">
-              <option value="fr" lang="fr">Français</option>
-              <option value="en" lang="en">English</option>
-            </select>
-          </label>
-        </div>
-        <div class="audio-controls">
-          <button id="audio-toggle" type="button" aria-pressed="false"></button>
-          <label for="audio-volume" data-i18n="audioVolume"></label>
-          <input id="audio-volume" type="range" min="0" max="100" value="25">
-          <span id="audio-status" role="status"></span>
+          <button id="open-options" type="button" aria-haspopup="dialog" aria-controls="options-dialog" data-i18n="optionsTitle"></button>
         </div>
       </header>
 
@@ -63,15 +51,12 @@
         <p class="title-note" data-i18n="titleContinueNote"></p>
       </section>
 
-      <div id="game-content" hidden>
-      <section class="map-card" aria-labelledby="map-title">
-        <div class="map-heading">
-          <div>
-            <p class="eyebrow" data-i18n="layer">Couche 01 · Cartographie</p>
-            <h2 id="map-title">Chargement de la région...</h2>
-            <p id="map-country" class="map-country"></p>
-          </div>
-          <div>
+      <section id="journey-setup" class="map-card journey-setup" aria-labelledby="setup-title" hidden>
+        <h1 id="setup-title" data-i18n="setupTitle"></h1>
+        <p data-i18n="setupIntro"></p>
+        <div class="setup-grid">
+          <section class="setup-presets" aria-labelledby="setup-region-title">
+            <h2 id="setup-region-title" data-i18n="setupRegions"></h2>
             <label class="language-picker">
               <span data-i18n="region">Région</span>
               <select id="region">
@@ -81,14 +66,31 @@
                 <option value="tahiti">Tahiti (Papeete)</option>
               </select>
             </label>
-            <p class="map-scale" id="map-scale"></p>
-            <button id="open-osm" type="button" aria-haspopup="dialog" aria-controls="osm-drawer" disabled data-i18n="openReference"></button>
-          </div>
+            <p id="starting-map-status" role="status"></p>
+          </section>
+        <section id="starting-point" aria-labelledby="place-title">
+          <h2 id="place-title" data-i18n="placeTitle"></h2>
+          <form id="place-search">
+            <label for="place-name" data-i18n="placeName"></label>
+            <input id="place-name" type="search" minlength="2" maxlength="120" required autocomplete="off">
+            <button id="search-place" type="submit" data-i18n="placeSearch"></button>
+          </form>
+          <button id="use-location" type="button" data-i18n="placeUseLocation"></button>
+          <button id="cancel-place" type="button" data-i18n="placeCancel" hidden></button>
+          <p id="place-status" role="status"></p>
+          <ul id="place-results"></ul>
+          <details class="place-privacy">
+            <summary data-i18n="placePrivacyTitle"></summary>
+            <p data-i18n="placePrivacy"></p>
+            <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" data-i18n="placeCredit"></a>
+          </details>
+        </section>
         </div>
-        <div id="map-workspace">
-        <section class="travel-panel" aria-labelledby="travel-title">
-          <h3 id="travel-title" data-i18n="travelTitle"></h3>
+        <section class="setup-departure" aria-labelledby="setup-departure-title">
+          <h2 id="setup-departure-title" data-i18n="setupDeparture"></h2>
           <div id="character-setup">
+            <label for="character-name" data-i18n="characterName"></label>
+            <input id="character-name" type="text" required maxlength="40" autocomplete="off" spellcheck="false">
             <select id="character-profile" hidden aria-label="Legacy profile">
               <option value="balanced" data-i18n="profile.balanced"></option>
               <option value="sturdy" data-i18n="profile.sturdy"></option>
@@ -99,10 +101,32 @@
           <button id="start-travel" type="button" disabled data-i18n="travelStart"></button>
           <button id="resume-travel" type="button" hidden disabled data-i18n="saveResume"></button>
           <p id="journey-save-status" role="status"></p>
+        </section>
+        <button id="back-title" type="button" data-i18n="setupBack"></button>
+      </section>
+
+      <div id="game-content" hidden>
+      <section class="map-card" aria-labelledby="map-title">
+        <div class="map-heading">
+          <div>
+            <p class="eyebrow" data-i18n="layer">Couche 01 · Cartographie</p>
+            <h2 id="map-title">Chargement de la région...</h2>
+            <p id="map-country" class="map-country"></p>
+          </div>
+          <div>
+            <p class="map-scale" id="map-scale"></p>
+            <button id="open-osm" type="button" aria-haspopup="dialog" aria-controls="osm-drawer" disabled data-i18n="openReference"></button>
+          </div>
+        </div>
+        <div id="map-workspace">
+        <section class="travel-panel" aria-labelledby="travel-title">
+          <h3 id="travel-title" data-i18n="travelTitle"></h3>
+          <p id="journey-play-save" role="status"></p>
           <div id="travel-controls" hidden>
             <time id="travel-clock"></time>
             <section class="player-needs" aria-labelledby="needs-title">
               <h4 id="needs-title" data-i18n="needsTitle"></h4>
+              <p id="player-name"></p>
               <p id="player-character"></p>
               <p id="player-wallet"></p>
               <p id="player-tarot"></p>
@@ -239,8 +263,31 @@
       </footer>
       </div>
     </main>
+    <dialog id="options-dialog" aria-labelledby="options-title">
+      <h2 id="options-title" data-i18n="optionsTitle"></h2>
+      <section class="option-group">
+        <label class="language-picker">
+          <span data-i18n="language">Langue</span>
+          <select id="language">
+            <option value="fr" lang="fr">Français</option>
+            <option value="en" lang="en">English</option>
+          </select>
+        </label>
+      </section>
+      <section class="option-group" aria-labelledby="options-music-title">
+        <h3 id="options-music-title" data-i18n="optionsMusic"></h3>
+        <div class="audio-controls">
+          <button id="audio-toggle" type="button" aria-pressed="false"></button>
+          <label for="audio-volume" data-i18n="audioVolume"></label>
+          <input id="audio-volume" type="range" min="0" max="100" value="25">
+          <span id="audio-status" role="status"></span>
+        </div>
+      </section>
+      <form method="dialog"><button id="close-options" data-i18n="optionsClose"></button></form>
+    </dialog>
     <dialog id="birth-tarot-dialog" aria-labelledby="birth-tarot-title">
       <h2 id="birth-tarot-title" data-i18n="birthTarotTitle"></h2>
+      <p id="birth-character-name"></p>
       <p data-i18n="birthTarotIntro"></p>
       <p id="birth-tarot-save" role="status"></p>
       <pre class="birth-card-art" aria-hidden="true"></pre>

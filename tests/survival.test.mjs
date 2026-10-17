@@ -3,7 +3,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import {
   startSurvival, characterProfile, hungerPercent, canEat, walkSurvival,
-  restSurvival, sleepSurvival, eatSurvival, validateSurvivalConfig,
+  restSurvival, sleepSurvival, eatSurvival, validateSurvivalConfig, normalizeCharacterName,
 } from "../survival.mjs";
 import { journeyDate } from "../travel.mjs";
 
@@ -12,6 +12,16 @@ const road = { terrain: "road", elevationMeters: 100 };
 const town = { terrain: "place" };
 const start = (profile = "balanced", settings = config) =>
   startSurvival(0, 0, Date.UTC(2026, 9, 17, 8), profile, settings);
+
+test("character names normalize whitespace and Unicode and reject unusable names", () => {
+  assert.equal(normalizeCharacterName("  Alex   du chemin "), "Alex du chemin");
+  assert.equal(normalizeCharacterName("E\u0301milie"), "\u00c9milie");
+  assert.equal(normalizeCharacterName("\u5c0f\u660e"), "\u5c0f\u660e");
+  assert.equal(normalizeCharacterName("A".repeat(40)).length, 40);
+  for (const invalid of ["", "   ", "A".repeat(41), "Alex\nCamille", "A\u0000", null, 10]) {
+    assert.throws(() => normalizeCharacterName(invalid));
+  }
+});
 
 test("fresh journey starts fed, rested and with independent character attributes", () => {
   const state = start();

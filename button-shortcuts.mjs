@@ -1,5 +1,9 @@
 const KEYS = {
   "audio-toggle": "M", "enter-world": "Enter",
+  "search-place": "G", "use-location": "V",
+  "cancel-place": "Z",
+  "back-title": "Escape",
+  "open-options": "K",
   "start-travel": "N", "resume-travel": "C", "open-osm": "O",
   "restart-travel": "N", "rest-travel": "R", "sleep-travel": "H",
   "eat-travel": "E", "open-town": "T", "open-music": "B",

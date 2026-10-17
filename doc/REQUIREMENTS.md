@@ -651,6 +651,46 @@ This file records additions to the design without modifying the source PDF,
   Exclude inaccessible/disused/abandoned/non-food stores. No nearby-store
   guessing, plant advice, theft instructions, inventory or real legal claims.
 
+## R-046 — Named and current-location starting points
+
+- **User request:** Type a place name as starting point or use the player's
+  real current location.
+- **Confirmed scope:** Europe only for new searches/locations; online lookup
+  permitted. Existing demonstration regions/saves remain unchanged.
+- Explicit search, disambiguated results, and one-shot browser geolocation
+  after permission. Show permission/timeouts/provider failures; no tracking.
+- Prepare real map data centred on the requested coordinate, then let the
+  player start/resume explicitly. Keep independent, persistent origin saves.
+  No synthetic place data or silent nearby fallback when a map/story cannot load.
+- First version uses Nominatim with attribution, caching and a global request
+  interval; European country/coordinate filter and sparse-map limits are
+  documented in README. Coordinate disclosure to mapping services is visible.
+
+## R-047 — Separate setup and options; uncluttered typography
+
+- **User requests:** The start feels cramped: insert an intermediate screen,
+  move language/music into an Options screen, and reduce competing font sizes.
+- Flow is title -> journey preparation -> gameplay. Preparation groups
+  existing/new origins, tarot explanation, Start and Resume; no map/needs
+  controls competing for space here. Returning preserves saved progress.
+- Options is available from all three screens, with language, music toggle
+  and volume; closing restores the same screen and journey.
+- Setup uses one font, a 24 px heading and 16 px content/controls, generous
+  gaps, short selected place labels, and responsive columns without horizontal
+  overflow. Narrow screens scroll vertically; desktop preview must not remain
+  accidentally constrained to a mobile-test viewport.
+
+## R-048 — Name the character
+
+- **User request:** The character should have a name.
+- Require a 1–40 character name in preparation for new journeys, before the
+  single tarot draw. Trim/collapse whitespace, normalize Unicode, reject
+  control characters and display as text, never markup.
+- Show the name on the initial tarot screen and in the player panel; save
+  and resume it exactly. Names remain local to the browser's journey save.
+- Legacy nameless saves remain valid and resumable without a forced name
+  or a new tarot draw. The new-journey name field does not rename an old save.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

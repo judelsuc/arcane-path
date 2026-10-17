@@ -23,6 +23,7 @@ from build_map import rasterize
 from fetch_osm import download_region
 from weather import fetch_climate
 from config import load_config
+from starting_places import PlaceLookup, coordinates
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_SIZE = 8
@@ -51,7 +52,8 @@ def atomic_write(path, data):
 
 
 def chunk_geometry(base, x, y):
-    latitude = (base["bounds"]["minLatitude"] + base["bounds"]["maxLatitude"]) / 2
+    latitude = base.get("projectionLatitude",
+                        (base["bounds"]["minLatitude"] + base["bounds"]["maxLatitude"]) / 2)
     lat_step = CELL_METERS / RADIUS * 180 / math.pi
     lon_step = lat_step / math.cos(math.radians(latitude))
     west = base["bounds"]["minLongitude"] + x * CHUNK_SIZE * lon_step
@@ -100,6 +102,45 @@ class ChunkStore:
             key: hashlib.sha256((root / region["snapshot"]).read_bytes()).hexdigest()
             for key, region in self.regions.items()
         }
+        self.origin_lock = threading.Lock()
+        self.places = PlaceLookup()
+        for path in (self.cache / "origins").glob("origin-*/map.json"):
+            self.register_origin(path.parent.name, json.loads(path.read_text()), path.parent / "source.osm.gz")
+
+    def register_origin(self, key, data, source):
+        fingerprint = hashlib.sha256(source.read_bytes()).hexdigest()
+        self.bases[key] = data
+        self.fingerprints[key] = fingerprint
+        self.regions[key] = {"name": data["name"], "snapshot": str(source.resolve())}
+
+    def prepare_origin(self, latitude, longitude):
+        latitude, longitude = coordinates(latitude, longitude)
+        key = "origin-" + hashlib.sha256(f"{latitude:.6f},{longitude:.6f}".encode()).hexdigest()[:20]
+        with self.origin_lock:
+            if key in self.bases:
+                return {"region": key, "map": self.bases[key]}
+            place = self.places.reverse(latitude, longitude)
+            lat_step = CELL_METERS / RADIUS * 180 / math.pi
+            lon_step = lat_step / math.cos(math.radians(latitude))
+            # Cell (12,12), the normal starting cell, is centred on the requested point.
+            bounds = [longitude - 12.5 * lon_step, latitude - 11.5 * lat_step,
+                      longitude + 11.5 * lon_step, latitude + 12.5 * lat_step]
+            directory = self.cache / "origins" / key
+            source = directory / "source.osm.gz"
+            download_region(bounds, place["name"], source)
+            with gzip.open(source, "rb") as stream:
+                root = ET.parse(stream).getroot()
+            root.set("projection_latitude", str(latitude))
+            atomic_write(source, gzip.compress(ET.tostring(root), mtime=0))
+            data = rasterize(source, place["name"], CELL_METERS)
+            data["rows"] = [row[:24] for row in data["rows"][:24]]
+            if len(data["rows"]) != 24 or any(len(row) != 24 for row in data["rows"]):
+                raise ValueError("Unexpected starting map dimensions.")
+            data["width"] = data["height"] = 24
+            data["origin"] = place
+            atomic_write(directory / "map.json", json.dumps(data).encode())
+            self.register_origin(key, data, source)
+            return {"region": key, "map": data}
 
     def path(self, region, x, y):
         identity = hashlib.sha256(
@@ -185,15 +226,14 @@ class ChunkStore:
 
 
 class ChunkJobs:
-    def __init__(self, store, workers=2, capacity=10):
+    def __init__(self, store, workers=2, capacity=10, pool=None):
         self.store = store
-        self.pool = ThreadPoolExecutor(max_workers=workers)
+        self.pool = pool or ThreadPoolExecutor(max_workers=workers)
         self.capacity = capacity
         self.lock = threading.Lock()
         self.jobs = {}
 
-    def request(self, region, x, y):
-        key = (region, x, y)
+    def request(self, *key):
         with self.lock:
             job = self.jobs.get(key)
             if job:
@@ -217,6 +257,18 @@ class ChunkJobs:
                 return 429, {"error": "Travel download queue is full. Retry shortly."}
             self.jobs[key] = self.pool.submit(self.store.build, *key)
             return 202, {"status": "loading"}
+
+
+class OriginStore:
+    def __init__(self, chunks):
+        self.chunks = chunks
+
+    def read(self, latitude, longitude):
+        # prepare_origin already handles the persistent cache under its lock.
+        return None
+
+    def build(self, latitude, longitude):
+        return self.chunks.prepare_origin(latitude, longitude)
 
 
 class WeatherStore:
@@ -254,6 +306,7 @@ class WeatherStore:
 
 def make_handler(store, jobs):
     weather = WeatherStore(store.cache / "weather")
+    origins = ChunkJobs(OriginStore(store), capacity=2, pool=jobs.pool)
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, directory=str(store.root), **kwargs)
@@ -285,9 +338,31 @@ def make_handler(store, jobs):
                 try:
                     if url.path == "/api/travel":
                         return self.send_json(200, {"chunkSize": CHUNK_SIZE, "cellSizeMeters": CELL_METERS})
-                    if url.path not in {"/api/chunk", "/api/weather"}:
+                    if url.path == "/api/origins":
+                        return self.send_json(200, [
+                            {"region": key, "name": data["name"]}
+                            for key, data in list(store.bases.items()) if key.startswith("origin-")])
+                    if url.path not in {"/api/chunk", "/api/weather", "/api/places",
+                                        "/api/location", "/api/origin", "/api/origin-map"}:
                         return self.send_json(404, {"error": "Unknown API endpoint."})
                     query = urllib.parse.parse_qs(url.query, strict_parsing=True)
+                    if url.path in {"/api/places", "/api/location", "/api/origin"}:
+                        try:
+                            if url.path == "/api/places":
+                                return self.send_json(200, store.places.search(query["q"][0]))
+                            latitude, longitude = coordinates(query["latitude"][0], query["longitude"][0])
+                            if url.path == "/api/location":
+                                return self.send_json(200, store.places.reverse(latitude, longitude))
+                            status, payload = origins.request(latitude, longitude)
+                            return self.send_json(status, payload)
+                        except (OSError, ValueError, TypeError) as error:
+                            logging.warning("Starting place unavailable: %s", error)
+                            return self.send_json(502, {"error": str(error)})
+                    if url.path == "/api/origin-map":
+                        key = query["region"][0]
+                        if not key.startswith("origin-") or key not in store.bases:
+                            raise ValueError("Unknown custom starting point.")
+                        return self.send_json(200, store.bases[key])
                     region = query["region"][0]
                     x, y = int(query["x"][0]), int(query["y"][0])
                     if region not in store.regions or abs(x) > 1000 or abs(y) > 1000:

@@ -112,6 +112,22 @@ class TravelServerTests(unittest.TestCase):
             try:
                 with urllib.request.urlopen(url + "/api/travel") as response:
                     self.assertEqual(json.load(response)["chunkSize"], 8)
+                with urllib.request.urlopen(url + "/api/origins") as response:
+                    self.assertEqual(json.load(response), [])
+                place = {"latitude": 44.5, "longitude": 2.3, "name": "Firmi"}
+                with patch.object(store.places, "search", return_value=[place]) as search:
+                    with urllib.request.urlopen(url + "/api/places?q=Firmi") as response:
+                        self.assertEqual(json.load(response), [place])
+                    search.assert_called_once_with("Firmi")
+                with patch.object(store.places, "reverse", return_value=place) as reverse:
+                    with urllib.request.urlopen(url + "/api/location?latitude=44.5&longitude=2.3") as response:
+                        self.assertEqual(json.load(response), place)
+                    reverse.assert_called_once_with(44.5, 2.3)
+                with patch.object(store.places, "search", side_effect=OSError("Lookup offline")):
+                    with self.assertRaises(urllib.error.HTTPError) as raised:
+                        urllib.request.urlopen(url + "/api/places?q=Firmi")
+                    self.assertEqual(raised.exception.code, 502)
+                    raised.exception.close()
                 with urllib.request.urlopen(url + "/public/config.json") as response:
                     settings = json.load(response)
                     self.assertEqual(settings["survival"]["reserve_kcal"], 1800)
@@ -130,6 +146,8 @@ class TravelServerTests(unittest.TestCase):
                     ("/api/chunk?region=unknown&x=0&y=0", 400),
                     ("/api/chunk?region=firmi&x=1001&y=0", 400),
                     ("/api/chunk?region=firmi&x=a&y=0", 400),
+                    ("/api/origin?latitude=nan&longitude=2.3", 502),
+                    ("/api/origin-map?region=firmi", 400),
                     ("/.git/config", 403),
                 ]:
                     with self.assertRaises(urllib.error.HTTPError) as raised:

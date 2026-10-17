@@ -5,6 +5,7 @@ import { setupCellContent } from "./cell-content-ui.mjs";
 import { setupTravel } from "./travel-ui.mjs";
 import { setupAudio } from "./audio-ui.mjs";
 import { setupButtonShortcuts } from "./button-shortcuts.mjs";
+import { setupStartingPoint, validateStartingMap } from "./starting-point-ui.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
 const viewport = document.querySelector("#map-viewport");
@@ -23,11 +24,16 @@ let mapData;
 let loadFailed = false;
 let activeRequest;
 let inspectedTile;
+let entered = false;
 const cellContent = setupCellContent(t);
 const audio = setupAudio(t);
 const travel = setupTravel({
   t, renderMap,
   onAudioContext: context => audio.update(context),
+  onActiveChange(active) {
+    document.querySelector("#journey-setup").hidden = !entered || active;
+    document.querySelector("#game-content").hidden = !entered || !active;
+  },
   selectPlayer(data, tile) {
     inspectTile(tile);
     if (data.rows[Number(tile.dataset.row)][Number(tile.dataset.col)].unavailable) {
@@ -39,13 +45,43 @@ const travel = setupTravel({
   resetContent: () => cellContent.reset(),
   onStop: () => loadRegion(),
 });
+function addOrigin({ region, name }) {
+  if ([...regionSelect.options].some(option => option.value === region)) return;
+  const option = document.createElement("option");
+  option.value = region;
+  option.textContent = name.split(",")[0];
+  option.title = name;
+  regionSelect.append(option);
+}
+const startingPoint = setupStartingPoint(t, {
+  addOrigin,
+  setPreparing: value => travel.setPreparing(value),
+  async select(region, data) {
+    addOrigin({ region, name: data.name });
+    regionSelect.value = region;
+    if (!await loadRegion(data)) throw new Error(t("loadError"));
+  },
+});
 
 document.querySelector("#enter-world").addEventListener("click", () => {
+  entered = true;
   document.querySelector("#title-screen").hidden = true;
-  document.querySelector("#game-content").hidden = false;
+  document.querySelector("#journey-setup").hidden = false;
   document.body.classList.remove("is-title");
   document.querySelector("#region").focus({ preventScroll: true });
   window.scrollTo({ top: 0, behavior: "instant" });
+});
+document.querySelector("#back-title").addEventListener("click", () => {
+  startingPoint.reset();
+  entered = false;
+  document.querySelector("#journey-setup").hidden = true;
+  document.querySelector("#title-screen").hidden = false;
+  document.body.classList.add("is-title");
+  document.querySelector("#enter-world").focus({ preventScroll: true });
+  window.scrollTo({ top: 0, behavior: "instant" });
+});
+document.querySelector("#open-options").addEventListener("click", () => {
+  document.querySelector("#options-dialog").showModal();
 });
 
 osmDrawer.addEventListener("keydown", (event) => {
@@ -143,6 +179,10 @@ function localize() {
   cellContent.localize(locale);
   audio.localize();
   travel.localize();
+  startingPoint.localize();
+  document.querySelector("#starting-map-status").textContent = mapData
+    ? t("setupSelected", { name: mapData.origin ? mapData.name.split(",")[0] : mapData.name })
+    : t(loadFailed ? "loadError" : "loading");
   mapElement.setAttribute("aria-label", t("mapLabel"));
   document.querySelector("#cell-info").textContent = t("cellHint");
 
@@ -251,7 +291,7 @@ languageSelect.addEventListener("change", () => {
 });
 localize();
 
-async function loadRegion() {
+async function loadRegion(prepared) {
   travel.reset();
   travel.configure(regionSelect.value, undefined);
   activeRequest?.abort();
@@ -275,14 +315,21 @@ async function loadRegion() {
   document.querySelector("#map-attribution").hidden = true;
   localize();
   try {
-    const response = await fetch(regionPaths[regionSelect.value], { signal: request.signal });
-    if (!response.ok) {
-      throw new Error(`Map request failed (HTTP ${response.status}).`);
+    let data = prepared;
+    if (!data) {
+      const path = regionPaths[regionSelect.value] ??
+        `/api/origin-map?${new URLSearchParams({ region: regionSelect.value })}`;
+      const response = await fetch(path, { signal: request.signal });
+      if (!response.ok) {
+        throw new Error(`Map request failed (HTTP ${response.status}).`);
+      }
+      data = await response.json();
     }
-    const data = await response.json();
     if (!request.signal.aborted) {
+      if (regionSelect.value.startsWith("origin-")) validateStartingMap(data);
       renderMap(data);
       travel.configure(regionSelect.value, data);
+      return true;
     }
   } catch (error) {
     if (request.signal.aborted) {
@@ -297,8 +344,12 @@ async function loadRegion() {
     viewport.replaceChildren(message);
     localize();
   }
+  return false;
 }
 
-regionSelect.addEventListener("change", loadRegion);
+regionSelect.addEventListener("change", () => {
+  startingPoint.reset();
+  loadRegion();
+});
 setupButtonShortcuts(t);
 loadRegion();

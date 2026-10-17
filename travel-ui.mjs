@@ -4,7 +4,7 @@ import { cellInfo } from "./cell-info.mjs";
 import { skyState, estimatedTemperature, altitudeTemperatureOffset } from "./sky.mjs";
 import {
   startSurvival, walkSurvival,
-  validateSurvivalConfig, hungerPercent, canEat,
+  validateSurvivalConfig, hungerPercent, canEat, normalizeCharacterName,
 } from "./survival.mjs";
 import { setupTowns } from "./towns-ui.mjs";
 import { validateEconomy, startEconomy, applyBirthTarot, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, finishAction } from "./economy.mjs";
@@ -19,7 +19,7 @@ import { setupTrail } from "./trail-ui.mjs";
 import { createJourneyStore, mapIdentity } from "./journey-save.mjs";
 import { tarotArt } from "./tarot-art.mjs";
 
-export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext }) {
+export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onActiveChange }) {
   const start = document.querySelector("#start-travel");
   const resume = document.querySelector("#resume-travel");
   const saveStatus = document.querySelector("#journey-save-status");
@@ -30,6 +30,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const sleep = document.querySelector("#sleep-travel");
   const eat = document.querySelector("#eat-travel");
   const profile = document.querySelector("#character-profile");
+  const nameInput = document.querySelector("#character-name");
+  nameInput.addEventListener("input", () => nameInput.setCustomValidity(""));
   const controls = document.querySelector("#travel-controls");
   const stats = document.querySelector("#travel-stats");
   const status = document.querySelector("#travel-status");
@@ -38,6 +40,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const directions = [...document.querySelectorAll("[data-move]")];
   const towns = setupTowns(t);
   let state, stream, region, base, token = 0, busy = false, error = "", active = false;
+  let preparingOrigin = false;
   let transient = "", missingHeightMoves = 0;
   let heading = [0, 0];
   let cursor, cameraData;
@@ -67,6 +70,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     birthArt.textContent = tarotArt(birthReveal.hidden ? null : card.id);
     const language = document.documentElement.lang === "en" ? "en" : "fr";
     document.querySelector("#birth-tarot-name").textContent = card[language];
+    document.querySelector("#birth-character-name").textContent = state.name ?? "";
     document.querySelector("#birth-tarot-meaning").textContent = t(`tarotMeaning.${card.id}`);
     document.querySelector("#birth-tarot-budget").textContent = t("birthTarotBudget", {
       money: (state.walletCents / 100).toFixed(2), units: card.mealUnits,
@@ -257,16 +261,18 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     document.querySelector("#map-workspace").classList.toggle("travel-active", active);
     document.body.classList.toggle("is-travelling", active);
     controls.hidden = !active;
+    onActiveChange?.(active);
     start.hidden = active;
-    start.disabled = !base;
+    start.disabled = !base || preparingOrigin;
     resume.hidden = active || !slotOccupied;
-    resume.disabled = !base || !savedJourney;
+    resume.disabled = !base || !savedJourney || preparingOrigin;
     document.querySelector("#save-travel").disabled = !state || busy;
     saveStatus.textContent = saveError ? t("saveError", { error: saveError })
       : savedAt ? t("saveStored", {
         date: new Date(savedAt).toLocaleString(document.documentElement.lang),
       }) : t("saveNone");
     document.querySelector("#birth-tarot-save").textContent = saveStatus.textContent;
+    document.querySelector("#journey-play-save").textContent = saveStatus.textContent;
     choicesUI.localize();
     document.querySelector("#character-setup").hidden = active;
     retry.disabled = busy;
@@ -284,6 +290,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const ended = Boolean(state?.ended);
     document.querySelector("#journey-ended").hidden = !ended;
     if (state && survivalConfig) {
+      document.querySelector("#player-name").textContent = state.name ?? t("unnamedCharacter");
       const character = state.character;
       document.querySelector("#player-character").textContent = t("characterStats", {
         profile: state.profileId === "tarot"
@@ -559,7 +566,19 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
 
   async function begin(restored, replacementConfirmed = false) {
-    if (!base || active) return;
+    if (!base || active || preparingOrigin) return;
+    let characterName;
+    if (!restored) {
+      try {
+        characterName = normalizeCharacterName(nameInput.value);
+      } catch {
+        nameInput.setCustomValidity(t("characterNameError"));
+        nameInput.reportValidity();
+        return;
+      }
+      nameInput.setCustomValidity("");
+      nameInput.value = characterName;
+    }
     if (!restored && slotOccupied && !replacementConfirmed && !confirm(t("saveReplaceConfirm"))) return;
     pendingRestore = restored;
     const currentToken = ++token;
@@ -581,6 +600,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       if (currentToken !== token) return;
       if (restored) {
         state = structuredClone(restored.state);
+        nameInput.value = state.name ?? "";
         state.dailyTarotSeenDay ??= state.tarotDay;
         survivalConfig = structuredClone(restored.survival);
         economyData = structuredClone(restored.economy);
@@ -599,7 +619,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         if (currentToken !== token) return;
         state = startEconomy(startSurvival(Math.floor(base.width / 2), Math.floor(base.height / 2),
           Date.now(), "balanced", survivalConfig), economyData);
-        state = applyBirthTarot(state, economyData);
+        state = { ...applyBirthTarot(state, economyData), name: characterName };
         state = { ...state, trail: createTrail(base, state.col, state.row) };
         birthPending = true;
       }
@@ -674,6 +694,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   stop.addEventListener("click", () => {
     reset();
     onStop();
+    document.querySelector("#region").focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: "instant" });
   });
   function survivalAction(action) {
     if (!state || busy || cursor || state.ended) return;
@@ -761,6 +783,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   });
   return {
     localize, reset, get active() { return active; },
+    setPreparing(value) {
+      preparingOrigin = value;
+      localize();
+    },
     configure(nextRegion, map) {
       region = nextRegion;
       base = map;

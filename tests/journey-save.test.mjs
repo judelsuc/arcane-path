@@ -25,6 +25,30 @@ function storage() {
   return { getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v), data };
 }
 
+test("custom coordinate origins save independently and retain strict region validation", () => {
+  const memory = storage(), store = createJourneyStore(memory), d = details();
+  const region = "origin-0123456789abcdef0123";
+  assert.equal(store.read(region), null);
+  store.write({ ...d, region });
+  assert.equal(store.read(region).region, region);
+  assert.equal(store.read("firmi"), null);
+  for (const invalid of ["origin-../file", "origin-abc", "../firmi", "origin-0123456789abcdef012Z"]) {
+    assert.throws(() => createSave({ ...d, region: invalid }, 1));
+  }
+});
+
+test("names survive actions and exact saves while nameless legacy journeys remain valid", () => {
+  const d = details();
+  d.state = { ...d.state, name: "\u00c9milie du chemin" };
+  d.state = finishAction(d.state, walkSurvival(d.state, 0, 1, cell, cell, survival), info, economy);
+  const save = createSave(d, 1);
+  assert.equal(validateSave(JSON.parse(JSON.stringify(save))).state.name, "\u00c9milie du chemin");
+  assert.equal(createSave(details(), 1).state.name, undefined);
+  for (const name of ["", "  Alex ", "E\u0301milie", "A".repeat(41), 42, "A\nB"]) {
+    assert.throws(() => createSave({ ...d, state: { ...d.state, name } }, 1));
+  }
+});
+
 test("tarot determines balanced-budget attributes and survives saves without changing old profiles", () => {
   for (const card of economy.tarot) {
     assert.equal(Object.values(card.attributes).reduce((a, b) => a + b), 9);

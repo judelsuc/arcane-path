@@ -21,9 +21,9 @@ python3 scripts/travel_server.py
 
 Ouvrir [http://127.0.0.1:8766](http://127.0.0.1:8766). Le serveur local utilise
 la bibliotheque standard Python et PyYAML pour la configuration, et ecoute sur la boucle locale.
-`--port` permet de choisir un autre port. Un serveur statique (`python3 -m
-http.server 8000`) conserve la consultation de couche 1 mais ne permet pas le
-streaming de voyage ; un message explicite indique la commande necessaire.
+`--port` permet de choisir un autre port. Le parcours titre, preparation,
+voyage necessite ce serveur : un serveur purement statique ne fournit ni
+la recherche de lieux ni le streaming de voyage, et affiche une erreur explicite.
 
 Le selecteur de region affiche de vrais extraits OSM de Paris, des Alpes pres
 de Chamonix, de Firmi en Aveyron et de Tahiti autour de Papeete.
@@ -32,6 +32,61 @@ solaire et les moyennes saisonnieres. Les snapshots compresses dans
 [data/regions/](./data/regions/) et leurs grilles sont inclus. La consultation
 fixe et les tests sont hors ligne ; le premier voyage telecharge les altitudes
 et les morceaux de carte situes hors des extraits inclus.
+
+## Depart, localisation et options
+
+L'ecran titre ouvre une **preparation du voyage distincte de la carte**.
+Choisir une region, rechercher un lieu ou demander la position ne demarre
+pas de partie et ne remplace aucune sauvegarde. **Commencer le voyage** et
+**Reprendre la sauvegarde** sont regroupes ici ; revenir a la preparation
+depuis le jeu conserve le progres sauvegarde.
+Un **nom de personnage** est requis pour un nouveau voyage (1 a 40 caracteres).
+Accents et autres alphabets sont acceptes ; espaces superflus et Unicode sont
+normalises. Le nom apparait au tirage initial et dans le panneau du personnage,
+et reste dans la sauvegarde locale. Reprendre une ancienne partie sans nom
+reste possible, sans changer son tarot, ses caracteristiques ni sa progression.
+
+- **Rechercher** (Alt + Maj + G) : saisir un nom, eventuellement avec le pays,
+  puis choisir le bon resultat. Aucune recherche automatique pendant la frappe.
+- **Utiliser ma position actuelle** (Alt + Maj + V) demande une seule position
+  au navigateur, avec permission ; pas de suivi continu. Une position de moins
+  d'une minute peut etre reutilisee. Apres 20 s sans position, un nouvel essai
+  haute precision dispose de 60 s ; **Annuler la recherche** (Alt + Maj + Z)
+  permet de revenir tout de suite a la saisie d'un lieu. La precision depend
+  du navigateur/appareil. Refus, delai et indisponibilite sont distingues.
+  Une permission accordee ne garantit pas un fournisseur de position utilisable :
+  si le navigateur integre de VS Code expire, ouvrir la meme adresse dans
+  Safari/Chrome et verifier les services de localisation du systeme.
+- Le serveur prepare une carte OSM de 24 x 24 cases a 250 m. La case initiale
+  est centree sur les coordonnees demandees (arrondies a six decimales),
+  sans deplacement automatique vers un village ou une route.
+- La nouvelle recherche est limitee a la zone europeenne prise en charge :
+  34 a 72 N, 32 W a 60 E et liste de pays europeens. Les resultats ultramarins
+  sont exclus ; Turquie limitee a >=40 N et <=29 E, Russie a >=41 N et <=60 E.
+  C'est un filtre operationnel approximatif, pas une frontiere politique exacte.
+  Les anciennes cartes de demonstration, dont Tahiti, restent disponibles.
+- La premiere preparation demande Internet et peut prendre plusieurs minutes.
+  L'interface interdit de lancer une autre partie pendant cette attente ;
+  changer de region annule l'attente, sans supprimer le cache en preparation.
+  Il faut dix cases avec lieux publics nommes pour la piste actuelle :
+  une zone trop peu documentee est refusee explicitement, sans indices inventes.
+- Les cartes et sources sont conservees dans `.cache/travel/origins/`.
+  Apres redemarrage du serveur/rechargement, les depart prepares reparaissent
+  dans le selecteur. Chaque couple de coordonnees a son propre emplacement de
+  sauvegarde navigateur ; revenir au meme point ne redessine pas le tarot.
+- Les recherches/coordonnees sont envoyees a Nominatim/OpenStreetMap, puis aux
+  services d'altitude/meteo deja utilises pendant le voyage. Elles figurent
+  aussi dans le cache et les journaux du serveur local. Nominatim est attribue,
+  les requetes sont identifiees, serialisees et espacees d'au moins 1,1 s,
+  avec reutilisation des recherches recentes. Aucun compte/jeton n'est requis.
+
+Le bouton **Options** (Alt + Maj + K), disponible au titre, a la preparation
+et pendant le jeu, regroupe **langue, musique et volume** dans un panneau
+dedie. Fermer ou Echap revient au meme ecran, sans changer la partie.
+La musique reste active par defaut a 25 %, sous reserve de l'autorisation de
+lecture automatique du navigateur. Les boutons conservent leurs infobulles
+et raccourcis. La preparation utilise une seule police, du texte/controles
+a 16 px et un titre a 24 px ; deux colonnes sur grand ecran, une sur mobile.
 
 ## Sources photo supplementaires
 
@@ -102,8 +157,8 @@ par la configuration ; les sources OSM et altitudes restent reutilisees.
   sont repliees dans « Aide et modele de voyage ».
 - La fenetre de 24 x 24 cases tient integralement dans le panneau : cases
   carrees redimensionnees selon la largeur, sans defilement interne coupant
-  la carte. Pendant le voyage, l'en-tete se limite a une barre de titre/langue
-  et aux commandes de region, sans grand titre ni introduction ; la page reste defilable.
+  la carte. Pendant le voyage, l'en-tete conserve Options et le nom du lieu,
+  sans commandes de preparation ni introduction ; la page reste defilable.
 - Il n'y a **aucune case bloquee par son terrain** a cette echelle. Eau,
   rochers, rails et batiments restent traversables dans le modele de jeu.
   Une case non telechargee attend ses donnees ; une erreur permet de reessayer
@@ -114,7 +169,7 @@ par la configuration ; les sources OSM et altitudes restent reutilisees.
   pas actives dans une fenetre photo ou le tiroir OSM.
 - La carte OSM du tiroir est recentree sur la case du joueur avec un marqueur,
   et le lien externe reprend cette position. Fermee, elle n'est pas rechargee.
-- **Revenir a la carte fixe**, changer de region ou recharger quitte la vue
+- **Revenir a la preparation** ou recharger quitte la vue
   du voyage. La progression est sauvegardee automatiquement apres chaque
   action : **Reprendre la sauvegarde** restaure la partie de cette region.
   Les donnees geographiques, altitudes et contenus decouverts restent en cache.
@@ -316,7 +371,8 @@ Survoler un bouton ou lui donner le focus avec Tab affiche son action et son
 raccourci **Alt + Maj + touche** (Option + Maj sur Mac). Chaque bouton dispose
 aussi de `title` et `aria-keyshortcuts`. Exemples : M musique, N nouveau
 voyage, C reprise, E repas, H sommeil, T ville, B musique de rue, J journal,
-S sauvegarde, Q retour carte. Entree ouvre la carte depuis le titre ; D
+S sauvegarde, Q retour preparation, K Options, G recherche, V position actuelle.
+Entree ouvre la preparation depuis le titre ; D
 revele le tarot, puis Entree continue (avec Alt + Maj pour ces raccourcis).
 
 Dans les dialogues, seuls leurs boutons repondent ; les options dynamiques
@@ -329,10 +385,10 @@ L observation, R repos, P photo, Espace rythme et Echap pour fermer.
 ## Ecran titre
 
 Au chargement, un ecran titre presente le voyage avec une illustration ASCII
-et une courte introduction (francais/anglais). **Ouvrir la carte** donne
-acces au choix de region/profil et a la reprise ; cette transition ne cree
-aucune partie et ne remplace aucune sauvegarde. Langue et musique restent
-accessibles pendant l'introduction. L'ecran revient a chaque rechargement.
+et une courte introduction (francais/anglais). **Preparer le voyage** donne
+acces a l'ecran intermediaire de choix du depart et de reprise ; cette transition
+ne cree aucune partie et ne remplace aucune sauvegarde. Langue et musique
+restent accessibles dans Options. L'ecran revient a chaque rechargement.
 
 ## Autres moyens de subsister
 
@@ -359,7 +415,7 @@ qu'a rendre disponible l'action fictive.
 
 ## Profil et tarot de depart
 
-Au debut d'un nouveau voyage, apres le choix du profil, **Reveler ma carte**
+Au debut d'un nouveau voyage, apres le choix du depart, **Reveler ma carte**
 presente le tarot de depart, sa lecture symbolique et la bourse exacte.
 Un seul tirage par nouveau voyage : la revelation ne tire pas une autre carte.
 **Prendre la route** ouvre ensuite le journal. Une reprise garde sa carte,
@@ -379,7 +435,7 @@ ni la bourse ni les caracteristiques. Continuer memorise sa lecture.
 Telecharger les pistes dans [public/audio/music/](public/audio/music/) puis
 la musique est activee par defaut. Si le navigateur bloque la lecture automatique,
 le premier clic ou appui clavier la lance. Volume initial
-25 %, reglable et pouvant etre coupe depuis l'en-tete. WAV, MP3 et OGG sont acceptes ;
+25 %, reglable et pouvant etre coupe dans Options. WAV, MP3 et OGG sont acceptes ;
 les noms `music-title.wav`, `01-music-title.wav` ou `01 - music-title.wav`
 fonctionnent sans renommer les telechargements existants.
 
@@ -417,7 +473,7 @@ Le voyage utilise uniquement les pistes instrumentales.
 ## Sauvegarde et reprise locales
 
 - Une sauvegarde **par region et par origine navigateur** (hote + port).
-  Sur la carte fixe, choisir la region puis **Reprendre la sauvegarde**.
+  A la preparation, choisir la region puis **Reprendre la sauvegarde**.
   Le serveur local doit tourner pour recharger les chunks ; ce n'est pas
   une sauvegarde sur un compte ou sur le serveur.
 - Sauvegarde automatique au depart puis apres chaque action reussie :
@@ -434,7 +490,7 @@ Le voyage utilise uniquement les pistes instrumentales.
   aucun gain. Une prestation terminee conserve exactement ses gains,
   sans nouveau versement. Les retrouvailles et epuisements restent terminaux.
 - **Nouveau voyage** demande confirmation avant de remplacer le slot courant.
-  Changer de region, revenir a la carte fixe ou vider le cache des contenus
+  Changer de region, revenir a la preparation ou vider le cache des contenus
   ne supprime pas les sauvegardes. Effacer les donnees du site, changer de
   navigateur/port ou utiliser une session privee peut les rendre indisponibles.
 - Format versionne et valide. Une sauvegarde endommagee, incompatible ou

@@ -18,6 +18,9 @@ test("directions, reveal, rhythm and photo controls retain meaningful bindings",
     [{ move: "0,-1" }, "ArrowUp"], [{ id: "birth-tarot-draw" }, "D"],
     [{ id: "birth-tarot-continue" }, "Enter"], [{ id: "music-tap" }, "Space"],
     [{ id: "previous-photo" }, "ArrowLeft"], [{ id: "audio-toggle" }, "M"],
+    [{ id: "open-options" }, "K"], [{ id: "search-place" }, "G"],
+    [{ id: "use-location" }, "V"], [{ id: "back-title" }, "Escape"],
+    [{ id: "cancel-place" }, "Z"],
   ]) assert.equal(buttonBindings([button])[0].key, expected);
   assert.throws(() => buttonBindings(Array.from({ length: 37 }, () => ({}))), /Too many/);
 });
