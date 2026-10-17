@@ -656,8 +656,15 @@ dialog p { margin: 12px 0; }
 .music-beat.rest { border-style: dashed; opacity: 0.35; }
 #music-progress { width: 100%; }
 #trail-dialog { width: min(1120px, 94vw); max-height: 90dvh; overflow: auto; overflow-wrap: anywhere; }
+#hint-dialog { overflow-wrap: anywhere; }
+#hint-towns { margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--line); }
+#hint-town { display: block; width: 100%; min-width: 0; max-width: 100%; margin-top: 8px; padding: 8px; font: inherit; background: #121a14; color: #e5e7d9; border: 1px solid var(--line); }
 .trail-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .trail-heading h2 { margin: 12px 0; }
+.trail-sections { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 20px; }
+.trail-sections [aria-pressed="true"] { background: #354239; border-color: var(--accent); color: var(--accent); }
+#trail-page-status { font-weight: bold; padding: 12px; border: 1px solid var(--line); }
+#trail-evidence-summary { color: var(--muted); font-size: 0.8rem; }
 .trail-layout { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(0, 2fr); gap: 24px; align-items: start; }
 .trail-guide { padding: 18px; background: #18251c; border: 1px solid var(--line); font-size: 0.85rem; line-height: 1.6; }
 .trail-guide h3, .trail-main > h3:first-child { margin-top: 0; }

@@ -15,6 +15,7 @@ for (const locale of ["fr", "en"]) {
       children = []; events = {}; textContent = ""; open = false;
       nextElementSibling = { hidden: false };
       addEventListener(type, listener) { this.events[type] = listener; }
+      setAttribute(name, value) { this[name] = value; }
       append(...children) { this.children.push(...children); }
       replaceChildren() { this.children = []; }
       showModal() { this.open = true; }
@@ -31,14 +32,15 @@ for (const locale of ["fr", "en"]) {
         ? [...elements.values()].find(e => e.open) ?? null : element(selector),
     };
     const tr = (key, args) => translate(locale, key, args);
-    let state = { col: 100, row: -200, ended: null, trail: {
+    let state = { col: 100, row: -200, ended: null,
+      startedAt: Date.UTC(2026, 9, 17, 12), elapsedMinutes: 60, trail: {
       version: 2, parentName: "Camille", index: 1, completed: false,
       stages: ["Known stop", "Known destination", "SECRET FUTURE"].map((name, i) => ({
         name, col: -100 - i * 200, row: 10, latitude: 45, longitude: 2 - i,
         osmId: `node/${i + 1}`, legMeters: 45000,
       })),
       history: [{ parentName: "Camille", place: "Known stop", witnessId: "fictional-traveler-1",
-        clueKind: "letter", next: { name: "Known destination" } }],
+        clueKind: "letter", next: { name: "Known destination" }, elapsedMinutes: 20 }],
       discovery: { kind: "letter", step: 0, nextName: "Known destination", pending: false },
     } };
     const before = structuredClone(state);
@@ -49,11 +51,21 @@ for (const locale of ["fr", "en"]) {
     assert.equal(element("#trail-target").textContent,
       tr("trailKnownDestination", { place: "Known destination" }));
     assert.equal(element("#trail-discovery-text").textContent, parentClueText(state, state.trail.discovery, tr));
-    element("#trail-page-previous").events.click();
     const history = element("#trail-history").children[0].children.map(p => p.textContent).join(" ");
+    const latest = element("#trail-history").children[0];
+    assert.equal(latest.children[0].dateTime, "2026-10-17T12:20:00.000Z");
+    assert.equal(latest.children[1].textContent, tr("trailLatestRecord"));
+    assert.equal(latest.children[2].textContent, tr("trailEvidenceFor", { page: 2 }));
     assert.ok(history.includes(element("#trail-discovery-text").textContent));
     assert.ok(!history.includes("fictional-traveler-1"));
     assert.ok(!history.includes("SECRET FUTURE"));
+    assert.equal(element("#trail-investigation-page").hidden, true);
+    element("#trail-section-actions").events.click();
+    assert.equal(element("#trail-investigation-page").hidden, false);
+    assert.equal(element("#trail-evidence-page").hidden, true);
+    element("#trail-section-past").events.click();
+    assert.equal(element("#trail-archive-pages").hidden, false);
+    assert.equal(element("#trail-history").children.length, 0);
     element("#trail-page-current").events.click();
     assert.ok(!elements.has("#trail-map-link"));
     assert.ok(!elements.has("#parent-path-status"));
@@ -86,6 +98,8 @@ for (const locale of ["fr", "en"]) {
           nights: 2, purchases: 3 }],
       } } };
     ui.localize();
+    element("#trail-section-past").events.click();
+    for (let i = 0; i < 5; i++) element("#trail-page-previous").events.click();
     const records = () => element("#parent-story-records").children
       .flatMap(item => item.children.map(p => p.textContent)).join(" ");
     assert.match(records(), /2026-10-16/);

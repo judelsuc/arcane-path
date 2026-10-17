@@ -54,6 +54,24 @@
   remaining town (350 m) to return the journal, without changing the finder's quest.
 - Capabilities are generated and durably saved before creation requests; they
   never appear in public journey lookups. Legacy saves receive a separate
+- Updated layout decision: separate Current clues, Investigate and Past
+  destinations pages. Open on current clues and keep paid actions separate.
+- File clues by the destination they concern, not the town where obtained;
+  merge pending discoveries with dated evidence and label the latest dated clue.
+  Show dates first, undated entries last and parent visit details only in the
+  corresponding past destination, without revealing unconfirmed future names.
+
+## R-107 - Ask directions to previously cited towns
+
+- In I, let the player choose towns named in earlier witness suggestions,
+  precise clues and reached destinations, including previous quest stages.
+- Label town choices by stage and known/visited/unconfirmed status. Never
+  expose unrevealed town names from the hidden itinerary or vague clues.
+- Use the existing paid directions encounter (10 minutes, 2 fatigue,
+  terrain-dependent chance) and show bearing, distance and coordinates from
+  the current position. This is not a guaranteed walkable route.
+- Keep uncertainty explicit: asking a town's location does not confirm it
+  as the parent's destination, advance the quest or replace the active target.
   random notebook-keeper identity and secret, not ownership of their public
   genesis ID. Complete deposits use a durable IndexedDB outbox across reloads.
   Starting over waits for successful publication; offline death release takes

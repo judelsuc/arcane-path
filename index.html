@@ -506,6 +506,13 @@
       <p id="hint-cost"></p>
       <ul id="hint-clues"></ul>
       <button id="hint-ask" type="button" data-i18n="hintAsk"></button>
+      <section id="hint-towns" hidden>
+        <h3 data-i18n="hintTownsTitle"></h3>
+        <label for="hint-town" data-i18n="hintTownSelect"></label>
+        <select id="hint-town"></select>
+        <p data-i18n="hintTownHelp"></p>
+        <button id="hint-town-ask" type="button" data-i18n="hintTownAsk"></button>
+      </section>
       <p id="hint-guidance" role="status"></p>
       <p id="hint-action-error" role="alert"></p>
       <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
@@ -515,6 +522,11 @@
         <h2 id="trail-title"></h2>
         <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
       </header>
+      <nav class="trail-sections" aria-label="Pages">
+        <button id="trail-section-current" type="button" data-i18n="trailSectionCurrent" aria-pressed="true"></button>
+        <button id="trail-section-actions" type="button" data-i18n="trailSectionActions" aria-pressed="false"></button>
+        <button id="trail-section-past" type="button" data-i18n="trailSectionPast" aria-pressed="false"></button>
+      </nav>
       <div class="trail-layout">
         <aside class="trail-guide" aria-labelledby="trail-guide-title">
           <h3 id="trail-guide-title" data-i18n="trailGuideTitle"></h3>
@@ -532,18 +544,21 @@
           <div id="restored-daily-tarot-journal"></div>
         </aside>
         <section class="trail-main" aria-labelledby="trail-main-title">
-          <h3 id="trail-main-title" data-i18n="trailMainTitle"></h3>
+          <h3 id="trail-main-title"></h3>
+          <section id="trail-investigation-page" hidden>
           <button id="trail-interview" type="button" disabled></button>
           <p data-i18n="trailCost"></p>
           <div id="trail-actions"></div>
           <p id="trail-action-error" role="alert"></p>
-          <div class="trail-pages" aria-label="Pages">
+          </section>
+          <section id="trail-evidence-page">
+          <div id="trail-archive-pages" class="trail-pages" aria-label="Pages" hidden>
             <button id="trail-page-previous" type="button" data-i18n="trailPagePrevious"></button>
             <button id="trail-page-current" type="button" data-i18n="trailPageCurrent"></button>
             <button id="trail-page-next" type="button" data-i18n="trailPageNext"></button>
           </div>
           <p id="trail-page-status" role="status"></p>
-          <h3 data-i18n="trailHistoryTitle"></h3>
+          <p id="trail-evidence-summary" role="status"></p>
           <section id="trail-discovery" hidden>
             <h3 id="trail-discovery-title"></h3>
             <blockquote id="trail-discovery-text"></blockquote>

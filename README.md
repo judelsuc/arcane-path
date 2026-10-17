@@ -740,6 +740,18 @@ atteinte est marquee et ouvre immediatement une nouvelle page pour chercher
 la piste suivante, sans avancer la quete avant l'enquete sur place.
 Les pages precedentes restent consultables, sans devoiler les futures villes.
 Les anciennes entrees sans date le signalent, sans inventer un horodatage.
+J s'ouvre sur **Indices actuels** ; **Enqueter** affiche les actions sur une
+page separee et **Destinations precedentes** permet de feuilleter les archives.
+Chaque indice est classe par la destination qu'il concerne, pas par le lieu
+ou il a ete recueilli : un temoignage obtenu a A pour rejoindre B figure avec B.
+La date precede chaque entree et le dernier indice date est marque clairement.
+Les recits de sejour du parent ne s'affichent que dans l'archive concernee.
+Dans I, **Villes deja citees** permet de choisir une ville deja nommee par un
+temoin, un indice precis ou une destination atteinte, puis de demander sa
+direction depuis la position actuelle. Les propositions anciennes restent
+disponibles avec leur etape et leur statut non confirme. Chaque demande paie
+les 10 minutes et 2 points de fatigue habituels, avec la meme chance de
+rencontrer quelqu'un ; elle ne change ni la quete ni la destination active.
 Retrouver un indice deja connu ne cree pas de doublon : le resultat signale
 explicitement qu'aucun nouvel indice n'a ete ajoute, avec les couts payes.
 Lorsqu'un temoin propose un nom de ville dans I, son avis indique aussi la
