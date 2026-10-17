@@ -12,7 +12,7 @@ ete etabli avec ce jeton.
 | Instance CPU b3-8 | Creee a Paris, cloud-init termine | 0,06144 EUR TTC/heure estime |
 | Groupe et regle de securite dedies | Non crees ; groupe default inchange | 0 EUR |
 | GPU, volumes additionnels, IP flottante | Non crees | 0 EUR |
-| Domaine arcane-path.eu | DNS A 57.130.85.251 verifie localement et sur Cloudflare ; service encore prive | Tarif non confirme |
+| Domaine arcane-path.eu | DNS A 57.130.85.251 ; previsualisation HTTPS protegee par mot de passe | Tarif domaine non confirme ; certificat gratuit |
 | Deploiement du jeu sur OVH | Service actif, HTTP et generation de parcours verifies par tunnel | Inclus dans la VM |
 | Sauvegarde distante | Non configuree | Tarif non confirme |
 
@@ -65,7 +65,7 @@ Les quotas CPU/RAM sont suffisants : 3 instances, 6 vCPU, 25 000 Mo.
   activent explicitement la proposition autorisee par l'utilisateur.
 - Pare-feu nftables `inet` actif : entrees IPv4/IPv6 bloquees par defaut,
   sauf boucle locale, flux etablis, ICMP et SSH depuis l'IPv4 administrateur /32.
-  Aucun acces HTTP/HTTPS public. Le groupe OVH default n'a pas ete modifie.
+  L'etape HTTPS ajoute les ports 80 et 443 ; le groupe OVH default reste inchange.
 - Cle privee locale `~/.ssh/arcane-path-ovh`, permissions 600, hors Git.
 - Ubuntu 24.04 ; cloud-init termine et service systemd non privilegie prepare.
   Les fichiers du prototype sont transferes ; service `arcane-path` actif.
@@ -74,11 +74,12 @@ Les quotas CPU/RAM sont suffisants : 3 instances, 6 vCPU, 25 000 Mo.
 - Cache persistant prevu dans `/var/lib/arcane-path/cache` ; ce n'est pas une
   sauvegarde et la suppression de l'instance pourrait le perdre.
 
-Le serveur de prototype reste lie a 127.0.0.1. L'acces prevu est un tunnel SSH ;
-aucune URL publique n'est annoncee. Le filtrage depend du systeme invite :
+Le serveur Python reste lie a 127.0.0.1. Nginx permet maintenant l'acces a
+**https://arcane-path.eu**, uniquement avec le mot de passe de previsualisation.
+Le tunnel SSH reste une alternative. Le filtrage depend du systeme invite :
 cloud-init ne garantit pas un pare-feu des le premier instant du demarrage.
-Une publication Internet demandera notamment HTTPS, controle d'acces,
-limitation des requetes et verification des fichiers exposes.
+Ne pas retirer l'authentification partagee pour ouvrir un service multi-joueurs
+sans autorisation individuelle, protections adaptees et sauvegarde restauree.
 
 ## Verifications effectuees
 
@@ -133,14 +134,58 @@ future sauvegarde restauree et testee. Une copie du runtime precedent est
 conservee dans `/home/ubuntu/arcane-path-before-layer9.tar.gz`, mode 0600 :
 elle permet un retour du code, mais ne sauvegarde pas cette base.
 
+### HTTPS protege et certificats sur la VM
+
+- Choix utilisateur : previsualisation HTTPS avec mot de passe, sans tunnel.
+  Accord Let's Encrypt accepte et adresse de contact fournie par l'administrateur.
+- Nginx et Certbot sont installes sur la VM existante. Certificat Let's Encrypt
+  emis pour `arcane-path.eu`, expiration initiale au **15 janvier 2027**.
+  La verification TLS du Mac reussit ; sans authentification, la racine
+  repond HTTP 401. HTTP redirige vers HTTPS ; seul le chemin ACME reste public.
+- Utilisateur : `preview`. Mot de passe genere dans
+  `~/.config/arcane-path/preview-access.json` sur le Mac, permissions 0600.
+  Il n'est pas dans Git, les arguments de commande ou les logs. Sur la VM,
+  seul le hash bcrypt est dans `/etc/nginx/arcane-preview.htpasswd`,
+  proprietaire root:www-data, permissions 0640.
+- Script de configuration/emission installe :
+  `/opt/arcane-path/scripts/configure_https.sh`. Il peut etre rejoue avec
+  `--agree-tos --email ADRESSE_ADMIN`, sans changer le mot de passe existant.
+  `--password-stdin` permet sa creation/rotation sans secret dans les arguments.
+- Renouvellement automatique : `certbot.timer`, active. Le hook versionne
+  `/etc/letsencrypt/renewal-hooks/deploy/arcane-nginx` verifie Nginx avant reload.
+  Commande de controle : `sudo certbot renew --dry-run --run-deploy-hooks --no-random-sleep-on-renew`.
+  Simulation distante terminee avec succes, y compris execution du hook.
+- Le proxy autorise uniquement les assets du jeu et les API connues, avec
+  filtrage des methodes, limite de corps et limites de requetes/connexions.
+  Les scripts, sources OSM, Terraform, depots Git et caches restent inaccessibles
+  par le proxy. Les credentials HTTP ne sont pas transmis au backend Python.
+- Tests HTTPS depuis le Mac avec credentials charges en memoire : assets et
+  API en HTTP 200 ; creation 201, reessai 200 identique, lecture identique ;
+  absence de credentials 401 ; chemins du depot refuses ; origine et methode
+  interdites refusees ; limite de creation effectivement verifiee (HTTP 429).
+- Le pare-feu persistant ajoute seulement 80/443, conserve la restriction SSH,
+  et garde l'ancienne configuration dans `/etc/nftables.before-https.conf`.
+  Le cloud-init Terraform existant n'est pas modifie : pas de remplacement VM.
+- Aucun GPU, nouvelle VM, volume ou service payant additionnel. Certificat et
+  logiciels gratuits ; les frais de domaine/reseau du compte restent a verifier.
+- Quatre tests locaux cibles passes (trois pour la configuration HTTPS et un
+  pour le paquet runtime). Reexecution du script sur la VM validee : certificat
+  encore valable reutilise, mot de passe conserve et aucune nouvelle regle
+  pare-feu dupliquee. Le refus 429 contient une erreur JSON et Retry-After.
+
+La sauvegarde navigateur reste propre a l'origine : les voyages sur localhost
+ne sont pas automatiquement presents sur `https://arcane-path.eu`.
+Cette protection est un compte partage de test, pas une gestion de comptes
+joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026
    a 13 h 02 heure de Paris. Ne jamais l'inclure dans Git ou le chat.
 2. Regenerer un plan Terraform ; ne pas reutiliser l'ancien plan.
 3. Verifier que le plan ne remplace ni ne detruit aucune ressource existante.
-4. Utiliser le tunnel documente dans README pour acceder au prototype.
-5. Configurer une sauvegarde avec restauration testee avant publication.
+4. Utiliser HTTPS et le mot de passe prive, ou le tunnel documente dans README.
+5. Configurer une sauvegarde avec restauration testee avant ouverture sans mot de passe.
 6. Traiter le domaine separement : les droits OpenStack ne le permettent pas.
 
 Le fournisseur Terraform OVH propose aussi

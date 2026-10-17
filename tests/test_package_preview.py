@@ -15,6 +15,7 @@ class PreviewPackageTests(unittest.TestCase):
             root = Path(directory)
             subprocess.run(["git", "init", "-q", str(root)], check=True)
             for name in ["index.html", "public/map.json", "scripts/travel_server.py",
+                         "infra/nginx/preview.conf", "infra/nginx/bootstrap.conf",
                          "infra/preview.tfstate", "ovh.conf", ".env", "README.md"]:
                 path = root / name
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -26,7 +27,8 @@ class PreviewPackageTests(unittest.TestCase):
             package(output, root)
             with tarfile.open(output) as archive:
                 self.assertEqual(set(archive.getnames()),
-                                 {"index.html", "public/map.json", "scripts/travel_server.py"})
+                                 {"index.html", "public/map.json", "scripts/travel_server.py",
+                                  "infra/nginx/preview.conf", "infra/nginx/bootstrap.conf"})
                 for member in archive:
                     self.assertEqual(member.mode, 0o644)
                     self.assertEqual(member.uid, 0)
