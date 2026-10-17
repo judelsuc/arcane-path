@@ -468,6 +468,30 @@ joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
 - Rollback :
   `/home/ubuntu/arcane-path-before-deploy-4c12274.tar.gz`, mode 0600.
 
+### Checkpoint deploye : rencontres pour demander son chemin et fatigue dans l'eau
+
+- **17 octobre 2026** : runtime `ed19caa`, tag
+  `deploy-2026-10-17-encounters-water`, integration `5309bc7`.
+  Base live `4c12274` ; generateur narratif en attente exclu.
+- I ouvre un dialogue gratuit montrant cout/chance, sans indication revelee.
+  Chaque tentative : 10 minutes, +2 fatigue, metabolisme/exposition ordinaires,
+  aucun argent. Reessais payants independants ; 90 % en localite et moins
+  ailleurs selon terrain, 0 % dans l'eau. Evanouissement/besoin fatal bloque
+  l'obtention d'indications. Cout sauvegarde normalement.
+- Chaque entree dans une case d'eau ajoute 40 fatigue par pas de 250 m,
+  sans reduction par endurance. Ponts cartographies comme route inchanges.
+  A 100 fatigue, finalisation ordinaire de l'evanouissement.
+- 249 tests JavaScript de release passes, dont probabilites mesurees pour
+  chaque terrain, couts/reessais, sauvegarde, besoins, exposition, eau/ponts.
+  Navigateur FR/EN : cout/chance avant action, echec puis succes payants,
+  20 minutes/4 fatigue pour deux tentatives et aucune reponse gratuite.
+- Six assets et manifeste verifies exactement en HTTPS ; services/API actifs,
+  aucun redemarrage ni changement des caches/configuration/sauvegardes existantes.
+- Rollback :
+  `/home/ubuntu/arcane-path-before-deploy-ed19caa.tar.gz`, mode 0600.
+  Restaurer les anciens fichiers archives ; `directions.mjs` ajoute peut rester
+  inerte ou etre retire separement.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026
