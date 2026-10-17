@@ -66,7 +66,7 @@ export function playerHint(state, info, t) {
     distance: t(`hintDistance.${distance}`) });
 }
 
-export function setupTrail(t, { context, interview, discover, askDirections, searchField, recognizeField }) {
+export function setupTrail(t, { context, interview, discover, askDirections, searchField, recognizeField, pinPhoto }) {
   const dialog = document.querySelector("#trail-dialog");
   const hintDialog = document.querySelector("#hint-dialog");
   const action = document.querySelector("#trail-interview");
@@ -158,6 +158,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         link.rel = "noopener noreferrer";
         photo.append(link, " ");
       }
+      pinPhoto?.(photo, content, { unannotated });
     } catch (error) {
       if (generation !== photoGeneration) return;
       console.error("Clue photo failed:", error);

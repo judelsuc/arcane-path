@@ -6,12 +6,13 @@ import { translate } from "../i18n.mjs";
 test("shortcut help uses actual bindings and localized usage, including rest versus sleep", () => {
   for (const locale of ["fr", "en"]) {
     const rows = shortcutHelpRows((key, args) => translate(locale, key, args));
-    assert.equal(rows.length, 20);
+    assert.equal(rows.length, 21);
     assert.equal(new Set(rows.map(row => row.key)).size, rows.length);
     assert.match(rows[0].usage, /250 m/);
     assert.equal(rows.find(row => row.key === "R").usage, translate(locale, "controls.rest"));
     assert.equal(rows.find(row => row.key === "H").usage, translate(locale, "controls.sleep"));
     assert.equal(rows.find(row => row.key === "?").usage, translate(locale, "controls.help"));
+    assert.equal(rows.find(row => row.key === "A").usage, translate(locale, "controls.journal"));
     assert.ok(rows.every(row => row.usage && !row.usage.startsWith("controls.")));
   }
 });
@@ -40,7 +41,7 @@ test("help welcomes once per page, can be reopened, and never stacks over anothe
   otherDialog = false;
   help.welcome();
   assert.equal(opens, 1);
-  assert.equal(list.children.length, 20);
+  assert.equal(list.children.length, 21);
   dialog.open = false;
   help.welcome();
   assert.equal(opens, 1);
@@ -50,5 +51,5 @@ test("help welcomes once per page, can be reopened, and never stacks over anothe
   locale = "fr";
   help.localize();
   assert.notEqual(list.children[0].children[1].textContent, before);
-  assert.equal(list.children.length, 20);
+  assert.equal(list.children.length, 21);
 });

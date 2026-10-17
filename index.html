@@ -15,6 +15,7 @@
         <div class="masthead-tools">
           <p class="eyebrow" data-i18n="prototype">Les Arcanes du Chemin · Prototype 01</p>
           <div class="masthead-actions">
+            <button id="open-journal" type="button" aria-haspopup="dialog" aria-controls="photo-journal-dialog" data-i18n="journalTitle"></button>
             <button id="open-controls" type="button" aria-haspopup="dialog" aria-controls="controls-dialog" data-i18n="controlsTitle"></button>
             <button id="open-options" type="button" aria-haspopup="dialog" aria-controls="options-dialog" data-i18n="optionsTitle"></button>
           </div>
@@ -377,6 +378,21 @@
         <a class="reference-link" id="osm-link" target="_blank" rel="noopener noreferrer" data-i18n="referenceLink"></a>
       </div>
     </dialog>
+    <dialog id="photo-journal-dialog" aria-labelledby="journal-title">
+      <header class="notebook-heading">
+        <h2 id="journal-title" data-i18n="journalTitle"></h2>
+        <form method="dialog"><button data-i18n="closePhoto"></button></form>
+      </header>
+      <p class="journal-storage-note" data-i18n="journalStorage"></p>
+      <div id="journal-pages" class="notebook-spread"></div>
+      <footer class="notebook-navigation">
+        <button id="journal-previous" type="button"></button>
+        <span id="journal-count" role="status"></span>
+        <button id="journal-next" type="button"></button>
+      </footer>
+      <p id="journal-status" role="status"></p>
+      <button id="journal-retry" type="button"></button>
+    </dialog>
     <dialog id="photo-dialog" aria-labelledby="photo-title">
       <h2 id="photo-title" data-i18n="photoTitle"></h2>
       <form method="dialog"><button data-i18n="closePhoto"></button></form>
@@ -500,8 +516,8 @@
       <section id="trail-discovery" hidden>
         <h3 id="trail-discovery-title"></h3>
         <blockquote id="trail-discovery-text"></blockquote>
-        <figure id="trail-clue-photo"></figure>
       </section>
+      <figure id="trail-clue-photo" hidden></figure>
       <p id="trail-action-error" role="alert"></p>
       <p id="trail-save-status" role="status"></p>
       <ol id="trail-history"></ol>

@@ -22,6 +22,8 @@ test("directions, reveal, rhythm and photo controls retain meaningful bindings",
     [{ id: "use-location" }, "V"], [{ id: "back-title" }, "Escape"],
     [{ id: "cancel-place" }, "Z"],
     [{ id: "open-controls" }, "?"],
+    [{ id: "open-journal" }, "A"],
+    [{ id: "journal-previous" }, "ArrowLeft"], [{ id: "journal-next" }, "ArrowRight"],
   ]) assert.equal(buttonBindings([button])[0].key, expected);
   assert.throws(() => buttonBindings(Array.from({ length: 37 }, () => ({}))), /Too many/);
 });

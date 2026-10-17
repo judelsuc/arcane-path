@@ -71,6 +71,29 @@ shortcuts, especially free meals and unrestricted outdoor sleep.
 - DATAtourisme import support is present but no production catalogue is
   claimed imported. Provider availability and OSM completeness still vary.
 
+## Photo notebook
+
+- R-098: one shared browser-local album uses its own IndexedDB database
+  (`arcane-photo-journal`), independent of server data, disposable content
+  cache, and localStorage journey records. The same pin helper is wired to
+  map/nature and clue-photo viewers. Source URLs deduplicate photos; license,
+  attribution and the actual image blob are retained.
+- Two-page spreads read/decode only the currently displayed photos and release
+  object URLs when turning pages or closing. White paper prints contain an
+  editable handwritten-style caption. Notes save on change or explicit save;
+  in-memory drafts survive rerenders. Errors are visible, not successful pins.
+- Field clue images were nested under a hidden town-discovery section.
+  Move their figure outside that section so first-stage/field photos and
+  their pin buttons are visible. Vague photos do not expose geographic titles.
+- Browser verification used the isolated exact live base, actual licensed
+  Commons photos, real IndexedDB and the complete application's shortcut/
+  modal observers. FR/EN pinning, note editing, reload persistence, source
+  credits, duplicate protection, clue-photo pinning, cache-clear isolation and
+  desktop/narrow layouts were checked. Five-photo navigation and the notebook
+  remained responsive; no observer loop was detected.
+- The reported whole-tab photo freeze remains unconfirmed. Server health
+  checks passed; this release does not claim a proven freeze root-cause fix.
+
 ## Lightweight Layer 9 completion
 
 - R-096/R-083: activate the deterministic parent-story generator for new server

@@ -710,6 +710,23 @@ pas interpretee comme l'absence d'hotels. Un catalogue DATAtourisme francais
 peut etre importe par l'administrateur, mais il n'est pas installe par les
 joueurs et ne constitue pas une couverture internationale.
 
+### Carnet de photos
+
+Le bouton **Mon carnet** dans l'en-tete (A) ouvre un carnet a deux pages
+avec une reliure spirale centrale. Dans la fenetre d'une photo de carte,
+de nature ou d'indice, **Epingler dans mon carnet** conserve l'image affichee,
+son auteur, sa source et sa licence. Les photos apparaissent dans des cadres
+blancs, avec un champ de note a l'ecriture manuscrite sous l'image.
+La note est enregistree en quittant le champ ou avec **Garder ma note**.
+Les fleches tournent les doubles pages ; retirer une photo demande confirmation.
+
+Ce carnet est commun aux voyages de ce navigateur. Il est conserve dans une
+base IndexedDB separee du cache photo et des sauvegardes de voyage :
+effacer le cache photo ne le vide pas. Il n'est pas synchronise entre appareils ;
+effacer toutes les donnees du site dans le navigateur l'efface aussi.
+Les photos d'indices vagues restent sans titre geographique dans le carnet,
+et les notes personnelles ne constituent pas des indices confirmes.
+
 Les **nouveaux voyages europeens** preparent dix etapes dans de vraies
 localites du catalogue GeoNames, espacees de **30 a 60 km a vol d'oiseau**, y compris
 du depart a la premiere ville : 300 a 600 km au total, soit un voyage de
