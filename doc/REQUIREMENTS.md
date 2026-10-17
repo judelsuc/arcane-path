@@ -1,5 +1,25 @@
 # Requirements tracked outside the design PDF
 
+## R-078 - Music with rests and repeated phrases
+
+- The rhythm must have empty squares (rests), not equally spaced notes only,
+  and repeat at least three times.
+- Implemented and deployed: twelve-slot phrase, eight notes and four rests,
+  repeated three times. Twenty-four scoring notes, unchanged maximum reward.
+  Visual and audio clocks agree; blank rests never award points.
+
+## R-079 - Mobile parents may go beyond the original ten towns
+
+- Finish Layer 9 before starting Layer 15.
+- The user explicitly allows extra towns when the parent keeps moving.
+- Current implementation under validation: up to three pre-generated, sourced
+  continuation towns, still 30-60 km apart. The parent advances after seven,
+  fourteen and twenty-one game days, then waits at the final town. The child
+  can catch the parent at town ten, eleven or twelve before that point.
+- Existing immutable beginnings and local saves are not rewritten. New story
+  facts apply only to new journeys after the story milestone is deployed.
+- Narrative solvability is not proof of terrain or survival-budget feasibility.
+
 This file records additions to the design without modifying the source PDF,
 [Les Arcanes du Chemin — Document de conception.pdf](./Les%20Arcanes%20du%20Chemin%20%E2%80%94%20Document%20de%20conception.pdf).
 

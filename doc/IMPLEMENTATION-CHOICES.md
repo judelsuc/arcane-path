@@ -1268,3 +1268,35 @@ failed and no sleep occurred. The lock explains that even a refusal consumes
 the single town/day attempt, and offers the next UTC game day or another town.
 French and English assertions cover these explanations; probabilities and
 hospitality history are unchanged.
+
+### Parent-story milestone under validation (not deployed)
+
+The user chose to finish Layer 9 before Layer 15, and explicitly allowed
+extra towns for a moving parent. New genesis records can now carry deterministic
+fictional facts: an arcane-weighted motive, orientation, travel mode, coherent
+backward chronology, September harvest season, town nights/provisions, four
+alternative clue methods per stop, one to three optional resemblance leads
+yielding a contact, and one or two optional lore crossovers.
+
+Moving stories preserve the original ten waypoints and append three sourced
+30--60 km towns. Continuations are generated at genesis, not during play.
+The parent leaves town ten after seven game days, then advances again at
+fourteen and twenty-one days, and waits at town thirteen. The child may finish
+at any of those four towns if it catches up. Zero-cost alternative clue methods
+avoid skill, photo-provider and unique-object dependencies; false leads do not
+consume the main clue. Fictional visit facts are revealed with discoveries,
+not as a full GPS trace. The journal explicitly labels narrative purchases
+and nights as fiction rather than real venue transactions.
+
+Generation retries use up to three derived seeds, preserving the immutable,
+idempotent SQLite transaction and checksums. Story data and generator code enter
+the content fingerprint. Existing records without stories are neither upgraded
+nor rerolled. Save validation covers chronology, ownership, mobile timing,
+optional-lead progress and early reunions with unused continuation towns.
+
+This is not full Layer 9 completion: narrative validation deliberately reports
+`terrainValidated: false`. Long-leg terrain validation, a true survival-budget
+simulation, route-positioned parent nights/purchases, motive-guided destination
+selection, aging witness precision and richer witness/biography templates remain
+open. Existing manual path preparation remains opt-in to avoid competing with
+the player's live map downloads.

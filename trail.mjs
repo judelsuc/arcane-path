@@ -3,6 +3,7 @@ import { restSurvival } from "./survival.mjs";
 import { finishAction, didFaint } from "./economy.mjs";
 import { distanceMeters } from "./cell-content.mjs";
 import { chunkPosition } from "./travel.mjs";
+import { validateParentStory, parentReunion } from "./parent-story.mjs";
 
 const PARENTS = ["Camille", "Alex", "Sacha", "Noa"];
 export const TRAIL_STAGES = 10;
@@ -15,8 +16,10 @@ export function validateTownTrail(trail) {
     Math.abs(chunkPosition(p.col, p.row).x) <= 1000 &&
     Math.abs(chunkPosition(p.col, p.row).y) <= 1000;
   if (!trail || trail.version !== 2 || !point(trail.origin) ||
-      !Array.isArray(trail.stages) || trail.stages.length !== TRAIL_STAGES ||
-      new Set(trail.stages.map(p => p?.geonameId === undefined ? p?.osmId : `geoname/${p.geonameId}`)).size !== TRAIL_STAGES) fail();
+      !Array.isArray(trail.stages) ||
+      !(trail.stages.length === TRAIL_STAGES || trail.story?.finalState === "mobile" && trail.stages.length === 13) ||
+      new Set(trail.stages.map(p => p?.geonameId === undefined ? p?.osmId : `geoname/${p.geonameId}`)).size !== trail.stages.length) fail();
+  validateParentStory(trail);
   let previous = trail.origin;
   for (const stage of trail.stages) {
     if (!point(stage) || !["city", "town"].includes(stage.placeType) ||
@@ -109,6 +112,7 @@ export function createTrail(map, col, row, random = Math.random) {
 }
 
 export function trailTarget(state) {
+  if (state.trail?.completed) return null;
   return state.trail?.stages[state.trail.index] ?? null;
 }
 
@@ -121,7 +125,7 @@ export function witnessFacts(state) {
   const target = trailTarget(state);
   if (!target) return null;
   return { witnessId: target.witnessId, parentName: state.trail.parentName,
-    place: target.name, next: state.trail.stages[state.trail.index + 1] ?? null,
+    place: target.name, next: parentReunion(state) ? null : state.trail.stages[state.trail.index + 1] ?? null,
     fictional: true };
 }
 

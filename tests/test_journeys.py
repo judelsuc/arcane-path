@@ -34,7 +34,8 @@ class JourneyTests(unittest.TestCase):
         self.assertTrue(created)
         state = record["state"]
         self.assertEqual(state["name"], "Alex")
-        self.assertEqual(len(state["trail"]["stages"]), 10)
+        self.assertEqual(len(state["trail"]["stages"]),
+                         13 if state["trail"]["story"]["finalState"] == "mobile" else 10)
         self.assertEqual(state["trail"]["generation"]["requests"], 0)
         self.assertEqual(state["elapsedMinutes"], 0)
         self.assertEqual(state["dailyCard"], state["birthCard"])

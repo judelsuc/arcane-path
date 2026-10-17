@@ -61,7 +61,8 @@ export function setupTrail(t, { context, interview, discover }) {
     photo.replaceChildren();
   }
   async function renderPhoto(state, discovery) {
-    const place = state.trail.stages[discovery.step + 1] ?? state.trail.stages[discovery.step];
+    const place = discovery.nextName
+      ? state.trail.stages[discovery.step + 1] : state.trail.stages[discovery.step];
     const key = `${discovery.step}:${place.osmId ?? `geoname/${place.geonameId}`}:${document.documentElement.lang}`;
     if (photoKey === key) return;
     clearPhoto();
@@ -116,6 +117,40 @@ export function setupTrail(t, { context, interview, discover }) {
     p.textContent = text;
     container.append(p);
   }
+  function renderStory(state) {
+    const { trail } = state, story = trail.story;
+    document.querySelector("#parent-story").hidden = !story;
+    if (!story) return;
+    document.querySelector("#parent-story-summary").textContent = t("parentStory.summary", {
+      parent: trail.parentName, motive: t(`parentStory.motive.${story.motive}`),
+      mode: t(`parentStory.mode.${story.mode}`),
+      orientation: t(`parentStory.${story.orientation}`),
+    });
+    document.querySelector("#parent-story-motion").textContent =
+      t(`parentStory.${story.finalState}`);
+    const records = document.querySelector("#parent-story-records");
+    records.replaceChildren();
+    for (const [index, facts] of trail.history.entries()) {
+      const visit = story.visits[index], item = document.createElement("li");
+      paragraph(item, t("parentStory.visit", {
+        place: facts.place, arrival: new Date(visit.arrival).toISOString().slice(0, 10),
+        departure: new Date(visit.departure).toISOString().slice(0, 10),
+        nights: visit.nights, purchases: visit.purchases,
+      }));
+      const lore = story.lore.find(entry => entry.stage === index);
+      if (lore) paragraph(item, t(`parentStory.lore.${lore.kind}`));
+      records.append(item);
+    }
+    for (const rumor of trail.rumors ?? []) {
+      const branch = story.falseLeads.find(entry => entry.stage === rumor.stage);
+      const item = document.createElement("li");
+      paragraph(item, t("parentStory.falseLead", {
+        traveler: branch.traveler, place: trail.stages[rumor.stage].name,
+        next: trail.stages[rumor.stage + 1].name,
+      }));
+      records.append(item);
+    }
+  }
   function localize() {
     const current = context();
     document.querySelector("#open-hint").disabled = !current?.state.trail || current.blocked;
@@ -129,6 +164,7 @@ export function setupTrail(t, { context, interview, discover }) {
     pathLoader.update(state);
     renderPath();
     const trail = state.trail;
+    renderStory(state);
     const modern = trail.version === 2;
     document.querySelector("#trail-save-status").textContent = current.saveStatus ?? "";
     const target = trailTarget(state);

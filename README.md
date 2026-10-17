@@ -41,6 +41,7 @@ verifiee, pas seulement du code prepare. Voir le
   - [x] Depart cree et conserve cote serveur : identifiant, graine, tarot, etat initial, contenu versionne.
   - [x] Reessais idempotents, reprise locale et anciennes sauvegardes preserves.
   - [x] Moteur A* borne sur la grille, persistance, cache et demande volontaire dans le journal.
+  - [ ] Recit factuel, chronologie, fausses pistes et poursuite mobile : en validation locale, non deployes.
   - [ ] Validation en conditions reelles d'une etape distante complete (30–60 km).
   - [ ] Algorithme complet du parent et validation de resolubilite.
 - [ ] Couche 15 juste apres la couche 9 : photos et carnet de voyage, export PDF.

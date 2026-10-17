@@ -26,6 +26,8 @@ with tempfile.TemporaryDirectory() as directory:
             record["state"]["startedAt"], card, record["survival"], record["economy"],
             record["state"]["trail"])
         variant["state"]["serverJourney"] = record["state"]["serverJourney"]
+        variant["state"]["trail"] = copy.deepcopy(record["state"]["trail"])
+        variant["state"]["trail"]["story"]["birthCard"] = card["id"]
         variants.append(variant)
     print(json.dumps({"record": record, "variants": variants}))
 `], { cwd: root, encoding: "utf8" }));

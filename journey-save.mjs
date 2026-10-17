@@ -4,6 +4,7 @@ import { chunkPosition } from "./travel.mjs";
 import { validateTownTrail } from "./trail.mjs";
 import { CLUE_ACTIONS } from "./trail-actions.mjs";
 import { validateHospitality } from "./hospitality.mjs";
+import { validateStoryProgress } from "./parent-story.mjs";
 
 export const SAVE_VERSION = 1;
 const PREFIX = "arcane-journey-v1:";
@@ -76,9 +77,13 @@ export function validateSave(save) {
     .every(k => nonnegative(s.lastMove[k])) || typeof s.lastMove.elevationKnown !== "boolean")) fail();
   const trail = s.trail;
   if (!trail || ![1, 2].includes(trail.version) || typeof trail.parentName !== "string" || !trail.parentName.trim() ||
-      !Array.isArray(trail.stages) || !(trail.version === 2 ? trail.stages.length === 10 : [3, 10].includes(trail.stages.length)) ||
+      !Array.isArray(trail.stages) || !(trail.version === 2
+        ? trail.stages.length === 10 || trail.story?.finalState === "mobile" && trail.stages.length === 13
+        : [3, 10].includes(trail.stages.length)) ||
       !integer(trail.index) || trail.index < 0 || trail.index > trail.stages.length ||
-      trail.completed !== (trail.index === trail.stages.length) ||
+      typeof trail.completed !== "boolean" ||
+      (trail.completed ? trail.story?.finalState === "mobile" ? trail.index < 10 : trail.index !== trail.stages.length
+        : trail.index >= trail.stages.length) ||
       (s.ended === "reunion") !== trail.completed ||
       !Array.isArray(trail.history) || trail.history.length !== trail.index ||
       new Set(trail.stages.map(p => `${p?.col},${p?.row}`)).size !== trail.stages.length ||
@@ -89,23 +94,25 @@ export function validateSave(save) {
           /^(node|way)\/\d+$/.test(p.osmId)) ||
         p.witnessId !== `fictional-traveler-${index + 1}`)) fail();
   if (trail.version === 2) validateTownTrail(trail);
+  validateStoryProgress(s);
   if (trail.version === 2 && trail.discovery !== undefined) {
     const d = trail.discovery;
-    if (!d || !Object.hasOwn(CLUE_ACTIONS, d.kind) || d.kind === "directions" ||
-        !integer(d.step) || d.step < 0 || d.step >= 10 || typeof d.pending !== "boolean" ||
+    if (!d || !Object.hasOwn(CLUE_ACTIONS, d.kind) || ["directions", "rumor"].includes(d.kind) ||
+        !integer(d.step) || d.step < 0 || d.step >= trail.stages.length || typeof d.pending !== "boolean" ||
         d.step !== (d.pending ? trail.index : trail.index - 1) ||
         d.place !== trail.stages[d.step].name ||
-        d.nextName !== (trail.stages[d.step + 1]?.name ?? null) ||
-        d.venue !== (trail.stages[d.step + 1]?.venue?.name ?? null) ||
+        d.nextName !== (trail.completed ? null : trail.stages[d.step + 1]?.name ?? null) ||
+        d.venue !== (trail.completed ? null : trail.stages[d.step + 1]?.venue?.name ?? null) ||
         (d.pending && !d.venue)) fail();
   }
   for (let i = 0; i < trail.history.length; i++) {
-    const fact = trail.history[i], stage = trail.stages[i], next = trail.stages[i + 1] ?? null;
+    const fact = trail.history[i], stage = trail.stages[i],
+      next = trail.completed && i === trail.index - 1 ? null : trail.stages[i + 1] ?? null;
     if (!fact || fact.fictional !== true || fact.parentName !== trail.parentName ||
         fact.witnessId !== stage.witnessId || fact.place !== stage.name ||
         JSON.stringify(fact.next) !== JSON.stringify(next)) fail();
     if (trail.version === 2 && (!Object.hasOwn(CLUE_ACTIONS, fact.clueKind) ||
-        fact.clueKind === "directions" || typeof fact.usedDirections !== "boolean")) fail();
+        ["directions", "rumor"].includes(fact.clueKind) || typeof fact.usedDirections !== "boolean")) fail();
   }
   if (s.ended === null && (s.reserveKcal <= 0 || s.fatigue >= 100 ||
       s.awakeHours >= save.survival.sleep_limit_hours)) fail();
