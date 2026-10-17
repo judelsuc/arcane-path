@@ -1,5 +1,43 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - carnets, tarot et panneau meteo compact
+
+- **17 octobre 2026** : runtime `e64e055`, tag
+  `deploy-2026-10-17-notebooks-weather`, developpement `1ff2e9f`,
+  base live `2db306c`. 45 fichiers selectionnes, sans remplacer config.yml.
+- Agenda, horloge et meteo dans un seul panneau : couleurs selon la
+  temperature estimee, gouttes sous pluie/orage et soleil/lune en arriere-plan
+  suivant l'heure du jeu. Ancien cadran solaire separe retire.
+  Effets meteo dans une infobulle au survol ou au focus clavier.
+- Indices dates UTC, tous types fusionnes du plus recent au plus ancien.
+  Bouton d'enquete en haut ; destination atteinte marquee et nouvelle page
+  ouverte immediatement, sans avancer la quete avant l'enquete locale.
+- 22 arcanes majeurs Jean Dodal et dos historiques du domaine public, servis
+  localement avec credits. Tirages naissance/jour reveles epingles avec date,
+  identite par voyage/role/jour et notes preservees lors des reprises.
+- Carnet propre a chaque voyage. Au deces ou au remplacement, depot du carnet
+  complet a la derniere position : photos, notes, tarot et indices deviennent
+  lisibles par les autres joueurs, avec avertissement et confirmation.
+  File IndexedDB durable, ancienne sauvegarde conservee si le depot echoue.
+- Recuperation et livraison en quete annexe, carnet retrouve en lecture seule,
+  sans remplacer la quete du joueur. Capacites privees, reclamation exclusive,
+  bail de sept jours ; parent de cette livraison fixe a sa position au depot.
+  Limites explicites de partage : 1000 entrees, 48 MiB d'images au total.
+- 369 tests JS et 21 tests Python passent. Navigateur : images decodees,
+  vrai stockage IndexedDB et API locale, migration/reinitialisation des carnets,
+  lecture retrouvee, dates/pages ; panneau et infobulle verifies a 1280/390 px,
+  soleil/lune ronds et uniques, pluie effacee lorsque les donnees changent.
+- Nginx valide puis recharge, service Python redemarre. 42 assets HTTPS
+  verifies octet par octet ; hachages des 45 fichiers installes verifies,
+  API jeu disponible et nouvelle API sans capacite correctement refusee (403).
+  Les 16 lignes de genesis presentes avant livraison sont strictement inchangees.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-e64e055.tar.gz` (0600).
+  Snapshots SQLite coherents (0600) dans `/var/lib/arcane-path/backups/` :
+  `journeys-before-e64e055.sqlite3` et `abandoned-journals-after-e64e055.sqlite3`.
+  Le nouveau magasin est `cache/travel/abandoned-journals.sqlite3` (0600),
+  distinct de `journeys.sqlite3`. Inclure desormais **les deux bases** dans
+  toute sauvegarde ; ne jamais restaurer une ancienne base lors d'un retour code.
+
 ## Derniere livraison - recherches retrouvant un indice connu
 
 - **17 octobre 2026** : runtime `2db306c`, tag
