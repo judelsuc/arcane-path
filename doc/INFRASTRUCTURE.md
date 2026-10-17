@@ -359,6 +359,18 @@ joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
   `/home/ubuntu/arcane-path-before-deploy-b035fa6.tar.gz`, mode 0600.
   Modification locale utilisateur de configuration photo exclue.
 
+### Checkpoint deploye : refus d'hospitalite explicite
+
+- **17 octobre 2026** : commit `d4897fe`, tag pousse
+  `deploy-2026-10-17-hospitality-wording`.
+- Texte FR/EN : refus explicite, absence de sommeil, tentative consommee meme
+  en cas de refus ; prochain jour UTC ou autre localite pour reessayer.
+- 24 tests JavaScript cibles passes. Module de traduction et manifeste verifies
+  identiques au commit en HTTPS authentifie ; services actifs, sans redemarrage.
+  Sauvegardes, probabilites et cache inchanges, configuration utilisateur exclue.
+- Rollback :
+  `/home/ubuntu/arcane-path-before-deploy-d4897fe.tar.gz`, mode 0600.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026
