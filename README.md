@@ -323,7 +323,11 @@ presente le tarot de depart, sa lecture symbolique et la bourse exacte.
 Un seul tirage par nouveau voyage : la revelation ne tire pas une autre carte.
 **Prendre la route** ouvre ensuite le journal. Une reprise garde sa carte,
 son profil et son budget ; elle ne repasse pas par un nouveau tirage.
-Dans cette version le tarot fixe le budget, pas les caracteristiques.
+Pour les nouveaux voyages, le tarot remplace le choix de profil : force,
+endurance et allure sont definies par carte (9 points au total). Les anciennes
+sauvegardes conservent leur profil. Chaque carte a son illustration ASCII.
+Le tarot de depart et celui du jour donnent ensemble une tendance pour les
+futurs evenements nocturnes ; aucun evenement n'est encore declenche.
 
 ## Musique
 

@@ -7,13 +7,14 @@ import {
   validateSurvivalConfig, hungerPercent, canEat,
 } from "./survival.mjs";
 import { setupTowns } from "./towns-ui.mjs";
-import { validateEconomy, startEconomy, buyMeal, sleepEconomy, restEconomy, finishAction } from "./economy.mjs";
+import { validateEconomy, startEconomy, applyBirthTarot, tarotEventChance, buyMeal, sleepEconomy, restEconomy, finishAction } from "./economy.mjs";
 import { setupEconomyUI } from "./economy-ui.mjs";
 import { beginBusking, settleBusking } from "./music.mjs";
 import { setupMusic } from "./music-ui.mjs";
 import { createTrail, interviewTrail } from "./trail.mjs";
 import { setupTrail } from "./trail-ui.mjs";
 import { createJourneyStore, mapIdentity } from "./journey-save.mjs";
+import { tarotArt } from "./tarot-art.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext }) {
   const start = document.querySelector("#start-travel");
@@ -43,11 +44,13 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const birthDialog = document.querySelector("#birth-tarot-dialog");
   const birthDraw = document.querySelector("#birth-tarot-draw");
   const birthReveal = document.querySelector("#birth-tarot-reveal");
+  const birthArt = document.querySelector(".birth-card-art");
   let birthPending = false;
   function openJourneyIntro() {
     if (birthPending) {
       birthDraw.hidden = false;
       birthReveal.hidden = true;
+      birthArt.textContent = tarotArt();
       birthDialog.showModal();
       birthDraw.focus();
       birthPending = false;
@@ -58,11 +61,18 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   function localizeBirthCard() {
     if (!state || !economyData) return;
     const card = economyData.tarot.find(card => card.id === state.birthCard);
+    birthArt.textContent = tarotArt(birthReveal.hidden ? null : card.id);
     const language = document.documentElement.lang === "en" ? "en" : "fr";
     document.querySelector("#birth-tarot-name").textContent = card[language];
     document.querySelector("#birth-tarot-meaning").textContent = t(`tarotMeaning.${card.id}`);
     document.querySelector("#birth-tarot-budget").textContent = t("birthTarotBudget", {
       money: (state.walletCents / 100).toFixed(2), units: card.mealUnits,
+    });
+    document.querySelector("#birth-tarot-attributes").textContent = t("characterStats", {
+      profile: card[language], ...state.character,
+    });
+    document.querySelector("#birth-tarot-events").textContent = t("birthTarotEvents", {
+      factor: (tarotEventChance(0.1, state, economyData) / 0.1).toFixed(2),
     });
   }
   birthDraw.addEventListener("click", () => {
@@ -242,7 +252,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     if (state && survivalConfig) {
       const character = state.character;
       document.querySelector("#player-character").textContent = t("characterStats", {
-        profile: t(`profile.${state.profileId}`), strength: character.strength,
+        profile: state.profileId === "tarot"
+          ? economyData.tarot.find(c => c.id === state.birthCard)[document.documentElement.lang === "en" ? "en" : "fr"]
+          : t(`profile.${state.profileId}`), strength: character.strength,
         endurance: character.endurance, pace: character.pace,
       });
       const values = {
@@ -550,7 +562,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         economyData = validateEconomy(await economyResponse.json());
         if (currentToken !== token) return;
         state = startEconomy(startSurvival(Math.floor(base.width / 2), Math.floor(base.height / 2),
-          Date.now(), profile.value, survivalConfig), economyData);
+          Date.now(), "balanced", survivalConfig), economyData);
+        state = applyBirthTarot(state, economyData);
         state = { ...state, trail: createTrail(base, state.col, state.row) };
         birthPending = true;
       }

@@ -34,11 +34,15 @@ export function validateSave(save) {
       (s.lastEarningsCents !== undefined && (!integer(s.lastEarningsCents) || s.lastEarningsCents < 0)) ||
       ![null, "hunger", "fatigue", "sleep", "reunion"].includes(s.ended) ||
       (s.performancePending !== undefined && s.performancePending !== null) ||
-      !Object.hasOwn(save.survival.profiles, s.profileId) ||
+      (s.profileId !== "tarot" && !Object.hasOwn(save.survival.profiles, s.profileId)) ||
       !save.economy.tarot.some(c => c.id === s.birthCard) ||
       !save.economy.tarot.some(c => c.id === s.dailyCard) ||
       s.tarotDay !== new Date(s.startedAt + s.elapsedMinutes * 60000).toISOString().slice(0, 10)) fail();
-  const character = characterProfile(save.survival.profiles[s.profileId]);
+  const attributes = s.profileId === "tarot"
+    ? save.economy.tarot.find(c => c.id === s.birthCard)?.attributes
+    : save.survival.profiles[s.profileId];
+  if (!attributes) fail();
+  const character = characterProfile(attributes);
   if (!s.character || Object.entries(character).some(([k, v]) => s.character[k] !== v)) fail();
   if (s.lastMove !== null && (!s.lastMove || !["meters", "minutes", "speedKmh",
     "energyKcal", "fatigueGain", "ascentMeters", "descentMeters", "terrainCost"]

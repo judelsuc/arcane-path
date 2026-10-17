@@ -600,3 +600,23 @@ Translation coverage verifies readings for every economy card in FR/EN.
 The user also changed the music policy: default-enabled at 25%, superseding
 earlier opt-in notes. The browser played the real English title song at load.
 If autoplay is denied, a subsequent click/key retries; mute remains explicit.
+
+## Tarot artwork and characteristic correction
+
+Replaced the misleading generic revealed road drawing with 22 distinct
+original ASCII symbols. Concealed cards use a patterned back. Automated
+coverage checks uniqueness, ASCII and equal-width borders for every card.
+
+The user then chose tarot-derived attributes instead of manual profiles and
+starting + daily cards for future event chances. Each card now defines nine
+total attribute points, distributed within 1-5. Existing mass/speed/effort/
+endurance formulas remain unchanged. New characters use profileId "tarot";
+save validation checks their coefficients against the pinned birth-card
+attributes. Older saves retain original profiles and need no migration.
+
+Night-event tendency is `0.5 + mean(birth.nightRisk, daily.nightRisk)`.
+The shared helper accepts a base probability and caps the result at one.
+Current curated cards give multipliers 0.7-1.1. This is provisional gameplay
+balance, not event execution: the future Events layer must call the helper.
+Birth attributes never change with daily draws. The reveal explicitly shows
+the attributes, budget and future tendency without claiming events are live.

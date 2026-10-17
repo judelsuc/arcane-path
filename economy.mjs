@@ -1,6 +1,6 @@
 import { journeyDate } from "./travel.mjs";
 import { skyState } from "./sky.mjs";
-import { eatSurvival, sleepSurvival, restSurvival } from "./survival.mjs";
+import { eatSurvival, sleepSurvival, restSurvival, characterProfile } from "./survival.mjs";
 
 export function validateEconomy(data) {
   const positive = n => Number.isFinite(n) && n > 0;
@@ -16,6 +16,9 @@ export function validateEconomy(data) {
       !Array.isArray(data.tarot) || data.tarot.length !== 22 ||
       new Set(data.tarot.map(c => c.id)).size !== 22 ||
       data.tarot.some(c => !c.id || !c.fr || !c.en || !positive(c.mealUnits) ||
+        (c.attributes !== undefined && (!c.attributes ||
+          Object.keys(c.attributes).sort().join() !== "endurance,pace,strength" ||
+          Object.values(c.attributes).some(v => !Number.isInteger(v) || v < 1 || v > 5))) ||
         !Number.isFinite(c.nightRisk) || c.nightRisk < 0 || c.nightRisk > 1) ||
       !Array.isArray(data.meals) || !data.meals.length ||
       new Set(data.meals.map(m => m.id)).size !== data.meals.length ||
@@ -41,6 +44,22 @@ export function startEconomy(state, data, random = Math.random) {
     tarotDay: journeyDate(state).toISOString().slice(0, 10),
     walletCents: Math.round(card.mealUnits * data.pricing.referenceCents),
     outdoorNightMinutes: 0, lastExpenseCents: 0 };
+}
+
+export function applyBirthTarot(state, data) {
+  const card = data.tarot.find(c => c.id === state.birthCard);
+  if (!card?.attributes) throw new Error("Starting tarot attributes are missing.");
+  return { ...state, profileId: "tarot", character: characterProfile(card.attributes) };
+}
+
+export function tarotEventChance(baseChance, state, data) {
+  if (!Number.isFinite(baseChance) || baseChance < 0 || baseChance > 1) {
+    throw new Error("Invalid base event probability.");
+  }
+  const birth = data.tarot.find(c => c.id === state.birthCard);
+  const daily = data.tarot.find(c => c.id === state.dailyCard);
+  if (!birth || !daily) throw new Error("Unknown event tarot card.");
+  return Math.min(1, baseChance * (0.5 + (birth.nightRisk + daily.nightRisk) / 2));
 }
 
 export function localMeals(info, data) {

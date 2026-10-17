@@ -586,6 +586,20 @@ This file records additions to the design without modifying the source PDF,
   respected; if blocked, retry on the first click/key or Retry music.
   Mute, volume and hidden-tab pauses remain available.
 
+## R-041 — Tarot-derived character and future event tendency
+
+- **User decision:** Replace manual profiles with starting-card attributes;
+  starting and daily tarot jointly affect future event occurrence.
+- New journeys use card-specific Strength/Endurance/Pace (1-5, nine total
+  points). Daily changes do not reroll attributes. Old saves retain profiles.
+- Store attributes in the pinned economy snapshot; validate character against
+  the saved birth card. Each revealed card has its own original ASCII symbol,
+  with a distinct concealed back before reveal.
+- Future night-event helper multiplies base probability by
+  `0.5 + (birth.nightRisk + daily.nightRisk) / 2`, capped at 1.
+  Values are provisional balance choices, not predictions. No events or
+  minigames are triggered before their later layer.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

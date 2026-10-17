@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createSave, validateSave, createJourneyStore, mapIdentity } from "../journey-save.mjs";
 import { startSurvival, walkSurvival } from "../survival.mjs";
-import { startEconomy, buyMeal, finishAction } from "../economy.mjs";
+import { startEconomy, buyMeal, finishAction, applyBirthTarot, tarotEventChance } from "../economy.mjs";
 import { createTrail, interviewTrail, trailTarget } from "../trail.mjs";
 import { beginBusking, settleBusking } from "../music.mjs";
 
@@ -23,6 +23,32 @@ function storage() {
   const data = new Map();
   return { getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v), data };
 }
+
+test("tarot determines balanced-budget attributes and survives saves without changing old profiles", () => {
+  for (const card of economy.tarot) {
+    assert.equal(Object.values(card.attributes).reduce((a, b) => a + b), 9);
+    const d = details();
+    d.state = applyBirthTarot({ ...d.state, birthCard: card.id }, economy);
+    assert.equal(d.state.profileId, "tarot");
+    for (const [key, value] of Object.entries(card.attributes)) assert.equal(d.state.character[key], value);
+    assert.deepEqual(createSave(d, 1).state.character, d.state.character);
+  }
+  assert.equal(createSave(details(), 1).state.profileId, "sturdy");
+});
+
+test("future night-event probabilities combine birth and daily cards without mutating attributes", () => {
+  const s = details().state;
+  const state = { ...s, birthCard: "tower", dailyCard: "star" };
+  assert.ok(Math.abs(tarotEventChance(0.2, state, economy) - 0.18) < 1e-12);
+  assert.notEqual(tarotEventChance(0.2, state, economy),
+    tarotEventChance(0.2, { ...state, birthCard: "star" }, economy));
+  assert.notEqual(tarotEventChance(0.2, state, economy),
+    tarotEventChance(0.2, { ...state, dailyCard: "tower" }, economy));
+  assert.equal(tarotEventChance(1, { ...state, dailyCard: "tower" }, economy), 1);
+  assert.equal(tarotEventChance(0, state, economy), 0);
+  assert.throws(() => tarotEventChance(-1, state, economy));
+  assert.throws(() => tarotEventChance(0.2, { ...state, birthCard: "bad" }, economy));
+});
 
 test("round trips complete state, pinned rules, map identity and separate region slots", () => {
   const memory = storage(), store = createJourneyStore(memory), d = details();
