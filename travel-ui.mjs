@@ -1,7 +1,11 @@
-import { initialJourney, moveJourney, restJourney, chunkPosition, journeyDate } from "./travel.mjs";
+import { chunkPosition, journeyDate } from "./travel.mjs";
 import { createChunkStream, neighborDownloads } from "./travel-stream.mjs";
 import { cellInfo } from "./cell-info.mjs";
 import { skyState, estimatedTemperature, altitudeTemperatureOffset } from "./sky.mjs";
+import {
+  startSurvival, walkSurvival, restSurvival, sleepSurvival, eatSurvival,
+  validateSurvivalConfig, hungerPercent, canEat,
+} from "./survival.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }) {
   const start = document.querySelector("#start-travel");
@@ -9,6 +13,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
   const rest = document.querySelector("#rest-travel");
   const retry = document.querySelector("#retry-travel");
   const look = document.querySelector("#look-travel");
+  const sleep = document.querySelector("#sleep-travel");
+  const eat = document.querySelector("#eat-travel");
+  const profile = document.querySelector("#character-profile");
   const controls = document.querySelector("#travel-controls");
   const stats = document.querySelector("#travel-stats");
   const status = document.querySelector("#travel-status");
@@ -19,6 +26,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
   let transient = "", missingHeightMoves = 0;
   let heading = [0, 0];
   let cursor, cameraData;
+  let survivalConfig;
   const weatherCache = new Map();
   let weatherKey, weatherData, weatherError = "", weatherController;
 
@@ -65,6 +73,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
     controls.hidden = !active;
     start.hidden = active;
     start.disabled = !base;
+    document.querySelector("#character-setup").hidden = active;
     retry.disabled = busy;
     stop.disabled = busy;
     status.textContent = error ? t("travelError", { error }) : transient ? t(transient) : "";
@@ -77,6 +86,39 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
     const position = state && chunkPosition(state.col, state.row);
     const chunk = position && stream?.get(position.x, position.y);
     const cell = chunk?.rows[position.row][position.col];
+    const ended = Boolean(state?.ended);
+    document.querySelector("#journey-ended").hidden = !ended;
+    if (state && survivalConfig) {
+      const character = state.character;
+      document.querySelector("#player-character").textContent = t("characterStats", {
+        profile: t(`profile.${state.profileId}`), strength: character.strength,
+        endurance: character.endurance, pace: character.pace,
+      });
+      const values = {
+        hunger: hungerPercent(state, survivalConfig),
+        fatigue: state.fatigue,
+        sleep: Math.min(100, state.awakeHours / survivalConfig.sleep_limit_hours * 100),
+      };
+      for (const [key, value] of Object.entries(values)) {
+        const meter = document.querySelector(`#needs-${key}`);
+        meter.value = value;
+        meter.low = survivalConfig.warning_percent * 0.6;
+        meter.high = survivalConfig.warning_percent;
+        document.querySelector(`#needs-${key}-value`).textContent = `${Math.round(value)}%`;
+      }
+      document.querySelector("#needs-sleep").title = t("needsAwake", { hours: state.awakeHours.toFixed(1) });
+      const warnings = [];
+      if (values.hunger >= survivalConfig.warning_percent) warnings.push(t("needsHungry"));
+      if (values.fatigue >= survivalConfig.warning_percent) warnings.push(t("needsTired"));
+      if (state.awakeHours >= survivalConfig.sleep_warning_hours) warnings.push(t("needsSleepy"));
+      document.querySelector("#needs-warning").textContent = warnings.join(" ");
+      document.querySelector("#journey-outcome").textContent = ended ? t(`journeyEnded.${state.ended}`) : "";
+      rest.textContent = t("needsRestAction", { minutes: survivalConfig.rest_minutes });
+      sleep.textContent = t("needsSleepHours", { hours: survivalConfig.sleep_hours });
+      eat.textContent = t("needsMeal", { minutes: survivalConfig.meal_minutes });
+      document.querySelector("#meal-location").textContent = canEat(cell)
+        ? t("needsMealAvailable") : t("needsMealUnavailable");
+    }
     updateWeather(chunk);
     const weatherSummary = document.querySelector("#weather-summary");
     const weatherSource = document.querySelector("#weather-source");
@@ -121,8 +163,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       weatherSummary.textContent = weatherError
         ? t("weatherError", { error: weatherError }) : active ? t("weatherLoading") : "";
     }
-    for (const button of directions) button.disabled = busy || !cell;
-    rest.disabled = busy || !cell || Boolean(cursor);
+    for (const button of directions) button.disabled = busy || !cell || (ended && !cursor);
+    rest.disabled = sleep.disabled = busy || !cell || Boolean(cursor) || ended;
+    eat.disabled = rest.disabled || !canEat(cell);
     look.disabled = busy || !cell;
     look.textContent = t(cursor ? "travelLookExit" : "travelLook");
     look.setAttribute("aria-pressed", String(Boolean(cursor)));
@@ -277,7 +320,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
   }
 
   async function move(dc, dr) {
-    if (!state || busy || !active) return;
+    if (!state || busy || !active || state.ended) return;
     heading = [dc, dr];
     stream.prioritize(neighborDownloads(state.col, state.row, ...heading));
     busy = true;
@@ -291,12 +334,12 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       const target = await stream.load(to.x, to.y, true);
       if (currentToken !== token) return;
       const fromCell = stream.get(from.x, from.y).rows[from.row][from.col];
-      state = moveJourney(state, dc, dr, fromCell, target.rows[to.row][to.col]);
+      state = walkSurvival(state, dc, dr, fromCell, target.rows[to.row][to.col], survivalConfig);
       if (!state.lastMove.elevationKnown) missingHeightMoves++;
       if (target.elevation.error) error = target.elevation.error;
       resetContent();
       draw();
-      prefetch();
+      if (!state.ended) prefetch();
       document.querySelector("#ascii-map").focus({ preventScroll: true });
       await new Promise(resolve => setTimeout(resolve, 130));
     } catch (reason) {
@@ -329,7 +372,14 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       const config = await health.json();
       if (config.chunkSize !== 8 || config.cellSizeMeters !== 250) throw new Error("Unsupported travel server.");
       if (currentToken !== token) return;
-      state = initialJourney(Math.floor(base.width / 2), Math.floor(base.height / 2));
+      const settingsResponse = await fetch("./public/config.json", {
+        cache: "no-cache", signal: AbortSignal.timeout(5000),
+      });
+      if (!settingsResponse.ok) throw new Error(`Survival configuration: HTTP ${settingsResponse.status}`);
+      survivalConfig = validateSurvivalConfig((await settingsResponse.json()).survival);
+      if (currentToken !== token) return;
+      state = startSurvival(Math.floor(base.width / 2), Math.floor(base.height / 2),
+        Date.now(), profile.value, survivalConfig);
       const p = chunkPosition(state.col, state.row);
       stream = createChunkStream(region, { onUpdate: () => {
         if (currentToken === token) draw();
@@ -371,16 +421,32 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
     localize();
   }
   start.addEventListener("click", begin);
+  document.querySelector("#restart-travel").addEventListener("click", () => {
+    reset();
+    begin();
+  });
   look.addEventListener("click", toggleLook);
   stop.addEventListener("click", () => {
     reset();
     onStop();
   });
-  rest.addEventListener("click", () => {
-    if (!state || busy) return;
-    state = restJourney(state);
-    localize();
-  });
+  function survivalAction(action) {
+    if (!state || busy || cursor || state.ended) return;
+    try {
+      const p = chunkPosition(state.col, state.row);
+      const cell = stream.get(p.x, p.y)?.rows[p.row][p.col];
+      if (!cell) throw new Error("Current cell is not loaded.");
+      state = action === "eat" ? eatSurvival(state, cell, survivalConfig)
+        : action === "sleep" ? sleepSurvival(state, survivalConfig) : restSurvival(state, survivalConfig);
+      localize();
+      document.querySelector("#ascii-map").focus({ preventScroll: true });
+    } catch (reason) {
+      report(reason);
+    }
+  }
+  rest.addEventListener("click", () => survivalAction("rest"));
+  sleep.addEventListener("click", () => survivalAction("sleep"));
+  eat.addEventListener("click", () => survivalAction("eat"));
   retry.addEventListener("click", async () => {
     if (busy) return;
     if (weatherError) weatherKey = undefined;
@@ -426,10 +492,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       if (!event.repeat) step(...delta);
     } else if (event.key.toLowerCase() === "r" && !event.repeat) {
       event.preventDefault();
-      if (state && !busy && !cursor) {
-        state = restJourney(state);
-        localize();
-      }
+      survivalAction("rest");
     }
   });
   return {

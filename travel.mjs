@@ -23,7 +23,7 @@ export function journeyDate(state) {
   return new Date(state.startedAt + state.elapsedMinutes * 60_000);
 }
 
-export function travelCost(from, to, meters, fatigue) {
+export function travelCost(from, to, meters, fatigue, character = TRAVEL_MODEL) {
   if (!(meters > 0) || !Number.isFinite(meters) || !Number.isFinite(fatigue) ||
       fatigue < 0 || fatigue > 100 || !(from.terrain in GROUND_COST) || !(to.terrain in GROUND_COST)) {
     throw new Error("Invalid travel cost input.");
@@ -33,14 +33,15 @@ export function travelCost(from, to, meters, fatigue) {
   const slope = Math.max(-0.5, Math.min(0.5, height / meters));
   const terrainCost = (GROUND_COST[from.terrain] + GROUND_COST[to.terrain]) / 2;
   const slopeSpeed = Math.exp(-3.5 * (Math.abs(slope + 0.05) - 0.05));
-  const speedKmh = Math.max(0.5, Math.min(6, TRAVEL_MODEL.baseSpeedKmh * slopeSpeed /
+  const speedKmh = Math.max(0.5, Math.min(6, character.baseSpeedKmh * slopeSpeed /
     terrainCost / (1 + fatigue / 100)));
   const minutes = meters / 1000 / speedKmh * 60;
   const ascentMeters = Math.max(0, height), descentMeters = Math.max(0, -height);
-  const energyKcal = TRAVEL_MODEL.bodyMassKg * (
+  const energyKcal = character.bodyMassKg * (
     0.75 * meters / 1000 * terrainCost + ascentMeters * 0.009 + descentMeters * 0.002
-  ) * (1 + fatigue / 200);
-  const fatigueGain = minutes * 0.08 * terrainCost + ascentMeters / 80 + descentMeters / 400;
+  ) * (1 + fatigue / 200) * (character.effortFactor ?? 1);
+  const fatigueGain = (minutes * 0.08 * terrainCost + ascentMeters / 80 + descentMeters / 400) /
+    (character.enduranceFactor ?? 1);
   return { meters, minutes, speedKmh, energyKcal, fatigueGain, ascentMeters, descentMeters,
     elevationKnown, terrainCost };
 }
@@ -49,7 +50,7 @@ export function moveJourney(state, dc, dr, from, to, meters = 250) {
   if (!Number.isInteger(dc) || !Number.isInteger(dr) || Math.abs(dc) + Math.abs(dr) !== 1) {
     throw new Error("Travel requires one orthogonal cell step.");
   }
-  const cost = travelCost(from, to, meters, state.fatigue);
+  const cost = travelCost(from, to, meters, state.fatigue, state.character);
   return {
     ...state, col: state.col + dc, row: state.row + dr,
     distanceMeters: state.distanceMeters + meters, elapsedMinutes: state.elapsedMinutes + cost.minutes,

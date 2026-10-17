@@ -276,7 +276,8 @@ def make_handler(store, jobs):
             url = urllib.parse.urlsplit(self.path)
             if url.path == "/public/config.json":
                 try:
-                    return self.send_json(200, {"photos": load_config()["photos"]})
+                    config = load_config()
+                    return self.send_json(200, {key: config[key] for key in ("photos", "survival") if key in config})
                 except (OSError, ValueError) as error:
                     logging.exception("Configuration request failed")
                     return self.send_json(500, {"error": str(error)})

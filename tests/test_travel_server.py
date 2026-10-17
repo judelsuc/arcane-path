@@ -112,6 +112,10 @@ class TravelServerTests(unittest.TestCase):
             try:
                 with urllib.request.urlopen(url + "/api/travel") as response:
                     self.assertEqual(json.load(response)["chunkSize"], 8)
+                with urllib.request.urlopen(url + "/public/config.json") as response:
+                    settings = json.load(response)
+                    self.assertEqual(settings["survival"]["reserve_kcal"], 1800)
+                    self.assertEqual(settings["photos"]["max_per_cell"], 5)
                 with patch("travel_server.WeatherStore.get", return_value={"months": []}) as weather:
                     with urllib.request.urlopen(url + "/api/weather?region=firmi&x=1&y=1") as response:
                         self.assertEqual(json.load(response), {"months": []})

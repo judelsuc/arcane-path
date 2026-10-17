@@ -74,8 +74,10 @@ def prepare_region(region, viewport, refresh=False, force=False, root=ROOT):
 
 
 def main():
+    settings = load_config()
     (ROOT / "public/config.json").write_text(
-        json.dumps({"photos": load_config()["photos"]}) + "\n", encoding="utf-8")
+        json.dumps({key: settings[key] for key in ("photos", "survival") if key in settings}) + "\n",
+        encoding="utf-8")
     config = json.loads(CONFIG.read_text(encoding="utf-8"))
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--region", choices=config["regions"], action="append",

@@ -416,6 +416,19 @@ dialog p { margin: 12px 0; }
   font-size: 0.65rem;
 }
 
+#character-setup { margin-bottom: 12px; }
+#character-setup select { display: block; max-width: 100%; margin-top: 6px; }
+#character-setup p { max-width: 42em; color: var(--muted); }
+.player-needs { margin: 10px 0; padding-block: 8px; border-block: 1px solid var(--line); }
+.player-needs h4 { margin: 0; color: var(--accent); }
+#player-character { color: var(--muted); font-size: 0.65rem; margin: 4px 0 8px; }
+.player-needs label { display: grid; grid-template-columns: 65px minmax(0, 1fr) 38px; align-items: center; gap: 6px; }
+.player-needs meter { width: 100%; height: 14px; }
+.player-needs output { text-align: right; }
+#needs-warning, #journey-ended { color: #f4cc80; }
+#needs-warning:empty { display: none; }
+#meal-location { color: var(--muted); font-size: 0.65rem; }
+
 .travel-panel {
   padding: 16px 24px;
   border-bottom: 1px solid var(--line);

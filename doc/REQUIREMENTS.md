@@ -418,6 +418,20 @@ This file records additions to the design without modifying the source PDF,
   Preserve current gallery position at completion and ignore stale progress
   after selection/language changes. Loading photos are not labelled as cached.
 
+## R-028 — Layer 4 character-dependent survival
+
+- **Requirement:** Add strength/build, endurance and pace trade-offs before
+  hunger/fatigue/sleep survival. Stronger/faster profiles require more energy.
+- **Status:** Implemented with three selectable YAML profiles, energy reserve,
+  passive metabolism and active exertion; hunger/sleep speed penalties,
+  distinct rest and sleep, temporary free meals only on settlement cells,
+  explicit exhaustion outcomes and restart.
+- **Bounds:** No player-state time advancement from real waiting, Look,
+  content downloads or failed movement. No weather penalty, inventory,
+  economy or skill tree yet. Constants are gameplay estimates.
+- **Review:** Decisions, provisional balancing, manual checkpoint tests and
+  open questions are recorded in IMPLEMENTATION-CHOICES.md.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

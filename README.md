@@ -1,6 +1,6 @@
 # Les Arcanes du Chemin
 
-Prototype des **couches 1 — Carte, 2 — Voyage et 3 — Temps** : donnees OSM reelles,
+Prototype des **couches 1 — Carte, 2 — Voyage, 3 — Temps et 4 — Besoins** : donnees OSM reelles,
 grille ASCII de 250 m, exploration a pied, horloge simulee, effort et streaming.
 
 Les ajouts au document de conception sont suivis dans [doc/REQUIREMENTS.md](./doc/REQUIREMENTS.md).
@@ -92,8 +92,8 @@ par la configuration ; les sources OSM et altitudes restent reutilisees.
   de depart, puis avancent selon la duree calculee des pas et repos, y compris
   lors du changement de jour. Le temps reel entre actions ne les fait pas avancer.
 - Le panneau indique distance, duree, vitesse du dernier pas, fatigue sur 100,
-  kcal cumulees et denivele positif/negatif. Les kcal preparent la future
-  mecanique de nourriture : aucun inventaire, faim ou repas n'est encore ajoute.
+  kcal cumulees et denivele positif/negatif. La couche 4 ajoute faim, sommeil,
+  profils de personnage et repas de prototype ; aucun inventaire pour l'instant.
 - Les commandes, l'horloge et les statistiques occupent une barre laterale a
   droite sur grand ecran, sous la carte sur mobile. Les explications du modele
   sont repliees dans « Aide et modele de voyage ».
@@ -106,7 +106,8 @@ par la configuration ; les sources OSM et altitudes restent reutilisees.
   Une case non telechargee attend ses donnees ; une erreur permet de reessayer
   sans deplacer le joueur ni consommer de temps ou d'energie.
 - La camera suit le joueur ; les descriptions et la touche **P** concernent
-  sa case, meme si la souris inspecte ailleurs. Les touches de marche ne sont
+  sa case, ou le curseur en mode L. La souris ne declenche pas d'inspection au survol.
+  Les touches de marche ne sont
   pas actives dans une fenetre photo ou le tiroir OSM.
 - La carte OSM du tiroir est recentree sur la case du joueur avec un marqueur,
   et le lien externe reprend cette position. Fermee, elle n'est pas rechargee.
@@ -140,6 +141,39 @@ difference entre centres, pas la somme des variations du chemin reel.
 Une altitude indisponible est explicitement signalee : le pas utilise une
 estimation de pente nulle, et le compteur de pas estimes reste visible.
 **Reessayer les telechargements** relance les altitudes manquantes.
+
+## Couche 4 : personnage et besoins
+
+Avant de partir, choisir **Equilibre**, **Robuste** ou **Endurant**. Le robuste
+marche un peu plus vite et consomme davantage ; l'endurant accumule moins de
+fatigue. Le profil reste fixe pendant un voyage. Le modele d'effort historique
+reste la base ; le profil ajuste masse de jeu, allure et endurance.
+
+- Les jauges affichent faim, fatigue et pression de sommeil (0 = bon etat).
+- La faim suit une reserve d'energie, consommee par le metabolisme de base
+  pendant toutes les actions et par l'effort de marche. Les kcal affichees sont
+  des depenses cumulees ; un repas ne remet pas ce compteur a zero.
+- Le repos de 30 min recupere la fatigue d'effort, pas la pression de sommeil.
+- **Dormir** avance de 8 h, diminue fatigue et dette de sommeil, mais consomme
+  encore de l'energie. Dormir sans manger indefiniment n'est pas une solution.
+- **Repas** est disponible uniquement sur une case de localite `○` :
+  20 min et 900 kcal de reserve (sans depasser sa capacite). Aide gratuite
+  de prototype, pas une promesse de nourriture ou d'accueil dans le lieu reel.
+  Les boutiques et l'argent viendront dans la couche economie.
+- Les avertissements expliquent les besoins eleves. Faim et manque de sommeil
+  ralentissent la marche. Reserve vide, fatigue a 100 ou 32 h d'eveil equivalent
+  terminent le voyage avec une explication et **Nouveau voyage**.
+- Les actions de survie sont desactivees en observation et dans les dialogues.
+  Attendre reellement ou telecharger ne consomme aucune ressource.
+
+Les profils et coefficients de besoins sont dans `config.yml`, section
+`survival`, valides au demarrage du voyage et exposes par le serveur. Pas
+de bonus invente depuis une photo ou une description Wikipedia ; les repas
+utilisent uniquement le terrain OSM de la case du joueur. Ni meteo punitive,
+ni blessures, ni eau potable, ni effets medicaux dans cette couche.
+
+Voir [les choix, questions ouvertes et parcours de test](./doc/IMPLEMENTATION-CHOICES.md)
+pour les hypotheses de jeu, les checkpoints Git et la verification couche par couche.
 
 ### Couche 3 : temps et cadran du ciel
 
