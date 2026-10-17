@@ -90,9 +90,13 @@ export function wakingSleepHours(state, minutes) {
   return hours;
 }
 
-function consume(state, minutes, extraEnergy, config, sleeping = false) {
-  const basal = config.basal_kcal_per_hour * state.character.bodyMassKg / 40 *
+export function basalEnergy(state, minutes, config, sleeping = false) {
+  return config.basal_kcal_per_hour * state.character.bodyMassKg / 40 *
     minutes / 60 * (sleeping ? config.sleep_metabolism_factor : 1);
+}
+
+function consume(state, minutes, extraEnergy, config, sleeping = false) {
+  const basal = basalEnergy(state, minutes, config, sleeping);
   const next = {
     ...state, elapsedMinutes: state.elapsedMinutes + minutes,
     energyKcal: state.energyKcal + basal + extraEnergy,

@@ -2,6 +2,9 @@ import { journeyDate } from "./travel.mjs";
 import { skyState } from "./sky.mjs";
 import { eatSurvival, sleepSurvival, restSurvival, faintSurvival, characterProfile, canEat } from "./survival.mjs";
 import { applyWeatherExposure } from "./weather-effects.mjs";
+import { advancePressures, didPlace, washingAvailable, refreshPressureTarot } from "./pressures.mjs";
+import { tarotEventChance } from "./tarot-effects.mjs";
+export { tarotEventChance } from "./tarot-effects.mjs";
 
 export function validateEconomy(data) {
   const positive = n => Number.isFinite(n) && n > 0;
@@ -67,17 +70,6 @@ export function applyBirthTarot(state, data) {
   const card = data.tarot.find(c => c.id === state.birthCard);
   if (!card?.attributes) throw new Error("Starting tarot attributes are missing.");
   return { ...state, profileId: "tarot", character: characterProfile(card.attributes) };
-}
-
-export function tarotEventChance(baseChance, state, data) {
-  if (!Number.isFinite(baseChance) || baseChance < 0 || baseChance > 1) {
-    throw new Error("Invalid base event probability.");
-  }
-
-  const birth = data.tarot.find(c => c.id === state.birthCard);
-  const daily = data.tarot.find(c => c.id === state.dailyCard);
-  if (!birth || !daily) throw new Error("Unknown event tarot card.");
-  return Math.min(1, baseChance * (0.5 + (birth.nightRisk + daily.nightRisk) / 2));
 }
 
 export function dailyTarotPending(state) {
@@ -212,8 +204,20 @@ export function didFaint(previous, next) {
   return (next.faints ?? 0) > (previous.faints ?? 0);
 }
 
+export function actionInterrupted(previous, next) {
+  return Boolean(next.ended || didFaint(previous, next) || didPlace(previous, next));
+}
+
+export function washEconomy(state, cell, info, survival, data) {
+  if (!state.pressures || !washingAvailable(cell)) throw new Error("No washing facilities available here.");
+  const cents = marketPrice(cell, 0.25, data, info).cents;
+  const paid = charge(state, cents);
+  const next = restSurvival(paid, { ...survival, rest_minutes: 20, rest_fatigue_recovery: 0 });
+  return finishAction(state, next, info, data, { survival, activity: "wash" });
+}
+
 export function finishAction(previous, next, info, data,
-  { sheltered = false, random = Math.random, survival } = {}) {
+  { sheltered = false, random = Math.random, survival, activity } = {}) {
   if (previous.ended) throw new Error("This journey has ended.");
   if (!sheltered) next = applyWeatherExposure(previous, next, info);
   if (next.reserveKcal <= 0) next = { ...next, ended: "hunger" };
@@ -239,12 +243,13 @@ export function finishAction(previous, next, info, data,
         col: next.col, row: next.row, sheltered, chance, robbed, stolenCents,
         walletBeforeCents: next.walletCents } };
   }
+  next = advancePressures(previous, next, info, { sheltered, survival, activity });
   const day = journeyDate(next).toISOString().slice(0, 10);
-  return { ...next,
+  return refreshPressureTarot({ ...next,
     outdoorNightMinutes: previous.outdoorNightMinutes + exposed,
     dailyCard: day === previous.tarotDay ? previous.dailyCard : drawTarot(data, random),
     dailyTarotSeenDay: previous.dailyTarotSeenDay ?? previous.tarotDay,
-    tarotDay: day };
+    tarotDay: day }, data);
 }
 
 export function validateFainting(state) {

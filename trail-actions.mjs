@@ -1,8 +1,9 @@
 import { atTrailTarget, witnessFacts } from "./trail.mjs";
 import { restSurvival } from "./survival.mjs";
-import { finishAction, marketPrice, didFaint } from "./economy.mjs";
+import { finishAction, marketPrice, actionInterrupted } from "./economy.mjs";
 import { parentClues } from "./parent-story.mjs";
 import { fieldSearchRules } from "./trail-search.mjs";
+import { witnessCooling } from "./pressures.mjs";
 
 export const CLUE_ACTIONS = Object.freeze({
   discuss: { minutes: 15, fatigue: 1, kcal: 10 },
@@ -59,7 +60,7 @@ export function trailClue(state, kind, cell, info, survival, economy) {
   let next = finishAction(state, { ...rested, reserveKcal, fatigue,
     energyKcal: rested.energyKcal + rule.kcal,
     ended: rested.ended ?? (reserveKcal <= 0 ? "hunger" : null) }, info, economy, { survival });
-  if (next.ended || didFaint(state, next)) return next;
+  if (actionInterrupted(state, next)) return next;
   if (kind === "rumor") return { ...next, trail: { ...state.trail,
     rumors: [...(state.trail.rumors ?? []), { stage: state.trail.index, elapsedMinutes: next.elapsedMinutes }],
   } };
@@ -75,11 +76,15 @@ export function trailClue(state, kind, cell, info, survival, economy) {
   const completed = !target;
   let exploration = state.trail.exploration;
   if (exploration && !completed) {
-    const precision = fieldSearchRules({ ...next, trail: { ...state.trail, index } }).precision;
+    const witnessState = { ...next, trail: { ...state.trail, index } };
+    const precision = fieldSearchRules(witnessState).precision;
     const hint = { stage: index, kind: precision === "precise" ? "place"
+      : witnessCooling(witnessState) === 2 ? "direction"
       : discovery.kind === "photo" ? "photo"
         : ["letter", "search", "ticket", "buy"].includes(discovery.kind) ? "prefix" : "direction",
-    precision, col: state.col, row: state.row, elapsedMinutes: next.elapsedMinutes };
+    precision, col: state.col, row: state.row, elapsedMinutes: next.elapsedMinutes,
+    ...(next.pressures ? { witnessMinutes: next.elapsedMinutes,
+      witnessFactor: next.pressures.tarotFactor } : {}) };
     exploration = { ...exploration, hints: [...exploration.hints, hint] };
   }
   return { ...next, ended: completed ? "reunion" : null, trail: { ...state.trail,

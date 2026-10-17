@@ -1,5 +1,6 @@
 import { restSurvival, sleepSurvival } from "./survival.mjs";
 import { finishAction, marketPrice, tarotEventChance, didFaint } from "./economy.mjs";
+import { didPlace, socialFailureChance } from "./pressures.mjs";
 
 export const CHOICE_RULES = Object.freeze({
   forage: Object.freeze({ minutes: 30, fatigue: 5, failureChance: 0.35, foodKcal: 450 }),
@@ -31,14 +32,16 @@ export function survivalChoice(state, kind, cell, info, survival, economy, rando
   const roll = random();
   if (!Number.isFinite(roll) || roll < 0 || roll >= 1) throw new Error("Invalid survival choice draw.");
   const rule = CHOICE_RULES[kind];
-  const failure = roll < tarotEventChance(rule.failureChance, state, economy);
+  const baseFailure = tarotEventChance(rule.failureChance, state, economy);
+  const failure = roll < (kind === "beg" ? socialFailureChance(baseFailure, state) : baseFailure);
   let next = restSurvival(state, { ...survival,
     rest_minutes: rule.minutes, rest_fatigue_recovery: 0 });
   next = { ...next, fatigue: Math.min(100, next.fatigue + rule.fatigue) };
-  next = finishAction(state, next, info, economy, { random, survival });
-  let outcome = next.ended ? "exhausted" : didFaint(state, next) ? "fainted" : failure ? "nothing" : "food";
+  next = finishAction(state, next, info, economy, { random, survival, activity: kind });
+  let outcome = didPlace(state, next) ? "placed" : next.ended ? "exhausted"
+    : didFaint(state, next) ? "fainted" : failure ? "nothing" : "food";
   let foodKcal = 0, moneyCents = 0, detentionMinutes = 0;
-  if (!next.ended && outcome !== "fainted") {
+  if (!next.ended && !["fainted", "placed"].includes(outcome)) {
     if (kind === "steal" && failure) {
       const detained = sleepSurvival({ ...next, reserveKcal: survival.reserve_kcal },
         { ...survival, sleep_hours: rule.detentionHours });

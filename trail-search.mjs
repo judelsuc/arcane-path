@@ -1,6 +1,7 @@
 import { restSurvival } from "./survival.mjs";
 import { finishAction, didFaint } from "./economy.mjs";
 import { askDirections } from "./directions.mjs";
+import { didPlace, witnessCooling } from "./pressures.mjs";
 
 const COMPASS = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
 
@@ -25,7 +26,8 @@ export function fieldSearchAvailable(state, cell) {
 export function fieldSearchRules(state) {
   const target = state.trail.stages[state.trail.index];
   const meters = Math.hypot(state.col - target.col, state.row - target.row) * 250;
-  const precision = meters <= 3000 ? "precise" : meters <= 15000 ? "partial" : "vague";
+  const precision = meters <= 3000 ? "precise"
+    : meters <= 15000 && witnessCooling(state) === 0 ? "partial" : "vague";
   const scale = Math.min(1, meters / 45000);
   return { precision, minMinutes: Math.round(8 + 22 * scale),
     maxMinutes: Math.round(14 + 46 * scale), minFatigue: 1 + Math.floor(3 * scale),
@@ -79,9 +81,10 @@ export async function prepareFieldSearch(state, cell, resolvePhoto, signal,
   const minutes = rules.minMinutes + Math.floor(draw() * (rules.maxMinutes - rules.minMinutes + 1));
   const fatigue = rules.minFatigue + Math.floor(draw() * (rules.maxFatigue - rules.minFatigue + 1));
   const roll = draw();
-  const success = roll < fieldSearchChance(pathDistance);
+  const success = state.pressures && rules.precision === "precise" || roll < fieldSearchChance(pathDistance);
   let kind = success ? rules.precision === "precise" ? "place"
     : ["direction", "prefix", "photo"][Math.floor(draw() * 3)] : null;
+  if (kind && rules.precision !== "precise" && witnessCooling(state) === 2) kind = "direction";
   const nearRoute = pathDistance <= 6000;
   const streak = state.trail.exploration.searchStreak;
   const misses = streak?.stage === state.trail.index ? streak.misses : [];
@@ -92,13 +95,14 @@ export async function prepareFieldSearch(state, cell, resolvePhoto, signal,
   signal.throwIfAborted();
   const photoUnavailable = kind === "photo" && !content;
   if (photoUnavailable) kind = "prefix";
-  return { stage: state.trail.index, col: state.col, row: state.row,
+  return { stage: state.trail.index, col: state.col, row: state.row, startedMinutes: state.elapsedMinutes,
     precision: rules.precision, minutes, fatigue, kind, content, photoUnavailable, nearRoute,
     ...(destinationBased ? { destinationBased: true } : {}) };
 }
 
 export function applyFieldSearch(state, result, cell, info, survival, economy) {
   if (!fieldSearchAvailable(state, cell) || result.stage !== state.trail.index ||
+      (result.startedMinutes !== undefined && result.startedMinutes !== state.elapsedMinutes) ||
       result.col !== state.col || result.row !== state.row) throw new Error("Stale clue search result.");
   const rules = fieldSearchRules(state);
   if (result.precision !== rules.precision ||
@@ -119,11 +123,13 @@ export function applyFieldSearch(state, result, cell, info, survival, economy) {
   let next = finishAction(state, { ...rested, reserveKcal,
     energyKcal: rested.energyKcal + kcal, fatigue: Math.min(100, rested.fatigue + result.fatigue),
     ended: rested.ended ?? (reserveKcal <= 0 ? "hunger" : null) }, info, economy, { survival });
-  const outcome = next.ended ? "exhausted" : didFaint(state, next) ? "fainted"
+  const outcome = didPlace(state, next) ? "placed" : next.ended ? "exhausted" : didFaint(state, next) ? "fainted"
     : result.kind === "sign" ? "sign" : result.kind ? "found" : "nothing";
   const exploration = state.trail.exploration;
   const hint = outcome === "found" ? { stage: result.stage, kind: result.kind,
-    precision: result.precision, col: result.col, row: result.row, elapsedMinutes: next.elapsedMinutes } : null;
+    precision: result.precision, col: result.col, row: result.row, elapsedMinutes: next.elapsedMinutes,
+    ...(state.pressures ? { witnessMinutes: state.elapsedMinutes,
+      witnessFactor: state.pressures.tarotFactor } : {}) } : null;
   const hints = hint && !exploration.hints.some(h => h.stage === hint.stage &&
     h.kind === hint.kind && h.precision === hint.precision) ? [...exploration.hints, hint] : exploration.hints;
   const repeated = Boolean(hint && hints === exploration.hints);
@@ -214,15 +220,17 @@ export function askAboutClue(state, prepared, cell, info, survival, economy, ran
     const roll = random();
     if (!Number.isFinite(roll) || roll < 0 || roll >= 1) throw new Error("Invalid recognition draw.");
     if (prepared.hint.kind === "prefix") {
-      suggestion = prepared.towns[roll < 0.8 ? 0 : Math.min(prepared.towns.length - 1,
-        1 + Math.floor((roll - 0.8) / 0.2 * (prepared.towns.length - 1)))];
+      const confidence = 0.8 - witnessCooling(state) * 0.15;
+      suggestion = prepared.towns[roll < confidence ? 0 : Math.min(prepared.towns.length - 1,
+        1 + Math.floor((roll - confidence) / (1 - confidence) * (prepared.towns.length - 1)))];
     } else {
       const target = state.trail.stages[state.trail.index];
       const correct = prepared.towns.find(town => town.name === target.name &&
         Math.abs(town.latitude - target.latitude) < 0.02 && Math.abs(town.longitude - target.longitude) < 0.02);
       const others = prepared.towns.filter(town => town !== correct);
-      suggestion = correct && (roll < 0.65 || !others.length) ? correct
-        : others[Math.floor((correct ? (roll - 0.65) / 0.35 : roll) * others.length)];
+      const confidence = 0.65 - witnessCooling(state) * 0.15;
+      suggestion = correct && (roll < confidence || !others.length) ? correct
+        : others[Math.floor((correct ? (roll - confidence) / (1 - confidence) : roll) * others.length)];
     }
   }
   const exploration = state.trail.exploration;
@@ -257,7 +265,15 @@ export function validateExploration(state) {
         Math.abs(Math.floor(hint.col / 8)) > 1000 || Math.abs(Math.floor(hint.row / 8)) > 1000 ||
         !Number.isFinite(hint.elapsedMinutes) || hint.elapsedMinutes < 0 ||
         hint.elapsedMinutes > state.elapsedMinutes ||
+        ((hint.witnessMinutes === undefined) !== (hint.witnessFactor === undefined)) ||
+        (hint.witnessMinutes !== undefined && (!state.pressures ||
+          !Number.isFinite(hint.witnessFactor) || hint.witnessFactor < 0.5 || hint.witnessFactor > 1.5 ||
+          !Number.isFinite(hint.witnessMinutes) || hint.witnessMinutes < state.pressures.startedMinutes ||
+          hint.witnessMinutes > hint.elapsedMinutes)) ||
         fieldSearchRules({ ...state, col: hint.col, row: hint.row,
+          pressures: hint.witnessMinutes === undefined ? undefined :
+            { ...state.pressures, tarotFactor: hint.witnessFactor },
+          elapsedMinutes: hint.witnessMinutes ?? hint.elapsedMinutes,
           trail: { ...state.trail, index: hint.stage } }).precision !== hint.precision) fail();
     const key = `${hint.stage}:${hint.precision}:${hint.kind}`;
     if (seen.has(key)) fail();
@@ -289,7 +305,7 @@ export function validateExploration(state) {
     if (r?.repeated !== undefined && (typeof r.repeated !== "boolean" || r.outcome !== "found")) fail();
     if (!r || !Number.isInteger(r.stage) || r.stage < e.firstStage || r.stage > state.trail.index ||
         r.stage >= state.trail.stages.length ||
-        !["found", "sign", "nothing", "fainted", "exhausted"].includes(r.outcome) ||
+        !["found", "sign", "nothing", "fainted", "exhausted", "placed"].includes(r.outcome) ||
         ((r.col !== undefined || r.row !== undefined) && !validPosition(r)) ||
         (r.outcome === "sign" && !e.signs?.some(s => s.stage === r.stage &&
           s.col === r.col && s.row === r.row && s.elapsedMinutes === r.elapsedMinutes)) ||
@@ -303,7 +319,7 @@ export function validateExploration(state) {
   for (const r of [...reports, ...(e.lastReport !== undefined ? [e.lastReport] : [])]) {
     if (!r || !e.hints.some(h => h.stage === r.stage && h.kind === r.kind && h.precision === r.precision &&
         r.elapsedMinutes >= h.elapsedMinutes + 10) ||
-        !["suggestion", "unsure", "nobody", "exhausted", "fainted"].includes(r.outcome) ||
+        !["suggestion", "unsure", "nobody", "exhausted", "fainted", "placed"].includes(r.outcome) ||
         !Number.isFinite(r.elapsedMinutes) || r.elapsedMinutes < 10 || r.elapsedMinutes > state.elapsedMinutes ||
         (r.outcome === "suggestion" ? !r.town || typeof r.town.name !== "string" || !r.town.name.trim() ||
           !Number.isFinite(r.town.latitude) || Math.abs(r.town.latitude) > 85 ||

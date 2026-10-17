@@ -136,7 +136,7 @@ class AbandonedJournals:
             raise JourneyRequest("Invalid notebook keeper.")
         position = self.position(record, data.get("col"), data.get("row"))
         ended = data.get("ended")
-        if ended not in (None, "hunger", "fatigue", "sleep", "reunion"):
+        if ended not in (None, "hunger", "fatigue", "sleep", "reunion", "placement"):
             raise JourneyRequest("Invalid journey outcome.")
         action = data.get("action", "sync")
         if action not in ("sync", "claim", "advance", "register", "publish", "read"):
@@ -168,7 +168,7 @@ class AbandonedJournals:
                 return {"registered": True}
             db.execute("""UPDATE journals SET finder=NULL,touched=NULL
                           WHERE delivered=0 AND touched<=?""", (now - LEASE_SECONDS,))
-            if action == "publish" or ended in ("hunger", "fatigue", "sleep"):
+            if action == "publish" or ended in ("hunger", "fatigue", "sleep", "placement"):
                 index = data.get("index")
                 stages = record["state"]["trail"]["stages"]
                 if type(index) is not int or not 0 <= index < len(stages):
@@ -248,4 +248,4 @@ class AbandonedJournals:
             return {"sidequests": [public(row) for row in claimed],
                     "nearby": [public(row) for row in nearby if distance(
                         position, (row["latitude"], row["longitude"])) <= 200],
-                    "published": bool(action == "publish" or ended in ("hunger", "fatigue", "sleep"))}
+                    "published": bool(action == "publish" or ended in ("hunger", "fatigue", "sleep", "placement"))}

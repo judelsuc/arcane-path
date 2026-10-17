@@ -2,6 +2,7 @@ const STORE = "photos";
 
 import { setFeedback } from "./feedback.mjs";
 import { createTarotJournalPinner, tarotJournalEntry } from "./tarot-cards.mjs";
+import { journeyStats } from "./journey-stats.mjs";
 
 export function validateJournalPhoto(photo) {
   if (!photo || typeof photo.sourceUrl !== "string" || typeof photo.licenseUrl !== "string" ||
@@ -126,6 +127,9 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
   const status = document.querySelector("#journal-status");
   const previous = document.querySelector("#journal-previous");
   const next = document.querySelector("#journal-next");
+  const photosButton = document.querySelector("#journal-photos-page");
+  const statsButton = document.querySelector("#journal-stats-page");
+  let statsContext = null, statistics = false;
   let entries = [], spread = 0, generation = 0, loading = false, error = "";
   const urls = new Set();
   const drafts = new Map();
@@ -147,10 +151,16 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
     previous.textContent = t("journalPrevious");
     next.textContent = t("journalNext");
     document.querySelector("#journal-retry").textContent = t("journalRetry");
-    previous.disabled = loading || spread === 0;
-    next.disabled = loading || (spread + 1) * 2 >= entries.length;
+    photosButton.textContent = t("journalPhotosPage");
+    statsButton.textContent = t("journalStatsPage");
+    photosButton.hidden = statsButton.hidden = readOnly;
+    photosButton.disabled = !statistics;
+    statsButton.disabled = statistics || !statsContext;
+    previous.disabled = statistics || loading || spread === 0;
+    next.disabled = statistics || loading || (spread + 1) * 2 >= entries.length;
     document.querySelector("#journal-count").textContent =
-      t("journalCount", { spread: spread + 1, total: Math.max(1, Math.ceil(entries.length / 2)) });
+      statistics ? t("journalStatsPage") :
+        t("journalCount", { spread: spread + 1, total: Math.max(1, Math.ceil(entries.length / 2)) });
     status.textContent = error ? t("journalError", { error }) : loading ? t("journalLoading") : "";
     setFeedback(status, error ? "failure" : "");
   }
@@ -160,6 +170,37 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
     error = "";
     localize();
     try {
+      pages.dataset.statistics = String(statistics);
+      if (statistics && statsContext && !readOnly) {
+        revoke();
+        pages.replaceChildren();
+        const page = document.createElement("section");
+        page.className = "notebook-page journal-statistics";
+        const title = document.createElement("h3");
+        title.textContent = t("journalStatsPage");
+        page.append(title);
+        const groups = document.createElement("div");
+        groups.className = "journal-stats-groups";
+        for (const group of journeyStats(statsContext, t, document.documentElement.lang)) {
+          const section = document.createElement("section"), heading = document.createElement("h4");
+          heading.textContent = group.title;
+          section.append(heading);
+          const list = document.createElement("dl");
+          for (const row of group.rows) {
+            const label = document.createElement("dt"), value = document.createElement("dd");
+            label.textContent = row.label;
+            value.textContent = row.value;
+            list.append(label, value);
+          }
+          section.append(list);
+          groups.append(section);
+        }
+        const note = document.createElement("p");
+        note.textContent = t("journalStatsNote");
+        page.append(groups, note);
+        pages.append(page);
+        return;
+      }
       const photos = await Promise.all(entries.slice(spread * 2, spread * 2 + 2).map(entry => store.get(entry.id)));
       if (current !== generation || !dialog.open) return;
       revoke();
@@ -278,18 +319,38 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
     dialog.showModal();
     void load();
   });
-  previous.addEventListener("click", () => { if (!loading && spread > 0) { spread--; void render(); } });
+  photosButton.addEventListener("click", () => {
+    if (readOnly) return;
+    statistics = false;
+    void load();
+  });
+  statsButton.addEventListener("click", () => {
+    if (readOnly || !statsContext) return;
+    statistics = true;
+    void render();
+  });
+  previous.addEventListener("click", () => { if (!statistics && !loading && spread > 0) { spread--; void render(); } });
   next.addEventListener("click", () => {
-    if (!loading && (spread + 1) * 2 < entries.length) { spread++; void render(); }
+    if (!statistics && !loading && (spread + 1) * 2 < entries.length) { spread++; void render(); }
   });
   document.querySelector("#journal-retry").addEventListener("click", () => { if (!loading) void load(); });
   dialog.addEventListener("close", () => {
     generation++; loading = false; revoke(); pages.replaceChildren();
     store = liveStore;
     readOnly = false;
+    statistics = false;
     document.querySelector("#journal-abandoned-clues")?.replaceChildren();
   });
   return {
+    updateStats(context) {
+      const wasStatistics = statistics;
+      statsContext = context;
+      if (!context) statistics = false;
+      if (dialog.open && !readOnly) {
+        if (statistics || wasStatistics) void render();
+        else localize();
+      }
+    },
     async useJourney(state, adoptLegacy = false) {
       const nextScope = notebookScope(state);
       if (nextScope === scope) return;
@@ -301,6 +362,8 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
       drafts.clear();
       entries = [];
       spread = 0;
+      statistics = false;
+      statsContext = null;
       store = scoped;
       liveStore = scoped;
       readOnly = false;
@@ -318,6 +381,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
     },
     async showAbandoned(notebook, clues) {
       readOnly = true;
+      statistics = false;
       const evidence = document.querySelector("#journal-abandoned-clues");
       evidence.replaceChildren();
       const heading = document.createElement("h3");

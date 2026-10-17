@@ -618,6 +618,9 @@ dialog p { margin: 12px 0; }
 .player-needs label { display: grid; grid-template-columns: 65px minmax(0, 1fr) 38px; align-items: center; gap: 6px; }
 .player-needs meter { width: 100%; height: 14px; }
 .player-needs output { text-align: right; }
+#pressure-panel label { grid-template-columns: minmax(0, 95px) minmax(0, 1fr) 38px; }
+#pressure-panel p, #pressure-panel button { overflow-wrap: anywhere; }
+#pressure-panel button { max-width: 100%; white-space: normal; }
 #needs-warning, #journey-ended { color: #f4cc80; }
 #needs-warning:empty { display: none; }
 #meal-location { color: var(--muted); font-size: 0.65rem; }
@@ -735,6 +738,18 @@ dialog p { margin: 12px 0; }
   transform: rotate(-1deg);
 }
 .notebook-page:nth-child(2) .journal-print { transform: rotate(1deg); }
+.notebook-spread[data-statistics="true"]::after { display: none; }
+.journal-statistics { grid-column: 1 / -1; color: #282622; }
+.journal-stats-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 12px 24px;
+}
+.journal-stats-groups section { min-width: 0; }
+.journal-stats-groups h4 { margin: 8px 0; }
+.journal-stats-groups dl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 12px; }
+.journal-stats-groups dt, .journal-stats-groups dd { margin: 0; overflow-wrap: anywhere; }
+.journal-stats-groups dd { text-align: right; font-weight: bold; }
 .journal-print img { width: 100%; height: 240px; object-fit: contain; margin: 0 0 12px; }
 .journal-print label { display: block; font-size: 0.8rem; }
 .journal-print textarea {

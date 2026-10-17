@@ -1,5 +1,6 @@
 import { restSurvival } from "./survival.mjs";
 import { finishAction, didFaint } from "./economy.mjs";
+import { didPlace, socialFailureChance } from "./pressures.mjs";
 
 export const DIRECTIONS_RULES = Object.freeze({ minutes: 10, fatigue: 2 });
 const CHANCES = Object.freeze({
@@ -9,11 +10,12 @@ const CHANCES = Object.freeze({
   forest: 0.15, hill: 0.15, mountain: 0.05, rail: 0.05, cable: 0.05, water: 0,
 });
 
-export function directionsChance(cell) {
+export function directionsChance(cell, state) {
   if (!cell || cell.unavailable || !Object.hasOwn(CHANCES, cell.terrain)) {
     throw new Error("Directions require a loaded cell with a known terrain.");
   }
-  return CHANCES[cell.terrain];
+  const base = CHANCES[cell.terrain];
+  return state?.pressures ? 1 - socialFailureChance(1 - base, state) : base;
 }
 
 export function citedTowns(state) {
@@ -55,12 +57,12 @@ export function askDirections(state, cell, info, survival, economy, random = Mat
   if (state.ended || !state.trail || state.trail.completed) {
     throw new Error("No active journey destination to ask about.");
   }
-  const chance = directionsChance(cell), roll = random();
+  const chance = directionsChance(cell, state), roll = random();
   if (!Number.isFinite(roll) || roll < 0 || roll >= 1) throw new Error("Invalid directions encounter draw.");
   let next = restSurvival({ ...state, lastExpenseCents: 0 }, { ...survival,
     rest_minutes: DIRECTIONS_RULES.minutes, rest_fatigue_recovery: 0 });
   next = finishAction(state, { ...next,
     fatigue: Math.min(100, next.fatigue + DIRECTIONS_RULES.fatigue) }, info, economy, { random, survival });
-  return { state: next, outcome: next.ended ? "exhausted"
+  return { state: next, outcome: didPlace(state, next) ? "placed" : next.ended ? "exhausted"
     : didFaint(state, next) ? "fainted" : roll < chance ? "helped" : "nobody" };
 }

@@ -46,8 +46,12 @@ verifiee, pas seulement du code prepare. Voir le
   - [x] Dialogues varies, souvenirs vieillissants sans perte des indices et presentation claire du motif/sejours (code).
 - [ ] Plus tard (R-083) : validation terrain 30–60 km, budget de survie,
   nuits/achats sur le trajet et destinations guidees par le motif.
-- [ ] Couche 15 apres le jalon narratif leger : photos et carnet de voyage, export PDF,
-  sans attendre les simulations avancees reportees.
+- [x] Couche 15, jalon accepte : photos, cartes historiques et carnet par voyage,
+  pages d'indices et carnets abandonnes. Export PDF et conversion ASCII restent reportes.
+- [x] Couche 10 : vigilance, sympathie locale, hygiene, temoins vieillissants et
+  deux placements recuperables avant une troisieme fin de voyage.
+- [x] Page Statistiques dans le carnet : besoins, chemin, argent, compteurs,
+  pressions et effets combines des cartes de naissance et du jour.
 - [ ] Autres couches du document de conception, avec checkpoints testes.
 - [ ] R-062 : caches d'objets persistantes, pour les autres joueurs et ses prochaines parties.
 - [ ] R-063 : indices d'arcanes plus precis avec la proximite ; habillage narratif LLM ulterieur.
@@ -57,6 +61,59 @@ Le DNS resout maintenant l'IP de la VM ; le site est accessible en HTTPS
 avec un mot de passe de previsualisation. Le jalon leger de la couche 9 est
 termine ; la simulation avancee du terrain et du budget de survie reste reportee.
 Les couts sont des estimations, pas un plafond de facturation automatise.
+
+## Pressions et statistiques du voyage
+
+Les pressions commencent au lancement ou a la reprise d'un voyage actif ;
+les sauvegardes anterieures restent lisibles, sans modifier le depart serveur.
+La vigilance (0–100) augmente avec le temps dans un secteur de 2 km, davantage
+en ville, pres d'une police cartographiee, avec forte fatigue ou mauvaise
+proprete. Apres quatre heures dans le meme secteur, rester sur place ajoute
+une pression. Mendier et voler attirent aussi l'attention. Marcher et dormir
+a l'abri la reduisent. Se laver en ville ou aux sanitaires publics cartographies
+coute 20 minutes et un quart de repas, rend la proprete a 100 et retire 5 de
+vigilance avant la pression du temps passe. Dormir a l'abri restaure aussi
+une partie de la proprete.
+
+A 100, un placement fictif ajoute 24 heures a l'abri, repas et repos,
+et fait perdre 25 % de l'argent restant, arrondi vers le bas. Aucun gain,
+indice ou avancement n'est accorde pour l'action interrompue. Les deux
+premiers episodes laissent reprendre au meme endroit, avec carnet et piste
+intacts ; le troisieme termine le voyage et depose le carnet a la derniere
+position. Les heures au foyer ne sont pas facturees comme exposition dehors.
+Un besoin deja fatal garde priorite.
+
+La sympathie depend de la proprete, de la fatigue et de la reputation du
+secteur. Une prestation reussie ameliore celle-ci ; mendier la reduit
+legerement et voler la degrade. Elle influence demandes d'argent, accueil,
+rencontres pour les directions et gains musicaux. La reputation est bornee
+a ±25 et conservee pour les 64 derniers secteurs concernes. Aucune competence
+linguistique de la future couche 17 n'est ajoutee.
+
+**Les deux cartes ont un effet direct** : on reutilise leur facteur existant
+`0.5 + (risque_naissance + risque_jour) / 2` pour le rythme de vigilance et
+l'oubli des nouveaux temoins ; le bonus de sympathie vaut
+`30 * (1 - facteur)` et l'usure de proprete est multipliee par
+`0.75 + facteur / 4`. Une nouvelle carte quotidienne actualise ces effets
+pour les actions suivantes, sans recalculer les indices deja collectes.
+Le panneau Pressions, le tirage quotidien et la page Statistiques affichent
+ces effets.
+
+Les nouveaux temoignages deviennent moins precis apres l'equivalent d'une
+semaine, puis ne donnent plus qu'une direction apres un mois, selon l'age
+du sejour du parent et les cartes. Sans chronologie du parent, l'anciennete
+commence a l'activation de ces pressions. Les indices et photos deja obtenus
+restent intacts : heure et facteur de collecte sont enregistres.
+Dans les 3 km de la destination, toute recherche terminee sans interruption
+permet toujours de l'identifier, meme si les temoins ont oublie ou le trajet
+de reference n'est pas pret.
+
+Dans le carnet, **Photos et cartes** et **Statistiques du voyage** sont deux
+pages distinctes. Les statistiques suivent la partie sauvegardee, montrent
+les besoins, argent, distance, temps, denivele, destinations atteintes et
+compteurs d'actions, ainsi que les deux cartes et les pressions. Aucun
+nom d'etape cachee n'apparait. Elles ne sont pas partagees avec les photos
+d'un carnet abandonne et ne remplacent ni les photos ni les notes.
 
 ## Infrastructure OVHcloud
 

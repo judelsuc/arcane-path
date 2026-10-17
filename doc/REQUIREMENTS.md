@@ -61,6 +61,38 @@
   Show dates first, undated entries last and parent visit details only in the
   corresponding past destination, without revealing unconfirmed future names.
 
+## R-109 - Layer 10 pressures and direct tarot effects
+
+- Confirmed: two recoverable foyer episodes, with lost time and some money;
+  the third placement ends the journey.
+- At 100 vigilance: one indoor day, food and rest, loss of 25% of remaining
+  money rounded down, no reward/clue/progression from the interrupted action.
+  Preserve the notebook and quest after recovery; keep the last position.
+- Vigilance responds to sector dwell time, urban/police context, fatigue,
+  cleanliness, begging and theft. Moving, shelter and paid washing offer
+  explicit counterplay. Sympathy uses condition and bounded local reputation,
+  affecting assistance and music. No layer-17 language skills.
+- Both birth and daily cards directly modify vigilance growth, cleanliness
+  decay, sympathy and witness forgetting. Show numerical combined effects;
+  daily draws update future actions, never historical evidence.
+- Confirmed: collected clues stay intact. Newly obtained information loses
+  precision as witnesses forget, using recorded chronology when available.
+  Preserve collection-time metadata; local searches within 3 km always
+  identify the destination when completed, preventing an aging dead end.
+- Pressure state persists with strict validation and legacy-save support.
+  Terminal placement uses the existing abandoned-notebook lifecycle.
+
+## R-110 - A dedicated notebook statistics page
+
+- Keep live journey statistics on their own notebook page, separate from
+  photos and tarot pins, with navigation at the top.
+- Show distance/time/elevation, needs, current money, reached destinations,
+  action counters, pressures and both cards' current effects.
+- Read existing saved state; never expose future destinations or invent
+  totals not tracked by the game.
+- Keep photos, drafts, credits and journey ownership intact. Personal live
+  statistics are not included in another player's abandoned notebook.
+
 ## R-108 - Search even before the reference path is known
 
 - Do not block field clue searches on a pending, failed or busy route worker.

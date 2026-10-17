@@ -7,6 +7,7 @@ import { marketPrice } from "./economy.mjs";
 import { parentSighting, parentReunion } from "./parent-story.mjs";
 import { DIRECTIONS_RULES, directionsChance, citedTowns } from "./directions.mjs";
 import { setFeedback } from "./feedback.mjs";
+import { witnessCooling } from "./pressures.mjs";
 import { fieldSearchAvailable, fieldSearchRules, prepareFieldSearch, fieldClueText, vagueLead,
   recognitionHint, prepareRecognition } from "./trail-search.mjs";
 
@@ -302,7 +303,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       ask.disabled = current.blocked || Boolean(current.state.ended) || searching;
       document.querySelector("#hint-cost").textContent = t("hintCost", {
         minutes: DIRECTIONS_RULES.minutes, fatigue: DIRECTIONS_RULES.fatigue,
-        chance: Math.round(directionsChance(current.cell) * 100),
+        chance: Math.round(directionsChance(current.cell, current.state) * 100),
       });
       const report = current.state.trail.exploration?.lastReport;
       setFeedback(document.querySelector("#hint-guidance"), directionsTown && directionsOutcome
@@ -492,6 +493,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       help.append(summary);
       paragraph(help, t("fieldSearchCosts", rules));
       paragraph(help, t("fieldSearchSupport"));
+      if (state.pressures) paragraph(help, t(`fieldCooling.${witnessCooling(state)}`));
       item.append(button);
       paragraph(item, t("fieldSearchCostSummary", rules));
       item.append(help);

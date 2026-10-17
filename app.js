@@ -41,6 +41,7 @@ const travel = setupTravel({
   useNotebook: photoJournal.useJourney,
   snapshotNotebook: photoJournal.snapshot,
   showNotebook: photoJournal.showAbandoned,
+  updateNotebookStats: photoJournal.updateStats,
   musicAudio: audio.busking,
   onAudioContext: context => audio.update(context),
   onStep: terrain => audio.step(terrain),

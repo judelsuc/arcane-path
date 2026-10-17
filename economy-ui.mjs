@@ -1,5 +1,6 @@
 import { mealOffers, marketPrice, shelters, tarotEventChance } from "./economy.mjs";
 import { HOSPITALITY_RULES, hospitalityStatus, worshipPlaces } from "./hospitality.mjs";
+import { socialFailureChance } from "./pressures.mjs";
 import { setFeedback } from "./feedback.mjs";
 
 export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodations, selectAccommodation }) {
@@ -161,7 +162,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       if (hospitality.town) {
         const note = t(hospitality.attempt ? "hospitalityAlreadyAsked" : "hospitalityNote", {
             town: hospitality.town.name, minutes: HOSPITALITY_RULES.minutes, hours: survival.sleep_hours,
-            chance: Math.round((1 - tarotEventChance(HOSPITALITY_RULES.failureChance, state, data)) * 100),
+            chance: Math.round((1 - socialFailureChance(tarotEventChance(HOSPITALITY_RULES.failureChance, state, data), state)) * 100),
           });
         const feedback = add(t("hospitalityAsk"), 0, { kind: "hospitality" },
           hospitality.attempt ? `${hospitalityResult(hospitality.attempt)} ${note}` : note,
@@ -181,7 +182,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
         const name = place.name?.trim() || t("worshipUnnamed");
         const note = t(status.attempt ? "worshipAlreadyAsked" : "worshipNote", {
           place: name, minutes: HOSPITALITY_RULES.minutes, hours: survival.sleep_hours,
-          chance: Math.round((1 - tarotEventChance(HOSPITALITY_RULES.failureChance, state, data)) * 100),
+          chance: Math.round((1 - socialFailureChance(tarotEventChance(HOSPITALITY_RULES.failureChance, state, data), state)) * 100),
         });
         const feedback = add(t("worshipAsk", { place: name }), 0,
           { kind: "hospitality", id: place.osmId },

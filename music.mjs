@@ -1,5 +1,6 @@
 import { restSurvival } from "./survival.mjs";
-import { finishAction, marketPrice, didFaint } from "./economy.mjs";
+import { finishAction, marketPrice, actionInterrupted } from "./economy.mjs";
+import { changeReputation, sympathy } from "./pressures.mjs";
 
 export const MUSIC = Object.freeze({
   beats: 24, loops: 3, slots: 12,
@@ -67,9 +68,10 @@ export function beginBusking(state, cell, info, survival, data) {
   const performing = restSurvival({ ...state, fatigue: Math.min(100,
     state.fatigue + data.rules.performanceFatigue) }, { ...survival,
     rest_minutes: data.rules.performanceMinutes, rest_fatigue_recovery: 0 });
-  const next = finishAction(state, performing, info, data, { survival });
-  return { ...next, performancePending: next.ended || didFaint(state, next) ? null : {
-    maxRewardCents: marketPrice(cell, 2, data, info).cents,
+  const next = finishAction(state, performing, info, data, { survival, activity: "music" });
+  return { ...next, performancePending: actionInterrupted(state, next) ? null : {
+    maxRewardCents: Math.round(marketPrice(cell, 2, data, info).cents *
+      (state.pressures ? 0.75 + sympathy(state) / 200 : 1)),
   } };
 }
 
@@ -82,6 +84,7 @@ export function settleBusking(state, hits, mistakes = 0) {
   }
   const reward = mistakes >= mistakeLimit ? 0
     : Math.round(state.performancePending.maxRewardCents * hits / MUSIC.beats);
-  return { ...state, walletCents: state.walletCents + reward, performancePending: null,
+  const next = reward > 0 ? changeReputation(state, 2) : state;
+  return { ...next, walletCents: state.walletCents + reward, performancePending: null,
     performances: (state.performances ?? 0) + 1, lastEarningsCents: reward };
 }

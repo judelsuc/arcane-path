@@ -6,6 +6,7 @@ import { CLUE_ACTIONS } from "./trail-actions.mjs";
 import { validateHospitality } from "./hospitality.mjs";
 import { validateStoryProgress } from "./parent-story.mjs";
 import { validateExploration } from "./trail-search.mjs";
+import { validatePressures } from "./pressures.mjs";
 
 export const SAVE_VERSION = 1;
 const PREFIX = "arcane-journey-v1:";
@@ -73,7 +74,7 @@ export function validateSave(save) {
       !["meals", "sleeps", "walletCents", "lastExpenseCents"].every(k => integer(s[k]) && s[k] >= 0) ||
       (s.performances !== undefined && (!integer(s.performances) || s.performances < 0)) ||
       (s.lastEarningsCents !== undefined && (!integer(s.lastEarningsCents) || s.lastEarningsCents < 0)) ||
-      ![null, "hunger", "fatigue", "sleep", "reunion"].includes(s.ended) ||
+      ![null, "hunger", "fatigue", "sleep", "reunion", "placement"].includes(s.ended) ||
       (s.performancePending !== undefined && s.performancePending !== null) ||
       (s.profileId !== "tarot" && !Object.hasOwn(save.survival.profiles, s.profileId)) ||
       !save.economy.tarot.some(c => c.id === s.birthCard) ||
@@ -90,7 +91,7 @@ export function validateSave(save) {
   if (s.lastSurvivalChoice !== undefined) {
     const result = s.lastSurvivalChoice;
     if (!result || !["forage", "beg", "steal"].includes(result.kind) ||
-        !["food", "money", "nothing", "detained", "exhausted", "fainted"].includes(result.outcome) ||
+        !["food", "money", "nothing", "detained", "exhausted", "fainted", "placed"].includes(result.outcome) ||
         !["foodKcal", "moneyCents", "detentionMinutes", "minutes"].every(k => nonnegative(result[k])) ||
         !integer(result.moneyCents) || !s.choiceCounts?.[result.kind]) fail();
   }
@@ -123,6 +124,7 @@ export function validateSave(save) {
         p.witnessId !== `fictional-traveler-${index + 1}`)) fail();
   if (trail.version === 2) validateTownTrail(trail);
   validateStoryProgress(s);
+  validatePressures(s, save.economy);
   validateExploration(s);
   if (trail.version === 2 && trail.discovery !== undefined) {
     const d = trail.discovery;
