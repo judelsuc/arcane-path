@@ -1,13 +1,41 @@
 # Requirements tracked outside the design PDF
 
+## R-086 - High fatigue when crossing water
+
+- **User decision:** Add forty fatigue per 250 m step into a water cell, in
+  addition to ordinary terrain/slope/endurance movement fatigue.
+- This fixed surcharge is not reduced by endurance. Leaving water for land
+  does not charge a second water-cell entry. Multiple water entries each cost.
+- Mapped bridges rendered as road cells retain road costs. No automatic
+  bridge detection or safety claim is inferred for cells still mapped as water.
+- Fatigue caps at 100 and uses normal fainting finalization; hunger and
+  sleep remain fatal where appropriate. Existing saves are not rewritten.
+
+## R-085 - Terrain-based directions encounters and paid rerolls
+
+- **User decision:** Directions usually work in towns (90%), less often
+  elsewhere. Every attempt rerolls, costing ten game minutes and +2 fatigue,
+  plus normal metabolism and nighttime exposure. No money charge.
+- Rates: settlements 90%; rail/cable stations 75%; roads, major roads,
+  buildings and places of worship 50%; plains, grass, fields, parks and
+  vineyards 25%; forests and hills 15%; mountains, rails and cable lines 5%;
+  water 0%. These are game probabilities, not real population estimates.
+- I opens a request dialog showing chance and cost before an explicit attempt.
+  Opening/closing is free and never reveals guidance. Each retry pays again,
+  whether or not someone can help. A failed search says so clearly.
+- A successful attempt gives R-084's vague directions. Fainting or fatal needs
+  interrupt the attempt without granting directions. No changes to trail clues.
+- Reopening clears the displayed answer, not the already paid time/fatigue.
+  Autosave preserves costs through reload; no new save schema is needed.
+
 ## R-084 - Ask people for vague directions using I
 
 - Keep shortcut I, replacing automatic exact travel guidance with an answer
   from a fictional passerby about the currently known destination.
 - Use a general eight-sector compass heading and qualitative distance, never
   exact cell counts or numeric kilometres in this answer.
-- Remain free/read-only like the original hint, available wherever the current
-  guidance was available. No real person or mapped NPC is required.
+- Superseded by R-085 for costs/chances: opening is free; actual attempts cost
+  time/fatigue and can fail. No real person or mapped NPC is required.
 - Preserve useful arrival/investigation guidance and pending venue-only clues
   without disclosing the unknown next town. No future stops are revealed.
 - These indications are approximate, not verified walkable routes. The

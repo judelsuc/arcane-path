@@ -18,6 +18,7 @@ import { createServerJourney } from "./server-journey.mjs";
 import { askHospitality } from "./hospitality.mjs";
 import { agendaClock } from "./agenda-clock.mjs";
 import { setupTrail } from "./trail-ui.mjs";
+import { askDirections } from "./directions.mjs";
 import { createJourneyStore, mapIdentity } from "./journey-save.mjs";
 import { tarotArt } from "./tarot-art.mjs";
 import { trailClue } from "./trail-actions.mjs";
@@ -239,6 +240,22 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     },
   });
   const trailUI = setupTrail(t, {
+    askDirections() {
+      const current = economyContext();
+      if (!current || current.blocked) return null;
+      try {
+        const result = askDirections(state, current.cell, current.info, survivalConfig, economyData);
+        state = result.state;
+        autosave();
+        error = "";
+        localize();
+        return result.outcome;
+      } catch (reason) {
+        report(reason);
+        document.querySelector("#hint-action-error").textContent = reason.message;
+        return null;
+      }
+    },
     context: () => {
       const current = economyContext();
       return current ? { ...current, saveStatus: saveStatus.textContent } : null;

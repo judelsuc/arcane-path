@@ -1422,3 +1422,39 @@ boundaries, legacy trails, arrival-radius regressions, undiscovered-clue
 privacy, translations and I binding. Browser checks open the actual hint
 dialog in French and English for Bapaume, verify no numeric guidance or
 future-town disclosure, and confirm the unchanged I shortcut.
+
+### Paid terrain-based directions encounters and high water fatigue
+
+R-085 supersedes the earlier free guidance action. I opens a cost/chance
+dialog but gives no answer until an explicit request. Each attempt rerolls,
+costs ten minutes plus two fatigue, consumes normal metabolism and nighttime
+exposure, and grants no ordinary rest recovery. Money is not charged.
+Success rates are exactly 90% in settlement cells, 75% at stations, 50% on
+roads/buildings/places of worship, 25% on open land/parks, 15% in forest/hills,
+5% on mountains/rail/cable lines and 0% on water. These are independent game
+encounters, not tarot-adjusted or real-population assertions.
+
+The existing survival finalizer runs before an answer: fainting and fatal
+needs prevent successful guidance. Failed searches explicitly retain their
+cost; retries pay again. Costs use the ordinary autosave path; answer text
+is transient and resets on reopening, so reopening never grants a free hint.
+No save-schema change, old-history invention or provider request is needed.
+Successful answers still use R-084's vague heading and distance and retain
+pending venue privacy.
+
+R-086 adds forty fatigue per 250 m entry into a water cell, on top of ordinary
+terrain/slope fatigue, independent of endurance. Land exits have no second
+surcharge; mapped road bridges remain ordinary roads. Existing fatigue caps,
+collapse, hunger and sleep logic stay in force. The reference route solver
+still estimates time at zero fatigue, not survival feasibility; this change
+does not turn its output into a survival guarantee.
+
+Validation: all 249 JavaScript tests pass on the isolated live-base release.
+Tests enumerate every terrain probability using 100 evenly spaced rolls each,
+check ten-minute/two-fatigue costs on failure and retry, metabolism/night
+exposure, no money/position/clue changes, save roundtrip, invalid input,
+fatal needs and collapse. Water tests measure exactly forty extra fatigue
+across endurance profiles, unchanged road bridges, land exits and fainting.
+The actual browser dialog in FR/EN verifies upfront 90%/cost disclosure,
+no free answer on opening/reopening, failed paid attempt followed by success,
+twenty minutes/four fatigue total and no future-town disclosure.

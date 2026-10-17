@@ -760,13 +760,21 @@ autres dialogues pour ne pas interrompre une action en cours.
 Un arret pour faim, fatigue ou manque de sommeil ouvre egalement une explication.
 Ces changements n'ajoutent ni provisions ni reanimation d'une partie terminee.
 
-**Demander son chemin (I)** permet de demander gratuitement a un passant
+**Demander son chemin (I)** permet de chercher un passant
 imaginaire comment rejoindre l'objectif deja connu : direction generale parmi
 huit points cardinaux et distance vague (« encore assez loin »), sans nombre de
 cases, kilometres exacts ni itineraire garanti. Disponible sans chercher un PNJ
 reel. Sur une etape, il rappelle comment enqueter ; pour un indice de lieu non
 resolu, il indique comment le preciser sans devoiler la ville.
-Aucun temps, argent ou energie n'est depense.
+Ouvrir le dialogue est gratuit ; chaque tentative coute 10 minutes et +2
+fatigue, plus metabolisme et exposition nocturne, sans argent. Reessayer
+relance le tirage et paie de nouveau. Chances : localites 90 %, gares 75 %,
+routes/batiments/lieux de culte 50 %, plaines/prairies/champs/parcs/vignes 25 %,
+forets/collines 15 %, montagnes/rails/cables 5 %, eau 0 %.
+
+Chaque pas de 250 m entrant dans une case d'eau ajoute 40 fatigue aux couts
+ordinaires, sans reduction par endurance. Les ponts cartographies comme route
+gardent leur cout normal ; a 100 fatigue, les regles d'evanouissement s'appliquent.
 
 Le journal de piste indique les directions depuis le joueur avec des nombres
 positifs et des fleches : est →, ouest ←, nord ↑, sud ↓. Par exemple, « 1 case

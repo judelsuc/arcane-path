@@ -3,6 +3,7 @@ export const TRAVEL_MODEL = {
   bodyMassKg: 40,
   restMinutes: 30,
   restFatigueRecovery: 20,
+  waterFatiguePerCell: 40,
 };
 
 const GROUND_COST = {
@@ -41,7 +42,8 @@ export function travelCost(from, to, meters, fatigue, character = TRAVEL_MODEL) 
     0.75 * meters / 1000 * terrainCost + ascentMeters * 0.009 + descentMeters * 0.002
   ) * (1 + fatigue / 200) * (character.effortFactor ?? 1);
   const fatigueGain = (minutes * 0.08 * terrainCost + ascentMeters / 80 + descentMeters / 400) /
-    (character.enduranceFactor ?? 1);
+    (character.enduranceFactor ?? 1) +
+    (to.terrain === "water" ? TRAVEL_MODEL.waterFatiguePerCell * meters / 250 : 0);
   return { meters, minutes, speedKmh, energyKcal, fatigueGain, ascentMeters, descentMeters,
     elevationKnown, terrainCost };
 }
