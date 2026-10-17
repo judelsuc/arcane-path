@@ -30,6 +30,8 @@ class Element {
   close() { this.open = false; }
   showModal() { this.open = true; }
   focus() { this.focused = true; }
+  scrollIntoView(options) { this.scrolled = options; }
+  setAttribute(name, value) { this[name] = value; }
 }
 function harness(t, language = "en") {
   const original = globalThis.document;
@@ -41,7 +43,9 @@ function harness(t, language = "en") {
   globalThis.document = {
     documentElement: { lang: language },
     querySelector: selector => selector === "dialog[open]"
-      ? [...elements.values()].find(e => e.open) ?? null : element(selector),
+      ? [...elements.values()].find(e => e.open) ?? null
+      : selector === "#economy-hospitality-feedback"
+      ? element("#economy-options").children[0]?.children[1] ?? null : element(selector),
     createElement: () => new Element(),
   };
   t.after(() => { globalThis.document = original; });
@@ -70,7 +74,11 @@ test("sleep menu explains missing OSM lodging, offers hospitality, and saves/dis
   assert.deepEqual(h.actions, [{ kind: "hospitality" }]);
   assert.equal(h.element("#economy-dialog").open, true);
   assert.equal(h.buttons()[0].disabled, true);
-  assert.match(h.element("#economy-hospitality-result").textContent, /Firmi, 2026-10-17:/);
+  assert.equal(h.element("#economy-hospitality-result").textContent, "");
+  const feedback = h.element("#economy-options").children[0].children[1];
+  assert.match(feedback.textContent, /Firmi, 2026-10-17:/);
+  assert.equal(feedback.focused, true);
+  assert.deepEqual(feedback.scrolled, { block: "nearest" });
   assert.match(h.element("#economy-options").children[0].children[1].textContent, /already asked/);
   h.buttons()[0].click();
   assert.equal(h.actions.length, 1);
@@ -97,6 +105,56 @@ test("hospitality is absent outside named settlements and mapped accommodation s
 });
 
 for (const language of ["fr", "en"]) {
+  test(`${language} hospitality opening is read-only and a refusal stays visible beside the disabled action`, async t => {
+    const h = harness(t, language);
+    let state;
+    for (let offset = 0; offset < 100; offset++) {
+      const candidate = start(offset);
+      if (askHospitality(candidate, town, info, survival, economy).hospitalityAttempts[0].outcome === "refused") {
+        state = candidate;
+        break;
+      }
+    }
+    assert.ok(state);
+    h.set({ state });
+    const before = structuredClone(state);
+    await h.ui.open("sleep");
+    assert.deepEqual(h.current().state, before);
+    assert.deepEqual(h.actions, []);
+    assert.equal(h.buttons()[0].disabled, false);
+    h.buttons()[0].click();
+    const feedback = h.element("#economy-options").children[0].children[1];
+    assert.match(feedback.textContent, language === "fr" ? /personne n'a pu vous accueillir/ : /nobody could host you/);
+    assert.match(feedback.textContent, /30 min/);
+    assert.match(feedback.textContent, language === "fr" ? /déjà demandé/ : /already asked/);
+    assert.equal(feedback.role, "status");
+    assert.equal(feedback.focused, true);
+    assert.deepEqual(feedback.scrolled, { block: "nearest" });
+    assert.equal(h.buttons()[0].disabled, true);
+    h.ui.reset();
+    h.set({ cell: { ...town, settlements: [{ osmId: "node/456", name: "Next town" }] } });
+    await h.ui.open("sleep");
+    assert.equal(h.buttons()[0].disabled, false);
+    assert.doesNotMatch(h.element("#economy-options").children[0].children[1].textContent,
+      language === "fr" ? /déjà demandé/ : /already asked/);
+    assert.equal(h.current().state.hospitalityAttempts.length, 1);
+  });
+
+  test(`${language} user's previous-day Tremblay refusal does not block the next day's request`, async t => {
+    const h = harness(t, language);
+    h.set({ state: { ...start(0), startedAt: 1792250169304, elapsedMinutes: 3881.4635429626146,
+      hospitalityAttempts: [{
+        townId: "node/26691640", townName: "Tremblay-en-France", day: "2026-10-19",
+        outcome: "refused", startedMinutes: 2809.7234818739466, finishedMinutes: 2839.7234818739466,
+      }],
+    }, cell: { ...town, settlements: [{ osmId: "node/26691640", name: "Tremblay-en-France" }] } });
+    await h.ui.open("sleep");
+    assert.equal(h.buttons()[0].disabled, false);
+    assert.doesNotMatch(h.element("#economy-options").children[0].children[1].textContent,
+      language === "fr" ? /déjà demandé/ : /already asked/);
+    assert.deepEqual(h.actions, []);
+  });
+
   test(`${language} food menu offers basic meals beyond specialties and mapped restaurant names with sources`, async t => {
     const h = harness(t, language);
     h.set({ info: { latitude: 45.182, longitude: 5.616 }, cell: {

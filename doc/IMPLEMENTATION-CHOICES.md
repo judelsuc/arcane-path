@@ -1243,3 +1243,21 @@ This distributes requests; it does not make public APIs reliable or permit
 quota evasion. Geofabrik regional extracts and BBBike custom extracts are
 better candidates for a future local-data importer, not live API replacements.
 No regional download, import dependency or new service is added here.
+
+### Hospitality outcome beside the action
+
+Safari save inspection found an actual refused request in the current Paris
+journey, not shared history from another journey. Its recorded UTC day was
+19 October, while the later saved time was 20 October: those exact values do
+not block another request. The user then confirmed the warning appeared after
+pressing 1 or clicking hospitality once in a new town. That immediately performs
+the 30-minute request; the UI replaced the explanatory note with the daily lock,
+while its separate outcome could be out of view.
+
+The current town/day outcome now appears directly beneath the hospitality
+button, before the daily-limit explanation, with status semantics. After a
+request it receives focus and scrolls into view. The separate historical result
+remains for other towns/days without duplicating the current outcome. No history
+is deleted, no new confirmation or gameplay rule is introduced. Tests cover
+visible refusal, read-only menu opening, another town and the user's exact
+previous-day timestamps in both languages.

@@ -592,6 +592,9 @@ consomme 30 minutes, puis immediatement la nuit protegee normale si des habitant
 acceptent. C'est gratuit, sans repas. La probabilite depend des tarots de naissance
 et du jour ; tenue et reputation sont differees. Une demande par identifiant OSM
 de localite et jour UTC, resultat enregistre et tirage stable contre les rechargements.
+Le resultat (refus ou accueil, date et temps passe) reste directement sous le
+bouton, avant la limite quotidienne ; apres la demande, il recoit le focus et
+defile dans la zone visible. Ouvrir le menu seul ne fait aucune demande.
 Une demande commencee avant minuit compte pour ce jour-la. Un accueil fictif
 n'invente pas un hebergement OSM ni une promesse reelle d'accueil.
 La demande reste exposee a la nuit ; le sommeil accepte est protege. Aucun besoin

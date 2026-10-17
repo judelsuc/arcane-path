@@ -6,6 +6,10 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
   let mode = "eat";
   let resolving = false, countryError = "", generation = 0;
   const money = cents => `${(cents / 100).toFixed(2)} ${t("gameMoney")}`;
+  const hospitalityResult = result => t(`hospitalityResult.${result.outcome}`, {
+    town: result.townName, day: result.day,
+    minutes: Math.round(result.finishedMinutes - result.startedMinutes),
+  });
 
   function localize() {
     const current = context();
@@ -44,8 +48,14 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
       button.disabled = unavailable || resolving || state.ended !== null || state.walletCents < cents || current.blocked;
       button.addEventListener("click", () => {
         if (act(run)) {
-          if (run.kind === "hospitality") localize();
-          else {
+          if (run.kind === "hospitality") {
+            localize();
+            const feedback = document.querySelector("#economy-hospitality-feedback");
+            if (feedback && dialog.open) {
+              feedback.focus({ preventScroll: true });
+              feedback.scrollIntoView({ block: "nearest" });
+            }
+          } else {
             dialog.close();
             document.querySelector("#ascii-map").focus({ preventScroll: true });
           }
@@ -63,6 +73,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
         item.append(a);
       }
       list.append(item);
+      return p;
     };
     if (mode === "eat") {
       const meals = mealOptions(cell, info, data);
@@ -85,18 +96,24 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
         t(mapped.length ? "shelterCellOnly" : "shelterNoneInCell");
       const hospitality = hospitalityStatus(state, cell);
       if (hospitality.town) {
-        add(t("hospitalityAsk"), 0, { kind: "hospitality" },
-          t(hospitality.attempt ? "hospitalityAlreadyAsked" : "hospitalityNote", {
+        const note = t(hospitality.attempt ? "hospitalityAlreadyAsked" : "hospitalityNote", {
             town: hospitality.town.name, minutes: HOSPITALITY_RULES.minutes, hours: survival.sleep_hours,
             chance: Math.round((1 - tarotEventChance(HOSPITALITY_RULES.failureChance, state, data)) * 100),
-          }), undefined, undefined, !hospitality.available);
+          });
+        const feedback = add(t("hospitalityAsk"), 0, { kind: "hospitality" },
+          hospitality.attempt ? `${hospitalityResult(hospitality.attempt)} ${note}` : note,
+          undefined, undefined, !hospitality.available);
+        feedback.id = "economy-hospitality-feedback";
+        feedback.tabIndex = -1;
+        feedback.setAttribute("role", "status");
+        feedback.setAttribute("aria-atomic", "true");
       } else {
         document.querySelector("#economy-shelter-context").textContent += ` ${t("hospitalityTownRequired")}`;
       }
       const result = state.hospitalityAttempts?.at(-1);
-      if (result) document.querySelector("#economy-hospitality-result").textContent =
-        t(`hospitalityResult.${result.outcome}`, { town: result.townName, day: result.day,
-          minutes: Math.round(result.finishedMinutes - result.startedMinutes) });
+      if (result && result !== hospitality.attempt) {
+        document.querySelector("#economy-hospitality-result").textContent = hospitalityResult(result);
+      }
       add(t("outdoorSleep"), 0, { kind: "sleep", id: null }, t("outdoorSleepNote"));
       for (const shelter of mapped) {
         const cents = shelter.free ? 0 : marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents;
@@ -108,7 +125,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
   }
 
   async function open(nextMode) {
-    if (!context() || context().blocked || document.querySelector("dialog[open]")) return;
+    if (!context() || context().blocked || document.querySelector("dialog[open]")) ;
     mode = nextMode;
     dialog.dataset.activity = mode;
     document.querySelector("#economy-action-error").textContent = "";
