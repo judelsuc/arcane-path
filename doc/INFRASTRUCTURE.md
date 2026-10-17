@@ -340,6 +340,25 @@ joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
   ancien Nginx `/home/ubuntu/arcane-nginx-before-f4fba25.conf`, mode 0600.
   Aucune ressource payante supplementaire ni import regional massif.
 
+### Checkpoint deploye : resultat d'hospitalite visible
+
+- **17 octobre 2026** : commit `b035fa6`, tag pousse
+  `deploy-2026-10-17-hospitality-feedback`.
+- Apres confirmation utilisateur que le message arrive apres le premier clic
+  ou raccourci 1 : resultat du vrai essai affiche sous le bouton, avant
+  l'explication de la limite quotidienne, focus et defilement visibles.
+  Aucune suppression d'historique ni modification des regles.
+- 18 tests JavaScript cibles passes, dont refus FR/EN, ouverture sans effet,
+  nouvelle ville et horodatages exacts du signalement Tremblay. Navigateur reel :
+  dialogue de 320 px deja defile, refus visible et focalise, un seul essai.
+- Seuls `economy-ui.mjs` et `public/release.json` remplaces : pas de redemarrage
+  du service ni interruption volontaire des preparations de terrain.
+  Services actifs ; manifeste exact, module identique et API verifies en HTTPS
+  authentifie. Cache et sauvegardes non modifies.
+- Rollback statique :
+  `/home/ubuntu/arcane-path-before-deploy-b035fa6.tar.gz`, mode 0600.
+  Modification locale utilisateur de configuration photo exclue.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026
