@@ -5,6 +5,23 @@ import { openContentCache } from "./content-cache.mjs";
 import { clueActions, CLUE_ACTIONS } from "./trail-actions.mjs";
 import { marketPrice } from "./economy.mjs";
 import { createParentPathLoader } from "./parent-path.mjs";
+import { parentSighting } from "./parent-story.mjs";
+
+export function parentClueText(state, discovery, t) {
+  if (!discovery.nextName) return t("trailReunion", { parent: state.trail.parentName });
+  const hint = discovery.pending ? discovery.venue : discovery.nextName;
+  if (discovery.kind !== "discuss") {
+    return t(`clueText.${discovery.kind}`, { hint, parent: state.trail.parentName });
+  }
+  const sighting = parentSighting(state, discovery.step);
+  const parts = [t(`parentWitness.${sighting.variant}`, { parent: state.trail.parentName })];
+  if (sighting.precision) parts.push(t(`parentWitness.${sighting.precision}`));
+  if (state.trail.story) parts.push(t("parentWitness.reason", {
+    motive: t(`parentStory.motive.${state.trail.story.motive}`),
+  }));
+  parts.push(t("parentWitness.lead", { hint }));
+  return parts.join(" ");
+}
 
 export function trailDirections(state, target, t) {
   const east = target.col - state.col, south = target.row - state.row;
@@ -61,7 +78,8 @@ export function setupTrail(t, { context, interview, discover }) {
     photo.replaceChildren();
   }
   async function renderPhoto(state, discovery) {
-    const place = state.trail.stages[discovery.step + 1] ?? state.trail.stages[discovery.step];
+    const place = discovery.nextName
+      ? state.trail.stages[discovery.step + 1] : state.trail.stages[discovery.step];
     const key = `${discovery.step}:${place.osmId ?? `geoname/${place.geonameId}`}:${document.documentElement.lang}`;
     if (photoKey === key) return;
     clearPhoto();
@@ -116,6 +134,40 @@ export function setupTrail(t, { context, interview, discover }) {
     p.textContent = text;
     container.append(p);
   }
+  function renderStory(state) {
+    const { trail } = state, story = trail.story;
+    document.querySelector("#parent-story").hidden = !story;
+    if (!story) return;
+    document.querySelector("#parent-story-summary").textContent = t("parentStory.summary", {
+      parent: trail.parentName, motive: t(`parentStory.motive.${story.motive}`),
+      mode: t(`parentStory.mode.${story.mode}`),
+      orientation: t(`parentStory.${story.orientation}`),
+    });
+    document.querySelector("#parent-story-motion").textContent =
+      t(`parentStory.${story.finalState}`);
+    const records = document.querySelector("#parent-story-records");
+    records.replaceChildren();
+    for (const [index, facts] of trail.history.entries()) {
+      const visit = story.visits[index], item = document.createElement("li");
+      paragraph(item, t("parentStory.visit", {
+        place: facts.place, arrival: new Date(visit.arrival).toISOString().slice(0, 10),
+        departure: new Date(visit.departure).toISOString().slice(0, 10),
+        nights: visit.nights, purchases: visit.purchases,
+      }));
+      const lore = story.lore.find(entry => entry.stage === index);
+      if (lore) paragraph(item, t(`parentStory.lore.${lore.kind}`));
+      records.append(item);
+    }
+    for (const rumor of trail.rumors ?? []) {
+      const branch = story.falseLeads.find(entry => entry.stage === rumor.stage);
+      const item = document.createElement("li");
+      paragraph(item, t("parentStory.falseLead", {
+        traveler: branch.traveler, place: trail.stages[rumor.stage].name,
+        next: trail.stages[rumor.stage + 1].name,
+      }));
+      records.append(item);
+    }
+  }
   function localize() {
     const current = context();
     document.querySelector("#open-hint").disabled = !current?.state.trail || current.blocked;
@@ -129,6 +181,7 @@ export function setupTrail(t, { context, interview, discover }) {
     pathLoader.update(state);
     renderPath();
     const trail = state.trail;
+    renderStory(state);
     const modern = trail.version === 2;
     document.querySelector("#trail-save-status").textContent = current.saveStatus ?? "";
     const target = trailTarget(state);
@@ -165,11 +218,16 @@ export function setupTrail(t, { context, interview, discover }) {
     action.textContent = t(trail.index === trail.stages.length - 1 ? "trailMeet" : "trailInterview");
     const history = document.querySelector("#trail-history");
     history.replaceChildren();
-    for (const facts of trail.history) {
+    for (const [index, facts] of trail.history.entries()) {
       const item = document.createElement("li");
-      if (facts.next && modern) paragraph(item, `${t(`clueAction.${facts.clueKind}`)} — ${t("clueHistory", {
-        place: facts.place, next: facts.next.name,
-      })}`);
+      if (facts.next && modern) {
+        paragraph(item, `${t(`clueAction.${facts.clueKind}`)} — ${t("clueHistory", {
+          place: facts.place, next: facts.next.name,
+        })}`);
+        if (facts.clueKind === "discuss") paragraph(item, parentClueText(state, {
+          kind: facts.clueKind, step: index, nextName: facts.next.name, pending: false,
+        }, t));
+      }
       else if (facts.next) paragraph(item, t("trailDialogue", {
         parent: facts.parentName, place: facts.place, next: facts.next.name,
       }));
@@ -203,11 +261,7 @@ export function setupTrail(t, { context, interview, discover }) {
     document.querySelector("#trail-discovery").hidden = !discovery;
     if (discovery) {
       document.querySelector("#trail-discovery-title").textContent = t(`clueAction.${discovery.kind}`);
-      document.querySelector("#trail-discovery-text").textContent = discovery.nextName
-        ? t(`clueText.${discovery.kind}`, {
-          hint: discovery.pending ? discovery.venue : discovery.nextName,
-          parent: trail.parentName,
-        }) : t("trailReunion", { parent: trail.parentName });
+      document.querySelector("#trail-discovery-text").textContent = parentClueText(state, discovery, t);
       photo.hidden = discovery.kind !== "photo";
       if (discovery.kind === "photo") void renderPhoto(state, discovery);
       else clearPhoto();

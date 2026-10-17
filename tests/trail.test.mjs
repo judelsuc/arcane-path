@@ -5,7 +5,8 @@ import { createTrail, trailTarget, atTrailTarget, witnessFacts, interviewTrail,
   validateTownTrail, loadTownTrail } from "../trail.mjs";
 import { startEconomy } from "../economy.mjs";
 import { startSurvival } from "../survival.mjs";
-import { trailDirections, playerHint } from "../trail-ui.mjs";
+import { trailDirections, playerHint, parentClueText } from "../trail-ui.mjs";
+import { parentSighting } from "../parent-story.mjs";
 import { translate } from "../i18n.mjs";
 
 test("trail directions name the correct compass direction without negative or zero offsets", () => {
@@ -37,6 +38,30 @@ const start = () => {
     "balanced", survival), economy, () => 0);
   return { ...state, trail: createTrail(maps[0], state.col, state.row, () => 0) };
 };
+
+test("discussion presentation preserves legacy clues and uses dated memories only with story facts", () => {
+  const state = { ...start(), trail: townTrailFixture() };
+  const discovery = { kind: "discuss", step: 0, pending: false, nextName: "Next town" };
+  const before = structuredClone(state);
+  for (const locale of ["fr", "en"]) {
+    const t = (key, args) => translate(locale, key, args);
+    const legacy = parentClueText(state, discovery, t);
+    assert.equal(parentSighting(state, 0).precision, null);
+    assert.ok(legacy.includes("Next town"));
+    const dated = { ...state, trail: { ...state.trail, story: {
+      motive: "family", visits: [{ departure: state.startedAt - 30 * 86_400_000 }],
+    } } };
+    const text = parentClueText(dated, discovery, t);
+    assert.ok(text.includes(t("parentWitness.old")));
+    assert.ok(text.includes(t("parentStory.motive.family")));
+    assert.ok(text.includes("Next town"));
+    assert.equal(parentClueText(structuredClone(dated), discovery, t), text);
+    const pending = parentClueText(dated, { ...discovery, pending: true, venue: "Known venue" }, t);
+    assert.ok(pending.includes("Known venue"));
+    assert.ok(!pending.includes("Next town"));
+  }
+  assert.deepEqual(state, before);
+});
 
 export function townTrailFixture() {
   const latitude = 44.54, longitude = 2.3;
