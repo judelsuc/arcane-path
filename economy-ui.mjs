@@ -7,6 +7,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
   let resolving = false, countryError = "", generation = 0;
   let accommodationController, accommodationResult, accommodationError = "", accommodationLoading = false;
   let accommodationCancelled = false;
+  let accommodationProgress;
   const money = cents => `${(cents / 100).toFixed(2)} ${t("gameMoney")}`;
   const hospitalityResult = result => t(`${result.placeKind === "worship" ? "worshipResult" : "hospitalityResult"}.${result.outcome}`, {
     town: result.townName, day: result.day,
@@ -41,6 +42,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
           : accommodationResult.places.length ? "accommodationReady" : "accommodationEmpty"
         : "accommodationHint");
     if (accommodationResult?.warnings.length) nearbyStatus.textContent += ` ${accommodationResult.warnings.join(" ")}`;
+    if (accommodationLoading && accommodationProgress) showAccommodationProgress();
     const nearby = document.querySelector("#accommodation-results");
     nearby.replaceChildren();
     for (const place of accommodationResult?.places ?? []) {
@@ -215,6 +217,12 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     }
     await accommodationSearch;
   }
+  function showAccommodationProgress() {
+    document.querySelector("#accommodation-status").textContent = `${t("accommodationLoading")} ${
+      t(`accommodationPhase.${accommodationProgress.phase}`)}${
+      accommodationProgress.provider ? ` (${accommodationProgress.provider})` : ""} · ${
+      t("accommodationElapsed", { seconds: accommodationProgress.elapsedSeconds })}`;
+  }
   async function searchAccommodations() {
     const current = context();
     if (!findAccommodations || accommodationLoading || !current || current.blocked) return;
@@ -222,10 +230,15 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     const controller = accommodationController;
     accommodationLoading = true;
     accommodationCancelled = false;
+    accommodationProgress = undefined;
     accommodationError = "";
     localize();
     try {
-      const result = await findAccommodations(controller.signal);
+      const result = await findAccommodations(controller.signal, progress => {
+        if (controller.signal.aborted || controller !== accommodationController) return;
+        accommodationProgress = progress;
+        showAccommodationProgress();
+      });
       if (controller.signal.aborted) return;
       accommodationResult = result;
     } catch (error) {

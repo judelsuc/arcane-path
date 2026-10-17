@@ -44,12 +44,70 @@ class AccommodationTests(unittest.TestCase):
             return self.store.build("firmi", latitude, longitude)
 
     def test_global_query_includes_nodes_ways_relations_and_bounded_radius(self):
+        progress = lambda event: None
         with patch("fetch_osm.fetch_catalogue", return_value={"elements": []}) as fetch:
-            self.assertEqual(fetch_accommodations(50, 4), [])
+            self.assertEqual(fetch_accommodations(50, 4, progress), [])
         query = fetch.call_args.args[0]
         self.assertIn("nwr(around:5000,50.000000,4.000000)", query)
         self.assertIn("hostel", query)
         self.assertIn("out center tags", query)
+        self.assertIs(fetch.call_args.args[1], progress)
+
+    def test_pending_jobs_expose_provider_progress_without_changing_completed_results(self):
+        entered, release = threading.Event(), threading.Event()
+        key = ("firmi", 44.54, 2.3)
+
+        def source(latitude, longitude, update):
+            update({"phase": "provider", "provider": "overpass.example.org"})
+            entered.set()
+            if not release.wait(5):
+                raise ValueError("Test source was not released")
+            return [self.element()]
+
+        jobs = ChunkJobs(self.store)
+        try:
+            with patch.object(self.store, "mapped", return_value=[]), \
+                    patch.object(self.store, "osm", side_effect=source), \
+                    patch.object(self.store, "datatourisme", return_value=([], None)):
+                self.assertEqual(jobs.request(*key)[0], 202)
+                self.assertTrue(entered.wait(5))
+                status, payload = jobs.request(*key)
+                self.assertEqual(status, 202)
+                self.assertEqual(payload["progress"],
+                                 {"phase": "provider", "provider": "overpass.example.org"})
+                release.set()
+                expected = jobs.jobs[key].result(timeout=5)
+                self.assertEqual(jobs.request(*key), (200, expected))
+                self.assertEqual(self.store.progress, {})
+        finally:
+            release.set()
+            jobs.pool.shutdown()
+
+    def test_progress_reports_real_stages_and_cleans_up_on_success_and_failure(self):
+        key = ("firmi", 44.54, 2.3)
+        self.assertEqual(self.store.get_progress(*key), {"phase": "queued"})
+        phases = []
+
+        def source(latitude, longitude, update):
+            phases.append(self.store.get_progress(*key)["phase"])
+            update({"phase": "provider", "provider": "overpass.example.org"})
+            self.assertEqual(self.store.get_progress(*key)["provider"], "overpass.example.org")
+            return [self.element()]
+
+        def catalogue(*args):
+            phases.append(self.store.get_progress(*key)["phase"])
+            return [], None
+
+        with patch.object(self.store, "mapped", return_value=[]), \
+                patch.object(self.store, "osm", side_effect=source), \
+                patch.object(self.store, "datatourisme", side_effect=catalogue):
+            self.store.build(*key)
+        self.assertEqual(phases, ["osm", "catalogue"])
+        self.assertEqual(self.store.get_progress(*key), {"phase": "queued"})
+        with patch.object(self.store, "mapped", side_effect=OSError("Map unavailable")):
+            with self.assertRaises(OSError):
+                self.store.build(*key)
+        self.assertEqual(self.store.progress, {})
 
     def test_real_coordinates_filter_closed_private_and_far_places_and_are_cached(self):
         result = self.build([self.element(), self.element(43, "way", longitude=2.31),

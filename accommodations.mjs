@@ -1,5 +1,10 @@
-export async function loadAccommodations(region, info, signal, fetcher = fetch) {
+export async function loadAccommodations(region, info, signal, fetcher = fetch, onProgress = () => {}) {
   signal = AbortSignal.any([signal, AbortSignal.timeout(240000)]);
+  const started = Date.now();
+  const progress = (phase, provider) => onProgress({
+    phase, provider, elapsedSeconds: Math.floor((Date.now() - started) / 1000),
+  });
+  progress("queued");
   const query = new URLSearchParams({ region, latitude: info.latitude, longitude: info.longitude });
   for (;;) {
     signal.throwIfAborted();
@@ -11,6 +16,14 @@ export async function loadAccommodations(region, info, signal, fetcher = fetch) 
     }
     const result = await response.json();
     if (response.status === 202 || response.status === 429) {
+      signal.throwIfAborted();
+      const event = result?.progress;
+      if (event !== undefined && (!event || typeof event !== "object" ||
+          !["queued", "maps", "osm", "provider", "catalogue", "filtering", "saving"].includes(event.phase) ||
+          (event.provider !== undefined && (typeof event.provider !== "string" || event.provider.length > 253)))) {
+        throw new Error("Invalid accommodation search progress.");
+      }
+      progress(response.status === 429 ? "queued" : event?.phase ?? "queued", event?.provider);
       await new Promise((resolve, reject) => {
         const abort = () => { clearTimeout(timer); reject(signal.reason); };
         const timer = setTimeout(() => {

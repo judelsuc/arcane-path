@@ -84,6 +84,11 @@
   than greying out an unchanged label. Explain the four-minute maximum wait,
   confirm cancellation and permit an immediate retry. Ignore late replies
   from cancelled searches without interrupting a newer lookup.
+- Show the server's actual search stage (queue, available maps, OSM source,
+  supplementary catalogue, distance filtering or cache write), the queried
+  provider when available, and elapsed search seconds. Update while polling,
+  discard progress from cancelled/previous searches, and do not invent a
+  completion percentage or imply that an unimported catalogue was queried.
 - **Agreed follow-up, not active:** Only after the user confirms that nearby
   accommodation discovery works, reduce fictional hospitality acceptance.
   Use base refusal probabilities of 0.8 for locals and 0.7 for places of

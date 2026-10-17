@@ -73,6 +73,28 @@ test("a bounded overall deadline prevents endless loading or queue-full polling"
   await assert.rejects(loading, { name: "TimeoutError" });
   assert.equal(calls, 1);
 });
+
+test("loading reports real server phases and queue saturation without invented percentages", async t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const events = [];
+  let calls = 0;
+  const loading = loadAccommodations("firmi", info, new AbortController().signal, async () => {
+    calls++;
+    if (calls === 1) return response({}, 429);
+    if (calls === 2) return response({ progress: { phase: "provider", provider: "overpass.example.org" } }, 202);
+    return response(payload());
+  }, event => events.push(event));
+  for (let i = 0; i < 30 && calls < 3; i++) {
+    await new Promise(resolve => setImmediate(resolve));
+    t.mock.timers.tick(1500);
+  }
+  await loading;
+  assert.deepEqual(events.map(event => event.phase), ["queued", "queued", "provider"]);
+  assert.equal(events.at(-1).provider, "overpass.example.org");
+  assert.ok(events.every(event => Number.isInteger(event.elapsedSeconds) && !("percent" in event)));
+  await assert.rejects(loadAccommodations("firmi", info, new AbortController().signal,
+    async () => response({ progress: { phase: "invented" } }, 202)), /Invalid accommodation search progress/);
+});
 test("discovered lodging only enables sleep at its exact cell and does not duplicate mapped POIs", () => {
   const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
   const survival = json("../public/config.json").survival, economy = json("../public/economy.json");
