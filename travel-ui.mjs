@@ -684,7 +684,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       const parts = agendaClock(journeyDate(state), document.documentElement.lang);
       clock.dateTime = parts.iso;
       clock.setAttribute("aria-label", t("travelClock", { date: parts.full }));
-      for (const key of ["weekday", "day", "month", "year", "time"]) {
+      for (const key of ["weekday", "day", "month", "year"]) {
         document.querySelector(`#agenda-${key}`).textContent = parts[key];
       }
       document.querySelector("#agenda-hour-hand").setAttribute("transform", `rotate(${parts.hourDegrees} 40 40)`);

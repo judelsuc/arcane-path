@@ -653,6 +653,10 @@ Sans donnees meteo, le fond reste neutre et les gouttes disparaissent.
 Le soleil ou la lune suit son arc en arriere-plan du meme panneau, sans
 cadran separe. Les effets de temperature et de pluie sont dans une infobulle
 au survol ou au focus clavier de la meteo, plutot qu'en texte permanent.
+Le petit calendrier reste a gauche ; le cadran analogique, l'icone meteo,
+la temperature et la condition sont empiles dans la colonne de droite.
+Pas d'heure numerique ni de petites legendes permanentes : moyennes,
+estimations et sources sont accessibles dans l'infobulle.
 L'agenda et le cadran affichent la date et l'heure simulees en UTC, avec
 libelles francais/anglais et texte accessible complet. Les aiguilles n'avancent
 pas en temps reel. **Copier les coordonnees** copie le centre de la case du joueur

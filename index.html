@@ -167,14 +167,11 @@
                   <path id="agenda-minute-hand" class="clock-hand" d="M40 40V15"/>
                   <circle class="clock-pin" cx="40" cy="40" r="2"/>
                 </svg>
-                <strong id="agenda-time"></strong>
-                <span class="agenda-caption" data-i18n="gameTimeUtc"></span>
-                <span class="agenda-caption" data-i18n="travelWalking"></span>
               </span>
             </time>
             <section class="weather-card" aria-labelledby="weather-title">
-              <h4 id="weather-title" data-i18n="weatherTitle"></h4>
-              <div id="weather-display" tabindex="0" aria-describedby="weather-effects" hidden>
+              <h4 id="weather-title" data-i18n="weatherTitle" hidden></h4>
+              <div id="weather-display" tabindex="0" aria-describedby="weather-tooltip" hidden>
                 <svg class="weather-icon" viewBox="0 0 64 56" aria-hidden="true">
                   <g data-weather-icon="clear">
                     <circle cx="32" cy="26" r="12"/>
@@ -190,19 +187,21 @@
                 </svg>
                 <strong id="weather-temperature"></strong>
                 <span id="weather-condition"></span>
-                <span id="weather-range"></span>
-                <span class="weather-average" data-i18n="weatherAverage"></span>
               </div>
               <p id="weather-state" role="status"></p>
-              <p id="weather-effects" role="tooltip"></p>
-            </section>
-            <details class="travel-weather">
+              <div id="weather-tooltip" role="tooltip">
+              <p id="weather-effects"></p>
+              <p id="weather-range"></p>
+              <p class="weather-average" data-i18n="weatherAverage"></p>
+              <details class="travel-weather">
               <summary data-i18n="weatherDetails"></summary>
               <p id="weather-summary"></p>
               <p data-i18n="weatherTemperatureNote"></p>
               <p id="weather-altitude" role="status"></p>
               <a id="weather-source" target="_blank" rel="noopener noreferrer" hidden></a>
             </details>
+              </div>
+            </section>
             </section>
             <section class="player-needs" aria-labelledby="needs-title">
               <h4 id="needs-title" data-i18n="needsTitle"></h4>

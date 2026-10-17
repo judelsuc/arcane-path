@@ -42,6 +42,9 @@
   or weather is unavailable; keep temperature and condition readable as text.
 - Put temperature/rain effects in a hover/keyboard-focus tooltip. Move the
   sun/moon position into the panel background and remove the separate sky panel.
+- Compact two-column layout: smaller unbroken date on the left; analog clock,
+  weather and condition stacked on the right. Remove digital time and permanent
+  fine print; keep estimates, ranges and sources in the weather tooltip.
 
 - Arcane-object searches are also side quests. Their gameplay is explicitly
   deferred; do not implement it as part of abandoned-journal delivery.
