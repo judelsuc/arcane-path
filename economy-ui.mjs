@@ -207,7 +207,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
         const cents = shelter.free ? 0 : marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents;
         const credit = shelter.credit ? ` ${shelter.credit} · ${shelter.license}${shelter.updated ? ` · ${shelter.updated}` : ""}` : "";
         add(shelter.name || t("mappedShelter"), cents, { kind: "sleep", id: shelter.osmId },
-          t("shelterNote", { hours: survival.sleep_hours }) + credit,
+          t(shelter.free ? "shelterNote" : "hotelRecoveryNote", { hours: survival.sleep_hours }) + credit,
           shelter.sourceUrl ?? `https://www.openstreetmap.org/${shelter.osmId}`, shelter.source ?? t("townOsm"));
       }
     }

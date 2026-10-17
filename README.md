@@ -64,6 +64,13 @@ Les couts sont des estimations, pas un plafond de facturation automatise.
 
 ## Pressions et statistiques du voyage
 
+Une nuit dans un hebergement payant (hotel, auberge, chambre d'hotes, motel
+ou refuge payant) inclut diner et petit-dejeuner dans le prix existant.
+Au reveil, reserve alimentaire pleine, fatigue a zero et pression de sommeil
+a zero ; deux repas et une nuit sont comptes. La duree et le prix ne changent
+pas. Les abris gratuits, l'hospitalite et le sommeil dehors n'incluent pas
+ces repas. Une partie deja terminee ne peut pas etre ranimee par un sejour.
+
 Les pressions commencent au lancement ou a la reprise d'un voyage actif ;
 les sauvegardes anterieures restent lisibles, sans modifier le depart serveur.
 La vigilance (0–100) augmente avec le temps dans un secteur de 2 km, davantage

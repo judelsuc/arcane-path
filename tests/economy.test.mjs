@@ -274,11 +274,37 @@ test("exposure can cause fainting, shelter cannot bypass hunger, and invalid dat
   assert.equal(fainted.fatigue, 40);
   assert.equal(fainted.faints, 1);
   assert.equal(sleepEconomy({ ...start(22), reserveKcal: 100 }, { pois: [shelter] },
-    info, shelter.osmId, survival, data).ended, "hunger");
+    info, shelter.osmId, survival, data).ended, null);
   for (const bad of [{}, { ...data, tarot: [] },
     { ...data, pricing: { ...data.pricing, referenceDollarPrice: 0 } }]) {
     assert.throws(() => validateEconomy(bad));
   }
+});
+
+test("paid accommodation includes food and fully relieves hunger, fatigue and sleep pressure", () => {
+  const state = { ...start(22), reserveKcal: 1, fatigue: 99, awakeHours: survival.sleep_limit_hours - 0.1 };
+  for (const tourism of ["hotel", "hostel", "guest_house", "motel", "alpine_hut"]) {
+    const cell = { ...town, pois: [{ ...shelter, tags: { tourism } }] };
+    const next = sleepEconomy(state, cell, info, shelter.osmId, survival, data);
+    assert.equal(next.ended, null);
+    assert.equal(next.reserveKcal, survival.reserve_kcal);
+    assert.equal(next.fatigue, 0);
+    assert.equal(next.awakeHours, 0);
+    assert.equal(next.meals, state.meals + 2);
+    assert.equal(next.sleeps, state.sleeps + 1);
+    assert.equal(next.elapsedMinutes, survival.sleep_hours * 60);
+    assert.equal(next.walletCents, state.walletCents -
+      marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents);
+    assert.equal(next.outdoorNightMinutes, 0);
+    assert.ok(next.energyKcal > state.energyKcal);
+  }
+  const free = { ...town, pois: [{ ...shelter, tags: { amenity: "shelter", fee: "no" } }] };
+  assert.equal(sleepEconomy(state, free, info, shelter.osmId, survival, data).ended, "hunger");
+  assert.equal(sleepEconomy(state, town, info, null, survival, data).ended, "hunger");
+  assert.throws(() => sleepEconomy({ ...state, ended: "hunger" }, { ...town, pois: [shelter] },
+    info, shelter.osmId, survival, data), /ended/);
+  assert.throws(() => sleepEconomy({ ...state, walletCents: 0 }, { ...town, pois: [shelter] },
+    info, shelter.osmId, survival, data), /funds/);
 });
 
 test("one nighttime rest at 90 fatigue now ends at 81; legacy zero-recovery rule yielded 91", () => {
