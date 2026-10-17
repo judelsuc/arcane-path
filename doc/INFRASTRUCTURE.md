@@ -1,5 +1,30 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - pages de piste et directions vers les villes citees
+
+- **18 octobre 2026 (heure locale)** : runtime `eba26f1`, tag
+  `deploy-2026-10-18-trail-pages`, developpement `d829645`,
+  base live `f4ceb07`. Cinq assets et manifeste, sans redemarrage.
+- J separe **Indices actuels**, **Enqueter** et **Destinations precedentes**.
+  Les temoignages sont classes sous la destination qu'ils designent, pas
+  sous le lieu de collecte. Decouvertes en attente et fausses pistes rejoignent
+  la chronologie ; dates en premier, dernier indice date marque, dates inconnues
+  en fin de liste. Les sejours du parent restent dans l'archive correspondante.
+- I propose les villes deja nommees : suggestions anciennes conservees,
+  destinations visitees et noms reellement obtenus, sans reveler l'itineraire cache.
+  Choix avec etape/statut, demande payante habituelle (10 minutes, 2 fatigue,
+  chance selon terrain), direction depuis la position actuelle et coordonnees.
+  L'avis reste non confirme ; aucun changement de destination ou de progression.
+- 371 tests JS passent. Navigateur avec vrais modules : trois pages isolees,
+  dates 13:00/12:40/12:20 decroissantes, archives distinctes, arrivee ouvrant
+  une page vide sans fuite de nom futur. Vraie demande de direction vers une
+  ancienne proposition : echec puis succes, 20 minutes payees, quete inchangee.
+  Liste de villes restauree depuis les rapports deja sauvegardes ; selecteur
+  sans debordement a 390 et 1280 px.
+- Cinq assets et manifeste HTTPS verifies octet par octet, API disponible et
+  services actifs. Les 16 lignes de genesis initiales sont strictement inchangees.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-eba26f1.tar.gz` (0600).
+
 ## Derniere livraison - calendrier reduit et colonne horloge/meteo
 
 - **17 octobre 2026** : runtime `f4ceb07`, tag
