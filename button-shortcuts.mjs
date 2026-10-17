@@ -29,6 +29,7 @@ const KEYS = {
   "clue-search": "F", "clue-buy": "A", "clue-guestbook": "G",
   "clue-ticket": "T", "clue-directions": "I",
   "clue-investigate": "F",
+  "clue-field-search": "F",
 };
 const DIRECTIONS = { "0,-1": "ArrowUp", "1,0": "ArrowRight", "0,1": "ArrowDown", "-1,0": "ArrowLeft" };
 

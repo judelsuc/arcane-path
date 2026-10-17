@@ -24,6 +24,7 @@ import { exposureTemperature, temperatureModifiers, precipitationModifiers } fro
 import { createJourneyStore, mapIdentity } from "./journey-save.mjs";
 import { tarotArt } from "./tarot-art.mjs";
 import { trailClue } from "./trail-actions.mjs";
+import { beginExploration, applyFieldSearch, askAboutClue } from "./trail-search.mjs";
 import { setupNeedsNotices } from "./needs-notices.mjs";
 import { setupSaveFeedback } from "./save-feedback.mjs";
 
@@ -287,6 +288,35 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     context: () => {
       const current = economyContext();
       return current ? { ...current, saveStatus: saveStatus.textContent } : null;
+    },
+    searchField(result) {
+      const current = economyContext();
+      if (!current || current.blocked) return false;
+      try {
+        state = applyFieldSearch(state, result, current.cell, current.info, survivalConfig, economyData);
+        autosave();
+        localize();
+        return true;
+      } catch (reason) {
+        report(reason);
+        document.querySelector("#trail-action-error").textContent = reason.message;
+        return false;
+      }
+    },
+    recognizeField(prepared) {
+      const current = economyContext();
+      if (!current || current.blocked) return null;
+      try {
+        const result = askAboutClue(state, prepared, current.cell, current.info, survivalConfig, economyData);
+        state = result.state;
+        autosave();
+        localize();
+        return result;
+      } catch (reason) {
+        report(reason);
+        document.querySelector("#hint-action-error").textContent = reason.message;
+        return null;
+      }
     },
     discover(kind) {
       const current = economyContext();
@@ -776,6 +806,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         birthPending = true;
       }
       if (currentToken !== token) return;
+      state = beginExploration(state, Boolean(restored));
       prepareCurrentParentPath();
       const p = chunkPosition(state.col, state.row);
       stream = createChunkStream(region, { onUpdate: () => {

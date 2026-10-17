@@ -6,6 +6,7 @@ import { validateServerJourney } from "../server-journey.mjs";
 import { createJourneyStore, mapIdentity } from "../journey-save.mjs";
 import { clueActions, trailClue } from "../trail-actions.mjs";
 import { parentStage } from "../parent-story.mjs";
+import { beginExploration } from "../trail-search.mjs";
 
 const root = new URL("../", import.meta.url);
 const python = existsSync(new URL(".venv/bin/python", root)) ? ".venv/bin/python" : "python3";
@@ -35,10 +36,12 @@ print(json.dumps(results))
 `], { cwd: root, encoding: "utf8" }));
 
 for (const record of records) {
-  for (const slow of record.state.trail.story.finalState === "mobile" ? [false, true] : [false]) {
-    test(`real offline genesis → clues → save/reload → ${slow ? "slow" : "early"} ${record.state.trail.story.finalState} reunion`, () => {
+  const speeds = record.state.trail.story.finalState === "mobile" ? [false, true] : [false];
+  for (const [slow, exploring] of speeds.flatMap(slow => [[slow, false], [slow, true]])) {
+    test(`real offline genesis → clues → save/reload → ${slow ? "slow" : "early"} ${record.state.trail.story.finalState} reunion (${exploring ? "vague leads" : "legacy"})`, () => {
       validateServerJourney(record, "firmi", map, "Layer nine check");
       let state = structuredClone(record.state);
+      if (exploring) state = beginExploration(state);
       const values = new Map();
       const storage = { getItem: key => values.get(key) ?? null,
         setItem: (key, value) => values.set(key, value) };

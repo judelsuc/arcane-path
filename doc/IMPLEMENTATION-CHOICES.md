@@ -1624,3 +1624,29 @@ across endurance profiles, unchanged road bridges, land exits and fainting.
 The actual browser dialog in FR/EN verifies upfront 90%/cost disclosure,
 no free answer on opening/reopening, failed paid attempt followed by success,
 twenty minutes/four fatigue total and no future-town disclosure.
+
+## Progressive field clues and fallible recognition
+
+- R-097: optional versioned exploration state is
+  initialized on new/resumed v2 games; older saves stay readable. A resumed
+  pre-feature lead keeps its known town. New leads expose only obtained hints.
+  Search success uses server-side proximity to points on the persisted
+  current reference leg; no path geometry reaches the browser. Missing
+  reference paths surface a retryable preparation error, not a fake route.
+  Costs and precision use destination proximity, independently of route
+  proximity. Search results are prepared before charging, guarded against
+  cancellation and stale state, then settled through normal survival rules.
+  Photo providers are never required: an unavailable image becomes a fragment.
+  Witness recognition uses nearest real prefix matches or nearby photo
+  candidates from GeoNames; guesses remain unconfirmed and cannot advance
+  progress. Versioned hint/report history is validated on every save.
+- Verification: 310 JavaScript tests pass, including real offline genesis to
+  stationary/early-mobile/slow-mobile reunion in both old and progressive
+  modes, exact FR/EN journal event handlers, costs, chance/precision boundaries,
+  stale/cancelled requests, fallible recognition and save corruption checks.
+  Python: 135/137 pass; the same two baseline photo-setting mismatches remain.
+  All 14 targeted hidden-route/proximity/recognition tests pass.
+  Real-browser journal checks used explicit proximity/town fixtures: a vague
+  fragment, a wrong unconfirmed suggestion, lower-cost precise nearby clue,
+  and save/reload of both evidence and guesses. No external route download
+  or player save was used for that UI check.

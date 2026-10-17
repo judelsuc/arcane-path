@@ -1,5 +1,41 @@
 # Requirements tracked outside the design PDF
 
+## R-097 - Search anywhere, progressive clues and fallible recognition
+
+- **User request:** Allow searches away from scheduled town encounters. Useful
+  clues are less likely farther from the parent's hidden path. Each new lead
+  starts vague: an uncaptioned real photo, a town-name fragment or a broad
+  direction. Clues become more precise near the place being sought.
+- Search costs must be randomly drawn, higher far from the destination and
+  lower nearby. Failed attempts still cost time, fatigue and energy.
+- **Implemented balance:** loaded land cells outside arrival range allow
+  field searches. The current persisted reference leg supplies proximity,
+  never a fabricated straight-line route. On-path success is 85%, decaying
+  exponentially over 3 km toward 2%. No route geometry is returned.
+- Beyond 15 km, use broad directions, at most two starting letters, or
+  uncaptioned photos. Within 15 km, name fragments may grow to five letters
+  (never the entire name). Within 3 km a successful search identifies the
+  current town. These distances are not shown in the journal.
+- Search ranges interpolate from 8–14 minutes/+1–2 fatigue at the destination
+  to 30–60 minutes/+4–7 fatigue at 45 km and beyond. Calories and existing
+  survival/fainting rules also apply. A failed provider request costs nothing
+  and displays an error; unavailable photos explicitly become name fragments.
+- Visiting the town still advances the main quest. The clue obtained there
+  starts a new vague lead rather than naming the next town. Existing saves
+  retain their already-known current destination and obtained clues.
+- **User refinement:** People may recognize collected letter fragments or
+  photos, but may be mistaken. Asking costs 10 minutes/+2 fatigue and uses
+  existing terrain-dependent encounter chances. Candidate towns come from
+  the offline GeoNames catalogue, not invented names or unrelated trail stops.
+- Letter recognition normally suggests the nearest matching real town
+  (80% when alternatives exist); another match can be suggested. Photo
+  recognition has 65% accuracy when the intended town and alternatives are
+  available. Other plausible nearby towns can be mistaken for it. Neither
+  successful recognition nor an incorrect answer advances the quest.
+- Suggestions are always explicitly unconfirmed, separate from confirmed
+  clues, and persist in saves and the journal. Never expose which guess was
+  correct, route geometry, exact distances or future town names.
+
 ## R-096 - Finish and release lightweight Layer 9
 
 - **User decision:** Finish the lightweight milestone autonomously. Advanced

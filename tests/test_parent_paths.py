@@ -153,6 +153,46 @@ class PathStoreTests(unittest.TestCase):
         self.assertEqual(len(self.chunks.built), count)
         self.assertTrue(self.store.location("b" * 32, 0).exists())
 
+    def test_search_proximity_uses_persisted_bent_route_without_exposing_geometry_or_downloading(self):
+        self.ready()
+        data = self.store.decode(self.store.location(self.identity, 0))
+        data["points"] = [[0, 0], [0, 1], [1, 1], [2, 1], [2, 0]]
+        self.store.save(self.store.location(self.identity, 0), data)
+        with patch.object(self.chunks, "build", side_effect=AssertionError("No downloads")):
+            for position, meters in [((1, 1), 0), ((1, 3), 500), ((1, 0), 250), ((-1, -1), math.sqrt(2) * 250)]:
+                status, result = self.store.request(self.identity, 0, position=position)
+                self.assertEqual(status, 200)
+                self.assertAlmostEqual(result["pathDistanceMeters"], meters)
+                self.assertNotIn("points", result)
+                self.assertEqual((result["col"], result["row"]), position)
+        for bad in [(True, 0), (-8001, 0), (0.1, 0), (0,), (0, 0, 0)]:
+            with self.assertRaisesRegex(ValueError, "position"):
+                self.store.request(self.identity, 0, position=bad)
+
+    def test_recognition_uses_offline_real_towns_and_nearest_matching_prefix_not_the_answer(self):
+        self.chunks.bases = {"test": {"bounds": {
+            "minLatitude": 44, "maxLatitude": 45, "minLongitude": 2, "maxLongitude": 3},
+            "cellSizeMeters": 250}}
+        self.journeys.record["state"]["trail"]["stages"][0].update(
+            name="Serein", latitude=44.5, longitude=2.5)
+        self.store.towns = type("Catalogue", (), {"buckets": {(44, 2): [
+            [1, "Serein", 44.5, 2.5, "FR", 3000],
+            [2, "Sète", 44.99, 2.01, "FR", 3000],
+            [3, "Other town", 44.6, 2.4, "FR", 3000],
+        ]}})()
+        with patch.object(self.chunks, "build", side_effect=AssertionError("No downloads")):
+            status, result = self.store.request(self.identity, 0, position=(0, 0), recognize="vague-prefix")
+            self.assertEqual(status, 200)
+            self.assertEqual([t["name"] for t in result["towns"]], ["Sète", "Serein"])
+            self.assertNotIn("correct", result)
+            self.assertNotIn("points", result)
+            self.assertEqual(self.store.jobs, {})
+            photo = self.store.request(self.identity, 0, position=(0, 0), recognize="partial-photo")[1]
+            self.assertEqual(len(photo["towns"]), 3)
+        for kind in ["prefix", "precise-prefix", "vague-direction"]:
+            with self.assertRaisesRegex(ValueError, "recognition"):
+                self.store.request(self.identity, 0, position=(0, 0), recognize=kind)
+
     def test_budget_error_persists_until_explicit_retry_and_terrain_is_reused(self):
         with patch("parent_paths.MAX_DOWNLOADS", 1):
             self.assertEqual(self.store.request(self.identity, 0)[0], 202)
@@ -245,9 +285,15 @@ class PathStoreTests(unittest.TestCase):
         status, data = call(f"journey={self.identity}&stage=0")
         self.assertEqual(status, 200)
         self.assertNotIn("points", data)
+        status, data = call(f"journey={self.identity}&stage=0&col=14&row=5")
+        self.assertEqual(status, 200)
+        self.assertEqual(data["pathDistanceMeters"], 0)
+        self.assertNotIn("points", data)
         for query in [f"journey={self.identity}&stage=-1", f"journey={self.identity}&stage=0&retry=yes",
                       f"journey={self.identity}&stage=0&stage=1", f"journey={self.identity}&extra=x",
-                      f"journey={self.identity}&stage=bad"]:
+                      f"journey={self.identity}&stage=bad", f"journey={self.identity}&stage=0&col=1",
+                      f"journey={self.identity}&stage=0&col=1&row=-8001",
+                      f"journey={self.identity}&stage=0&recognize=vague-prefix"]:
             self.assertEqual(call(query)[0], 400)
         self.assertEqual(call("journey=missing&stage=0")[0], 404)
 

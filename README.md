@@ -214,9 +214,12 @@ precision de pont, cloture ou chemin pieton reel n'est inventee.
 `GET /api/parent-path?journey=IDENTIFIANT&stage=0` lance ou consulte la
 preparation ; `retry=1` relance seulement un echec. Reponse 202 avec compteurs,
 200 avec resume sans geometrie, 422 en cas d'echec, 429 si la file est pleine.
-Le trace reste cache, conserve cote serveur pour les futurs indices ; aucun
-indice intermediaire n'est encore ajoute. Les anciennes parties locales
-sans identifiant serveur ne sont ni modifiees ni regenerees.
+Le trace reste cache cote serveur. Ajouter `col` et `row` retourne uniquement
+la proximite de cette position au trace conserve, pour les recherches d'indices.
+`recognize=vague-prefix|partial-prefix|vague-photo|partial-photo` avec une
+position propose des villes reelles du catalogue, sans geometrie ni indication
+de la bonne reponse. Les anciennes parties locales sans identifiant serveur
+ne sont ni regenerees ni dotees d'un faux chemin.
 
 Un seul worker de chemins, au plus deux travaux en cours/file, couloirs de
 8/16/32 cases elargis si aucun passage, 50 000 expansions au total, 256
@@ -713,17 +716,38 @@ sauvegarde precedente et ne tire pas le tarot du nouveau personnage.
 Les telechargements de carte, altitude, meteo et photos restent distincts
 et peuvent encore rencontrer des limites de leurs fournisseurs.
 
-**Piste du parent** ouvre gratuitement le carnet. Il indique la ville de
-l'etape actuelle, sa direction et sa distance ; les suivantes restent cachees.
+**Piste du parent** (J) ouvre gratuitement le carnet. Chaque nouvelle piste
+commence vaguement : direction generale depuis la precedente halte, fragment
+du nom de ville ou photo sans annotation. Le carnet ne fournit ni distances,
+ni coordonnees, ni trace et ne nomme pas les villes encore inconnues.
+Dans une case terrestre chargee, **Chercher un indice** (F dans le carnet)
+consomme du temps, de la fatigue et de l'energie, meme sans resultat.
+Les chances diminuent avec l'eloignement du chemin cache du parent.
+Les couts tires au hasard diminuent en approchant de la ville recherchee :
+30–60 min/+4–7 fatigue loin, jusqu'a 8–14 min/+1–2 fatigue a proximite.
+Les indices deviennent progressivement plus precis : fragment plus long
+dans les 15 km, ville identifiable dans les 3 km.
+Le chemin de reference doit etre prepare pour une recherche hors d'etape ;
+une erreur de preparation est affichee sans facturer l'action.
+
+On peut **montrer un fragment ou une photo a quelqu'un**, dans le carnet
+ou avec I : 10 min/+2 fatigue, avec les chances habituelles de rencontrer
+quelqu'un selon le terrain. Les personnes suggerent de vraies villes :
+la plus proche commencant par ces lettres, ou une ville qui rappelle la photo.
+Elles peuvent confondre des noms similaires ou se tromper sur l'image.
+Ces avis restent explicitement **non confirmes**, sont sauvegardes a part
+des indices et n'avancent jamais la quete.
+
 Pour les parcours de villes, l'enquete est accessible sur la case du point
 repere et ses huit voisines (250 m par axe), afin de ne pas exiger le pixel
 exact d'un centre GeoNames/OSM. A deux cases sur un axe, il faut encore avancer.
 Les anciens parcours locaux gardent leur regle de case exacte.
-Seule la **case exacte de l'etape prevue** propose des indices du parent,
-jamais une autre case de la meme ville ni le curseur Look.
-Quatre actions differentes sont proposees a chaque etape, selon une rotation :
-discussion, photo annotee, lettre, fouille, note achetee, livre d'or ou billet.
-Chaque forme presente la prochaine destination differemment :
+Seule l'arrivee dans ce rayon permet de **passer a l'etape suivante** ;
+une recherche en pleine campagne ne saute jamais une ville. Le curseur Look
+ne deplace pas le personnage et n'autorise pas de recherche distante.
+A l'arrivee, la decouverte est tiree parmi quatre formes accessibles :
+discussion, photo, lettre, fouille, note achetee, livre d'or ou billet.
+Chaque forme amorce une nouvelle piste vague, avec ses couts propres :
 
 | Action | Temps | Fatigue ajoutee | Effort supplementaire |
 | --- | --- | --- | --- |
@@ -744,12 +768,13 @@ sur place pour identifier la ville. Le carnet ne devoile alors ni distance
 ni lien cartographique. Cette attente et les decouvertes sont sauvegardees.
 Les nouvelles pistes locales ne font plus de recherche de lieux publics
 au depart : cet enrichissement optionnel est differe, pas simule.
-Elles revelent directement les villes par les memes formes d'indices.
+Une ancienne sauvegarde conserve sa destination deja connue lors de la
+reprise ; ses nouvelles pistes utilisent ensuite les indices progressifs.
 
 La photo cherche une vraie image geographique sous licence, autour de la
-destination, avec auteur, source et licence. Le petit indice est affiche
-separement comme une **annotation fictive**, jamais comme une inscription
-authentique sur l'image. Une indisponibilite est affichee sans bloquer l'indice.
+destination, avec auteur, source et licence, mais sans titre geographique
+ni annotation revelant la ville. Lors d'une recherche hors etape, une photo
+indisponible est remplacee explicitement par un fragment de nom.
 Lettres, temoins, billets et autres objets narratifs sont egalement fictifs :
 aucun habitant ou etablissement reel n'est implique dans l'histoire.
 
