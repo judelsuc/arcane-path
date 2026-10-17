@@ -371,6 +371,21 @@ joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
 - Rollback :
   `/home/ubuntu/arcane-path-before-deploy-d4897fe.tar.gz`, mode 0600.
 
+### Checkpoint deploye : musique avec silences et trois boucles
+
+- **17 octobre 2026** : commit `e28c7d8`, tag pousse
+  `deploy-2026-10-17-music-loops`.
+- Phrase de 12 cases : huit notes et quatre silences, trois boucles, 24 notes
+  au total. Pas 400 ms, tolerance 150 ms ; audio et reperes synchronises.
+  Compteur de boucle, silences vides ; plafond de revenu et cout de jeu inchanges.
+- 32 tests cibles passes (musique, audio, UI, langues et sauvegardes). Navigateur :
+  quatre cases vides, compteurs 1/3, 2/3, 3/3 et score final 24/24 verifies.
+- Cinq assets statiques et manifeste remplaces, tous compares en HTTPS au commit.
+  Services actifs ; pas de redemarrage ni modification des caches/sauvegardes.
+  Travail couche 9 en cours et configuration utilisateur exclus du paquet.
+- Rollback :
+  `/home/ubuntu/arcane-path-before-deploy-e28c7d8.tar.gz`, mode 0600.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026
