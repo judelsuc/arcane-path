@@ -1,5 +1,30 @@
 # Requirements tracked outside the design PDF
 
+## R-080 - Layer 15 personal journey journal
+
+- **Priority:** Keep for Layer 15, after completing Layer 9. Requirements only;
+  journal implementation has not started.
+- **Pinned photos:** The player can pin a discovered photo in the journal and
+  attach a personal note. Preserve its image, source, attribution/license,
+  associated location and game timestamp across save/resume and journal export.
+- **Journey history:** Maintain a chronological record using game dates/times
+  and locations, including:
+  - Where the player slept, including outdoor sleep and accommodation or
+    fictional hospitality when applicable.
+  - Hospitality requests and outcomes, explicitly including refusals by
+    townspeople.
+  - Meals: when and where the player ate, and what they ate.
+  - Other meaningful journey events as the journal scope is finalized.
+- **Historical accuracy:** Capture event details when actions happen, rather
+  than reconstructing them from current counters or only the latest result.
+  Do not invent missing events for older saves.
+- **Map vignette (proposed):** A small patch of the ASCII grid could accompany
+  entries to show their local setting. Keep as a candidate feature; patch
+  dimensions and exact presentation remain to be decided during Layer 15.
+- **Integration:** Include these requirements in Layer 15's photo/travel-journal
+  and PDF-export design. Personal notes do not introduce player-to-player
+  free-text sharing.
+
 ## R-078 - Music with rests and repeated phrases
 
 - The rhythm must have empty squares (rests), not equally spaced notes only,
