@@ -20,6 +20,8 @@ verifiee, pas seulement du code prepare. Voir le
 - [x] Repos nocturne utile : 10 fatigue recuperee avant exposition (environ 9 nets).
 - [x] Pas sonores par terrain, agenda UTC et bouton Copier les coordonnees.
 - [x] Huit voisins visibles precharges meme a l'arret, reessais temporaires espaces.
+- [x] Repas simple payant dans toutes les localites, restaurants OSM en contexte.
+- [x] Melodie, basse et retours de frappe synchronises au mini-jeu musical.
 - [x] Acces OpenStack au bon projet et inventaire de Paris verifies.
 - [x] Tarif CPU verifie : 45,71 EUR TTC maximum pour 744 heures, hors extras.
 - [x] Terraform valide : une VM CPU, aucun GPU ni volume additionnel.
@@ -497,8 +499,14 @@ de Chamonix/Savoie, poisson cru au lait de coco a Tahiti. Sources touristiques
 et descriptions originales dans [public/economy.json](./public/economy.json).
 Chaque repas vaut pour le jeu 900 kcal de reserve et 20 minutes ; ce ne sont
 pas des mesures nutritionnelles. Les zones sont des boites de curation,
-pas des frontieres culinaires exactes. Hors zone couverte, absence explicite.
-Les repas restent limites aux cases de localite.
+pas des frontieres culinaires exactes. Un **repas simple** de jeu reste toujours
+propose sur une case de localite, y compris hors de ces quatre zones, au meme
+tarif national et avec les memes couts de temps. Les restaurants, cafes,
+restaurations rapides et food courts OSM de la case proposent aussi ce repas
+sous leur nom avec lien source ; leur menu, ouverture et service reels ne sont
+pas verifies. Lieux prives/interdits, desaffectes ou abandonnes exclus. Aucun
+restaurant n'est invente lorsque la carte n'en indique pas. Les achats restent
+limites aux cases de localite et exigent la bourse necessaire.
 
 L'echelle des tarifs utilise les observations Big Mac du **1 juillet 2026**
 publiees par The Economist, pas Eurostat. Les valeurs en dollars permettent
@@ -803,11 +811,20 @@ pistes generiques `music-city` et `music-coast`.
 Les pistes bouclent, sans fondu ni correction automatique des raccords.
 L'onglet masque et le dialogue du minijeu de rythme mettent la musique en
 pause ; aucune piste Suno non synchronisee n'influence les notes/recompenses.
-Les effets sonores et pistes `future-` ne sont pas encore connectes.
+Le mini-jeu a sa propre melodie originale avec basse et accompagnement,
+synthetisee par Web Audio sans fichier musical a telecharger. Les notes sont
+programmees sur les memes huit temps de 700 ms que les reperes visuels.
+Une frappe juste ou fausse joue un retour distinct. Le bouton de depart
+demande l'activation audio au navigateur ; les refus sont affiches sans bloquer
+le jeu visuel. Volume et coupure partages dans Options. Fermeture, annulation
+et onglet masque arretent toutes les notes ; aucune musique de fond ne masque
+le rythme. Les pistes `future-` restent non connectees.
 Un premier jeu de 27 effets courts est maintenant synthetise localement,
 sans musique d'accompagnement :
-[ecouter les effets](public/audio/sfx/index.html). Ils ne sont pas encore
-declenches dans le jeu. Regeneration reproductible avec
+[ecouter les effets](public/audio/sfx/index.html). Les cinq sons de pas sont
+connectes ; les autres WAV restent disponibles pour de futures actions.
+Le mini-jeu utilise sa propre synthese synchronisee, pas ces WAV.
+Regeneration reproductible avec
 `scripts/generate_sfx.py` (bibliotheque standard Python uniquement).
 
 Une [chanson originale en anglais](audio-prompts/title-song.md) est prevue

@@ -97,6 +97,26 @@ test("hospitality is absent outside named settlements and mapped accommodation s
 });
 
 for (const language of ["fr", "en"]) {
+  test(`${language} food menu offers basic meals beyond specialties and mapped restaurant names with sources`, async t => {
+    const h = harness(t, language);
+    h.set({ info: { latitude: 45.182, longitude: 5.616 }, cell: {
+      ...town, pois: [{ osmId: "node/42", name: "Le Café du village", tags: { amenity: "restaurant" } }],
+    } });
+    await h.ui.open("eat");
+    assert.equal(h.element("#economy-empty").hidden, true);
+    assert.equal(h.buttons().length, 2);
+    assert.match(h.buttons()[0].textContent, language === "fr" ? /Repas simple/ : /Basic meal/);
+    assert.match(h.buttons()[1].textContent, /Le Café du village/);
+    const item = h.element("#economy-options").children[1];
+    assert.equal(item.children[2].href, "https://www.openstreetmap.org/node/42");
+    assert.match(item.children[1].textContent, language === "fr" ? /non vérifiés/ : /not verified/);
+    h.buttons()[1].click();
+    assert.deepEqual(h.actions, [{ kind: "meal", id: "basic-meal@node/42" }]);
+    h.set({ state: { ...h.current().state, walletCents: 0 } });
+    await h.ui.open("eat");
+    assert.ok(h.buttons().every(button => button.disabled));
+  });
+
   test(`${language} menu discloses immediate sleep, time cost and tarot probability before requesting`, async t => {
     const h = harness(t, language);
     await h.ui.open("sleep");

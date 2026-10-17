@@ -178,6 +178,21 @@ ne sont pas automatiquement presents sur `https://arcane-path.eu`.
 Cette protection est un compte partage de test, pas une gestion de comptes
 joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
 
+### Checkpoint deploye : recuperation du gameplay
+
+- **17 octobre 2026** : commit `b89cc2bba454d84b66fa774cf88f23bcc4b5e164`,
+  tag pousse `deploy-2026-10-17-gameplay-recovery`.
+- Hospitalite, reequilibrage du repos nocturne, pas sonores, prechargement
+  immobile, agenda/cadran, copie des coordonnees et correction des relations
+  de couverture OSM incompletes sur les morceaux externes.
+- 193 tests JavaScript et 109 tests Python passes avant empaquetage.
+- HTTPS authentifie : manifeste `public/release.json` egal au commit attendu,
+  API voyage et nouveaux modules en 200, WAV de pas accessible (7 982 octets).
+  Nginx valide, services actifs, cache persistant et base de voyages conserves.
+- Retour code possible avec `/home/ubuntu/arcane-path-before-deploy-b89cc2b.tar.gz`,
+  permissions 0600. Cette archive exclut le cache et n'est pas une sauvegarde
+  des voyages. Aucun nouvel abonnement ni ressource payante.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026

@@ -1076,3 +1076,25 @@ remain pending. Existing 30-60 km legs are straight-line distances only.
   took 510 minutes, advanced the UTC agenda, and disabled another town/day
   request. The 375px layout fits; clipboard denial is visibly reported in the
   automated browser (which cannot grant focus/clipboard permissions).
+
+## Settlement meals and audible street music
+
+Meal catalogue coverage is not food availability. A paid fictional 900-kcal
+basic meal is now available on every loaded settlement cell, including Engins,
+using the existing price/time/need rules. Specialty selection remains sourced.
+Mapped public active food venues add named options with OSM links, without
+claiming real menu or service availability. UI and purchase validation share
+mealOptions, so stale venue IDs cannot buy a remote meal. Legacy economies
+need no catalogue migration and still offer basic food.
+
+The rhythm minigame previously deliberately silenced background music but
+had no audio implementation. It now owns an original synthesized melody,
+bass and offbeat accompaniment through Web Audio, timed on beatTime rather
+than an unsynchronized downloaded music track or render interval. Tap
+feedback distinguishes hits/misses. Shared mute/volume do not affect scoring.
+Session tokens prevent cancelled asynchronous unlocks from restarting sound;
+all scheduled oscillators stop on exit/finish/hidden tab. Explicit audio errors
+leave visual play possible. Browser validation observed a running real audio
+context and all 24 scheduled melody/accompaniment voices; basic meal purchase
+updated wallet, reserves and game time. Automated checks cover exact beat
+times, latency, cancellation, silence controls and food/venue validation.

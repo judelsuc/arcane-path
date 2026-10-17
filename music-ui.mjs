@@ -1,6 +1,6 @@
 import { MUSIC, rhythm, beatTime, rhythmEnd, tapRhythm } from "./music.mjs";
 
-export function setupMusic(t, { begin, settle, available }) {
+export function setupMusic(t, { begin, settle, available, audio }) {
   const dialog = document.querySelector("#music-dialog");
   const play = document.querySelector("#music-start");
   const tap = document.querySelector("#music-tap");
@@ -36,6 +36,7 @@ export function setupMusic(t, { begin, settle, available }) {
     if (!game) return;
     clearInterval(timer);
     timer = undefined;
+    audio.stop();
     const hits = cancelled ? 0 : game.hits.filter(Boolean).length;
     game = undefined;
     settled = settle(hits);
@@ -54,6 +55,7 @@ export function setupMusic(t, { begin, settle, available }) {
     }
     feedback = "";
     game = rhythm(performance.now());
+    void audio.start(game);
     track.replaceChildren();
     beats.length = 0;
     for (let i = 0; i < MUSIC.beats; i++) {
@@ -76,7 +78,9 @@ export function setupMusic(t, { begin, settle, available }) {
     if (!game) return;
     const now = performance.now();
     if (now > rhythmEnd(game)) return finish();
-    game = tapRhythm(game, now);
+    const next = tapRhythm(game, now);
+    audio.hit(next !== game);
+    game = next;
     render(now);
   }
   function open() {

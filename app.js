@@ -32,6 +32,7 @@ const coordinates = setupCopyCoordinates(t, () => mapData && inspectedTile
   ? cellInfo(mapData, Number(inspectedTile.dataset.row), Number(inspectedTile.dataset.col)) : null);
 const travel = setupTravel({
   t, renderMap,
+  musicAudio: audio.busking,
   onAudioContext: context => audio.update(context),
   onStep: terrain => audio.step(terrain),
   onActiveChange(active) {

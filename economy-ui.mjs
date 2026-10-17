@@ -1,4 +1,4 @@
-import { localMeals, marketPrice, shelters, tarotEventChance } from "./economy.mjs";
+import { mealOptions, marketPrice, shelters, tarotEventChance } from "./economy.mjs";
 import { HOSPITALITY_RULES, hospitalityStatus } from "./hospitality.mjs";
 
 export function setupEconomyUI(t, { context, act, resolveCountry }) {
@@ -65,12 +65,19 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
       list.append(item);
     };
     if (mode === "eat") {
-      const meals = cell.terrain === "place" ? localMeals(info, data) : [];
+      const meals = mealOptions(cell, info, data);
       document.querySelector("#economy-empty").hidden = meals.length > 0;
-      for (const meal of meals) add(meal.name, marketPrice(cell, meal.mealUnits, data, info).cents,
-        { kind: "meal", id: meal.id },
-        `${meal[language]} ${t("mealEffect", { kcal: meal.reserveKcal, minutes: survival.meal_minutes })}`,
-        meal.source, meal.publisher);
+      for (const meal of meals) {
+        const restaurant = meal.kind === "restaurant";
+        const title = restaurant ? t("mealAtRestaurant", { name: meal.venue.name ?? t("mappedRestaurant") })
+          : meal.kind === "basic" ? t("basicMeal") : meal.name;
+        const note = restaurant ? t("restaurantMealNote") : meal.kind === "basic" ? t("basicMealNote") : meal[language];
+        add(title, marketPrice(cell, meal.mealUnits, data, info).cents,
+          { kind: "meal", id: meal.id },
+          `${note} ${t("mealEffect", { kcal: meal.reserveKcal, minutes: survival.meal_minutes })}`,
+          restaurant ? `https://www.openstreetmap.org/${meal.venue.osmId}` : meal.source,
+          restaurant ? t("townOsm") : meal.publisher);
+      }
     } else {
       document.querySelector("#economy-empty").hidden = true;
       const mapped = shelters(cell);

@@ -1,5 +1,6 @@
 import { createMusicPlayer, musicTrack } from "./audio.mjs";
 import { createFootstepPlayer } from "./footsteps.mjs";
+import { createStreetMusicAudio } from "./street-music-audio.mjs";
 
 export function setupAudio(t) {
   const toggle = document.querySelector("#audio-toggle");
@@ -7,6 +8,11 @@ export function setupAudio(t) {
   const volume = document.querySelector("#audio-volume");
   let context = {}, playback = { status: "off", enabled: false };
   let footstepError = "";
+  let streetMusicError = "";
+  const busking = createStreetMusicAudio({
+    createContext: () => new AudioContext(),
+    onError(error) { streetMusicError = error; localize(); },
+  });
   const footsteps = createFootstepPlayer({
     createAudio: url => new Audio(url),
     onError(error) { footstepError = error; localize(); },
@@ -20,12 +26,16 @@ export function setupAudio(t) {
     });
     document.querySelector("#footstep-status").textContent =
       footstepError ? t("footstepError", { error: footstepError }) : "";
+    document.querySelector("#music-audio-status").textContent = streetMusicError
+      ? t("streetMusicAudioError", { error: streetMusicError })
+      : t(playback.enabled ? "streetMusicAudioOn" : "streetMusicAudioOff");
   }
   const player = createMusicPlayer({
     createAudio: url => new Audio(url),
     onChange(next) {
       playback = next;
       footsteps.enable(next.enabled && !document.hidden);
+      busking.enable(next.enabled);
       localize();
     },
   });
@@ -47,9 +57,11 @@ export function setupAudio(t) {
     const value = Number(volume.value) / 100;
     player.volume(value);
     footsteps.volume(value);
+    busking.volume(value);
   });
   document.addEventListener("visibilitychange", () => {
     footsteps.enable(playback.enabled && !document.hidden);
+    if (document.hidden) busking.stop();
     void player.suspend(document.hidden);
   });
   player.suspend(document.hidden);
@@ -59,6 +71,6 @@ export function setupAudio(t) {
   sync();
   void player.enable(true);
   localize();
-  return { localize, step(terrain) { void footsteps.play(terrain); },
+  return { localize, busking, step(terrain) { void footsteps.play(terrain); },
     update(next) { context = next; sync(); } };
 }

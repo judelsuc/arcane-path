@@ -1,6 +1,6 @@
 import { journeyDate } from "./travel.mjs";
 import { skyState } from "./sky.mjs";
-import { eatSurvival, sleepSurvival, restSurvival, characterProfile } from "./survival.mjs";
+import { eatSurvival, sleepSurvival, restSurvival, characterProfile, canEat } from "./survival.mjs";
 
 export function validateEconomy(data) {
   const positive = n => Number.isFinite(n) && n > 0;
@@ -89,6 +89,22 @@ export function localMeals(info, data) {
     info.longitude >= west && info.longitude <= east && info.latitude >= south && info.latitude <= north);
 }
 
+function usablePoi({ tags = {} }) {
+  return !["private", "no"].includes(tags.access) &&
+    (!tags.disused || tags.disused === "no") && (!tags.abandoned || tags.abandoned === "no");
+}
+
+export function mealOptions(cell, info, data) {
+  if (!canEat(cell) || cell.unavailable) return [];
+  const basic = { id: "basic-meal", kind: "basic", mealUnits: 1, reserveKcal: 900 };
+  const restaurants = [...new Map((cell.pois ?? []).filter(p => usablePoi(p) &&
+    /^(node|way|relation)\/\d+$/.test(p.osmId) &&
+    ["restaurant", "fast_food", "cafe", "food_court"].includes(p.tags?.amenity))
+    .map(p => [p.osmId, p])).values()];
+  return [basic, ...localMeals(info, data).map(meal => ({ ...meal, kind: "specialty" })),
+    ...restaurants.map(venue => ({ ...basic, id: `basic-meal@${venue.osmId}`, kind: "restaurant", venue }))];
+}
+
 export function marketPrice(cell, units, data, info) {
   if (!Number.isFinite(units) || units <= 0) throw new Error("Invalid price units.");
   const codes = [...new Set(cell.countryCodes ?? [])];
@@ -127,10 +143,8 @@ export function refreshNightRest(savedEconomy, currentEconomy) {
 }
 
 export function shelters(cell) {
-  return (cell.pois ?? []).filter(p => {
+  return (cell.pois ?? []).filter(p => usablePoi(p)).filter(p => {
     const tags = p.tags ?? {};
-    if (["private", "no"].includes(tags.access) ||
-        (tags.disused && tags.disused !== "no") || (tags.abandoned && tags.abandoned !== "no")) return false;
     return ["hotel", "hostel", "guest_house", "motel", "alpine_hut"].includes(tags.tourism) ||
       (["shelter", "wilderness_hut"].includes(tags.amenity ?? tags.tourism) && tags.fee === "no");
   }).map(p => ({ ...p, free: p.tags.fee === "no" }));
@@ -166,8 +180,9 @@ function charge(state, cents) {
 }
 
 export function buyMeal(state, cell, info, mealId, survival, data) {
-  const meal = localMeals(info, data).find(m => m.id === mealId);
-  if (!meal) throw new Error("No sourced local meal available.");
+  if (!canEat(cell)) throw new Error("Meals are only available in settlement cells.");
+  const meal = mealOptions(cell, info, data).find(m => m.id === mealId);
+  if (!meal) throw new Error("No local meal available in the player's cell.");
   const paid = charge(state, marketPrice(cell, meal.mealUnits, data, info).cents);
   const next = eatSurvival(paid, cell, { ...survival, meal_kcal: meal.reserveKcal });
   return finishAction(state, next, info, data, { sheltered: true });

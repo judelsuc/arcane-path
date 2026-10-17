@@ -1104,3 +1104,31 @@ This file records additions to the design without modifying the source PDF,
   preparation time in public/release.json, protected by preview authentication.
   Use a deploy-* Git tag, push checkpoint, verify live manifest and service
   before reporting success. Never include credentials in release metadata.
+
+## R-070 — Audible street performance
+
+- **User report:** Street-music minigame has neither sound nor music.
+- **Implemented:** Original synthesized melody, bass and offbeat accompaniment,
+  scheduled on the existing eight visual beat timestamps using Web Audio.
+  Distinct successful/failed tap notes. No downloaded backing track dependency
+  or change to score, tolerance, upfront cost or rewards.
+- **Controls:** Start resumes audio from the player's gesture; shared Options
+  mute/volume. Cancellation, finish, reset and hidden tab cancel scheduled notes.
+  Delayed unlocks cannot revive a cancelled session. Surface audio errors in
+  the dialog and console; retain fully usable visual play without audio.
+
+## R-071 — Food in every settlement, with real mapped venues for immersion
+
+- **Approved user decision:** Always propose food; offer known restaurants
+  when present for immersion.
+- **Implemented:** A fictional basic paid meal on every available settlement
+  cell, independent of the four curated specialty areas. Same national-price
+  helper, 900 kcal reserve and normal meal time/costs; no free food or revival.
+  Existing specialty entries remain geographically sourced and unchanged.
+- **Immersion:** Additional basic-meal choices use current-cell public active
+  OSM restaurant/cafe/fast-food/food-court names and source links. Deduplicate
+  OSM IDs; exclude private, forbidden, disused and abandoned venues. Engine
+  rejects stale/nonlocal venue IDs. No fabricated venue, menu, opening hours,
+  actual portion, price or guarantee of service.
+- Legacy saved economies immediately gain the generic option without replacing
+  their pinned specialty catalogue or rules. No remote restaurant interaction.

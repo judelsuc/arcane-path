@@ -23,7 +23,7 @@ import { tarotArt } from "./tarot-art.mjs";
 import { trailClue } from "./trail-actions.mjs";
 import { setupNeedsNotices } from "./needs-notices.mjs";
 
-export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange }) {
+export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio }) {
   const start = document.querySelector("#start-travel");
   const resume = document.querySelector("#resume-travel");
   const saveStatus = document.querySelector("#journey-save-status");
@@ -197,6 +197,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     },
   });
   const musicUI = setupMusic(t, {
+    audio: musicAudio,
     available: () => {
       const current = economyContext();
       return Boolean(current && !current.blocked && current.cell.terrain === "place");
