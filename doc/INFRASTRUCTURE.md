@@ -1,5 +1,20 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - separation des dialogues J et I
+
+- **17 octobre 2026** : runtime `09cfca4`, tag
+  `deploy-2026-10-17-clue-dialogs`, developpement `8adb605`,
+  base live `7a24962`. Trois assets et manifeste, sans redemarrage ni
+  modification des sauvegardes.
+- J conserve les recherches de nouveaux indices et l'historique. Les
+  actions pour montrer les fragments/photos collectes sont dans I.
+  Titres, explications et aide des raccourcis corriges en FR/EN.
+- 41 tests cibles passent, dont recherche dans J puis reconnaissance du
+  fragment dans I, couts, suggestions incertaines et reprise sauvegardee.
+  Manifeste, trois assets HTTPS et API jeu verifies.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-09cfca4.tar.gz`
+  (0600). Aucun changement des probabilites d'accueil.
+
 ## Derniere livraison - cache immediat et couleurs des resultats
 
 - **17 octobre 2026** : runtime `7a24962`, tag
