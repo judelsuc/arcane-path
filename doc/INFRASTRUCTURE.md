@@ -1,5 +1,22 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - recherche d'hebergements annulable
+
+- **17 octobre 2026** : runtime `45cc324`, tag
+  `deploy-2026-10-17-lodging-search-ui`, developpement `131b991`,
+  base live `9616997`. Deux modules et manifeste uniquement ; aucun
+  redemarrage serveur ni changement des sauvegardes.
+- La recherche automatique affiche un bouton actif pour annuler, un delai
+  maximal explicite de quatre minutes et une confirmation d'annulation.
+  La relance est immediate ; une ancienne reponse ne termine pas la
+  nouvelle recherche. Fermer le menu annule toujours la recherche client.
+- 31 tests cibles passent dans le developpement et le runtime isole.
+  Navigateur : bouton actif, annulation, relance, retour du libelle et
+  raccourci numerique verifies avec une source deliberement en attente.
+- Manifeste et deux modules HTTPS compares au runtime teste ; API jeu
+  verifiee. Retour code :
+  `/home/ubuntu/arcane-path-before-deploy-45cc324.tar.gz` (0600).
+
 ## Derniere livraison - photo aerienne IGN de secours
 
 - **17 octobre 2026** : runtime `9616997`, tag
