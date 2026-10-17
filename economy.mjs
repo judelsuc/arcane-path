@@ -1,6 +1,7 @@
 import { journeyDate } from "./travel.mjs";
 import { skyState } from "./sky.mjs";
 import { eatSurvival, sleepSurvival, restSurvival, faintSurvival, characterProfile, canEat } from "./survival.mjs";
+import { applyWeatherExposure } from "./weather-effects.mjs";
 
 export function validateEconomy(data) {
   const positive = n => Number.isFinite(n) && n > 0;
@@ -197,22 +198,27 @@ export function didFaint(previous, next) {
 export function finishAction(previous, next, info, data,
   { sheltered = false, random = Math.random, survival } = {}) {
   if (previous.ended) throw new Error("This journey has ended.");
+  if (!sheltered) next = applyWeatherExposure(previous, next, info);
+  if (next.reserveKcal <= 0) next = { ...next, ended: "hunger" };
   const minutes = next.elapsedMinutes - previous.elapsedMinutes;
   let exposed = sheltered ? 0 : nightMinutes(previous, minutes, info);
   const fatigue = Math.min(100, next.fatigue + exposed / 60 * data.rules.outdoorFatiguePerNightHour);
   next = { ...next, fatigue };
-  if (fatigue >= 100 && next.ended !== "hunger") {
+  const sleepy = next.ended === "sleep";
+  if ((fatigue >= 100 || sleepy) && next.ended !== "hunger") {
     const startedMinutes = next.elapsedMinutes;
     const chance = faintingRisk(previous, info, data, sheltered);
     const robbed = collapseDraw(next, "robbery") < chance;
     const stolenCents = robbed
       ? Math.min(Math.floor(next.walletCents / 2),
         Math.ceil(next.walletCents * (0.25 + collapseDraw(next, "loss") * 0.25))) : 0;
-    const recovered = faintSurvival(next, survival);
+    const unconscious = faintSurvival(next, survival);
+    const recovered = sheltered ? unconscious : applyWeatherExposure(next, unconscious, info);
     if (!sheltered) exposed += nightMinutes(next, 8 * 60, info);
     next = { ...recovered, walletCents: next.walletCents - stolenCents,
       faints: (next.faints ?? 0) + 1,
       lastFaint: { startedMinutes, finishedMinutes: recovered.elapsedMinutes,
+        ...(sleepy ? { reason: "sleep" } : {}),
         col: next.col, row: next.row, sheltered, chance, robbed, stolenCents,
         walletBeforeCents: next.walletCents } };
   }
@@ -236,6 +242,7 @@ export function validateFainting(state) {
       !Number.isSafeInteger(f.col) || Math.abs(Math.floor(f.col / 8)) > 1000 ||
       !Number.isSafeInteger(f.row) || Math.abs(Math.floor(f.row / 8)) > 1000 ||
       typeof f.sheltered !== "boolean" || typeof f.robbed !== "boolean" ||
+      (f.reason !== undefined && f.reason !== "sleep") ||
       !Number.isFinite(f.chance) || f.chance <= 0 || f.chance > (f.sheltered ? 0.075 : 0.45) + 1e-9 ||
       !integer(f.walletBeforeCents) || !integer(f.stolenCents) ||
       (!f.robbed && f.stolenCents !== 0) ||
@@ -276,7 +283,10 @@ export function sleepEconomy(state, cell, info, shelterId, survival, data) {
 export function restEffect(state, info, survival, data) {
   const night = nightMinutes(state, survival.rest_minutes, info) / survival.rest_minutes;
   const recovery = survival.rest_fatigue_recovery * (1 - night * (1 - data.rules.nightRestRecoveryFactor));
-  return { recovery, fatigue: Math.min(100, Math.max(0, state.fatigue - recovery) +
+  const rested = { ...state, elapsedMinutes: state.elapsedMinutes + survival.rest_minutes,
+    fatigue: Math.max(0, state.fatigue - recovery) };
+  const exposed = applyWeatherExposure(state, rested, info);
+  return { recovery, fatigue: Math.min(100, exposed.fatigue +
     night * survival.rest_minutes / 60 * data.rules.outdoorFatiguePerNightHour) };
 }
 

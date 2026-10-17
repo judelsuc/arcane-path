@@ -2,7 +2,7 @@ import { trailTarget, atTrailTarget } from "./trail.mjs";
 import { distanceMeters } from "./cell-content.mjs";
 import { createContentService } from "./cell-content.mjs";
 import { openContentCache } from "./content-cache.mjs";
-import { clueActions, CLUE_ACTIONS } from "./trail-actions.mjs";
+import { clueActions, CLUE_ACTIONS, searchClueOptions, prepareClueSearch } from "./trail-actions.mjs";
 import { marketPrice } from "./economy.mjs";
 import { createParentPathLoader } from "./parent-path.mjs";
 import { parentSighting } from "./parent-story.mjs";
@@ -58,6 +58,7 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
   const photo = document.querySelector("#trail-clue-photo");
   const ask = document.querySelector("#hint-ask");
   let directionsOutcome;
+  let searching = false, searchGeneration = 0, preparedPhoto, photoUnavailable = false;
   let photoKey, objectUrl, photoGeneration = 0, service;
   const pathLoader = createParentPathLoader({ onUpdate: renderPath });
   function renderPath() {
@@ -84,30 +85,59 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     objectUrl = photoKey = undefined;
     photo.replaceChildren();
   }
-  async function renderPhoto(state, discovery) {
-    const place = discovery.nextName
-      ? state.trail.stages[discovery.step + 1] : state.trail.stages[discovery.step];
-    const key = `${discovery.step}:${place.osmId ?? `geoname/${place.geonameId}`}:${document.documentElement.lang}`;
-    if (photoKey === key) return;
-    clearPhoto();
-    photoKey = key;
-    const generation = photoGeneration;
-    paragraph(photo, t("cluePhotoLoading"));
+  async function resolveCluePhoto(state, index) {
+    const place = state.trail.stages[index + 1] ?? state.trail.stages[index];
     const step = 250 / 6371008.8 * 180 / Math.PI;
     const lonStep = step / Math.cos(place.latitude * Math.PI / 180);
     const info = { latitude: place.latitude, longitude: place.longitude, meters: 250,
       bounds: { west: place.longitude - lonStep / 2, east: place.longitude + lonStep / 2,
         south: place.latitude - step / 2, north: place.latitude + step / 2 },
       contentSources: [], pois: [], names: [] };
+    service ??= createContentService({ cache: openContentCache(), maxPhotos: 1 });
+    const result = await service.resolve(info, document.documentElement.lang, "photo");
+    if (result.errors?.length) console.warn("Clue photo sources:", result.errors);
+    const content = result.content;
+    if (!content?.blob || content.nature) return null;
+    for (const url of [content.sourceUrl, content.licenseUrl]) {
+      if (new URL(url).protocol !== "https:") throw new Error("Unsafe clue-photo source.");
+    }
+    if (typeof createImageBitmap === "function") {
+      const bitmap = await createImageBitmap(content.blob);
+      bitmap.close();
+    } else {
+      const url = URL.createObjectURL(content.blob);
+      try {
+        const image = new Image();
+        image.src = url;
+        await image.decode();
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+    return content;
+  }
+  async function availablePhoto(state, index) {
     try {
-      service ??= createContentService({ cache: openContentCache(), maxPhotos: 1 });
-      const result = await service.resolve(info, document.documentElement.lang, "photo");
+      return await resolveCluePhoto(state, index);
+    } catch (error) {
+      console.error("Clue photo unavailable:", error);
+      return null;
+    }
+  }
+  async function renderPhoto(state, discovery) {
+    const key = `${discovery.step}:${document.documentElement.lang}`;
+    if (photoKey === key) return;
+    clearPhoto();
+    photoKey = key;
+    const generation = photoGeneration;
+    paragraph(photo, t("cluePhotoLoading"));
+    try {
+      const content = preparedPhoto?.step === discovery.step
+        ? preparedPhoto.content : await availablePhoto(state, discovery.step);
       if (generation !== photoGeneration) return;
       photo.replaceChildren();
-      const content = result.content;
-      if (!content?.blob || content.nature) {
+      if (!content) {
         paragraph(photo, t("cluePhotoMissing"));
-        if (result.errors?.length) console.warn("Clue photo unavailable:", result.errors);
         return;
       }
       objectUrl = URL.createObjectURL(content.blob);
@@ -235,7 +265,7 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     for (const [index, facts] of trail.history.entries()) {
       const item = document.createElement("li");
       if (facts.next && modern) {
-        paragraph(item, `${t(`clueAction.${facts.clueKind}`)} — ${t("clueHistory", {
+        paragraph(item, `${t(`clueFound.${facts.clueKind}`)} — ${t("clueHistory", {
           place: facts.place, next: facts.next.name,
         })}`);
         if (facts.clueKind === "discuss") paragraph(item, parentClueText(state, {
@@ -253,13 +283,58 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     const actions = document.querySelector("#trail-actions");
     actions.replaceChildren();
     if (modern && !atTrailTarget(state) && !trail.completed) paragraph(actions, t("clueTravelFirst"));
-    for (const kind of clueActions(state)) {
+    const available = clueActions(state);
+    const options = searchClueOptions(state, current.cell, current.info, current.data);
+    if (options.length) {
+      const item = document.createElement("div"), button = document.createElement("button");
+      button.id = "clue-investigate";
+      button.type = "button";
+      button.textContent = t(searching ? "clueSearchLoading" : "clueSearch");
+      button.disabled = blocked || searching;
+      button.addEventListener("click", async () => {
+        const latest = context();
+        if (searching || !latest || latest.blocked || latest.state !== state) return;
+        searching = true;
+        photoUnavailable = false;
+        const generation = ++searchGeneration;
+        document.querySelector("#trail-action-error").textContent = "";
+        localize();
+        try {
+          const found = await prepareClueSearch(state, current.cell, current.info, current.data, availablePhoto);
+          if (generation !== searchGeneration) return;
+          const latest = context();
+          if (!latest || latest.blocked || latest.state !== state) return;
+          preparedPhoto = found.content ? { step: state.trail.index, content: found.content } : undefined;
+          photoUnavailable = found.photoUnavailable;
+          discover(found.kind);
+        } catch (error) {
+          console.error("Clue search failed:", error);
+          document.querySelector("#trail-action-error").textContent = error.message;
+        } finally {
+          if (generation === searchGeneration) {
+            searching = false;
+            localize();
+          }
+        }
+      });
+      item.append(button);
+      paragraph(item, t("clueSearchCosts"));
+      for (const kind of options) {
+        const rule = CLUE_ACTIONS[kind];
+        paragraph(item, `${t(`clueFound.${kind}`)} — ${t("clueCost", {
+          minutes: rule.minutes, fatigue: rule.fatigue, kcal: rule.kcal,
+          money: ((rule.mealUnits ? marketPrice(current.cell, rule.mealUnits, current.data, current.info).cents : 0) / 100).toFixed(2),
+        })}`);
+      }
+      actions.append(item);
+    }
+    for (const kind of available.filter(kind => ["directions", "rumor"].includes(kind))) {
       const rule = CLUE_ACTIONS[kind];
       const button = document.createElement("button");
       button.id = `clue-${kind}`;
       button.type = "button";
       button.textContent = t(`clueAction.${kind}`);
-      button.disabled = blocked;
+      button.disabled = blocked || searching;
       button.addEventListener("click", () => {
         document.querySelector("#trail-action-error").textContent = "";
         discover(kind);
@@ -274,8 +349,9 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     const discovery = trail.discovery;
     document.querySelector("#trail-discovery").hidden = !discovery;
     if (discovery) {
-      document.querySelector("#trail-discovery-title").textContent = t(`clueAction.${discovery.kind}`);
-      document.querySelector("#trail-discovery-text").textContent = parentClueText(state, discovery, t);
+      document.querySelector("#trail-discovery-title").textContent = t(`clueFound.${discovery.kind}`);
+      document.querySelector("#trail-discovery-text").textContent =
+        `${photoUnavailable ? `${t("cluePhotoFallback")} ` : ""}${parentClueText(state, discovery, t)}`;
       photo.hidden = discovery.kind !== "photo";
       if (discovery.kind === "photo") void renderPhoto(state, discovery);
       else clearPhoto();
@@ -316,6 +392,12 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     dialog.close();
     document.querySelector("#restart-travel").click();
   });
+  dialog.addEventListener("close", () => {
+    if (searching) {
+      searchGeneration++;
+      searching = false;
+    }
+  });
   dialog.addEventListener("keydown", event => {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -323,6 +405,10 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     }
   });
   return { open, localize, reset() {
+    searchGeneration++;
+    searching = false;
+    preparedPhoto = undefined;
+    photoUnavailable = false;
     pathLoader.stop();
     dialog.close();
     hintDialog.close();

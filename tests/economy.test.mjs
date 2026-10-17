@@ -284,7 +284,7 @@ test("one nighttime rest at 90 fatigue now ends at 81; legacy zero-recovery rule
   const legacy = { ...data, rules: { ...data.rules, nightRestRecoveryFactor: 0 } };
   assert.equal(restEconomy(state, info, survival, legacy).fatigue, 91);
   assert.equal(next.ended, null);
-  assert.equal(next.awakeHours, 16.5);
+  assert.equal(next.awakeHours, 17);
   for (const hour of [0, 5, 6, 12, 17, 18, 22, 23]) {
     for (const fatigue of [0, 10, 90, 99.5]) {
       const before = { ...start(hour), fatigue, awakeHours: 16 };
@@ -292,7 +292,10 @@ test("one nighttime rest at 90 fatigue now ends at 81; legacy zero-recovery rule
         restEconomy(before, info, survival, data).fatigue);
     }
   }
-  assert.equal(restEconomy({ ...state, awakeHours: 31.75 }, info, survival, data).ended, "sleep");
+  const sleepy = restEconomy({ ...state, awakeHours: 31.75 }, info, survival, data);
+  assert.equal(sleepy.ended, null);
+  assert.equal(sleepy.lastFaint.reason, "sleep");
+  assert.equal(sleepy.elapsedMinutes, 510);
 });
 
 test("approved nighttime-rest migration changes only the one coefficient, once, on legacy resume", () => {

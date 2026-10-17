@@ -24,7 +24,7 @@ export function setupNeedsNotices(t, { context }) {
     if (!dialog.open || !kind) return;
     const state = context()?.state;
     const faint = state?.lastFaint;
-    const faintText = faint ? `${t("faintingText")} ${t(faint.robbed ? "faintingRobbed" : "faintingSafe", {
+    const faintText = faint ? `${t(faint.reason === "sleep" ? "sleepFaintingText" : "faintingText")} ${t(faint.robbed ? "faintingRobbed" : "faintingSafe", {
       money: (faint.stolenCents / 100).toFixed(2), risk: Math.round(faint.chance * 100),
     })}` : "";
     document.querySelector("#needs-notice-title").textContent = t(
