@@ -230,6 +230,29 @@ joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
   complete : itineraires pietons, algorithme complet du parent et validateur
   de resolubilite restent explicitement non implementes.
 
+### Checkpoint deploye : evanouissement au lieu de fatigue fatale
+
+- **17 octobre 2026** : commit `b6cd3e130976d66550aa311b3908ae7509aa5d53`,
+  tag pousse `deploy-2026-10-17-fainting`.
+- A 100 fatigue : huit heures d'inconscience dans la meme case, retour a
+  exactement 40 fatigue ; faim et metabolisme continuent, exposition nocturne
+  comptabilisee. Vol fictif selon lieu/tarots, 25--50% de la bourse,
+  resultat deterministe sauvegarde. Les anciennes parties terminees restent
+  terminees. Actions interrompues sans indices/gains/accueil apres le reveil.
+- 212 tests JavaScript passes. Aucun changement Python depuis les 109 tests
+  passes du checkpoint precedent. Navigateur : mouvement, evanouissement,
+  480 minutes supplementaires, fatigue 40, vol persiste et popup FR verifies ;
+  sauvegarde locale precedente restauree apres le test.
+- Service jeu et Nginx actifs ; API voyage 200. Manifeste HTTPS authentifie
+  egal au commit attendu. Modules economie, survie, notifications, traduction
+  et voyage effectivement servis en 200 avec les nouvelles regles.
+- Archive de retour code hors cache :
+  `/home/ubuntu/arcane-path-before-deploy-b6cd3e1.tar.gz`, mode 0600.
+  Lien du cache et base des departs conserves ; aucune nouvelle ressource.
+- Priorite enregistree : finir la couche 9 (chemins A* bornes sur la grille,
+  algorithme parent et resolubilite), puis passer directement a la couche 15
+  (photos et carnet). Ce checkpoint ne termine pas la couche 9.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026
