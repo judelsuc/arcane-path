@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { startSurvival, walkSurvival } from "../survival.mjs";
-import { validateEconomy, drawTarot, startEconomy, localMeals, mealOptions, marketPrice, shelters, restEffect, refreshNightRest,
+import { validateEconomy, drawTarot, startEconomy, localMeals, mealOptions, mealOffers, marketPrice, shelters, restEffect, refreshNightRest,
   nightMinutes, finishAction, buyMeal, sleepEconomy, restEconomy,
   dailyTarotPending, acknowledgeDailyTarot, refreshPricing, refreshMeals } from "../economy.mjs";
 
@@ -125,12 +125,14 @@ test("national prices use comparable dollar values and missing countries use the
 test("paid meal restores reserve once, costs time and money, and cannot be bought outside town or without funds", () => {
   const state = { ...start(), reserveKcal: 300 };
   const next = buyMeal(state, town, info, "aligot", survival, data);
-  assert.equal(next.walletCents, state.walletCents - 560);
+  const offer = mealOffers(state, town, info, data).find(m => m.id === "aligot");
+  assert.equal(next.walletCents, state.walletCents - offer.cents);
   assert.equal(next.meals, 1);
   assert.equal(next.elapsedMinutes, 20);
-  assert.ok(next.reserveKcal > 1100);
+  assert.equal(next.reserveKcal, Math.min(survival.reserve_kcal, 300 + offer.reserveKcal) -
+    survival.basal_kcal_per_hour * survival.meal_minutes / 60);
   assert.equal(state.reserveKcal, 300);
-  assert.throws(() => buyMeal({ ...state, walletCents: 559 }, town, info, "aligot", survival, data), /funds/);
+  assert.throws(() => buyMeal({ ...state, walletCents: offer.cents - 1 }, town, info, "aligot", survival, data), /funds/);
   assert.throws(() => buyMeal(state, { terrain: "forest" }, info, "aligot", survival, data), /settlement/);
   assert.throws(() => buyMeal(state, town, info, "poisson-cru", survival, data), /local meal/);
 });
@@ -141,10 +143,12 @@ test("every settlement offers a priced basic meal, including Engins and legacy e
   assert.deepEqual(mealOptions(town, engins, data).map(m => m.id), ["basic-meal"]);
   const state = { ...start(), reserveKcal: 300 };
   const next = buyMeal(state, town, engins, "basic-meal", survival, data);
-  assert.equal(next.walletCents, state.walletCents - marketPrice(town, 1, data, engins).cents);
+  const offer = mealOffers(state, town, engins, data)[0];
+  assert.equal(next.walletCents, state.walletCents - offer.cents);
   assert.equal(next.elapsedMinutes - state.elapsedMinutes, survival.meal_minutes);
   assert.equal(next.meals, 1);
-  assert.ok(next.reserveKcal > 1100);
+  assert.equal(next.reserveKcal, Math.min(survival.reserve_kcal, 300 + offer.reserveKcal) -
+    survival.basal_kcal_per_hour * survival.meal_minutes / 60);
   assert.throws(() => buyMeal({ ...state, walletCents: 0 }, town, engins, "basic-meal", survival, data), /funds/);
   assert.deepEqual(mealOptions({ terrain: "forest" }, engins, data), []);
   assert.throws(() => buyMeal(state, { terrain: "forest" }, engins, "basic-meal", survival, data), /settlement/);
@@ -152,7 +156,7 @@ test("every settlement offers a priced basic meal, including Engins and legacy e
   assert.ok(mealOptions(town, info, data).some(m => m.id === "aligot"));
 });
 
-test("mapped restaurant offers use current-cell public active OSM venues, without changing meal costs or inventing specialties", () => {
+test("mapped restaurant offers use current-cell public active OSM venues without inventing specialties", () => {
   const venue = { osmId: "node/32", name: "Test café", tags: { amenity: "cafe" } };
   const cell = { ...town, pois: [venue, venue,
     { osmId: "way/33", tags: { amenity: "restaurant", access: "private" } },
@@ -164,8 +168,9 @@ test("mapped restaurant offers use current-cell public active OSM venues, withou
   const options = mealOptions(cell, info, data);
   assert.deepEqual(options.filter(m => m.kind === "restaurant").map(m => m.id), ["basic-meal@node/32"]);
   const state = { ...start(), reserveKcal: 300 };
-  assert.deepEqual(buyMeal(state, cell, info, "basic-meal@node/32", survival, data),
-    buyMeal(state, town, info, "basic-meal", survival, data));
+  const offer = mealOffers(state, cell, info, data).find(m => m.id === "basic-meal@node/32");
+  const bought = buyMeal(state, cell, info, offer.id, survival, data);
+  assert.equal(bought.walletCents, state.walletCents - offer.cents);
   assert.throws(() => buyMeal(state, town, info, "basic-meal@node/32", survival, data), /local meal/);
   assert.deepEqual(mealOptions({ ...cell, unavailable: true }, info, data), []);
 });
@@ -240,7 +245,7 @@ test("only current-cell mapped accommodation and explicitly free shelters are us
 test("estimated meal quotes and actual charges use exactly the same cell variation", () => {
   const cell = { terrain: "place" };
   const state = start();
-  const quote = marketPrice(cell, 1, data, info);
+  const quote = mealOffers(state, cell, info, data).find(m => m.id === "aligot");
   assert.equal(buyMeal(state, cell, info, "aligot", survival, data).walletCents,
     state.walletCents - quote.cents);
 });

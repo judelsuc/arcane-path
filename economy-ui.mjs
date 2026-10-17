@@ -1,4 +1,4 @@
-import { mealOptions, marketPrice, shelters, tarotEventChance } from "./economy.mjs";
+import { mealOffers, marketPrice, shelters, tarotEventChance } from "./economy.mjs";
 import { HOSPITALITY_RULES, hospitalityStatus, worshipPlaces } from "./hospitality.mjs";
 
 export function setupEconomyUI(t, { context, act, resolveCountry }) {
@@ -33,6 +33,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
         delta: `${quote.variation >= 0 ? "+" : ""}${(quote.variation * 100).toFixed(2)}` });
     if (resolving) document.querySelector("#economy-pricing").textContent = t("priceCountryLoading");
     else if (countryError) document.querySelector("#economy-pricing").textContent += ` ${t("priceCountryError", { error: countryError })}`;
+    if (mode === "eat") document.querySelector("#economy-pricing").textContent += ` ${t("mealDailyOffers")}`;
     const priceSource = document.querySelector("#economy-price-source");
     priceSource.href = data.pricing.source;
     document.querySelector("#economy-title").textContent = t(mode === "eat" ? "mealTitle" : "sleepTitle");
@@ -77,7 +78,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
       return p;
     };
     if (mode === "eat") {
-      const meals = mealOptions(cell, info, data);
+      const meals = mealOffers(state, cell, info, data);
       document.querySelector("#economy-empty").hidden = meals.length > 0;
       for (const meal of meals) {
         const restaurant = meal.kind === "restaurant";
@@ -86,7 +87,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
         let note = restaurant ? t("restaurantMealNote") : meal.kind === "basic" ? t("basicMealNote") : meal[language];
         if (meal.kind === "specialty" && meal.area) note = `${t(
           meal.scope === "national" ? "mealNationalOrigin" : "mealRegionalOrigin", { area: meal.area })} ${note}`;
-        add(title, marketPrice(cell, meal.mealUnits, data, info).cents,
+        add(title, meal.cents,
           { kind: "meal", id: meal.id },
           `${note} ${t("mealEffect", { kcal: meal.reserveKcal, minutes: survival.meal_minutes })}`,
           restaurant ? `https://www.openstreetmap.org/${meal.venue.osmId}` : meal.source,

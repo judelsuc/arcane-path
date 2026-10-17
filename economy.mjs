@@ -135,6 +135,23 @@ export function marketPrice(cell, units, data, info) {
     estimated: !market && Boolean(data.pricing.fallback) };
 }
 
+export function mealOffers(state, cell, info, data) {
+  const meals = mealOptions(cell, info, data);
+  if (!meals.length) return [];
+  const day = journeyDate(state).toISOString().slice(0, 10);
+  const baseCents = marketPrice(cell, 1, data, info).cents;
+  return meals.map(meal => {
+    const identity = JSON.stringify([state.startedAt, state.col, state.row, day, meal.id]);
+    let hash = 2166136261;
+    for (const char of identity) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0;
+    hash = Math.imul(hash ^ hash >>> 16, 0x85ebca6b);
+    hash = Math.imul(hash ^ hash >>> 13, 0xc2b2ae35);
+    const factor = 0.7 + ((hash ^ hash >>> 16) >>> 0) / 2 ** 32 * 0.8;
+    const cents = marketPrice(cell, meal.mealUnits * factor, data, info).cents;
+    return { ...meal, cents, reserveKcal: Math.round(900 * cents / baseCents) };
+  });
+}
+
 export function refreshPricing(savedEconomy, currentEconomy) {
   validateEconomy(currentEconomy);
   return validateEconomy({ ...structuredClone(savedEconomy), pricing: structuredClone(currentEconomy.pricing) });
@@ -261,9 +278,9 @@ function charge(state, cents) {
 
 export function buyMeal(state, cell, info, mealId, survival, data) {
   if (!canEat(cell)) throw new Error("Meals are only available in settlement cells.");
-  const meal = mealOptions(cell, info, data).find(m => m.id === mealId);
+  const meal = mealOffers(state, cell, info, data).find(m => m.id === mealId);
   if (!meal) throw new Error("No local meal available in the player's cell.");
-  const paid = charge(state, marketPrice(cell, meal.mealUnits, data, info).cents);
+  const paid = charge(state, meal.cents);
   const next = eatSurvival(paid, cell, { ...survival, meal_kcal: meal.reserveKcal });
   return finishAction(state, next, info, data, { sheltered: true, survival });
 }
