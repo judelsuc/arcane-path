@@ -4,6 +4,10 @@ Original prompts for **Les Arcanes du Chemin**. Music is intended for Suno;
 sound-effect prompts can also be used in a dedicated SFX generator.
 These are production briefs, not generated audio or runtime integration.
 
+Download generated tracks into [public/audio/music/](../public/audio/music/),
+and individual sound effects into [public/audio/sfx/](../public/audio/sfx/).
+Use the prompt IDs as filenames (for example, `music-road-day.wav`).
+
 ## Files
 
 - [Soundtracks](./soundtracks.md): instrumental 8-bit music, including the
