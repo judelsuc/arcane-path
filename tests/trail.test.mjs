@@ -5,26 +5,28 @@ import { createTrail, trailTarget, atTrailTarget, witnessFacts, interviewTrail,
   validateTownTrail, loadTownTrail } from "../trail.mjs";
 import { startEconomy } from "../economy.mjs";
 import { startSurvival } from "../survival.mjs";
-import { trailDirections, playerHint, parentClueText } from "../trail-ui.mjs";
+import { trailReminder, playerHint, parentClueText } from "../trail-ui.mjs";
 import { parentSighting } from "../parent-story.mjs";
 import { translate } from "../i18n.mjs";
 
-test("trail directions name the correct compass direction without negative or zero offsets", () => {
-  const state = { col: 14, row: 10 };
+test("trail reminders retain only the known lead, never live directions, distances or future clues", () => {
   for (const locale of ["fr", "en"]) {
     const t = (key, params) => translate(locale, key, params);
-    for (const east of [-2, 0, 2]) for (const south of [-1, 0, 1]) {
-      const text = trailDirections(state, { col: 14 + east, row: 10 + south }, t);
-      const expected = [];
-      if (east) expected.push(t(east > 0 ? "trailEast" : "trailWest", { count: Math.abs(east) }));
-      if (south) expected.push(t(south > 0 ? "trailSouth" : "trailNorth", { count: Math.abs(south) }));
-      assert.equal(text, expected.length ? expected.join(t("trailDirectionJoin")) : t("trailAlreadyHere"));
-      assert.doesNotMatch(text, /-\d|\b0\b/);
-    }
+    const trail = townTrailFixture(), state = { col: 14, row: 10, trail };
+    const before = structuredClone(state);
+    assert.equal(trailReminder(state, t), t("trailKnownDestination", { place: "Town 1" }));
+    assert.equal(trailReminder({ ...state, col: -166 }, t), trailReminder(state, t));
+    assert.doesNotMatch(trailReminder(state, t).replace("Town 1", ""), /\d|km|→|↑|https:/);
+    assert.equal(trailReminder({ ...state, trail: { ...trail, discovery: {
+      pending: true, venue: "Known library", nextName: "SECRET CITY",
+    } } }, t), t("clueAskDirections", { venue: "Known library" }));
+    assert.equal(trailReminder({ ...state, trail: { ...trail, completed: true, index: 10 } }, t),
+      t("trailReunion", { parent: trail.parentName }));
+    const legacy = start();
+    assert.equal(trailReminder(legacy, t),
+      t("trailKnownDestination", { place: legacy.trail.stages[0].name }));
+    assert.deepEqual(state, before);
   }
-  assert.equal(trailDirections(state, { col: 15, row: 9 },
-    (key, params) => translate("fr", key, params)),
-  "1 case(s) vers l'est (→) et 1 case(s) vers le nord (↑)");
 });
 
 const survival = JSON.parse(readFileSync(new URL("../public/config.json", import.meta.url))).survival;
