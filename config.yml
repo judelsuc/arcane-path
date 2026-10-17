@@ -3,7 +3,7 @@ map:
   water_coverage_percent: 50
 photos:
   # Maximum photos downloaded per cell (1-20).
-  max_per_cell: 5
+  max_per_cell: 10
 survival:
   reserve_kcal: 1800
   basal_kcal_per_hour: 40
