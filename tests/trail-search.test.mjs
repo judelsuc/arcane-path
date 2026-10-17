@@ -399,6 +399,7 @@ for (const locale of ["fr", "en"]) {
       children = []; events = {}; textContent = ""; open = false;
       nextElementSibling = { hidden: false };
       addEventListener(type, listener) { this.events[type] = listener; }
+      setAttribute(name, value) { this[name] = value; }
       append(...children) { this.children.push(...children); }
       replaceChildren() { this.children = []; }
       showModal() { this.open = true; }
@@ -434,6 +435,9 @@ for (const locale of ["fr", "en"]) {
     });
     const texts = node => [node.textContent, ...node.children.flatMap(texts)];
     ui.open();
+    assert.equal(element("#trail-investigation-page").hidden, true);
+    element("#trail-section-actions").events.click();
+    assert.equal(element("#trail-evidence-page").hidden, true);
     const searchItem = element("#trail-actions").children.find(c =>
       c.children.some(b => b.id === "clue-field-search"));
     assert.equal(searchItem.children[0].id, "clue-field-search");
@@ -446,6 +450,7 @@ for (const locale of ["fr", "en"]) {
     await element("#trail-actions").children.find(c => c.children.some(b => b.id === "clue-field-search"))
       .children.find(b => b.id === "clue-field-search").events.click();
     assert.equal(state.elapsedMinutes, 30);
+    assert.equal(element("#trail-investigation-page").hidden, true);
     assert.match(element("#trail-target").textContent, /Se/);
     assert.ok(element("#trail-history").children[0].children.every(b => !b.events.click));
     element("#trail-dialog").close();
@@ -461,6 +466,8 @@ for (const locale of ["fr", "en"]) {
     state = validateSave(JSON.parse(JSON.stringify(save(state)))).state;
     ui.reset();
     ui.open();
+    assert.ok(element("#hint-town").children.some(option => option.textContent.includes("Seaside")));
+    assert.ok(element("#hint-town").children.every(option => !option.textContent.includes("Secret Town")));
     const text = texts(element("#trail-history")).join(" ");
     assert.match(text, /Seaside/);
     assert.match(text, locale === "fr" ? /non confirmé/ : /Unconfirmed/);

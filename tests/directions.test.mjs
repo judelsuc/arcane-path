@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { askDirections, directionsChance } from "../directions.mjs";
+import { askDirections, directionsChance, citedTowns } from "../directions.mjs";
 import { startSurvival } from "../survival.mjs";
 import { startEconomy, finishAction } from "../economy.mjs";
 import { createSave, validateSave } from "../journey-save.mjs";
 import { createTrail } from "../trail.mjs";
-import { setupTrail } from "../trail-ui.mjs";
+import { setupTrail, citedTownDirections } from "../trail-ui.mjs";
 import { translate } from "../i18n.mjs";
 
 const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
@@ -18,6 +18,38 @@ const start = (hour = 12) => ({
 });
 const ask = (state, terrain = "place", roll = 0) =>
   askDirections(state, { terrain }, info, survival, economy, () => roll);
+
+test("town choices retain old witness suggestions without exposing uncollected future destinations", () => {
+  const stages = ["Visited", "CURRENT SECRET", "FUTURE SECRET"].map((name, i) => ({
+    name, latitude: 44 + i, longitude: 2,
+  }));
+  const proposed = { name: "Suggested town", latitude: 45.1, longitude: 2.1 };
+  const state = { trail: { index: 1, stages, history: [{ next: stages[1], elapsedMinutes: 30 }],
+    arrivals: [{ stage: 0, elapsedMinutes: 10 }],
+    exploration: { firstStage: 0, knownStage: null, hints: [],
+      reports: [{ stage: 0, outcome: "suggestion", town: proposed, elapsedMinutes: 15 }],
+      lastReport: { stage: 1, outcome: "suggestion", town: proposed, elapsedMinutes: 50 } },
+  } };
+  const before = structuredClone(state);
+  let choices = citedTowns(state);
+  assert.deepEqual(choices.map(town => town.name), ["Suggested town", "Visited"]);
+  assert.equal(choices[0].status, "suggested");
+  assert.equal(choices[0].stage, 1);
+  assert.equal(choices[1].status, "visited");
+  assert.deepEqual(state, before);
+  state.trail.exploration.hints.push({ stage: 1, kind: "place", elapsedMinutes: 60 });
+  choices = citedTowns(state);
+  assert.equal(choices[0].name, "CURRENT SECRET");
+  assert.equal(choices[0].status, "known");
+  assert.ok(!choices.some(town => town.name === "FUTURE SECRET"));
+  for (const language of ["fr", "en"]) {
+    const text = citedTownDirections(choices.find(town => town.status === "suggested"), info,
+      (key, args) => translate(language, key, args));
+    assert.match(text, /Suggested town/);
+    assert.match(text, language === "fr" ? /non confirmée/ : /unconfirmed/);
+    assert.match(text, /45[.,]100000|45\.100000/);
+  }
+});
 
 test("every terrain has the approved rate, including 90% in towns and zero on water", () => {
   const groups = [
@@ -109,6 +141,7 @@ test("directions dialog hides guidance until a paid successful attempt, permits 
     children = []; events = {}; dataset = {}; textContent = ""; open = false;
     nextElementSibling = { hidden: false };
     addEventListener(type, listener) { this.events[type] = listener; }
+    setAttribute(name, value) { this[name] = value; }
     append(...children) { this.children.push(...children); }
     replaceChildren() { this.children = []; }
     showModal() { this.open = true; }
@@ -149,5 +182,28 @@ test("directions dialog hides guidance until a paid successful attempt, permits 
   element("#open-hint").events.click();
   assert.equal(element("#hint-guidance").textContent, translate("en", "hintBeforeAsk"));
   assert.equal(attempts, 2);
+  state = { ...state, elapsedMinutes: 60, trail: { ...state.trail, version: 2, index: 1,
+    stages: state.trail.stages.map((stage, i) => ({ ...stage,
+      latitude: 44 + i / 10, longitude: 2, name: i === 0 ? "Visited town" : `SECRET ${i}` })),
+    history: [],
+    exploration: { firstStage: 1, knownStage: null, hints: [], reports: [],
+      lastReport: { stage: 1, outcome: "suggestion",
+        kind: "prefix", precision: "vague",
+        town: { name: "Witness town", latitude: 45, longitude: 3 }, elapsedMinutes: 50 } },
+  } };
+  ui.localize();
+  assert.equal(element("#hint-towns").hidden, false);
+  const town = citedTowns(state).find(town => town.name === "Witness town");
+  element("#hint-town").events.change({ target: { value: town.key } });
+  const trailBefore = structuredClone(state.trail), minutesBefore = state.elapsedMinutes;
+  attempts = 0;
+  element("#hint-town-ask").events.click();
+  assert.equal(element("#hint-guidance").textContent, translate("en", "hintOutcome.nobody"));
+  element("#hint-town-ask").events.click();
+  assert.match(element("#hint-guidance").textContent, /Witness town/);
+  assert.match(element("#hint-guidance").textContent, /unconfirmed/);
+  assert.doesNotMatch(element("#hint-guidance").textContent, /SECRET/);
+  assert.equal(state.elapsedMinutes, minutesBefore + 20);
+  assert.deepEqual(state.trail, trailBefore);
   ui.reset();
 });

@@ -23,6 +23,15 @@ test("parent trail separates guidance from investigation while keeping action/re
   for (const id of ["trail-page-previous", "trail-page-next", "trail-page-current", "trail-page-status"]) {
     assert.match(main, new RegExp(`id="${id}"`));
   }
+  for (const id of ["trail-section-current", "trail-section-actions", "trail-section-past"]) {
+    assert.match(dialog, new RegExp(`id="${id}"`));
+  }
+  const actionsPage = main.split('id="trail-investigation-page"')[1].split("</section>")[0];
+  assert.match(actionsPage, /id="trail-actions"/);
+  assert.doesNotMatch(actionsPage, /id="trail-history"/);
+  const evidencePage = main.split('id="trail-evidence-page"')[1];
+  assert.match(evidencePage, /id="trail-history"/);
+  assert.doesNotMatch(evidencePage, /id="trail-actions"/);
   const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
   assert.match(css, /\.trail-layout\s*\{[^}]*grid-template-columns:/);
   assert.match(css, /@media \(max-width: 760px\)\s*\{\s*\.trail-layout\s*\{ grid-template-columns: minmax\(0, 1fr\)/);

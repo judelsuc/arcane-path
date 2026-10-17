@@ -16,6 +16,41 @@ export function directionsChance(cell) {
   return CHANCES[cell.terrain];
 }
 
+export function citedTowns(state) {
+  const trail = state.trail, towns = new Map();
+  if (!trail) return [];
+  const rank = { suggested: 0, known: 1, visited: 2 };
+  function add(town, stage, status, elapsedMinutes = -1) {
+    if (!town?.name || !Number.isFinite(town.latitude) || !Number.isFinite(town.longitude)) return;
+    const key = JSON.stringify([town.name, town.latitude.toFixed(6), town.longitude.toFixed(6)]);
+    const previous = towns.get(key);
+    if (!previous || rank[status] > rank[previous.status] ||
+        rank[status] === rank[previous.status] && elapsedMinutes > previous.elapsedMinutes) {
+      towns.set(key, { key, name: town.name, latitude: town.latitude, longitude: town.longitude,
+        stage, status, elapsedMinutes });
+    }
+  }
+  const exploration = trail.exploration;
+  for (const [stage, town] of trail.stages.entries()) {
+    const arrival = trail.arrivals?.find(entry => entry.stage === stage);
+    if (stage < trail.index || arrival) add(town, stage, "visited", arrival?.elapsedMinutes);
+    else if ((stage === trail.index && (!exploration || exploration.knownStage === stage)) ||
+        exploration?.hints.some(hint => hint.stage === stage && hint.kind === "place")) {
+      add(town, stage, "known", exploration?.hints.find(hint =>
+        hint.stage === stage && hint.kind === "place")?.elapsedMinutes);
+    }
+  }
+  for (const [index, facts] of trail.history.entries()) {
+    if (facts.next && (!exploration || index < exploration.firstStage)) {
+      add(facts.next, index + 1, "known", facts.elapsedMinutes);
+    }
+  }
+  for (const report of [...(exploration?.reports ?? []), ...(exploration?.lastReport ? [exploration.lastReport] : [])]) {
+    if (report.outcome === "suggestion") add(report.town, report.stage, "suggested", report.elapsedMinutes);
+  }
+  return [...towns.values()].sort((a, b) => b.elapsedMinutes - a.elapsedMinutes || a.name.localeCompare(b.name));
+}
+
 export function askDirections(state, cell, info, survival, economy, random = Math.random) {
   if (state.ended || !state.trail || state.trail.completed) {
     throw new Error("No active journey destination to ask about.");

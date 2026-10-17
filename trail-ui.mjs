@@ -5,7 +5,7 @@ import { openContentCache } from "./content-cache.mjs";
 import { clueActions, CLUE_ACTIONS, searchClueOptions, prepareClueSearch } from "./trail-actions.mjs";
 import { marketPrice } from "./economy.mjs";
 import { parentSighting, parentReunion } from "./parent-story.mjs";
-import { DIRECTIONS_RULES, directionsChance } from "./directions.mjs";
+import { DIRECTIONS_RULES, directionsChance, citedTowns } from "./directions.mjs";
 import { setFeedback } from "./feedback.mjs";
 import { fieldSearchAvailable, fieldSearchRules, prepareFieldSearch, fieldClueText, vagueLead,
   recognitionHint, prepareRecognition } from "./trail-search.mjs";
@@ -66,27 +66,42 @@ export function playerHint(state, info, t) {
     distance: t(`hintDistance.${distance}`) });
 }
 
-export function suggestedTownPosition(town, info, t) {
+function townPosition(town, info, t) {
   const east = Math.sin((town.longitude - info.longitude) * Math.PI / 180) *
     Math.cos(town.latitude * Math.PI / 180);
   const north = Math.cos(info.latitude * Math.PI / 180) * Math.sin(town.latitude * Math.PI / 180) -
     Math.sin(info.latitude * Math.PI / 180) * Math.cos(town.latitude * Math.PI / 180) *
     Math.cos((town.longitude - info.longitude) * Math.PI / 180);
   const sectors = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
-  return t("fieldSuggestedPosition", {
+  return {
     meters: distanceMeters(info, town.latitude, town.longitude),
     direction: t(`hintCompass.${sectors[(Math.round(Math.atan2(east, north) / (Math.PI / 4)) + 8) % 8]}`),
     latitude: town.latitude.toFixed(6), longitude: town.longitude.toFixed(6),
-  });
+  };
+}
+
+export function suggestedTownPosition(town, info, t) {
+  return t("fieldSuggestedPosition", townPosition(town, info, t));
+}
+
+export function citedTownDirections(town, info, t) {
+  return t("hintTownDirections", { place: town.name, ...townPosition(town, info, t) }) +
+    (town.status === "suggested" ? ` ${t("hintTownUnconfirmed")}` : "");
 }
 
 export function trailPageRecords(state, stage) {
   const trail = state.trail;
   return [
-    ...trail.history.map((value, index) => ({ kind: "history", stage: index, value, index })),
+    ...trail.history.map((value, index) => ({
+      kind: "history", stage: value.next ? index + 1 : index, value, index,
+    })),
+    ...(trail.discovery?.pending ? [{
+      kind: "discovery", stage: trail.discovery.step + 1, value: trail.discovery,
+    }] : []),
     ...(trail.exploration?.hints ?? []).map(value => ({ kind: "hint", stage: value.stage, value })),
     ...(trail.exploration?.signs ?? []).map(value => ({ kind: "sign", stage: value.stage, value })),
     ...(trail.exploration?.reports ?? []).map(value => ({ kind: "report", stage: value.stage, value })),
+    ...(trail.rumors ?? []).map(value => ({ kind: "rumor", stage: value.stage + 1, value })),
     ...(trail.arrivals ?? []).map(value => ({ kind: "arrival", stage: value.stage, value })),
   ].filter(record => record.stage === stage).map((record, order) => ({ ...record, order }))
     .sort((a, b) => (b.value.elapsedMinutes ?? -1) - (a.value.elapsedMinutes ?? -1) || b.order - a.order);
@@ -106,12 +121,12 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
   const action = document.querySelector("#trail-interview");
   const photo = document.querySelector("#trail-clue-photo");
   const ask = document.querySelector("#hint-ask");
-  let directionsOutcome;
+  let directionsOutcome, directionsTown, selectedTownKey;
   let searching = false, searchGeneration = 0, preparedPhoto, photoUnavailable = false;
   let photoKey, objectUrl, photoGeneration = 0, service;
   let searchController, fieldPhoto, fieldPhotoUnavailable = false;
   let viewedFieldPhoto;
-  let viewedStage, lastActiveStage, pageJourney;
+  let viewedStage, lastActiveStage, pageJourney, section = "current";
 
   function clearPhoto() {
     photoGeneration++;
@@ -208,6 +223,17 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     setFeedback(p, outcome);
     container.append(p);
   }
+  function photoButton(container, state, stage) {
+    const view = document.createElement("button");
+    view.type = "button";
+    view.textContent = t("fieldViewPhoto");
+    view.addEventListener("click", () => {
+      viewedFieldPhoto = stage;
+      photo.hidden = false;
+      void renderPhoto(state, { step: stage }, Boolean(state.trail.exploration), true);
+    });
+    container.append(view);
+  }
   function reportText(report) {
     const text = t(`fieldReport.${report.outcome === "suggestion" ? report.kind : report.outcome}`, {
       place: report.town?.name,
@@ -218,6 +244,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
   async function askCollectedClue(hint) {
     const current = context();
     if (!current || current.blocked || searching) return;
+    directionsOutcome = directionsTown = undefined;
     searching = true;
     const generation = ++searchGeneration;
     const controller = searchController = new AbortController();
@@ -255,6 +282,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     const records = document.querySelector("#parent-story-records");
     records.replaceChildren();
     for (const [index, facts] of trail.history.entries()) {
+      if (index !== viewedStage) continue;
       const visit = story.visits[index], item = document.createElement("li");
       paragraph(item, t(visit.departure > state.startedAt + state.elapsedMinutes * 60_000
         ? "parentStory.currentVisit" : "parentStory.visit", {
@@ -264,16 +292,6 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       }));
       const lore = story.lore.find(entry => entry.stage === index);
       if (lore) paragraph(item, t(`parentStory.lore.${lore.kind}`));
-      records.append(item);
-    }
-    for (const rumor of trail.rumors ?? []) {
-      const branch = story.falseLeads.find(entry => entry.stage === rumor.stage);
-      const item = document.createElement("li");
-      paragraph(item, t("parentStory.falseLead", {
-        traveler: branch.traveler, place: trail.stages[rumor.stage].name,
-        next: trail.exploration && rumor.stage >= trail.exploration.firstStage
-          ? vagueLead(state, rumor.stage + 1, t) : trail.stages[rumor.stage + 1].name,
-      }));
       records.append(item);
     }
   }
@@ -287,10 +305,15 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         chance: Math.round(directionsChance(current.cell) * 100),
       });
       const report = current.state.trail.exploration?.lastReport;
-      setFeedback(document.querySelector("#hint-guidance"), report?.stage === current.state.trail.index
+      setFeedback(document.querySelector("#hint-guidance"), directionsTown && directionsOutcome
+        ? directionsOutcome === "helped" ? "success" : "failure"
+        : report?.stage === current.state.trail.index
         ? report.outcome === "suggestion" ? "" : "failure"
         : directionsOutcome ? directionsOutcome === "helped" ? "success" : "failure" : "");
-      document.querySelector("#hint-guidance").textContent = report?.stage === current.state.trail.index
+      document.querySelector("#hint-guidance").textContent = directionsTown && directionsOutcome
+        ? directionsOutcome === "helped" ? citedTownDirections(directionsTown, current.info, t)
+          : t(`hintOutcome.${directionsOutcome}`)
+        : report?.stage === current.state.trail.index
         ? reportText(report)
         : directionsOutcome === "helped" ? playerHint(current.state, current.info, t)
           : t(directionsOutcome ? `hintOutcome.${directionsOutcome}` : "hintBeforeAsk");
@@ -307,6 +330,21 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         item.append(button);
         clues.append(item);
       }
+      const towns = citedTowns(current.state), select = document.querySelector("#hint-town");
+      document.querySelector("#hint-towns").hidden = towns.length === 0;
+      select.replaceChildren();
+      for (const town of towns) {
+        const option = document.createElement("option");
+        option.value = town.key;
+        option.textContent = t("hintTownOption", {
+          place: town.name, status: t(`hintTownStatus.${town.status}`), page: town.stage + 1,
+        });
+        select.append(option);
+      }
+      selectedTownKey = towns.some(town => town.key === selectedTownKey) ? selectedTownKey : towns[0]?.key;
+      select.value = selectedTownKey ?? "";
+      document.querySelector("#hint-town-ask").disabled = !towns.length || current.blocked ||
+        Boolean(current.state.ended) || searching;
     }
     document.querySelector("#open-trail").disabled = !current?.state.trail;
     document.querySelector("#town-trail").disabled = !current?.state.trail;
@@ -323,20 +361,36 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       lastActiveStage = activeStage;
       pageJourney = journeyKey;
       viewedFieldPhoto = undefined;
+      section = "current";
     }
+    if (section !== "past") viewedStage = activeStage;
     const currentPage = viewedStage === activeStage;
+    for (const name of ["current", "actions", "past"]) {
+      const button = document.querySelector(`#trail-section-${name}`);
+      button.setAttribute("aria-pressed", String(section === name));
+      button.disabled = name === "past" && activeStage === 0;
+    }
+    document.querySelector("#trail-investigation-page").hidden = section !== "actions";
+    document.querySelector("#trail-evidence-page").hidden = section === "actions";
+    document.querySelector("#trail-archive-pages").hidden = section !== "past";
+    document.querySelector("#trail-main-title").textContent = t(
+      section === "actions" ? "trailSectionActions" : section === "past" ? "trailSectionPast" : "trailSectionCurrent");
     document.querySelector("#trail-page-previous").disabled = viewedStage === 0;
     document.querySelector("#trail-page-next").disabled = viewedStage >= activeStage;
     document.querySelector("#trail-page-current").disabled = currentPage;
     const reached = viewedStage < trail.index || trail.arrivals?.some(a => a.stage === viewedStage) ||
       viewedStage === trail.index && atTrailTarget(state);
+    const knownDestination = viewedStage === trail.index &&
+      (!trail.exploration || trail.exploration.knownStage === trail.index) && !trail.discovery?.pending;
     document.querySelector("#trail-page-status").textContent = t(
       currentPage && awaitingLead ? "trailPageAwaiting" : reached ? "trailPageReached" : "trailPageActive", {
       page: viewedStage + 1, place: currentPage && awaitingLead ? trail.stages[trail.index].name
         : reached ? trail.stages[viewedStage].name : "",
-    });
+    }) + (knownDestination && !awaitingLead && !reached
+      ? ` — ${trail.stages[viewedStage].name}` : "");
     setFeedback(document.querySelector("#trail-page-status"), reached ? "success" : "");
     renderStory(state);
+    document.querySelector("#parent-story").hidden = section !== "past" || !trail.story;
     const modern = trail.version === 2;
     document.querySelector("#trail-save-status").textContent = current.saveStatus ?? "";
     document.querySelector("#trail-title").textContent = t(trail.completed ? "trailReunionTitle" : "trailTitle");
@@ -353,24 +407,41 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     action.textContent = t(trail.index === trail.stages.length - 1 ? "trailMeet" : "trailInterview");
     const history = document.querySelector("#trail-history");
     history.replaceChildren();
-    for (const record of trailPageRecords(state, viewedStage)) {
+    const records = trailPageRecords(state, viewedStage);
+    const latestClue = records.find(record => record.kind !== "arrival" && record.value.elapsedMinutes !== undefined);
+    document.querySelector("#trail-evidence-summary").textContent = t(
+      records.length ? "trailEvidenceOrder" : section === "past" ? "trailArchiveEmpty" : "trailEvidenceEmpty");
+    for (const record of records) {
       const item = document.createElement("li");
       const { value: facts, index } = record;
+      const date = document.createElement("time");
+      date.className = "trail-entry-date";
+      date.textContent = trailEntryDate(state, facts.elapsedMinutes, document.documentElement.lang, t);
+      if (facts.elapsedMinutes !== undefined) date.dateTime =
+        new Date(state.startedAt + facts.elapsedMinutes * 60_000).toISOString();
+      item.append(date);
+      if (record === latestClue) paragraph(item, t("trailLatestRecord"), "success");
+      paragraph(item, t("trailEvidenceFor", { page: viewedStage + 1 }));
       if (record.kind === "history") {
         if (facts.next && modern) {
           const progressive = trail.exploration && index >= trail.exploration.firstStage;
           paragraph(item, `${t(progressive && facts.clueKind === "photo" ? "fieldClue.photo" : `clueFound.${facts.clueKind}`)} — ${t(progressive ? "fieldClueAt" : "clueHistory", {
             place: facts.place, next: facts.next.name,
           })}`);
-          paragraph(item, parentClueText(state, {
+          if (!progressive) paragraph(item, parentClueText(state, {
             kind: facts.clueKind, step: index, nextName: facts.next.name, pending: false,
           }, t));
+          if (!progressive && facts.clueKind === "photo") photoButton(item, state, viewedStage);
         }
         else if (facts.next) paragraph(item, t("trailDialogue", {
           place: facts.place, next: facts.next.name,
           parent: facts.parentName,
         }));
         else paragraph(item, t("trailReunion", { parent: facts.parentName }));
+      } else if (record.kind === "discovery") {
+        paragraph(item, t(`clueFound.${facts.kind}`));
+        paragraph(item, parentClueText(state, facts, t));
+        if (facts.kind === "photo") photoButton(item, state, viewedStage);
       } else if (record.kind === "hint") {
         const hint = facts;
         paragraph(item, t("fieldEvidence"));
@@ -378,17 +449,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         paragraph(item, t("fieldRecordedAt", {
           col: hint.col, row: hint.row, minutes: Math.round(hint.elapsedMinutes),
         }));
-        if (hint.kind === "photo") {
-          const view = document.createElement("button");
-          view.type = "button";
-          view.textContent = t("fieldViewPhoto");
-          view.addEventListener("click", () => {
-            viewedFieldPhoto = hint.stage;
-            photo.hidden = false;
-            void renderPhoto(state, { step: hint.stage }, true);
-          });
-          item.append(view);
-        }
+        if (hint.kind === "photo") photoButton(item, state, hint.stage);
       } else if (record.kind === "sign") {
         const sign = facts;
         paragraph(item, t("fieldSignTitle"));
@@ -399,16 +460,17 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       } else if (record.kind === "report") {
         paragraph(item, t("fieldSuggestionTitle"));
         paragraph(item, reportText(facts));
+      } else if (record.kind === "rumor") {
+        const branch = trail.story.falseLeads.find(entry => entry.stage === facts.stage);
+        paragraph(item, t("parentStory.falseLead", {
+          traveler: branch.traveler, place: trail.stages[facts.stage].name,
+          next: trail.exploration && facts.stage >= trail.exploration.firstStage
+            ? vagueLead(state, facts.stage + 1, t) : trail.stages[facts.stage + 1].name,
+        }));
       } else {
         paragraph(item, t("trailPageReached", { page: viewedStage + 1,
           place: trail.stages[viewedStage].name }), "success");
       }
-      const date = document.createElement("time");
-      date.className = "trail-entry-date";
-      date.textContent = trailEntryDate(state, facts.elapsedMinutes, document.documentElement.lang, t);
-      if (facts.elapsedMinutes !== undefined) date.dateTime =
-        new Date(state.startedAt + facts.elapsedMinutes * 60_000).toISOString();
-      item.append(date);
       history.append(item);
     }
     const actions = document.querySelector("#trail-actions");
@@ -459,6 +521,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
           viewedFieldPhoto = found.content ? found.stage : undefined;
           fieldPhotoUnavailable = found.photoUnavailable;
           searchField(found);
+          section = "current";
         } catch (error) {
           if (controller.signal.aborted) return;
           console.error("Field clue search failed:", error);
@@ -496,6 +559,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
           preparedPhoto = found.content ? { step: state.trail.index, content: found.content } : undefined;
           photoUnavailable = found.photoUnavailable;
           discover(found.kind);
+          section = "current";
         } catch (error) {
           console.error("Clue search failed:", error);
           document.querySelector("#trail-action-error").textContent = error.message;
@@ -527,6 +591,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       button.addEventListener("click", () => {
         document.querySelector("#trail-action-error").textContent = "";
         discover(kind);
+        section = "current";
         localize();
       });
       const item = document.createElement("div");
@@ -536,7 +601,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       actions.append(item);
     }
     const discovery = trail.discovery;
-    document.querySelector("#trail-discovery").hidden = !discovery || !currentPage || Boolean(trail.exploration);
+    document.querySelector("#trail-discovery").hidden = true;
     if (discovery) {
       document.querySelector("#trail-discovery-date").textContent =
         trailEntryDate(state, discovery.elapsedMinutes, document.documentElement.lang, t);
@@ -548,11 +613,12 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     const last = trail.exploration?.lastSearch;
     const latestPhoto = trail.exploration?.hints.find(h => h.kind === "photo" &&
       h.elapsedMinutes === last?.elapsedMinutes);
-    if (viewedFieldPhoto !== undefined || currentPage && latestPhoto && latestPhoto.stage === viewedStage &&
-        last.stage === trail.index && last.outcome === "found") {
+    if (section !== "actions" && (viewedFieldPhoto !== undefined || currentPage && latestPhoto && latestPhoto.stage === viewedStage &&
+        last.stage === trail.index && last.outcome === "found")) {
       photo.hidden = false;
-      void renderPhoto(state, { step: viewedFieldPhoto ?? latestPhoto.stage }, true);
-    } else if (discovery?.kind === "photo" && currentPage) {
+      void renderPhoto(state, { step: viewedFieldPhoto ?? latestPhoto.stage }, Boolean(trail.exploration), true);
+    } else if (section !== "actions" && discovery?.kind === "photo" && currentPage &&
+        discovery.step + 1 === viewedStage) {
       photo.hidden = false;
       void renderPhoto(state, discovery, Boolean(trail.exploration), false);
     } else {
@@ -562,11 +628,13 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
   }
   function open() {
     if (!context()?.state.trail || document.querySelector("dialog[open]")) return;
+    section = "current";
     dialog.showModal();
     localize();
   }
   function changePage(stage) {
     viewedStage = stage;
+    section = stage === lastActiveStage ? "current" : "past";
     viewedFieldPhoto = undefined;
     localize();
   }
@@ -577,11 +645,19 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     if (viewedStage < lastActiveStage) changePage(viewedStage + 1);
   });
   document.querySelector("#trail-page-current").addEventListener("click", () => changePage(lastActiveStage));
+  for (const name of ["current", "actions", "past"]) {
+    document.querySelector(`#trail-section-${name}`).addEventListener("click", () => {
+      section = name;
+      viewedStage = name === "past" ? Math.max(0, lastActiveStage - 1) : lastActiveStage;
+      viewedFieldPhoto = undefined;
+      localize();
+    });
+  }
   document.querySelector("#open-trail").addEventListener("click", open);
   document.querySelector("#open-hint").addEventListener("click", () => {
     const current = context();
     if (!current?.state.trail || current.blocked || current.state.ended || document.querySelector("dialog[open]")) return;
-    directionsOutcome = undefined;
+    directionsOutcome = directionsTown = undefined;
     document.querySelector("#hint-action-error").textContent = "";
     localize();
     hintDialog.showModal();
@@ -589,6 +665,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
   ask.addEventListener("click", () => {
     const current = context();
     if (!current || current.blocked || current.state.ended) return;
+    directionsTown = undefined;
     const hint = recognitionHint(current.state);
     if (hint) {
       void askCollectedClue(hint);
@@ -600,12 +677,31 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     directionsOutcome = outcome;
     localize();
   });
+  document.querySelector("#hint-town").addEventListener("change", event => {
+    selectedTownKey = event.target.value;
+  });
+  document.querySelector("#hint-town-ask").addEventListener("click", () => {
+    const current = context();
+    if (!current || current.blocked || current.state.ended || searching) return;
+    const town = citedTowns(current.state).find(town => town.key === selectedTownKey);
+    if (!town) {
+      document.querySelector("#hint-action-error").textContent = t("hintTownUnavailable");
+      return;
+    }
+    document.querySelector("#hint-action-error").textContent = "";
+    const outcome = askDirections();
+    if (!outcome) return;
+    directionsTown = town;
+    directionsOutcome = outcome;
+    localize();
+  });
   document.querySelector("#town-trail").addEventListener("click", () => {
     document.querySelector("#town-dialog").close();
     open();
   });
   action.addEventListener("click", () => {
     if (!interview()) return;
+    section = "current";
     localize();
   });
   dialog.addEventListener("close", () => {
@@ -638,11 +734,12 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     fieldPhoto = undefined;
     viewedFieldPhoto = undefined;
     viewedStage = lastActiveStage = pageJourney = undefined;
+    section = "current";
     fieldPhotoUnavailable = false;
     photoUnavailable = false;
     dialog.close();
     hintDialog.close();
-    directionsOutcome = undefined;
+    directionsOutcome = directionsTown = selectedTownKey = undefined;
     clearPhoto();
   } };
 }
