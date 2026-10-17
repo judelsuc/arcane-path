@@ -1,5 +1,23 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - photo aerienne IGN de secours
+
+- **17 octobre 2026** : runtime `9616997`, tag
+  `deploy-2026-10-17-aerial-photos`, developpement `8574a61`,
+  base live `58f4f51`. Six assets statiques et manifeste, sans carnet photo,
+  partage de journaux, redemarrage serveur ni modification des sauvegardes.
+- Fallback IGN exact-cell en France metropolitaine/Corse, pays confirme,
+  credits/licence et etiquette aerienne ; recherche classique toujours 2 km.
+  Les anciens caches photo vides sont retentes. Descriptions inchangees,
+  aucune photo aerienne utilisee comme indice du parent.
+- 63 tests cibles isoles reussis. Les deux positions signalees ont retourne
+  une image IGN ; 43.778990/2.407230 verifie dans le navigateur : JPEG
+  512x512, 33422 octets, 1252 couleurs echantillonnees (pas une image vide).
+- Six assets HTTPS compares octet par octet, manifeste et API verifies.
+  Le pays de la position signalee est confirme FR par l'endpoint live.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-9616997.tar.gz`
+  (0600). Aucune restauration de base de donnees necessaire.
+
 ## Derniere livraison - indices narratifs et petits signes
 
 - **17 octobre 2026** : runtime `58f4f51`, tag
