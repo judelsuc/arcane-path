@@ -360,8 +360,6 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     }
     const actions = document.querySelector("#trail-actions");
     actions.replaceChildren();
-    const lastReport = trail.exploration?.lastReport;
-    if (lastReport?.stage === trail.index) paragraph(actions, reportText(lastReport));
     if (modern && !atTrailTarget(state) && !trail.completed && !trail.exploration) paragraph(actions, t("clueTravelFirst"));
     if (fieldSearchAvailable(state, current.cell) && !atTrailTarget(state)) {
       const item = document.createElement("div"), button = document.createElement("button");
@@ -370,8 +368,14 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       button.type = "button";
       button.textContent = t(searching ? "clueSearchLoading" : "clueSearch");
       button.disabled = blocked || searching || !state.serverJourney;
-      paragraph(item, t("fieldSearchCosts", rules));
-      paragraph(item, t("fieldSearchSupport"));
+      const help = document.createElement("details"), summary = document.createElement("summary");
+      summary.textContent = t("fieldSearchHelp");
+      help.append(summary);
+      paragraph(help, t("fieldSearchCosts", rules));
+      paragraph(help, t("fieldSearchSupport"));
+      item.append(button);
+      paragraph(item, t("fieldSearchCostSummary", rules));
+      item.append(help);
       if (!state.serverJourney) paragraph(item, t("fieldSearchServer"));
       const last = trail.exploration.lastSearch;
       if (last?.stage === trail.index) {
@@ -409,7 +413,6 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
           }
         }
       });
-      item.append(button);
       actions.append(item);
     }
     const available = clueActions(state);
