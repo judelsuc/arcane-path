@@ -1,6 +1,6 @@
 # Les Arcanes du Chemin
 
-Prototype des **couches 1 a 6 — Carte, Voyage, Temps, Besoins, Localites et Economie** : donnees OSM reelles,
+Prototype des **couches 1 a 7 — Carte, Voyage, Temps, Besoins, Localites, Economie et Musique** : donnees OSM reelles,
 grille ASCII de 250 m, exploration a pied, horloge simulee, effort et streaming.
 
 Les ajouts au document de conception sont suivis dans [doc/REQUIREMENTS.md](./doc/REQUIREMENTS.md).
@@ -253,6 +253,25 @@ la carte ne passe toujours pas de temps.
 La base culinaire est remplie manuellement pour cette version. Un futur LLM
 pourra proposer des entrees a partir de sources web, mais ne devra pas
 inventer de specialite, de provenance, de tarif ou de promesse d'accueil.
+
+## Couche 7 : musique de rue
+
+Sur une case de localite, **Musique de rue** ouvre le premier mini-jeu.
+Commencer depense immediatement 30 minutes, le metabolisme correspondant
+et 4 points de fatigue (plus l'exposition nocturne eventuelle). Pas besoin
+d'argent pour jouer, mais il faut encore pouvoir supporter cet effort.
+
+Huit notes, espacees de 700 ms : appuyer sur **Espace** ou toucher le bouton
+quand une case s'allume, avec une tolerance de +/-180 ms. Jeu visuel sans
+audio pour ce premier prototype. Chaque note ne compte qu'une fois.
+La prestation parfaite rapporte l'equivalent de deux repas au tarif courant ;
+les gains sont proportionnels aux reussites, arrondis en centimes.
+
+**Echap**, fermeture ou onglet masque annule les gains, pas le cout deja
+depense. Aucun temps reel supplementaire ne passe pendant le jeu ; les
+30 minutes sont comptabilisees au depart. Les autres commandes restent
+bloquees par le dialogue. Les cadeaux ne sont pas attribues a de vraies
+personnes ou etablissements ; ce n'est pas une autorisation de jouer sur place.
 
 ### Couche 3 : temps et cadran du ciel
 

@@ -138,6 +138,7 @@
               <button id="sleep-travel" type="button" data-i18n="needsSleepAction"></button>
               <button id="eat-travel" type="button" data-i18n="needsEatAction"></button>
               <button id="open-town" type="button" disabled data-i18n="townOpen"></button>
+              <button id="open-music" type="button" disabled data-i18n="musicOpen"></button>
               <button id="look-travel" type="button" aria-pressed="false" data-i18n="travelLook"></button>
               <button id="retry-travel" type="button" data-i18n="travelRetry"></button>
               <button id="stop-travel" type="button" data-i18n="travelStop"></button>
@@ -225,6 +226,7 @@
       <div id="town-welcome" role="status"></div>
       <button id="town-refresh" type="button" data-i18n="townRefresh"></button>
       <button id="town-services" type="button" data-i18n="mealTitle"></button>
+      <button id="town-music" type="button" data-i18n="musicOpen"></button>
       <h3 data-i18n="townPlacesTitle"></h3>
       <p id="town-empty" data-i18n="townEmpty"></p>
       <ul id="town-places"></ul>
@@ -241,6 +243,18 @@
       <p id="economy-empty" data-i18n="noLocalMeal"></p>
       <ul id="economy-options"></ul>
       <p id="economy-action-error" role="alert"></p>
+    </dialog>
+    <dialog id="music-dialog" aria-labelledby="music-title">
+      <h2 id="music-title" data-i18n="musicOpen"></h2>
+      <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
+      <p data-i18n="musicInstructions"></p>
+      <p data-i18n="musicCost"></p>
+      <button id="music-start" type="button" data-i18n="musicStart"></button>
+      <div id="music-track" aria-hidden="true"></div>
+      <progress id="music-progress" max="100" value="0" aria-label="Performance"></progress>
+      <button id="music-tap" type="button" disabled data-i18n="musicTap"></button>
+      <p id="music-score" role="status"></p>
+      <p id="music-result" role="status"></p>
     </dialog>
   </body>
 </html>

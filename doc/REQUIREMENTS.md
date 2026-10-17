@@ -474,6 +474,17 @@ This file records additions to the design without modifying the source PDF,
 - **Target:** Layer 13 Events, with Layer 6 exposure/daily-card foundations.
   Street-music earnings come first in Layer 7. No real-time idle penalties.
 
+## R-032 — Layer 7 street-music earning loop
+
+- **Status:** Implemented one visual rhythm variant, eight timed notes,
+  keyboard/touch input, score-proportional earnings, upfront game time,
+  energy/fatigue and exposure costs.
+- **Bounds:** Only actual settlement cells, no remote Look earnings, no
+  double reward or note spam. Cancellation/tab hiding awards nothing and
+  does not refund survival costs. No audio or real permit/venue claim.
+- **Milestone:** Walk, earn, buy a meal and sleep in mapped shelter. A model
+  test verifies three full simulated days of paid meals/lodging and earnings.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

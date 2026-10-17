@@ -439,6 +439,13 @@ dialog p { margin: 12px 0; }
 #economy-options button { max-width: 100%; white-space: normal; }
 #player-wallet { color: var(--accent); }
 #player-tarot, #outdoor-status { font-size: 0.65rem; color: var(--muted); }
+#music-dialog { width: min(620px, 94vw); max-height: 90dvh; overflow: auto; }
+#music-track { display: flex; gap: 5px; margin-block: 20px; }
+.music-beat { flex: 1; min-width: 0; padding-block: 14px; text-align: center; border: 1px solid var(--line); }
+.music-beat.cue { background: #f4cc80; color: #17251b; }
+.music-beat.hit { background: #375d3b; color: white; }
+.music-beat.missed { opacity: 0.5; }
+#music-progress { width: 100%; }
 
 .travel-panel {
   padding: 16px 24px;

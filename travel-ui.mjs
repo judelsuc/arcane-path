@@ -9,6 +9,8 @@ import {
 import { setupTowns } from "./towns-ui.mjs";
 import { validateEconomy, startEconomy, buyMeal, sleepEconomy, restEconomy, finishAction } from "./economy.mjs";
 import { setupEconomyUI } from "./economy-ui.mjs";
+import { beginBusking, settleBusking } from "./music.mjs";
+import { setupMusic } from "./music-ui.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }) {
   const start = document.querySelector("#start-travel");
@@ -40,6 +42,35 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       data: economyData, survival: survivalConfig, blocked: busy || Boolean(cursor) || Boolean(state.ended) };
   }
   const economyUI = setupEconomyUI(t, { context: economyContext, act: economyAction });
+  const musicUI = setupMusic(t, {
+    available: () => {
+      const current = economyContext();
+      return Boolean(current && !current.blocked && current.cell.terrain === "place");
+    },
+    begin() {
+      const current = economyContext();
+      if (!current || current.blocked) return false;
+      try {
+        state = beginBusking(state, current.cell, current.info, survivalConfig, economyData);
+        localize();
+        return Boolean(state.performancePending);
+      } catch (reason) {
+        report(reason);
+        return false;
+      }
+    },
+    settle(hits) {
+      if (!state?.performancePending) return null;
+      try {
+        state = settleBusking(state, hits);
+        localize();
+        return state.lastEarningsCents;
+      } catch (reason) {
+        report(reason);
+        return null;
+      }
+    },
+  });
   const weatherCache = new Map();
   let weatherKey, weatherData, weatherError = "", weatherController;
 
@@ -83,6 +114,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
   function localize() {
     towns.localize(document.documentElement.lang);
     economyUI.localize();
+    musicUI.localize();
     document.querySelector("#map-workspace").classList.toggle("travel-active", active);
     document.body.classList.toggle("is-travelling", active);
     controls.hidden = !active;
@@ -427,6 +459,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
 
   function reset() {
     token++;
+    musicUI.reset();
     towns.reset();
     economyUI.reset();
     stream?.stop();

@@ -10,6 +10,7 @@ All survival numbers below are gameplay approximations, not medical advice.
 - Layer 4 checkpoint: Git tag `layer-4-needs` (created after validation).
 - Layer 5 checkpoint: Git tag `layer-5-towns`.
 - Layer 6 checkpoint: Git tag `layer-6-economy`.
+- Layer 7 checkpoint: Git tag `layer-7-music`.
 - Each completed further stage gets its own commit/tag and section here.
 - Nothing is pushed remotely automatically.
 
@@ -283,3 +284,36 @@ covered a real tarot purse, paid sourced aligot with exact wallet deduction,
 modal input isolation, outdoor-sleep selection and the reference-price notice.
 The meal dialog fits 375 x 800 without horizontal overflow. Shelter outcomes
 and nighttime thresholds are asserted in deterministic model tests.
+
+## Layer 7 - first earning minigame
+
+- One visual rhythm variant, no audio dependency: eight beats 700 ms apart,
+  1.5 second preparation, +/-180 ms hit window. Space or touch/click input.
+- Upfront cost: 30 game minutes, basal metabolism and 4 fatigue; nighttime
+  exposure still applies. Start may exhaust the character, in which case
+  there is no performance or reward. No money required to try earning.
+- Each note scores at most once. Full score earns two locally priced meals,
+  partial score a proportional integer-cent share, all misses zero.
+- Settlement only, using actual player cell; no need for a specific real cafe.
+  No implied street-performance permission or fictional real-person tipper.
+- Costs are never refunded on cancellation. Escape/close/tab hiding cancels
+  and gives no reward. Real-world minigame duration is not extra game time.
+  Background timers stop when the game ends, closes or the journey resets.
+- No difficulty tiers, audio latency settings, skill progression or assist
+  mode yet. The explicit first variant can be replaced without changing the
+  economic settlement model. Accessibility options are an open question.
+
+### Layer 7 manual test and validation
+
+1. Walk south from Firmi start. Open Street music from the town or sidebar.
+2. Start: clock +30 min and fatigue +4 immediately. Tap eight lit notes.
+   Perfect score yields +12.38 game EUR at the reference tariff.
+3. Start again and Escape: no money awarded, time/fatigue remain spent.
+4. Look or move outside a settlement: performance unavailable.
+5. A meal spends earnings; use a real current-cell lodging for a protected
+   night. Keep enough money/energy to reach it rather than farming until spent.
+
+Browser verified 8/8 timing, exact 12.38 earnings, upfront costs, cancellation
+without refund and 375-pixel layout without horizontal overflow.
+Unit tests cover timing endpoints, spam resistance, exactly-once settlement,
+zero-money earning, exhaustion and three full 24-hour survival cycles.
