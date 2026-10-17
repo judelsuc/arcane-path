@@ -1400,3 +1400,25 @@ available when a journey already carries story facts.
 Presentation runtime `7832ea9` is deployed, with exact HTTPS comparisons of
 all four changed assets and the manifest. The travel API and both services
 remain healthy without restart. The server generator remains unchanged.
+
+### I asks a fictional passerby for approximate directions
+
+R-084 keeps the I binding but renames the action to Ask for directions.
+Travel answers name only the known objective, a general eight-sector compass
+heading and qualitative distance: nearby, a stretch, quite a way, a long way.
+Internal distance thresholds are 2, 10 and 30 km; no numeric distance, cell
+count or turn-by-turn directions appear in the answer. Compass sectors use
+the same grid axes as movement. The separate trail journal is unchanged.
+
+Free, read-only availability is preserved everywhere, without a real NPC or
+provider request. Arrival and pending-venue answers retain actionable journal
+instructions without revealing the unknown destination. Both languages state
+that the passerby and conversation are fictional and that the direction is
+not a verified walkable route. Shortcut help describes this behavior.
+
+Validation: 244 JavaScript tests pass on the isolated live-base release,
+including all eight headings, near-axis rounding, exact distance-band
+boundaries, legacy trails, arrival-radius regressions, undiscovered-clue
+privacy, translations and I binding. Browser checks open the actual hint
+dialog in French and English for Bapaume, verify no numeric guidance or
+future-town disclosure, and confirm the unchanged I shortcut.

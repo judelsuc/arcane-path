@@ -760,10 +760,13 @@ autres dialogues pour ne pas interrompre une action en cours.
 Un arret pour faim, fatigue ou manque de sommeil ouvre egalement une explication.
 Ces changements n'ajoutent ni provisions ni reanimation d'une partie terminee.
 
-**Un coup de pouce (I)** donne gratuitement la prochaine action utile et la
-direction/distance vers l'objectif deja connu. Sur une etape, il rappelle
-comment enqueter ; pour un indice de lieu non resolu, il indique de demander
-son chemin sans devoiler la ville. Aucun temps, argent ou energie n'est depense.
+**Demander son chemin (I)** permet de demander gratuitement a un passant
+imaginaire comment rejoindre l'objectif deja connu : direction generale parmi
+huit points cardinaux et distance vague (« encore assez loin »), sans nombre de
+cases, kilometres exacts ni itineraire garanti. Disponible sans chercher un PNJ
+reel. Sur une etape, il rappelle comment enqueter ; pour un indice de lieu non
+resolu, il indique comment le preciser sans devoiler la ville.
+Aucun temps, argent ou energie n'est depense.
 
 Le journal de piste indique les directions depuis le joueur avec des nombres
 positifs et des fleches : est →, ouest ←, nord ↑, sud ↓. Par exemple, « 1 case

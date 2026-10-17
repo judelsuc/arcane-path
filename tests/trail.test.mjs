@@ -97,7 +97,9 @@ test("free hints guide known objectives without revealing future towns or changi
     const before = structuredClone(state);
     const travel = playerHint(state, info, t);
     assert.ok(travel.includes("Town 1"));
-    assert.ok(travel.includes("45.0"));
+    assert.ok(travel.includes(t("hintCompass.west")));
+    assert.ok(travel.includes(t("hintDistance.distant")));
+    assert.doesNotMatch(travel.replace("Town 1", ""), /\d|km|case\(s\)|cell\(s\)/);
     assert.ok(!travel.includes("Town 2"));
     const arrived = { ...state, col: trail.stages[0].col, row: trail.stages[0].row };
     assert.equal(playerHint(arrived, info, t), t("hintInvestigate", { place: "Town 1" }));
@@ -129,6 +131,33 @@ test("offline GeoNames stages retain real source identity without inventing OSM 
   const duplicate = structuredClone(route);
   duplicate.stages[1].geonameId = duplicate.stages[0].geonameId;
   assert.throws(() => validateTownTrail(duplicate), /Invalid town/);
+});
+
+test("asking directions uses eight vague compass sectors and distance bands without cell counts", () => {
+  for (const locale of ["fr", "en"]) {
+    const t = (key, args) => translate(locale, key, args);
+    for (const [col, row, direction] of [
+      [0, -20, "north"], [20, -20, "northeast"], [20, 0, "east"],
+      [20, 20, "southeast"], [0, 20, "south"], [-20, 20, "southwest"],
+      [-20, 0, "west"], [-20, -20, "northwest"], [1, -20, "north"],
+    ]) {
+      const state = { col: 0, row: 0, ended: null, trail: {
+        version: 1, index: 0, completed: false, stages: [{ col, row, name: "Bapaume" }],
+      } };
+      const text = playerHint(state, info, t);
+      assert.ok(text.includes(t(`hintCompass.${direction}`)), `${col},${row}: ${text}`);
+      assert.ok(text.includes("Bapaume"));
+      assert.doesNotMatch(text, /\d|km|→|←|↑|↓/);
+    }
+    for (const [cells, band] of [[7, "near"], [8, "short"], [39, "short"],
+      [40, "far"], [119, "far"], [120, "distant"]]) {
+      const state = { col: 0, row: 0, ended: null, trail: {
+        version: 1, index: 0, completed: false,
+        stages: [{ col: cells, row: 0, name: "Bapaume" }],
+      } };
+      assert.ok(playerHint(state, info, t).includes(t(`hintDistance.${band}`)));
+    }
+  }
 });
 
 test("town route loading validates new routes, propagates failures and requests one origin", async () => {

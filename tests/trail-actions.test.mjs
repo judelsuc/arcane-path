@@ -43,7 +43,11 @@ test("modern town arrivals accept all eight adjacent cells but never two cells a
         if (expected) assert.equal(hint, translate(locale, "hintInvestigate", {
           place: s.trail.stages[0].name,
         }));
-        else assert.match(hint, locale === "fr" ? /case/ : /cell/i);
+        else {
+          assert.ok(hint.includes(s.trail.stages[0].name));
+          assert.match(hint, locale === "fr" ? /Partez plutôt/ : /Head roughly/);
+          assert.doesNotMatch(hint, /case\(s\)|cell\(s\)|\d+ km/);
+        }
       }
       if (expected) {
         const next = trailClue(s, "discuss", cell, info, survival, economy);

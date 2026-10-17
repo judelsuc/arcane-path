@@ -1,5 +1,18 @@
 # Requirements tracked outside the design PDF
 
+## R-084 - Ask people for vague directions using I
+
+- Keep shortcut I, replacing automatic exact travel guidance with an answer
+  from a fictional passerby about the currently known destination.
+- Use a general eight-sector compass heading and qualitative distance, never
+  exact cell counts or numeric kilometres in this answer.
+- Remain free/read-only like the original hint, available wherever the current
+  guidance was available. No real person or mapped NPC is required.
+- Preserve useful arrival/investigation guidance and pending venue-only clues
+  without disclosing the unknown next town. No future stops are revealed.
+- These indications are approximate, not verified walkable routes. The
+  separate trail journal's existing numeric navigation is unchanged.
+
 ## R-083 - Prioritize lightweight parent-story improvements
 
 - **User decision (17 October 2026):** Do the easy narrative improvements now;
@@ -861,6 +874,8 @@ This file records additions to the design without modifying the source PDF,
 
 ## R-053 — Free guidance when lost
 
+- **Updated by R-084:** I now asks a fictional passerby for vague directions,
+  not exact cell counts or numeric distances.
 - **User request and confirmed choice:** Add a hint button explaining the
   next action and direction/distance to the current known objective, for free.
 - Show the shortcut in its caption. No time, energy or money cost, state
