@@ -14,6 +14,7 @@ shortcuts, especially free meals and unrestricted outdoor sleep.
 - Layer 6 checkpoint: Git tag `layer-6-economy`.
 - Layer 7 checkpoint: Git tag `layer-7-music`.
 - Layer 8 checkpoint: Git tag `layer-8-parent-trail`.
+- Save/resume checkpoint: Git tag `local-save-resume`.
 - Each completed further stage gets its own commit/tag and section here.
 - Nothing is pushed remotely automatically.
 
@@ -387,3 +388,74 @@ Python pipeline logic.
   explicitly requested. The daily tarot/risk data are foundations only.
 - First-pass budgets, 900-kcal meals, lodging multiplier, exposure penalties
   and rhythm difficulty need playtesting rather than claims of realism.
+
+## Local save/resume - user-selected priority before Layer 9
+
+This supersedes the no-persistence notes in Layers 4-8 above.
+
+### Choices
+
+- One browser-local slot per region, explicit Resume and confirmation before
+  replacing it with a new journey. No automatic start on page load. Switching
+  region or stopping merely leaves the live view; the last state stays stored.
+- Synchronous localStorage write after each committed gameplay state change,
+  not after render, Look, weather/content fetch, or failed movement. No
+  unload-handler dependency. A visible timestamp follows successful writes;
+  failures are logged and remain visibly distinct from success.
+- Format v1 contains state, region, map geometry identity, revision, saved
+  timestamp and pinned survival/economy snapshots. Restoring does not fetch
+  current balance settings or reroll any character/tarot/story choice.
+- Keep all model data, including immutable witness facts, past performance
+  counts, birth card, daily card/date, global chunk position, last movement
+  and terminal outcome. Stream memory, modal state and inspection cursor are
+  intentionally reconstructed, not serialized.
+- During music, the persisted snapshot is already a cancelled performance:
+  upfront costs remain; no pending reward can be replayed. The live
+  performance continues normally, and settlement replaces the snapshot with
+  its actual score/reward. Repeated reloads do not add costs or rewards.
+- Validate snapshot fields, character coefficients against pinned attributes,
+  tarot ids/day, route/history consistency and finite resource values.
+  Geometry changes reject resume rather than moving a player to a different
+  place. Existing world data can still update within unchanged geometry.
+- Corrupt/unknown-version data stays in its slot and is not silently reset.
+  Starting a new journey confirms replacement; no migration or export UI yet.
+- A store remembers the raw value it loaded and checks before each write.
+  Another tab's update blocks that tab's subsequent writes with an error.
+  This is a local stale-write guard, not a database lock or cloud conflict
+  resolution system; use one playing tab per region.
+- A save error does not undo a successful gameplay action or pretend it was
+  persisted. Save now can retry after transient quota/access failures. A
+  stale-tab error requires reload/resume to adopt the stored version.
+- Browser origin-specific, not server-side. No account, cross-device sync,
+  encryption, anti-cheat promise or audio asset storage. Clearing photo cache
+  is independent from clearing browser site data. The map server is still
+  needed to resume its normal travel/chunk API.
+- Future incompatible model changes must increment the save format and add
+  an explicit migration or rejection, not reinterpret old state silently.
+
+### Manual test
+
+1. Start Firmi, walk, eat, rest and discover a clue. Note money, time and tarot.
+2. Reload, select Firmi, click Resume: same position, gauges, money, cards,
+   profile, route and journal; no real-world time has elapsed in-game.
+3. Start music and reload partway through: upfront time/fatigue persists;
+   no performance resumes or pays again. Finish a performance and repeat:
+   the already-earned money remains, but is not paid twice.
+4. Stop or switch regions, then return to Firmi: Resume is still available.
+   Start fresh and decline confirmation: the old save remains unchanged.
+5. Change YAML/prices, then resume: old rules remain. Start a new journey
+   after confirmation to use the new rules.
+6. At exhaustion or reunion, reload/resume: still ended, never revived.
+7. Use another tab to change the same slot, then Save now in the first:
+   expect a visible stale-save warning, not an overwrite.
+8. Simulate storage denial/quota failure: expect a visible error. Restore
+   storage and Save now; previous data was not deleted on failure.
+
+### Validation
+
+107 JavaScript tests pass, including exact round trips after movement, meals
+and clues, pinned data, interrupted music, terminal saves, independent region
+slots, bad values/versions, quota/access errors and stale writes. Browser
+checks verified exact reload/resume, preserved profile/tarot/money/journal,
+music costs without duplicate reward, explicit quota and stale-write errors,
+recovery via Save now, region switching and cancelled replacement.

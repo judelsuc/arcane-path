@@ -13,9 +13,12 @@ import { beginBusking, settleBusking } from "./music.mjs";
 import { setupMusic } from "./music-ui.mjs";
 import { createTrail, interviewTrail } from "./trail.mjs";
 import { setupTrail } from "./trail-ui.mjs";
+import { createJourneyStore, mapIdentity } from "./journey-save.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }) {
   const start = document.querySelector("#start-travel");
+  const resume = document.querySelector("#resume-travel");
+  const saveStatus = document.querySelector("#journey-save-status");
   const stop = document.querySelector("#stop-travel");
   const rest = document.querySelector("#rest-travel");
   const retry = document.querySelector("#retry-travel");
@@ -35,6 +38,41 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
   let heading = [0, 0];
   let cursor, cameraData;
   let survivalConfig, economyData;
+  let saveStore, savedJourney, slotOccupied = false, saveError = "", savedAt;
+  let pendingRestore;
+  function readJourney() {
+    savedJourney = undefined;
+    slotOccupied = false;
+    savedAt = undefined;
+    saveError = "";
+    try {
+      saveStore ??= createJourneyStore(localStorage);
+      slotOccupied = localStorage.getItem(`arcane-journey-v1:${region}`) !== null;
+      savedJourney = saveStore.read(region);
+      if (savedJourney && savedJourney.mapIdentity !== mapIdentity(base)) {
+        throw new Error(t("saveMapChanged"));
+      }
+      savedAt = savedJourney?.savedAt;
+    } catch (reason) {
+      savedJourney = undefined;
+      saveError = reason.message;
+      console.error("Unable to read journey save:", reason);
+    }
+  }
+  function autosave() {
+    try {
+      if (!saveStore) throw new Error(t("saveStorageUnavailable"));
+      const saved = saveStore.write({ region, map: base, state,
+        survival: survivalConfig, economy: economyData });
+      savedJourney = saved;
+      slotOccupied = true;
+      savedAt = saved.savedAt;
+      saveError = "";
+    } catch (reason) {
+      saveError = reason.message;
+      console.error("Unable to save journey:", reason);
+    }
+  }
   function economyContext() {
     if (!state || !stream || !economyData) return null;
     const p = chunkPosition(state.col, state.row);
@@ -54,6 +92,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       if (!current || current.blocked) return false;
       try {
         state = beginBusking(state, current.cell, current.info, survivalConfig, economyData);
+        autosave();
         localize();
         return Boolean(state.performancePending);
       } catch (reason) {
@@ -65,6 +104,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       if (!state?.performancePending) return null;
       try {
         state = settleBusking(state, hits);
+        autosave();
         localize();
         return state.lastEarningsCents;
       } catch (reason) {
@@ -80,6 +120,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       if (!current || current.blocked) return false;
       try {
         state = interviewTrail(state, current.info, survivalConfig, economyData);
+        autosave();
         localize();
         return true;
       } catch (reason) {
@@ -138,6 +179,13 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
     controls.hidden = !active;
     start.hidden = active;
     start.disabled = !base;
+    resume.hidden = active || !slotOccupied;
+    resume.disabled = !base || !savedJourney;
+    document.querySelector("#save-travel").disabled = !state || busy;
+    saveStatus.textContent = saveError ? t("saveError", { error: saveError })
+      : savedAt ? t("saveStored", {
+        date: new Date(savedAt).toLocaleString(document.documentElement.lang),
+      }) : t("saveNone");
     document.querySelector("#character-setup").hidden = active;
     retry.disabled = busy;
     stop.disabled = busy;
@@ -403,6 +451,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       const previous = state;
       state = walkSurvival(state, dc, dr, fromCell, target.rows[to.row][to.col], survivalConfig);
       state = finishAction(previous, state, cellInfo(target, to.row, to.col), economyData);
+      autosave();
       if (!state.lastMove.elevationKnown) missingHeightMoves++;
       if (target.elevation.error) error = target.elevation.error;
       resetContent();
@@ -421,8 +470,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
     }
   }
 
-  async function begin() {
+  async function begin(restored, replacementConfirmed = false) {
     if (!base || active) return;
+    if (!restored && slotOccupied && !replacementConfirmed && !confirm(t("saveReplaceConfirm"))) return;
+    pendingRestore = restored;
     const currentToken = ++token;
     active = true;
     busy = true;
@@ -440,20 +491,28 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       const config = await health.json();
       if (config.chunkSize !== 8 || config.cellSizeMeters !== 250) throw new Error("Unsupported travel server.");
       if (currentToken !== token) return;
-      const settingsResponse = await fetch("./public/config.json", {
-        cache: "no-cache", signal: AbortSignal.timeout(5000),
-      });
-      if (!settingsResponse.ok) throw new Error(`Survival configuration: HTTP ${settingsResponse.status}`);
-      survivalConfig = validateSurvivalConfig((await settingsResponse.json()).survival);
-      const economyResponse = await fetch("./public/economy.json", {
-        cache: "no-cache", signal: AbortSignal.timeout(5000),
-      });
-      if (!economyResponse.ok) throw new Error(`Economy database: HTTP ${economyResponse.status}`);
-      economyData = validateEconomy(await economyResponse.json());
+      if (restored) {
+        state = structuredClone(restored.state);
+        survivalConfig = structuredClone(restored.survival);
+        economyData = structuredClone(restored.economy);
+        profile.value = state.profileId;
+      } else {
+        const settingsResponse = await fetch("./public/config.json", {
+          cache: "no-cache", signal: AbortSignal.timeout(5000),
+        });
+        if (!settingsResponse.ok) throw new Error(`Survival configuration: HTTP ${settingsResponse.status}`);
+        survivalConfig = validateSurvivalConfig((await settingsResponse.json()).survival);
+        const economyResponse = await fetch("./public/economy.json", {
+          cache: "no-cache", signal: AbortSignal.timeout(5000),
+        });
+        if (!economyResponse.ok) throw new Error(`Economy database: HTTP ${economyResponse.status}`);
+        economyData = validateEconomy(await economyResponse.json());
+        if (currentToken !== token) return;
+        state = startEconomy(startSurvival(Math.floor(base.width / 2), Math.floor(base.height / 2),
+          Date.now(), profile.value, survivalConfig), economyData);
+        state = { ...state, trail: createTrail(base, state.col, state.row) };
+      }
       if (currentToken !== token) return;
-      state = startEconomy(startSurvival(Math.floor(base.width / 2), Math.floor(base.height / 2),
-        Date.now(), profile.value, survivalConfig), economyData);
-      state = { ...state, trail: createTrail(base, state.col, state.row) };
       const p = chunkPosition(state.col, state.row);
       stream = createChunkStream(region, { onUpdate: () => {
         if (currentToken === token) draw();
@@ -461,6 +520,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       const first = await stream.load(p.x, p.y, true);
       if (currentToken !== token) return;
       if (first.elevation.error) error = first.elevation.error;
+      autosave();
       resetContent();
       trailUI.open();
       draw();
@@ -499,10 +559,21 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
     document.querySelector("#map-viewport").classList.remove("travel-viewport");
     localize();
   }
-  start.addEventListener("click", begin);
+  start.addEventListener("click", () => begin());
+  resume.addEventListener("click", () => {
+    readJourney();
+    if (savedJourney) begin(savedJourney);
+    else localize();
+  });
+  document.querySelector("#save-travel").addEventListener("click", () => {
+    if (!state || busy) return;
+    autosave();
+    localize();
+  });
   document.querySelector("#restart-travel").addEventListener("click", () => {
+    if (slotOccupied && !confirm(t("saveReplaceConfirm"))) return;
     reset();
-    begin();
+    begin(undefined, true);
   });
   look.addEventListener("click", toggleLook);
   stop.addEventListener("click", () => {
@@ -516,6 +587,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       if (!current) throw new Error("Current cell is not loaded.");
       if (action !== "rest") return economyUI.open(action);
       state = restEconomy(state, current.info, survivalConfig, economyData);
+      autosave();
       localize();
       document.querySelector("#ascii-map").focus({ preventScroll: true });
     } catch (reason) {
@@ -529,6 +601,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       state = action.kind === "meal"
         ? buyMeal(state, current.cell, current.info, action.id, survivalConfig, economyData)
         : sleepEconomy(state, current.cell, current.info, action.id, survivalConfig, economyData);
+      autosave();
       error = "";
       localize();
       return true;
@@ -546,7 +619,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
     if (weatherError) weatherKey = undefined;
     if (!state || !stream) {
       active = false;
-      return begin();
+      return begin(pendingRestore, true);
     }
     busy = true;
     error = "";
@@ -558,6 +631,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       const chunk = await stream.load(p.x, p.y, true);
       if (currentToken !== token) return;
       if (chunk.elevation.error) error = chunk.elevation.error;
+      autosave();
       prefetch();
       draw();
     } catch (reason) {
@@ -591,6 +665,11 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
   });
   return {
     localize, reset, get active() { return active; },
-    configure(nextRegion, map) { region = nextRegion; base = map; localize(); },
+    configure(nextRegion, map) {
+      region = nextRegion;
+      base = map;
+      if (base) readJourney();
+      localize();
+    },
   };
 }

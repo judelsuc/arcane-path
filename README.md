@@ -114,9 +114,10 @@ par la configuration ; les sources OSM et altitudes restent reutilisees.
   pas actives dans une fenetre photo ou le tiroir OSM.
 - La carte OSM du tiroir est recentree sur la case du joueur avec un marqueur,
   et le lien externe reprend cette position. Fermee, elle n'est pas rechargee.
-- **Revenir a la carte fixe**, changer de region ou recharger la page termine
-  la partie courante. Les statistiques ne sont pas encore sauvegardees ; les
-  donnees geographiques, altitudes et contenus decouverts restent en cache.
+- **Revenir a la carte fixe**, changer de region ou recharger quitte la vue
+  du voyage. La progression est sauvegardee automatiquement apres chaque
+  action : **Reprendre la sauvegarde** restaure la partie de cette region.
+  Les donnees geographiques, altitudes et contenus decouverts restent en cache.
   Les trains et bus ne sont pas encore implementes.
 
 ### Modele d'effort et altitude
@@ -302,10 +303,44 @@ avant son objectif. Les etapes ne sont pas atteignables par le curseur Look.
 Raccourcis assumes : parent immobile au dernier repere, quatre prenoms,
 un seul modele de dialogue, trois etapes choisies parmi les quatre reperes
 proches successifs, sans OSRM, fausses pistes ni calendrier du parent.
-La generation fonctionne sur les quatre cartes incluses. **Pas de sauvegarde
-de partie : recharger ou changer de region recommence toujours le voyage.**
+La generation fonctionne sur les quatre cartes incluses. La sauvegarde locale
+permet maintenant de reprendre la piste apres rechargement ou changement de region.
 Le serveur de voyage local existe deja, mais la creation serveur et les
 parcours complets de la couche 9 ne sont pas encore implementes.
+
+## Sauvegarde et reprise locales
+
+- Une sauvegarde **par region et par origine navigateur** (hote + port).
+  Sur la carte fixe, choisir la region puis **Reprendre la sauvegarde**.
+  Le serveur local doit tourner pour recharger les chunks ; ce n'est pas
+  une sauvegarde sur un compte ou sur le serveur.
+- Sauvegarde automatique au depart puis apres chaque action reussie :
+  marche, repos, repas, sommeil, musique et rencontre. **Sauvegarder maintenant**
+  permet aussi de reessayer apres une erreur de stockage. Une date confirme
+  le dernier enregistrement ; une erreur reste affichee et journalisee.
+- Position globale (y compris hors snapshot), temps simule, profil, besoins,
+  argent, tarot de depart/du jour, depenses/gains et piste complete sont
+  conserves. Attendre reellement pendant une interruption ne coute rien.
+- Les regles de survie et la base economique de la partie sont incluses :
+  une modification de YAML ou des tarifs n'altere pas un voyage repris.
+  Un nouveau voyage utilise la configuration courante.
+- Une prestation interrompue est reprise **comme annulee** : couts conserves,
+  aucun gain. Une prestation terminee conserve exactement ses gains,
+  sans nouveau versement. Les retrouvailles et epuisements restent terminaux.
+- **Nouveau voyage** demande confirmation avant de remplacer le slot courant.
+  Changer de region, revenir a la carte fixe ou vider le cache des contenus
+  ne supprime pas les sauvegardes. Effacer les donnees du site, changer de
+  navigateur/port ou utiliser une session privee peut les rendre indisponibles.
+- Format versionne et valide. Une sauvegarde endommagee, incompatible ou
+  utilisant une autre geometrie de carte ne se recharge pas silencieusement
+  et n'est pas effacee automatiquement. Pas encore d'import/export/migration.
+- Eviter de jouer la meme region dans plusieurs onglets : un onglet qui
+  detecte une sauvegarde modifiee ailleurs refuse de l'ecraser et demande
+  un rechargement. Les slots de regions differentes sont independants.
+
+Les dialogues, curseur Look, telechargements et images ne sont pas des etats
+de jeu sauvegardes ; les menus se reconstruisent et les caches existants
+restent separes. La sauvegarde est locale, pas un mecanisme anti-triche.
 
 ### Couche 3 : temps et cadran du ciel
 

@@ -448,6 +448,7 @@ dialog p { margin: 12px 0; }
 #music-progress { width: 100%; }
 #trail-dialog { width: min(680px, 94vw); max-height: 90dvh; overflow: auto; overflow-wrap: anywhere; }
 #trail-history { padding-left: 1.3em; }
+#journey-save-status { color: var(--muted); font-size: 0.65rem; overflow-wrap: anywhere; }
 
 .travel-panel {
   padding: 16px 24px;

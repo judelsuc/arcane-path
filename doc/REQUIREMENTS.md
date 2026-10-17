@@ -499,6 +499,22 @@ This file records additions to the design without modifying the source PDF,
   or long-distance route generation. Geographic landmarks do not imply
   real staff participation or guaranteed physical access.
 
+## R-034 — Local save/resume before Layer 9
+
+- **User decision:** Add save/resume before expanding the game server.
+- **Status:** One versioned browser-local slot per region, autosaved after
+  successful state changes, explicit resume/new-journey controls and manual
+  save retry. Starting fresh confirms replacement.
+- **Preserve:** Global position, simulated clock, character, needs, money,
+  birth/daily tarot, economic history/counters, parent route, found witness
+  facts and terminal outcomes. Pin the original survival/economy rules.
+- **Interruption:** No offline time cost, reroll or repeated reward. Pending
+  music resumes cancelled, with upfront costs retained and zero reward.
+- **Reliability:** Validate before loading/writing, reject changed map geometry,
+  surface quota/access/corruption/version errors, retain unreadable originals
+  until explicitly replaced, detect stale-tab writes. No cloud sync,
+  import/export, cross-device transfer, migration or anti-cheat claims.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,
