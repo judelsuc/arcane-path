@@ -1,5 +1,29 @@
 # Infrastructure OVHcloud - rapport du 18 octobre 2026
 
+## Dernieres livraisons - couverture du carnet et fond reel en cache
+
+- Couverture : runtime `e6e20a1`, tag `deploy-2026-10-18-notebook-cover`,
+  developpement `04e2e50`, base `f473198`. Sept assets et manifeste verifies
+  octet par octet sur HTTPS, sans redemarrage ; **421 tests JS passes**.
+  Titre Voyage de [nom], sous-titre humoristique FR/EN, depart et date UTC,
+  page initiale du carnet et du PDF. Donnees du lecteur exclues des carnets trouves.
+  Retour code : `/home/ubuntu/arcane-path-before-deploy-e6e20a1.tar.gz` (0600).
+- Correction du fond : runtime `f473198`, tag
+  `deploy-2026-10-18-terrain-inventory`, developpement `63f4eb5`, base `c572c0f`.
+  Deux assets, deux modules Python et manifeste verifies ; backend redemarre.
+  Inventaire des vrais fichiers de cache au lieu de sondages espaces manquant
+  les chemins etroits. Aucun travail fournisseur ni reconstruction de chunk.
+  Retrait de la spirale decorative au milieu de la carte.
+  **419 tests JS et quatre nouveaux tests Python passes** (dont HTTP reel).
+  Suite serveur : dix tests passent ; un echec preexistant attend cinq photos
+  alors que la configuration de production en autorise dix, inchangee ici.
+- Endpoint de production verifie sur le cache reel : **68 chunks, 4352 blocs
+  de terrain, 12 types**, stride 1, aucun telechargement geographique.
+  Retour code : `/home/ubuntu/arcane-path-before-deploy-f473198.tar.gz` (0600).
+- Pour chaque livraison : deux bases sauvegardees avant/apres, **16 genesis
+  initiales inchangees**, services actifs et API disponible. Mini-jeux exclus.
+  Verification visuelle toujours bloquee par la connexion navigateur CDP.
+
 ## Derniere livraison - carte du voyage, fond en cache et deces
 
 - Runtime `c572c0f`, tag `deploy-2026-10-18-death-terrain`,
