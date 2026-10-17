@@ -24,6 +24,7 @@ verifiee, pas seulement du code prepare. Voir le
 - [x] Fichiers du prototype transferes sur la VM, hors secrets et etat Terraform.
 - [x] Service du jeu operationnel et tests HTTP distants termines.
 - [x] Acces prive par tunnel SSH verifie ; parcours distant de dix etapes genere.
+- [ ] CI GitHub Actions : publication du workflow bloquee par les droits OAuth actuels.
 - [ ] Sauvegarde distante et restauration testee.
 - [ ] Domaine arcane-path.eu reserve et DNS configure.
 - [ ] HTTPS et protections necessaires avant publication publique.

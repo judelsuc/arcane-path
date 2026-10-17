@@ -100,6 +100,11 @@ La premiere connexion SSH utilise l'acceptation de la nouvelle cle d'hote
 (TOFU), puis les connexions suivantes exigent la cle locale connue.
 Le tunnel de test a ete ferme ; la VM et le service restent actifs.
 
+Validation locale du checkpoint : 162 tests JavaScript, 92 tests Python et
+5 plans Terraform simules passes. L'ajout d'un workflow GitHub Actions a ete
+refuse par GitHub (scope OAuth `workflow` absent) ; il a ete retire de la
+publication. Aucune CI distante n'est donc revendiquee.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026
