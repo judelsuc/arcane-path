@@ -874,7 +874,11 @@ L'onglet masque et le dialogue du minijeu de rythme mettent la musique en
 pause ; aucune piste Suno non synchronisee n'influence les notes/recompenses.
 Le mini-jeu a sa propre melodie originale avec basse et accompagnement,
 synthetisee par Web Audio sans fichier musical a telecharger. Les notes sont
-programmees sur les memes huit temps de 700 ms que les reperes visuels.
+programmees sur les memes reperes visuels : une phrase de 12 cases (8 notes,
+4 silences), repetee trois fois. Les cases vides ne donnent aucun point.
+Le pas est de 400 ms, la tolerance de 150 ms ; les silences rendent les attaques
+irregulieres. Le compteur indique la boucle courante sur trois. Les 24 notes
+partagent le meme plafond de gain qu'avant, sans tripler le revenu.
 Une frappe juste ou fausse joue un retour distinct. Le bouton de depart
 demande l'activation audio au navigateur ; les refus sont affiches sans bloquer
 le jeu visuel. Volume et coupure partages dans Options. Fermeture, annulation

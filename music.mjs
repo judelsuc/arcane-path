@@ -1,7 +1,12 @@
 import { restSurvival } from "./survival.mjs";
 import { finishAction, marketPrice, didFaint } from "./economy.mjs";
 
-export const MUSIC = Object.freeze({ beats: 8, intervalMs: 700, leadMs: 1500, windowMs: 180 });
+export const MUSIC_PATTERN = Object.freeze([1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1]);
+const NOTES = MUSIC_PATTERN.flatMap((note, index) => note ? [index] : []);
+export const MUSIC = Object.freeze({
+  beats: NOTES.length * 3, loops: 3, slots: MUSIC_PATTERN.length,
+  intervalMs: 400, leadMs: 1500, windowMs: 150,
+});
 
 export function rhythm(startedAt) {
   if (!Number.isFinite(startedAt)) throw new Error("Invalid performance clock.");
@@ -9,7 +14,8 @@ export function rhythm(startedAt) {
 }
 
 export function beatTime(game, index) {
-  return game.startedAt + MUSIC.leadMs + index * MUSIC.intervalMs;
+  const slot = Math.floor(index / NOTES.length) * MUSIC.slots + NOTES[index % NOTES.length];
+  return game.startedAt + MUSIC.leadMs + slot * MUSIC.intervalMs;
 }
 
 export function rhythmEnd(game) {
@@ -18,7 +24,10 @@ export function rhythmEnd(game) {
 
 export function tapRhythm(game, now) {
   if (!Number.isFinite(now)) throw new Error("Invalid tap clock.");
-  const index = Math.round((now - game.startedAt - MUSIC.leadMs) / MUSIC.intervalMs);
+  const slot = Math.round((now - game.startedAt - MUSIC.leadMs) / MUSIC.intervalMs);
+  const position = NOTES.indexOf(slot % MUSIC.slots);
+  const index = Math.floor(slot / MUSIC.slots) * NOTES.length + position;
+  if (position < 0) return game;
   if (index < 0 || index >= MUSIC.beats || game.hits[index] ||
       Math.abs(now - beatTime(game, index)) > MUSIC.windowMs) return game;
   const hits = [...game.hits];

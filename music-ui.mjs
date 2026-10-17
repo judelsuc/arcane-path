@@ -1,4 +1,4 @@
-import { MUSIC, rhythm, beatTime, rhythmEnd, tapRhythm } from "./music.mjs";
+import { MUSIC, MUSIC_PATTERN, rhythm, beatTime, rhythmEnd, tapRhythm } from "./music.mjs";
 
 export function setupMusic(t, { begin, settle, available, audio }) {
   const dialog = document.querySelector("#music-dialog");
@@ -20,13 +20,23 @@ export function setupMusic(t, { begin, settle, available, audio }) {
 
   function render(now) {
     const hits = game.hits.filter(Boolean).length;
+    const loop = Math.min(MUSIC.loops - 1, Math.max(0,
+      Math.floor((now - game.startedAt - MUSIC.leadMs) / (MUSIC.slots * MUSIC.intervalMs))));
+    let note = loop * MUSIC.beats / MUSIC.loops;
     for (let i = 0; i < beats.length; i++) {
-      beats[i].className = game.hits[i] ? "music-beat hit"
-        : Math.abs(beatTime(game, i) - now) <= MUSIC.windowMs ? "music-beat cue"
-        : now > beatTime(game, i) + MUSIC.windowMs ? "music-beat missed" : "music-beat";
-      beats[i].textContent = game.hits[i] ? "+" : now > beatTime(game, i) + MUSIC.windowMs ? "-" : String(i + 1);
+      if (!MUSIC_PATTERN[i]) {
+        beats[i].className = "music-beat rest";
+        beats[i].textContent = "";
+        continue;
+      }
+      beats[i].className = game.hits[note] ? "music-beat hit"
+        : Math.abs(beatTime(game, note) - now) <= MUSIC.windowMs ? "music-beat cue"
+        : now > beatTime(game, note) + MUSIC.windowMs ? "music-beat missed" : "music-beat";
+      beats[i].textContent = game.hits[note] ? "+" : now > beatTime(game, note) + MUSIC.windowMs ? "-" : "*";
+      note++;
     }
-    document.querySelector("#music-score").textContent = t("musicScore", { hits, total: MUSIC.beats });
+    document.querySelector("#music-score").textContent = `${t("musicScore", { hits, total: MUSIC.beats })} — ${
+      t("musicLoop", { loop: loop + 1, total: MUSIC.loops })}`;
     const cursor = Math.max(0, Math.min(100, (now - game.startedAt) /
       (rhythmEnd(game) - game.startedAt) * 100));
     document.querySelector("#music-progress").value = cursor;
@@ -58,7 +68,7 @@ export function setupMusic(t, { begin, settle, available, audio }) {
     void audio.start(game);
     track.replaceChildren();
     beats.length = 0;
-    for (let i = 0; i < MUSIC.beats; i++) {
+    for (let i = 0; i < MUSIC.slots; i++) {
       const beat = document.createElement("span");
       beat.className = "music-beat";
       track.append(beat);

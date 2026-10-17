@@ -38,12 +38,17 @@ test("street performance wires melody, successful and failed taps, finish and hi
   nodes.get("#open-music").handlers.click();
   nodes.get("#music-start").handlers.click();
   assert.ok(current);
-  assert.equal(nodes.get("#music-track").children.length, MUSIC.beats);
+  assert.equal(nodes.get("#music-track").children.length, MUSIC.slots);
+  assert.equal(nodes.get("#music-track").children.filter(e => e.className === "music-beat rest").length, 4);
   nodes.get("#music-tap").handlers.click();
   now = beatTime(current, 0);
   nodes.get("#music-tap").handlers.click();
   nodes.get("#music-tap").handlers.click();
   assert.deepEqual(hits, [false, true, false]);
+  now = beatTime(current, 8);
+  tick();
+  assert.match(nodes.get("#music-score").textContent, /musicLoop/);
+  assert.equal(nodes.get("#music-tap").disabled, false);
   now = beatTime(current, MUSIC.beats - 1) + MUSIC.windowMs;
   tick();
   assert.deepEqual(settled, [1]);

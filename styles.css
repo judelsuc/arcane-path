@@ -636,6 +636,7 @@ dialog p { margin: 12px 0; }
 .music-beat.cue { background: #f4cc80; color: #17251b; }
 .music-beat.hit { background: #375d3b; color: white; }
 .music-beat.missed { opacity: 0.5; }
+.music-beat.rest { border-style: dashed; opacity: 0.35; }
 #music-progress { width: 100%; }
 #trail-dialog { width: min(680px, 94vw); max-height: 90dvh; overflow: auto; overflow-wrap: anywhere; }
 #trail-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createStreetMusicAudio } from "../street-music-audio.mjs";
-import { MUSIC, rhythm } from "../music.mjs";
+import { MUSIC, rhythm, beatTime } from "../music.mjs";
 
 function fixture(options = {}) {
   const voices = [], gains = [], errors = [], reports = [];
@@ -30,11 +30,10 @@ test("street melody and bass use the exact visual beat clock, with distinct hit/
   const { player, voices, errors } = fixture();
   player.enable(true);
   await player.start(rhythm(1000));
-  assert.equal(voices.length, MUSIC.beats * 3);
+  assert.equal(voices.length, MUSIC.beats * 2);
   for (let i = 0; i < MUSIC.beats; i++) {
-    assert.equal(voices[i * 3].started, 10 + MUSIC.leadMs / 1000 + i * MUSIC.intervalMs / 1000);
-    assert.equal(voices[i * 3 + 1].started, voices[i * 3].started);
-    assert.equal(voices[i * 3 + 2].started, voices[i * 3].started + MUSIC.intervalMs / 2000);
+    assert.equal(voices[i * 2].started, 10 + (beatTime(rhythm(1000), i) - 1000) / 1000);
+    assert.equal(voices[i * 2 + 1].started, voices[i * 2].started);
   }
   player.hit(true);
   assert.equal(voices.at(-1).frequency.value, 783.99);
@@ -65,7 +64,7 @@ test("shared mute/volume apply immediately and stopping cancels every scheduled 
 test("resume latency skips elapsed cues rather than playing a burst of late notes", async () => {
   const { player, voices } = fixture({ now: () => 3000 });
   await player.start(rhythm(1000));
-  assert.equal(voices.length, (MUSIC.beats - 1) * 3);
+  assert.equal(voices.length, (MUSIC.beats - 2) * 2);
   assert.ok(voices.every(voice => voice.started >= 10));
 });
 
@@ -80,7 +79,7 @@ test("cancelled unlock cannot start music, and a later performance reuses the co
   assert.equal(voices.length, 0);
   context.resume = async () => {};
   await player.start(rhythm(1000));
-  assert.equal(voices.length, MUSIC.beats * 3);
+  assert.equal(voices.length, MUSIC.beats * 2);
 });
 
 test("unsupported or rejected audio is reported, without rejecting the visual game", async () => {

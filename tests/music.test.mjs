@@ -26,10 +26,18 @@ test("rhythm counts each note once, including exact tolerance endpoints", () => 
   assert.throws(() => tapRhythm(game, NaN));
 });
 
-test("perfect sequence hits all eight notes; rapid spamming cannot count one note twice", () => {
+test("perfect sequence hits all 24 notes over three irregular loops; rests never score", () => {
   let game = rhythm(0);
   for (let i = 0; i < MUSIC.beats; i++) game = tapRhythm(game, beatTime(game, i));
-  assert.equal(game.hits.filter(Boolean).length, 8);
+  assert.equal(game.hits.filter(Boolean).length, 24);
+  const empty = rhythm(0);
+  for (let loop = 0; loop < 3; loop++) {
+    for (const slot of [2, 4, 7, 9]) {
+      assert.equal(tapRhythm(empty, MUSIC.leadMs + (loop * 12 + slot) * MUSIC.intervalMs), empty);
+    }
+    assert.equal(beatTime(empty, loop * 8), MUSIC.leadMs + loop * 12 * MUSIC.intervalMs);
+  }
+  assert.equal(beatTime(empty, 2) - beatTime(empty, 1), 2 * MUSIC.intervalMs);
   let spam = rhythm(0);
   for (let i = 0; i < 50; i++) spam = tapRhythm(spam, 1500 + i);
   assert.equal(spam.hits.filter(Boolean).length, 1);
@@ -48,14 +56,14 @@ test("performances cost time, energy and fatigue up front, even with no money", 
 
 test("rewards are score-proportional integer cents and settle exactly once", () => {
   const state = beginBusking(start(), cell, info, survival, data);
-  for (const hits of [0, 4, 8]) {
+  for (const hits of [0, 12, 24]) {
     const next = settleBusking(state, hits);
-    assert.equal(next.walletCents - state.walletCents, Math.round(1120 * hits / 8));
+    assert.equal(next.walletCents - state.walletCents, Math.round(1120 * hits / MUSIC.beats));
     assert.equal(next.elapsedMinutes, 30);
     assert.equal(next.performancePending, null);
     assert.throws(() => settleBusking(next, hits), /No active/);
   }
-  for (const score of [-1, 9, 2.5]) assert.throws(() => settleBusking(state, score));
+  for (const score of [-1, 25, 2.5]) assert.throws(() => settleBusking(state, score));
 });
 
 test("cancelled performance costs remain and exhausted or remote characters cannot earn", () => {
@@ -76,7 +84,7 @@ test("earning, meals and shelter support three full simulated days without free 
     "balanced", survival), data, () => 0);
   const hostel = { ...cell, pois: [{ osmId: "node/1", tags: { tourism: "hostel" } }] };
   for (let day = 0; day < 3; day++) {
-    for (let i = 0; i < 4; i++) state = settleBusking(beginBusking(state, cell, info, survival, data), 8);
+    for (let i = 0; i < 4; i++) state = settleBusking(beginBusking(state, cell, info, survival, data), MUSIC.beats);
     for (let i = 0; i < 40; i++) state = restEconomy(state, info, { ...survival, rest_minutes: 20 }, data);
     for (let i = 0; i < 2; i++) state = buyMeal(state, cell, info, "aligot", survival, data);
     state = sleepEconomy(state, hostel, info, "node/1", survival, data);

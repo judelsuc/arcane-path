@@ -69,9 +69,8 @@ export function createStreetMusicAudio({ createContext, now = () => performance.
           const delay = (beatTime(game, i) - current) / 1000;
           if (delay < 0) continue;
           const at = context.currentTime + delay;
-          note(MELODY[i], at, 0.45, 0.28);
-          note(BASS[i], at, 0.58, 0.16, "sine");
-          note(MELODY[i] / 2, at + MUSIC.intervalMs / 2000, 0.22, 0.09);
+          note(MELODY[i % MELODY.length], at, 0.22, 0.28);
+          note(BASS[i % BASS.length], at, 0.3, 0.16, "sine");
         }
         active = true;
         onError("");
