@@ -295,10 +295,14 @@ export function sleepEconomy(state, cell, info, shelterId, survival, data) {
   if (shelterId !== null && !shelter) throw new Error("Shelter is not available in the player's cell.");
   const cents = shelter && !shelter.free ? marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents : 0;
   const paid = charge(state, cents);
+  const fullBoard = Boolean(shelter && !shelter.free);
   const config = shelter ? survival : { ...survival,
     sleep_fatigue_recovery_per_hour: 0,
     sleep_recovery_per_hour: survival.sleep_recovery_per_hour * data.rules.outdoorSleepRecoveryFactor };
-  const next = sleepSurvival(paid, config);
+  const sleeping = fullBoard ? { ...paid, reserveKcal: survival.reserve_kcal } : paid;
+  let next = sleepSurvival(sleeping, config);
+  if (fullBoard) next = { ...next, reserveKcal: survival.reserve_kcal,
+    fatigue: 0, awakeHours: 0, meals: next.meals + 2, ended: null };
   return finishAction(state, next, info, data, { sheltered: Boolean(shelter), survival });
 }
 

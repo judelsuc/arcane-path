@@ -179,6 +179,6 @@ test("earning, meals and shelter support three full simulated days without free 
   }
   assert.equal(state.elapsedMinutes, 3 * 24 * 60);
   assert.equal(state.performances, 12);
-  assert.equal(state.meals, 6);
+  assert.equal(state.meals, 12);
   assert.equal(state.sleeps, 3);
 });
