@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { createParentPathLoader } from "../parent-path.mjs";
+import { createParentPathLoader, prepareParentPaths } from "../parent-path.mjs";
 import { travelCost } from "../travel.mjs";
 
 const root = new URL("../", import.meta.url);
@@ -125,5 +125,84 @@ test("malformed routes, progress, HTML and network errors are surfaced, never ac
     await settle();
     assert.equal(loader.status.status, "error");
     loader.stop();
+  }
+});
+
+const automaticState = () => ({ ...state(0), trail: { ...state(0).trail,
+  stages: Array.from({ length: 13 }, () => ({})) } });
+
+test("automatic preparation defaults to the current leg, sequences requested legs and preserves state", async () => {
+  const initial = automaticState(), before = structuredClone(initial), stages = [], updates = [];
+  const fetcher = async url => {
+    const stage = Number(new URL(url, "http://localhost").searchParams.get("stage"));
+    stages.push(stage);
+    return response(ready(stage));
+  };
+  await prepareParentPaths(initial, { fetcher, onUpdate: status => updates.push(status) });
+  assert.deepEqual(stages, [0]);
+  await prepareParentPaths(initial, { fetcher, firstStage: 10, endStage: 13 });
+  assert.deepEqual(stages, [0, 10, 11, 12]);
+  assert.ok(updates.every(status => status.stage === 0 && status.total === 13));
+  assert.deepEqual(initial, before);
+  for (const s of [{ ...initial, serverJourney: undefined }, { ...initial, ended: "reunion" },
+    { ...initial, trail: { version: 1 } }, { ...initial, trail: { ...initial.trail, completed: true } }]) {
+    await prepareParentPaths(s, { fetcher: () => assert.fail("Ineligible journey must not request paths") });
+  }
+  for (const range of [{ firstStage: -1 }, { endStage: 14 }, { firstStage: 1.5 },
+    { firstStage: 2, endStage: 1 }]) {
+    await assert.rejects(prepareParentPaths(initial, range), /stage range/);
+  }
+});
+
+test("automatic preparation retries a cached route error once, but surfaces persistent and transport failures", async () => {
+  const urls = [];
+  await prepareParentPaths(automaticState(), { fetcher: async url => {
+    urls.push(url);
+    return urls.length === 1 ? response({ error: "Previously unavailable" }, 422) : response(ready(0));
+  } });
+  assert.equal(urls.length, 2);
+  assert.match(urls[1], /retry=1/);
+  for (const status of [422, 500]) {
+    let count = 0;
+    await assert.rejects(prepareParentPaths(automaticState(), { fetcher: async () => {
+      count++;
+      return response({ error: "Still unavailable" }, status);
+    } }), /Still unavailable/);
+    assert.equal(count, status === 422 ? 2 : 1);
+  }
+});
+
+test("automatic preparation cancels polls and active requests and bounds a permanently busy worker", async () => {
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(prepareParentPaths(automaticState(), { signal: controller.signal,
+    fetcher: () => assert.fail("Already aborted") }), { name: "AbortError" });
+  const active = new AbortController();
+  let requestSignal;
+  const pending = prepareParentPaths(automaticState(), {
+    signal: active.signal,
+    fetcher: (_, options) => { requestSignal = options.signal; return new Promise(() => {}); },
+  });
+  active.abort();
+  await assert.rejects(pending, { name: "AbortError" });
+  assert.equal(requestSignal.aborted, true);
+  const callbacks = [], cleared = [];
+  const waiting = new AbortController();
+  const queued = prepareParentPaths(automaticState(), { signal: waiting.signal,
+    fetcher: async () => response({}, 429),
+    setTimer: callback => { callbacks.push(callback); return 123; },
+    clearTimer: timer => cleared.push(timer),
+  });
+  await settle();
+  assert.equal(callbacks.length, 1);
+  waiting.abort();
+  await assert.rejects(queued, { name: "AbortError" });
+  assert.ok(cleared.includes(123));
+  const keepAlive = setTimeout(() => {}, 100);
+  try {
+    await assert.rejects(prepareParentPaths(automaticState(), { timeoutMs: 5,
+      fetcher: () => new Promise(() => {}) }), { name: "TimeoutError" });
+  } finally {
+    clearTimeout(keepAlive);
   }
 });

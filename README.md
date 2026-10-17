@@ -38,11 +38,11 @@ verifiee, pas seulement du code prepare. Voir le
 - [x] DNS arcane-path.eu : adresse A 57.130.85.251 verifiee localement et sur Cloudflare.
 - [x] Certificat HTTPS valide et acces de previsualisation protege par mot de passe.
 - [ ] Ouverture sans mot de passe : comptes, protections et sauvegardes a finaliser.
-- [ ] Couche 9 : creation de partie serveur, parcours routables et validation.
+- [x] Couche 9, jalon leger : creation serveur, recit coherent et poursuite finie.
   - [x] Depart cree et conserve cote serveur : identifiant, graine, tarot, etat initial, contenu versionne.
   - [x] Reessais idempotents, reprise locale et anciennes sauvegardes preserves.
-  - [x] Moteur A* borne sur la grille, persistance, cache et demande volontaire dans le journal.
-  - [ ] Recit factuel, chronologie, fausses pistes et poursuite mobile : en validation locale, non deployes.
+  - [x] Moteur A* borne sur la grille, persistance, cache et preparation automatique de l'etape courante.
+  - [x] Recit factuel, chronologie, fausses pistes et poursuite mobile : parcours narratifs et sauvegardes verifies.
   - [x] Dialogues varies, souvenirs vieillissants sans perte des indices et presentation claire du motif/sejours (code).
 - [ ] Plus tard (R-083) : validation terrain 30–60 km, budget de survie,
   nuits/achats sur le trajet et destinations guidees par le motif.
@@ -54,8 +54,8 @@ verifiee, pas seulement du code prepare. Voir le
 - [ ] Notifications par mail : aucun service d'envoi configure.
 
 Le DNS resout maintenant l'IP de la VM ; le site est accessible en HTTPS
-avec un mot de passe de previsualisation. La couche 9
-est en cours, pas terminee.
+avec un mot de passe de previsualisation. Le jalon leger de la couche 9 est
+termine ; la simulation avancee du terrain et du budget de survie reste reportee.
 Les couts sont des estimations, pas un plafond de facturation automatise.
 
 ## Infrastructure OVHcloud
@@ -155,10 +155,11 @@ creation pourrait remplacer la VM et est bloque par `prevent_destroy`.
 Les sauvegardes navigateur du port 8766 ne sont pas automatiquement presentes
 sur le port 18766 : chaque origine navigateur garde ses propres voyages.
 
-### Couche 9 : creation de partie (premier jalon)
+### Couche 9 : jalon narratif leger
 
 Une nouvelle partie passe par `POST /api/journeys`. Le serveur choisit une
-graine et un tarot, genere dix villes du catalogue europeen local et conserve
+graine et un tarot, genere dix villes du catalogue europeen local, le recit du
+parent et, si necessaire, trois villes de continuation. Il conserve
 le depart complet dans `.cache/travel/journeys.sqlite3`. Le meme identifiant
 de requete renvoie exactement le meme depart, meme apres redemarrage ou mise
 a jour des regles. Un changement de nom ou region avec cet identifiant est
@@ -186,18 +187,28 @@ dans une future sauvegarde ; le cache persistant seul n'est pas une sauvegarde.
 
 Les etapes restent choisies a **30–60 km a vol d'oiseau**. Le choix approuve
 pour les chemins est A* sur la grille du jeu, pas OSRM/GraphHopper. Cela ne
-revendique ni un vrai itineraire routier pieton ni le validateur complet de
-resolubilite de la couche 9.
+revendique ni un vrai itineraire routier pieton ni une validation du budget de
+survie. Le jalon leger valide la coherence du recit et l'acces aux indices.
+
+Le recit fixe motif, mode de voyage, chronologie, fausses pistes facultatives et
+souvenirs des temoins. Le parent attend ou poursuit sa route apres 7, 14 et 21
+jours de jeu, puis attend dans la treizieme ville au plus tard. On peut le
+rattraper des la dixieme. Chaque etape garde un indice accessible sans argent,
+photo externe, competence ni objet unique. Les anciennes parties conservent
+leur piste d'origine, sans recit ajoute retroactivement.
 
 ### Chemins du parent sur la grille
 
-Pendant une partie serveur, le bouton du journal prepare le chemin vers la
-prochaine etape en arriere-plan. Le lancement reste volontaire pendant les
-tests, pour ne pas charger davantage les fournisseurs cartographiques.
-Le journal affiche le travail reel, la distance sur la
-grille et les heures de marche de reference (personnage 4,5 km/h, sans fatigue,
-faim ni repos). Les couts terrain/pente et les quatre directions sont les memes
-que pour le joueur. L'eau reste traversable comme dans le jeu actuel ; aucune
+Pendant une partie serveur, la preparation du chemin de l'etape courante
+demarre automatiquement des la preparation/reprise et a chaque nouvel indice.
+Elle reste en arriere-plan, sans bloquer l'ouverture de la partie. Les
+etapes futures ne sont pas telechargees d'avance. Un statut et un bouton de
+reessai en cas d'erreur apparaissent hors du journal ; attente client bornee a
+cinq minutes et une relance automatique d'un echec serveur deja en cache.
+Le journal rappelle uniquement les indices obtenus, sans distances ou nombres
+de cases. Le calcul de reference (personnage 4,5 km/h, sans fatigue, faim ni
+repos) utilise les couts terrain/pente et les quatre directions du joueur.
+L'eau reste traversable comme dans le jeu actuel ; aucune
 precision de pont, cloture ou chemin pieton reel n'est inventee.
 
 `GET /api/parent-path?journey=IDENTIFIANT&stage=0` lance ou consulte la

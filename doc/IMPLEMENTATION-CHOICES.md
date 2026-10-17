@@ -6,6 +6,49 @@ All survival numbers below are gameplay approximations, not medical advice.
 Sections are chronological checkpoint records: later layers supersede earlier
 shortcuts, especially free meals and unrestricted outdoor sleep.
 
+## Lightweight Layer 9 completion
+
+- R-096/R-083: activate the deterministic parent-story generator for new server
+  journeys only. Genesis stores its story and code/content fingerprint with the
+  existing idempotent request identity. Pre-story records are returned intact;
+  no migrations, cache invalidation, or replacement of a player's local save.
+- Six motives, four travel modes, a past ten-town chronology and optional
+  false leads/lore share fixed facts with the browser. A mobile parent advances
+  after 7/14/21 game days into up to three extra real sourced towns, then waits.
+  Early pursuit can reunite at town ten. Progress and chronology survive reload.
+- Narrative validation guarantees an unpaid, provider-independent main clue at
+  each stage and finite pursuit. It does not certify terrain feasibility,
+  resources, lodging or survival budgets; these remain explicitly deferred.
+- Reference A* work now starts automatically at setup/resume, then for each
+  newly known current leg, rather than eagerly downloading every future leg.
+  This intentionally replaces the unshipped first-leg blocking/all-legs
+  background draft: reference provider failure must not prevent opening a save.
+  Main journey status shows preparation/error/retry without revealing route
+  distances, cells or future destinations in the parent journal.
+- Abort previous-leg requests on progression/reset/stop/end. Client waiting is
+  bounded to five minutes. A cached 422 gets one retry to reuse prepared terrain;
+  persistent or malformed/transport failures are visible, never a fake route.
+- Only discovered stays enter history; a current stay shows arrival without
+  leaking its planned departure or future provision purchases.
+- Validation includes actual offline Python genesis through browser validation,
+  optional false leads and every save/reload transition through stationary,
+  early mobile and slow thirteen-town reunion. Arrival/resource fixtures isolate
+  narrative logic; they are not a whole-route walking/survival simulation.
+- Full isolated JavaScript suite: 290 tests pass. Full Python suite passes
+  133/135; its two photo-config assertions also fail on the unchanged live
+  baseline (YAML limit 10 versus exported/expected 5). The pre-story
+  record-preservation test passes. User config.yml is unchanged; neither this
+  pre-existing photo-setting mismatch nor the development YAML typo is repaired.
+- Browser lifecycle uses actual local server genesis and explicitly stubbed
+  terrain/reference responses: a failed reference provider leaves the new game
+  playable with a saved mobile story and visible retry. Resuming the exact
+  story, obtaining a clue, saving it, switching to English and resuming again
+  preserves all facts and the newly discovered visit. Reference-ready status
+  updates automatically for the current leg. No real player's save is used.
+- A random-rhythm test now correctly treats rest slots after the last note's
+  end time as inactive, avoiding an intermittent test-only failure. No change
+  to musical scoring, timing, charisma or audio.
+
 ## Parent-trail clue reminders, without exact navigation
 
 - R-095: replace trailDirections and the combined target/distance formatter

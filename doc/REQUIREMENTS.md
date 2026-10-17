@@ -1,5 +1,26 @@
 # Requirements tracked outside the design PDF
 
+## R-096 - Finish and release lightweight Layer 9
+
+- **User decision:** Finish the lightweight milestone autonomously. Advanced
+  terrain/survival feasibility remains deferred under R-083; do not represent
+  a narrative-solvability check as proof of a survivable walking itinerary.
+- New server journeys include deterministic motives, travel modes, chronology,
+  one-to-three optional false leads, lore and stationary or finite mobile pursuit.
+  No mandatory clue requires money, an external photo, skill or unique object.
+- Validate Python genesis against browser rules, save/resume every main clue
+  transition and optional branch, and finish both early and slow mobile pursuit.
+  Existing server records and local saves must remain unchanged and usable.
+- Prepare the current reference leg automatically from setup/resume and when a
+  new lead is obtained. Limit work to the current leg rather than downloading
+  all ten/thirteen legs per player. Preparation runs in the background:
+  provider errors must not block play or destroy a saved journey.
+- Bound client waiting to five minutes; retry a cached server route failure
+  once, then display the error with an explicit retry outside the parent journal.
+  Cancel stale requests on stage change, reset, stop and journey ending.
+- Show only discovered visits. An ongoing visit must not display a planned
+  departure or future nights/purchases as completed history.
+
 ## R-095 - Parent trail recalls clues instead of providing navigation
 
 - Parent trail is a reminder of obtained clues and the known destination, not

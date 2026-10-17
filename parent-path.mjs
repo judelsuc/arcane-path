@@ -1,3 +1,44 @@
+export async function prepareParentPaths(state, { signal = new AbortController().signal, onUpdate = () => {},
+  firstStage = state.trail?.index ?? 0, endStage = firstStage + 1, timeoutMs = 300_000,
+  fetcher = fetch, setTimer = setTimeout, clearTimer = clearTimeout } = {}) {
+  if (!state.serverJourney?.id || state.ended || state.trail?.version !== 2 || state.trail.completed) return;
+  if (!Number.isInteger(firstStage) || !Number.isInteger(endStage) || firstStage < 0 ||
+      firstStage >= endStage || endStage > state.trail.stages.length) {
+    throw new Error("Invalid parent-path stage range.");
+  }
+  signal = AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]);
+  signal.throwIfAborted();
+  for (let stage = firstStage; stage < endStage; stage++) {
+    signal.throwIfAborted();
+    let loader, abort, retried = false;
+    try {
+      await new Promise((resolve, reject) => {
+        abort = () => reject(signal.reason);
+        signal.addEventListener("abort", abort, { once: true });
+        loader = createParentPathLoader({ fetcher, setTimer, clearTimer,
+          onUpdate(status) {
+            onUpdate({ ...status, stage, total: state.trail.stages.length });
+            if (status.status === "ready") resolve();
+            if (status.status === "error") {
+              if (status.retryable && !retried && !signal.aborted) {
+                retried = true;
+                loader.retry();
+              } else reject(new Error(status.error));
+            }
+          },
+        });
+        loader.update({ ...state, trail: { ...state.trail, index: stage } });
+        if (signal.aborted) abort();
+        else loader.prepare();
+      });
+      signal.throwIfAborted();
+    } finally {
+      signal.removeEventListener("abort", abort);
+      loader?.stop();
+    }
+  }
+}
+
 export function createParentPathLoader({ fetcher = fetch, onUpdate = () => {},
   setTimer = setTimeout, clearTimer = clearTimeout } = {}) {
   let key, controller, timer, generation = 0, status = { status: "legacy" };
@@ -9,6 +50,7 @@ export function createParentPathLoader({ fetcher = fetch, onUpdate = () => {},
   }
   async function poll(journey, stage, retry = false) {
     const current = generation;
+    let retryable = false;
     controller = new AbortController();
     try {
       const query = new URLSearchParams({ journey, stage: String(stage) });
@@ -36,6 +78,7 @@ export function createParentPathLoader({ fetcher = fetch, onUpdate = () => {},
             typeof data.elevationComplete !== "boolean") throw new Error("Invalid prepared parent path.");
         status = data;
       } else {
+        retryable = response.status === 422;
         throw new Error(data.error ?? `Parent path: HTTP ${response.status}`);
       }
       onUpdate(status);
@@ -43,7 +86,7 @@ export function createParentPathLoader({ fetcher = fetch, onUpdate = () => {},
     } catch (error) {
       if (current !== generation) return;
       console.error("Parent path preparation failed:", error);
-      status = { status: "error", error: error.message };
+      status = { status: "error", error: error.message, retryable };
       onUpdate(status);
     }
   }

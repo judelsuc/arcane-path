@@ -76,6 +76,23 @@ for (const locale of ["fr", "en"]) {
     assert.equal(element("#trail-target").textContent, tr("clueAskDirections", { venue: "Known café" }));
     assert.doesNotMatch(element("#trail-target").textContent, /Berchem|SECRET NEXT/);
     assert.doesNotMatch(element("#trail-discovery-text").textContent, /SECRET NEXT/);
+    state = { ...state, startedAt: Date.UTC(2026, 9, 17), elapsedMinutes: 0,
+      trail: { ...state.trail, story: { motive: "family", mode: "walk", orientation: "upright",
+        finalState: "mobile", lore: [], falseLeads: [],
+        visits: [{ arrival: Date.UTC(2026, 9, 16), departure: Date.UTC(2026, 9, 18),
+          nights: 2, purchases: 3 }],
+      } } };
+    ui.localize();
+    const records = () => element("#parent-story-records").children
+      .flatMap(item => item.children.map(p => p.textContent)).join(" ");
+    assert.match(records(), /2026-10-16/);
+    assert.doesNotMatch(records(), /2026-10-18|SECRET/);
+    assert.ok(records().includes(tr("parentStory.currentVisit", {
+      place: "Known stop", arrival: "2026-10-16",
+    })));
+    state = { ...state, elapsedMinutes: 2 * 1440 };
+    ui.localize();
+    assert.match(records(), /2026-10-18/);
     ui.reset();
   });
 }

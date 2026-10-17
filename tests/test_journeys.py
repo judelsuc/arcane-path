@@ -1,4 +1,5 @@
 import json
+import hashlib
 import sys
 import tempfile
 import threading
@@ -54,6 +55,20 @@ class JourneyTests(unittest.TestCase):
         self.assertTrue(all(record == results[0][0] for record, _ in results))
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT count(*) FROM journeys").fetchone()[0], 1)
+
+    def test_existing_storyless_genesis_is_not_upgraded_or_rerolled(self):
+        data = request()
+        record, _ = self.store.create(data)
+        del record["state"]["trail"]["story"]
+        record["state"]["trail"]["stages"] = record["state"]["trail"]["stages"][:10]
+        payload = json.dumps(record)
+        with self.store.connect() as db:
+            db.execute("UPDATE journeys SET payload=?,checksum=? WHERE request_id=?",
+                       (payload, hashlib.sha256(payload.encode()).hexdigest(), data["requestId"]))
+        restarted = JourneyStore(self.chunks, atomic_write)
+        with patch.object(restarted.trails, "build", side_effect=AssertionError("No legacy reroll")):
+            self.assertEqual(restarted.create(data), (record, False))
+            self.assertEqual(restarted.read(record["state"]["serverJourney"]["id"]), record)
 
     def test_conflicts_never_replace_existing_records(self):
         data = request()

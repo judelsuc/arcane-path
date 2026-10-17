@@ -165,7 +165,8 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     records.replaceChildren();
     for (const [index, facts] of trail.history.entries()) {
       const visit = story.visits[index], item = document.createElement("li");
-      paragraph(item, t("parentStory.visit", {
+      paragraph(item, t(visit.departure > state.startedAt + state.elapsedMinutes * 60_000
+        ? "parentStory.currentVisit" : "parentStory.visit", {
         place: facts.place, arrival: new Date(visit.arrival).toISOString().slice(0, 10),
         departure: new Date(visit.departure).toISOString().slice(0, 10),
         nights: visit.nights, purchases: visit.purchases,
