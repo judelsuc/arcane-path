@@ -66,6 +66,16 @@
   witness, note and other small discoveries. Preserve broad directions and
   avoid revealing future town names or exact distances.
 
+## Clue dialog responsibilities
+
+- **User clarification:** J opens the parent trail to search for new clues.
+  I opens conversations about clues already collected, such as a town-name
+  fragment or a photo. Recognition actions belong in I, not in J's history.
+- Keep collected evidence readable in J and allow selecting each current
+  fragment/photo in I. Preserve recognition uncertainty, action costs,
+  cancellation, save compatibility and the existing known-place directions.
+  Shortcut labels and help must describe this distinction in FR and EN.
+
 ## R-100 - Green success and red failure feedback
 
 - **User request:** Sentences indicating success should be green; failures red.
