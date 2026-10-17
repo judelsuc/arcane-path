@@ -1,4 +1,6 @@
 import { hungerPercent } from "./survival.mjs";
+import { isDeath } from "./death.mjs";
+import { renderTarotCard } from "./tarot-cards.mjs";
 
 export function createNeedsNotices() {
   let hungerSeen = false, endedSeen, faintSeen = 0, placementSeen = 0;
@@ -24,10 +26,17 @@ export function createNeedsNotices() {
 
 export function setupNeedsNotices(t, { context }) {
   const dialog = document.querySelector("#needs-notice-dialog");
-  let notices = createNeedsNotices(), kind, queued = false;
+  const deathCard = document.querySelector("#needs-death-card");
+  const fade = document.querySelector("#death-fade");
+  let notices = createNeedsNotices(), kind, queued = false, deathAcknowledged = false;
   function localize() {
     if (!dialog.open || !kind) return;
     const state = context()?.state;
+    const dead = isDeath(state);
+    deathCard.hidden = !dead;
+    document.querySelector("#needs-death-retry").hidden = !dead;
+    dialog.classList.toggle("death-notice", dead);
+    if (dead) renderTarotCard(deathCard, "nameless", t("deathCardTitle"), t);
     const faint = state?.lastFaint;
     const placement = state?.pressures?.placements.at(-1);
     const placementText = placement ? t("placementText", {
@@ -37,15 +46,23 @@ export function setupNeedsNotices(t, { context }) {
       money: (faint.stolenCents / 100).toFixed(2), risk: Math.round(faint.chance * 100),
     })}` : "";
     document.querySelector("#needs-notice-title").textContent = t(
-      kind === "warning" ? "hungerWarningTitle" : kind === "fainted" ? "faintingTitle"
+      dead ? "deathTitle" : kind === "warning" ? "hungerWarningTitle" : kind === "fainted" ? "faintingTitle"
         : kind === "placed" ? "placementTitle" : "needsEndedTitle");
-    document.querySelector("#needs-notice-text").textContent = kind === "warning"
+    document.querySelector("#needs-notice-text").textContent = dead
+      ? `${t(`deathCause.${state.ended}`)} ${t("needsEndedHelp")}` : kind === "warning"
       ? t("hungerWarningText") : kind === "fainted" ? faintText : kind === "placed" ? placementText
         : kind === "placement" ? `${placementText} ${t("journeyEnded.placement")} ${t("needsEndedHelp")}`
         : `${faint?.finishedMinutes === state.elapsedMinutes ? `${faintText} ` : ""}${t(`journeyEnded.${kind}`)} ${t("needsEndedHelp")}`;
     document.querySelector("#needs-notice-actions").hidden = kind !== "warning";
   }
   function update() {
+    const currentState = context()?.state;
+    fade.classList.toggle("active", isDeath(currentState) && !deathAcknowledged);
+    fade.setAttribute("aria-hidden", "true");
+    if (dialog.open && isDeath(currentState) && !["hunger", "fatigue", "sleep"].includes(kind)) {
+      kind = currentState.ended;
+      notices.shown(kind, currentState);
+    }
     localize();
     if (queued) return;
     queued = true;
@@ -65,8 +82,24 @@ export function setupNeedsNotices(t, { context }) {
     dialog.close();
     document.querySelector("#open-survival-choices").click();
   });
+  document.querySelector("#needs-death-retry").addEventListener("click", () => {
+    delete deathCard.dataset.card;
+    localize();
+  });
+  dialog.addEventListener("close", () => {
+    if (isDeath(context()?.state) && ["hunger", "fatigue", "sleep"].includes(kind)) {
+      deathAcknowledged = true;
+      fade.classList.remove("active");
+    }
+  });
   new MutationObserver(update).observe(document.body, {
     subtree: true, attributes: true, attributeFilter: ["open"],
   });
-  return { update, reset() { notices = createNeedsNotices(); kind = undefined; dialog.close(); } };
+  return { update, reset() {
+    notices = createNeedsNotices();
+    kind = undefined;
+    deathAcknowledged = false;
+    fade.classList.remove("active");
+    dialog.close();
+  } };
 }

@@ -511,12 +511,15 @@
     </dialog>
     <dialog id="needs-notice-dialog" aria-labelledby="needs-notice-title" aria-describedby="needs-notice-text">
       <h2 id="needs-notice-title"></h2>
+      <figure id="needs-death-card" hidden></figure>
+      <button id="needs-death-retry" type="button" data-i18n="deathArtworkRetry" hidden></button>
       <p id="needs-notice-text"></p>
       <div id="needs-notice-actions">
         <button id="needs-notice-cell" type="button" data-i18n="survivalChoices"></button>
       </div>
       <form method="dialog"><button data-i18n="needsNoticeClose" autofocus></button></form>
     </dialog>
+    <div id="death-fade" aria-hidden="true"></div>
     <dialog id="hint-dialog" aria-labelledby="hint-title">
       <h2 id="hint-title" data-i18n="hintTitle"></h2>
       <p data-i18n="hintFree"></p>

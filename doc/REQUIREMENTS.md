@@ -14,6 +14,31 @@
   geographic basemap. Bound saved route size and label any simplification.
 - Include the map and legend in PDF exports. Do not substitute the reader's
   personal map when displaying or exporting somebody else's abandoned notebook.
+- **Additional user request:** Draw lines between known stops. When the actual
+  earlier path is missing, use distinct brown dotted straight-line connections
+  in visit order, explicitly labelled as schematic, not the route walked.
+- **Additional user decision:** Draw scaled terrain cells behind the route
+  using cached data only. Never prepare/download new geographic data for this
+  view. Leave cache misses blank, explain incomplete or sampled coverage and
+  retain the same background in PDF exports.
+
+## R-113 - Obvious death popup with the Death tarot arcane
+
+- **User request:** Death is not obvious enough. Display a dedicated popup
+  with the Death tarot arcane when the character dies.
+- Show the existing historical Death card (arcane XIII), an unambiguous
+  localized death heading and the actual recorded cause.
+- **Additional user request:** Replace the character's map marker with a cross
+  at the final position when they die, then slowly fade the game scene to black.
+  Keep the Death-card popup and its controls readable and usable above the fade.
+- Treat the card as death-event artwork, not a new birth/daily tarot draw:
+  do not reroll cards, change their effects or invent a notebook draw.
+- Preserve the terminal journey state and existing abandoned-notebook
+  behavior. Do not label recoverable fainting, foyer placement or successful
+  reunion as death.
+- Closing the popup restores access to the notebook and new-journey controls,
+  without reviving the character. Respect reduced motion; image failures remain
+  visible with a retry action. Reopening an ended save shows the death notice.
 
 ## R-114 - Download the complete notebook as PDF
 

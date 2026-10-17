@@ -194,6 +194,8 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         revoke();
         pages.replaceChildren();
         const view = journeyMapView(statsContext.state, statsContext.cellSizeMeters);
+        if (statsContext.mapTerrain) view.terrain = await statsContext.mapTerrain(view);
+        if (current !== generation || !dialog.open) return;
         const page = document.createElement("section");
         page.className = "notebook-page journal-map";
         const title = document.createElement("h3");
@@ -420,6 +422,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         ? journeyStats(statsContext, t, document.documentElement.lang) : [];
       const route = !foreign && statsContext
         ? journeyMapView(statsContext.state, statsContext.cellSizeMeters) : null;
+      if (route && statsContext.mapTerrain) route.terrain = await statsContext.mapTerrain(route);
       await Promise.all(pendingPins);
       if (!stillCurrent()) return;
       const failed = [...failedPins.values()].find(entry => entry.scope === owner);
@@ -465,9 +468,12 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   return {
     updateStats(context) {
       const wasSpecialPage = statistics || mapping;
+      const unchangedMap = mapping && context?.state === statsContext?.state &&
+        context?.mapTerrain === statsContext?.mapTerrain;
       statsContext = context;
       if (!context) statistics = mapping = false;
       if (dialog.open && !readOnly) {
+        if (unchangedMap) return;
         if (statistics || mapping || wasSpecialPage) void render();
         else localize();
       }
