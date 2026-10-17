@@ -704,15 +704,18 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       stream = createChunkStream(region, { onUpdate: () => {
         if (currentToken === token) draw();
       } });
-      backgroundDownloads = createChunkPrefetcher(stream, { onError(reason) {
-        if (currentToken === token) report(reason);
-      }, onLoad(chunk, x, y) {
-        const key = `${x},${y}`;
-        if (currentToken === token && chunk.elevation.error && !reported.has(key)) {
-          reported.add(key);
-          report(new Error(chunk.elevation.error));
-        }
-      } });
+      backgroundDownloads = createChunkPrefetcher(stream, {
+        cached: targets => stream.restoreCached(targets),
+        onError(reason) {
+          if (currentToken === token) report(reason);
+        }, onLoad(chunk, x, y) {
+          const key = `${x},${y}`;
+          if (currentToken === token && chunk.elevation.error && !reported.has(key)) {
+            reported.add(key);
+            report(new Error(chunk.elevation.error));
+          }
+        },
+      });
       const first = await stream.load(p.x, p.y, true);
       if (currentToken !== token) return;
       if (first.elevation.error) error = first.elevation.error;

@@ -195,6 +195,16 @@ class TravelServerTests(unittest.TestCase):
                     self.assertEqual(json.load(response)["chunkSize"], 8)
                 with urllib.request.urlopen(url + "/api/origins") as response:
                     self.assertEqual(json.load(response), [])
+                cached_chunk = {"chunk": {"region": "firmi", "x": 0, "y": 0}}
+                with patch.object(store, "read", side_effect=[cached_chunk, None]) as read, \
+                        patch.object(jobs, "request") as request, \
+                        patch.object(store, "build") as build:
+                    query = urllib.parse.urlencode({"region": "firmi", "positions": "[[0,0],[1,0]]"})
+                    with urllib.request.urlopen(url + "/api/chunks-cached?" + query) as response:
+                        self.assertEqual(json.load(response), {"chunks": [cached_chunk]})
+                    self.assertEqual(read.call_count, 2)
+                    request.assert_not_called()
+                    build.assert_not_called()
                 place = {"latitude": 44.5, "longitude": 2.3, "name": "Firmi"}
                 with patch.object(store.places, "search", return_value=[place]) as search:
                     with urllib.request.urlopen(url + "/api/places?q=Firmi") as response:
@@ -236,6 +246,13 @@ class TravelServerTests(unittest.TestCase):
                     ("/api/chunk?region=unknown&x=0&y=0", 400),
                     ("/api/chunk?region=firmi&x=1001&y=0", 400),
                     ("/api/chunk?region=firmi&x=a&y=0", 400),
+                    *[("/api/chunks-cached?" + urllib.parse.urlencode({
+                        "region": region, "positions": json.dumps(positions),
+                    }), 400) for region, positions in [
+                        ("unknown", [[0, 0]]), ("firmi", []), ("firmi", [[0, 0]] * 10),
+                        ("firmi", [[True, 0]]), ("firmi", [[1001, 0]]),
+                        ("firmi", [[0]]), ("firmi", {"x": 0}), ("firmi", [[0.5, 0]]),
+                    ]],
                     ("/api/origin?latitude=nan&longitude=2.3", 502),
                     ("/api/origin-map?region=firmi", 400),
                     ("/api/trail?region=unknown&seed=00000001", 400),

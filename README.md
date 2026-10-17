@@ -995,7 +995,11 @@ precharges en arriere-plan : direction de marche en premier, cotes selon
 la proximite de leur frontiere, puis arriere. Un changement de direction
 reordonne les demandes en attente sans interrompre celles en cours ni
 retelecharger les morceaux en cache ; les diagonales inconnues apparaissent en `?`.
-Le client limite les demandes simultanees a deux et conserve au plus 25 morceaux
+Avant les preparations, une lecture groupee du cache serveur restaure les voisins
+deja termines, sans lancer de telechargement. Elle contourne la file des deux
+preparations lentes : des voisins caches ne restent plus en `?` derriere elles.
+Les morceaux absents du cache doivent toujours etre telecharges.
+Le client limite les preparations simultanees a deux et conserve au plus 25 morceaux
 en memoire. Les demandes de deplacement sont prioritaires devant celles encore
 en file d'attente. Le serveur limite lui aussi ses travailleurs a deux et
 sa file a dix travaux, avec deduplication des demandes identiques.

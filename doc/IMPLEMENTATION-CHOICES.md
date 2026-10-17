@@ -1200,3 +1200,27 @@ Louis Blanc API checks served all nine cached chunks in 0.44 seconds total,
 without new terrain requests. The deployment must migrate the exact current
 pipeline before restarting, then recheck those cells; preserving the cache
 directory alone is not sufficient when changing its lookup identity.
+
+### Cached neighbors must bypass slow preparations
+
+The next screenshot exposed a separate client queue issue. Live requests were
+for Paris chunks x=4..6, y=-3..-1, not the Louis Blanc x=0..2 area checked earlier.
+Several had no historical grid/source at all; OSM HTTP 509 delays were real.
+However, cached neighbors also waited behind two uncached chunk polls in the
+browser's two-slot queue. Direct cache API latency alone did not verify the
+player's complete loading experience.
+
+A bounded, cache-only batch endpoint now reads at most nine specified chunks
+without scheduling jobs or contacting providers. The browser restores available
+neighbors before queuing missing chunks, and can repeat this lookup while both
+download slots are occupied. Existing checksums, 25-chunk browser limit,
+two-preparation concurrency, errors and retry behavior remain in place.
+Responses are validated before any partial restoration; restored elevation
+warnings use the existing notification path. Missing cells still need providers:
+this is not a guarantee of instant first-time terrain.
+
+Regression tests hold both downloads unresolved and assert that cached
+neighbors render, including a new neighbor after a viewport update. HTTP tests
+assert cache misses neither build terrain nor enqueue jobs, and reject oversized
+or invalid coordinate batches. This handler-only change does not change grid
+identity or require cache migration.

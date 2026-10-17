@@ -458,10 +458,27 @@ def make_handler(store, jobs, path_pool=None):
                         if record is None:
                             return self.send_json(404, {"error": "Server journey not found."})
                         return self.send_json(200, record)
-                    if url.path not in {"/api/chunk", "/api/weather", "/api/places", "/api/parent-path",
+                    if url.path not in {"/api/chunk", "/api/chunks-cached", "/api/weather", "/api/places", "/api/parent-path",
                                         "/api/location", "/api/origin", "/api/origin-map", "/api/trail", "/api/pricing-country"}:
                         return self.send_json(404, {"error": "Unknown API endpoint."})
                     query = urllib.parse.parse_qs(url.query, strict_parsing=True)
+                    if url.path == "/api/chunks-cached":
+                        if set(query) != {"region", "positions"} or any(len(v) != 1 for v in query.values()):
+                            raise ValueError("Invalid cached-chunk lookup.")
+                        region = query["region"][0]
+                        positions = json.loads(query["positions"][0])
+                        if (region not in store.bases or not isinstance(positions, list)
+                                or not 1 <= len(positions) <= 9 or any(
+                                    not isinstance(p, list) or len(p) != 2 or any(
+                                        type(v) is not int or abs(v) > 1000 for v in p)
+                                    for p in positions)):
+                            raise ValueError("Invalid cached-chunk positions.")
+                        result = []
+                        for x, y in positions:
+                            cached = store.read(region, x, y)
+                            if cached is not None:
+                                result.append(cached)
+                        return self.send_json(200, {"chunks": result})
                     if url.path == "/api/parent-path":
                         if (set(query) - {"journey", "stage", "retry"}
                                 or any(len(v) != 1 for v in query.values())

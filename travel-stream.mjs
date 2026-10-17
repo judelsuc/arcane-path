@@ -29,8 +29,9 @@ class ChunkRequestError extends Error {
 
 export function createChunkPrefetcher(stream, {
   onError = console.error, onLoad = () => {}, now = Date.now, setTimer = setTimeout, clearTimer = clearTimeout,
+  cached,
 } = {}) {
-  let targets = [], timer, stopped = false;
+  let targets = [], timer, stopped = false, generation = 0;
   const failures = new Map();
   function tick() {
     if (stopped) return;
@@ -64,7 +65,19 @@ export function createChunkPrefetcher(stream, {
       const keys = new Set(targets.map(({ x, y }) => `${x},${y}`));
       for (const key of failures.keys()) if (!keys.has(key)) failures.delete(key);
       stream.prioritize(targets);
-      tick();
+      const current = ++generation;
+      if (cached) {
+        clearTimer(timer);
+        Promise.resolve().then(() => cached(next)).then(restored => {
+          if (!stopped && current === generation) {
+            for (const data of restored) onLoad(data, data.chunk.x, data.chunk.y);
+          }
+        }).catch(error => {
+          if (!stopped && current === generation) onError(error);
+        }).finally(() => {
+          if (!stopped && current === generation) tick();
+        });
+      } else tick();
     },
     retry() { failures.clear(); tick(); },
     stop() { stopped = true; clearTimer(timer); failures.clear(); targets = []; },
@@ -77,6 +90,19 @@ export function createChunkStream(region, { fetcher = fetch, onUpdate = () => {}
   let running = 0;
 
   const key = (x, y) => `${x},${y}`;
+  function validate(data, x, y) {
+    if (!data || data.chunk?.x !== x || data.chunk?.y !== y || data.chunk?.region !== region ||
+        data.width !== 8 || data.height !== 8 ||
+        !Array.isArray(data.rows) || data.rows.length !== 8 ||
+        data.rows.some(row => !Array.isArray(row) || row.length !== 8)) {
+      throw new Error("Invalid streamed chunk.");
+    }
+    return data;
+  }
+  function remember(data) {
+    chunks.set(key(data.chunk.x, data.chunk.y), data);
+    if (chunks.size > 25) chunks.delete(chunks.keys().next().value);
+  }
   async function retrieve(x, y) {
     const deadline = Date.now() + 180_000;
     while (!controller.signal.aborted) {
@@ -93,12 +119,7 @@ export function createChunkStream(region, { fetcher = fetch, onUpdate = () => {}
       }
       if (response.status !== 202 && response.status !== 429) {
         if (!response.ok) throw new ChunkRequestError(data.error ?? `HTTP ${response.status}`, response.status);
-        if (data.chunk?.x !== x || data.chunk?.y !== y || data.chunk?.region !== region ||
-            data.width !== 8 || data.height !== 8 ||
-            data.rows?.length !== 8 || data.rows.some(row => row.length !== 8)) {
-          throw new Error("Invalid streamed chunk.");
-        }
-        return data;
+        return validate(data, x, y);
       }
       if (Date.now() >= deadline) throw new ChunkRequestError(
         "Chunk download timed out. Retry to resume cached preparation.", 408);
@@ -119,9 +140,7 @@ export function createChunkStream(region, { fetcher = fetch, onUpdate = () => {}
       const job = queue.shift();
       running++;
       retrieve(job.x, job.y).then(data => {
-        chunks.set(job.key, data);
-        // Keep a small working set; durable copies remain in the server cache.
-        if (chunks.size > 25) chunks.delete(chunks.keys().next().value);
+        remember(data);
         job.resolve(data);
         onUpdate();
       }, job.reject).finally(() => {
@@ -161,6 +180,29 @@ export function createChunkStream(region, { fetcher = fetch, onUpdate = () => {}
 
   return {
     chunks, load,
+    async restoreCached(targets) {
+      const missing = targets.filter(({ x, y }) => !chunks.has(key(x, y)));
+      if (!missing.length) return [];
+      const response = await fetcher(`/api/chunks-cached?${new URLSearchParams({
+        region, positions: JSON.stringify(missing.map(({ x, y }) => [x, y])),
+      })}`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)]) });
+      const data = await response.json();
+      if (!response.ok) throw new ChunkRequestError(data.error ?? `HTTP ${response.status}`, response.status);
+      if (!Array.isArray(data.chunks) || data.chunks.length > missing.length) {
+        throw new Error("Invalid cached chunk response.");
+      }
+      const allowed = new Set(missing.map(({ x, y }) => key(x, y))), seen = new Set();
+      for (const chunk of data.chunks) {
+        const x = chunk?.chunk?.x, y = chunk?.chunk?.y, id = key(x, y);
+        if (!allowed.has(id) || seen.has(id)) throw new Error("Unexpected cached chunk.");
+        validate(chunk, x, y);
+        seen.add(id);
+      }
+      controller.signal.throwIfAborted();
+      for (const chunk of data.chunks) remember(chunk);
+      onUpdate();
+      return data.chunks;
+    },
     prioritize(neighbors) {
       const ranks = new Map(neighbors.map(({ x, y }, index) => [key(x, y), index]));
       queue.sort((a, b) => Number(b.priority) - Number(a.priority) ||

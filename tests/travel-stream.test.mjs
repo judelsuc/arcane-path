@@ -150,6 +150,86 @@ function chunk(x, y) {
     rows: Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => ({ terrain: "grass" }))) };
 }
 
+test("cached neighbors render before and during two stalled downloads without using download slots", async () => {
+  const started = [], release = [], loaded = [], errors = [];
+  let lookups = 0, updates = 0;
+  const stream = createChunkStream("firmi", {
+    onUpdate: () => updates++,
+    fetcher: async url => {
+      const parsed = new URL(url, "http://localhost");
+      if (parsed.pathname === "/api/chunks-cached") {
+        lookups++;
+        assert.equal(parsed.searchParams.get("region"), "firmi");
+        const positions = JSON.parse(parsed.searchParams.get("positions"));
+        return new Response(JSON.stringify({ chunks: positions.filter(([x]) => x >= 2)
+          .map(([x, y]) => chunk(x, y)) }));
+      }
+      const x = Number(parsed.searchParams.get("x"));
+      started.push(x);
+      await new Promise(resolve => release.push(resolve));
+      return new Response(JSON.stringify(chunk(x, 0)));
+    },
+  });
+  const background = createChunkPrefetcher(stream, {
+    cached: targets => stream.restoreCached(targets),
+    onLoad: data => loaded.push(data.chunk.x), onError: error => errors.push(error),
+  });
+  try {
+    background.update([0, 1, 2, 3].map(x => ({ x, y: 0 })));
+    await flush();
+    assert.deepEqual(started, [0, 1]);
+    assert.deepEqual(loaded, [2, 3]);
+    assert.ok(stream.get(2, 0));
+    assert.ok(stream.get(3, 0));
+    background.update([0, 1, 2, 3, 4].map(x => ({ x, y: 0 })));
+    await flush();
+    assert.ok(stream.get(4, 0));
+    assert.deepEqual(started, [0, 1]);
+    assert.equal(lookups, 2);
+    assert.ok(updates >= 2);
+    assert.deepEqual(errors, []);
+  } finally {
+    background.stop();
+    stream.stop();
+    for (const resolve of release) resolve();
+    await flush();
+  }
+});
+
+test("cache lookup rejects malformed, duplicate and unsolicited chunks without partial restoration", async () => {
+  for (const body of [
+    {}, { chunks: [chunk(2, 0)] }, { chunks: [chunk(0, 0), chunk(0, 0)] },
+    { chunks: [chunk(0, 0), { ...chunk(1, 0), rows: [] }] },
+  ]) {
+    const stream = createChunkStream("firmi", {
+      fetcher: async () => new Response(JSON.stringify(body)),
+    });
+    try {
+      await assert.rejects(stream.restoreCached([{ x: 0, y: 0 }, { x: 1, y: 0 }]));
+      assert.equal(stream.chunks.size, 0);
+    } finally { stream.stop(); }
+  }
+});
+
+test("failed cache lookup is reported and does not prevent ordinary chunk loading", async () => {
+  const errors = [], loaded = [];
+  const stream = createChunkStream("firmi", {
+    fetcher: async url => url.startsWith("/api/chunks-cached?")
+      ? new Response(JSON.stringify({ error: "Cache lookup failed" }), { status: 500 })
+      : new Response(JSON.stringify(chunk(0, 0))),
+  });
+  const background = createChunkPrefetcher(stream, {
+    cached: targets => stream.restoreCached(targets),
+    onError: error => errors.push(error), onLoad: data => loaded.push(data),
+  });
+  try {
+    background.update([{ x: 0, y: 0 }]);
+    await flush();
+    assert.equal(errors[0].message, "Cache lookup failed");
+    assert.equal(loaded.length, 1);
+  } finally { background.stop(); stream.stop(); }
+});
+
 test("stream deduplicates requests, bounds concurrency at two and prioritizes foreground work", async () => {
   let running = 0, peak = 0;
   const started = [], release = [];
