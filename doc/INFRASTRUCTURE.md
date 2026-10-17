@@ -1,5 +1,21 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - indices en premier dans J
+
+- **17 octobre 2026** : runtime `1905873`, tag
+  `deploy-2026-10-17-clues-first`, developpement `0cdf906`,
+  base live `0a8dff8`. Quatre assets et manifeste, sans redemarrage serveur.
+- Decouvertes, photos et indices precedant les actions. Sur mobile, la zone
+  principale precede les consignes. Les avis ne sont plus dupliques avant
+  les actions. Liste d'actions sur une colonne.
+- Bouton de recherche puis cout resume toujours visibles ; longues regles
+  dans une aide repliable fermee par defaut. Probabilites et couts inchanges.
+- 24 tests cibles passent. Navigateur avec vrai setupTrail et indice :
+  indices avant actions, bouton en premier, aide fermee puis depliable,
+  contenu principal avant consignes a 390 px sans debordement horizontal.
+- Quatre assets et manifeste HTTPS verifies octet par octet ; API jeu verifiee.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-1905873.tar.gz` (0600).
+
 ## Derniere livraison - retrait du bouton Nouveau voyage dans J
 
 - **17 octobre 2026** : runtime `0a8dff8`, tag
