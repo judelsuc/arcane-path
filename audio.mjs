@@ -1,11 +1,11 @@
 const TRACKS = [
   "music-title", "music-road-day", "music-forest", "music-mountains",
-  "music-town", "music-paris", "music-tahiti", "music-night",
+  "music-town", "music-city", "music-coast", "music-night",
   "music-shelter", "music-tarot-trail", "music-street-practice",
   "music-reunion", "music-journey-ended",
 ];
 
-export function musicTrack({ active, ended, region, terrain, night, dialog, sleeping } = {}) {
+export function musicTrack({ active, ended, terrain, sources = [], night, dialog, sleeping } = {}) {
   if (dialog === "music-dialog") return null;
   if (!active) return "music-title";
   if (ended) return ended === "reunion" ? "music-reunion" : "music-journey-ended";
@@ -13,10 +13,11 @@ export function musicTrack({ active, ended, region, terrain, night, dialog, slee
   if (dialog === "economy-dialog" && sleeping) return "music-shelter";
   if (dialog === "town-dialog" || dialog === "economy-dialog") return "music-town";
   if (night) return "music-night";
-  if (region === "alps" || terrain === "mountain" || terrain === "hill") return "music-mountains";
-  if (region === "paris") return "music-paris";
-  if (region === "tahiti") return "music-tahiti";
+  if (terrain === "mountain" || terrain === "hill") return "music-mountains";
+  if (sources.some(source => source.tags?.natural === "coastline")) return "music-coast";
   if (terrain === "forest") return "music-forest";
+  if (sources.some(source => ["city", "town"].includes(source.tags?.place) ||
+      ["residential", "commercial", "retail"].includes(source.tags?.landuse))) return "music-city";
   if (terrain === "place") return "music-town";
   return "music-road-day";
 }
@@ -25,8 +26,11 @@ export function musicCandidates(track) {
   const index = TRACKS.indexOf(track);
   if (index < 0) throw new Error(`Unknown music track: ${track}`);
   const number = String(index + 1).padStart(2, "0");
+  const legacy = { "music-city": "music-paris", "music-coast": "music-tahiti" }[track];
+  const names = [track, ...(legacy ? [legacy] : [])].flatMap(id =>
+    [id, `${number}-${id}`, `${number} - ${id}`]);
   return ["wav", "mp3", "ogg"].flatMap(extension =>
-    [track, `${number}-${track}`, `${number} - ${track}`].map(name =>
+    names.map(name =>
       `./public/audio/music/${encodeURIComponent(name)}.${extension}`));
 }
 

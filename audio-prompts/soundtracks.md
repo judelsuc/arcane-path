@@ -54,7 +54,7 @@ game references or recognizable borrowed melodies.
 
 ## 04 - music-mountains - The patient climb
 
-Use: Chamonix, slopes and mountain travel. Target: 76 BPM, 120 seconds.
+Use: hills, slopes and mountain travel anywhere. Target: 76 BPM, 120 seconds.
 
 ```text
 Instrumental original 8-bit mountain-walking music. Wide space, effort,
@@ -83,12 +83,13 @@ clean loop boundaries and no long intro or fade. No vocals, crowd recordings,
 realistic accordion, orchestral instruments, borrowed themes or artist imitation.
 ```
 
-## 06 - music-paris - Streets and small discoveries
+## 06 - music-city - Streets and small discoveries
 
-Use: Paris travel/menu alternative. Target: 104 BPM, 90 seconds.
+Use: urban exploration anywhere in Europe. Target: 104 BPM, 90 seconds.
+Existing `music-paris` downloads remain accepted as filename aliases.
 
 ```text
-Instrumental original 8-bit music for exploring modern Paris on foot:
+Instrumental original 8-bit music for exploring a contemporary European city on foot:
 busy little streets, bookshops, side passages and small discoveries.
 104 BPM with light syncopation, elegant but unpretentious. Two soft pulse
 voices, nimble triangle bass, restrained noise percussion and short arpeggios.
@@ -99,13 +100,14 @@ stable dynamics and clean bar-aligned ending. No vocals, realistic accordion,
 street recordings, jazz samples, existing songs or artist imitation.
 ```
 
-## 07 - music-tahiti - Light over the lagoon
+## 07 - music-coast - Light over the water
 
-Use: Tahiti daytime travel/menu alternative. Target: 92 BPM, 120 seconds.
+Use: coastal walking anywhere, not a particular country. Target: 92 BPM, 120 seconds.
+Existing `music-tahiti` downloads remain accepted as filename aliases.
 
 ```text
-Original instrumental 8-bit exploration music for a contemporary island walk
-near Papeete: warm daylight, open water and a living town, calm and curious.
+Original instrumental 8-bit exploration music for a contemporary coastal walk:
+soft daylight, open water and a distant harbour, calm and curious.
 92 BPM, gentle offbeat motion without caricature. Soft pulse-wave melody,
 rounded triangle bass, delicate chip arpeggios and quiet noise percussion.
 Open bright harmony with a slightly wistful D-F-A-E motif. No imitation of

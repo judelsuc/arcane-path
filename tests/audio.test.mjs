@@ -28,14 +28,18 @@ function harness(available = new Set()) {
   return { player, attempts, states, warnings, sounds, last: () => states.at(-1) };
 }
 
-test("music context follows real player terrain, region, solar phase, menus and outcomes", () => {
+test("music context follows map features, solar phase, menus and outcomes, never region names", () => {
   const travel = { active: true, terrain: "field", region: "firmi" };
   assert.equal(musicTrack(), "music-title");
   assert.equal(musicTrack(travel), "music-road-day");
   for (const [context, expected] of [
-    [{ terrain: "forest" }, "music-forest"], [{ region: "alps" }, "music-mountains"],
-    [{ terrain: "mountain" }, "music-mountains"], [{ region: "paris" }, "music-paris"],
-    [{ region: "tahiti" }, "music-tahiti"], [{ terrain: "place" }, "music-town"],
+    [{ terrain: "forest" }, "music-forest"], [{ region: "alps" }, "music-road-day"],
+    [{ terrain: "mountain" }, "music-mountains"], [{ region: "paris" }, "music-road-day"],
+    [{ region: "tahiti" }, "music-road-day"], [{ terrain: "place" }, "music-town"],
+    [{ sources: [{ tags: { place: "city" } }] }, "music-city"],
+    [{ sources: [{ tags: { landuse: "residential" } }] }, "music-city"],
+    [{ sources: [{ tags: { natural: "coastline" } }] }, "music-coast"],
+    [{ sources: [{ tags: { natural: "water" } }] }, "music-road-day"],
     [{ night: true, region: "alps" }, "music-night"],
     [{ dialog: "trail-dialog" }, "music-tarot-trail"],
     [{ dialog: "economy-dialog", sleeping: true }, "music-shelter"],
@@ -51,6 +55,9 @@ test("accepts canonical and numbered filenames without renaming user downloads",
   assert.ok(musicCandidates("music-road-day").includes("./public/audio/music/02%20-%20music-road-day.wav"));
   assert.ok(musicCandidates("music-night").includes("./public/audio/music/music-night.mp3"));
   assert.ok(musicCandidates("music-town").includes("./public/audio/music/music-town.ogg"));
+  assert.ok(musicCandidates("music-city").includes("./public/audio/music/06%20-%20music-paris.wav"));
+  assert.ok(musicCandidates("music-coast").includes("./public/audio/music/07%20-%20music-tahiti.wav"));
+  assert.ok(musicCandidates("music-city").includes("./public/audio/music/music-city.wav"));
   assert.deepEqual(musicFallbacks("music-road-day"), ["music-road-day", "music-title"]);
   assert.deepEqual(musicFallbacks("music-title"), ["music-title"]);
   assert.deepEqual(musicFallbacks(null), []);

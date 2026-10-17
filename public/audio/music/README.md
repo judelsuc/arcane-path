@@ -16,6 +16,9 @@ Click **Enable music** in the game (off on each page load). Tracks loop at
 25% volume by default; use the volume slider or mute button at any time.
 The player accepts WAV, MP3 or OGG, with canonical or numbered prompt names:
 `music-title.wav`, `01-music-title.wav` and `01 - music-title.wav` all work.
+Tracks 06 and 07 are now generic `music-city` and `music-coast`, usable
+throughout Europe. Existing `music-paris` and `music-tahiti` filenames (with
+or without numbering) remain accepted; no need to regenerate or rename them.
 Do not keep multiple versions unless you want the first matching one used:
 WAV before MP3 before OGG, canonical before compact/spaced numbered names.
 

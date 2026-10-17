@@ -521,7 +521,7 @@ This file records additions to the design without modifying the source PDF,
   tracks to be present.
 - **Status:** Opt-in background loops with mute and volume controls, accepting
   canonical/numbered prompt filenames in WAV, MP3 or OGG.
-- **Context:** Title, actual player terrain/region/solar night, town/shelter/
+- **Context:** Title, actual player terrain/OSM features/solar night, town/shelter/
   journal menus, reunion and exhaustion. Inspection does not move the player.
 - **Fallback:** Requested track, daytime road, title, then explicit silence.
   Missing/undecodable files and autoplay blocks are visible/logged. Re-enabling
@@ -529,6 +529,9 @@ This file records additions to the design without modifying the source PDF,
 - **Timing:** Pause while hidden and during the rhythm-game dialog. Do not
   use unaligned generated practice music as the rhythm clock. SFX and future
   event/dungeon tracks remain separate unimplemented audio surfaces.
+- **Europe-wide scope:** No soundtrack selection based on starting-region
+  names. City/coast are reusable moods selected only from explicit map tags;
+  previous Paris/Tahiti filenames remain compatible aliases.
 
 ## R-027 — Geocache-linked fictional dungeons
 

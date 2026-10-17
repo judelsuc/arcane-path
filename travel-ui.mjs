@@ -338,7 +338,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       document.querySelector("#sky-title").textContent =
         `${t(cycle.phase === "day" ? "skyDay" : "skyNight")} · ${text} · ${t("skyNote")}`;
     }
-    onAudioContext?.({ active, ended: state?.ended, region, terrain: cell?.terrain,
+    onAudioContext?.({ active, ended: state?.ended, terrain: cell?.terrain,
+      sources: cell?.contentSources ?? [],
       night: Boolean(cell) && sky.dataset.phase === "night" });
   }
 

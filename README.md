@@ -316,13 +316,20 @@ cliquer **Activer la musique** (desactivee a chaque chargement). Volume initial
 les noms `music-title.wav`, `01-music-title.wav` ou `01 - music-title.wav`
 fonctionnent sans renommer les telechargements existants.
 
-La musique suit le vrai joueur : carte fixe/titre, terrain, region, nuit
+La musique suit le vrai joueur : carte fixe/titre, terrain, indices OSM, nuit
 solaire, menus de ville/sommeil/journal et issue du voyage. Un curseur Look
 ne change pas la musique selon la case inspectee. Une piste absente ou
 illisible utilise `music-road-day`, puis `music-title`, puis le silence.
 Le statut indique ce remplacement et les erreurs sont journalisees.
 Couper/reactiver apres un nouveau telechargement pour reessayer les fichiers
 manquants. Le jeu et les sauvegardes fonctionnent meme sans aucun fichier.
+
+Pas de piste imposee par la region de depart : montagnes, foret, ville et
+cote fonctionnent partout. Ville/cote exigent des tags OSM explicites
+(`place=city/town`, `landuse=residential/commercial/retail`, `natural=coastline`) ;
+sans ces indices, utiliser les ambiances generiques, sans deviner le lieu.
+Les anciens noms `music-paris` et `music-tahiti` restent acceptes pour les
+pistes generiques `music-city` et `music-coast`.
 
 Les pistes bouclent, sans fondu ni correction automatique des raccords.
 L'onglet masque et le dialogue du minijeu de rythme mettent la musique en

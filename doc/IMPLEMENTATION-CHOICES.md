@@ -470,7 +470,7 @@ recovery via Save now, region switching and cancelled replacement.
 - Accept prompt IDs with or without the two-digit numbering, including spaces
   around the hyphen. Try WAV, MP3 and OGG in that order. Existing downloaded
   masters are not renamed, transcoded or modified.
-- Choose from actual player terrain/region and computed solar phase, never
+- Choose from actual player terrain/OSM features and computed solar phase, never
   Look inspection. Menus and terminal outcomes override travel music.
 - Requested track falls back to road-day, title, then visible silence.
   Missing files/decode failures are logged and remembered for the session;
@@ -507,3 +507,14 @@ start afterward. Use the status to distinguish real playback from fallback.
 - Listen and tune relative loudness/loop points of the generated masters.
 - WAV masters are large; choose web delivery encodings once tracks are final.
   No automatic conversion, offline audio cache or audio downloads UI yet.
+
+### Europe-wide correction
+
+The user clarified that music must work across Europe, not only the sample
+maps. Removed all region-name checks. Mountains/forest follow terrain;
+generic city/coast follow explicit OSM tags on the current cell. Absence of
+tags uses ordinary travel/town music, not an inferred country or coastline.
+Renamed prompt concepts to music-city/music-coast while retaining numbered
+music-paris/music-tahiti download aliases. Their prompts no longer specify
+Paris/Papeete. More detailed cultural palettes can be discussed later; they
+are not inferred from a starting map.
