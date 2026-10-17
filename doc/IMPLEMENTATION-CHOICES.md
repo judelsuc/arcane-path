@@ -830,3 +830,104 @@ No additional providers or unlimited recursion were introduced.
 Regression tests exercise five consecutive node-limit responses, failure of
 the first Overpass and success of the second, exact original fallback bounds,
 provider cooldowns, primary HTTP rejection and incomplete primary payloads.
+
+## Long town trails and per-cell investigations
+
+The user chose ten 30–60 km town-to-town legs for new journeys only.
+Route v2 is generated server-side from named OSM city/town nodes within
+60 km, with exact great-circle distance checks, no repeated town and a
+20 km separation from previous stops. A deterministic seed ranks directional
+continuity and distance near 45 km, choosing among the first three candidates.
+No backtracking or road routing is performed: sparse islands, borders and
+dead ends can fail explicitly. This is not a promise of a walkable land route.
+The streamed global grid, not separate destination maps, locates all stops.
+
+Town and optional public-venue catalogues are cached by coordinate/query kind.
+Overpass Germany and Kumi share the existing source lock/cooldowns; the bounded
+trail-job queue shares the map executor. New journeys poll the same seeded job,
+support cancellation and create state/tarot/save only after successful validation.
+Old v1 routes retain their original coordinates, facts and five-minute encounter.
+New starting maps no longer need ten local named POIs.
+
+These small bounded catalogue queries use supported HTTP GET requests.
+Live verification found POST catalogue requests failing with HTTP 500/502,
+while the same query succeeded via GET; bulk map geometry keeps its existing
+request path. Provider fallback and explicit failures still apply.
+
+The cell menu forwards to existing food, music, survival and rest commands,
+preserving availability/cost rules. Only exact v2 target cells offer parent
+investigations. Four choices rotate across three sets; seven artifact/dialogue
+forms currently exist, not all brainstorm suggestions. Each uses a distinct
+presentation and explicit time/fatigue/extra-calorie cost; buying a note adds
+0.25 local meal units. Basal metabolism and night exposure still apply.
+Exhaustion wins over discovery/reunion, and invalid/unaffordable actions throw
+before payment. No random clue failures or clue theft were added.
+
+On alternating destination towns, an accessible named library/cafe/restaurant/
+theatre node within 2 km can provide a venue-only lead. Missing venues do not
+invent one; provider failure remains an explicit generation failure. The saved
+pending discovery keeps the current stage active until a separate directions
+action is paid. The UI hides the next city, distance and map link meanwhile.
+Resolving advances once and records the original clue form plus directions.
+
+Photo discoveries use the existing content service/cache for one geographical
+image near the destination, excluding species illustrations. License, author
+and source accompany the image; the fictional annotation is separate from
+the original. Provider/image failure is shown without blocking the text clue.
+Fictional objects and speakers are not claims about the sourced real venue.
+
+Browser checks used an isolated temporary v2 save, restored the original save,
+and verified four choices, a photo-provider failure, venue-only redaction,
+30-minute photo cost, additional 15-minute directions cost, single advancement
+and non-target cell rest without clue advancement. Network fixtures are not
+evidence that the public town/photo services are currently available.
+
+## Startup must not expose an empty playable map
+
+The new long-route request could fail before state/stream creation while
+the UI already considered the journey active. That left a map without a
+player and disabled movement. Startup now stays in preparation until the
+first player chunk is loaded. It shows progress and cancellation, disables
+duplicate starts, and reports failure in preparation with Start/Resume usable.
+Returning to title cancels startup. Failed/cancelled generation preserves the
+existing save. Browser checks used page-local in-memory storage to verify
+provider failure, cancellation, legacy resume, a visible @ and a 250 m move.
+
+## Visible single-key button shortcuts
+
+Shortcut captions are appended as a separate parenthesized span. Refresh
+ignores its own text mutations, so localization/state changes replace labels
+without accumulating suffixes or triggering an observer loop. Tooltips use
+the unadorned action; aria-keyshortcuts describes the primary single key.
+Alt+Shift physical-code aliases remain accepted for compatibility.
+
+Unmodified letters follow the typed keyboard layout, with existing physical
+codes retained for non-letter/special keys and legacy aliases. Ctrl/Cmd,
+IME composition, edit controls, hidden/disabled actions and key repeats remain
+excluded. The active dialog captures its own shortcuts before gameplay.
+Shared cell/town/toolbar services and dynamically rebuilt investigation buttons
+have stable explicit bindings; other dynamic choices keep numbered keys.
+Begging uses A to avoid conflicting with street music B in the cell menu.
+Browser checks verified Enter, C, Escape, F and R end to end, including
+one suffix per button and the same R action in the toolbar and cell dialog.
+
+## Retry and activity feedback for long-route preparation
+
+TownTrailStore retries each uncached catalogue up to three provider rounds.
+Each round uses the existing Germany/Kumi fallback and shared cooldowns;
+sleep occurs outside the source lock so other workers are not blocked by
+the retry delay. Final SourceUnavailable is propagated, not converted into
+empty town data. Successful catalogues survive a failed later stage.
+
+The route store exposes a thread-safe progress snapshot while its bounded job
+is active. ChunkJobs includes it in 202 responses only for stores supporting
+progress; other job payloads remain unchanged. The snapshot contains stage,
+phase, provider or retry deadline, not destination names. The client polls
+as before, translating actual activity and computing a retry countdown from
+the server deadline. Progress is cleared on job completion/failure and reset
+on client cancellation. No guessed percentages or synthetic activity rotation.
+
+A real Firmi route was validated against the frontend geographic validator:
+ten towns, 479 km total, every leg 30–60 km, with sourced public venues.
+Both public providers failed on earlier attempts; cached catalogues allowed
+a later attempt to complete. This is not an availability guarantee.

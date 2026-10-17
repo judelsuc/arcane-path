@@ -100,6 +100,8 @@
           </div>
           <button id="start-travel" type="button" disabled data-i18n="travelStart"></button>
           <button id="resume-travel" type="button" hidden disabled data-i18n="saveResume"></button>
+          <p id="journey-start-status" role="status"></p>
+          <button id="cancel-journey-start" type="button" hidden data-i18n="journeyStartCancel"></button>
           <p id="journey-save-status" role="status"></p>
         </section>
         <button id="back-title" type="button" data-i18n="setupBack"></button>
@@ -204,6 +206,7 @@
               <button id="open-music" type="button" disabled data-i18n="musicOpen"></button>
               <button id="open-survival-choices" type="button" disabled data-i18n="survivalChoices"></button>
               <button id="open-trail" type="button" disabled data-i18n="trailTitle"></button>
+              <button id="open-hint" type="button" disabled data-i18n="hintTitle"></button>
               <button id="save-travel" type="button" disabled data-i18n="saveNow"></button>
               <button id="look-travel" type="button" aria-pressed="false" data-i18n="travelLook"></button>
               <button id="retry-travel" type="button" data-i18n="travelRetry"></button>
@@ -345,11 +348,13 @@
       </div>
       <p data-i18n="townScope"></p>
       <div id="town-welcome" role="status"></div>
-      <button id="town-refresh" type="button" data-i18n="townRefresh"></button>
-      <button id="town-services" type="button" data-i18n="mealTitle"></button>
-      <button id="town-music" type="button" data-i18n="musicOpen"></button>
-      <button id="town-survival-choices" type="button" data-i18n="survivalChoices"></button>
-      <button id="town-trail" type="button" data-i18n="trailTitle"></button>
+      <div class="content-actions">
+        <button id="town-refresh" type="button" data-i18n="townRefresh"></button>
+        <button id="town-services" type="button" data-i18n="mealTitle"></button>
+        <button id="town-music" type="button" data-i18n="musicOpen"></button>
+        <button id="town-survival-choices" type="button" data-i18n="survivalChoices"></button>
+        <button id="town-trail" type="button" data-i18n="trailTitle"></button>
+      </div>
       <h3 data-i18n="townPlacesTitle"></h3>
       <p id="town-empty" data-i18n="townEmpty"></p>
       <ul id="town-places"></ul>
@@ -361,6 +366,15 @@
       <h2 id="survival-choices-title" data-i18n="survivalChoices"></h2>
       <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
       <p data-i18n="survivalChoicesFiction"></p>
+      <p id="cell-action-context"></p>
+      <div class="cell-action-services">
+        <button id="cell-buy" type="button" data-i18n="cellBuy"></button>
+        <button id="cell-rest" type="button" data-i18n="cellRest"></button>
+        <button id="cell-sleep" type="button" data-i18n="cellSleep"></button>
+        <button id="cell-music" type="button" data-i18n="musicOpen"></button>
+        <button id="cell-clues" type="button" data-i18n="cellClues"></button>
+      </div>
+      <p data-i18n="cellActionAvailability"></p>
       <button id="choice-forage" type="button" data-i18n="choice.forage"></button>
       <p id="choice-forage-note"></p>
       <button id="choice-beg" type="button" data-i18n="choice.beg"></button>
@@ -393,6 +407,12 @@
       <p id="music-score" role="status"></p>
       <p id="music-result" role="status"></p>
     </dialog>
+    <dialog id="hint-dialog" aria-labelledby="hint-title">
+      <h2 id="hint-title" data-i18n="hintTitle"></h2>
+      <p data-i18n="hintFree"></p>
+      <p id="hint-guidance" role="status"></p>
+      <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
+    </dialog>
     <dialog id="trail-dialog" aria-labelledby="trail-title">
       <h2 id="trail-title"></h2>
       <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
@@ -402,6 +422,14 @@
       <a id="trail-map-link" target="_blank" rel="noopener noreferrer" data-i18n="townOsm"></a>
       <button id="trail-interview" type="button" disabled></button>
       <p data-i18n="trailCost"></p>
+      <div id="trail-actions"></div>
+      <section id="trail-discovery" hidden>
+        <h3 id="trail-discovery-title"></h3>
+        <blockquote id="trail-discovery-text"></blockquote>
+        <figure id="trail-clue-photo"></figure>
+      </section>
+      <p id="trail-action-error" role="alert"></p>
+      <p id="trail-save-status" role="status"></p>
       <ol id="trail-history"></ol>
       <button id="trail-restart" type="button" data-i18n="journeyRestart"></button>
     </dialog>

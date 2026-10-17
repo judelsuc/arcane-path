@@ -68,6 +68,20 @@ reste possible, sans changer son tarot, ses caracteristiques ni sa progression.
   C'est un filtre operationnel approximatif, pas une frontiere politique exacte.
   Les anciennes cartes de demonstration, dont Tahiti, restent disponibles.
 - La premiere preparation demande Internet et peut prendre plusieurs minutes.
+Une petite roue accompagne le message pendant les recherches et la
+preparation de la carte ou du voyage. Elle disparait a la fin ou a
+l'annulation ; aucun pourcentage artificiel n'est affiche. L'animation
+respecte la preference systeme de reduction des mouvements.
+Une file serveur temporairement pleine conserve l'attente et sa roue,
+avec nouvelle tentative automatique et annulation possible.
+Pendant la creation de la piste, le message precise l'etape sur dix,
+la recherche de villes/lieux publics, la reutilisation du cache et le
+serveur interroge. Chaque catalogue essaie Overpass Allemagne puis Kumi ;
+si les deux echouent, jusqu'a trois tentatives respectent leur delai de
+refroidissement, avec compte a rebours visible. Un echec final reste explicite.
+Pendant la marche, une roue apparait aussi au centre de chaque morceau
+visible en attente de streaming. Elle disparait au chargement ou en cas
+d'echec ; les zones inconnues non demandees gardent simplement leurs « ? ».
   Si l'API OSM depasse sa limite de noeuds, les requetes sont subdivisees ;
   si quatre niveaux ne suffisent pas, le chargement essaie Overpass
   (overpass-api.de, puis overpass.kumi.systems) sur la zone complete.
@@ -76,8 +90,10 @@ reste possible, sans changer son tarot, ses caracteristiques ni sa progression.
   aucun fournisseur ne peut fournir la carte.
   L'interface interdit de lancer une autre partie pendant cette attente ;
   changer de region annule l'attente, sans supprimer le cache en preparation.
-  Il faut dix cases avec lieux publics nommes pour la piste actuelle :
-  une zone trop peu documentee est refusee explicitement, sans indices inventes.
+  Le depart n'exige plus dix lieux nommes dans sa petite carte :
+  la piste des nouveaux voyages cherche des villes dans une zone bien plus large.
+  La preparation echoue explicitement si aucun parcours de dix etapes
+  de 30 a 60 km n'est disponible, ou si ses fournisseurs sont indisponibles.
 - Les cartes et sources sont conservees dans `.cache/travel/origins/`.
   Apres redemarrage du serveur/rechargement, les depart prepares reparaissent
   dans le selecteur. Chaque couple de coordonnees a son propre emplacement de
@@ -344,53 +360,89 @@ depense. Aucun temps reel supplementaire ne passe pendant le jeu ; les
 bloquees par le dialogue. Les cadeaux ne sont pas attribues a de vraies
 personnes ou etablissements ; ce n'est pas une autorisation de jouer sur place.
 
-## Couche 8 : une courte piste du parent
+## Piste du parent : un long voyage de ville en ville
 
-Chaque nouveau voyage genere un parent fictif et dix etapes proches dans
-la region de depart, a partir de localites ou de lieux publics nommes OSM.
-Un carnet s'ouvre au depart. **Piste du parent** le rouvre sans cout.
-Le carnet indique la prochaine etape et le nombre de cases est/ouest,
-nord/sud a parcourir ; il ne revele pas d'avance les suivantes.
+Les **nouveaux voyages** preparent dix etapes dans de vraies villes OSM
+(`place=city|town`), espacees de **30 a 60 km a vol d'oiseau**, y compris
+du depart a la premiere ville : 300 a 600 km au total, soit un voyage de
+plusieurs semaines. Les cases sont projetees dans la grille globale,
+y compris au nord ou a l'ouest du depart ; la carte continue a charger en marchant.
+Le serveur consulte Overpass Allemagne puis Kumi, conserve ses catalogues dans
+`.cache/travel/towns/` et signale explicitement les echecs. Il ne remplace pas
+une ville manquante par un commerce voisin. Un echec ne remplace pas la
+sauvegarde precedente et ne tire pas le tarot du nouveau personnage.
 
-Sur la case cible, **Interroger le voyageur imaginaire** prend 5 minutes et
-donne un indice ecrit a la main, base sur une fiche de faits : parent,
-lieu de rencontre, prochaine destination. Les temoins sont entierement
-inventes ; aucun habitant, employe ou proprietaire reel ne recoit de role.
-Les fiches et dialogues trouves restent dans le carnet pendant ce voyage.
+**Piste du parent** ouvre gratuitement le carnet. Il indique la ville de
+l'etape actuelle, sa direction et sa distance ; les suivantes restent cachees.
+Seule la **case exacte de l'etape prevue** propose des indices du parent,
+jamais une autre case de la meme ville ni le curseur Look.
+Quatre actions differentes sont proposees a chaque etape, selon une rotation :
+discussion, photo annotee, lettre, fouille, note achetee, livre d'or ou billet.
+Chaque forme presente la prochaine destination differemment :
 
-A la dixieme etape, **Retrouver votre parent** ouvre les retrouvailles :
-objectif atteint, partie terminee, nouveau voyage possible. Les besoins
-restent actifs pendant les rencontres : l'epuisement peut terminer le voyage
-avant son objectif. Les etapes ne sont pas atteignables par le curseur Look.
+| Action | Temps | Fatigue ajoutee | Effort supplementaire |
+| --- | --- | --- | --- |
+| Discuter | 15 min | 1 | 10 kcal |
+| Chercher une photo | 30 min | 3 | 30 kcal |
+| Lire une lettre | 20 min | 2 | 15 kcal |
+| Fouiller | 40 min | 5 | 50 kcal |
+| Acheter une note | 10 min | 1 | 5 kcal + prix de 0,25 repas local |
+| Consulter un livre d'or | 25 min | 2 | 20 kcal |
+| Examiner un billet | 30 min | 3 | 25 kcal |
+| Demander son chemin | 15 min | 1 | 10 kcal |
 
-Raccourcis assumes : parent immobile au dernier repere, quatre prenoms,
-un seul modele de dialogue, dix etapes choisies parmi les quatre reperes
-proches successifs, sans OSRM, fausses pistes ni calendrier du parent.
-La generation fonctionne sur les quatre cartes incluses. La sauvegarde locale
-permet maintenant de reprendre la piste apres rechargement ou changement de region.
-Les anciennes sauvegardes a trois etapes gardent leur parcours et leur
-progression ; commencer un nouveau voyage pour obtenir dix etapes.
-Le serveur de voyage local existe deja, mais la creation serveur et les
-parcours complets de la couche 9 ne sont pas encore implementes.
+Le metabolisme et les risques nocturnes habituels s'ajoutent a ces couts.
+L'epuisement peut terminer la partie avant qu'un indice soit obtenu.
+Quand un lieu public nomme est disponible dans la prochaine ville, certains
+indices ne donnent que son nom : il faut ensuite **demander son chemin**
+sur place pour identifier la ville. Le carnet ne devoile alors ni distance
+ni lien cartographique. Cette attente et les decouvertes sont sauvegardees.
+
+La photo cherche une vraie image geographique sous licence, autour de la
+destination, avec auteur, source et licence. Le petit indice est affiche
+separement comme une **annotation fictive**, jamais comme une inscription
+authentique sur l'image. Une indisponibilite est affichee sans bloquer l'indice.
+Lettres, temoins, billets et autres objets narratifs sont egalement fictifs :
+aucun habitant ou etablissement reel n'est implique dans l'histoire.
+
+La derniere decouverte declenche les retrouvailles et termine le voyage.
+Les anciennes sauvegardes a trois ou dix reperes locaux restent **inchangees**,
+avec leur ancienne rencontre de cinq minutes ; elles ne sont pas converties.
+Commencer un nouveau voyage pour obtenir la longue piste et ses nouvelles actions.
+
+Limites : distances geographiques, pas un itineraire pieton calcule ; le
+trajet reel peut etre plus long ou interrompu par la mer ou des obstacles.
+Pas de garantie de continuite routiere, de deplacement du parent, de fausses
+pistes ou de calendrier narratif. La generation serveur couvre cette partie
+de la couche 9, pas l'ensemble de ses fonctionnalites prevues.
 
 ## Boutons et raccourcis
+
+**Un coup de pouce (I)** donne gratuitement la prochaine action utile et la
+direction/distance vers l'objectif deja connu. Sur une etape, il rappelle
+comment enqueter ; pour un indice de lieu non resolu, il indique de demander
+son chemin sans devoiler la ville. Aucun temps, argent ou energie n'est depense.
 
 Le journal de piste indique les directions depuis le joueur avec des nombres
 positifs et des fleches : est →, ouest ←, nord ↑, sud ↓. Par exemple, « 1 case
 vers l'est et 1 vers le nord » signifie une case a droite et une vers le haut.
-Les axes sans deplacement sont omis ; sur place, le journal invite a parler
-au temoin plutot qu'afficher des coordonnees regionales.
+Les axes sans deplacement sont omis ; sur place, le journal invite a choisir
+une enquete (ou a parler au temoin pour les anciennes pistes).
 
-Survoler un bouton ou lui donner le focus avec Tab affiche son action et son
-raccourci **Alt + Maj + touche** (Option + Maj sur Mac). Chaque bouton dispose
-aussi de `title` et `aria-keyshortcuts`. Exemples : M musique, N nouveau
+Chaque bouton affiche son raccourci **entre parentheses**, directement dans
+son libelle : « Se reposer (R) », « Acheter un repas (E) ». Une seule touche
+suffit, sans Alt/Maj ; la meme action garde sa touche dans les differents menus.
+Survoler le bouton ou lui donner le focus affiche aussi son info-bulle.
+Chaque bouton dispose de `title` et `aria-keyshortcuts`. Exemples : N nouveau
 voyage, C reprise, E repas, H sommeil, T ville, B musique de rue, J journal,
 S sauvegarde, Q retour preparation, K Options, G recherche, V position actuelle.
 Entree ouvre la preparation depuis le titre ; D
-revele le tarot, puis Entree continue (avec Alt + Maj pour ces raccourcis).
+revele le tarot, puis Entree continue. M commande la musique dans Options.
+Les anciennes combinaisons Alt + Maj + touche restent acceptees.
 
-Dans les dialogues, seuls leurs boutons repondent ; les options dynamiques
-utilisent 1-9, 0 puis les lettres disponibles, indiquees dans leurs info-bulles.
+Dans les dialogues, seuls leurs boutons repondent ; les enquetes gardent leurs
+touches propres, meme quand l'ordre change. Les autres options dynamiques
+utilisent 1-9, 0 puis les lettres disponibles, affichees dans les boutons.
 Les boutons caches/desactives et les appuis repetes sont ignores. Aucun
 raccourci ne s'active pendant l'utilisation d'un champ ou selecteur.
 Les commandes existantes restent disponibles sans modificateurs : fleches,
@@ -406,8 +458,14 @@ restent accessibles dans Options. L'ecran revient a chaque rechargement.
 
 ## Autres moyens de subsister
 
-En voyage ou dans le menu de ville, **Autres moyens de subsister**
-(Alt + Maj + F) presente trois actions fictives avec leur cout et risque :
+En voyage ou dans le menu de ville, **Agir dans cette case**
+(F) ouvre les actions de la case actuelle, pas de la ville entiere.
+Le repos et le sommeil sont accessibles partout ; repas, musique de rue,
+cueillette, manche et vol dependent du terrain et des commerces cartographies.
+Hors etape prevue, ces actions servent a obtenir nourriture, argent ou repos,
+pas des indices du parent. Sur une etape, le menu ouvre aussi ses enquetes.
+Les commandes reutilisent les memes regles et sauvegardes que leurs boutons
+habituels. Les trois actions de subsistance gardent leur cout et risque :
 
 - **Chercher dans les bois** : foret uniquement, 30 min et +5 fatigue.
   En cas de succes, jusqu'a 450 kcal consommees sur place.

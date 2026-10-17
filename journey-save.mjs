@@ -1,6 +1,8 @@
 import { validateSurvivalConfig, characterProfile, normalizeCharacterName } from "./survival.mjs";
 import { validateEconomy } from "./economy.mjs";
 import { chunkPosition } from "./travel.mjs";
+import { validateTownTrail } from "./trail.mjs";
+import { CLUE_ACTIONS } from "./trail-actions.mjs";
 
 export const SAVE_VERSION = 1;
 const PREFIX = "arcane-journey-v1:";
@@ -64,21 +66,35 @@ export function validateSave(save) {
     "energyKcal", "fatigueGain", "ascentMeters", "descentMeters", "terrainCost"]
     .every(k => nonnegative(s.lastMove[k])) || typeof s.lastMove.elevationKnown !== "boolean")) fail();
   const trail = s.trail;
-  if (!trail || trail.version !== 1 || typeof trail.parentName !== "string" || !trail.parentName.trim() ||
-      !Array.isArray(trail.stages) || ![3, 10].includes(trail.stages.length) ||
+  if (!trail || ![1, 2].includes(trail.version) || typeof trail.parentName !== "string" || !trail.parentName.trim() ||
+      !Array.isArray(trail.stages) || !(trail.version === 2 ? trail.stages.length === 10 : [3, 10].includes(trail.stages.length)) ||
       !integer(trail.index) || trail.index < 0 || trail.index > trail.stages.length ||
       trail.completed !== (trail.index === trail.stages.length) ||
       (s.ended === "reunion") !== trail.completed ||
       !Array.isArray(trail.history) || trail.history.length !== trail.index ||
       new Set(trail.stages.map(p => `${p?.col},${p?.row}`)).size !== trail.stages.length ||
-      trail.stages.some((p, index) => !p || !integer(p.col) || !integer(p.row) || p.col < 0 || p.row < 0 ||
+      trail.stages.some((p, index) => !p || !integer(p.col) || !integer(p.row) ||
+        (trail.version === 1 && (p.col < 0 || p.row < 0)) ||
         typeof p.name !== "string" || !p.name.trim() || !/^(node|way)\/\d+$/.test(p.osmId) ||
         p.witnessId !== `fictional-traveler-${index + 1}`)) fail();
+  if (trail.version === 2) validateTownTrail(trail);
+  if (trail.version === 2 && trail.discovery !== undefined) {
+    const d = trail.discovery;
+    if (!d || !Object.hasOwn(CLUE_ACTIONS, d.kind) || d.kind === "directions" ||
+        !integer(d.step) || d.step < 0 || d.step >= 10 || typeof d.pending !== "boolean" ||
+        d.step !== (d.pending ? trail.index : trail.index - 1) ||
+        d.place !== trail.stages[d.step].name ||
+        d.nextName !== (trail.stages[d.step + 1]?.name ?? null) ||
+        d.venue !== (trail.stages[d.step + 1]?.venue?.name ?? null) ||
+        (d.pending && !d.venue)) fail();
+  }
   for (let i = 0; i < trail.history.length; i++) {
     const fact = trail.history[i], stage = trail.stages[i], next = trail.stages[i + 1] ?? null;
     if (!fact || fact.fictional !== true || fact.parentName !== trail.parentName ||
         fact.witnessId !== stage.witnessId || fact.place !== stage.name ||
         JSON.stringify(fact.next) !== JSON.stringify(next)) fail();
+    if (trail.version === 2 && (!Object.hasOwn(CLUE_ACTIONS, fact.clueKind) ||
+        fact.clueKind === "directions" || typeof fact.usedDirections !== "boolean")) fail();
   }
   if (s.ended === null && (s.reserveKcal <= 0 || s.fatigue >= 100 ||
       s.awakeHours >= save.survival.sleep_limit_hours)) fail();

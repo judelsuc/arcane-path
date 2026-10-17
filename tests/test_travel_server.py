@@ -148,6 +148,8 @@ class TravelServerTests(unittest.TestCase):
                     ("/api/chunk?region=firmi&x=a&y=0", 400),
                     ("/api/origin?latitude=nan&longitude=2.3", 502),
                     ("/api/origin-map?region=firmi", 400),
+                    ("/api/trail?region=unknown&seed=00000001", 400),
+                    ("/api/trail?region=firmi&seed=invalid", 400),
                     ("/.git/config", 403),
                 ]:
                     with self.assertRaises(urllib.error.HTTPError) as raised:

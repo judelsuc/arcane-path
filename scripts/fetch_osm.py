@@ -133,6 +133,44 @@ def _request_sources(bounds):
     raise SourceUnavailable("All OSM sources unavailable. " + " | ".join(failures))
 
 
+def fetch_towns(latitude, longitude, venues=False, on_progress=None):
+    """Fetch a bounded catalogue, not all regional geometry."""
+    query = (f'[out:json][timeout:45];node(around:{2000 if venues else 60000},'
+             f'{latitude:.6f},{longitude:.6f})' +
+             ('["amenity"~"^(library|cafe|restaurant|theatre)$"]["name"];out body;'
+              if venues else '["place"~"^(city|town)$"]["name"];out body;'))
+    failures = []
+    with _SOURCE_LOCK:
+        for source in OVERPASS_URLS:
+            remaining = _COOLDOWNS.get(source, 0) - time.monotonic()
+            if remaining > 0:
+                failures.append(f"{source}: cooldown ({math.ceil(remaining)} seconds)")
+                continue
+            if on_progress:
+                on_progress({"phase": "provider", "provider": urllib.parse.urlparse(source).hostname,
+                             "backup": source != OVERPASS_URLS[0]})
+            request = urllib.request.Request(
+                source + "?" + urllib.parse.urlencode({"data": query}),
+                headers={"User-Agent": "ArcanePath/0.4 (https://github.com/judelsuc/arcane-path)"},
+            )
+            try:
+                with urllib.request.urlopen(request, timeout=60) as response:
+                    data = json.load(response)
+                if (not isinstance(data, dict) or data.get("remark")
+                        or not isinstance(data.get("elements"), list)):
+                    raise SourceUnavailable("Overpass returned an incomplete town catalogue.")
+                return {"elements": data["elements"], "sourceUrl": source,
+                        "retrievedAt": datetime.now(timezone.utc).isoformat()}
+            except (OSError, ValueError) as error:
+                _COOLDOWNS[source] = time.monotonic() + 60
+                failures.append(f"{source}: {error}")
+                print(f"Town catalogue unavailable; trying fallback: {source}: {error}", file=sys.stderr)
+    delay = max(1, math.ceil(min(
+        (_COOLDOWNS.get(source, 0) - time.monotonic() for source in OVERPASS_URLS),
+        default=60)))
+    raise SourceUnavailable("Town catalogue unavailable. " + " | ".join(failures), delay)
+
+
 def download_region(bounds, name, output, refresh=False, reference_bounds=None):
     west, south, east, north = bounds
     if (

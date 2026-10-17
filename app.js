@@ -73,6 +73,7 @@ document.querySelector("#enter-world").addEventListener("click", () => {
 });
 document.querySelector("#back-title").addEventListener("click", () => {
   startingPoint.reset();
+  travel.reset();
   entered = false;
   document.querySelector("#journey-setup").hidden = true;
   document.querySelector("#title-screen").hidden = false;
@@ -233,7 +234,8 @@ function localize() {
   document.querySelector("#legend").replaceChildren(legend);
   mapElement.querySelectorAll(".tile").forEach((tile) => {
     const details = tileDetails(tile);
-    tile.setAttribute("aria-label", details);
+    tile.setAttribute("aria-label", tile.classList.contains("tile--downloading")
+      ? `${t("travelChunkLoading")} ${details}` : details);
   });
   if (inspectedTile) {
     document.querySelector("#cell-info").textContent = tileDetails(inspectedTile, false);
@@ -260,6 +262,12 @@ function renderMap(data) {
       const tile = document.createElement("span");
       tile.className = `tile tile--${cell.terrain}`;
       tile.textContent = cell.glyph;
+      if (cell.downloading) {
+        tile.classList.add("tile--downloading");
+        tile.title = t("travelChunkLoading");
+        tile.setAttribute("aria-label", t("travelChunkLoading"));
+        tile.setAttribute("aria-busy", "true");
+      }
       tile.dataset.row = rowIndex;
       tile.dataset.col = colIndex;
       tile.tabIndex = travel.active ? -1 : 0;

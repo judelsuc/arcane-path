@@ -24,6 +24,7 @@ from fetch_osm import download_region
 from weather import fetch_climate
 from config import load_config
 from starting_places import PlaceLookup, coordinates
+from town_trail import TownTrailStore
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_SIZE = 8
@@ -238,7 +239,8 @@ class ChunkJobs:
             job = self.jobs.get(key)
             if job:
                 if not job.done():
-                    return 202, {"status": "loading"}
+                    progress = getattr(self.store, "get_progress", None)
+                    return 202, {"status": "loading", **({"progress": progress(*key)} if progress else {})}
                 del self.jobs[key]
                 try:
                     return 200, job.result()
@@ -307,6 +309,7 @@ class WeatherStore:
 def make_handler(store, jobs):
     weather = WeatherStore(store.cache / "weather")
     origins = ChunkJobs(OriginStore(store), capacity=2, pool=jobs.pool)
+    trails = ChunkJobs(TownTrailStore(store, atomic_write), capacity=2, pool=jobs.pool)
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, directory=str(store.root), **kwargs)
@@ -343,9 +346,16 @@ def make_handler(store, jobs):
                             {"region": key, "name": data["name"]}
                             for key, data in list(store.bases.items()) if key.startswith("origin-")])
                     if url.path not in {"/api/chunk", "/api/weather", "/api/places",
-                                        "/api/location", "/api/origin", "/api/origin-map"}:
+                                        "/api/location", "/api/origin", "/api/origin-map", "/api/trail"}:
                         return self.send_json(404, {"error": "Unknown API endpoint."})
                     query = urllib.parse.parse_qs(url.query, strict_parsing=True)
+                    if url.path == "/api/trail":
+                        region, seed = query["region"][0], query["seed"][0]
+                        if (region not in store.bases or len(seed) != 8
+                                or any(c not in "0123456789abcdef" for c in seed)):
+                            raise ValueError("Invalid town-trail origin or seed.")
+                        status, payload = trails.request(region, seed)
+                        return self.send_json(status, payload)
                     if url.path in {"/api/places", "/api/location", "/api/origin"}:
                         try:
                             if url.path == "/api/places":

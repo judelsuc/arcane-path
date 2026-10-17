@@ -106,3 +106,29 @@ test("stream caps in-memory chunks at 25 while allowing durable-cache reloads", 
   assert.equal((await stream.load(0, 0)).chunk.x, 0);
   stream.stop();
 });
+
+test("pending map markers update when work starts, succeeds, fails or is cancelled", async () => {
+  let release;
+  let updates = 0;
+  const stream = createChunkStream("firmi", { onUpdate: () => updates++,
+    fetcher: async () => {
+      await new Promise(resolve => { release = resolve; });
+      return new Response(JSON.stringify(chunk(0, 0)));
+    } });
+  assert.equal(stream.isPending(0, 0), false);
+  const loading = stream.load(0, 0);
+  assert.equal(stream.isPending(0, 0), true);
+  assert.equal(updates, 1);
+  release();
+  await loading;
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(stream.isPending(0, 0), false);
+  assert.ok(updates >= 2);
+  stream.stop();
+  const failed = createChunkStream("firmi", { fetcher: async () =>
+    new Response(JSON.stringify({ error: "Offline" }), { status: 502 }) });
+  await assert.rejects(failed.load(0, 0), /Offline/);
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(failed.isPending(0, 0), false);
+  failed.stop();
+});

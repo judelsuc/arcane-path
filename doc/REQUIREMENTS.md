@@ -663,7 +663,7 @@ This file records additions to the design without modifying the source PDF,
   player start/resume explicitly. Keep independent, persistent origin saves.
   No synthetic place data or silent nearby fallback when a map/story cannot load.
 - First version uses Nominatim with attribution, caching and a global request
-  interval; European country/coordinate filter and sparse-map limits are
+  interval; European country/coordinate filter and preparation limits are
   documented in README. Coordinate disclosure to mapping services is visible.
 
 ## R-047 — Separate setup and options; uncluttered typography
@@ -690,6 +690,97 @@ This file records additions to the design without modifying the source PDF,
   and resume it exactly. Names remain local to the browser's journey save.
 - Legacy nameless saves remain valid and resumable without a forced name
   or a new tarot draw. The new-journey name field does not rename an old save.
+
+## R-049 — Evaluate production map-data capacity
+
+- **User suggestion:** Consider a paid API key for higher limits, and
+  browser-side requests so each player's traffic originates from their own IP.
+- **Status:** Architecture options to evaluate, not an approved migration or
+  provider purchase. No paid service or client-side download change implemented.
+- Distinguish raw OSM geometry/tags from map tiles, geocoding and browser
+  geolocation: buying one service does not necessarily address the others.
+  The main OSM editing API's node cap is not an API-key subscription tier.
+- Evaluate a commercial raw-data provider or a dedicated/self-hosted Overpass
+  service with European coverage, appropriate licensing, budget, cache rights,
+  operational limits and reliable availability.
+- Direct client access requires provider permission/CORS, privacy disclosure
+  and suitable browser-safe credentials. It does not remove per-request size
+  limits or aggregate application usage obligations; do not distribute traffic
+  across player IPs to evade a public service's restrictions.
+- Prefer shared cached geographic chunks for repeated areas. Keep secret
+  credentials server-side. Public OSM/Overpass services are not a production SLA.
+- Reference: [OSMF API usage policy](https://operations.osmfoundation.org/policies/api/).
+
+## R-050 — Long town-to-town parent journeys
+
+- **Confirmed choice:** Ten stages, each 30–60 km from the preceding town
+  (including departure to first town), for a weeks-long journey.
+- Apply only to new journeys. Preserve all existing saved routes/progress.
+- Use real named OSM cities/towns, not nearby shops or successive local
+  landmarks. Stream the global grid while walking, including negative cells.
+- Distances are great-circle, not routed walking distances: explicitly
+  disclose that road connectivity and water crossings are not checked.
+- Server generation uses sourced, cached town catalogues and provider
+  fallback. Display preparation/failure; never invent a short substitute
+  or overwrite the previous save when generation fails.
+
+## R-051 — Per-cell actions and varied discoveries
+
+- **User requests:** Pirates!-style choices per cell, not per town; every
+  planned stop has several ways to investigate, with time/energy costs.
+  Planned stops reveal the next destination. Other cells provide contextual
+  ways to obtain food, earn money or rest, not parent directions.
+- Offer four rotating clue forms at each new-route stop: discussion,
+  annotated photo, letter, search, purchased note, guestbook or travel ticket.
+  Keep their presentations distinct and show time, fatigue, energy and any
+  price before choosing. Existing hunger/exhaustion/night rules still apply.
+- A photo uses licensed online geographical imagery with attribution and a
+  clearly separate fictional hint. Image failure is explicit but does not
+  erase the written clue or make progression depend on an image provider.
+- Some clues initially name only a real public POI in another town.
+  Asking directions is a separate paid-in-time/energy action before the
+  town, distance and map location are revealed. Persist the unresolved lead.
+- Parent clues require the exact planned cell. Everywhere else, reuse
+  existing terrain/POI-gated buying, foraging, begging, food theft, street
+  music, resting and sleeping; do not silently turn every cell into a shop.
+- Artifacts and encounters are fictional, not statements about real people,
+  venues or objects. The earlier ten additional brainstorm ideas are not all
+  implemented; do not describe them as completed gameplay.
+
+## R-052 — Visible, simple and stable action shortcuts
+
+- **User request:** Put each action shortcut in parentheses in the button
+  caption; keep shortcuts as a single key combination wherever possible.
+- Prefer single keys without modifiers. Preserve the same key for the same
+  service across toolbar/cell/town menus and for each investigation form.
+- Keep captions, translated special-key names, tooltips and accessibility
+  metadata consistent. Do not duplicate suffixes after state/language updates.
+- Scope shortcuts to the active dialog/screen. Ignore hidden/disabled actions,
+  repeated keydown, typing/select controls, IME input and Ctrl/Cmd shortcuts.
+  Keep the previous Alt+Shift combinations as compatibility aliases.
+
+## R-053 — Free guidance when lost
+
+- **User request and confirmed choice:** Add a hint button explaining the
+  next action and direction/distance to the current known objective, for free.
+- Show the shortcut in its caption. No time, energy or money cost, state
+  mutation, random draw or undiscovered destination/clue disclosure.
+- Guide travel toward the current stop, investigation on arrival, or asking
+  directions for an unresolved venue-only lead. Support legacy saved trails.
+
+## R-054 — Resilient preparation with truthful activity updates
+
+- **User request:** Automatic retries and backup servers; explain what the
+  algorithm is doing so preparation feels less opaque.
+- For town/venue catalogues, try the existing Germany/Kumi providers and
+  retry up to three rounds, respecting cooldowns outside the shared source
+  lock. Retain successful catalogue caches; surface final failure.
+- Expose real job progress: queued, stage number out of ten, finding towns,
+  public-venue lookup, cache reuse, primary/backup provider and retry countdown.
+  Do not fabricate a completion percentage or disclose future town names.
+- Keep the spinner active while waiting and retain client cancellation.
+  Cancellation stops client waiting; already-running server work may finish
+  into its shared cache rather than being forcibly terminated.
 
 ## R-027 — Geocache-linked fictional dungeons
 

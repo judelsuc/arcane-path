@@ -61,6 +61,7 @@ export function createChunkStream(region, { fetcher = fetch, onUpdate = () => {}
         running--;
         requests.delete(job.key);
         pump();
+        onUpdate();
       });
     }
   }
@@ -87,6 +88,7 @@ export function createChunkStream(region, { fetcher = fetch, onUpdate = () => {}
     });
     requests.set(id, promise);
     pump();
+    onUpdate();
     return promise;
   }
 
@@ -99,6 +101,7 @@ export function createChunkStream(region, { fetcher = fetch, onUpdate = () => {}
     },
     drop: (x, y) => chunks.delete(key(x, y)),
     get: (x, y) => chunks.get(key(x, y)),
+    isPending: (x, y) => !controller.signal.aborted && requests.has(key(x, y)),
     stop() {
       controller.abort();
       for (const job of queue.splice(0)) job.reject(controller.signal.reason);

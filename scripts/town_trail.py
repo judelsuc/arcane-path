@@ -1,0 +1,176 @@
+"""Build long, sourced town-to-town trails without downloading regional geometry."""
+
+import hashlib
+import json
+import math
+import random
+import threading
+import time
+import logging
+
+from fetch_osm import fetch_towns, SourceUnavailable
+
+RADIUS = 6_371_008.8
+MIN_METERS = 30_000
+MAX_METERS = 60_000
+STAGES = 10
+
+
+def distance(a, b):
+    lat1, lat2 = map(math.radians, (a["latitude"], b["latitude"]))
+    dlat = lat2 - lat1
+    dlon = math.radians(b["longitude"] - a["longitude"])
+    h = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    return RADIUS * 2 * math.asin(math.sqrt(min(1, h)))
+
+
+def grid_position(base, latitude, longitude):
+    projection = base.get("projectionLatitude",
+                          (base["bounds"]["minLatitude"] + base["bounds"]["maxLatitude"]) / 2)
+    step = base["cellSizeMeters"] / RADIUS * 180 / math.pi
+    return {
+        "col": math.floor((longitude - base["bounds"]["minLongitude"])
+                          / (step / math.cos(math.radians(projection)))),
+        "row": math.floor((base["bounds"]["maxLatitude"] - latitude) / step),
+    }
+
+
+def starting_point(base):
+    col, row = base["width"] // 2, base["height"] // 2
+    projection = base.get("projectionLatitude",
+                          (base["bounds"]["minLatitude"] + base["bounds"]["maxLatitude"]) / 2)
+    step = base["cellSizeMeters"] / RADIUS * 180 / math.pi
+    return {"col": col, "row": row,
+            "latitude": base["bounds"]["maxLatitude"] - (row + 0.5) * step,
+            "longitude": base["bounds"]["minLongitude"] +
+            (col + 0.5) * step / math.cos(math.radians(projection))}
+
+
+def build_town_trail(base, seed, catalogue, venues=None, on_progress=None):
+    rng = random.Random(seed)
+    origin = starting_point(base)
+    current = origin
+    visited = [origin]
+    stages = []
+    heading = rng.uniform(-math.pi, math.pi)
+    for index in range(STAGES):
+        if on_progress:
+            on_progress({"phase": "towns", "stage": index + 1})
+        envelope = catalogue(current["latitude"], current["longitude"])
+        candidates = []
+        for item in envelope["elements"]:
+            tags = item.get("tags", {})
+            latitude, longitude = item.get("lat"), item.get("lon")
+            if (item.get("type") != "node" or not isinstance(item.get("id"), int)
+                    or item["id"] <= 0 or tags.get("place") not in {"city", "town"}
+                    or not isinstance(tags.get("name"), str) or not tags["name"].strip()
+                    or any(isinstance(v, bool) or not isinstance(v, (float, int))
+                           or not math.isfinite(v) for v in (latitude, longitude))
+                    or not -85 <= latitude <= 85 or not -180 <= longitude <= 180):
+                continue
+            candidate = {"latitude": latitude, "longitude": longitude}
+            meters = distance(current, candidate)
+            if not MIN_METERS <= meters <= MAX_METERS:
+                continue
+            position = grid_position(base, latitude, longitude)
+            if (abs(position["col"] // 8) > 1000 or abs(position["row"] // 8) > 1000
+                    or any(distance(point, candidate) < 20_000 for point in visited)):
+                continue
+            osm_id = f'node/{item["id"]}'
+            if any(stage["osmId"] == osm_id for stage in stages):
+                continue
+            angle = math.atan2(latitude - current["latitude"],
+                               (longitude - current["longitude"]) *
+                               math.cos(math.radians(current["latitude"])))
+            turn = abs(math.atan2(math.sin(angle - heading), math.cos(angle - heading)))
+            candidates.append((turn, abs(meters - 45_000), osm_id, {
+                **candidate, **position, "name": tags["name"].strip(), "osmId": osm_id,
+                "placeType": tags["place"], "legMeters": round(meters, 3),
+                "sourceUrl": envelope["sourceUrl"], "retrievedAt": envelope["retrievedAt"],
+                "witnessId": f"fictional-traveler-{index + 1}",
+            }, angle))
+        if not candidates:
+            raise ValueError(
+                f"No onward town 30–60 km away for stage {index + 1}/10. "
+                "Try another route or starting point; no short-distance substitute was generated.")
+        candidates.sort(key=lambda candidate: candidate[:3])
+        chosen = candidates[rng.randrange(min(3, len(candidates)))]
+        current = chosen[3]
+        if venues and index % 2 == 1:
+            if on_progress:
+                on_progress({"phase": "venues", "stage": index + 1})
+            places = venues(current["latitude"], current["longitude"])
+            for item in sorted(places["elements"], key=lambda p: p.get("id", 0)):
+                tags = item.get("tags", {})
+                if (item.get("type") == "node" and isinstance(item.get("id"), int)
+                        and item["id"] > 0 and isinstance(tags.get("name"), str)
+                        and tags["name"].strip() and tags.get("access") not in {"private", "no"}
+                        and tags.get("disused", "no") == "no" and tags.get("abandoned", "no") == "no"
+                        and tags.get("amenity") in {"library", "cafe", "restaurant", "theatre"}
+                        and isinstance(item.get("lat"), (int, float))
+                        and isinstance(item.get("lon"), (int, float))
+                        and math.isfinite(item["lat"]) and math.isfinite(item["lon"])
+                        and -85 <= item["lat"] <= 85 and -180 <= item["lon"] <= 180
+                        and distance(current, {"latitude": item["lat"], "longitude": item["lon"]}) <= 2000):
+                    current["venue"] = {"name": tags["name"].strip(), "osmId": f'node/{item["id"]}',
+                                        "sourceUrl": places["sourceUrl"]}
+                    break
+        heading = chosen[4]
+        stages.append(current)
+        visited.append(current)
+    return {"version": 2, "origin": origin, "parentName": rng.choice(["Camille", "Alex", "Sacha", "Noa"]),
+            "stages": stages, "index": 0, "history": [], "completed": False}
+
+
+class TownTrailStore:
+    def __init__(self, chunks, write):
+        self.chunks = chunks
+        self.write = write
+        self.cache = chunks.cache / "towns"
+        self.progress = {}
+        self.lock = threading.Lock()
+
+    def get_progress(self, region, seed):
+        with self.lock:
+            return dict(self.progress.get((region, seed), {"phase": "queued"}))
+
+    def catalogue(self, latitude, longitude, venues=False, on_progress=None):
+        key = hashlib.sha256(f"v1:{venues}:{latitude:.6f},{longitude:.6f}".encode()).hexdigest()[:24]
+        path = self.cache / f"{key}.json"
+        if path.exists():
+            if on_progress:
+                on_progress({"phase": "cache"})
+            return json.loads(path.read_text())
+        for attempt in range(1, 4):
+            try:
+                data = fetch_towns(latitude, longitude, venues=venues, on_progress=on_progress)
+                break
+            except SourceUnavailable as error:
+                if attempt == 3:
+                    raise
+                logging.warning("Town catalogue attempt %s/3 failed: %s", attempt, error)
+                delay = error.retry_after
+                if on_progress:
+                    on_progress({"phase": "retry", "attempt": attempt + 1,
+                                 "retryAt": time.time() + delay, "lastError": str(error)})
+                time.sleep(delay)
+        self.write(path, json.dumps(data).encode())
+        return data
+
+    def read(self, region, seed):
+        return None
+
+    def build(self, region, seed):
+        key = (region, seed)
+        def update(detail):
+            with self.lock:
+                previous = self.progress.get(key, {})
+                self.progress[key] = {"stage": previous.get("stage", 1), **detail}
+        try:
+            return build_town_trail(self.chunks.bases[region], seed,
+                                   lambda lat, lon: self.catalogue(lat, lon, on_progress=update),
+                                   lambda lat, lon: self.catalogue(lat, lon, venues=True, on_progress=update),
+                                   on_progress=update)
+        finally:
+            with self.lock:
+                self.progress.pop(key, None)

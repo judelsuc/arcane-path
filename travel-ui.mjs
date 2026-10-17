@@ -14,10 +14,11 @@ import { setupSurvivalChoices } from "./survival-choices-ui.mjs";
 import { setupEconomyUI } from "./economy-ui.mjs";
 import { beginBusking, settleBusking } from "./music.mjs";
 import { setupMusic } from "./music-ui.mjs";
-import { createTrail, interviewTrail } from "./trail.mjs";
+import { loadTownTrail, interviewTrail } from "./trail.mjs";
 import { setupTrail } from "./trail-ui.mjs";
 import { createJourneyStore, mapIdentity } from "./journey-save.mjs";
 import { tarotArt } from "./tarot-art.mjs";
+import { trailClue } from "./trail-actions.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onActiveChange }) {
   const start = document.querySelector("#start-travel");
@@ -41,6 +42,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const towns = setupTowns(t);
   let state, stream, region, base, token = 0, busy = false, error = "", active = false;
   let preparingOrigin = false;
+  let trailController;
+  let trailProgress;
   let transient = "", missingHeightMoves = 0;
   let heading = [0, 0];
   let cursor, cameraData;
@@ -197,7 +200,24 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     },
   });
   const trailUI = setupTrail(t, {
-    context: economyContext,
+    context: () => {
+      const current = economyContext();
+      return current ? { ...current, saveStatus: saveStatus.textContent } : null;
+    },
+    discover(kind) {
+      const current = economyContext();
+      if (!current || current.blocked) return false;
+      try {
+        state = trailClue(state, kind, current.cell, current.info, survivalConfig, economyData);
+        autosave();
+        localize();
+        return true;
+      } catch (reason) {
+        report(reason);
+        document.querySelector("#trail-action-error").textContent = reason.message;
+        return false;
+      }
+    },
     interview() {
       const current = economyContext();
       if (!current || current.blocked) return false;
@@ -263,9 +283,21 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     controls.hidden = !active;
     onActiveChange?.(active);
     start.hidden = active;
-    start.disabled = !base || preparingOrigin;
+    start.disabled = !base || preparingOrigin || busy;
     resume.hidden = active || !slotOccupied;
-    resume.disabled = !base || !savedJourney || preparingOrigin;
+    resume.disabled = !base || !savedJourney || preparingOrigin || busy;
+    document.querySelector("#journey-start-status").textContent = active ? ""
+      : error ? t("journeyStartError", { error }) : busy && transient ? t(transient) : "";
+    if (!active && busy && trailProgress && transient === "trailPreparing") {
+      const phase = trailProgress.phase === "provider" && trailProgress.backup ? "backup" : trailProgress.phase;
+      document.querySelector("#journey-start-status").textContent += ` ${t(`trailProgress.${phase}`, {
+        stage: trailProgress.stage ?? 1, provider: trailProgress.provider ?? "",
+        attempt: trailProgress.attempt ?? 1,
+        seconds: Math.max(0, Math.ceil((trailProgress.retryAt ?? 0) - Date.now() / 1000)),
+      })}`;
+    }
+    document.querySelector("#journey-start-status").classList.toggle("is-loading", !active && busy);
+    document.querySelector("#cancel-journey-start").hidden = active || !busy;
     document.querySelector("#save-travel").disabled = !state || busy;
     saveStatus.textContent = saveError ? t("saveError", { error: saveError })
       : savedAt ? t("saveStored", {
@@ -447,8 +479,13 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     for (let row = 0; row < 24; row++) {
       const cells = [];
       for (let col = 0; col < 24; col++) {
-        const chunk = stream.get(position.x - 1 + Math.floor(col / 8), position.y - 1 + Math.floor(row / 8));
-        cells.push(chunk?.rows[row % 8][col % 8] ?? { terrain: "plain", glyph: "?", unavailable: true });
+        const x = position.x - 1 + Math.floor(col / 8);
+        const y = position.y - 1 + Math.floor(row / 8);
+        const chunk = stream.get(x, y);
+        cells.push(chunk?.rows[row % 8][col % 8] ?? {
+          terrain: "plain", glyph: "?", unavailable: true,
+          downloading: stream.isPending(x, y) && row % 8 === 3 && col % 8 === 3,
+        });
       }
       rows.push(cells);
     }
@@ -566,7 +603,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
 
   async function begin(restored, replacementConfirmed = false) {
-    if (!base || active || preparingOrigin) return;
+    if (!base || active || busy || preparingOrigin) return;
     let characterName;
     if (!restored) {
       try {
@@ -582,7 +619,6 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     if (!restored && slotOccupied && !replacementConfirmed && !confirm(t("saveReplaceConfirm"))) return;
     pendingRestore = restored;
     const currentToken = ++token;
-    active = true;
     busy = true;
     error = "";
     transient = "travelLoading";
@@ -617,10 +653,23 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         if (!economyResponse.ok) throw new Error(`Economy database: HTTP ${economyResponse.status}`);
         economyData = validateEconomy(await economyResponse.json());
         if (currentToken !== token) return;
+        transient = "trailPreparing";
+        localize();
+        trailController = new AbortController();
+        const trail = await loadTownTrail(region, trailController.signal, fetch, progress => {
+          if (currentToken !== token) return;
+          if (!["queued", "towns", "venues", "provider", "retry", "cache"].includes(progress?.phase)) {
+            throw new Error("Invalid route preparation progress.");
+          }
+          trailProgress = progress;
+          localize();
+        });
+        if (currentToken !== token) return;
         state = startEconomy(startSurvival(Math.floor(base.width / 2), Math.floor(base.height / 2),
           Date.now(), "balanced", survivalConfig), economyData);
         state = { ...applyBirthTarot(state, economyData), name: characterName };
-        state = { ...state, trail: createTrail(base, state.col, state.row) };
+        state = { ...state, trail };
+        transient = "travelLoading";
         birthPending = true;
       }
       if (currentToken !== token) return;
@@ -631,6 +680,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       const first = await stream.load(p.x, p.y, true);
       if (currentToken !== token) return;
       if (first.elevation.error) error = first.elevation.error;
+      active = true;
       autosave();
       resetContent();
       openJourneyIntro();
@@ -638,7 +688,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       prefetch();
       if (!document.querySelector("dialog[open]")) document.querySelector("#ascii-map").focus({ preventScroll: true });
     } catch (reason) {
-      if (currentToken === token) report(reason);
+      if (currentToken === token) {
+        reset();
+        report(reason);
+      }
     } finally {
       if (currentToken === token) {
         busy = false;
@@ -650,6 +703,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
 
   function reset() {
     token++;
+    trailController?.abort();
+    trailController = undefined;
+    trailProgress = undefined;
     birthDialog.close();
     dailyTarotUI.reset();
     birthPending = false;
@@ -675,6 +731,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     localize();
   }
   start.addEventListener("click", () => begin());
+  document.querySelector("#cancel-journey-start").addEventListener("click", reset);
   resume.addEventListener("click", () => {
     readJourney();
     if (savedJourney) begin(savedJourney);

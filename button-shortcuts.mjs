@@ -2,12 +2,14 @@ const KEYS = {
   "audio-toggle": "M", "enter-world": "Enter",
   "search-place": "G", "use-location": "V",
   "cancel-place": "Z",
+  "cancel-journey-start": "A",
   "back-title": "Escape",
   "open-options": "K",
   "start-travel": "N", "resume-travel": "C", "open-osm": "O",
   "restart-travel": "N", "rest-travel": "R", "sleep-travel": "H",
   "eat-travel": "E", "open-town": "T", "open-music": "B",
   "open-trail": "J", "save-travel": "S", "look-travel": "L",
+  "open-hint": "I",
   "retry-travel": "Y", "stop-travel": "Q", "show-photo": "P",
   "refresh-content": "U", "clear-content": "X",
   "birth-tarot-draw": "D", "birth-tarot-continue": "Enter",
@@ -17,7 +19,12 @@ const KEYS = {
   "town-trail": "J", "music-start": "Enter", "music-tap": "Space",
   "trail-interview": "I", "trail-restart": "N",
   "open-survival-choices": "F", "town-survival-choices": "F",
-  "choice-forage": "F", "choice-beg": "B", "choice-steal": "T",
+  "choice-forage": "F", "choice-beg": "A", "choice-steal": "T",
+  "cell-buy": "E", "cell-rest": "R", "cell-sleep": "H",
+  "cell-music": "B", "cell-clues": "J",
+  "clue-discuss": "D", "clue-photo": "P", "clue-letter": "L",
+  "clue-search": "F", "clue-buy": "A", "clue-guestbook": "G",
+  "clue-ticket": "T", "clue-directions": "I",
 };
 const DIRECTIONS = { "0,-1": "ArrowUp", "1,0": "ArrowRight", "0,1": "ArrowDown", "-1,0": "ArrowLeft" };
 
@@ -38,7 +45,8 @@ export function buttonBindings(buttons) {
 }
 
 export function shortcutCode(event) {
-  if (!event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey) return null;
+  if (event.ctrlKey || event.metaKey || event.isComposing || (event.altKey && !event.shiftKey)) return null;
+  if (!event.altKey && /^[a-z0-9]$/i.test(event.key)) return event.key.toUpperCase();
   if (/^Key[A-Z]$/.test(event.code)) return event.code.slice(3);
   if (/^Digit[0-9]$/.test(event.code)) return event.code.slice(5);
   return ["Enter", "Escape", "Space", "ArrowUp", "ArrowRight", "ArrowDown", "ArrowLeft"]
@@ -65,11 +73,22 @@ export function setupButtonShortcuts(t) {
     for (const scope of [document.querySelector("main"), ...document.querySelectorAll("dialog")]) {
       for (const { button, key } of bindings(scope)) {
         const element = button.element;
+        let caption = element.querySelector(".button-shortcut");
+        const action = [...element.childNodes].filter(node => node !== caption)
+          .map(node => node.textContent).join("").trim();
+        if (!caption) {
+          caption = document.createElement("span");
+          caption.className = "button-shortcut";
+          caption.setAttribute("aria-hidden", "true");
+          element.append(caption);
+        }
+        const suffix = ` (${label(key)})`;
+        if (caption.textContent !== suffix) caption.textContent = suffix;
         const text = t("buttonTooltip", {
-          action: element.textContent.trim(), key: label(key),
+          action, key: label(key),
         });
         element.title = text;
-        element.setAttribute("aria-keyshortcuts", `Alt+Shift+${key}`);
+        element.setAttribute("aria-keyshortcuts", key);
       }
     }
     if (current?.isConnected && !tooltip.hidden) tooltip.textContent = current.title;
@@ -123,7 +142,9 @@ export function setupButtonShortcuts(t) {
     button.click();
   }, true);
   new MutationObserver(records => {
-    if (records.some(record => record.target !== tooltip && !tooltip.contains(record.target))) refresh();
+    if (records.some(record => record.target !== tooltip && !tooltip.contains(record.target) &&
+        !record.target.parentElement?.closest(".button-shortcut") &&
+        !record.target.classList?.contains("button-shortcut"))) refresh();
   }).observe(document.body, {
     subtree: true, childList: true, characterData: true, attributes: true,
     attributeFilter: ["hidden", "disabled", "open", "lang"],

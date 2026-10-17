@@ -25,12 +25,35 @@ test("directions, reveal, rhythm and photo controls retain meaningful bindings",
   assert.throws(() => buttonBindings(Array.from({ length: 37 }, () => ({}))), /Too many/);
 });
 
-test("physical codes support Option/Alt layouts and require the complete modifier chord", () => {
+test("single keys follow the keyboard layout and retain the legacy Alt+Shift alias", () => {
   const event = { altKey: true, shiftKey: true, code: "KeyS", key: "Í" };
   assert.equal(shortcutCode(event), "S");
   assert.equal(shortcutCode({ ...event, code: "Digit1" }), "1");
   assert.equal(shortcutCode({ ...event, code: "Enter" }), "Enter");
-  for (const change of [{ altKey: false }, { shiftKey: false }, { ctrlKey: true }, { metaKey: true }, { code: "Tab" }]) {
+  for (const change of [{ shiftKey: false }, { ctrlKey: true }, { metaKey: true }, { code: "Tab" }]) {
     assert.equal(shortcutCode({ ...event, ...change }), null);
   }
+  assert.equal(shortcutCode({ key: "j", code: "KeyJ" }), "J");
+  assert.equal(shortcutCode({ key: "a", code: "KeyQ" }), "A");
+  assert.equal(shortcutCode({ key: "J", code: "KeyJ", shiftKey: true }), "J");
+  assert.equal(shortcutCode({ key: "1", code: "Digit1" }), "1");
+  assert.equal(shortcutCode({ key: "ArrowUp", code: "ArrowUp" }), "ArrowUp");
+  assert.equal(shortcutCode({ key: "j", code: "KeyJ", ctrlKey: true }), null);
+  assert.equal(shortcutCode({ key: "j", code: "KeyJ", isComposing: true }), null);
+});
+
+test("cell services and clue forms keep stable, non-conflicting action keys", () => {
+  const cellIds = ["cell-buy", "cell-rest", "cell-sleep", "cell-music", "cell-clues",
+    "choice-forage", "choice-beg", "choice-steal"];
+  const cell = buttonBindings(cellIds.map(id => ({ id })));
+  assert.equal(new Set(cell.map(b => b.key)).size, cellIds.length);
+  for (const [toolbar, menu] of [["eat-travel", "cell-buy"], ["rest-travel", "cell-rest"],
+    ["sleep-travel", "cell-sleep"], ["open-music", "cell-music"], ["open-trail", "cell-clues"]]) {
+    assert.equal(buttonBindings([{ id: toolbar }])[0].key, buttonBindings([{ id: menu }])[0].key);
+  }
+  const clues = ["clue-discuss", "clue-photo", "clue-letter", "clue-search",
+    "clue-buy", "clue-guestbook", "clue-ticket", "clue-directions"];
+  const original = new Map(buttonBindings(clues.map(id => ({ id }))).map(b => [b.button.id, b.key]));
+  assert.equal(new Set(original.values()).size, clues.length);
+  for (const id of clues) assert.equal(buttonBindings([{ id }])[0].key, original.get(id));
 });

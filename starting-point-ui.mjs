@@ -1,7 +1,10 @@
-import { createTrail } from "./trail.mjs";
-
 export function validateStartingMap(map) {
-  createTrail(map, Math.floor(map.width / 2), Math.floor(map.height / 2), () => 0);
+  if (!map || !Number.isSafeInteger(map.width) || map.width < 1 ||
+      !Number.isSafeInteger(map.height) || map.height < 1 || map.cellSizeMeters !== 250 ||
+      !Array.isArray(map.rows) || map.rows.length !== map.height ||
+      map.rows.some(row => !Array.isArray(row) || row.length !== map.width)) {
+    throw new Error("Invalid starting map.");
+  }
 }
 
 export async function locatePosition(geolocation, signal, onRetry) {
@@ -54,6 +57,7 @@ export function setupStartingPoint(t, { select, addOrigin, setPreparing }) {
 
   function localize() {
     status.textContent = statusKey ? t(statusKey, { error: detail }) : "";
+    status.classList.toggle("is-loading", busy);
     form.querySelector("button").disabled = locate.disabled = input.disabled = busy;
     cancel.hidden = !busy && !selectionPending;
     results.querySelectorAll("button").forEach(button => { button.disabled = busy; });
@@ -114,7 +118,6 @@ export function setupStartingPoint(t, { select, addOrigin, setPreparing }) {
     } while (result.pending);
     if (signal.aborted) return;
     const { region, map } = result.data;
-    // Never start a partially generated journey where the existing story cannot run.
     validateStartingMap(map);
     await select(region, map);
     selectionPending = false;

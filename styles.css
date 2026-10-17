@@ -236,6 +236,22 @@ h1 {
 .journey-setup .language-picker { display: grid; gap: 12px; font: inherit; }
 .journey-setup #region { width: 100%; }
 #starting-map-status { margin-top: 20px; }
+.is-loading::before {
+  content: "";
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  margin-right: 10px;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  vertical-align: -0.1em;
+  animation: preparation-spin 0.9s linear infinite;
+}
+@keyframes preparation-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .is-loading::before { animation: none; }
+}
 .journey-setup button, .journey-setup select { font: inherit; padding: 10px 14px; }
 .setup-departure { padding-top: 28px; margin-bottom: 32px; border-top: 1px solid var(--line); }
 .setup-departure button { margin: 0 12px 12px 0; }
@@ -314,6 +330,27 @@ h1 {
 }
 
 .tile--water { color: #61b7c1; }
+.tile--downloading {
+  position: relative;
+  color: transparent;
+}
+.tile--downloading::after {
+  content: "";
+  position: absolute;
+  width: 1.1em;
+  height: 1.1em;
+  top: 50%;
+  left: 50%;
+  margin: -0.55em 0 0 -0.55em;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: preparation-spin 0.9s linear infinite;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile--downloading::after { animation: none; }
+}
 .tile--road { color: #c1bdab; }
 .tile--major_road { color: #f4cc80; font-weight: 700; }
 .tile--rail { color: #c6a581; }
@@ -566,6 +603,14 @@ dialog p { margin: 12px 0; }
 .music-beat.missed { opacity: 0.5; }
 #music-progress { width: 100%; }
 #trail-dialog { width: min(680px, 94vw); max-height: 90dvh; overflow: auto; overflow-wrap: anywhere; }
+#trail-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+#trail-actions p { color: var(--muted); font-size: 0.85rem; line-height: 1.6; }
+#trail-discovery { padding: 20px; margin-top: 24px; border: 1px solid var(--line); }
+#trail-discovery blockquote { margin: 16px 0; white-space: pre-line; line-height: 1.7; }
+#trail-clue-photo { margin: 16px 0; }
+#trail-clue-photo img { display: block; width: 100%; max-height: 360px; object-fit: contain; }
+#trail-clue-photo p { font-size: 0.8rem; color: var(--muted); }
+.cell-action-services { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
 #trail-history { padding-left: 1.3em; }
 #journey-save-status { color: var(--muted); font-size: inherit; overflow-wrap: anywhere; }
 
@@ -729,3 +774,4 @@ dialog p { margin: 12px 0; }
     padding-inline: 18px;
   }
 }
+.button-shortcut { white-space: nowrap; }

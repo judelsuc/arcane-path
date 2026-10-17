@@ -1,10 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createTrail, trailTarget, atTrailTarget, witnessFacts, interviewTrail } from "../trail.mjs";
+import { createTrail, trailTarget, atTrailTarget, witnessFacts, interviewTrail,
+  validateTownTrail, loadTownTrail } from "../trail.mjs";
 import { startEconomy } from "../economy.mjs";
 import { startSurvival } from "../survival.mjs";
-import { trailDirections } from "../trail-ui.mjs";
+import { trailDirections, playerHint } from "../trail-ui.mjs";
 import { translate } from "../i18n.mjs";
 
 test("trail directions name the correct compass direction without negative or zero offsets", () => {
@@ -36,6 +37,103 @@ const start = () => {
     "balanced", survival), economy, () => 0);
   return { ...state, trail: createTrail(maps[0], state.col, state.row, () => 0) };
 };
+
+export function townTrailFixture() {
+  const latitude = 44.54, longitude = 2.3;
+  const step = 45000 / 6371008.8 * 180 / Math.PI / Math.cos(latitude * Math.PI / 180);
+  return { version: 2, origin: { col: 14, row: 10, latitude, longitude },
+    parentName: "Camille", index: 0, completed: false, history: [],
+    stages: Array.from({ length: 10 }, (_, i) => ({
+      col: -166 - 180 * i, row: 10, latitude, longitude: longitude - (i + 1) * step,
+      name: `Town ${i + 1}`, osmId: `node/${i + 1}`, placeType: "town",
+      legMeters: 45000, sourceUrl: "https://overpass-api.de/api/interpreter",
+      retrievedAt: "2026-10-17T12:00:00Z", witnessId: `fictional-traveler-${i + 1}`,
+    })) };
+}
+
+test("long trails require ten real towns 30–60 km apart and allow distant negative cells", () => {
+  const trail = townTrailFixture();
+  assert.equal(validateTownTrail(trail), trail);
+  for (const change of [
+    { placeType: "hamlet" }, { legMeters: 500 }, { longitude: 2.31 },
+    { col: -8001 }, { latitude: NaN }, { sourceUrl: "javascript:alert(1)" },
+  ]) {
+    const bad = structuredClone(trail);
+    Object.assign(bad.stages[0], change);
+    assert.throws(() => validateTownTrail(bad), /Invalid town/);
+  }
+});
+
+test("free hints guide known objectives without revealing future towns or changing state", () => {
+  for (const locale of ["fr", "en"]) {
+    const t = (key, params) => translate(locale, key, params);
+    const trail = townTrailFixture();
+    const state = { col: trail.origin.col, row: trail.origin.row, trail, ended: null };
+    const before = structuredClone(state);
+    const travel = playerHint(state, info, t);
+    assert.ok(travel.includes("Town 1"));
+    assert.ok(travel.includes("45.0"));
+    assert.ok(!travel.includes("Town 2"));
+    const arrived = { ...state, col: trail.stages[0].col, row: trail.stages[0].row };
+    assert.equal(playerHint(arrived, info, t), t("hintInvestigate", { place: "Town 1" }));
+    const pending = { ...arrived, trail: { ...trail, discovery: {
+      pending: true, venue: "Known library", nextName: "SECRET CITY",
+    } } };
+    assert.equal(playerHint(pending, info, t), t("hintDirections", { venue: "Known library" }));
+    assert.ok(!playerHint(pending, info, t).includes("SECRET CITY"));
+    assert.equal(playerHint({ ...state, ended: "hunger" }, info, t), t("hintEnded"));
+    assert.deepEqual(state, before);
+    const legacy = start();
+    const target = legacy.trail.stages[0];
+    assert.equal(playerHint({ ...legacy, col: target.col, row: target.row }, info, t),
+      t("hintInterview", { place: target.name }));
+  }
+});
+
+test("town route loading validates new routes, propagates failures and requests one origin", async () => {
+  const signal = new AbortController().signal;
+  const urls = [];
+  const response = data => new Response(JSON.stringify(data), {
+    headers: { "Content-Type": "application/json" },
+  });
+  const trail = await loadTownTrail("firmi", signal, async url => {
+    urls.push(url);
+    return response(townTrailFixture());
+  });
+  assert.equal(trail.stages.length, 10);
+  assert.match(urls[0], /^\/api\/trail\?region=firmi&seed=[a-f0-9]{8}$/);
+  await assert.rejects(loadTownTrail("firmi", signal, async () =>
+    response({ ...townTrailFixture(), index: 1 })), /Invalid new/);
+  await assert.rejects(loadTownTrail("firmi", signal, async () =>
+    new Response('{"error":"No onward town 30–60 km away"}', { status: 502,
+      headers: { "Content-Type": "application/json" } })), /No onward town/);
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(loadTownTrail("firmi", controller.signal, async () =>
+    response(townTrailFixture())), { name: "AbortError" });
+});
+
+test("temporary full route queues keep polling the same job and remain cancellable", async () => {
+  const urls = [];
+  const progress = [];
+  const trail = await loadTownTrail("firmi", new AbortController().signal, async url => {
+    urls.push(url);
+    return new Response(JSON.stringify(urls.length === 1 ? { error: "Queue full" } : townTrailFixture()), {
+      status: urls.length === 1 ? 429 : 200, headers: { "Content-Type": "application/json" },
+    });
+  }, detail => progress.push(detail));
+  assert.equal(trail.stages.length, 10);
+  assert.equal(urls.length, 2);
+  assert.equal(urls[0], urls[1]);
+  assert.deepEqual(progress, [{ phase: "queued" }]);
+  const controller = new AbortController();
+  const loading = loadTownTrail("firmi", controller.signal, async () => {
+    controller.abort();
+    return new Response('{"error":"Queue full"}', { status: 429,
+      headers: { "Content-Type": "application/json" } });
+  });
+  await assert.rejects(loading, { name: "AbortError" });
+});
 
 test("all four real maps support ten distinct local stages using existing named OSM objects", () => {
   for (const map of maps) {

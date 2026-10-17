@@ -3,12 +3,13 @@ import assert from "node:assert/strict";
 import { placeRequest, validateStartingMap, locatePosition } from "../starting-point-ui.mjs";
 import { readFileSync } from "node:fs";
 
-test("starting maps require real named story locations before a journey is offered", () => {
+test("starting maps validate geometry without requiring ten nearby landmarks", () => {
   const map = JSON.parse(readFileSync(new URL("../public/map.json", import.meta.url)));
   assert.doesNotThrow(() => validateStartingMap(map));
-  assert.throws(() => validateStartingMap({
-    width: 1, height: 1, rows: [[{ terrain: "grass" }]],
-  }), /10 distinct named/);
+  assert.doesNotThrow(() => validateStartingMap({
+    width: 1, height: 1, cellSizeMeters: 250, rows: [[{ terrain: "grass" }]],
+  }));
+  assert.throws(() => validateStartingMap({ width: 1, height: 1, rows: [] }), /Invalid starting/);
 });
 
 test("location retries provider failures with higher accuracy, not permission denials", async () => {
