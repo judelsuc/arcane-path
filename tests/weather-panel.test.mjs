@@ -10,8 +10,13 @@ test("one compact panel owns the clock, background sky and keyboard-accessible w
     assert.ok(panel.includes(`id="${id}"`));
     assert.equal(html.split(`id="${id}"`).length - 1, 1);
   }
-  assert.match(panel, /id="weather-display" tabindex="0" aria-describedby="weather-effects"/);
-  assert.match(panel, /id="weather-effects" role="tooltip"/);
+  assert.match(panel, /id="weather-display" tabindex="0" aria-describedby="weather-tooltip"/);
+  assert.match(panel, /id="weather-tooltip" role="tooltip"/);
+  assert.doesNotMatch(panel, /id="agenda-time"|class="agenda-caption"/);
+  const tooltip = panel.slice(panel.indexOf('id="weather-tooltip"'));
+  for (const id of ["weather-effects", "weather-range", "weather-summary", "weather-source"]) {
+    assert.ok(tooltip.includes(`id="${id}"`));
+  }
   assert.doesNotMatch(html, /class="travel-atmosphere"/);
 });
 
