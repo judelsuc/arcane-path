@@ -274,6 +274,39 @@ joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
 - Correctif deploye depuis un worktree propre, sans le routage couche 9
   encore en cours dans le worktree principal.
 
+### Checkpoint deploye : cache stable, retours visibles et chemins sur grille
+
+- **17 octobre 2026** : commit `1d97170452d65b32b94205ba77eea50164484460`,
+  tag pousse `deploy-2026-10-17-cache-feedback-paths`.
+- Inclut le correctif de resultat de cueillette `eac8c68` : resultat/erreur
+  en haut du dialogue, focus et defilement. Confirmation manuelle de
+  sauvegarde visible dans le viewport, heure reelle, mention navigateur ;
+  erreur de stockage en alerte, jamais en succes.
+- Identite des grilles separee des API et du transport. Migration explicite
+  de 17 grilles compatibles depuis le pipeline
+  `9d5affc03d4d75553e2fe93d335e8a729ad77bc723753b7afd139caccd610d7c`,
+  apres verification somme de controle/geometrie, sans telechargement ni
+  rasterisation. Apres redemarrage : neuf morceaux Louis Blanc HTTP 200,
+  0,43 s au total, aucune nouvelle preparation.
+- Moteur A* borne, cache partage et traces conservees par partie/etape.
+  Lancement volontaire depuis le journal, pas de telechargement distant
+  automatique pendant les tests. Resume seulement cote navigateur, trace
+  cachee. Ce jalon ne termine pas la couche 9 ni ne garantit une etape
+  distante complete validee : narration parent et resolubilite restent ouvertes.
+- 224 tests JavaScript et 126 Python passes. Navigateur : resultat de
+  cueillette visible dans un dialogue de 320 px, confirmation/erreur Save,
+  journal chemins avec reponse simulee et mention altitude manquante.
+  Tests Python : terrain reel prepare Firmi, couts/detours, bornes,
+  persistance/reprise, migration sans reseau et API ; 1 944 cas de couts
+  compares exactement aux regles JavaScript.
+- Nginx teste puis recharge, services actifs. Manifeste HTTPS authentifie
+  egal au commit exact ; nouveaux modules, HTML et API verifies. Endpoint
+  chemins teste avec identifiant inexistant, sans creer de partie ni download.
+- Archive code hors cache :
+  `/home/ubuntu/arcane-path-before-deploy-1d97170.tar.gz`, mode 0600.
+  Ancien Nginx : `/home/ubuntu/arcane-nginx-before-1d97170.conf`, mode 0600.
+  Cache et base des departs preserves. Aucune ressource payante ajoutee.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026
