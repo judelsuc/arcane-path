@@ -289,7 +289,7 @@ test("FR/EN new leads never leak town names, distances or future town clues; old
     (key, args) => args.prefix), "E");
 });
 
-test("proximity requests require exact stage/position, fail explicitly on pending/bad servers and never accept geometry", async () => {
+test("proximity requests validate stage/position and use the destination when the route is unavailable", async () => {
   const state = { ...start(), serverJourney: { id: "a".repeat(32) } };
   const data = { status: "ready", version: "grid-walk-v1", stage: 0, col: 14, row: 10, pathDistanceMeters: 1250 };
   assert.equal(await loadSearchProximity(state, signal(), async url => {
@@ -299,8 +299,31 @@ test("proximity requests require exact stage/position, fail explicitly on pendin
   for (const value of [{ ...data, col: 15 }, { ...data, stage: 1 }, { ...data, pathDistanceMeters: -1 }]) {
     await assert.rejects(loadSearchProximity(state, signal(), async () => response(value)), /Invalid/);
   }
-  await assert.rejects(loadSearchProximity(state, signal(), async () => response({ status: "loading" }, 202)), /prepared/);
+  for (const [status, body] of [[202, { status: "loading", stage: 0 }],
+    [422, { error: "Path limit", stage: 0 }], [429, { error: "Worker busy" }]]) {
+    assert.deepEqual(await loadSearchProximity(state, signal(), async () => response(body, status)),
+      { destinationDistanceMeters: 45000 });
+  }
+  await assert.rejects(loadSearchProximity(state, signal(), async () =>
+    response({ status: "loading", stage: 1 }, 202)), /prepared/);
+  await assert.rejects(loadSearchProximity(state, signal(), async () =>
+    response({ error: "Missing journey" }, 404)), /Missing journey/);
   await assert.rejects(loadSearchProximity(state, signal(), async () => new Response("<html>")), /updated/);
+});
+
+test("destination-based searches still charge, find clues and round-trip without changing route data", async () => {
+  const state = start();
+  const result = await prepareFieldSearch(state, cell, async () => null, signal(), {
+    random: () => 0, proximity: async () => ({ destinationDistanceMeters: 45000 }),
+  });
+  assert.equal(result.destinationBased, true);
+  assert.equal(result.kind, "direction");
+  const next = applyFieldSearch(state, result, cell, info, survival, economy);
+  assert.equal(next.elapsedMinutes, result.minutes);
+  assert.equal(next.trail.exploration.lastSearch.destinationBased, true);
+  assert.equal(next.trail.exploration.hints.length, 1);
+  assert.equal(next.trail.index, state.trail.index);
+  assert.deepEqual(validateSave(save(next)).state, next);
 });
 
 test("prefix recognition usually suggests the nearest real matching town and may confuse alternatives", () => {

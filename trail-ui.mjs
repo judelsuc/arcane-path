@@ -498,6 +498,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       if (!state.serverJourney) paragraph(item, t("fieldSearchServer"));
       const last = trail.exploration.lastSearch;
       if (last?.stage === trail.index) {
+        if (last.destinationBased) paragraph(item, t("fieldDestinationSearch"));
         paragraph(item, t(`fieldOutcome.${last.repeated ? "repeated" : last.outcome}`, last),
           !last.repeated && ["found", "sign"].includes(last.outcome) ? "success" : "failure");
         if (last.outcome === "nothing") paragraph(item, t("fieldNothingAdvice"));

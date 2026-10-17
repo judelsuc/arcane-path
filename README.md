@@ -841,8 +841,11 @@ Les couts tires au hasard diminuent en approchant de la ville recherchee :
 30–60 min/+4–7 fatigue loin, jusqu'a 8–14 min/+1–2 fatigue a proximite.
 Les indices deviennent progressivement plus precis : fragment plus long
 dans les 15 km, ville identifiable dans les 3 km.
-Le chemin de reference doit etre prepare pour une recherche hors d'etape ;
-une erreur de preparation est affichee sans facturer l'action.
+Si le chemin de reference est encore en preparation, en echec ou sa file
+occupee, la recherche utilise explicitement la distance a la destination,
+sans inventer de trajet. Les couts et resultats normaux s'appliquent et ce
+mode est signale dans le resultat. Les erreurs reseau, de donnees ou de
+partie inconnue restent visibles sans facturer l'action.
 
 On peut **montrer un fragment ou une photo a quelqu'un**, dans le carnet
 ou avec I : 10 min/+2 fatigue, avec les chances habituelles de rencontrer

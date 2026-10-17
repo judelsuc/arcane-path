@@ -50,6 +50,11 @@ export async function loadSearchProximity(state, signal, fetcher = fetch) {
     throw new Error("The updated game server is required for field searches.");
   }
   const data = await response.json();
+  if (response.status === 202 && data.status === "loading" && data.stage === state.trail.index ||
+      [422, 429].includes(response.status) && typeof data.error === "string") {
+    const target = state.trail.stages[state.trail.index];
+    return { destinationDistanceMeters: Math.hypot(state.col - target.col, state.row - target.row) * 250 };
+  }
   if (response.status !== 200) throw new Error(data.error ?? "Parent path is still being prepared. Retry shortly.");
   if (data.status !== "ready" || data.version !== "grid-walk-v1" || data.stage !== state.trail.index ||
       data.col !== state.col || data.row !== state.row) throw new Error("Invalid clue search proximity response.");
@@ -65,7 +70,10 @@ export async function prepareFieldSearch(state, cell, resolvePhoto, signal,
     if (!Number.isFinite(roll) || roll < 0 || roll >= 1) throw new Error("Invalid clue search draw.");
     return roll;
   };
-  const pathDistance = await proximity(state, signal);
+  const proximityResult = await proximity(state, signal);
+  const destinationBased = typeof proximityResult === "object";
+  const pathDistance = destinationBased ? proximityResult.destinationDistanceMeters : proximityResult;
+  fieldSearchChance(pathDistance);
   signal.throwIfAborted();
   const rules = fieldSearchRules(state);
   const minutes = rules.minMinutes + Math.floor(draw() * (rules.maxMinutes - rules.minMinutes + 1));
@@ -85,7 +93,8 @@ export async function prepareFieldSearch(state, cell, resolvePhoto, signal,
   const photoUnavailable = kind === "photo" && !content;
   if (photoUnavailable) kind = "prefix";
   return { stage: state.trail.index, col: state.col, row: state.row,
-    precision: rules.precision, minutes, fatigue, kind, content, photoUnavailable, nearRoute };
+    precision: rules.precision, minutes, fatigue, kind, content, photoUnavailable, nearRoute,
+    ...(destinationBased ? { destinationBased: true } : {}) };
 }
 
 export function applyFieldSearch(state, result, cell, info, survival, economy) {
@@ -96,6 +105,7 @@ export function applyFieldSearch(state, result, cell, info, survival, economy) {
       !Number.isInteger(result.minutes) || result.minutes < rules.minMinutes || result.minutes > rules.maxMinutes ||
       !Number.isInteger(result.fatigue) || result.fatigue < rules.minFatigue || result.fatigue > rules.maxFatigue ||
       typeof result.nearRoute !== "boolean" ||
+      (result.destinationBased !== undefined && typeof result.destinationBased !== "boolean") ||
       ![null, "place", "direction", "prefix", "photo", "sign"].includes(result.kind) ||
       (result.kind === "sign" && !result.nearRoute) ||
       (result.kind !== "sign" &&
@@ -131,6 +141,7 @@ export function applyFieldSearch(state, result, cell, info, survival, economy) {
     signs: retainedSigns, searchStreak: { stage: result.stage, misses },
     lastSearch: { stage: result.stage, outcome, minutes: result.minutes, fatigue: result.fatigue,
       ...(repeated ? { repeated: true } : {}),
+      ...(result.destinationBased ? { destinationBased: true } : {}),
       ...position, elapsedMinutes: next.elapsedMinutes },
   } } };
   return next;
@@ -274,6 +285,7 @@ export function validateExploration(state) {
   }
   if (e.lastSearch !== undefined) {
     const r = e.lastSearch;
+    if (r?.destinationBased !== undefined && typeof r.destinationBased !== "boolean") fail();
     if (r?.repeated !== undefined && (typeof r.repeated !== "boolean" || r.outcome !== "found")) fail();
     if (!r || !Number.isInteger(r.stage) || r.stage < e.firstStage || r.stage > state.trail.index ||
         r.stage >= state.trail.stages.length ||

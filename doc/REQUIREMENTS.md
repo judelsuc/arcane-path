@@ -61,6 +61,14 @@
   Show dates first, undated entries last and parent visit details only in the
   corresponding past destination, without revealing unconfirmed future names.
 
+## R-108 - Search even before the reference path is known
+
+- Do not block field clue searches on a pending, failed or busy route worker.
+- Use the known destination's straight-line distance for this search mode,
+  explicitly label it, preserve normal action costs and never fabricate a path.
+- Keep malformed responses, unknown journeys and network errors explicit
+  and free of action costs.
+
 ## R-107 - Ask directions to previously cited towns
 
 - In I, let the player choose towns named in earlier witness suggestions,
