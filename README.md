@@ -27,7 +27,8 @@ verifiee, pas seulement du code prepare. Voir le
 - [ ] CI GitHub Actions : publication du workflow bloquee par les droits OAuth actuels.
 - [ ] Sauvegarde distante et restauration testee.
 - [x] DNS arcane-path.eu : adresse A 57.130.85.251 verifiee localement et sur Cloudflare.
-- [ ] HTTPS et protections necessaires avant publication publique.
+- [x] Certificat HTTPS valide et acces de previsualisation protege par mot de passe.
+- [ ] Ouverture sans mot de passe : comptes, protections et sauvegardes a finaliser.
 - [ ] Couche 9 : creation de partie serveur, parcours routables et validation.
   - [x] Depart cree et conserve cote serveur : identifiant, graine, tarot, etat initial, contenu versionne.
   - [x] Reessais idempotents, reprise locale et anciennes sauvegardes preserves.
@@ -37,22 +38,63 @@ verifiee, pas seulement du code prepare. Voir le
 - [ ] R-063 : indices d'arcanes plus precis avec la proximite ; habillage narratif LLM ulterieur.
 - [ ] Notifications par mail : aucun service d'envoi configure.
 
-Le DNS resout maintenant l'IP de la VM ; le site reste prive. La couche 9
+Le DNS resout maintenant l'IP de la VM ; le site est accessible en HTTPS
+avec un mot de passe de previsualisation. La couche 9
 est en cours, pas terminee.
 Les couts sont des estimations, pas un plafond de facturation automatise.
 
-## Infrastructure OVHcloud (preparation uniquement)
+## Infrastructure OVHcloud
 
 Le dossier [infra](./infra/) contient la configuration Terraform OpenStack
 pour OVH Paris, fournisseur 3.4.0 verrouille. Une instance CPU b3-8 est prevue,
-desactivee par defaut, SSH limite a l'IP administrateur. Le prototype reste
-prive, sans port HTTP public. Le [rapport infrastructure](./doc/INFRASTRUCTURE.md)
+desactivee par defaut, SSH limite a l'IP administrateur. Le prototype est
+protege par mot de passe via Nginx. Le [rapport infrastructure](./doc/INFRASTRUCTURE.md)
 detaille les ressources reelles, les couts et la reprise.
 
 **Etat :** VM CPU et cle SSH creees ; cloud-init, pare-feu Ubuntu, service du
-jeu et acces par tunnel verifies. Le service ecoute seulement sur 127.0.0.1.
+jeu et acces par tunnel verifies. Le service Python ecoute seulement sur 127.0.0.1 ;
+Nginx expose les ports 80 (redirection/ACME) et 443 (HTTPS avec authentification).
 Le groupe reseau OVH `default` est utilise sans modification, selon le choix
 de simplification approuve. Le DNS du domaine resout l'IP de la VM.
+
+### Tester dans le navigateur
+
+Ouvrir **https://arcane-path.eu** et utiliser le compte `preview`.
+Le mot de passe est conserve hors Git, dans le fichier local prive
+`~/.config/arcane-path/preview-access.json` du poste administrateur.
+Il n'est ni inclus dans ce document ni affiche dans les logs de deploiement.
+Le navigateur affiche sa boite de connexion HTTP ; aucun tunnel n'est requis.
+Ne pas partager ce compte publiquement. Aucun compte individuel de joueur
+n'est encore disponible, et la progression reste propre a chaque navigateur.
+
+Le certificat Let's Encrypt est valide et renouvele par `certbot.timer`.
+Sur la VM, le script versionne `scripts/configure_https.sh` configure Nginx,
+emet le certificat et active le renouvellement ; il est installe dans
+`/opt/arcane-path/scripts/configure_https.sh`. Pour le rejouer sans changer
+le mot de passe existant, depuis la racine du runtime sur la VM :
+
+```sh
+sudo bash scripts/configure_https.sh --agree-tos --email ADRESSE_ADMIN
+sudo certbot renew --dry-run --run-deploy-hooks --no-random-sleep-on-renew
+sudo systemctl list-timers certbot.timer
+```
+
+`--agree-tos` suppose l'acceptation de l'accord Let's Encrypt par l'administrateur.
+Au premier passage, ou pour changer le mot de passe, ajouter
+`--password-stdin` et transmettre un secret de 20 a 72 octets sur stdin,
+jamais dans les arguments ni Git. Seul son hash bcrypt reste sur le serveur.
+Le hook `scripts/renew_https_hook.sh`, installe dans
+`/etc/letsencrypt/renewal-hooks/deploy/arcane-nginx`, verifie la configuration
+avant de recharger Nginx apres renouvellement.
+
+Les fichiers Nginx dans `infra/nginx/` limitent les routes exposees aux assets
+du jeu et aux API connues, filtrent les methodes et limitent les requetes.
+Les depots, scripts, donnees source et caches ne sont pas servis par ce proxy.
+Cette previsualisation partagee ne remplace pas des comptes joueurs, une
+moderation ou une sauvegarde externe. Les ressources CPU existantes suffisent ;
+aucun service payant additionnel n'est commande pour HTTPS.
+Le pare-feu est modifie apres provisionnement sans changer le cloud-init
+Terraform de la VM existante, afin de ne pas provoquer son remplacement.
 
 Les credentials restent hors Git : `~/Downloads/openrc.sh` et
 `~/.config/arcane-path/openstack-token`, permissions 600. Le wrapper lit
@@ -119,10 +161,11 @@ La mise a jour des seuls tarifs a la reprise reste volontairement conservee.
 dans le navigateur ; ce n'est ni une synchronisation ni une reprise cloud.
 `GET /api/journeys/IDENTIFIANT` retrouve le depart, pas la progression ; aucun
 annuaire de parties n'est expose. L'identifiant aleatoire doit rester prive :
-il permet de lire le nom et la piste. Cette API est reservee au tunnel prive,
-sans comptes utilisateurs ; HTTPS, controle d'acces et limitation des requetes
-restent obligatoires avant ouverture publique. La base est limitee a 1 000
-departs (y compris les creations abandonnees), puis refuse explicitement de
+il permet de lire le nom et la piste. Cette API est protegee par le mot de
+passe partage de previsualisation, sans comptes utilisateurs individuels ;
+ne pas retirer cette protection avant de definir l'autorisation par joueur
+et les protections de publication. La base est limitee a 1 000 departs
+(y compris les creations abandonnees), puis refuse explicitement de
 nouvelles creations sans effacer les anciennes. Ce fichier doit etre inclus
 dans une future sauvegarde ; le cache persistant seul n'est pas une sauvegarde.
 

@@ -934,6 +934,14 @@ This file records additions to the design without modifying the source PDF,
 - **Progress reporting:** Maintain a checked/unchecked progress list in README
   and push frequent tested checkpoints to GitHub. Email updates are requested
   if possible, but no sending service or recipient is configured.
+- **Browser preview:** The user approved password-protected HTTPS on
+  arcane-path.eu, then required a certificate-generation script on the VM.
+  Nginx protects the known game assets/APIs; the Python backend stays on
+  loopback. The tracked `scripts/configure_https.sh` issues a free Let's
+  Encrypt certificate with explicit agreement/contact, configures the preview
+  and enables Certbot's renewal timer plus a checked Nginx reload hook.
+  Preview credentials remain outside Git; this shared test account is not
+  multiplayer identity or authorization. Renewal dry-run passed on the VM.
 
 ## R-027 — Geocache-linked fictional dungeons
 
