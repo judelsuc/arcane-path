@@ -86,6 +86,23 @@ function inspectTile(tile) {
   inspectedTile = tile;
   tile.classList.add("tile--inspected");
   document.querySelector("#cell-info").textContent = tileDetails(tile, false);
+  updateCellHeading(tile);
+}
+
+function updateCellHeading(tile) {
+  const info = cellInfo(mapData, Number(tile.dataset.row), Number(tile.dataset.col));
+  const fallbackName = info.pois.find(poi => poi.name)?.name ??
+    info.contentSources.find(source => source.tags.name)?.tags.name;
+  const names = info.names.length ? info.names : fallbackName ? [fallbackName] : [];
+  document.querySelector("#ascii-title").textContent = names.length
+    ? [...new Set(names)].join(" · ") : t(`terrain.${info.terrain}`);
+  updateCountry(mapData.rows[Number(tile.dataset.row)][Number(tile.dataset.col)].countryCodes ?? []);
+}
+
+function updateCountry(codes) {
+  const names = new Intl.DisplayNames([locale], { type: "region" });
+  document.querySelector("#map-country").textContent = codes.length
+    ? codes.map(code => names.of(code)).join(" · ") : t("countryUnavailable");
 }
 
 for (const event of ["focusin", "click"]) {
@@ -110,6 +127,7 @@ function localize() {
     element.textContent = t(element.dataset.i18n);
   });
   languageSelect.value = locale;
+  updateCountry([]);
   cellContent.localize(locale);
   travel.localize();
   mapElement.setAttribute("aria-label", t("mapLabel"));
@@ -120,12 +138,14 @@ function localize() {
   }
   if (!mapData) {
     document.querySelector("#map-title").textContent = t(loadFailed ? "loadErrorTitle" : "loading");
+    document.querySelector("#ascii-title").textContent = t(loadFailed ? "loadErrorTitle" : "loading");
     return;
   }
 
   document.querySelector("#map-title").textContent = mapData.illustrative
     ? t("demoRegion", { name: mapData.name })
     : mapData.name;
+  document.querySelector("#ascii-title").textContent = document.querySelector("#map-title").textContent;
   document.querySelector("#osm-frame").title = t("referenceFrame", { name: mapData.name });
   document.querySelector("#map-scale").textContent =
     t("scale", { meters: mapData.cellSizeMeters });
@@ -164,6 +184,7 @@ function localize() {
   });
   if (inspectedTile) {
     document.querySelector("#cell-info").textContent = tileDetails(inspectedTile, false);
+    updateCellHeading(inspectedTile);
   }
 }
 

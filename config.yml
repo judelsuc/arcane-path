@@ -1,3 +1,6 @@
 map:
   # Percentage of mapped cell area required before water can replace ground.
   water_coverage_percent: 50
+photos:
+  # Maximum photos downloaded per cell (1-20).
+  max_per_cell: 5

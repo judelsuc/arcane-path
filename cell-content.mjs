@@ -4,6 +4,7 @@ const COMMONS = "https://commons.wikimedia.org/w/api.php";
 const OSM_LICENSE = "https://opendatacommons.org/licenses/odbl/1-0/";
 const WIKI_LICENSE = "https://creativecommons.org/licenses/by-sa/4.0/";
 export const MAX_CELL_PHOTOS = 5;
+const PHOTO_LIMIT = 20;
 
 export function insideCell(info, latitude, longitude) {
   const b = info.bounds;
@@ -38,8 +39,8 @@ export async function contentKey(info, locale, kind) {
 }
 
 export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_CELL_PHOTOS }) {
-  if (!Number.isInteger(maxPhotos) || maxPhotos < 1 || maxPhotos > MAX_CELL_PHOTOS) {
-    throw new Error(`Photo limit must be between 1 and ${MAX_CELL_PHOTOS}.`);
+  if (!Number.isInteger(maxPhotos) || maxPhotos < 1 || maxPhotos > PHOTO_LIMIT) {
+    throw new Error(`Photo limit must be between 1 and ${PHOTO_LIMIT}.`);
   }
   async function json(endpoint, parameters) {
     const url = new URL(endpoint);
@@ -98,7 +99,7 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
     return pages.map(page => photoMetadata(page, info, association)).filter(Boolean);
   }
 
-  async function resolve(info, locale, kind, refresh = false) {
+  async function resolve(info, locale, kind, refresh = false, onProgress = () => {}) {
     const key = `${await contentKey(info, locale, kind)}${kind === "photo" ? `:${maxPhotos}` : ""}`;
     const cached = await cache.get(key);
     if (cached && !refresh) return { ...cached, cached: true };
@@ -163,7 +164,13 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
             }
             return bytes;
           });
-          if (blob) photos.push({ ...candidate, blob });
+          if (blob) {
+            photos.push({ ...candidate, blob });
+            onProgress({
+              photos: [...photos], content: photos[0], errors: [...errors],
+              loading: true, retrievedAt: new Date().toISOString(), cached: false,
+            });
+          }
         }
       }
       const titles = sources.flatMap(s => [s.tags.wikimedia_commons, s.tags.image])

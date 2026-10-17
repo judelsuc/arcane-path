@@ -42,13 +42,26 @@ CC0, CC BY et CC BY-SA sont acceptees, avec auteur, lien source et licence.
 Les hebergeurs d'images sont limites aux domaines verifies iNaturalist,
 Naturalis et observation.org ; les autres sont ignores.
 
-Les memes limites de galerie (5 photos) et de taille (12 Mo/image) s'appliquent.
+Le nombre maximal de photos par case est defini dans
+`config.yml` par `photos.max_per_cell` (5 par defaut, de 1 a 20).
+Le serveur expose cette configuration au navigateur ; recharger la page apres
+modification. Pour un hebergement statique, `prepare_regions.py` exporte
+`public/config.json`. La taille reste limitee a 12 Mo/image.
+La premiere photo apparait des son telechargement, sans attendre la fin de la
+galerie ; les fleches permettent de parcourir les photos deja pretes pendant
+que les suivantes arrivent. Un indicateur de chargement reste visible.
 Les octets sont caches dans IndexedDB ; les doublons iNaturalist/GBIF sont
 elimines. Le cache photo v3 recherche les nouvelles sources tout en reutilisant
 les octets des anciennes galeries v2/v1 et en les conservant en cas de panne.
 Les erreurs fournisseur restent visibles. Aucun jeton ou compte n'est requis.
 
 ## Configuration et couverture d'eau
+
+Le pays affiche provient des codes OSM de la case (adresses ou limites
+administratives completes contenant son centre), jamais du nom de la region
+test. Les noms de pays sont localises dans le navigateur. Une donnee absente
+ou une limite incomplete ne permet pas de deviner le pays : l'interface
+signale alors explicitement que le pays n'est pas renseigne.
 
 [config.yml](./config.yml) contient `map.water_coverage_percent` (50 par defaut,
 valeur strictement positive jusqu'a 100). Une case ne peut devenir `~` que si

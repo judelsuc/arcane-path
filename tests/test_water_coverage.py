@@ -96,3 +96,22 @@ class WaterCoverageTests(unittest.TestCase):
                 load_config(config)
         config.write_text("map:\n  water_coverage_percent: 65\n")
         self.assertEqual(load_config(config)["map"]["water_coverage_percent"], 65)
+
+    def test_photo_count_configuration_accepts_one_to_twenty_only(self):
+        config = Path(self.directory.name) / "config.yml"
+        for value in ["0", "21", "true", "1.5", "wrong"]:
+            config.write_text(f"map:\n  water_coverage_percent: 50\nphotos:\n  max_per_cell: {value}\n")
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                load_config(config)
+        config.write_text("map:\n  water_coverage_percent: 50\nphotos:\n  max_per_cell: 12\n")
+        self.assertEqual(load_config(config)["photos"]["max_per_cell"], 12)
+
+    def test_country_is_extracted_from_osm_not_region_name(self):
+        self.write([(0, 0, 100, 100)])
+        xml = self.source.read_text().replace(
+            '</osm>', '<node id="999" lat="0.0001" lon="0.0001">'
+            '<tag k="addr:country" v="PF"/></node></osm>')
+        self.source.write_text(xml)
+        self.assertEqual(self.cell()["countryCodes"], ["PF"])
+        self.write([(0, 0, 100, 100)])
+        self.assertNotIn("countryCodes", self.cell())

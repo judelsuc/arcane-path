@@ -5944,15 +5944,13 @@
   "cache": {
     "schemaVersion": 1,
     "sourceSha256": "ec6578c2f0ad33f60168d49680ed297afae3694254697cf7fe1db02e217788b0",
-    "pipelineSha256": "576d1f5ef3fc39561ef694c6ff10c51794c752a77b07e1e7ee285660f62bafd4",
+    "pipelineSha256": "932bc7adc58f6290ad6e0945538a60796b08144b781c173058adc62edb5080e6",
     "name": "Firmi",
     "cellSizeMeters": 250,
     "configuration": {
-      "map": {
-        "water_coverage_percent": 50
-      }
+      "water_coverage_percent": 50
     },
-    "key": "44e19aa444aa5f8b03ad6c5fbf63a16564cd2a348cfda9bc21c95049c7e8375c",
+    "key": "6b9c67e9883cef9c6bf822322487567870e9d6304fffbf2548ac33904b96ee1d",
     "payloadSha256": "709b0de934e31bf1fdb8c0062a99764bf9d20312c5c5514ed6969d2b81d5ca2d"
   }
 }

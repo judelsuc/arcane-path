@@ -377,3 +377,74 @@ This file records additions to the design without modifying the source PDF,
   usage rights, description language and geographic association. Define upload
   validation, moderation, privacy controls, editing/removal and cache
   invalidation before enabling shared contributions.
+
+## R-025 — Real geocaches with virtual game items
+
+- **Requirement:** Integrate real geocache listings read-only and associate
+  fictional in-game items with those real caches.
+- **Status:** Deferred; recorded for a later layer, not implemented.
+- **Target layer:** Layer 13 — Events: a real cache supplies a geographic
+  anchor for a search/discovery event and its virtual reward. Layer 9 — Server
+  provides the foundation for authorized provider access and permitted caching.
+  Optional extensions can connect discoveries to Layer 8's parent trail,
+  Layer 20's tarot lore, and Layer 21's shared-player traces; these are not
+  prerequisites for an initial read-only, per-journey implementation.
+- **Separation:** Provider listings, contents and logs remain untouched.
+  Game items are stored separately, keyed by provider and cache identifier,
+  and clearly labelled as fictional rather than promised physical contents.
+  A virtual visit/discovery must never submit a real-world "Found it" log.
+- **Gameplay direction:** Searching near a cache can consume game time and
+  reveal supplies, keepsakes or story clues. Ordinary discoveries should
+  persist per journey, without repeat-search farming or another player
+  emptying the adventure.
+- **Provider constraints:** Use authorized APIs or permitted user imports;
+  verify access, licensing, attribution, display and caching rules before
+  implementation. Respect disabled/archived listings and do not expose
+  unpublished puzzle solutions, final coordinates or hidden stages.
+- **Resilience and safety:** Do not make mandatory progression depend solely
+  on a third-party cache. Virtual access does not imply permission to visit
+  or search a physical site. Physically placing game objects in containers
+  is outside this requirement and would require a separate opt-in arrangement
+  with cache owners.
+
+## R-026 — Configurable progressive photo galleries
+
+- **Requirement:** Configure photo count in YAML and display photos before the
+  whole gallery finishes downloading.
+- **Status:** `photos.max_per_cell` in `config.yml`, default 5, validated 1-20.
+  The server serves current photo configuration; static preparation exports it.
+  Gallery cache keys include the count. Photos appear after each successful
+  download and can be browsed while further sources/downloads continue.
+  Preserve current gallery position at completion and ignore stale progress
+  after selection/language changes. Loading photos are not labelled as cached.
+
+## R-027 — Geocache-linked fictional dungeons
+
+- **Requirement:** Real geocaches can anchor entrances to fictional,
+  explorable dungeons, with an overworld-to-interior transition inspired by
+  Ultima's separate exploration scales.
+- **Status:** Deferred; recorded for a later layer, not implemented.
+- **Target layer:** Extension to Layer 13 — Events, building on R-025's
+  read-only geocache integration. Layer 20 — Lore can later add tarot-related
+  locations and discoveries. Dungeon exploration is additional scope, not
+  required to complete the original Layer 13 milestone.
+- **Exploration:** Leave the real-world 250 m grid for a separate room-scale
+  interior map, then return to the same geographic entrance. Start with one
+  small handcrafted dungeon to validate entering, exploring and returning
+  before considering procedural generation.
+- **Discovery direction:** A fictional item discovered through a cache may
+  reveal or unlock an entrance, potentially under a game-time condition.
+  Interiors can contain environmental puzzles, hidden passages, parent-trail
+  clues, supplies, keepsakes and rare tarot clues. Conventional combat or
+  monster encounters are not assumed requirements.
+- **Continuity:** Preserve journey state across transitions and record
+  interior discoveries per journey to prevent repeat-loot farming. Define
+  interior action time and interactions with fatigue, light and supplies
+  before implementation.
+- **Separation and safety:** Entrances, interiors and associated items are
+  explicitly fictional, not claims about real tunnels or accessible sites.
+  Never encourage physical entry, trespassing or unsafe searches. Real cache
+  listings, contents and logs remain untouched; no automatic real find logs.
+- **Resilience:** Dungeons are optional discoveries. Disabled, archived or
+  unavailable third-party caches must not block the main story; any mandatory
+  clue needs an alternative route or suitable landmark anchor.

@@ -10,6 +10,7 @@ from pathlib import Path
 
 from build_map import build_cached
 from fetch_osm import download_region
+from config import load_config
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "data" / "regions.json"
@@ -73,6 +74,8 @@ def prepare_region(region, viewport, refresh=False, force=False, root=ROOT):
 
 
 def main():
+    (ROOT / "public/config.json").write_text(
+        json.dumps({"photos": load_config()["photos"]}) + "\n", encoding="utf-8")
     config = json.loads(CONFIG.read_text(encoding="utf-8"))
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--region", choices=config["regions"], action="append",

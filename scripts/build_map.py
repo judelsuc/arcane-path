@@ -459,6 +459,45 @@ def rasterize(
             if feature_name:
                 named_points.setdefault((col, row), []).append((terrain, feature_name))
 
+    country_cells = {}
+    for element in node_elements:
+        tags = _tags(element)
+        code = tags.get("addr:country", tags.get("is_in:country_code", "")).upper()
+        point = nodes[element.attrib["id"]]
+        if len(code) == 2 and code.isascii() and code.isalpha() and (
+                min_x <= point[0] <= max_x and min_y <= point[1] <= max_y):
+            country_cells.setdefault(grid_position(point), set()).add(code)
+    for relation in root.findall("relation"):
+        tags = _tags(relation)
+        code = tags.get("ISO3166-1:alpha2", tags.get("ISO3166-1", ""))
+        if tags.get("boundary") != "administrative" or len(code) != 2 or not code.isascii() or not code.isupper():
+            continue
+        parts = {"outer": [], "inner": []}
+        try:
+            for member in relation.findall("member"):
+                role = member.attrib.get("role") or "outer"
+                if member.attrib.get("type") != "way" or role not in parts:
+                    continue
+                way = ways.get(member.attrib["ref"])
+                if way is None:
+                    raise ValueError("Missing country boundary way")
+                refs = [ref.attrib["ref"] for ref in way.findall("nd")]
+                if any(ref not in nodes for ref in refs):
+                    raise ValueError("Missing country boundary node")
+                parts[role].append(refs)
+            outers = [[nodes[ref] for ref in ring] for ring in _join_rings(parts["outer"])]
+            holes = [[nodes[ref] for ref in ring] for ring in _join_rings(parts["inner"])]
+        except ValueError as error:
+            print(f"Attention : pays OSM {relation.attrib['id']} ignore : {error}.", file=sys.stderr)
+            continue
+        for row in range(height):
+            for col in range(width):
+                x = (min_x + col * cell_size_meters + min(max_x, min_x + (col + 1) * cell_size_meters)) / 2
+                y = (max_y - row * cell_size_meters + max(min_y, max_y - (row + 1) * cell_size_meters)) / 2
+                if any(_point_in_polygon(x, y, outer) for outer in outers) and not any(
+                        _point_in_polygon(x, y, hole) for hole in holes):
+                    country_cells.setdefault((col, row), set()).add(code)
+
     cell_pois = {}
     cell_content = {}
     for kind, elements in (("node", node_elements), ("way", ways.values())):
@@ -508,6 +547,8 @@ def rasterize(
                 "glyph": TERRAINS[cell["terrain"]]["glyph"],
                 "terrain": cell["terrain"],
             }
+            if (col_index, row_index) in country_cells:
+                output_cell["countryCodes"] = sorted(country_cells[col_index, row_index])
             samples = water_samples.get((col_index, row_index))
             if samples:
                 output_cell["waterCoveragePercent"] = len(samples) * 100 / sample_count ** 2
@@ -582,7 +623,7 @@ def build_cached(source, output, name, cell_size_meters=DEFAULT_CELL_SIZE_METERS
         "pipelineSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "name": name,
         "cellSizeMeters": cell_size_meters,
-        "configuration": load_config(),
+        "configuration": load_config()["map"],
     }
     key = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode("utf-8")).hexdigest()
     if output.exists() and not force:

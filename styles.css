@@ -410,6 +410,12 @@ dialog p { margin: 12px 0; }
   text-align: center;
 }
 
+.map-country {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
 .travel-panel {
   padding: 16px 24px;
   border-bottom: 1px solid var(--line);

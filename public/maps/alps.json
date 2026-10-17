@@ -6456,15 +6456,13 @@
   "cache": {
     "schemaVersion": 1,
     "sourceSha256": "038ce9ab3199f133836e82d93c0c7edce8af1fa3e37974ba5cc299dd45192117",
-    "pipelineSha256": "576d1f5ef3fc39561ef694c6ff10c51794c752a77b07e1e7ee285660f62bafd4",
+    "pipelineSha256": "932bc7adc58f6290ad6e0945538a60796b08144b781c173058adc62edb5080e6",
     "name": "Alpes — Chamonix",
     "cellSizeMeters": 250,
     "configuration": {
-      "map": {
-        "water_coverage_percent": 50
-      }
+      "water_coverage_percent": 50
     },
-    "key": "7bab6c0d1def12e053e7f1592064bf759acc85ec11852636f298cd3484a73026",
+    "key": "c03fae5d275d96aa16ea98c2951931972b7f12667a371395b9b143743e87e10e",
     "payloadSha256": "40eee1046d1f40cfab851a8854923f1a403fddcab0e1a5415784bc8e24d1936a"
   }
 }

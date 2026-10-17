@@ -31,6 +31,7 @@
           <div>
             <p class="eyebrow" data-i18n="layer">Couche 01 · Cartographie</p>
             <h2 id="map-title">Chargement de la région...</h2>
+            <p id="map-country" class="map-country"></p>
           </div>
           <div>
             <label class="language-picker">
@@ -126,13 +127,12 @@
         </section>
         <div class="map-comparison">
           <section class="comparison-panel" aria-labelledby="ascii-title">
-            <h3 id="ascii-title" data-i18n="asciiTitle">Grille ASCII</h3>
+            <h3 id="ascii-title"></h3>
             <div class="map-viewport" id="map-viewport" aria-live="polite">
               <pre class="ascii-map" id="ascii-map" aria-label="Carte fixe de la région"></pre>
             </div>
             <p class="cell-info" id="cell-info" role="status"></p>
-            <section class="cell-content" aria-labelledby="content-title">
-              <h3 id="content-title" data-i18n="contentTitle">Découvrir cette case</h3>
+            <section class="cell-content" aria-labelledby="ascii-title">
               <p id="content-hint" data-i18n="contentHint"></p>
               <p id="content-position"></p>
               <div id="cell-description" role="status"></div>

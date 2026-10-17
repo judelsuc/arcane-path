@@ -4,7 +4,23 @@ import { openContentCache } from "./content-cache.mjs";
 
 export function setupCellContent(t) {
   const cache = openContentCache();
-  const service = createContentService({ cache });
+  let servicePromise;
+  function contentService() {
+    if (!servicePromise) {
+      servicePromise = fetch("./public/config.json", { cache: "no-cache" }).then(async response => {
+        if (!response.ok) throw new Error(`Photo configuration: HTTP ${response.status}`);
+        const config = await response.json();
+        if (!Number.isInteger(config.photos?.max_per_cell)) {
+          throw new Error("Photo configuration requires photos.max_per_cell.");
+        }
+        return createContentService({ cache, maxPhotos: config.photos?.max_per_cell });
+      }).catch(error => {
+        servicePromise = undefined;
+        throw error;
+      });
+    }
+    return servicePromise;
+  }
   const description = document.querySelector("#cell-description");
   const photo = document.querySelector("#cell-photo");
   const dialog = document.querySelector("#photo-dialog");
@@ -17,7 +33,7 @@ export function setupCellContent(t) {
   const previous = document.querySelector("#previous-photo");
   const next = document.querySelector("#next-photo");
   let photoIndex = 0;
-  let selected, locale, generation = 0, objectUrl;
+  let selected, locale, generation = 0, objectUrl, displayedBlob;
   let descriptionResult, photoResult;
   let photoNeedsRefresh = false;
   const pending = new Set();
@@ -75,6 +91,7 @@ export function setupCellContent(t) {
   function revoke() {
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     objectUrl = undefined;
+    displayedBlob = undefined;
   }
 
   function paragraph(container, text) {
@@ -104,8 +121,11 @@ export function setupCellContent(t) {
     const content = result.content;
     if (content) {
       if (content.blob) {
-        revoke();
-        objectUrl = URL.createObjectURL(content.blob);
+        if (displayedBlob !== content.blob) {
+          revoke();
+          objectUrl = URL.createObjectURL(content.blob);
+          displayedBlob = content.blob;
+        }
         const image = document.createElement("img");
         image.src = objectUrl;
         image.alt = content.title;
@@ -127,7 +147,9 @@ export function setupCellContent(t) {
     if (result.errors.length) {
       paragraph(container, t("contentWarnings", { errors: result.errors.join("; ") }));
     }
-    if (content || !result.errors.length) {
+    if (result.loading) {
+      paragraph(container, t("contentLoading"));
+    } else if (content || !result.errors.length) {
       paragraph(container, t(result.cached ? "contentCached" : "contentStored", {
         date: new Date(result.retrievedAt).toLocaleString(locale),
       }));
@@ -142,17 +164,23 @@ export function setupCellContent(t) {
     pending.add(pendingKey);
     const container = kind === "photo" ? photo : description;
     if (kind === "photo") {
+      photoIndex = 0;
       navigation.hidden = true;
       revoke();
     }
     container.replaceChildren();
     paragraph(container, t("contentLoading"));
     try {
-      const result = await service.resolve(selected, locale, kind, force);
+      const service = await contentService();
+      const result = await service.resolve(selected, locale, kind, force, progress => {
+        if (current !== generation || kind !== "photo") return;
+        photoResult = progress;
+        if (dialog.open) renderPhoto();
+      });
       if (current !== generation) return;
       if (kind === "photo") {
         photoResult = result;
-        photoIndex = 0;
+        photoIndex = Math.min(photoIndex, Math.max(0, result.photos.length - 1));
         photoNeedsRefresh = false;
       } else {
         descriptionResult = result;

@@ -90,7 +90,7 @@ class ChunkStore:
         self.regions = json.loads((root / "data/regions.json").read_text())["regions"]
         self.pipeline = hashlib.sha256(
             Path(__file__).read_bytes() + (ROOT / "scripts/build_map.py").read_bytes() +
-            json.dumps(load_config(), sort_keys=True).encode()
+            json.dumps(load_config()["map"], sort_keys=True).encode()
         ).hexdigest()
         self.bases = {
             key: json.loads((root / region["map"]).read_text())
@@ -274,6 +274,12 @@ def make_handler(store, jobs):
 
         def do_GET(self):
             url = urllib.parse.urlsplit(self.path)
+            if url.path == "/public/config.json":
+                try:
+                    return self.send_json(200, {"photos": load_config()["photos"]})
+                except (OSError, ValueError) as error:
+                    logging.exception("Configuration request failed")
+                    return self.send_json(500, {"error": str(error)})
             if url.path.startswith("/api/"):
                 try:
                     if url.path == "/api/travel":

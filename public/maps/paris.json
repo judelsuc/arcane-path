@@ -88653,15 +88653,13 @@
   "cache": {
     "schemaVersion": 1,
     "sourceSha256": "b0144623dcb016345d1be24d2b728e2b2c09129955198367719a130047935c3d",
-    "pipelineSha256": "576d1f5ef3fc39561ef694c6ff10c51794c752a77b07e1e7ee285660f62bafd4",
+    "pipelineSha256": "932bc7adc58f6290ad6e0945538a60796b08144b781c173058adc62edb5080e6",
     "name": "Paris",
     "cellSizeMeters": 250,
     "configuration": {
-      "map": {
-        "water_coverage_percent": 50
-      }
+      "water_coverage_percent": 50
     },
-    "key": "f59541cf28c5022ca5013c10678e2a115d5f052f4e9a2101875c7d634ac3ca5a",
+    "key": "c234dbe5518111b439d4e66d98bd97a66217442ab5fee6b2a440d1ffe37b0396",
     "payloadSha256": "e4344044505bd0d00521a5c3e1c0503704f01ae58c078eef537d9698c6a2436f"
   }
 }

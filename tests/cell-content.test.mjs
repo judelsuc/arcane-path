@@ -315,7 +315,44 @@ test("old single-photo cache is preserved offline during gallery upgrade", async
 });
 
 test("invalid gallery limits fail explicitly", () => {
-  for (const maxPhotos of [0, 6, 1.5, NaN]) {
+  for (const maxPhotos of [0, 21, 1.5, NaN]) {
     assert.throws(() => createService({ cache: memoryCache(), maxPhotos }), /Photo limit/);
   }
+});
+
+test("configured gallery emits usable photos before remaining downloads finish", async () => {
+  const cache = memoryCache();
+  let release, firstReady;
+  const first = new Promise(resolve => { firstReady = resolve; });
+  const gate = new Promise(resolve => { release = resolve; });
+  const progress = [];
+  let downloads = 0, completed = false;
+  const service = createService({ cache, maxPhotos: 7, fetcher: async url => {
+    const parsed = new URL(url);
+    if (parsed.pathname.endsWith("api.php")) {
+      return api(Array.from({ length: 9 }, (_, i) => {
+        const page = image(`File:Progress ${i}.jpg`, 44.545, 2.305);
+        page.imageinfo[0].thumburl = `https://thumb.wikimedia.org/progress-${i}.jpg`;
+        page.imageinfo[0].descriptionurl = `https://commons.wikimedia.org/wiki/File:Progress_${i}.jpg`;
+        return page;
+      }));
+    }
+    if (++downloads === 2) await gate;
+    return new Response(new Blob(["photo"], { type: "image/jpeg" }));
+  } });
+  const pending = service.resolve(info, "fr", "photo", false, result => {
+    progress.push(result);
+    if (result.photos.length === 1) firstReady();
+  }).then(result => { completed = true; return result; });
+  await first;
+  assert.equal(completed, false);
+  assert.equal(progress[0].photos.length, 1);
+  assert.equal(progress[0].loading, true);
+  assert.ok(progress[0].content.blob.size);
+  release();
+  const result = await pending;
+  assert.equal(result.photos.length, 7);
+  assert.equal(downloads, 7);
+  assert.equal(progress[0].photos.length, 1);
+  assert.equal((await service.resolve(info, "fr", "photo")).cached, true);
 });

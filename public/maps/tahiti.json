@@ -144,11 +144,17 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "contentSources": [
           {
             "osmId": "node/7039731612",
@@ -403,15 +409,24 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
-      },
-      {
-        "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -846,6 +861,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "stream"
         ],
@@ -860,6 +878,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -887,6 +908,9 @@
       {
         "glyph": ",",
         "terrain": "park",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -953,6 +977,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/14021713289",
@@ -978,6 +1005,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "way/730928750",
@@ -998,11 +1028,17 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -1280,6 +1316,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/2385741190",
@@ -1731,6 +1770,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river",
           "stream"
@@ -1750,6 +1792,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/3221657415",
@@ -1793,6 +1838,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -1830,6 +1878,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/6834033477",
@@ -1848,11 +1899,17 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
@@ -1860,6 +1917,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -2822,6 +2882,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -2878,6 +2941,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/508278839",
@@ -2937,6 +3003,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -3006,6 +3075,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -3051,6 +3123,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/11844756988",
@@ -3086,6 +3161,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -3121,6 +3199,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "way/728937866",
@@ -3906,6 +3987,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -3924,6 +4008,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/10210868363",
@@ -3973,6 +4060,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/2186555970",
@@ -3992,6 +4082,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -4015,6 +4108,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/11777766640",
@@ -4069,6 +4165,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -4118,6 +4217,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -4132,6 +4234,9 @@
       {
         "glyph": "♣",
         "terrain": "forest",
+        "countryCodes": [
+          "PF"
+        ],
         "contentSources": [
           {
             "osmId": "way/201512258",
@@ -5115,6 +5220,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -5153,6 +5261,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/12941570342",
@@ -5189,6 +5300,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/3135613113",
@@ -5262,6 +5376,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -5352,6 +5469,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/6960295552",
@@ -5376,6 +5496,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "way/753459276",
@@ -5386,6 +5509,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -5408,6 +5534,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
@@ -5415,6 +5544,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "way/1054516102",
@@ -6425,6 +6557,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -6489,6 +6624,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/12811320681",
@@ -6535,11 +6673,17 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -6566,22 +6710,34 @@
       },
       {
         "glyph": "♣",
-        "terrain": "forest"
+        "terrain": "forest",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": "○",
         "terrain": "place",
+        "countryCodes": [
+          "PF"
+        ],
         "names": [
           "Pīraʻe"
         ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
@@ -6589,17 +6745,26 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": "♣",
@@ -7242,6 +7407,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/10215533552",
@@ -7659,6 +7827,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -7735,6 +7906,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/12811320682",
@@ -7769,11 +7943,17 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -7788,6 +7968,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -7801,15 +7984,24 @@
       },
       {
         "glyph": "♣",
-        "terrain": "forest"
-      },
-      {
-        "glyph": " ",
-        "terrain": "plain"
+        "terrain": "forest",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "way/730929504",
@@ -7836,6 +8028,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
@@ -7843,6 +8038,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
@@ -7850,6 +8048,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
@@ -9017,6 +9218,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -9063,6 +9267,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/495948464",
@@ -9107,6 +9314,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "way/730928847",
@@ -9117,11 +9327,17 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -9146,13 +9362,33 @@
       {
         "glyph": "♣",
         "terrain": "forest",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
       },
       {
         "glyph": "♣",
-        "terrain": "forest"
+        "terrain": "forest",
+        "countryCodes": [
+          "PF"
+        ]
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
@@ -9160,15 +9396,10 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
-      },
-      {
-        "glyph": " ",
-        "terrain": "plain"
-      },
-      {
-        "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
@@ -9176,6 +9407,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
@@ -9183,6 +9417,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
@@ -9190,6 +9427,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
@@ -9197,6 +9437,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
@@ -9780,7 +10023,10 @@
       },
       {
         "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": "+",
@@ -9828,6 +10074,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -9846,19 +10095,31 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
-      },
-      {
-        "glyph": "+",
-        "terrain": "major_road"
-      },
-      {
-        "glyph": "+",
-        "terrain": "major_road"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ]
+      },
+      {
+        "glyph": "+",
+        "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river",
           "stream"
@@ -9867,6 +10128,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/2186845623",
@@ -9877,11 +10141,17 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
@@ -10553,6 +10823,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -10566,21 +10839,23 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
-      },
-      {
-        "glyph": " ",
-        "terrain": "plain"
-      },
-      {
-        "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
         "terrain": "plain",
-        "waterways": [
-          "stream"
+        "countryCodes": [
+          "PF"
+        ]
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
         ]
       },
       {
@@ -10592,11 +10867,24 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "waterways": [
+          "stream"
+        ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
@@ -10916,31 +11204,39 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
-      },
-      {
-        "glyph": " ",
-        "terrain": "plain"
-      },
-      {
-        "glyph": " ",
-        "terrain": "plain"
-      },
-      {
-        "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
         "terrain": "plain",
-        "waterways": [
-          "stream"
+        "countryCodes": [
+          "PF"
+        ]
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
         ]
       },
       {
@@ -10953,6 +11249,16 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "waterways": [
+          "stream"
+        ]
+      },
+      {
+        "glyph": " ",
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "pois": [
           {
             "osmId": "node/5425985521",
@@ -10962,7 +11268,10 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
@@ -11339,25 +11648,40 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
@@ -11372,11 +11696,17 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
@@ -11812,21 +12142,33 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
@@ -12296,6 +12638,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ],
@@ -12316,15 +12661,24 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
@@ -12794,6 +13148,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river"
         ]
@@ -12801,6 +13158,9 @@
       {
         "glyph": "+",
         "terrain": "major_road",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "river",
           "stream"
@@ -12824,6 +13184,9 @@
       {
         "glyph": "^",
         "terrain": "mountain",
+        "countryCodes": [
+          "PF"
+        ],
         "names": [
           "Temati"
         ],
@@ -13323,6 +13686,9 @@
       {
         "glyph": " ",
         "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ],
         "waterways": [
           "stream"
         ]
@@ -13337,7 +13703,10 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
@@ -13637,7 +14006,10 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
@@ -13854,7 +14226,10 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
@@ -13874,7 +14249,10 @@
       },
       {
         "glyph": " ",
-        "terrain": "plain"
+        "terrain": "plain",
+        "countryCodes": [
+          "PF"
+        ]
       },
       {
         "glyph": " ",
@@ -15737,15 +16115,13 @@
   "cache": {
     "schemaVersion": 1,
     "sourceSha256": "e332dcb9fd318afd180715278435a4e588146204e35fb0d11fd469c859e5b735",
-    "pipelineSha256": "576d1f5ef3fc39561ef694c6ff10c51794c752a77b07e1e7ee285660f62bafd4",
+    "pipelineSha256": "932bc7adc58f6290ad6e0945538a60796b08144b781c173058adc62edb5080e6",
     "name": "Tahiti — Papeete",
     "cellSizeMeters": 250,
     "configuration": {
-      "map": {
-        "water_coverage_percent": 50
-      }
+      "water_coverage_percent": 50
     },
-    "key": "c045ef0c0f7e026644e2db3f8d3dc3c7154402648439f1095507c025a8d9dc09",
-    "payloadSha256": "7408cc5e8173179516fef7d863296a42aa8baa3fdcafad020e022c924b727845"
+    "key": "cea2d2b7b583e4b9fbc52ccad82d42ad78d92235d1e65dc3bcdfaa6313bb1bd0",
+    "payloadSha256": "a9734665aa5f1bf369b652f95e1b4d2db90e57dc5ba8d16d7805136026ef4fe0"
   }
 }
