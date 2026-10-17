@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="./styles.css">
     <script type="module" src="./app.js"></script>
   </head>
-  <body>
+  <body class="is-title">
     <main class="game-shell">
       <header class="masthead">
         <div class="masthead-tools">
@@ -28,10 +28,44 @@
           <input id="audio-volume" type="range" min="0" max="100" value="25">
           <span id="audio-status" role="status"></span>
         </div>
-        <h1 data-i18n="headline">La route commence quelque part.</h1>
-        <p class="intro" data-i18n="intro">Une carte, un enfant, et toute l'Europe devant soi.</p>
+        <h1 class="map-intro" data-i18n="headline">La route commence quelque part.</h1>
+        <p class="intro map-intro" data-i18n="intro">Une carte, un enfant, et toute l'Europe devant soi.</p>
       </header>
 
+      <section id="title-screen" aria-labelledby="title-heading">
+        <p class="eyebrow" data-i18n="titleKicker"></p>
+        <h1 id="title-heading" tabindex="-1">Les Arcanes<br><span>du Chemin</span></h1>
+        <pre class="title-art" aria-hidden="true">
+                    .             *
+       *                    .
+                 /\       /\
+          /\    /  \  /\ /  \       .
+     ____/  \__/    \/  \    \____
+        ^      ^           ^      ^
+       /|\    /|\    _    /|\    /|\
+        |      |    / \    |      |
+    _______________|_o_|_____________
+                  / . \
+          .      /  .  \      .
+                /   .   \
+      [D]      /    .    \      [E]
+              /     .     \
+       @     /      .      \
+      /|\   /       .       \
+      / \  /        .        \
+    ______/_________._________\______
+        </pre>
+        <p class="title-tagline" data-i18n="titleTagline"></p>
+        <div class="title-story">
+          <p data-i18n="titleStoryOne"></p>
+          <p data-i18n="titleStoryTwo"></p>
+          <p data-i18n="titleStoryThree"></p>
+        </div>
+        <button id="enter-world" type="button" data-i18n="titleEnter"></button>
+        <p class="title-note" data-i18n="titleContinueNote"></p>
+      </section>
+
+      <div id="game-content" hidden>
       <section class="map-card" aria-labelledby="map-title">
         <div class="map-heading">
           <div>
@@ -205,6 +239,7 @@
         <span class="status-dot" aria-hidden="true"></span>
         <span data-i18n="status">Carte fixe — le déplacement arrive à la couche 02.</span>
       </footer>
+      </div>
     </main>
     <dialog id="osm-drawer" aria-labelledby="reference-title">
       <div class="drawer-heading">

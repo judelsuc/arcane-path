@@ -308,6 +308,14 @@ permet maintenant de reprendre la piste apres rechargement ou changement de regi
 Le serveur de voyage local existe deja, mais la creation serveur et les
 parcours complets de la couche 9 ne sont pas encore implementes.
 
+## Ecran titre
+
+Au chargement, un ecran titre presente le voyage avec une illustration ASCII
+et une courte introduction (francais/anglais). **Ouvrir la carte** donne
+acces au choix de region/profil et a la reprise ; cette transition ne cree
+aucune partie et ne remplace aucune sauvegarde. Langue et musique restent
+accessibles pendant l'introduction. L'ecran revient a chaque rechargement.
+
 ## Musique
 
 Telecharger les pistes dans [public/audio/music/](public/audio/music/) puis

@@ -34,6 +34,39 @@ body {
   margin-bottom: 36px;
 }
 
+[hidden] { display: none !important; }
+.is-title .map-intro { display: none; }
+.is-title .game-shell { padding-top: 24px; }
+.is-title .masthead { margin-bottom: 20px; }
+#title-screen {
+  text-align: center;
+  padding: 28px 20px 36px;
+  border: 1px solid var(--line);
+  background: radial-gradient(ellipse at top, #2b3526, #101711 75%);
+}
+#title-heading {
+  max-width: none;
+  color: var(--accent);
+  font-size: clamp(2.8rem, 8vw, 5rem);
+}
+#title-heading span { color: #e5e7d9; }
+.title-art {
+  color: #b9c7a6;
+  font-size: clamp(8px, 2vw, 13px);
+  line-height: 1.15;
+  margin: 24px auto;
+  white-space: pre;
+}
+.title-tagline {
+  color: var(--accent);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.3rem;
+}
+.title-story { max-width: 580px; margin: 24px auto; line-height: 1.8; font-size: 0.85rem; }
+.title-story p:last-child { color: #c6cfbc; }
+#enter-world { padding: 14px 24px; border-color: var(--accent); }
+.title-note { margin: 16px auto 0; max-width: 460px; color: var(--muted); font-size: 0.72rem; line-height: 1.6; }
+
 .masthead-tools {
   display: flex;
   flex-wrap: wrap;

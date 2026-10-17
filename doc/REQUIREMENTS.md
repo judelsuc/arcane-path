@@ -554,6 +554,19 @@ This file records additions to the design without modifying the source PDF,
   coverage/format/duration/headroom/envelopes, and a manual listening gallery.
   Gameplay triggers remain a separate integration step.
 
+## R-038 — Gentle story-led title screen
+
+- **User request:** Replace the abrupt map-first opening with a title screen,
+  storyline and attractive ASCII art.
+- **Status:** Initial screen with original ASCII landscape, game title and
+  localized introduction to the parent search, clues, tarot and daily needs.
+- **Flow:** Explicit Open the map button reveals existing region/profile/
+  resume controls without starting or overwriting a journey. Language and
+  opt-in music controls remain accessible; reload shows the title again.
+- **Accessibility:** Decorative art is hidden from assistive technology,
+  story is ordinary text, map controls are hidden until entry, and keyboard
+  focus moves to region selection on entry. Layout fits narrow screens.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

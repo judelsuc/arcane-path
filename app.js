@@ -39,6 +39,14 @@ const travel = setupTravel({
   onStop: () => loadRegion(),
 });
 
+document.querySelector("#enter-world").addEventListener("click", () => {
+  document.querySelector("#title-screen").hidden = true;
+  document.querySelector("#game-content").hidden = false;
+  document.body.classList.remove("is-title");
+  document.querySelector("#region").focus({ preventScroll: true });
+  window.scrollTo({ top: 0, behavior: "instant" });
+});
+
 osmDrawer.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     event.preventDefault();

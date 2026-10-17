@@ -558,3 +558,23 @@ zero endpoints, peaks below 70% full scale and overwrite protection. All 27
 WAVs decoded successfully in the browser, including the 140 ms water cue.
 These checks validate files, not subjective listening quality; the user
 should audition at low volume and request adjustments to the palette.
+
+## Story-led opening screen
+
+Added a deliberately calm first screen rather than starting on map controls:
+original ASCII road/forest/mountain landscape, typographic game title and
+three short localized paragraphs about the parent search and practical
+journey. No invented explanation for the parent's absence or new quest
+mechanics. Open the map reveals existing setup/resume controls; it does not
+start a game, reroll tarot, spend time or write a save.
+
+Title returns on each reload, without a new browser preference. Music and
+language remain accessible; the existing optional vocal title song continues
+to work. Map loading may finish behind the opening screen. Decorative ASCII
+is aria-hidden, with real-text title/story. Keyboard focus transfers to the
+region selector; mobile keeps the artwork inside the viewport.
+
+Validated 15 focused localization/audio tests, JS syntax and whitespace.
+Browser checks at 375 px confirmed no horizontal title overflow, translated
+entry button, hidden map before entry, revealed map afterward, region focus,
+unchanged saved data and no active journey created by entry.
