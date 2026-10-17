@@ -717,6 +717,14 @@ Les directions sont a vol d'oiseau, pas un itineraire garanti ; il faut rejoindr
 la case a pied puis ouvrir le sommeil avec H. Le repere peut etre annule et
 n'est pas conserve apres fermeture ou rechargement du voyage.
 
+La fenetre de la piste du parent (J) separe les consignes et le rappel de la
+piste dans une colonne laterale, des boutons d'enquete et des resultats dans
+la zone principale. Sur petit ecran, la colonne passe au-dessus des actions.
+Lorsqu'un temoin propose un nom de ville dans I, son avis indique aussi la
+distance a vol d'oiseau, la direction depuis votre position actuelle et les
+coordonnees de la ville proposee. Cela ne confirme pas qu'il s'agit de la
+bonne destination ; le temoin peut toujours se tromper.
+
 ### Carnet de photos
 
 Le bouton **Mon carnet** dans l'en-tete (A) ouvre un carnet a deux pages

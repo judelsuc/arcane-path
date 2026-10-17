@@ -501,29 +501,40 @@
       <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
     </dialog>
     <dialog id="trail-dialog" aria-labelledby="trail-title">
-      <h2 id="trail-title"></h2>
-      <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
-      <p id="trail-intro"></p>
-      <section id="parent-story" hidden aria-labelledby="parent-story-title">
-        <h3 id="parent-story-title" data-i18n="parentStory.title"></h3>
-        <p id="parent-story-summary"></p>
-        <p id="parent-story-motion"></p>
-        <ul id="parent-story-records"></ul>
-      </section>
-      <p id="trail-catalogue-credit" hidden><a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames contributors</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
-      <p id="trail-target" role="status"></p>
-      <button id="trail-interview" type="button" disabled></button>
-      <p data-i18n="trailCost"></p>
-      <div id="trail-actions"></div>
-      <section id="trail-discovery" hidden>
-        <h3 id="trail-discovery-title"></h3>
-        <blockquote id="trail-discovery-text"></blockquote>
-      </section>
-      <figure id="trail-clue-photo" hidden></figure>
-      <p id="trail-action-error" role="alert"></p>
-      <p id="trail-save-status" role="status"></p>
-      <ol id="trail-history"></ol>
-      <button id="trail-restart" type="button" data-i18n="journeyRestart"></button>
+      <header class="trail-heading">
+        <h2 id="trail-title"></h2>
+        <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
+      </header>
+      <div class="trail-layout">
+        <aside class="trail-guide" aria-labelledby="trail-guide-title">
+          <h3 id="trail-guide-title" data-i18n="trailGuideTitle"></h3>
+          <p id="trail-intro"></p>
+          <p id="trail-target" role="status"></p>
+          <section id="parent-story" hidden aria-labelledby="parent-story-title">
+            <h3 id="parent-story-title" data-i18n="parentStory.title"></h3>
+            <p id="parent-story-summary"></p>
+            <p id="parent-story-motion"></p>
+            <ul id="parent-story-records"></ul>
+          </section>
+          <p id="trail-catalogue-credit" hidden><a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames contributors</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
+          <p id="trail-save-status" role="status"></p>
+        </aside>
+        <section class="trail-main" aria-labelledby="trail-main-title">
+          <h3 id="trail-main-title" data-i18n="trailMainTitle"></h3>
+          <button id="trail-interview" type="button" disabled></button>
+          <p data-i18n="trailCost"></p>
+          <div id="trail-actions"></div>
+          <section id="trail-discovery" hidden>
+            <h3 id="trail-discovery-title"></h3>
+            <blockquote id="trail-discovery-text"></blockquote>
+          </section>
+          <figure id="trail-clue-photo" hidden></figure>
+          <p id="trail-action-error" role="alert"></p>
+          <h3 data-i18n="trailHistoryTitle"></h3>
+          <ol id="trail-history"></ol>
+          <button id="trail-restart" type="button" data-i18n="journeyRestart"></button>
+        </section>
+      </div>
     </dialog>
   </body>
 </html>

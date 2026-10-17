@@ -66,6 +66,20 @@ export function playerHint(state, info, t) {
     distance: t(`hintDistance.${distance}`) });
 }
 
+export function suggestedTownPosition(town, info, t) {
+  const east = Math.sin((town.longitude - info.longitude) * Math.PI / 180) *
+    Math.cos(town.latitude * Math.PI / 180);
+  const north = Math.cos(info.latitude * Math.PI / 180) * Math.sin(town.latitude * Math.PI / 180) -
+    Math.sin(info.latitude * Math.PI / 180) * Math.cos(town.latitude * Math.PI / 180) *
+    Math.cos((town.longitude - info.longitude) * Math.PI / 180);
+  const sectors = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
+  return t("fieldSuggestedPosition", {
+    meters: distanceMeters(info, town.latitude, town.longitude),
+    direction: t(`hintCompass.${sectors[(Math.round(Math.atan2(east, north) / (Math.PI / 4)) + 8) % 8]}`),
+    latitude: town.latitude.toFixed(6), longitude: town.longitude.toFixed(6),
+  });
+}
+
 export function setupTrail(t, { context, interview, discover, askDirections, searchField, recognizeField, pinPhoto }) {
   const dialog = document.querySelector("#trail-dialog");
   const hintDialog = document.querySelector("#hint-dialog");
@@ -174,9 +188,11 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     container.append(p);
   }
   function reportText(report) {
-    return t(`fieldReport.${report.outcome === "suggestion" ? report.kind : report.outcome}`, {
+    const text = t(`fieldReport.${report.outcome === "suggestion" ? report.kind : report.outcome}`, {
       place: report.town?.name,
     });
+    return report.outcome === "suggestion"
+      ? `${text} ${suggestedTownPosition(report.town, context().info, t)}` : text;
   }
   async function askCollectedClue(hint) {
     const current = context();
