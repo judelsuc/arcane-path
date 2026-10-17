@@ -6,6 +6,24 @@ All survival numbers below are gameplay approximations, not medical advice.
 Sections are chronological checkpoint records: later layers supersede earlier
 shortcuts, especially free meals and unrestricted outdoor sleep.
 
+## Parent-trail clue reminders, without exact navigation
+
+- R-095: replace trailDirections and the combined target/distance formatter
+  with trailReminder. It only names the known lead, repeats a pending venue
+  reminder without its undisclosed next town, or shows the completed reunion.
+  Moving the player cannot change this text.
+- Show every obtained clue's actual text in history, not just discussion
+  clues; remove internal witness fact sheets. Keep the existing valid inquiry
+  actions, paid I directions, photo credits/licenses and catalogue attribution.
+- Remove target map links and reference-route preparation/estimate controls.
+  The separate automatic preparation and accommodation work are not shipped.
+- Regression fixture reproduces step 7, Berchem, 138 east/13 south and a 57 km
+  leg, and verifies that none of those navigation numbers/arrows are rendered
+  in French or English. Pending venue clues cannot leak the next town.
+- Validation: all 277 isolated live-base JavaScript tests pass. Browser checks
+  of the actual dialog in French and English show only the known Berchem lead
+  and obtained letter text, with no route controls or exact-navigation links.
+
 ## Street-performance mistakes and starting-card charisma
 
 - R-094: rhythm state keeps an immutable per-performance mistake limit and a

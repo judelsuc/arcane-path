@@ -1,5 +1,17 @@
 # Requirements tracked outside the design PDF
 
+## R-095 - Parent trail recalls clues instead of providing navigation
+
+- Parent trail is a reminder of obtained clues and the known destination, not
+  a navigator. Remove cell offsets, compass arrows, player-to-town distance,
+  inter-stage distance, walking estimates and current-target map links.
+- Repeat the obtained clue text in history for every clue type. Do not expose
+  internal witness fact sheets or a future town hidden by a pending venue clue.
+- Retain inquiry/search actions when applicable, source/license attribution,
+  saved progress and the separate I action for paid vague directions.
+- Remove manual path-preparation controls from this window. Automatic path
+  preparation remains a separate pending change, not part of this UI release.
+
 ## R-094 - Music mistakes and starting-card charisma
 
 - Playing on a rest, outside the note's +/-150 ms window, before the phrase,

@@ -4,7 +4,6 @@ import { createContentService } from "./cell-content.mjs";
 import { openContentCache } from "./content-cache.mjs";
 import { clueActions, CLUE_ACTIONS, searchClueOptions, prepareClueSearch } from "./trail-actions.mjs";
 import { marketPrice } from "./economy.mjs";
-import { createParentPathLoader } from "./parent-path.mjs";
 import { parentSighting } from "./parent-story.mjs";
 import { DIRECTIONS_RULES, directionsChance } from "./directions.mjs";
 
@@ -24,12 +23,11 @@ export function parentClueText(state, discovery, t) {
   return parts.join(" ");
 }
 
-export function trailDirections(state, target, t) {
-  const east = target.col - state.col, south = target.row - state.row;
-  const parts = [];
-  if (east) parts.push(t(east > 0 ? "trailEast" : "trailWest", { count: Math.abs(east) }));
-  if (south) parts.push(t(south > 0 ? "trailSouth" : "trailNorth", { count: Math.abs(south) }));
-  return parts.length ? parts.join(t("trailDirectionJoin")) : t("trailAlreadyHere");
+export function trailReminder(state, t) {
+  const trail = state.trail;
+  if (trail.completed) return t("trailReunion", { parent: trail.parentName });
+  if (trail.discovery?.pending) return t("clueAskDirections", { venue: trail.discovery.venue });
+  return t("trailKnownDestination", { place: trailTarget(state).name });
 }
 
 export function playerHint(state, info, t) {
@@ -60,24 +58,6 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
   let directionsOutcome;
   let searching = false, searchGeneration = 0, preparedPhoto, photoUnavailable = false;
   let photoKey, objectUrl, photoGeneration = 0, service;
-  const pathLoader = createParentPathLoader({ onUpdate: renderPath });
-  function renderPath() {
-    const status = pathLoader.status;
-    const element = document.querySelector("#parent-path-status");
-    element.textContent = t(`parentPath.${status.status}`, {
-      chunks: status.chunks ?? 0, downloads: status.downloads ?? 0,
-      expanded: status.expanded ?? 0, error: status.error ?? "",
-      km: ((status.distanceMeters ?? 0) / 1000).toFixed(1),
-      hours: ((status.walkingMinutes ?? 0) / 60).toFixed(1),
-    });
-    if (status.status === "ready" && !status.elevationComplete) {
-      element.textContent += ` ${t("parentPath.noElevation")}`;
-    }
-    document.querySelector("#parent-path-retry").hidden = status.status !== "error";
-    document.querySelector("#parent-path-prepare").hidden = status.status !== "idle";
-  }
-  document.querySelector("#parent-path-retry").addEventListener("click", () => pathLoader.retry());
-  document.querySelector("#parent-path-prepare").addEventListener("click", () => pathLoader.prepare());
 
   function clearPhoto() {
     photoGeneration++;
@@ -146,7 +126,6 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
       image.alt = t("cluePhotoAlt");
       image.onerror = () => { if (generation === photoGeneration) paragraph(photo, t("cluePhotoMissing")); };
       photo.append(image);
-      paragraph(photo, t("cluePhotoDisclaimer", { distance: content.distance ?? 0 }));
       paragraph(photo, t("contentCredit", content));
       for (const [url, label] of [[content.sourceUrl, content.title], [content.licenseUrl, t("contentLicense")]]) {
         const parsed = new URL(url);
@@ -222,40 +201,15 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     document.querySelector("#town-trail").disabled = !current?.state.trail;
     if (!current?.state.trail) return;
     const { state, blocked } = current;
-    pathLoader.update(state);
-    renderPath();
     const trail = state.trail;
     renderStory(state);
     const modern = trail.version === 2;
     document.querySelector("#trail-save-status").textContent = current.saveStatus ?? "";
-    const target = trailTarget(state);
     document.querySelector("#trail-title").textContent = t(trail.completed ? "trailReunionTitle" : "trailTitle");
-    document.querySelector("#trail-intro").textContent = t(trail.version === 2 ? "trailTownIntro" : "trailIntro",
-      { parent: trail.parentName, total: trail.stages.length });
+    document.querySelector("#trail-intro").textContent = t("trailReminderIntro", { parent: trail.parentName });
     const local = trail.stages.some(stage => stage.geonameId !== undefined);
     document.querySelector("#trail-catalogue-credit").hidden = !local;
-    if (local) document.querySelector("#trail-intro").textContent += ` ${t("trailLocalSummary")}`;
-    document.querySelector("#trail-target").textContent = target
-      ? t("trailTarget", { step: trail.index + 1, total: trail.stages.length, place: target.name,
-        directions: modern && atTrailTarget(state) ? t("clueChooseAction") : trailDirections(state, target, t) })
-      : t("trailReunion", { parent: trail.parentName });
-    if (target && trail.version === 2) {
-      document.querySelector("#trail-target").textContent += ` ${t("trailTownDistance", {
-        km: (distanceMeters(current.info, target.latitude, target.longitude) / 1000).toLocaleString(
-          document.documentElement.lang, { maximumFractionDigits: 1 }),
-        leg: Math.round(target.legMeters / 1000),
-      })}`;
-    }
-    if (trail.discovery?.pending) {
-      document.querySelector("#trail-target").textContent = t("clueAskDirections", {
-        venue: trail.discovery.venue,
-      });
-    }
-    const mapLink = document.querySelector("#trail-map-link");
-    mapLink.hidden = !target || Boolean(trail.discovery?.pending);
-    if (target) mapLink.href = target.geonameId
-      ? `https://www.openstreetmap.org/?mlat=${target.latitude}&mlon=${target.longitude}#map=14/${target.latitude}/${target.longitude}`
-      : `https://www.openstreetmap.org/${target.osmId}`;
+    document.querySelector("#trail-target").textContent = trailReminder(state, t);
     action.disabled = blocked || !atTrailTarget(state);
     action.hidden = modern;
     action.nextElementSibling.hidden = modern;
@@ -268,7 +222,7 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
         paragraph(item, `${t(`clueFound.${facts.clueKind}`)} — ${t("clueHistory", {
           place: facts.place, next: facts.next.name,
         })}`);
-        if (facts.clueKind === "discuss") paragraph(item, parentClueText(state, {
+        paragraph(item, parentClueText(state, {
           kind: facts.clueKind, step: index, nextName: facts.next.name, pending: false,
         }, t));
       }
@@ -276,8 +230,6 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
         parent: facts.parentName, place: facts.place, next: facts.next.name,
       }));
       else paragraph(item, t("trailReunion", { parent: facts.parentName }));
-      paragraph(item, t("trailFacts", { id: facts.witnessId, place: facts.place,
-        next: facts.next?.name ?? t("trailReunionTitle") }));
       history.append(item);
     }
     const actions = document.querySelector("#trail-actions");
@@ -409,7 +361,6 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     searching = false;
     preparedPhoto = undefined;
     photoUnavailable = false;
-    pathLoader.stop();
     dialog.close();
     hintDialog.close();
     directionsOutcome = undefined;
