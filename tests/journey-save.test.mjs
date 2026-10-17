@@ -5,6 +5,7 @@ import { createSave, validateSave, createJourneyStore, mapIdentity } from "../jo
 import { startSurvival, walkSurvival } from "../survival.mjs";
 import { startEconomy, buyMeal, finishAction, applyBirthTarot, tarotEventChance,
   dailyTarotPending, acknowledgeDailyTarot, refreshPricing } from "../economy.mjs";
+import { refreshNightRest, restEconomy } from "../economy.mjs";
 import { createTrail, interviewTrail, trailTarget } from "../trail.mjs";
 import { beginBusking, settleBusking } from "../music.mjs";
 
@@ -24,6 +25,26 @@ function storage() {
   const data = new Map();
   return { getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v), data };
 }
+
+test("legacy resume applies only the approved rest migration and persists it without altering progress", () => {
+  const d = details(), legacy = structuredClone(d.economy), memory = storage();
+  delete legacy.restRuleVersion;
+  legacy.rules.nightRestRecoveryFactor = 0;
+  legacy.rules.lodgingMealUnits = 3;
+  const store = createJourneyStore(memory);
+  store.read(d.region);
+  store.write({ ...d, economy: legacy });
+  const resumed = store.read(d.region);
+  const migrated = refreshNightRest(refreshPricing(resumed.economy, economy), economy);
+  store.write({ ...d, state: resumed.state, economy: migrated });
+  const saved = createJourneyStore(memory).read(d.region);
+  assert.deepEqual(saved.state, resumed.state);
+  assert.equal(saved.economy.rules.nightRestRecoveryFactor, 0.5);
+  assert.equal(saved.economy.rules.lodgingMealUnits, 3);
+  const night = { ...saved.state, startedAt: Date.UTC(2026, 9, 17, 23), fatigue: 90,
+    tarotDay: "2026-10-17", awakeHours: 16 };
+  assert.equal(restEconomy(night, info, survival, saved.economy).fatigue, 81);
+});
 
 test("custom coordinate origins save independently and retain strict region validation", () => {
   const memory = storage(), store = createJourneyStore(memory), d = details();

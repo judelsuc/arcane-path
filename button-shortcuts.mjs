@@ -10,6 +10,7 @@ const KEYS = {
   "eat-travel": "E", "open-town": "T", "open-music": "B",
   "open-trail": "J", "save-travel": "S", "look-travel": "L",
   "open-hint": "I",
+  "copy-coordinates": "D",
   "needs-notice-cell": "F",
   "retry-travel": "Y", "stop-travel": "Q", "show-photo": "P",
   "refresh-content": "U", "clear-content": "X",

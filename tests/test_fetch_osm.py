@@ -9,7 +9,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from fetch_osm import _request_map, _request_sources, _COOLDOWNS, OVERPASS_URLS, download_region
+from fetch_osm import (_request_map, _request_sources, _COOLDOWNS, OVERPASS_URLS,
+                       download_region, incomplete_landcover)
 
 OSM_RESPONSE = b"""<osm version="0.6" copyright="OpenStreetMap and contributors">
   <bounds minlat="0" minlon="0" maxlat="0.009" maxlon="0.009"/>
@@ -20,6 +21,69 @@ OSM_RESPONSE = b"""<osm version="0.6" copyright="OpenStreetMap and contributors"
 
 
 class FetchOsmTests(unittest.TestCase):
+    def test_primary_completes_landcover_members_before_caching(self):
+        partial = OSM_RESPONSE.replace(b"</osm>", b"""
+          <relation id="12"><member type="way" ref="20" role="outer"/>
+            <tag k="type" v="multipolygon"/><tag k="landuse" v="meadow"/>
+          </relation></osm>""")
+        complete = b"""<osm><node id="2" lat="0.001" lon="0.001"/>
+          <node id="3" lat="0.001" lon="0.008"/>
+          <node id="4" lat="0.008" lon="0.008"/>
+          <node id="5" lat="0.008" lon="0.001"/>
+          <way id="20"><nd ref="2"/><nd ref="3"/><nd ref="4"/><nd ref="5"/><nd ref="2"/></way>
+          <relation id="12"><member type="way" ref="20" role="outer"/>
+            <tag k="type" v="multipolygon"/><tag k="landuse" v="meadow"/>
+          </relation></osm>"""
+        with patch("fetch_osm.urllib.request.urlopen", side_effect=[
+                io.BytesIO(partial), io.BytesIO(complete)]) as request:
+            root, urls = _request_map([0, 0, 0.009, 0.009])
+        self.assertEqual(request.call_count, 2)
+        self.assertEqual(urls[-1], "https://api.openstreetmap.org/api/0.6/relation/12/full")
+        self.assertEqual(incomplete_landcover(root), [])
+        self.assertIsNotNone(root.find("node[@id='1']"))
+        with tempfile.TemporaryDirectory() as directory:
+            from build_map import rasterize
+            path = Path(directory) / "complete.osm"
+            path.write_bytes(ET.tostring(root))
+            data = rasterize(path, "Complete meadow", 250)
+            self.assertEqual(data["rows"][2][2]["terrain"], "grass")
+
+    def test_completion_failure_uses_fallback_and_does_not_accept_partial_geometry(self):
+        partial = OSM_RESPONSE.replace(b"</osm>", b"""
+          <relation id="12"><member type="way" ref="20" role="outer"/>
+            <tag k="type" v="multipolygon"/><tag k="landuse" v="forest"/>
+          </relation></osm>""")
+        with patch("fetch_osm.urllib.request.urlopen", side_effect=[
+                io.BytesIO(partial), OSError("Completion offline"),
+                io.BytesIO(partial), io.BytesIO(OSM_RESPONSE)]):
+            root, urls = _request_sources([0, 0, 0.009, 0.009])
+        self.assertEqual(urls, [OVERPASS_URLS[1]])
+        self.assertEqual(incomplete_landcover(root), [])
+
+    def test_completion_detects_missing_nodes_but_ignores_unrendered_boundaries(self):
+        root = ET.fromstring("""<osm><way id="20"><nd ref="2"/></way>
+          <relation id="12"><member type="way" ref="20" role="outer"/>
+            <tag k="type" v="multipolygon"/><tag k="natural" v="wood"/></relation>
+          <relation id="13"><member type="way" ref="99" role="outer"/>
+            <tag k="type" v="boundary"/></relation></osm>""")
+        self.assertEqual(incomplete_landcover(root), ["12"])
+
+    def test_prepared_snapshot_can_still_be_reused_offline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "old.osm"
+            root = ET.fromstring(OSM_RESPONSE)
+            root.set("source_url", "https://api.openstreetmap.org/api/0.6/map?bbox=0,0,0.009,0.009")
+            root.set("region_name", "Test")
+            relation = ET.SubElement(root, "relation", {"id": "12"})
+            ET.SubElement(relation, "member", {"type": "way", "ref": "20", "role": "outer"})
+            ET.SubElement(relation, "tag", {"k": "type", "v": "multipolygon"})
+            ET.SubElement(relation, "tag", {"k": "landuse", "v": "meadow"})
+            output.write_bytes(ET.tostring(root))
+            with patch("fetch_osm.urllib.request.urlopen", side_effect=AssertionError("Offline")) as request:
+                _, _, reused = download_region([0, 0, 0.009, 0.009], "Test", output)
+            self.assertTrue(reused)
+            request.assert_not_called()
+
     def setUp(self):
         _COOLDOWNS.clear()
 

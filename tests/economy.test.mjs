@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { startSurvival, walkSurvival } from "../survival.mjs";
-import { validateEconomy, drawTarot, startEconomy, localMeals, marketPrice, shelters,
+import { validateEconomy, drawTarot, startEconomy, localMeals, marketPrice, shelters, restEffect, refreshNightRest,
   nightMinutes, finishAction, buyMeal, sleepEconomy, restEconomy,
   dailyTarotPending, acknowledgeDailyTarot, refreshPricing } from "../economy.mjs";
 
@@ -166,7 +166,7 @@ test("outdoor nights increase fatigue during sleep, walking and rest; daytime ha
   assert.equal(night.walletCents, state.walletCents);
   assert.ok(night.outdoorNightMinutes > 400);
   const rest = restEconomy(state, info, survival, data);
-  assert.ok(rest.fatigue > 40);
+  assert.equal(rest.fatigue, 31);
   const day = restEconomy({ ...start(), fatigue: 40 }, info, survival, data);
   assert.equal(day.fatigue, 20);
   const walk = walkSurvival(state, 1, 0, town, town, survival);
@@ -176,11 +176,45 @@ test("outdoor nights increase fatigue during sleep, walking and rest; daytime ha
 });
 
 test("exposure can terminate a journey, shelter cannot bypass hunger, and invalid databases fail explicitly", () => {
-  assert.equal(restEconomy({ ...start(22), fatigue: 99.5 }, info, survival, data).ended, "fatigue");
+  const oldRules = { ...data, rules: { ...data.rules, nightRestRecoveryFactor: 0 } };
+  assert.equal(restEconomy({ ...start(22), fatigue: 99.5 }, info, survival, oldRules).ended, "fatigue");
   assert.equal(sleepEconomy({ ...start(22), reserveKcal: 100 }, { pois: [shelter] },
     info, shelter.osmId, survival, data).ended, "hunger");
   for (const bad of [{}, { ...data, tarot: [] },
     { ...data, pricing: { ...data.pricing, referenceDollarPrice: 0 } }]) {
     assert.throws(() => validateEconomy(bad));
   }
+});
+
+test("one nighttime rest at 90 fatigue now ends at 81; legacy zero-recovery rule yielded 91", () => {
+  const state = { ...start(22), fatigue: 90, awakeHours: 16 };
+  const next = restEconomy(state, info, survival, data);
+  assert.equal(next.elapsedMinutes - state.elapsedMinutes, 30);
+  assert.equal(next.fatigue, 81);
+  const legacy = { ...data, rules: { ...data.rules, nightRestRecoveryFactor: 0 } };
+  assert.equal(restEconomy(state, info, survival, legacy).fatigue, 91);
+  assert.equal(next.ended, null);
+  assert.equal(next.awakeHours, 16.5);
+  for (const hour of [0, 5, 6, 12, 17, 18, 22, 23]) {
+    for (const fatigue of [0, 10, 90, 99.5]) {
+      const before = { ...start(hour), fatigue, awakeHours: 16 };
+      assert.equal(restEffect(before, info, survival, data).fatigue,
+        restEconomy(before, info, survival, data).fatigue);
+    }
+  }
+  assert.equal(restEconomy({ ...state, awakeHours: 31.75 }, info, survival, data).ended, "sleep");
+});
+
+test("approved nighttime-rest migration changes only the one coefficient, once, on legacy resume", () => {
+  const legacy = structuredClone(data);
+  delete legacy.restRuleVersion;
+  legacy.rules.nightRestRecoveryFactor = 0;
+  legacy.rules.lodgingMealUnits = 3;
+  const snapshot = structuredClone(legacy);
+  const migrated = refreshNightRest(legacy, data);
+  assert.deepEqual(migrated, { ...snapshot, restRuleVersion: 1,
+    rules: { ...snapshot.rules, nightRestRecoveryFactor: 0.5 } });
+  assert.deepEqual(legacy, snapshot);
+  assert.deepEqual(refreshNightRest(migrated, data), migrated);
+  assert.throws(() => validateEconomy({ ...data, restRuleVersion: 2 }), /Invalid economy/);
 });

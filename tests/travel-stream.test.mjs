@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createChunkStream, neighborDownloads } from "../travel-stream.mjs";
+import { createChunkStream, createChunkPrefetcher, neighborDownloads, visibleDownloads } from "../travel-stream.mjs";
 
 test("neighbor downloads favor heading, then nearby boundaries, including negative chunks", () => {
   assert.deepEqual(neighborDownloads(6, 1, 1, 0), [
@@ -13,6 +13,115 @@ test("neighbor downloads favor heading, then nearby boundaries, including negati
     { x: -1, y: -2 }, { x: 0, y: -1 }, { x: -2, y: -1 }, { x: -1, y: 0 },
   ]);
   assert.deepEqual(neighborDownloads(6, 1)[0], { x: 0, y: -1 });
+});
+
+test("stationary camera requests all eight visible neighbors, including the four corners", () => {
+  for (const [col, row] of [[6, 1], [-1, -1], [16, 16]]) {
+    const neighbors = visibleDownloads(col, row, 1, 0);
+    assert.equal(neighbors.length, 8);
+    assert.equal(new Set(neighbors.map(({ x, y }) => `${x},${y}`)).size, 8);
+    assert.deepEqual(neighbors.slice(0, 4), neighborDownloads(col, row, 1, 0));
+    const x = Math.floor(col / 8), y = Math.floor(row / 8);
+    assert.ok(neighbors.every(p => Math.abs(p.x - x) <= 1 && Math.abs(p.y - y) <= 1 &&
+      (p.x !== x || p.y !== y)));
+  }
+});
+
+const flush = () => new Promise(resolve => setImmediate(resolve));
+function backgroundHarness(fetcher) {
+  let clock = 0, id = 0;
+  const timers = new Map(), errors = [], loaded = [];
+  const stream = createChunkStream("firmi", { fetcher });
+  const background = createChunkPrefetcher(stream, {
+    now: () => clock, onError: error => errors.push(error), onLoad: data => loaded.push(data),
+    setTimer(fn, delay) { timers.set(++id, { fn, at: clock + delay }); return id; },
+    clearTimer(timer) { timers.delete(timer); },
+  });
+  return { stream, background, timers, errors, loaded,
+    async advance(ms) {
+      const end = clock + ms;
+      while ([...timers.values()].some(t => t.at <= end)) {
+        const [timerId, timer] = [...timers.entries()].sort((a, b) => a[1].at - b[1].at)[0];
+        timers.delete(timerId);
+        clock = timer.at;
+        timer.fn();
+        await flush();
+      }
+      clock = end;
+    },
+    stop() { background.stop(); stream.stop(); },
+  };
+}
+
+test("idle background completes all eight chunks without movement and reuses cached results", async () => {
+  const started = [];
+  const h = backgroundHarness(async url => {
+    const params = new URL(url, "http://localhost").searchParams;
+    const x = Number(params.get("x")), y = Number(params.get("y"));
+    started.push(`${x},${y}`);
+    return new Response(JSON.stringify(chunk(x, y)));
+  });
+  try {
+    h.background.update(visibleDownloads(4, 4));
+    await flush();
+    assert.equal(started.length, 8);
+    assert.equal(h.loaded.length, 8);
+    h.background.update(visibleDownloads(4, 4));
+    await h.advance(60_000);
+    assert.equal(started.length, 8);
+    assert.equal(h.timers.size, 0);
+  } finally { h.stop(); }
+});
+
+test("idle provider failures retry after cooldown, without blocking other chunks or game time", async () => {
+  const attempts = new Map();
+  const h = backgroundHarness(async url => {
+    const params = new URL(url, "http://localhost").searchParams;
+    const x = Number(params.get("x")), y = Number(params.get("y")), key = `${x},${y}`;
+    const count = (attempts.get(key) ?? 0) + 1;
+    attempts.set(key, count);
+    if (x === 1 && y === 1 && count < 3) return new Response("Unavailable", { status: 503 });
+    return new Response(JSON.stringify(chunk(x, y)));
+  });
+  try {
+    const state = { elapsedMinutes: 0, col: 4, row: 4 };
+    h.background.update(visibleDownloads(state.col, state.row));
+    await flush();
+    assert.equal(h.stream.chunks.size, 7);
+    assert.equal(h.errors.length, 1);
+    await h.advance(29_999);
+    assert.equal(attempts.get("1,1"), 1);
+    await h.advance(1);
+    assert.equal(attempts.get("1,1"), 2);
+    await h.advance(59_999);
+    assert.equal(attempts.get("1,1"), 2);
+    await h.advance(1);
+    assert.equal(attempts.get("1,1"), 3);
+    assert.equal(h.stream.chunks.size, 8);
+    assert.deepEqual(state, { elapsedMinutes: 0, col: 4, row: 4 });
+  } finally { h.stop(); }
+});
+
+test("permanent failures wait for manual retry and stopping cancels future background retries", async () => {
+  let attempts = 0;
+  const h = backgroundHarness(async () => {
+    attempts++;
+    return new Response(JSON.stringify({ error: "Invalid map" }), { status: 400 });
+  });
+  try {
+    h.background.update([{ x: 0, y: 0 }]);
+    await flush();
+    await h.advance(300_000);
+    assert.equal(attempts, 1);
+    assert.equal(h.errors.length, 1);
+    h.background.retry();
+    await flush();
+    assert.equal(attempts, 2);
+    h.stop();
+    assert.equal(h.timers.size, 0);
+    await h.advance(300_000);
+    assert.equal(attempts, 2);
+  } finally { h.stop(); }
 });
 
 test("turning reorders queued downloads without displacing foreground or restarting active work", async () => {

@@ -1047,3 +1047,32 @@ on the server. The first chunk must still load before replacing a local save.
 Full cloud resume, user accounts, parent motives/timetable/mobility, actual
 walking routes, three accessible clues per leg and the solvability simulator
 remain pending. Existing 30-60 km legs are straight-line distances only.
+
+## Protected-preview gameplay recovery
+
+- Locals' fictional hospitality uses existing need/time/sleep actions, not
+  mapped lodging. One deterministic attempt per OSM settlement and UTC day,
+  saved locally; birth/daily tarot affect risk, outfit/reputation deferred.
+- Night rest now recovers half the normal fatigue before outdoor exposure.
+  Resume migrates only this approved coefficient via restRuleVersion, not
+  the rest of a journey's pinned economy. Forecast and action share a helper.
+- Existing original terrain footsteps play once on successful movement through
+  the shared audio controls. Calendar and clock follow simulated UTC only.
+- Copy coordinates uses the selected cell center, like inspected cell content;
+  clipboard failures are visible rather than a success-shaped fallback.
+- Idle prefetch now covers all eight neighbors with the existing bounded
+  stream and transient-error cooldown. This does not fill unmapped land.
+- Engins investigation used the live cached OSM snapshot, not the map's
+  background color. Seven incomplete multipolygons were skipped. Fetching
+  their full public relation geometry changed its five plain cells to forest.
+  Primary downloads now complete missing land-cover members (bounded at 16;
+  otherwise recursive fallback). Reject incomplete fallback geometry and repair
+  old external sources. Fingerprint fetch logic as well as rasterizer code.
+  Prepared starting snapshots retain offline behavior; unmatched coverage may
+  still exist. No grass/field inference or unlimited area prefetch is added.
+- Packaging now requires committed runtime and embeds its commit in
+  public/release.json. Tag and verify every deployment before announcing it.
+- Validation: 193 JavaScript and 109 Python tests. Browser check: hosted night
+  took 510 minutes, advanced the UTC agenda, and disabled another town/day
+  request. The 375px layout fits; clipboard denial is visibly reported in the
+  automated browser (which cannot grant focus/clipboard permissions).

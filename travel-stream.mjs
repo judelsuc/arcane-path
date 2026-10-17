@@ -12,6 +12,65 @@ export function neighborDownloads(col, row, dc = 0, dr = 0) {
     .map(({ x, y }) => ({ x, y }));
 }
 
+export function visibleDownloads(col, row, dc = 0, dr = 0) {
+  const p = chunkPosition(col, row);
+  const corners = [-1, 1].flatMap(dx => [-1, 1].map(dy => ({
+    x: p.x + dx, y: p.y + dy, heading: dx * dc + dy * dr,
+  }))).sort((a, b) => b.heading - a.heading);
+  return [...neighborDownloads(col, row, dc, dr), ...corners.map(({ x, y }) => ({ x, y }))];
+}
+
+class ChunkRequestError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.retryable = status === 408 || status >= 500;
+  }
+}
+
+export function createChunkPrefetcher(stream, {
+  onError = console.error, onLoad = () => {}, now = Date.now, setTimer = setTimeout, clearTimer = clearTimeout,
+} = {}) {
+  let targets = [], timer, stopped = false;
+  const failures = new Map();
+  function tick() {
+    if (stopped) return;
+    clearTimer(timer);
+    timer = undefined;
+    let waiting = false;
+    for (const { x, y } of targets) {
+      const key = `${x},${y}`, failure = failures.get(key);
+      if (stream.get(x, y) || failure?.permanent) continue;
+      waiting = true;
+      if (stream.isPending(x, y) || failure && failure.nextAt > now()) continue;
+      stream.load(x, y).then(data => {
+        failures.delete(key);
+        if (!stopped && targets.some(p => p.x === x && p.y === y)) onLoad(data, x, y);
+      }).catch(error => {
+        if (stopped || !targets.some(p => p.x === x && p.y === y)) return;
+        const attempts = (failures.get(key)?.attempts ?? 0) + 1;
+        const retryable = error.retryable === true || error instanceof TypeError ||
+          error.name === "TimeoutError";
+        failures.set(key, { attempts, permanent: !retryable,
+          nextAt: now() + Math.min(300_000, 30_000 * 2 ** Math.min(4, attempts - 1)) });
+        onError(error);
+      });
+    }
+    if (waiting) timer = setTimer(tick, 30_000);
+  }
+  return {
+    update(next) {
+      if (stopped) return;
+      targets = next;
+      const keys = new Set(targets.map(({ x, y }) => `${x},${y}`));
+      for (const key of failures.keys()) if (!keys.has(key)) failures.delete(key);
+      stream.prioritize(targets);
+      tick();
+    },
+    retry() { failures.clear(); tick(); },
+    stop() { stopped = true; clearTimer(timer); failures.clear(); targets = []; },
+  };
+}
+
 export function createChunkStream(region, { fetcher = fetch, onUpdate = () => {} } = {}) {
   const chunks = new Map(), requests = new Map(), queue = [];
   const controller = new AbortController();
@@ -24,9 +83,16 @@ export function createChunkStream(region, { fetcher = fetch, onUpdate = () => {}
       const response = await fetcher(`/api/chunk?${new URLSearchParams({ region, x, y })}`, {
         signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
       });
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (error) {
+        if (!(error instanceof SyntaxError)) throw error;
+        if (!response.ok) throw new ChunkRequestError(`HTTP ${response.status}: invalid map response`, response.status);
+        throw error;
+      }
       if (response.status !== 202 && response.status !== 429) {
-        if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
+        if (!response.ok) throw new ChunkRequestError(data.error ?? `HTTP ${response.status}`, response.status);
         if (data.chunk?.x !== x || data.chunk?.y !== y || data.chunk?.region !== region ||
             data.width !== 8 || data.height !== 8 ||
             data.rows?.length !== 8 || data.rows.some(row => row.length !== 8)) {
@@ -34,7 +100,8 @@ export function createChunkStream(region, { fetcher = fetch, onUpdate = () => {}
         }
         return data;
       }
-      if (Date.now() >= deadline) throw new Error("Chunk download timed out. Retry to resume cached preparation.");
+      if (Date.now() >= deadline) throw new ChunkRequestError(
+        "Chunk download timed out. Retry to resume cached preparation.", 408);
       await new Promise((resolve, reject) => {
         const abort = () => { clearTimeout(timer); reject(controller.signal.reason); };
         const timer = setTimeout(() => {

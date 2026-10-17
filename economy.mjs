@@ -5,7 +5,8 @@ import { eatSurvival, sleepSurvival, restSurvival, characterProfile } from "./su
 export function validateEconomy(data) {
   const positive = n => Number.isFinite(n) && n > 0;
   const source = url => typeof url === "string" && url.startsWith("https://");
-  if (data?.version !== 1 || !Number.isSafeInteger(data.pricing?.referenceCents) ||
+  if (data?.version !== 1 || (data.restRuleVersion !== undefined && data.restRuleVersion !== 1) ||
+      !Number.isSafeInteger(data.pricing?.referenceCents) ||
       !positive(data.pricing.referenceCents) || !positive(data.pricing.referenceDollarPrice) ||
       !source(data.pricing.source) || !data.pricing.markets ||
       Object.values(data.pricing.markets).some(m => !m.name || !positive(m.dollarPrice)) ||
@@ -114,6 +115,17 @@ export function refreshPricing(savedEconomy, currentEconomy) {
   return validateEconomy({ ...structuredClone(savedEconomy), pricing: structuredClone(currentEconomy.pricing) });
 }
 
+export function refreshNightRest(savedEconomy, currentEconomy) {
+  validateEconomy(savedEconomy);
+  validateEconomy(currentEconomy);
+  const updated = structuredClone(savedEconomy);
+  if (updated.restRuleVersion === undefined && currentEconomy.restRuleVersion === 1) {
+    updated.restRuleVersion = 1;
+    updated.rules.nightRestRecoveryFactor = currentEconomy.rules.nightRestRecoveryFactor;
+  }
+  return validateEconomy(updated);
+}
+
 export function shelters(cell) {
   return (cell.pois ?? []).filter(p => {
     const tags = p.tags ?? {};
@@ -173,9 +185,15 @@ export function sleepEconomy(state, cell, info, shelterId, survival, data) {
   return finishAction(state, next, info, data, { sheltered: Boolean(shelter) });
 }
 
-export function restEconomy(state, info, survival, data) {
+export function restEffect(state, info, survival, data) {
   const night = nightMinutes(state, survival.rest_minutes, info) / survival.rest_minutes;
-  const next = restSurvival(state, { ...survival, rest_fatigue_recovery:
-    survival.rest_fatigue_recovery * (1 - night * (1 - data.rules.nightRestRecoveryFactor)) });
+  const recovery = survival.rest_fatigue_recovery * (1 - night * (1 - data.rules.nightRestRecoveryFactor));
+  return { recovery, fatigue: Math.min(100, Math.max(0, state.fatigue - recovery) +
+    night * survival.rest_minutes / 60 * data.rules.outdoorFatiguePerNightHour) };
+}
+
+export function restEconomy(state, info, survival, data) {
+  const next = restSurvival(state, { ...survival,
+    rest_fatigue_recovery: restEffect(state, info, survival, data).recovery });
   return finishAction(state, next, info, data);
 }

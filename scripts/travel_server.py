@@ -21,7 +21,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from build_map import rasterize
-from fetch_osm import download_region
+from fetch_osm import download_region, incomplete_landcover
 from weather import fetch_climate
 from config import load_config
 from starting_places import PlaceLookup, coordinates
@@ -95,6 +95,7 @@ class ChunkStore:
         self.regions = json.loads((root / "data/regions.json").read_text())["regions"]
         self.pipeline = hashlib.sha256(
             Path(__file__).read_bytes() + (ROOT / "scripts/build_map.py").read_bytes() +
+            (ROOT / "scripts/fetch_osm.py").read_bytes() +
             json.dumps(load_config()["map"], sort_keys=True).encode()
         ).hexdigest()
         self.bases = {
@@ -189,9 +190,10 @@ class ChunkStore:
         source_base = self.source_path(region, x, y)
         source = source_base.with_suffix(".osm.gz")
         base = self.bases[region]["bounds"]
+        inside_base = (base["minLongitude"] <= bounds[0] and base["minLatitude"] <= bounds[1]
+                       and bounds[2] <= base["maxLongitude"] and bounds[3] <= base["maxLatitude"])
         if not source.exists():
-            if (base["minLongitude"] <= bounds[0] and base["minLatitude"] <= bounds[1]
-                    and bounds[2] <= base["maxLongitude"] and bounds[3] <= base["maxLatitude"]):
+            if inside_base:
                 with gzip.open(self.root / self.regions[region]["snapshot"], "rb") as stream:
                     root = ET.parse(stream).getroot()
                 b = root.find("bounds")
@@ -201,6 +203,12 @@ class ChunkStore:
                 download_region(bounds, self.regions[region]["name"], source)
         with gzip.open(source, "rb") as stream:
             root = ET.parse(stream).getroot()
+        # Prepared starting snapshots remain usable offline.
+        if not inside_base and incomplete_landcover(root):
+            logging.warning("Refreshing incomplete land-cover source for %s chunk %s,%s", region, x, y)
+            download_region(bounds, self.regions[region]["name"], source, refresh=True)
+            with gzip.open(source, "rb") as stream:
+                root = ET.parse(stream).getroot()
         if root.attrib.get("projection_latitude") != str(latitude) or "reference_bbox" in root.attrib:
             root.set("projection_latitude", str(latitude))
             root.attrib.pop("reference_bbox", None)

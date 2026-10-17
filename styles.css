@@ -650,7 +650,48 @@ dialog p { margin: 12px 0; }
 .travel-help summary { cursor: pointer; color: var(--accent); }
 .travel-panel h3 { margin: 0 0 10px; }
 .travel-panel a { color: var(--accent); }
-#travel-clock { display: block; color: var(--accent); font-size: 1rem; }
+#travel-clock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #66583d;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #2a3022, #121a14);
+}
+.agenda-page {
+  position: relative;
+  display: grid;
+  text-align: center;
+  padding: 0 0 10px;
+  border-radius: 3px;
+  background: linear-gradient(120deg, #f3e8ca, #ded0ac);
+  color: #303627;
+  box-shadow: 0 3px 0 #b0a181, 0 5px 0 #82775f;
+  overflow: hidden;
+}
+.agenda-weekday {
+  padding: 7px 2px;
+  border-bottom: 1px solid #bcb08c;
+  background: #344135;
+  color: #f3e8ca;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.agenda-day { font: 3.3rem/1.15 Georgia, "Times New Roman", serif; padding-top: 6px; }
+.agenda-month { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.agenda-year { font-size: 0.6rem; margin-top: 4px; color: #615c48; }
+.agenda-clock { display: grid; justify-items: center; gap: 4px; min-width: 0; }
+.clock-face { width: 80px; max-width: 100%; fill: #162018; stroke: #96805a; stroke-width: 1; }
+.clock-numerals { fill: #cbb78d; stroke: none; text-anchor: middle; font: 10px Georgia, serif; }
+.clock-hand { fill: none; stroke: #e6b767; stroke-width: 2; stroke-linecap: round; }
+.clock-hour { stroke-width: 3; }
+.clock-pin { fill: #e6b767; stroke: none; }
+#agenda-time { color: #f1d5a3; font-size: 1.2rem; font-variant-numeric: tabular-nums; letter-spacing: 0.08em; }
+.agenda-caption { color: var(--muted); font-size: 0.55rem; text-align: center; line-height: 1.5; }
+#rest-effect { margin: 0; color: var(--muted); font-size: 0.65rem; line-height: 1.6; }
 .travel-sky { margin: 8px 0; text-align: center; }
 .travel-sky svg { display: block; width: 120px; max-width: 100%; margin: auto; overflow: visible; }
 .sky-circle, .sky-arc, .sky-horizon { fill: none; stroke: var(--line); }

@@ -1,12 +1,12 @@
 import { chunkPosition, journeyDate } from "./travel.mjs";
-import { createChunkStream, neighborDownloads } from "./travel-stream.mjs";
+import { createChunkStream, createChunkPrefetcher, visibleDownloads } from "./travel-stream.mjs";
 import { cellInfo } from "./cell-info.mjs";
 import { skyState, estimatedTemperature, altitudeTemperatureOffset } from "./sky.mjs";
 import {
   walkSurvival, hungerPercent, canEat, normalizeCharacterName,
 } from "./survival.mjs";
 import { setupTowns } from "./towns-ui.mjs";
-import { refreshPricing, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, finishAction } from "./economy.mjs";
+import { refreshPricing, refreshNightRest, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, restEffect, finishAction } from "./economy.mjs";
 import { setupDailyTarot } from "./daily-tarot-ui.mjs";
 import { survivalChoice } from "./survival-choices.mjs";
 import { setupSurvivalChoices } from "./survival-choices-ui.mjs";
@@ -15,13 +15,15 @@ import { beginBusking, settleBusking } from "./music.mjs";
 import { setupMusic } from "./music-ui.mjs";
 import { interviewTrail } from "./trail.mjs";
 import { createServerJourney } from "./server-journey.mjs";
+import { askHospitality } from "./hospitality.mjs";
+import { agendaClock } from "./agenda-clock.mjs";
 import { setupTrail } from "./trail-ui.mjs";
 import { createJourneyStore, mapIdentity } from "./journey-save.mjs";
 import { tarotArt } from "./tarot-art.mjs";
 import { trailClue } from "./trail-actions.mjs";
 import { setupNeedsNotices } from "./needs-notices.mjs";
 
-export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onActiveChange }) {
+export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange }) {
   const start = document.querySelector("#start-travel");
   const resume = document.querySelector("#resume-travel");
   const saveStatus = document.querySelector("#journey-save-status");
@@ -45,6 +47,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   let preparingOrigin = false;
   let trailController;
   let pendingCreation;
+  let backgroundDownloads;
   const pricingCountries = new Map();
   let transient = "", missingHeightMoves = 0;
   let heading = [0, 0];
@@ -337,6 +340,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const chunk = position && stream?.get(position.x, position.y);
     const cell = chunk?.rows[position.row][position.col];
     const ended = Boolean(state?.ended);
+    if (ended) backgroundDownloads?.stop();
     document.querySelector("#journey-ended").hidden = !ended;
     if (state && survivalConfig) {
       document.querySelector("#player-wallet").textContent = t("wallet", {
@@ -375,6 +379,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       rest.textContent = t("needsRestAction", { minutes: survivalConfig.rest_minutes });
       sleep.textContent = t("sleepTitle");
       eat.textContent = t("mealTitle");
+      document.querySelector("#rest-effect").textContent = cell ? t("restEffect", {
+        minutes: survivalConfig.rest_minutes, before: state.fatigue.toFixed(1),
+        after: restEffect(state, cellInfo(chunk, position.row, position.col), survivalConfig, economyData).fatigue.toFixed(1),
+      }) : "";
       document.querySelector("#meal-location").textContent = canEat(cell)
         ? t("needsMealAvailable") : t("needsMealUnavailable");
     }
@@ -458,12 +466,17 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     }
     note.textContent = active ? t("travelModelNote") : "";
     const clock = document.querySelector("#travel-clock");
-    clock.textContent = state ? t("travelClock", {
-      date: new Intl.DateTimeFormat(document.documentElement.lang, {
-        dateStyle: "medium", timeStyle: "short", timeZone: "UTC",
-      }).format(journeyDate(state)),
-    }) : "";
-    clock.dateTime = state ? journeyDate(state).toISOString() : "";
+    clock.hidden = !state;
+    if (state) {
+      const parts = agendaClock(journeyDate(state), document.documentElement.lang);
+      clock.dateTime = parts.iso;
+      clock.setAttribute("aria-label", t("travelClock", { date: parts.full }));
+      for (const key of ["weekday", "day", "month", "year", "time"]) {
+        document.querySelector(`#agenda-${key}`).textContent = parts[key];
+      }
+      document.querySelector("#agenda-hour-hand").setAttribute("transform", `rotate(${parts.hourDegrees} 40 40)`);
+      document.querySelector("#agenda-minute-hand").setAttribute("transform", `rotate(${parts.minuteDegrees} 40 40)`);
+    }
     const sky = document.querySelector("#travel-sky");
     sky.hidden = !cell;
     if (cell) {
@@ -571,28 +584,13 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
 
   function prefetch() {
-    const neighbors = neighborDownloads(state.col, state.row, ...heading);
-    stream.prioritize(neighbors);
-    const currentToken = token;
-    for (const { x, y } of neighbors) {
-      const key = `${x},${y}`;
-      stream.load(x, y).then(chunk => {
-        if (token !== currentToken) return;
-        if (chunk.elevation.error && !reported.has(key)) {
-          reported.add(key);
-          report(new Error(chunk.elevation.error));
-        }
-      }).catch(reason => {
-        if (token !== currentToken) return;
-        report(reason);
-      });
-    }
+    backgroundDownloads.update(visibleDownloads(state.col, state.row, ...heading));
   }
 
   async function move(dc, dr) {
     if (!state || busy || !active || state.ended) return;
     heading = [dc, dr];
-    stream.prioritize(neighborDownloads(state.col, state.row, ...heading));
+    stream.prioritize(visibleDownloads(state.col, state.row, ...heading));
     busy = true;
     transient = "travelLoading";
     error = "";
@@ -608,6 +606,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       state = walkSurvival(state, dc, dr, fromCell, target.rows[to.row][to.col], survivalConfig);
       state = finishAction(previous, state, cellInfo(target, to.row, to.col), economyData);
       autosave();
+      onStep?.(target.rows[to.row][to.col].terrain);
       if (!state.lastMove.elevationKnown) missingHeightMoves++;
       if (target.elevation.error) error = target.elevation.error;
       resetContent();
@@ -667,7 +666,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
           cache: "no-cache", signal: AbortSignal.timeout(5000),
         });
         if (!response.ok) throw new Error(`Economy database: HTTP ${response.status}`);
-        economyData = refreshPricing(restored.economy, await response.json());
+        const currentEconomy = await response.json();
+        economyData = refreshNightRest(refreshPricing(restored.economy, currentEconomy), currentEconomy);
         if (currentToken !== token) return;
         profile.value = state.profileId;
       } else {
@@ -690,6 +690,15 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       const p = chunkPosition(state.col, state.row);
       stream = createChunkStream(region, { onUpdate: () => {
         if (currentToken === token) draw();
+      } });
+      backgroundDownloads = createChunkPrefetcher(stream, { onError(reason) {
+        if (currentToken === token) report(reason);
+      }, onLoad(chunk, x, y) {
+        const key = `${x},${y}`;
+        if (currentToken === token && chunk.elevation.error && !reported.has(key)) {
+          reported.add(key);
+          report(new Error(chunk.elevation.error));
+        }
       } });
       const first = await stream.load(p.x, p.y, true);
       if (currentToken !== token) return;
@@ -731,6 +740,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     economyUI.reset();
     choicesUI.reset();
     stream?.stop();
+    backgroundDownloads?.stop();
+    backgroundDownloads = undefined;
     stream = undefined;
     state = undefined;
     cursor = cameraData = undefined;
@@ -790,6 +801,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     try {
       state = action.kind === "meal"
         ? buyMeal(state, current.cell, current.info, action.id, survivalConfig, economyData)
+        : action.kind === "hospitality"
+        ? askHospitality(state, current.cell, current.info, survivalConfig, economyData)
         : sleepEconomy(state, current.cell, current.info, action.id, survivalConfig, economyData);
       autosave();
       error = "";
@@ -817,6 +830,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     localize();
     const currentToken = token, p = chunkPosition(state.col, state.row);
     try {
+      backgroundDownloads.retry();
       stream.drop(p.x, p.y);
       const chunk = await stream.load(p.x, p.y, true);
       if (currentToken !== token) return;

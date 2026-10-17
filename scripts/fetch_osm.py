@@ -16,7 +16,9 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
+from build_map import classify
 
+MAX_LANDCOVER_COMPLETIONS = 16
 OVERPASS_URLS = (
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
@@ -41,6 +43,60 @@ def _http_failure(error, reason):
 def _map_url(bounds):
     bbox = ",".join(format(value, ".12g") for value in bounds)
     return f"https://api.openstreetmap.org/api/0.6/map?bbox={bbox}"
+
+
+def incomplete_landcover(root):
+    nodes = {node.attrib["id"] for node in root.findall("node")}
+    ways = {way.attrib["id"]: way for way in root.findall("way")}
+    incomplete = []
+    for relation in root.findall("relation"):
+        tags = {tag.attrib["k"]: tag.attrib["v"] for tag in relation.findall("tag")}
+        if tags.get("type") != "multipolygon" or classify(tags) not in {
+            "forest", "grass", "field", "vineyard", "park", "water", "mountain",
+        }:
+            continue
+        for member in relation.findall("member"):
+            if member.attrib.get("type") != "way":
+                continue
+            way = ways.get(member.attrib["ref"])
+            if way is None or any(nd.attrib["ref"] not in nodes for nd in way.findall("nd")):
+                incomplete.append(relation.attrib["id"])
+                break
+    return incomplete
+
+
+def _complete_landcover(root, on_progress):
+    missing = incomplete_landcover(root)
+    if len(missing) > MAX_LANDCOVER_COMPLETIONS:
+        raise SourceUnavailable("Too many incomplete land-cover relations; use recursive source fallback.")
+    urls = []
+    elements = {(e.tag, e.attrib["id"]): e for e in root if e.tag in {"node", "way", "relation"}}
+    for relation_id in missing:
+        url = f"https://api.openstreetmap.org/api/0.6/relation/{relation_id}/full"
+        if on_progress:
+            on_progress({"phase": "download", "provider": "api.openstreetmap.org",
+                         "relation": relation_id})
+        request = urllib.request.Request(url, headers={"User-Agent": "ArcanePath/0.1 (OSM map prototype)"})
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                part = ET.fromstring(response.read())
+        except urllib.error.HTTPError as error:
+            raise _http_failure(error, error.read(4096).decode("utf-8", errors="replace")) from error
+        if part.tag != "osm" or not any(
+                r.attrib["id"] == relation_id for r in part.findall("relation")):
+            raise SourceUnavailable(f"Incomplete land-cover response for relation {relation_id}.")
+        for element in part:
+            if element.tag in {"node", "way", "relation"}:
+                elements[(element.tag, element.attrib["id"])] = element
+        urls.append(url)
+    if missing:
+        for element in list(root):
+            if element.tag in {"node", "way", "relation"}:
+                root.remove(element)
+        root.extend(elements.values())
+        if incomplete_landcover(root):
+            raise SourceUnavailable("OSM returned incomplete land-cover geometry after completion.")
+    return urls
 
 
 def _request_map(bounds, depth=0, on_progress=None):
@@ -83,10 +139,12 @@ def _request_map(bounds, depth=0, on_progress=None):
                     if previous is None or int(element.attrib.get("version", "0")) > int(previous.attrib.get("version", "0")):
                         elements[key] = element
         root.extend(elements.values())
+        if depth == 0:
+            first_urls += _complete_landcover(root, on_progress)
         return root, first_urls + second_urls
     if root.tag != "osm" or root.find("bounds") is None or root.find("node") is None:
         raise SourceUnavailable("The OSM API did not return a bounded map with nodes.")
-    return root, [url]
+    return root, [url, *(_complete_landcover(root, on_progress) if depth == 0 else [])]
 
 
 def _request_overpass(bounds, url, on_progress=None):
@@ -109,6 +167,8 @@ def _request_overpass(bounds, url, on_progress=None):
         raise _http_failure(error, reason) from error
     if root.tag != "osm" or root.find("remark") is not None or root.find("node") is None:
         raise SourceUnavailable("Overpass returned incomplete data or a runtime error.")
+    if incomplete_landcover(root):
+        raise SourceUnavailable("Overpass returned incomplete land-cover geometry.")
     for element in list(root.findall("bounds")):
         root.remove(element)
     ET.SubElement(root, "bounds", {

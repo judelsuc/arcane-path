@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "restRuleVersion": 1,
   "pricing": {
     "date": "2026-07-01",
     "source": "https://raw.githubusercontent.com/TheEconomist/big-mac-data/master/source-data/big-mac-source-data-v2.csv",
@@ -234,7 +235,7 @@
     "lodgingMealUnits": 4,
     "outdoorFatiguePerNightHour": 2,
     "outdoorSleepRecoveryFactor": 0.25,
-    "nightRestRecoveryFactor": 0,
+    "nightRestRecoveryFactor": 0.5,
     "performanceMinutes": 30,
     "performanceFatigue": 4
   },

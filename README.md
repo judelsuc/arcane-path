@@ -16,6 +16,10 @@ verifiee, pas seulement du code prepare. Voir le
 - [x] Prototype jouable des couches 1 a 8, sauvegarde locale et besoins.
 - [x] Tarifs nationaux europeens et estimation de secours stable par case.
 - [x] Details reels du chargement des cartes et compteurs de requetes.
+- [x] Hospitalite fictive chez les habitants : une demande par localite/jour, selon les tarots.
+- [x] Repos nocturne utile : 10 fatigue recuperee avant exposition (environ 9 nets).
+- [x] Pas sonores par terrain, agenda UTC et bouton Copier les coordonnees.
+- [x] Huit voisins visibles precharges meme a l'arret, reessais temporaires espaces.
 - [x] Acces OpenStack au bon projet et inventaire de Paris verifies.
 - [x] Tarif CPU verifie : 45,71 EUR TTC maximum pour 744 heures, hors extras.
 - [x] Terraform valide : une VM CPU, aucun GPU ni volume additionnel.
@@ -176,6 +180,11 @@ Pour preparer un transfert sans credentials ni fichiers non suivis :
 `python3 scripts/package_preview.py /chemin/prive/preview.tar.gz`.
 Le paquet normalise les permissions des fichiers a 0644 pour le service non
 privilegie. Ne pas inclure l'etat Terraform ou le cache local dans le transfert.
+Le runtime doit etre committe avant empaquetage. Chaque paquet contient
+`public/release.json` avec le commit exact et la date de preparation.
+Chaque deploiement doit avoir un checkpoint Git et un tag `deploy-*`, etre
+verifie sur le serveur puis annonce a l'utilisateur. Le manifeste reste protege
+par le mot de passe HTTPS ; il ne contient aucun credential.
 
 ## Lancer le prototype
 
@@ -520,14 +529,54 @@ repas de reference locale ; un abri n'est gratuit que si `fee=no` est
 explicitement cartographie. Acces prive/interdit et lieux desaffectes exclus.
 Un hotel dans le menu des environs n'est pas utilisable a distance.
 
+Sur une case de localite nommee, **Demander l'hospitalite et dormir si accepte**
+consomme 30 minutes, puis immediatement la nuit protegee normale si des habitants
+acceptent. C'est gratuit, sans repas. La probabilite depend des tarots de naissance
+et du jour ; tenue et reputation sont differees. Une demande par identifiant OSM
+de localite et jour UTC, resultat enregistre et tirage stable contre les rechargements.
+Une demande commencee avant minuit compte pour ce jour-la. Un accueil fictif
+n'invente pas un hebergement OSM ni une promesse reelle d'accueil.
+La demande reste exposee a la nuit ; le sommeil accepte est protege. Aucun besoin
+fatal n'est annule. Les anciennes sauvegardes sans historique restent compatibles.
+
 Dormir dehors reste possible, mais sans recuperation de fatigue d'effort,
 avec seulement 25 % de recuperation du besoin de sommeil. Toute action dehors
-accumule +2 fatigue par heure nocturne (marche, repos et sommeil) ; le repos
-nocturne ne recupere pas la fatigue. La nuit utilise le cycle solaire
+accumule +2 fatigue par heure nocturne (marche, repos et sommeil). Le repos
+nocturne recupere maintenant 50 % de la recuperation normale : 10 fatigue en
+30 minutes, moins l'exposition (generalement 9 nets). A 90, un repos nocturne
+de 30 minutes finit a 81, pas a 100. Il consomme toujours des reserves et
+augmente le manque de sommeil. Le resultat prevu est affiche avant l'action.
+Cette modification approuvee migre uniquement ce coefficient des anciennes
+sauvegardes a la reprise, sans modifier leur etat ni les autres regles.
+La nuit utilise le cycle solaire
 geographique, pas une heure fixe. Les repas et nuits payees sont proteges.
 Les futurs evenements nocturnes dangereux dependront du tarot du jour ;
 leurs mini-jeux ne sont pas encore actifs. Attendre reellement ou regarder
 la carte ne passe toujours pas de temps.
+
+L'agenda et le cadran affichent la date et l'heure simulees en UTC, avec
+libelles francais/anglais et texte accessible complet. Les aiguilles n'avancent
+pas en temps reel. **Copier les coordonnees** copie le centre de la case du joueur
+ou du curseur d'observation a six decimales ; les erreurs presse-papiers sont affichees.
+Les cinq sons de pas originaux suivent le terrain d'arrivee, uniquement apres un
+deplacement reussi. Ils partagent volume et coupure avec la musique. Les autres
+effets sonores restent a connecter ; les musiques telechargees hors Git ne sont
+pas automatiquement incluses dans le deploiement.
+
+La camera charge ses huit voisins, coins compris, meme sans marcher, avec au
+plus deux requetes actives. Les erreurs temporaires se reessaient apres 30 s,
+puis 60 s, 120 s, jusqu'a 5 min entre tentatives ; les erreurs de donnees restent
+explicites et attendent une relance manuelle. Ce n'est pas un telechargement
+illimite du trajet futur. `?` signifie morceau non disponible ; les petits
+points sont un terrain sans couverture specifique dans la source OSM chargee,
+pas un telechargement en attente. Diagnostic d'Engins : sept multipolygones
+OSM incomplets dans le cache. Avec leurs membres complets, les cinq cases
+non classees du morceau contenant Engins deviennent de la foret, pas de l'herbe.
+Les nouveaux telechargements completent les relations de couverture manquantes
+(au plus 16 par requete, sinon fournisseur recursif de secours). Les anciens
+morceaux externes incomplets sont retelecharges avant reconstruction. Les
+cartes de depart preparees restent utilisables hors ligne sans retelechargement
+force ; cette correction ne garantit pas une couverture OSM sans lacune partout.
 
 La base culinaire est remplie manuellement pour cette version. Un futur LLM
 pourra proposer des entrees a partir de sources web, mais ne devra pas

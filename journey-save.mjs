@@ -3,6 +3,7 @@ import { validateEconomy } from "./economy.mjs";
 import { chunkPosition } from "./travel.mjs";
 import { validateTownTrail } from "./trail.mjs";
 import { CLUE_ACTIONS } from "./trail-actions.mjs";
+import { validateHospitality } from "./hospitality.mjs";
 
 export const SAVE_VERSION = 1;
 const PREFIX = "arcane-journey-v1:";
@@ -108,6 +109,7 @@ export function validateSave(save) {
   }
   if (s.ended === null && (s.reserveKcal <= 0 || s.fatigue >= 100 ||
       s.awakeHours >= save.survival.sleep_limit_hours)) fail();
+  validateHospitality(s, save.survival);
   return save;
 }
 

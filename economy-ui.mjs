@@ -1,4 +1,5 @@
-import { localMeals, marketPrice, shelters } from "./economy.mjs";
+import { localMeals, marketPrice, shelters, tarotEventChance } from "./economy.mjs";
+import { HOSPITALITY_RULES, hospitalityStatus } from "./hospitality.mjs";
 
 export function setupEconomyUI(t, { context, act, resolveCountry }) {
   const dialog = document.querySelector("#economy-dialog");
@@ -33,16 +34,21 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
     document.querySelector("#economy-title").textContent = t(mode === "eat" ? "mealTitle" : "sleepTitle");
     const list = document.querySelector("#economy-options");
     list.replaceChildren();
-    const add = (title, cents, run, note, url, sourceName) => {
+    document.querySelector("#economy-shelter-context").textContent = "";
+    document.querySelector("#economy-hospitality-result").textContent = "";
+    const add = (title, cents, run, note, url, sourceName, unavailable = false) => {
       const item = document.createElement("li");
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = `${title} — ${money(cents)}`;
-      button.disabled = resolving || state.ended !== null || state.walletCents < cents || current.blocked;
+      button.disabled = unavailable || resolving || state.ended !== null || state.walletCents < cents || current.blocked;
       button.addEventListener("click", () => {
         if (act(run)) {
-          dialog.close();
-          document.querySelector("#ascii-map").focus({ preventScroll: true });
+          if (run.kind === "hospitality") localize();
+          else {
+            dialog.close();
+            document.querySelector("#ascii-map").focus({ preventScroll: true });
+          }
         }
       });
       const p = document.createElement("p");
@@ -67,8 +73,25 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
         meal.source, meal.publisher);
     } else {
       document.querySelector("#economy-empty").hidden = true;
+      const mapped = shelters(cell);
+      document.querySelector("#economy-shelter-context").textContent =
+        t(mapped.length ? "shelterCellOnly" : "shelterNoneInCell");
+      const hospitality = hospitalityStatus(state, cell);
+      if (hospitality.town) {
+        add(t("hospitalityAsk"), 0, { kind: "hospitality" },
+          t(hospitality.attempt ? "hospitalityAlreadyAsked" : "hospitalityNote", {
+            town: hospitality.town.name, minutes: HOSPITALITY_RULES.minutes, hours: survival.sleep_hours,
+            chance: Math.round((1 - tarotEventChance(HOSPITALITY_RULES.failureChance, state, data)) * 100),
+          }), undefined, undefined, !hospitality.available);
+      } else {
+        document.querySelector("#economy-shelter-context").textContent += ` ${t("hospitalityTownRequired")}`;
+      }
+      const result = state.hospitalityAttempts?.at(-1);
+      if (result) document.querySelector("#economy-hospitality-result").textContent =
+        t(`hospitalityResult.${result.outcome}`, { town: result.townName, day: result.day,
+          minutes: Math.round(result.finishedMinutes - result.startedMinutes) });
       add(t("outdoorSleep"), 0, { kind: "sleep", id: null }, t("outdoorSleepNote"));
-      for (const shelter of shelters(cell)) {
+      for (const shelter of mapped) {
         const cents = shelter.free ? 0 : marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents;
         add(shelter.name ?? t("mappedShelter"), cents, { kind: "sleep", id: shelter.osmId },
           t("shelterNote", { hours: survival.sleep_hours }),

@@ -6,6 +6,7 @@ import threading
 import unittest
 import urllib.error
 import urllib.request
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from unittest.mock import patch
 
@@ -17,6 +18,35 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class TravelServerTests(unittest.TestCase):
+    def test_existing_partial_chunk_source_is_repaired_before_rasterizing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ChunkStore(cache=Path(directory))
+            source = store.source_path("firmi", -1, 0).with_suffix(".osm.gz")
+            source.parent.mkdir(parents=True)
+            snapshot = ROOT / store.regions["firmi"]["snapshot"]
+            with gzip.open(snapshot, "rb") as stream:
+                root = ET.parse(stream).getroot()
+            partial = ET.fromstring(ET.tostring(root))
+            relation = ET.SubElement(partial, "relation", {"id": "987654321"})
+            ET.SubElement(relation, "member", {"type": "way", "ref": "missing", "role": "outer"})
+            ET.SubElement(relation, "tag", {"k": "type", "v": "multipolygon"})
+            ET.SubElement(relation, "tag", {"k": "landuse", "v": "meadow"})
+            source.write_bytes(gzip.compress(ET.tostring(partial)))
+
+            def repair(bounds, name, output, refresh):
+                self.assertTrue(refresh)
+                self.assertEqual(output, source)
+                b = root.find("bounds")
+                b.attrib.update(dict(zip(("minlon", "minlat", "maxlon", "maxlat"), map(str, bounds))))
+                output.write_bytes(gzip.compress(ET.tostring(root)))
+
+            with patch("travel_server.download_region", side_effect=repair) as fetch, \
+                    patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}):
+                data = store.build("firmi", -1, 0)
+            fetch.assert_called_once()
+            self.assertEqual(data["width"], 8)
+            self.assertEqual(store.read("firmi", -1, 0), data)
+
     def test_origin_progress_is_polled_without_blocking_and_counts_only_requests(self):
         store = ChunkStore()
         origins = OriginStore(store)

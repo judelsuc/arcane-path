@@ -1039,3 +1039,68 @@ This file records additions to the design without modifying the source PDF,
 - **Independent of the LLM:** Structured factual hints and deterministic
   templates must make discovery playable before generated prose is available.
   This does not turn LLM text into a required dependency for finding an item.
+
+## R-064 — Ask locals for hospitality
+
+- **User decision:** Implement a first playable version now: a free sheltered
+  night on success, one request per town per game day.
+- **Implemented:** Sleep menu on a mapped named settlement cell, 30-minute
+  exposed request, chance influenced by birth/daily tarot via the existing
+  risk helper (base failure 50%). Success immediately gives normal protected
+  sleep without food or charge; refusal costs the request time. Costs and
+  fatal needs apply before rewards. Outfit and reputation are deferred.
+- **Persistence:** Attempts keyed by stable OSM settlement ID and starting UTC
+  day, validated in local saves. Deterministic seed/town/day draws avoid
+  reload rerolls; this is not server anti-cheat. Legacy saves remain readable.
+- **Clarity:** Disclose immediate sleep, chance and time before acting; show
+  the result. Explain that missing current-cell mapped lodging does not prove
+  a town has no accommodation. Hospitality is explicitly fictional.
+
+## R-065 — Useful outdoor nighttime rest
+
+- **Approved balance change:** Thirty-minute nighttime rest recovers 10 fatigue
+  before normal exposure, generally 9 net. Daytime remains 20. Rest still
+  consumes food reserves, increases awake time and cannot revive an ended run.
+- **Implemented:** Set nightRestRecoveryFactor to 0.5; one-time restRuleVersion
+  migration on resume changes only that coefficient, preserving state and all
+  other pinned rules. Show before/after fatigue, using the action's calculation.
+
+## R-066 — Play footsteps on movement
+
+- **Implemented:** Destination terrain chooses an existing original road,
+  grass, forest, water or stone WAV. Play once after a successful move, never
+  in Look mode or during failed/loading moves. Use existing music mute/volume,
+  stop on hidden tab; surface playback failures in Options and console.
+- Other sound cues and untracked downloaded music are not implied implemented.
+
+## R-067 — Stationary map preparation
+
+- **Implemented:** Download all eight visible neighbors, including corners,
+  without advancing game time. Reuse existing bounded two-request stream.
+  Temporary server/network failures retry with 30-second exponential cooldown
+  capped at five minutes. Permanent data errors wait for manual retry.
+- **Clarification:** User's dotted-cell screenshot refers to unclassified
+  loaded land, not missing chunks. Do not impose a full-camera blocking gate
+  or fabricate grass/fields. Actual cached Engins geometry has seven incomplete
+  land-cover multipolygons; completing them changes all five plain cells in
+  its chunk to forest. Complete missing primary-source relation members before
+  rasterization, bounded at 16 relations; otherwise use recursive fallback.
+  Repair old external streamed sources before rebuilding their grids, without
+  discarding unrelated caches. Preserve offline prepared starting snapshots.
+  No guarantee that every OSM coverage gap is now filled.
+
+## R-068 — Agenda, clock and copyable coordinates
+
+- **Implemented:** Localized agenda page plus analog/digital 24-hour UTC
+  game clock, accessible full timestamp, no real-time advancement.
+  Copy selected cell center at six decimals (player or Look cursor), with
+  explicit clipboard failures and success confirmation.
+
+## R-069 — Checkpoint every deployment
+
+- **User decision:** Announce when a release is actually deployed, and checkpoint
+  every server deployment.
+- **Implementation:** Commit runtime before packaging; embed exact commit and
+  preparation time in public/release.json, protected by preview authentication.
+  Use a deploy-* Git tag, push checkpoint, verify live manifest and service
+  before reporting success. Never include credentials in release metadata.

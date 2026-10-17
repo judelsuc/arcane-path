@@ -125,7 +125,30 @@
           <h3 id="travel-title" data-i18n="travelTitle"></h3>
           <p id="journey-play-save" role="status"></p>
           <div id="travel-controls" hidden>
-            <time id="travel-clock"></time>
+            <time id="travel-clock" class="journey-time">
+              <span class="agenda-page" aria-hidden="true">
+                <span id="agenda-weekday" class="agenda-weekday"></span>
+                <span id="agenda-day" class="agenda-day"></span>
+                <span id="agenda-month" class="agenda-month"></span>
+                <span id="agenda-year" class="agenda-year"></span>
+              </span>
+              <span class="agenda-clock" aria-hidden="true">
+                <svg viewBox="0 0 80 80" class="clock-face">
+                  <circle cx="40" cy="40" r="36"/>
+                  <path d="M40 7V11 M73 40H69 M40 73V69 M7 40H11"/>
+                  <g class="clock-numerals">
+                    <text x="40" y="21">12</text><text x="61" y="44">3</text>
+                    <text x="40" y="66">6</text><text x="19" y="44">9</text>
+                  </g>
+                  <path id="agenda-hour-hand" class="clock-hand clock-hour" d="M40 40V23"/>
+                  <path id="agenda-minute-hand" class="clock-hand" d="M40 40V15"/>
+                  <circle class="clock-pin" cx="40" cy="40" r="2"/>
+                </svg>
+                <strong id="agenda-time"></strong>
+                <span class="agenda-caption" data-i18n="gameTimeUtc"></span>
+                <span class="agenda-caption" data-i18n="travelWalking"></span>
+              </span>
+            </time>
             <section class="player-needs" aria-labelledby="needs-title">
               <h4 id="needs-title" data-i18n="needsTitle"></h4>
               <p id="player-name"></p>
@@ -201,6 +224,7 @@
               <button data-move="1,0" type="button" data-i18n="travelEast"></button>
               </div>
               <button id="rest-travel" type="button" data-i18n="travelRest"></button>
+              <p id="rest-effect"></p>
               <button id="sleep-travel" type="button" data-i18n="needsSleepAction"></button>
               <button id="eat-travel" type="button" data-i18n="needsEatAction"></button>
               <button id="open-town" type="button" disabled data-i18n="townOpen"></button>
@@ -231,6 +255,8 @@
               <pre class="ascii-map" id="ascii-map" aria-label="Carte fixe de la région"></pre>
             </div>
             <p class="cell-info" id="cell-info" role="status"></p>
+            <button id="copy-coordinates" type="button" disabled data-i18n="copyCoordinates"></button>
+            <p id="copy-coordinates-status" role="status"></p>
             <section class="cell-content" aria-labelledby="ascii-title">
               <p id="content-hint" data-i18n="contentHint"></p>
               <p id="content-position"></p>
@@ -285,6 +311,8 @@
           <label for="audio-volume" data-i18n="audioVolume"></label>
           <input id="audio-volume" type="range" min="0" max="100" value="25">
           <span id="audio-status" role="status"></span>
+          <p data-i18n="footstepNote"></p>
+          <p id="footstep-status" role="status"></p>
         </div>
       </section>
       <form method="dialog"><button id="close-options" data-i18n="optionsClose"></button></form>
@@ -393,6 +421,8 @@
       <a id="economy-price-source" target="_blank" rel="noopener noreferrer" data-i18n="priceSource"></a>
       <p data-i18n="economyFiction"></p>
       <p id="economy-empty" data-i18n="noLocalMeal"></p>
+      <p id="economy-shelter-context"></p>
+      <p id="economy-hospitality-result" role="status"></p>
       <ul id="economy-options"></ul>
       <p id="economy-action-error" role="alert"></p>
     </dialog>

@@ -6,6 +6,7 @@ import { setupTravel } from "./travel-ui.mjs";
 import { setupAudio } from "./audio-ui.mjs";
 import { setupButtonShortcuts } from "./button-shortcuts.mjs";
 import { setupStartingPoint, validateStartingMap } from "./starting-point-ui.mjs";
+import { setupCopyCoordinates } from "./copy-coordinates.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
 const viewport = document.querySelector("#map-viewport");
@@ -27,9 +28,12 @@ let inspectedTile;
 let entered = false;
 const cellContent = setupCellContent(t);
 const audio = setupAudio(t);
+const coordinates = setupCopyCoordinates(t, () => mapData && inspectedTile
+  ? cellInfo(mapData, Number(inspectedTile.dataset.row), Number(inspectedTile.dataset.col)) : null);
 const travel = setupTravel({
   t, renderMap,
   onAudioContext: context => audio.update(context),
+  onStep: terrain => audio.step(terrain),
   onActiveChange(active) {
     document.querySelector("#journey-setup").hidden = !entered || active;
     document.querySelector("#game-content").hidden = !entered || !active;
@@ -136,6 +140,7 @@ function inspectTile(tile) {
   tile.classList.add("tile--inspected");
   document.querySelector("#cell-info").textContent = tileDetails(tile, false);
   updateCellHeading(tile);
+  coordinates.update();
 }
 
 function updateCellHeading(tile) {
@@ -181,6 +186,7 @@ function localize() {
   audio.localize();
   travel.localize();
   startingPoint.localize();
+  coordinates.update();
   document.querySelector("#starting-map-status").textContent = mapData
     ? t("setupSelected", { name: mapData.origin ? mapData.name.split(",")[0] : mapData.name })
     : t(loadFailed ? "loadError" : "loading");
@@ -281,6 +287,7 @@ function renderMap(data) {
   mapElement.replaceChildren(map);
   mapElement.style.setProperty("--map-columns", data.width);
   inspectedTile = undefined;
+  coordinates.update();
   viewport.replaceChildren(mapElement);
   mapData = data;
   const referenceFrame = document.querySelector("#osm-frame");
