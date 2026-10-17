@@ -401,7 +401,9 @@ Python pipeline logic.
 
 - **Layer 9:** The loopback map server is not the full game server. Server-side
   game creation, route generation/validation, OSRM integration and versioned
-  content/persistence need a separate design and playable checkpoint.
+  content/persistence need a separate design and playable checkpoint. The
+  immutable server-created genesis milestone below supersedes the creation
+  and initial-content persistence part only.
 - Confirm whether the parent should already move, which profile/biography
   choices belong to character creation, and whether local starts should remain
   a short tutorial before a larger trip.
@@ -1002,3 +1004,46 @@ GeoNames stages must cite GeoNames and cannot also claim an OSM ID. Map links
 use coordinates for GeoNames, original OSM object URLs for existing saves.
 Saved OSM/v1 routes are never regenerated. New Tahiti routes fail explicitly
 outside Europe; existing Tahiti saves still bypass generation and resume.
+
+## Layer 9 - immutable server-created journey beginnings
+
+First milestone only: POST /api/journeys takes region, normalized name and a
+client UUID used solely for idempotency. The server chooses the random seed,
+starting tarot and timestamp, generates the existing offline ten-town trail,
+and atomically saves the complete initial state and pinned survival/economy.
+The versioned SQLite store is in .cache/travel/journeys.sqlite3. The same
+request returns the same record across retries and process restarts; changing
+its name or region returns 409. Failed generation rolls back and reports the
+cause, without creating a substitute trail. No ongoing gameplay is uploaded.
+
+An opaque server UUID identifies the immutable beginning. GET by UUID returns
+it; no listing endpoint is provided. Keep UUIDs private: the private-preview
+API has no user accounts, and possession allows reading the name and route.
+Both ID and server-owned seed/content digest are carried in local saves.
+Legacy states without that metadata remain valid and never call creation on
+resume. The deliberate pricing-only refresh on resume is unchanged.
+
+Each record pins a SHA256 content version over rules, map identity/source,
+generator sources and bundled town catalogue. SQLite schema and record
+versions are checked; checksums detect payload corruption. This is detection,
+not authentication or a backup. The database survives service restarts on the
+VM's persistent writable directory, but is not protected from disk/VM loss.
+Capacity is bounded to 1,000 beginnings, including cancelled creations, and
+exhaustion is reported rather than deleting player records. Request bodies
+are bounded, JSON-only, and cross-origin browser creation is rejected.
+These safeguards do not replace authentication/rate limiting before public use.
+
+Python owns initial-state creation because the game server runs Python; the
+browser independently verifies it with the existing JavaScript constructors.
+A cross-language test covers every one of the 22 starting tarot cards, so
+character formulas, wallet, UTC day and initial resources cannot silently
+drift. Browser validation also checks the full local-save schema and the
+selected map/name before activation.
+
+The browser reuses its request UUID after transient failure or cancellation
+within the same page, and ignores late/cancelled responses. A page reload
+before local autosave loses that pending request; abandoned beginnings remain
+on the server. The first chunk must still load before replacing a local save.
+Full cloud resume, user accounts, parent motives/timetable/mobility, actual
+walking routes, three accessible clues per leg and the solvability simulator
+remain pending. Existing 30-60 km legs are straight-line distances only.

@@ -12,7 +12,7 @@ ete etabli avec ce jeton.
 | Instance CPU b3-8 | Creee a Paris, cloud-init termine | 0,06144 EUR TTC/heure estime |
 | Groupe et regle de securite dedies | Non crees ; groupe default inchange | 0 EUR |
 | GPU, volumes additionnels, IP flottante | Non crees | 0 EUR |
-| Domaine arcane-path.eu | Non reserve ; disponibilite non verifiee | Tarif non confirme |
+| Domaine arcane-path.eu | DNS A 57.130.85.251 verifie localement et sur Cloudflare ; service encore prive | Tarif non confirme |
 | Deploiement du jeu sur OVH | Service actif, HTTP et generation de parcours verifies par tunnel | Inclus dans la VM |
 | Sauvegarde distante | Non configuree | Tarif non confirme |
 
@@ -92,18 +92,46 @@ limitation des requetes et verification des fichiers exposes.
 - Chemins caches, Git et tentative de traversee rejetes.
 - Cache accessible en ecriture au compte de service, code non modifiable
   par ce compte. Permissions de lecture corrigees apres le premier transfert.
-- Aucune verification visuelle complete du gameplay distant n'est revendiquee.
-- Le transfert contient les fichiers runtime suivis du checkpoint `d4405db` ;
-  l'infrastructure est ajoutee au checkpoint suivant. Aucun secret transfere.
+- Aucun parcours pieton complet de dix etapes n'a ete valide a distance.
+- Le transfert initial contenait les fichiers runtime du checkpoint `d4405db`.
+  Le jalon couche 9 ci-dessous les met a jour. Aucun secret transfere.
 
 La premiere connexion SSH utilise l'acceptation de la nouvelle cle d'hote
 (TOFU), puis les connexions suivantes exigent la cle locale connue.
 Le tunnel de test a ete ferme ; la VM et le service restent actifs.
 
-Validation locale du checkpoint : 162 tests JavaScript, 92 tests Python et
+Validation locale du checkpoint initial : 162 tests JavaScript, 92 tests Python et
 5 plans Terraform simules passes. L'ajout d'un workflow GitHub Actions a ete
 refuse par GitHub (scope OAuth `workflow` absent) ; il a ete retire de la
 publication. Aucune CI distante n'est donc revendiquee.
+
+### Jalon couche 9 : depart persistant
+
+- Creation distante par POST : HTTP 201, dix villes et zero requete externe
+  pour la generation de la piste ; un reessai renvoie HTTP 200 et le meme etat.
+- Redemarrage reel du service : le meme identifiant de requete retrouve le
+  meme depart, et la lecture par identifiant renvoie exactement cet enregistrement.
+- Base `/var/lib/arcane-path/cache/travel/journeys.sqlite3` : proprietaire
+  `arcane`, permissions 0600 ; elle n'est pas lisible par l'utilisateur ubuntu
+  sans privilege. Le premier controle depuis ubuntu a donc ete refuse ; la
+  verification privilegiee confirme les permissions attendues.
+- Test navigateur par tunnel : nouveau personnage, affichage du tarot initial,
+  sauvegarde locale egale au depart conserve sur le serveur. Apres rechargement,
+  Reprendre conserve exactement l'etat et ne fait aucun POST de creation.
+- La musique telechargee hors Git n'est pas incluse dans le paquet : fichiers
+  audio absents signales. Un chargement de carte voisine a retourne une erreur
+  fournisseur 503, explicitement affichee ; la disponibilite des fournisseurs
+  externes n'est pas garantie par ce jalon.
+- Validation locale : **167 tests JavaScript et 101 tests Python passes**,
+  dont la parite des etats initiaux pour les 22 tarots. Terraform n'a pas
+  change et aucune ressource supplementaire n'a ete commandee.
+
+Seul le depart est conserve cote serveur, pas la progression. Les sauvegardes
+en cours restent locales ; routage pieton et validation complete de la couche
+9 restent a faire. La base limitee a 1 000 departs doit etre incluse dans une
+future sauvegarde restauree et testee. Une copie du runtime precedent est
+conservee dans `/home/ubuntu/arcane-path-before-layer9.tar.gz`, mode 0600 :
+elle permet un retour du code, mais ne sauvegarde pas cette base.
 
 ## Reprise
 
@@ -127,6 +155,5 @@ avec permissions privees. Aucun backend distant partage n'est configure :
 conserver une copie chiffree de l'etat avant de changer de poste.
 Ne jamais publier les plans ou les etats ; ils peuvent contenir des secrets.
 
-Les couches de jeu suivantes ne sont pas declarees deployees ou terminees.
-Leur implementation doit reprendre a partir du document de conception apres
-verification de ce premier serveur, avec checkpoints frequents.
+Le premier jalon de creation de la couche 9 est deploye en prive, pas la couche
+complete. La suite reprend le document de conception avec checkpoints frequents.

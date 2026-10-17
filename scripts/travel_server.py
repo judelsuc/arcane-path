@@ -7,6 +7,7 @@ import hashlib
 import json
 import logging
 import math
+import sqlite3
 import tempfile
 import threading
 import time
@@ -25,6 +26,7 @@ from weather import fetch_climate
 from config import load_config
 from starting_places import PlaceLookup, coordinates
 from town_trail import TownTrailStore
+from journeys import JourneyStore, JourneyRequest, JourneyConflict, JourneyCapacity, JourneyGeneration
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_SIZE = 8
@@ -340,6 +342,7 @@ def make_handler(store, jobs):
     weather = WeatherStore(store.cache / "weather")
     origins = ChunkJobs(OriginStore(store), capacity=2, pool=jobs.pool)
     trails = ChunkJobs(TownTrailStore(store, atomic_write), capacity=2, pool=jobs.pool)
+    journeys = JourneyStore(store, atomic_write)
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, directory=str(store.root), **kwargs)
@@ -358,6 +361,55 @@ def make_handler(store, jobs):
                 self.send_header("Cache-Control", "no-cache")
             super().end_headers()
 
+        def do_POST(self):
+            if urllib.parse.urlsplit(self.path).path != "/api/journeys":
+                return self.send_json(404, {"error": "Unknown API endpoint."})
+            origin = self.headers.get("Origin")
+            try:
+                source = urllib.parse.urlsplit(origin or "")
+            except ValueError:
+                return self.send_json(403, {"error": "Invalid journey request origin."})
+            if (self.headers.get("Sec-Fetch-Site") == "cross-site"
+                    or origin is not None and (
+                        source.scheme not in {"http", "https"}
+                        or source.netloc != self.headers.get("Host"))):
+                return self.send_json(403, {"error": "Cross-origin journey creation is not allowed."})
+            if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json":
+                return self.send_json(415, {"error": "Journey creation requires application/json."})
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+            except ValueError:
+                return self.send_json(400, {"error": "Invalid request body length."})
+            if length < 1 or length > 4096 or self.headers.get("Transfer-Encoding"):
+                return self.send_json(413, {"error": "Journey request must contain 1 to 4096 bytes."})
+            previous_timeout = self.connection.gettimeout()
+            try:
+                self.connection.settimeout(10)
+                body = self.rfile.read(length)
+                if len(body) != length:
+                    raise JourneyRequest("Incomplete journey request.")
+                try:
+                    request = json.loads(body)
+                except (ValueError, UnicodeError) as error:
+                    raise JourneyRequest("Invalid journey JSON.") from error
+                record, created = journeys.create(request)
+                return self.send_json(201 if created else 200, record)
+            except JourneyRequest as error:
+                logging.warning("Journey request rejected: %s", error)
+                return self.send_json(400, {"error": str(error)})
+            except JourneyConflict as error:
+                return self.send_json(409, {"error": str(error)})
+            except JourneyCapacity as error:
+                return self.send_json(503, {"error": str(error)})
+            except JourneyGeneration as error:
+                logging.warning("Journey route generation failed: %s", error)
+                return self.send_json(422, {"error": str(error)})
+            except (OSError, ValueError, KeyError, sqlite3.Error):
+                logging.exception("Server journey creation failed")
+                return self.send_json(500, {"error": "Server journey creation failed; check the server logs."})
+            finally:
+                self.connection.settimeout(previous_timeout)
+
         def do_GET(self):
             url = urllib.parse.urlsplit(self.path)
             if url.path == "/public/config.json":
@@ -375,6 +427,17 @@ def make_handler(store, jobs):
                         return self.send_json(200, [
                             {"region": key, "name": data["name"]}
                             for key, data in list(store.bases.items()) if key.startswith("origin-")])
+                    if url.path.startswith("/api/journeys/"):
+                        try:
+                            record = journeys.read(url.path.removeprefix("/api/journeys/"))
+                        except JourneyRequest as error:
+                            return self.send_json(400, {"error": str(error)})
+                        except (OSError, ValueError, sqlite3.Error):
+                            logging.exception("Server journey lookup failed")
+                            return self.send_json(500, {"error": "Server journey lookup failed; check the server logs."})
+                        if record is None:
+                            return self.send_json(404, {"error": "Server journey not found."})
+                        return self.send_json(200, record)
                     if url.path not in {"/api/chunk", "/api/weather", "/api/places",
                                         "/api/location", "/api/origin", "/api/origin-map", "/api/trail", "/api/pricing-country"}:
                         return self.send_json(404, {"error": "Unknown API endpoint."})
@@ -422,7 +485,7 @@ def make_handler(store, jobs):
                 except (ValueError, KeyError) as error:
                     logging.warning("Travel request rejected: %s", error)
                     return self.send_json(400, {"error": str(error)})
-                except (OSError, ET.ParseError) as error:
+                except (OSError, ET.ParseError, sqlite3.Error) as error:
                     logging.exception("Travel cache request failed")
                     return self.send_json(500, {"error": str(error)})
             path = Path(urllib.parse.unquote(url.path))

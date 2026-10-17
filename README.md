@@ -26,13 +26,19 @@ verifiee, pas seulement du code prepare. Voir le
 - [x] Acces prive par tunnel SSH verifie ; parcours distant de dix etapes genere.
 - [ ] CI GitHub Actions : publication du workflow bloquee par les droits OAuth actuels.
 - [ ] Sauvegarde distante et restauration testee.
-- [ ] Domaine arcane-path.eu reserve et DNS configure.
+- [x] DNS arcane-path.eu : adresse A 57.130.85.251 verifiee localement et sur Cloudflare.
 - [ ] HTTPS et protections necessaires avant publication publique.
 - [ ] Couche 9 : creation de partie serveur, parcours routables et validation.
+  - [x] Depart cree et conserve cote serveur : identifiant, graine, tarot, etat initial, contenu versionne.
+  - [x] Reessais idempotents, reprise locale et anciennes sauvegardes preserves.
+  - [ ] Itineraires pietons reels, algorithme complet du parent et validation de resolubilite.
 - [ ] Couches suivantes du document de conception, avec checkpoints testes.
+- [ ] R-062 : caches d'objets persistantes, pour les autres joueurs et ses prochaines parties.
+- [ ] R-063 : indices d'arcanes plus precis avec la proximite ; habillage narratif LLM ulterieur.
 - [ ] Notifications par mail : aucun service d'envoi configure.
 
-Le domaine et les couches suivantes ne sont pas declares implementes.
+Le DNS resout maintenant l'IP de la VM ; le site reste prive. La couche 9
+est en cours, pas terminee.
 Les couts sont des estimations, pas un plafond de facturation automatise.
 
 ## Infrastructure OVHcloud (preparation uniquement)
@@ -46,7 +52,7 @@ detaille les ressources reelles, les couts et la reprise.
 **Etat :** VM CPU et cle SSH creees ; cloud-init, pare-feu Ubuntu, service du
 jeu et acces par tunnel verifies. Le service ecoute seulement sur 127.0.0.1.
 Le groupe reseau OVH `default` est utilise sans modification, selon le choix
-de simplification approuve. Le domaine n'est pas reserve.
+de simplification approuve. Le DNS du domaine resout l'IP de la VM.
 
 Les credentials restent hors Git : `~/Downloads/openrc.sh` et
 `~/.config/arcane-path/openstack-token`, permissions 600. Le wrapper lit
@@ -91,6 +97,37 @@ depuis une session ouverte ou la console OVH ; changer cloud-init apres
 creation pourrait remplacer la VM et est bloque par `prevent_destroy`.
 Les sauvegardes navigateur du port 8766 ne sont pas automatiquement presentes
 sur le port 18766 : chaque origine navigateur garde ses propres voyages.
+
+### Couche 9 : creation de partie (premier jalon)
+
+Une nouvelle partie passe par `POST /api/journeys`. Le serveur choisit une
+graine et un tarot, genere dix villes du catalogue europeen local et conserve
+le depart complet dans `.cache/travel/journeys.sqlite3`. Le meme identifiant
+de requete renvoie exactement le meme depart, meme apres redemarrage ou mise
+a jour des regles. Un changement de nom ou region avec cet identifiant est
+refuse, sans remplacer la partie. Le navigateur conserve cet identifiant pour
+reessayer apres une erreur ou annulation, tant que la page n'est pas rechargee.
+Un echec du chargement initial ne remplace pas une sauvegarde locale existante.
+
+Le contenu epingle comprend les regles de survie et d'economie ; son empreinte
+integre aussi le generateur, la carte/source et le catalogue. Le navigateur
+valide le depart contre ses regles existantes avant de jouer. Les anciennes
+parties restent lisibles sans identifiant serveur et ne sont pas regenerees.
+La mise a jour des seuls tarifs a la reprise reste volontairement conservee.
+
+**Limites :** seul le depart est conserve sur le serveur. La progression reste
+dans le navigateur ; ce n'est ni une synchronisation ni une reprise cloud.
+`GET /api/journeys/IDENTIFIANT` retrouve le depart, pas la progression ; aucun
+annuaire de parties n'est expose. L'identifiant aleatoire doit rester prive :
+il permet de lire le nom et la piste. Cette API est reservee au tunnel prive,
+sans comptes utilisateurs ; HTTPS, controle d'acces et limitation des requetes
+restent obligatoires avant ouverture publique. La base est limitee a 1 000
+departs (y compris les creations abandonnees), puis refuse explicitement de
+nouvelles creations sans effacer les anciennes. Ce fichier doit etre inclus
+dans une future sauvegarde ; le cache persistant seul n'est pas une sauvegarde.
+
+Les etapes restent a **30–60 km a vol d'oiseau**. Aucun itineraire pieton OSRM
+ou GraphHopper ni validateur de resolubilite n'est encore revendique.
 
 Pour preparer un transfert sans credentials ni fichiers non suivis :
 `python3 scripts/package_preview.py /chemin/prive/preview.tar.gz`.
