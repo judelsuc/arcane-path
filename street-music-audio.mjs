@@ -1,12 +1,11 @@
-import { MUSIC, rhythm, beatTime, rhythmEnd } from "./music.mjs";
+import { MUSIC, beatTime, rhythmEnd } from "./music.mjs";
 
 const MELODY = [261.63, 329.63, 392, 329.63, 293.66, 349.23, 392, 523.25];
 const BASS = [130.81, 130.81, 130.81, 130.81, 146.83, 146.83, 196, 130.81];
 const SAMPLE_RATE = 22050;
 
-export function streetMusicWav(hit) {
-  const game = rhythm(0);
-  const seconds = hit === undefined ? rhythmEnd(game) / 1000 + 0.3 : 0.16;
+export function streetMusicWav(hit, game) {
+  const seconds = hit === undefined ? (rhythmEnd(game) - game.startedAt) / 1000 + 0.3 : 0.16;
   const samples = new Float32Array(Math.ceil(seconds * SAMPLE_RATE));
   function note(frequency, at, duration, level, triangle = false) {
     const start = Math.round(at * SAMPLE_RATE);
@@ -21,7 +20,7 @@ export function streetMusicWav(hit) {
   }
   if (hit === undefined) {
     for (let i = 0; i < MUSIC.beats; i++) {
-      const at = beatTime(game, i) / 1000;
+      const at = (beatTime(game, i) - game.startedAt) / 1000;
       note(MELODY[i % MELODY.length], at, 0.22, 0.55, true);
       note(BASS[i % BASS.length], at, 0.3, 0.35);
     }
@@ -45,7 +44,7 @@ export function streetMusicWav(hit) {
 
 export function createStreetMusicAudio({ createAudio, now = () => performance.now(),
   onError, report = console.warn }) {
-  let enabled = false, volume = 0.25, generation = 0, active = false, melody;
+  let enabled = false, volume = 0.25, generation = 0, active = false;
   const sounds = new Map(), voices = new Set();
 
   function release(voice) {
@@ -109,8 +108,7 @@ export function createStreetMusicAudio({ createAudio, now = () => performance.no
     },
     start(game) {
       stop();
-      melody ??= streetMusicWav();
-      return play(melody, generation, game);
+      return play(streetMusicWav(undefined, game), generation, game);
     },
     hit(success) {
       if (!active) return;

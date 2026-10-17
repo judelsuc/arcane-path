@@ -28,6 +28,8 @@ test("street performance wires melody, successful and failed taps, finish and hi
   let now = 1000, tick, current;
   const hits = [], settled = [];
   let stops = 0;
+  let roll = 0;
+  t.mock.method(Math, "random", () => roll);
   t.mock.method(performance, "now", () => now);
   t.mock.method(globalThis, "setInterval", callback => { tick = callback; return 123; });
   t.mock.method(globalThis, "clearInterval", () => {});
@@ -40,6 +42,9 @@ test("street performance wires melody, successful and failed taps, finish and hi
   assert.ok(current);
   assert.equal(nodes.get("#music-track").children.length, MUSIC.slots);
   assert.equal(nodes.get("#music-track").children.filter(e => e.className === "music-beat rest").length, 4);
+  assert.deepEqual(nodes.get("#music-track").children.map(e => e.className !== "music-beat rest"),
+    current.pattern.map(Boolean));
+  const firstPattern = current.pattern;
   nodes.get("#music-tap").handlers.click();
   now = beatTime(current, 0);
   nodes.get("#music-tap").handlers.click();
@@ -54,7 +59,11 @@ test("street performance wires melody, successful and failed taps, finish and hi
   assert.deepEqual(settled, [1]);
   assert.equal(stops, 1);
   assert.equal(nodes.get("#music-tap").disabled, true);
+  roll = 0.99;
   nodes.get("#music-start").handlers.click();
+  assert.notDeepEqual(current.pattern, firstPattern);
+  assert.deepEqual(nodes.get("#music-track").children.map(e => e.className !== "music-beat rest"),
+    current.pattern.map(Boolean));
   doc.hidden = true;
   doc.handlers.visibilitychange();
   assert.deepEqual(settled, [1, 0]);
