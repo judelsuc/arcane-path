@@ -131,6 +131,13 @@ export function witnessFacts(state) {
     fictional: true };
 }
 
+export function recordTrailArrival(state) {
+  if (!state.trail || state.trail.completed || !atTrailTarget(state) ||
+      state.trail.arrivals?.some(a => a.stage === state.trail.index)) return state;
+  return { ...state, trail: { ...state.trail, arrivals: [...(state.trail.arrivals ?? []),
+    { stage: state.trail.index, elapsedMinutes: state.elapsedMinutes }] } };
+}
+
 export function interviewTrail(state, info, survival, economy) {
   if (state.trail?.version === 2) throw new Error("Choose a clue action at this stop.");
   if (!state.trail || state.trail.completed || !atTrailTarget(state)) {
@@ -143,5 +150,5 @@ export function interviewTrail(state, info, survival, economy) {
   const index = state.trail.index + 1;
   const completed = index === state.trail.stages.length;
   return { ...next, ended: completed ? "reunion" : null, trail: { ...state.trail,
-    index, completed, history: [...state.trail.history, facts] } };
+    index, completed, history: [...state.trail.history, { ...facts, elapsedMinutes: next.elapsedMinutes }] } };
 }

@@ -13,25 +13,29 @@ import { setupSurvivalChoices } from "./survival-choices-ui.mjs";
 import { setupEconomyUI } from "./economy-ui.mjs";
 import { beginBusking, settleBusking, musicMistakeLimit } from "./music.mjs";
 import { setupMusic } from "./music-ui.mjs";
-import { interviewTrail } from "./trail.mjs";
+import { interviewTrail, recordTrailArrival } from "./trail.mjs";
 import { createServerJourney } from "./server-journey.mjs";
 import { prepareParentPaths } from "./parent-path.mjs";
 import { loadAccommodations, cachedAccommodations, mergeAccommodations, withDiscoveredAccommodations } from "./accommodations.mjs";
 import { setFeedback } from "./feedback.mjs";
 import { askHospitality } from "./hospitality.mjs";
 import { agendaClock } from "./agenda-clock.mjs";
-import { setupTrail } from "./trail-ui.mjs";
+import { setupTrail, trailReminder, parentClueText, trailEntryDate } from "./trail-ui.mjs";
 import { askDirections } from "./directions.mjs";
 import { exposureTemperature, temperatureModifiers, precipitationModifiers } from "./weather-effects.mjs";
 import { createJourneyStore, mapIdentity } from "./journey-save.mjs";
-import { tarotArt } from "./tarot-art.mjs";
+import { renderTarotCard } from "./tarot-cards.mjs";
 import { trailClue } from "./trail-actions.mjs";
-import { beginExploration, applyFieldSearch, askAboutClue } from "./trail-search.mjs";
+import { beginExploration, applyFieldSearch, askAboutClue, fieldClueText } from "./trail-search.mjs";
 import { setupNeedsNotices } from "./needs-notices.mjs";
 import { setupSaveFeedback } from "./save-feedback.mjs";
 import { lodgingGuidance } from "./lodging-guidance.mjs";
+import { pendingJournalCreation, finishJournalCreation, ensureJournalAccess, createJournalClient } from "./abandoned-journals.mjs";
+import { setupAbandonedJournals } from "./abandoned-journals-ui.mjs";
+import { encodeNotebook } from "./notebook-transfer.mjs";
+import { updateWeatherPanel } from "./weather-panel.mjs";
 
-export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, pinPhoto }) {
+export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, pinPhoto, pinTarot, useNotebook, snapshotNotebook, showNotebook }) {
   const start = document.querySelector("#start-travel");
   const resume = document.querySelector("#resume-travel");
   const saveStatus = document.querySelector("#journey-save-status");
@@ -66,6 +70,43 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   let survivalConfig, economyData;
   let saveStore, savedJourney, slotOccupied = false, saveError = "", savedAt;
   let pendingRestore;
+  const journalClient = createJournalClient(localStorage);
+  let publishingNotebook;
+  async function publishNotebook(previous) {
+    if (previous.journalPublished) return;
+    if (publishingNotebook) return publishingNotebook;
+    publishingNotebook = (async () => {
+      const photos = await snapshotNotebook(previous);
+      const dated = (record, text) =>
+        `${trailEntryDate(previous, record.elapsedMinutes, document.documentElement.lang, t)} — ${text}`;
+      const clues = [trailReminder(previous, t),
+        ...(previous.trail.exploration?.hints ?? []).map(h => dated(h,
+          `${fieldClueText(previous, h, t)} ${t("fieldRecordedAt", {
+            col: h.col, row: h.row, minutes: Math.round(h.elapsedMinutes),
+          })}`)),
+        ...(previous.trail.exploration?.signs ?? []).map(sign =>
+          dated(sign, t("fieldSign", { parent: previous.trail.parentName }))),
+        ...(previous.trail.exploration?.reports ?? []).map(r => dated(r,
+          `${t(`fieldReport.${r.kind}`, { place: r.town.name })} (${r.town.latitude}, ${r.town.longitude})`)),
+        ...previous.trail.history.map((facts, step) => dated(facts, facts.next
+          ? previous.trail.version === 2
+            ? parentClueText(previous, { kind: facts.clueKind, step, nextName: facts.next.name, pending: false }, t)
+            : t("trailDialogue", { parent: facts.parentName, place: facts.place, next: facts.next.name })
+          : t("trailReunion", { parent: previous.trail.parentName })))];
+      await journalClient.publish(previous, await encodeNotebook(photos), clues);
+    })();
+    try { await publishingNotebook; }
+    finally { publishingNotebook = undefined; }
+  }
+  const abandonedUI = setupAbandonedJournals(t, {
+    publishNotebook, showNotebook,
+    context: () => state,
+    persist(sidequests, published) {
+      if (!state) return;
+      state = { ...state, sidequests, ...(published ? { journalPublished: true } : {}) };
+      autosave();
+    },
+  });
   const saveFeedback = setupSaveFeedback(t, {
     available: () => Boolean(state && !busy),
     save() {
@@ -83,7 +124,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     if (birthPending) {
       birthDraw.hidden = false;
       birthReveal.hidden = true;
-      birthArt.textContent = tarotArt();
+      renderTarotCard(birthArt, null, "", t);
       birthDialog.showModal();
       birthDraw.focus();
       birthPending = false;
@@ -94,8 +135,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   function localizeBirthCard() {
     if (!state || !economyData) return;
     const card = economyData.tarot.find(card => card.id === state.birthCard);
-    birthArt.textContent = tarotArt(birthReveal.hidden ? null : card.id);
     const language = document.documentElement.lang === "en" ? "en" : "fr";
+    renderTarotCard(birthArt, birthReveal.hidden ? null : card.id, birthReveal.hidden ? "" : card[language], t);
+    if (!birthReveal.hidden) pinTarot?.(document.querySelector("#birth-tarot-journal"), state, "birth", economyData);
+    if (!birthReveal.hidden) pinTarot?.(document.querySelector("#birth-daily-tarot-journal"), state, "daily", economyData);
     document.querySelector("#birth-tarot-name").textContent = card[language];
     document.querySelector("#birth-character-name").textContent = state.name ?? "";
     document.querySelector("#birth-tarot-meaning").textContent = t(`tarotMeaning.${card.id}`);
@@ -121,6 +164,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   });
   birthDialog.addEventListener("cancel", event => event.preventDefault());
   const dailyTarotUI = setupDailyTarot(t, {
+    pinTarot,
     context: () => active && state && economyData ? {
       state, data: economyData, busy, saveStatus: saveStatus.textContent,
     } : null,
@@ -154,6 +198,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
   function autosave() {
     saveFeedback.reset();
+    if (state) state = recordTrailArrival(state);
     try {
       if (!saveStore) throw new Error(t("saveStorageUnavailable"));
       const saved = saveStore.write({ region, map: base, state,
@@ -166,6 +211,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       saveError = reason.message;
       console.error("Unable to save journey:", reason);
     }
+    abandonedUI.update();
   }
   function prepareCurrentParentPath(retry = false) {
     if (!state?.serverJourney || state.ended || state.trail?.version !== 2 || state.trail.completed) {
@@ -429,6 +475,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const reported = new Set();
 
   function localize() {
+    abandonedUI.localize();
     saveFeedback.localize();
     localizeBirthCard();
     towns.localize(document.documentElement.lang);
@@ -550,6 +597,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       const offset = elevationKnown
         ? altitudeTemperatureOffset(cell.elevationMeters, weatherData.elevationMeters) : 0;
       const temperature = exposureTemperature(journeyDate(state), exposureInfo(chunk, position.row, position.col));
+      updateWeatherPanel(document.querySelector("#journey-atmosphere"), temperature, month.condition);
       document.querySelector("#weather-temperature").textContent = `${number(temperature)} °C`;
       const effects = temperatureModifiers(temperature);
       document.querySelector("#weather-effects").textContent = t(effects.extraCaloriesFactor
@@ -583,6 +631,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       weatherSource.href = weatherData.sourceUrl;
       weatherSource.textContent = `${weatherData.source} · ${weatherData.license}`;
     } else {
+      updateWeatherPanel(document.querySelector("#journey-atmosphere"), null, null);
       document.querySelector("#weather-effects").textContent = active ? t("temperatureUnavailable") : "";
       weatherSummary.textContent = weatherError
         ? t("weatherError", { error: weatherError }) : active ? t("weatherLoading") : "";
@@ -825,6 +874,14 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     document.querySelector("#map-viewport").classList.add("travel-viewport");
     localize();
     try {
+      if (!restored && savedJourney && !savedJourney.state.journalPublished) {
+        const previous = ensureJournalAccess(savedJourney.state);
+        savedJourney = saveStore.write({ region, map: base, state: previous,
+          survival: savedJourney.survival, economy: savedJourney.economy });
+        await publishNotebook(previous);
+        savedJourney = saveStore.write({ region, map: base, state: { ...previous, journalPublished: true },
+          survival: savedJourney.survival, economy: savedJourney.economy });
+      }
       const health = await fetch("/api/travel", { signal: AbortSignal.timeout(5000) });
       if (!health.ok || !(health.headers.get("content-type") ?? "").includes("application/json")) {
         throw new Error(t("travelServerRequired"));
@@ -833,7 +890,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       if (config.chunkSize !== 8 || config.cellSizeMeters !== 250) throw new Error("Unsupported travel server.");
       if (currentToken !== token) return;
       if (restored) {
-        state = structuredClone(restored.state);
+        state = ensureJournalAccess(structuredClone(restored.state));
+        if (state.journalPublished && !state.ended) throw new Error(t("abandoned.alreadyLeft"));
+        savedJourney = saveStore.write({ region, map: base, state,
+          survival: restored.survival, economy: restored.economy });
         nameInput.value = state.name ?? "";
         state.dailyTarotSeenDay ??= state.tarotDay;
         survivalConfig = structuredClone(restored.survival);
@@ -851,12 +911,12 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         localize();
         trailController = new AbortController();
         if (pendingCreation?.region !== region || pendingCreation?.name !== characterName) {
-          pendingCreation = { region, name: characterName, requestId: crypto.randomUUID() };
+          pendingCreation = pendingJournalCreation(localStorage, region, characterName);
         }
         const created = await createServerJourney(region, base, characterName,
-          pendingCreation.requestId, trailController.signal);
+          pendingCreation.requestId, trailController.signal, fetch, pendingCreation.capability);
         if (currentToken !== token) return;
-        state = created.state;
+        state = { ...created.state, journalAccess: pendingCreation.capability };
         survivalConfig = created.survival;
         economyData = created.economy;
         transient = "travelLoading";
@@ -864,6 +924,13 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       }
       if (currentToken !== token) return;
       state = beginExploration(state, Boolean(restored));
+      await useNotebook?.(state, Boolean(restored));
+      if (restored) {
+        pinTarot?.(document.querySelector("#restored-birth-tarot-journal"), state, "birth", economyData);
+        if (state.dailyTarotSeenDay === state.tarotDay) {
+          pinTarot?.(document.querySelector("#restored-daily-tarot-journal"), state, "daily", economyData);
+        }
+      }
       prepareCurrentParentPath();
       const p = chunkPosition(state.col, state.row);
       stream = createChunkStream(region, { onUpdate: () => {
@@ -886,6 +953,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       if (first.elevation.error) error = first.elevation.error;
       active = true;
       autosave();
+      if (!saveError) finishJournalCreation(localStorage, region);
       pendingCreation = undefined;
       resetContent();
       openJourneyIntro();
@@ -952,6 +1020,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     else localize();
   });
   document.querySelector("#restart-travel").addEventListener("click", () => {
+    if (busy) return;
     if (slotOccupied && !confirm(t("saveReplaceConfirm"))) return;
     reset();
     begin(undefined, true);

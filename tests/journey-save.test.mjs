@@ -26,6 +26,46 @@ function storage() {
   return { getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v), data };
 }
 
+test("private journal capability and independent delivery progress survive exact saves", () => {
+  const d = details();
+  d.state.serverJourney = { id: "1".repeat(32), seed: "12345678",
+    contentVersion: "2".repeat(64), createdAt: new Date(d.state.startedAt).toISOString() };
+  d.state.journalAccess = "3".repeat(64);
+  d.state.sidequests = [{ id: "4".repeat(32), parent: "Fictional parent", history: ["Town"],
+    stages: Array.from({ length: 10 }, (_, n) => ({ name: `Town ${n}`, latitude: 44, longitude: 2 })),
+    step: 3, delivered: false }];
+  const before = structuredClone(d.state.trail), memory = storage();
+  const store = createJourneyStore(memory);
+  store.read(d.region);
+  store.write(d);
+  const restored = createJourneyStore(memory).read(d.region);
+  assert.deepEqual(restored.state, d.state);
+  assert.deepEqual(restored.state.trail, before);
+  for (const mutate of [
+    s => { s.journalAccess = s.serverJourney.id; },
+    s => { s.sidequests[0].step = 10; },
+    s => { s.sidequests[0].stages[0].latitude = Infinity; },
+    s => { s.journalPublished = "yes"; },
+  ]) {
+    const bad = structuredClone(restored);
+    mutate(bad.state);
+    assert.throws(() => validateSave(bad));
+  }
+});
+
+test("dated arrivals survive resume and malformed or future records are rejected", () => {
+  const d = details();
+  d.state.elapsedMinutes = 10;
+  d.state.trail.arrivals = [{ stage: 0, elapsedMinutes: 5 }];
+  assert.deepEqual(validateSave(createSave(d, 1)).state.trail.arrivals, d.state.trail.arrivals);
+  for (const arrivals of [[{ stage: 0, elapsedMinutes: 11 }], [{ stage: 1, elapsedMinutes: 5 }],
+    [{ stage: 0, elapsedMinutes: -1 }], [d.state.trail.arrivals[0], d.state.trail.arrivals[0]]]) {
+    const malformed = structuredClone(d);
+    malformed.state.trail.arrivals = arrivals;
+    assert.throws(() => validateSave(createSave(malformed, 1)));
+  }
+});
+
 test("legacy resume applies only the approved rest migration and persists it without altering progress", () => {
   const d = details(), legacy = structuredClone(d.economy), memory = storage();
   delete legacy.restRuleVersion;

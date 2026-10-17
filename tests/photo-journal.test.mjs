@@ -104,6 +104,10 @@ for (const locale of ["fr", "en"]) {
     await new Promise(resolve => setImmediate(resolve));
     const restored = element("#journal-pages").children[0].children[0].children[1].children[0].children[0];
     assert.equal(restored.value, "A useful handwritten memory");
+    restored.value = "A draft not yet blurred";
+    restored.events.input();
+    await ui.useJourney({ startedAt: 0, serverJourney: { id: "b".repeat(32) } });
+    assert.equal(rows.get(photo(1).sourceUrl).note, "A draft not yet blurred");
     element("#photo-journal-dialog").close();
     assert.equal(element("#journal-pages").children.length, 0);
   });
@@ -131,4 +135,43 @@ test("storage errors are visible and allow retry rather than claiming a successf
   await container.children[0].events.click();
   assert.equal(container.children[0].disabled, false);
   assert.match(container.children[1].textContent, /journalError Quota exceeded/);
+});
+
+test("automatic tarot pins show storage failures with retry and do not pin again on repeated rendering", async t => {
+  const original = { document: globalThis.document, fetch: globalThis.fetch };
+  t.after(() => { globalThis.document = original.document; globalThis.fetch = original.fetch; });
+  class Element {
+    dataset = {}; children = []; events = {};
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    addEventListener(type, callback) { this.events[type] = callback; }
+  }
+  globalThis.document = { documentElement: { lang: "en" }, createElement: () => new Element(),
+    querySelector: () => new Element() };
+  globalThis.fetch = async () => ({ ok: true, blob: async () => new Blob(["jpeg"], { type: "image/jpeg" }) });
+  const data = JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url)));
+  const state = { startedAt: Date.UTC(2026, 9, 17), birthCard: "sun", dailyCard: "moon",
+    tarotDay: "2026-10-18", serverJourney: { id: "a".repeat(32) } };
+  let calls = 0;
+  const ui = setupPhotoJournal((key, args) => translate("en", key, args), {
+    store: { async get() {}, async pin() {
+      calls++;
+      if (calls === 1) throw new Error("Storage full");
+      return true;
+    } },
+  });
+  const container = new Element();
+  ui.pinTarot(container, state, "birth", data);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match(container.children[0].textContent, /Storage full/);
+  assert.equal(container.children[0].dataset.feedback, "failure");
+  assert.equal(container.children[1].hidden, false);
+  container.children[1].events.click();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match(container.children[0].textContent, /Birth card.*2026-10-17.*pinned/);
+  assert.equal(container.children[0].dataset.feedback, "success");
+  assert.equal(container.children[1].hidden, true);
+  ui.pinTarot(container, state, "birth", data);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls, 2);
 });

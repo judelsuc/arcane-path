@@ -67,6 +67,7 @@ export function trailClue(state, kind, cell, info, survival, economy) {
   const target = facts.next;
   const pending = !state.trail.exploration && kind !== "directions" && Boolean(target?.venue);
   const discovery = { kind: kind === "directions" ? state.trail.discovery.kind : kind,
+    elapsedMinutes: next.elapsedMinutes,
     step: state.trail.index, pending, place: state.trail.stages[state.trail.index].name,
     nextName: target?.name ?? null, venue: target?.venue?.name ?? null };
   if (pending) return { ...next, trail: { ...state.trail, discovery } };
@@ -85,5 +86,6 @@ export function trailClue(state, kind, cell, info, survival, economy) {
     ...(exploration ? { exploration } : {}),
     index, completed, discovery, history: [...state.trail.history, {
       ...facts, clueKind: discovery.kind, usedDirections: kind === "directions",
+      elapsedMinutes: next.elapsedMinutes,
     }] } };
 }

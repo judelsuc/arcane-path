@@ -37,6 +37,10 @@ const controls = setupShortcutHelp(t);
 const travel = setupTravel({
   t, renderMap,
   pinPhoto: photoJournal.pinButton,
+  pinTarot: photoJournal.pinTarot,
+  useNotebook: photoJournal.useJourney,
+  snapshotNotebook: photoJournal.snapshot,
+  showNotebook: photoJournal.showAbandoned,
   musicAudio: audio.busking,
   onAudioContext: context => audio.update(context),
   onStep: terrain => audio.step(terrain),

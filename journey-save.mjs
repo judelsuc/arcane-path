@@ -26,6 +26,33 @@ export function validateSave(save) {
   validateSurvivalConfig(save.survival);
   validateEconomy(save.economy);
   const s = save.state;
+  for (const item of [...(s?.trail?.history ?? []),
+    ...(s?.trail?.discovery ? [s.trail.discovery] : [])]) {
+    if (item.elapsedMinutes !== undefined && (!nonnegative(item.elapsedMinutes) ||
+        item.elapsedMinutes > s.elapsedMinutes)) fail();
+  }
+  if (s?.trail?.arrivals !== undefined && (!Array.isArray(s.trail.arrivals) ||
+      s.trail.arrivals.length > s.trail.stages.length ||
+      new Set(s.trail.arrivals.map(a => a?.stage)).size !== s.trail.arrivals.length ||
+      s.trail.arrivals.some(a => !a || !integer(a.stage) || a.stage < 0 ||
+        a.stage > s.trail.index || a.stage >= s.trail.stages.length ||
+        !nonnegative(a.elapsedMinutes) || a.elapsedMinutes > s.elapsedMinutes))) fail();
+  if (s?.journalAccess !== undefined && (typeof s.journalAccess !== "string" ||
+      !/^[a-f0-9]{64}$/.test(s.journalAccess) || !s.serverJourney)) fail();
+  if (s?.journalKeeper !== undefined && (typeof s.journalKeeper !== "string" ||
+      !/^[a-f0-9]{32}$/.test(s.journalKeeper) || !s.journalAccess)) fail();
+  if (s?.journalPublished !== undefined && typeof s.journalPublished !== "boolean") fail();
+  if (s?.sidequests !== undefined && (!Array.isArray(s.sidequests) || s.sidequests.length > 1000 ||
+      s.sidequests.some(q => !q || !/^[a-f0-9]{32}$/.test(q.id) ||
+        typeof q.parent !== "string" || q.parent.length > 200 ||
+        !Array.isArray(q.history) || q.history.length > 13 ||
+        q.history.some(p => typeof p !== "string" || p.length > 200) ||
+        !Array.isArray(q.stages) || q.stages.length < 10 || q.stages.length > 13 ||
+        !integer(q.step) || q.step < 0 || q.step >= q.stages.length ||
+        typeof q.delivered !== "boolean" || q.stages.some(p =>
+          typeof p?.name !== "string" || p.name.length > 200 ||
+          !finite(p.latitude) || Math.abs(p.latitude) > 90 ||
+          !finite(p.longitude) || Math.abs(p.longitude) > 180)))) fail();
   if (s?.serverJourney !== undefined) {
     const metadata = s.serverJourney;
     if (!metadata || typeof metadata.id !== "string" || !/^[a-f0-9]{32}$/.test(metadata.id) ||

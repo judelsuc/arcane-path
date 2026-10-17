@@ -1,6 +1,7 @@
 const STORE = "photos";
 
 import { setFeedback } from "./feedback.mjs";
+import { createTarotJournalPinner, tarotJournalEntry } from "./tarot-cards.mjs";
 
 export function validateJournalPhoto(photo) {
   if (!photo || typeof photo.sourceUrl !== "string" || typeof photo.licenseUrl !== "string" ||
@@ -13,6 +14,10 @@ export function validateJournalPhoto(photo) {
       !photo.blob.size || photo.blob.size > 12_000_000) {
     throw new Error("Invalid photo or missing source/license for journal.");
   }
+}
+
+export function notebookScope(state) {
+  return state.serverJourney?.id ?? `local:${state.startedAt}`;
 }
 
 export function createPhotoJournalStore(index = indexedDB) {
@@ -44,33 +49,54 @@ export function createPhotoJournalStore(index = indexedDB) {
       tx.onerror = () => reject(tx.error ?? new Error("Journal storage failed."));
     });
   }
-  return {
+  function scoped(owner) {
+    const key = id => JSON.stringify([owner, id]);
+    return {
+    async scope(nextOwner, { adoptLegacy = false } = {}) {
+      if (adoptLegacy) await transaction("readwrite", store => {
+        const request = store.openCursor();
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (!cursor) return;
+          if (!cursor.value.owner) {
+            store.put({ ...cursor.value, owner: nextOwner, entryId: cursor.key },
+              JSON.stringify([nextOwner, cursor.key]));
+            cursor.delete();
+          }
+          cursor.continue();
+        };
+      });
+      return scoped(nextOwner);
+    },
     list() {
       return transaction("readonly", (store, done) => {
         const entries = [], request = store.openCursor();
         request.onsuccess = () => {
           const cursor = request.result;
           if (!cursor) { done(entries.sort((a, b) => a.pinnedAt.localeCompare(b.pinnedAt))); return; }
-          entries.push({ id: cursor.key, pinnedAt: cursor.value.pinnedAt });
+          if (cursor.value.owner === owner) entries.push({
+            id: cursor.value.entryId, pinnedAt: cursor.value.pinnedAt });
           cursor.continue();
         };
       });
     },
     get(id) {
       return transaction("readonly", (store, done) => {
-        const request = store.get(id);
+        const request = store.get(key(id));
         request.onsuccess = () => done(request.result);
       });
     },
-    pin(photo, { unannotated = false } = {}) {
+    pin(photo, { unannotated = false, id = photo.sourceUrl, caption = "", note = "" } = {}) {
       validateJournalPhoto(photo);
+      if (typeof id !== "string" || !id || typeof caption !== "string" ||
+          typeof note !== "string" || note.length > 2000) throw new Error("Invalid journal entry.");
       return transaction("readwrite", (store, done) => {
-        const request = store.get(photo.sourceUrl);
+        const request = store.get(key(id));
         request.onsuccess = () => {
           if (request.result) { done(false); return; }
           store.add({ blob: photo.blob, title: photo.title, sourceUrl: photo.sourceUrl,
             attribution: photo.attribution, license: photo.license, licenseUrl: photo.licenseUrl,
-            unannotated, note: "", pinnedAt: new Date().toISOString() }, photo.sourceUrl);
+            owner, entryId: id, unannotated, caption, note, pinnedAt: new Date().toISOString() }, key(id));
           done(true);
         };
       });
@@ -78,19 +104,23 @@ export function createPhotoJournalStore(index = indexedDB) {
     note(id, note) {
       if (typeof note !== "string" || note.length > 2000) throw new Error("Journal note is too long.");
       return transaction("readwrite", (store, done) => {
-        const request = store.get(id);
+        const request = store.get(key(id));
         request.onsuccess = () => {
           if (!request.result) { store.transaction.abort(); return; }
-          store.put({ ...request.result, note }, id);
+          store.put({ ...request.result, note }, key(id));
           done(true);
         };
       });
     },
-    remove: id => transaction("readwrite", (store, done) => { store.delete(id); done(true); }),
-  };
+    remove: id => transaction("readwrite", (store, done) => { store.delete(key(id)); done(true); }),
+    };
+  }
+  return scoped("unassigned");
 }
 
 export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {}) {
+  const rootStore = store;
+  let liveStore = store, readOnly = false;
   const dialog = document.querySelector("#photo-journal-dialog");
   const pages = document.querySelector("#journal-pages");
   const status = document.querySelector("#journal-status");
@@ -99,6 +129,10 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
   let entries = [], spread = 0, generation = 0, loading = false, error = "";
   const urls = new Set();
   const drafts = new Map();
+  const tarotPins = new WeakMap();
+  let scope = "unassigned";
+  const pendingPins = new Set();
+  const failedPins = new Map();
   function revoke() {
     for (const url of urls) URL.revokeObjectURL(url);
     urls.clear();
@@ -131,6 +165,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
       revoke();
       pages.replaceChildren();
       for (let side = 0; side < 2; side++) {
+        const target = store;
         const page = document.createElement("section");
         page.className = "notebook-page";
         const photo = photos[side], entry = entries[spread * 2 + side];
@@ -142,6 +177,11 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
           page.append(empty);
         } else {
           validateJournalPhoto(photo);
+          if (photo.caption) {
+            const title = document.createElement("h3");
+            title.textContent = photo.caption;
+            page.append(title);
+          }
           const frame = document.createElement("figure");
           frame.className = "journal-print";
           const image = document.createElement("img");
@@ -161,9 +201,11 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
           note.placeholder = t("journalNotePlaceholder");
           note.maxLength = 2000;
           note.rows = 3;
+          note.disabled = readOnly;
           label.append(note);
           const save = document.createElement("button");
           save.type = "button";
+          save.hidden = readOnly;
           save.textContent = t("journalSaveNote");
           const noteStatus = document.createElement("span");
           noteStatus.role = "status";
@@ -172,7 +214,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
             drafts.set(entry.id, value);
             save.disabled = true;
             try {
-              await store.note(entry.id, value);
+              await target.note(entry.id, value);
               if (drafts.get(entry.id) === value) drafts.delete(entry.id);
               noteStatus.textContent = t("journalNoteSaved");
               setFeedback(noteStatus, "success");
@@ -200,11 +242,12 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
           page.append(credit);
           const remove = document.createElement("button");
           remove.type = "button";
+          remove.hidden = readOnly;
           remove.textContent = t("journalUnpin");
           remove.addEventListener("click", async () => {
             if (!confirm(t("journalUnpinConfirm"))) return;
             remove.disabled = true;
-            try { await store.remove(entry.id); drafts.delete(entry.id); await load(); }
+            try { await target.remove(entry.id); drafts.delete(entry.id); await load(); }
             catch (reason) { failure(reason); remove.disabled = false; }
           });
           page.append(remove);
@@ -240,10 +283,99 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
     if (!loading && (spread + 1) * 2 < entries.length) { spread++; void render(); }
   });
   document.querySelector("#journal-retry").addEventListener("click", () => { if (!loading) void load(); });
-  dialog.addEventListener("close", () => { generation++; loading = false; revoke(); pages.replaceChildren(); });
+  dialog.addEventListener("close", () => {
+    generation++; loading = false; revoke(); pages.replaceChildren();
+    store = liveStore;
+    readOnly = false;
+    document.querySelector("#journal-abandoned-clues")?.replaceChildren();
+  });
   return {
+    async useJourney(state, adoptLegacy = false) {
+      const nextScope = notebookScope(state);
+      if (nextScope === scope) return;
+      for (const [id, note] of drafts) await liveStore.note(id, note);
+      const scoped = rootStore.scope ? await rootStore.scope(nextScope, { adoptLegacy }) : rootStore;
+      generation++;
+      revoke();
+      pages.replaceChildren();
+      drafts.clear();
+      entries = [];
+      spread = 0;
+      store = scoped;
+      liveStore = scoped;
+      readOnly = false;
+      scope = nextScope;
+      if (dialog.open) await load();
+    },
+    async snapshot(state) {
+      await Promise.all(pendingPins);
+      const failed = [...failedPins.values()].find(entry => entry.scope === notebookScope(state));
+      if (failed) throw new Error(failed.message);
+      const target = rootStore.scope ? await rootStore.scope(notebookScope(state), { adoptLegacy: true }) : rootStore;
+      for (const [id, note] of drafts) if (scope === notebookScope(state)) await target.note(id, note);
+      const entries = await target.list();
+      return Promise.all(entries.map(async entry => ({ ...await target.get(entry.id), id: entry.id })));
+    },
+    async showAbandoned(notebook, clues) {
+      readOnly = true;
+      const evidence = document.querySelector("#journal-abandoned-clues");
+      evidence.replaceChildren();
+      const heading = document.createElement("h3");
+      heading.textContent = t("journalAbandonedTitle");
+      evidence.append(heading);
+      for (const text of clues) {
+        const p = document.createElement("p");
+        p.textContent = text;
+        evidence.append(p);
+      }
+      dialog.showModal();
+      const imported = new Map(notebook.map(photo => [photo.id, photo]));
+      store = {
+        list: async () => notebook.map(photo => ({ id: photo.id, pinnedAt: photo.pinnedAt })),
+        get: async id => imported.get(id),
+      };
+      spread = 0;
+      await load();
+    },
+    pinTarot(container, state, role, data) {
+      const entry = tarotJournalEntry(state, role, data, t,
+        document.documentElement.lang === "en" ? "en" : "fr");
+      const previous = tarotPins.get(container);
+      if (previous?.id === entry.id) return;
+      tarotPins.set(container, { id: entry.id });
+      const pinTarot = createTarotJournalPinner(store);
+      const pinScope = scope;
+      const feedback = document.createElement("p"), retry = document.createElement("button");
+      feedback.role = "status";
+      retry.type = "button";
+      retry.textContent = t("journalRetry");
+      retry.hidden = true;
+      container.replaceChildren(feedback, retry);
+      async function save() {
+        retry.hidden = true;
+        feedback.textContent = t("journalLoading");
+        setFeedback(feedback);
+        try {
+          await pinTarot(entry);
+          failedPins.delete(entry.id);
+          feedback.textContent = t("journalTarotPinned", { card: entry.title });
+          setFeedback(feedback, "success");
+        } catch (reason) {
+          console.error("Could not pin tarot card:", reason);
+          failedPins.set(entry.id, { scope: pinScope, message: reason.message });
+          feedback.textContent = t("journalError", { error: reason.message });
+          setFeedback(feedback, "failure");
+          retry.hidden = false;
+        }
+      }
+      retry.addEventListener("click", () => { void save(); });
+      const pending = save();
+      pendingPins.add(pending);
+      void pending.finally(() => pendingPins.delete(pending));
+    },
     localize() { localize(); if (dialog.open) void render(); },
     pinButton(container, photo, options) {
+      const target = store;
       const button = document.createElement("button");
       button.type = "button";
       button.className = "pin-photo";
@@ -253,7 +385,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore() } = {})
       button.addEventListener("click", async () => {
         button.disabled = true;
         try {
-          const added = await store.pin(photo, options);
+          const added = await target.pin(photo, options);
           feedback.textContent = t(added ? "journalPinned" : "journalAlreadyPinned");
           setFeedback(feedback, "success");
         } catch (reason) {

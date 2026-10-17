@@ -34,11 +34,12 @@ export function validateServerJourney(record, region, map, name) {
   return record;
 }
 
-export async function createServerJourney(region, map, name, requestId, signal, fetcher = fetch) {
+export async function createServerJourney(region, map, name, requestId, signal, fetcher = fetch, capability) {
   signal.throwIfAborted();
   const response = await fetcher("/api/journeys", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json",
+      ...(capability ? { "X-Journal-Capability": capability } : {}) },
     body: JSON.stringify({ region, name, requestId }),
     signal: AbortSignal.any([signal, AbortSignal.timeout(30_000)]),
   });

@@ -28,6 +28,7 @@ from config import load_config
 from starting_places import PlaceLookup, coordinates
 from town_trail import TownTrailStore
 from journeys import JourneyStore, JourneyRequest, JourneyConflict, JourneyCapacity, JourneyGeneration
+from abandoned_journals import AbandonedJournals, JournalForbidden, capability_hash
 from parent_paths import ParentPaths
 from accommodations import Accommodations
 
@@ -363,6 +364,7 @@ def make_handler(store, jobs, path_pool=None):
     origins = ChunkJobs(OriginStore(store), capacity=2, pool=jobs.pool)
     trails = ChunkJobs(TownTrailStore(store, atomic_write), capacity=2, pool=jobs.pool)
     journeys = JourneyStore(store, atomic_write)
+    abandoned = AbandonedJournals(journeys)
     parent_paths = ParentPaths(store, journeys, atomic_write, pool=path_pool)
     accommodations = ChunkJobs(Accommodations(store, atomic_write), capacity=2, pool=jobs.pool)
     class Handler(SimpleHTTPRequestHandler):
@@ -384,7 +386,8 @@ def make_handler(store, jobs, path_pool=None):
             super().end_headers()
 
         def do_POST(self):
-            if urllib.parse.urlsplit(self.path).path != "/api/journeys":
+            endpoint = urllib.parse.urlsplit(self.path).path
+            if endpoint not in ("/api/journeys", "/api/abandoned-journals"):
                 return self.send_json(404, {"error": "Unknown API endpoint."})
             origin = self.headers.get("Origin")
             try:
@@ -402,11 +405,12 @@ def make_handler(store, jobs, path_pool=None):
                 length = int(self.headers.get("Content-Length", "0"))
             except ValueError:
                 return self.send_json(400, {"error": "Invalid request body length."})
-            if length < 1 or length > 4096 or self.headers.get("Transfer-Encoding"):
-                return self.send_json(413, {"error": "Journey request must contain 1 to 4096 bytes."})
+            maximum = 68 * 1024 * 1024 if endpoint == "/api/abandoned-journals" else 4096
+            if length < 1 or length > maximum or self.headers.get("Transfer-Encoding"):
+                return self.send_json(413, {"error": f"Request must contain 1 to {maximum} bytes."})
             previous_timeout = self.connection.gettimeout()
             try:
-                self.connection.settimeout(10)
+                self.connection.settimeout(90 if endpoint == "/api/abandoned-journals" else 10)
                 body = self.rfile.read(length)
                 if len(body) != length:
                     raise JourneyRequest("Incomplete journey request.")
@@ -414,8 +418,17 @@ def make_handler(store, jobs, path_pool=None):
                     request = json.loads(body)
                 except (ValueError, UnicodeError) as error:
                     raise JourneyRequest("Invalid journey JSON.") from error
+                capability = self.headers.get("X-Journal-Capability")
+                if endpoint == "/api/abandoned-journals":
+                    return self.send_json(200, abandoned.request(request, capability))
+                if capability is not None:
+                    capability_hash(capability)
                 record, created = journeys.create(request)
+                if capability is not None:
+                    abandoned.bind(record["state"]["serverJourney"]["id"], capability)
                 return self.send_json(201 if created else 200, record)
+            except JournalForbidden as error:
+                return self.send_json(403, {"error": str(error)})
             except JourneyRequest as error:
                 logging.warning("Journey request rejected: %s", error)
                 return self.send_json(400, {"error": str(error)})

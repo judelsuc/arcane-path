@@ -1,7 +1,7 @@
 import { dailyTarotPending, tarotEventChance } from "./economy.mjs";
-import { tarotArt } from "./tarot-art.mjs";
+import { renderTarotCard } from "./tarot-cards.mjs";
 
-export function setupDailyTarot(t, { context, acknowledge }) {
+export function setupDailyTarot(t, { context, acknowledge, pinTarot }) {
   const dialog = document.querySelector("#daily-tarot-dialog");
   const draw = document.querySelector("#daily-tarot-draw");
   const reveal = document.querySelector("#daily-tarot-reveal");
@@ -15,7 +15,8 @@ export function setupDailyTarot(t, { context, acknowledge }) {
     const { state, data, saveStatus } = current;
     const card = data.tarot.find(card => card.id === state.dailyCard);
     const language = document.documentElement.lang === "en" ? "en" : "fr";
-    art.textContent = tarotArt(reveal.hidden ? null : card.id);
+    renderTarotCard(art, reveal.hidden ? null : card.id, reveal.hidden ? "" : card[language], t);
+    if (!reveal.hidden) pinTarot?.(document.querySelector("#daily-tarot-journal"), state, "daily", data);
     document.querySelector("#daily-tarot-date").textContent = t("dailyTarotDate", { date: state.tarotDay });
     document.querySelector("#daily-tarot-name").textContent = card[language];
     document.querySelector("#daily-tarot-meaning").textContent = t(`tarotMeaning.${card.id}`);
