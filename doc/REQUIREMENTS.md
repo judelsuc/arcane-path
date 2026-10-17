@@ -1157,8 +1157,21 @@ This file records additions to the design without modifying the source PDF,
   must not produce a straight-line path labelled as validated.
 - Persist completed paths with the server journey for later intermediate
   parent clues. Keep paths hidden; free exploration remains unchanged.
-- **Status:** Implementation queued behind the approved fainting change.
-  This does not yet complete Layer 9 or implement additional hints.
+- **Implementation:** Upcoming leg prepared asynchronously on explicit journal
+  request for server journeys (no automatic distant downloads during testing);
+  completed paths and terrain source identity persist separately from immutable
+  genesis, with shared route/terrain reuse. Journal progress/error/retry and
+  summary only; geometry remains server-side. Local legacy saves unchanged.
+- **Bounds:** One worker, two jobs, widening 8/16/32-cell corridors, 50,000
+  expansions, 256 loaded chunks and 96 chunk preparations per attempt.
+  A 180-second budget is checked between terrain accesses; an in-flight
+  provider request may exceed it. Keep prepared terrain after failure.
+- **Accuracy:** Reference 4.5 km/h walker with zero fatigue, same terrain/slope
+  formula and four directions as gameplay. Missing elevations are explicitly
+  reported, with the game's no-slope rule. Water remains traversable; no
+  real-world pedestrian access or globally shortest path is claimed.
+- This does not yet complete Layer 9's parent story/solvability algorithm or
+  implement additional hints. Do not prepare all ten distant legs eagerly.
 
 ## R-074 — Fatigue collapse instead of game over
 
@@ -1188,3 +1201,30 @@ This file records additions to the design without modifying the source PDF,
   and PDF export). Layers 10–14 are not the next sequential work.
 - Check actual dependencies before implementation; do not mark intervening
   layers implemented or expand scope silently.
+
+## R-076 — Reuse completed map cells on resume and deployment
+
+- **User reports:** Replaying/resuming around Paris / Louis Blanc showed
+  missing cells and slow downloads despite previous exploration.
+- Distinguish unfinished downloads (provider quota/502/500 failures) from
+  existing server grids. Narrow Overpass recursion to multipolygons rather
+  than nationwide transport/administrative relations.
+- Cache grid identity must follow raster geometry, source and actual chunk
+  processing, not unrelated API, UI or download-transport changes.
+- For this compatible identity transition, explicitly migrate checksum- and
+  geometry-verified completed grids from the exact previous pipeline.
+  No redownload, rerasterization, deletion, player-state rewrite or blind
+  reuse of arbitrarily old/incompatible grids.
+- A genuinely changed rasterizer still invalidates grids. Existing source and
+  elevation caches remain reusable. Missing cells are not invented terrain.
+
+## R-077 — Visible food-search and manual-save results
+
+- **User reports:** Food-search results are hidden at the bottom of the
+  window; pressing Save gives no visible confirmation.
+- Put cell-action outcomes/errors above actions, focus and scroll the feedback
+  into view after a search. Preserve status/alert semantics and all costs.
+- Manual Save (button or S) shows a fixed visible confirmation with actual
+  saved time, explicitly local to this browser, only after successful storage.
+  Write errors show an alert, never success. Repeat saves reannounce feedback;
+  next gameplay autosave or leaving clears the manual confirmation.

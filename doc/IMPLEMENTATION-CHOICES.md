@@ -1156,3 +1156,47 @@ Four regression tests cover FR/EN results, error priority and actual markup
 order. Browser validation in a 320px-high scrolling modal started at the
 bottom, performed a real food search, and confirmed the result was visible
 and focused. No saved journey was changed by this UI-only test.
+
+## Stable grid caches, save confirmation and bounded parent paths
+
+Live investigation confirmed both unfinished Paris downloads (OSM quota and
+Overpass failures) and excessive invalidation: the old grid identity hashed
+the entire travel server and downloader. A fetch/API-only release could make
+every completed grid look missing. The new identity hashes geometry, elevation
+processing, source naming, chunk building, rasterizer and map rules, not
+unrelated handlers or transport code. Rasterizer changes still invalidate.
+The explicit migrate_chunk_grids script accepts an exact operator-approved
+compatible old hash, verifies checksums/bounds/chunk dimensions and copies
+completed grids into the new identity with no provider calls or rasterization.
+Do not use it across real geometry/raster-rule changes.
+
+Manual Save now shows an accessible fixed confirmation with actual saved
+time, explicitly browser-local. Errors use an alert instead. The same button
+handler covers S; repeated saves reannounce, gameplay autosave/reset clears
+the old manual message. Three unit tests and browser success/error/viewport
+checks verify the behavior without replacing an actual journey save.
+
+Parent paths use bounded four-neighbor A* and the same reference-walker
+terrain/slope costs as travel.mjs (1,944 cross-language cost cases). Search
+stays in 8/16/32-cell widening corridors, at most 50,000 expansions, 256
+loaded chunks and 96 preparations, with a 180-second inter-request budget.
+One independent worker, at most two jobs; immutable genesis and SQLite write
+transactions remain untouched. Completed point sequences and source identity
+are checksummed on disk by journey/stage, with shared reuse for equal
+source/endpoints. Retries keep prepared terrain; errors never become invented
+straight lines. Missing elevation is explicit, using normal no-slope rules.
+
+To avoid competing with map downloads during the user's Paris tests, path
+preparation is opt-in from the journal. It reports real counters, a reference
+distance/time and errors/retry; no geometry is sent to the browser. Browser
+UI validation used a mocked completed response; Python tests exercise actual
+A*, corridor widening, Dijkstra optimality within a corridor, real prepared
+Firmi terrain, persistence/restarts, limits, HTTP and cache reuse. No distant
+30--60 km live path is claimed validated yet. Full Layer 9 parent narrative,
+chronology, false branches and solvability remain unfinished.
+
+Combined validation: 224 JavaScript and 126 Python tests pass. Repeated live
+Louis Blanc API checks served all nine cached chunks in 0.44 seconds total,
+without new terrain requests. The deployment must migrate the exact current
+pipeline before restarting, then recheck those cells; preserving the cache
+directory alone is not sufficient when changing its lookup identity.

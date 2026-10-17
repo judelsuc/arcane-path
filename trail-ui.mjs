@@ -4,6 +4,7 @@ import { createContentService } from "./cell-content.mjs";
 import { openContentCache } from "./content-cache.mjs";
 import { clueActions, CLUE_ACTIONS } from "./trail-actions.mjs";
 import { marketPrice } from "./economy.mjs";
+import { createParentPathLoader } from "./parent-path.mjs";
 
 export function trailDirections(state, target, t) {
   const east = target.col - state.col, south = target.row - state.row;
@@ -34,6 +35,24 @@ export function setupTrail(t, { context, interview, discover }) {
   const action = document.querySelector("#trail-interview");
   const photo = document.querySelector("#trail-clue-photo");
   let photoKey, objectUrl, photoGeneration = 0, service;
+  const pathLoader = createParentPathLoader({ onUpdate: renderPath });
+  function renderPath() {
+    const status = pathLoader.status;
+    const element = document.querySelector("#parent-path-status");
+    element.textContent = t(`parentPath.${status.status}`, {
+      chunks: status.chunks ?? 0, downloads: status.downloads ?? 0,
+      expanded: status.expanded ?? 0, error: status.error ?? "",
+      km: ((status.distanceMeters ?? 0) / 1000).toFixed(1),
+      hours: ((status.walkingMinutes ?? 0) / 60).toFixed(1),
+    });
+    if (status.status === "ready" && !status.elevationComplete) {
+      element.textContent += ` ${t("parentPath.noElevation")}`;
+    }
+    document.querySelector("#parent-path-retry").hidden = status.status !== "error";
+    document.querySelector("#parent-path-prepare").hidden = status.status !== "idle";
+  }
+  document.querySelector("#parent-path-retry").addEventListener("click", () => pathLoader.retry());
+  document.querySelector("#parent-path-prepare").addEventListener("click", () => pathLoader.prepare());
 
   function clearPhoto() {
     photoGeneration++;
@@ -107,6 +126,8 @@ export function setupTrail(t, { context, interview, discover }) {
     document.querySelector("#town-trail").disabled = !current?.state.trail;
     if (!current?.state.trail) return;
     const { state, blocked } = current;
+    pathLoader.update(state);
+    renderPath();
     const trail = state.trail;
     const modern = trail.version === 2;
     document.querySelector("#trail-save-status").textContent = current.saveStatus ?? "";
@@ -222,5 +243,10 @@ export function setupTrail(t, { context, interview, discover }) {
       dialog.close();
     }
   });
-  return { open, localize, reset() { dialog.close(); hintDialog.close(); clearPhoto(); } };
+  return { open, localize, reset() {
+    pathLoader.stop();
+    dialog.close();
+    hintDialog.close();
+    clearPhoto();
+  } };
 }

@@ -15,6 +15,22 @@
   box-sizing: border-box;
 }
 
+#save-feedback {
+  position: fixed;
+  z-index: 10;
+  inset: auto 16px 16px auto;
+  max-width: min(30rem, calc(100vw - 32px));
+  margin: 0;
+  padding: 14px 18px;
+  border: 1px solid var(--accent);
+  background: #18251c;
+  color: var(--accent);
+  box-shadow: 0 4px 24px #0008;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+#save-feedback[data-state="error"] { background: #39251c; }
+
 body {
   min-width: 320px;
   min-height: 100vh;

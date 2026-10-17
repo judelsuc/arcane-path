@@ -22,6 +22,7 @@ import { createJourneyStore, mapIdentity } from "./journey-save.mjs";
 import { tarotArt } from "./tarot-art.mjs";
 import { trailClue } from "./trail-actions.mjs";
 import { setupNeedsNotices } from "./needs-notices.mjs";
+import { setupSaveFeedback } from "./save-feedback.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio }) {
   const start = document.querySelector("#start-travel");
@@ -55,6 +56,14 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   let survivalConfig, economyData;
   let saveStore, savedJourney, slotOccupied = false, saveError = "", savedAt;
   let pendingRestore;
+  const saveFeedback = setupSaveFeedback(t, {
+    available: () => Boolean(state && !busy),
+    save() {
+      autosave();
+      localize();
+      return saveError ? { error: saveError } : { savedAt };
+    },
+  });
   const birthDialog = document.querySelector("#birth-tarot-dialog");
   const birthDraw = document.querySelector("#birth-tarot-draw");
   const birthReveal = document.querySelector("#birth-tarot-reveal");
@@ -134,6 +143,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     }
   }
   function autosave() {
+    saveFeedback.reset();
     try {
       if (!saveStore) throw new Error(t("saveStorageUnavailable"));
       const saved = saveStore.write({ region, map: base, state,
@@ -302,6 +312,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const reported = new Set();
 
   function localize() {
+    saveFeedback.localize();
     localizeBirthCard();
     towns.localize(document.documentElement.lang);
     economyUI.localize();
@@ -728,6 +739,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
 
   function reset() {
+    saveFeedback.reset();
     token++;
     trailController?.abort();
     trailController = undefined;
@@ -765,11 +777,6 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     readJourney();
     if (savedJourney) begin(savedJourney);
     else localize();
-  });
-  document.querySelector("#save-travel").addEventListener("click", () => {
-    if (!state || busy) return;
-    autosave();
-    localize();
   });
   document.querySelector("#restart-travel").addEventListener("click", () => {
     if (slotOccupied && !confirm(t("saveReplaceConfirm"))) return;

@@ -18,6 +18,20 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class TravelServerTests(unittest.TestCase):
+    def test_grid_identity_ignores_api_and_fetch_transport_edits_but_tracks_rasterizer(self):
+        original = ChunkStore()
+        original_read = Path.read_bytes
+        def changed(path):
+            data = original_read(path)
+            return data + b"\n# transport-only change\n" if path.name in {"travel_server.py", "fetch_osm.py"} else data
+        with patch.object(Path, "read_bytes", changed):
+            self.assertEqual(ChunkStore().pipeline, original.pipeline)
+        def raster_changed(path):
+            data = original_read(path)
+            return data + b"\n# raster change\n" if path.name == "build_map.py" else data
+        with patch.object(Path, "read_bytes", raster_changed):
+            self.assertNotEqual(ChunkStore().pipeline, original.pipeline)
+
     def test_existing_partial_chunk_source_is_repaired_before_rasterizing(self):
         with tempfile.TemporaryDirectory() as directory:
             store = ChunkStore(cache=Path(directory))

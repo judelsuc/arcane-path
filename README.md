@@ -40,7 +40,9 @@ verifiee, pas seulement du code prepare. Voir le
 - [ ] Couche 9 : creation de partie serveur, parcours routables et validation.
   - [x] Depart cree et conserve cote serveur : identifiant, graine, tarot, etat initial, contenu versionne.
   - [x] Reessais idempotents, reprise locale et anciennes sauvegardes preserves.
-  - [ ] Chemins A* sur la grille du jeu, caches et bornes ; algorithme complet du parent et resolubilite.
+  - [x] Moteur A* borne sur la grille, persistance, cache et demande volontaire dans le journal.
+  - [ ] Validation en conditions reelles d'une etape distante complete (30–60 km).
+  - [ ] Algorithme complet du parent et validation de resolubilite.
 - [ ] Couche 15 juste apres la couche 9 : photos et carnet de voyage, export PDF.
 - [ ] Autres couches du document de conception, avec checkpoints testes.
 - [ ] R-062 : caches d'objets persistantes, pour les autres joueurs et ses prochaines parties.
@@ -178,8 +180,53 @@ et les protections de publication. La base est limitee a 1 000 departs
 nouvelles creations sans effacer les anciennes. Ce fichier doit etre inclus
 dans une future sauvegarde ; le cache persistant seul n'est pas une sauvegarde.
 
-Les etapes restent a **30–60 km a vol d'oiseau**. Aucun itineraire pieton OSRM
-ou GraphHopper ni validateur de resolubilite n'est encore revendique.
+Les etapes restent choisies a **30–60 km a vol d'oiseau**. Le choix approuve
+pour les chemins est A* sur la grille du jeu, pas OSRM/GraphHopper. Cela ne
+revendique ni un vrai itineraire routier pieton ni le validateur complet de
+resolubilite de la couche 9.
+
+### Chemins du parent sur la grille
+
+Pendant une partie serveur, le bouton du journal prepare le chemin vers la
+prochaine etape en arriere-plan. Le lancement reste volontaire pendant les
+tests, pour ne pas charger davantage les fournisseurs cartographiques.
+Le journal affiche le travail reel, la distance sur la
+grille et les heures de marche de reference (personnage 4,5 km/h, sans fatigue,
+faim ni repos). Les couts terrain/pente et les quatre directions sont les memes
+que pour le joueur. L'eau reste traversable comme dans le jeu actuel ; aucune
+precision de pont, cloture ou chemin pieton reel n'est inventee.
+
+`GET /api/parent-path?journey=IDENTIFIANT&stage=0` lance ou consulte la
+preparation ; `retry=1` relance seulement un echec. Reponse 202 avec compteurs,
+200 avec resume sans geometrie, 422 en cas d'echec, 429 si la file est pleine.
+Le trace reste cache, conserve cote serveur pour les futurs indices ; aucun
+indice intermediaire n'est encore ajoute. Les anciennes parties locales
+sans identifiant serveur ne sont ni modifiees ni regenerees.
+
+Un seul worker de chemins, au plus deux travaux en cours/file, couloirs de
+8/16/32 cases elargis si aucun passage, 50 000 expansions au total, 256
+morceaux en memoire et 96 preparations de morceaux par essai. Budget de
+180 secondes controle entre les acces terrain ; un telechargement deja
+commence conserve les delais bornes des fournisseurs et peut le depasser.
+Apres limite ou panne, erreur explicite et bouton Reessayer : le terrain
+deja prepare reste reutilisable, pas de faux trace direct. Le jeu reste
+jouable ; un terrain joueur non cache peut toutefois attendre le fournisseur
+OSM partage avec les autres telechargements.
+
+Les caches terrain sont partages entre parties/joueurs. Les chemins identiques
+reutilisent aussi un cache par points/source/version, puis sont epingles par
+partie/etape dans `.cache/travel/parent-paths/journeys/`. Une mise a jour du
+rasteriseur peut reconstruire les grilles depuis leurs sources en cache ; les
+chemins deja termines d'une partie ne sont pas recalcules. Les caches ont une
+somme de controle ; une corruption est signalee, pas remplacee silencieusement.
+Inclure ces chemins dans la future sauvegarde distante.
+
+Les modifications d'API, d'interface ou de transport du telechargeur ne changent
+plus l'identite des grilles. Pour la transition compatible de ce correctif,
+`scripts/migrate_chunk_grids.py --from-pipeline SHA256_PRECEDENT` conserve les
+grilles completes apres verification. Usage administrateur seulement, apres
+confirmation que la geometrie et les regles de rendu n'ont pas change :
+ce n'est pas un contournement de l'invalidation pour un vrai changement raster.
 
 Pour preparer un transfert sans credentials ni fichiers non suivis :
 `python3 scripts/package_preview.py /chemin/prive/preview.tar.gz`.

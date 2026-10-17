@@ -4,6 +4,7 @@
 import argparse
 import gzip
 import hashlib
+import inspect
 import json
 import logging
 import math
@@ -27,6 +28,7 @@ from config import load_config
 from starting_places import PlaceLookup, coordinates
 from town_trail import TownTrailStore
 from journeys import JourneyStore, JourneyRequest, JourneyConflict, JourneyCapacity, JourneyGeneration
+from parent_paths import ParentPaths
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_SIZE = 8
@@ -94,9 +96,13 @@ class ChunkStore:
         self.cache = cache or root / ".cache" / "travel"
         self.regions = json.loads((root / "data/regions.json").read_text())["regions"]
         self.pipeline = hashlib.sha256(
-            Path(__file__).read_bytes() + (ROOT / "scripts/build_map.py").read_bytes() +
-            (ROOT / "scripts/fetch_osm.py").read_bytes() +
-            json.dumps(load_config()["map"], sort_keys=True).encode()
+            b"chunk-pipeline-v2" +
+            inspect.getsource(chunk_geometry).encode() +
+            inspect.getsource(fetch_elevations).encode() +
+            inspect.getsource(ChunkStore.source_path).encode() +
+            inspect.getsource(ChunkStore.build_locked).encode() +
+            (ROOT / "scripts/build_map.py").read_bytes() +
+            json.dumps([CHUNK_SIZE, CELL_METERS, load_config()["map"]], sort_keys=True).encode()
         ).hexdigest()
         self.bases = {
             key: json.loads((root / region["map"]).read_text())
@@ -107,6 +113,7 @@ class ChunkStore:
             for key, region in self.regions.items()
         }
         self.origin_lock = threading.Lock()
+        self.chunk_locks = [threading.Lock() for _ in range(32)]
         self.places = PlaceLookup()
         for path in (self.cache / "origins").glob("origin-*/map.json"):
             self.register_origin(path.parent.name, json.loads(path.read_text()), path.parent / "source.osm.gz")
@@ -182,6 +189,10 @@ class ChunkStore:
         return payload
 
     def build(self, region, x, y):
+        with self.chunk_locks[hash((region, x, y)) % len(self.chunk_locks)]:
+            return self.build_locked(region, x, y)
+
+    def build_locked(self, region, x, y):
         cached = self.read(region, x, y)
         if cached is not None:
             return cached
@@ -346,11 +357,12 @@ class WeatherStore:
             return data
 
 
-def make_handler(store, jobs):
+def make_handler(store, jobs, path_pool=None):
     weather = WeatherStore(store.cache / "weather")
     origins = ChunkJobs(OriginStore(store), capacity=2, pool=jobs.pool)
     trails = ChunkJobs(TownTrailStore(store, atomic_write), capacity=2, pool=jobs.pool)
     journeys = JourneyStore(store, atomic_write)
+    parent_paths = ParentPaths(store, journeys, atomic_write, pool=path_pool)
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, directory=str(store.root), **kwargs)
@@ -446,10 +458,18 @@ def make_handler(store, jobs):
                         if record is None:
                             return self.send_json(404, {"error": "Server journey not found."})
                         return self.send_json(200, record)
-                    if url.path not in {"/api/chunk", "/api/weather", "/api/places",
+                    if url.path not in {"/api/chunk", "/api/weather", "/api/places", "/api/parent-path",
                                         "/api/location", "/api/origin", "/api/origin-map", "/api/trail", "/api/pricing-country"}:
                         return self.send_json(404, {"error": "Unknown API endpoint."})
                     query = urllib.parse.parse_qs(url.query, strict_parsing=True)
+                    if url.path == "/api/parent-path":
+                        if (set(query) - {"journey", "stage", "retry"}
+                                or any(len(v) != 1 for v in query.values())
+                                or query.get("retry", ["0"])[0] not in {"0", "1"}):
+                            raise ValueError("Invalid parent path request.")
+                        status, payload = parent_paths.request(query["journey"][0],
+                            int(query["stage"][0]), query.get("retry", ["0"])[0] == "1")
+                        return self.send_json(status, payload)
                     if url.path == "/api/trail":
                         region, seed = query["region"][0], query["seed"][0]
                         if (region not in store.bases or len(seed) != 8
@@ -516,7 +536,8 @@ def main():
     logging.basicConfig(level=logging.INFO)
     store = ChunkStore()
     jobs = ChunkJobs(store)
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(store, jobs))
+    path_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="parent-path")
+    server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(store, jobs, path_pool))
     print(f"Travel prototype: http://127.0.0.1:{args.port}/", flush=True)
     try:
         server.serve_forever()
@@ -525,6 +546,7 @@ def main():
     finally:
         server.server_close()
         jobs.pool.shutdown(wait=True, cancel_futures=True)
+        path_pool.shutdown(wait=True, cancel_futures=True)
 
 
 if __name__ == "__main__":
