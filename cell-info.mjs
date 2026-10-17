@@ -15,6 +15,7 @@ export function cellInfo(map, row, col) {
   const east = Math.min(bounds.maxLongitude, west + longitudeStep);
   return {
     terrain: map.rows[row][col].terrain,
+    countryCodes: map.rows[row][col].countryCodes ?? [],
     waterCoveragePercent: map.rows[row][col].waterCoveragePercent ?? 0,
     waterways: map.rows[row][col].waterways ?? [],
     names: map.rows[row][col].names ?? [],

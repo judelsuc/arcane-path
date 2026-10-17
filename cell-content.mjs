@@ -1,4 +1,5 @@
 import { naturePhotos } from "./nature-photos.mjs";
+import { aerialPhoto } from "./aerial-photos.mjs";
 
 const COMMONS = "https://commons.wikimedia.org/w/api.php";
 const OSM_LICENSE = "https://opendatacommons.org/licenses/odbl/1-0/";
@@ -105,7 +106,7 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
   async function resolve(info, locale, kind, refresh = false, onProgress = () => {}) {
     const key = `${await contentKey(info, locale, kind)}${kind === "photo" ? `:${maxPhotos}` : ""}`;
     const cached = await cache.get(key);
-    if (cached && !refresh) return { ...cached, cached: true };
+    if (cached && !refresh && (kind !== "photo" || cached.content)) return { ...cached, cached: true };
     const previous = kind === "photo" && !refresh
       ? await cache.get(key.replace(/^v3:/, "v2:")) : undefined;
     const legacy = kind === "photo" && !refresh
@@ -232,6 +233,10 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
       }
       if (!photos.length) {
         photos.push(...savedPhotos.filter(photo => photo.blob).slice(0, maxPhotos));
+      }
+      if (!photos.length) {
+        const aerial = await attempt("IGN aerial photo", () => aerialPhoto(info, fetcher));
+        if (aerial) await download([aerial]);
       }
       content = photos[0];
     } else {
