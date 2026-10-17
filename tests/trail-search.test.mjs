@@ -431,7 +431,11 @@ for (const locale of ["fr", "en"]) {
       .children.find(b => b.id === "clue-field-search").events.click();
     assert.equal(state.elapsedMinutes, 30);
     assert.match(element("#trail-target").textContent, /Se/);
-    const ask = element("#trail-history").children[0].children.find(b => b.events.click);
+    assert.ok(element("#trail-history").children[0].children.every(b => !b.events.click));
+    element("#trail-dialog").close();
+    element("#open-hint").events.click();
+    assert.equal(element("#hint-dialog").open, true);
+    const ask = element("#hint-clues").children[0].children.find(b => b.events.click);
     await ask.events.click();
     assert.equal(state.elapsedMinutes, 40);
     assert.equal(state.trail.exploration.lastReport.town.name, "Seaside");

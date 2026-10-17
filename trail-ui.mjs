@@ -256,6 +256,19 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         ? reportText(report)
         : directionsOutcome === "helped" ? playerHint(current.state, current.info, t)
           : t(directionsOutcome ? `hintOutcome.${directionsOutcome}` : "hintBeforeAsk");
+      const clues = document.querySelector("#hint-clues");
+      clues.replaceChildren();
+      for (const hint of current.state.trail.exploration?.hints ?? []) {
+        if (hint.stage !== current.state.trail.index || !["prefix", "photo"].includes(hint.kind)) continue;
+        const item = document.createElement("li"), button = document.createElement("button");
+        paragraph(item, fieldClueText(current.state, hint, t));
+        button.type = "button";
+        button.textContent = t("fieldAsk");
+        button.disabled = current.blocked || searching || Boolean(current.state.ended);
+        button.addEventListener("click", () => askCollectedClue(hint));
+        item.append(button);
+        clues.append(item);
+      }
     }
     document.querySelector("#open-trail").disabled = !current?.state.trail;
     document.querySelector("#town-trail").disabled = !current?.state.trail;
@@ -310,14 +323,6 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
           void renderPhoto(state, { step: hint.stage }, true);
         });
         item.append(view);
-      }
-      if (hint.stage === trail.index && ["prefix", "photo"].includes(hint.kind) && !state.ended) {
-        const askButton = document.createElement("button");
-        askButton.type = "button";
-        askButton.textContent = t("fieldAsk");
-        askButton.disabled = blocked || searching;
-        askButton.addEventListener("click", () => askCollectedClue(hint));
-        item.append(askButton);
       }
       history.append(item);
     }
