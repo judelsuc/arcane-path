@@ -46,6 +46,8 @@ function harness(t, language = "en") {
       ? [...elements.values()].find(e => e.open) ?? null
       : selector === "#economy-hospitality-feedback"
       ? element("#economy-options").children[0]?.children[1] ?? null : element(selector),
+    getElementById: id => element("#economy-options").children
+      .flatMap(li => li.children).find(child => child.id === id) ?? null,
     createElement: () => new Element(),
   };
   t.after(() => { globalThis.document = original; });
@@ -56,7 +58,7 @@ function harness(t, language = "en") {
     act: action => {
       actions.push(action);
       if (action.kind === "hospitality") current = { ...current, state:
-        askHospitality(current.state, current.cell, info, survival, economy, () => 0) };
+        askHospitality(current.state, current.cell, info, survival, economy, () => 0, action.id) };
       return true;
     },
   });
@@ -105,6 +107,49 @@ test("hospitality is absent outside named settlements and mapped accommodation s
 });
 
 for (const language of ["fr", "en"]) {
+  test(`${language} worship shelter works outside towns and displays immediate per-place feedback`, async t => {
+    const h = harness(t, language);
+    const cell = { terrain: "church", pois: [
+      { osmId: "way/201", name: "Église", tags: { amenity: "place_of_worship" } },
+      { osmId: "node/202", name: "Mosque", tags: { amenity: "place_of_worship", religion: "muslim" } },
+      { osmId: "node/203", name: "Private", tags: { amenity: "place_of_worship", access: "private" } },
+    ] };
+    h.set({ cell });
+    await h.ui.open("sleep");
+    assert.equal(h.buttons().length, 3);
+    assert.match(h.buttons()[0].textContent, /Mosque/);
+    const note = h.element("#economy-options").children[0].children[1];
+    assert.match(note.textContent, language === "fr" ? /entièrement fictif/ : /Entirely fictional/);
+    assert.match(note.textContent, /30 min/);
+    h.buttons()[0].click();
+    assert.deepEqual(h.actions, [{ kind: "hospitality", id: "node/202" }]);
+    assert.equal(h.buttons()[0].disabled, true);
+    assert.equal(h.buttons()[1].disabled, false);
+    assert.equal(h.element("#economy-dialog").open, true);
+    const feedback = h.element("#economy-options").children[0].children[1];
+    assert.match(feedback.textContent, language === "fr" ? /dans le jeu/ : /game/);
+    assert.match(feedback.textContent, language === "fr" ? /même en cas de refus/ : /even if refused/);
+    assert.equal(feedback.focused, true);
+    assert.deepEqual(feedback.scrolled, { block: "nearest" });
+    assert.equal(h.element("#economy-hospitality-result").textContent, "");
+  });
+
+  test(`${language} regional and national dishes expose their geographic scope and documentary source`, async t => {
+    const h = harness(t, language);
+    h.set({ info: { latitude: 40.42, longitude: -3.7 }, cell: { terrain: "place", countryCodes: ["ES"] } });
+    await h.ui.open("eat");
+    assert.match(h.buttons()[1].textContent, /Tortilla/);
+    let item = h.element("#economy-options").children[1];
+    assert.match(item.children[1].textContent, language === "fr" ? /pas une spécialité propre/ : /not specific/);
+    assert.equal(item.children[2].href, "https://en.wikipedia.org/wiki/Spanish_omelette");
+    h.ui.reset();
+    h.set({ info: { latitude: 49.387, longitude: 3.005 }, cell: { terrain: "place", countryCodes: ["FR"] } });
+    await h.ui.open("eat");
+    item = h.element("#economy-options").children[1];
+    assert.match(item.children[0].textContent, /Ficelle/);
+    assert.match(item.children[1].textContent, /Picardie/);
+  });
+
   test(`${language} hospitality opening is read-only and a refusal stays visible beside the disabled action`, async t => {
     const h = harness(t, language);
     let state;

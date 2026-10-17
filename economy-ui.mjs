@@ -1,12 +1,12 @@
 import { mealOptions, marketPrice, shelters, tarotEventChance } from "./economy.mjs";
-import { HOSPITALITY_RULES, hospitalityStatus } from "./hospitality.mjs";
+import { HOSPITALITY_RULES, hospitalityStatus, worshipPlaces } from "./hospitality.mjs";
 
 export function setupEconomyUI(t, { context, act, resolveCountry }) {
   const dialog = document.querySelector("#economy-dialog");
   let mode = "eat";
   let resolving = false, countryError = "", generation = 0;
   const money = cents => `${(cents / 100).toFixed(2)} ${t("gameMoney")}`;
-  const hospitalityResult = result => t(`hospitalityResult.${result.outcome}`, {
+  const hospitalityResult = result => t(`${result.placeKind === "worship" ? "worshipResult" : "hospitalityResult"}.${result.outcome}`, {
     town: result.townName, day: result.day,
     minutes: Math.round(result.finishedMinutes - result.startedMinutes),
   });
@@ -50,7 +50,8 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
         if (act(run)) {
           if (run.kind === "hospitality") {
             localize();
-            const feedback = document.querySelector("#economy-hospitality-feedback");
+            const feedback = document.getElementById(run.id
+              ? `economy-worship-${run.id.replace("/", "-")}` : "economy-hospitality-feedback");
             if (feedback && dialog.open) {
               feedback.focus({ preventScroll: true });
               feedback.scrollIntoView({ block: "nearest" });
@@ -82,7 +83,9 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
         const restaurant = meal.kind === "restaurant";
         const title = restaurant ? t("mealAtRestaurant", { name: meal.venue.name ?? t("mappedRestaurant") })
           : meal.kind === "basic" ? t("basicMeal") : meal.name;
-        const note = restaurant ? t("restaurantMealNote") : meal.kind === "basic" ? t("basicMealNote") : meal[language];
+        let note = restaurant ? t("restaurantMealNote") : meal.kind === "basic" ? t("basicMealNote") : meal[language];
+        if (meal.kind === "specialty" && meal.area) note = `${t(
+          meal.scope === "national" ? "mealNationalOrigin" : "mealRegionalOrigin", { area: meal.area })} ${note}`;
         add(title, marketPrice(cell, meal.mealUnits, data, info).cents,
           { kind: "meal", id: meal.id },
           `${note} ${t("mealEffect", { kcal: meal.reserveKcal, minutes: survival.meal_minutes })}`,
@@ -110,8 +113,26 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
       } else {
         document.querySelector("#economy-shelter-context").textContent += ` ${t("hospitalityTownRequired")}`;
       }
+      const places = worshipPlaces(cell);
+      for (const place of places) {
+        const status = hospitalityStatus(state, cell, place.osmId);
+        const name = place.name?.trim() || t("worshipUnnamed");
+        const note = t(status.attempt ? "worshipAlreadyAsked" : "worshipNote", {
+          place: name, minutes: HOSPITALITY_RULES.minutes, hours: survival.sleep_hours,
+          chance: Math.round((1 - tarotEventChance(HOSPITALITY_RULES.failureChance, state, data)) * 100),
+        });
+        const feedback = add(t("worshipAsk", { place: name }), 0,
+          { kind: "hospitality", id: place.osmId },
+          status.attempt ? `${hospitalityResult(status.attempt)} ${note}` : note,
+          `https://www.openstreetmap.org/${place.osmId}`, t("townOsm"), !status.available);
+        feedback.id = `economy-worship-${place.osmId.replace("/", "-")}`;
+        feedback.tabIndex = -1;
+        feedback.setAttribute("role", "status");
+        feedback.setAttribute("aria-atomic", "true");
+      }
       const result = state.hospitalityAttempts?.at(-1);
-      if (result && result !== hospitality.attempt) {
+      if (result && result !== hospitality.attempt && !places.some(place =>
+        hospitalityStatus(state, cell, place.osmId).attempt === result)) {
         document.querySelector("#economy-hospitality-result").textContent = hospitalityResult(result);
       }
       add(t("outdoorSleep"), 0, { kind: "sleep", id: null }, t("outdoorSleepNote"));

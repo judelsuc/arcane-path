@@ -35,7 +35,12 @@ export function validateEconomy(data) {
       data.meals.some(m => !m.id || !m.name || !m.fr || !m.en || !m.publisher ||
         !source(m.source) || !positive(m.reserveKcal) || !positive(m.mealUnits) ||
         !Array.isArray(m.bounds) || m.bounds.length !== 4 || !m.bounds.every(Number.isFinite) ||
-        m.bounds[0] >= m.bounds[2] || m.bounds[1] >= m.bounds[3])) {
+        m.bounds[0] >= m.bounds[2] || m.bounds[1] >= m.bounds[3] ||
+        (m.scope !== undefined && (!["regional", "national"].includes(m.scope) ||
+          typeof m.area !== "string" || !m.area.trim() ||
+          !Array.isArray(m.countries) || !m.countries.length ||
+          new Set(m.countries).size !== m.countries.length ||
+          m.countries.some(code => typeof code !== "string" || !/^[A-Z]{2}$/.test(code)))))) {
     throw new Error("Invalid economy database.");
   }
   return data;
@@ -84,9 +89,12 @@ export function acknowledgeDailyTarot(state) {
   return { ...state, dailyTarotSeenDay: state.tarotDay };
 }
 
-export function localMeals(info, data) {
-  return data.meals.filter(({ bounds: [west, south, east, north] }) =>
-    info.longitude >= west && info.longitude <= east && info.latitude >= south && info.latitude <= north);
+export function localMeals(info, data, countryCodes = []) {
+  const countries = [...new Set(countryCodes)];
+  return data.meals.filter(({ bounds: [west, south, east, north], countries: allowed, scope }) => {
+    if (scope && (countries.length !== 1 || !allowed.includes(countries[0]))) return false;
+    return info.longitude >= west && info.longitude <= east && info.latitude >= south && info.latitude <= north;
+  }).sort((a, b) => Number(a.scope === "national") - Number(b.scope === "national"));
 }
 
 function usablePoi({ tags = {} }) {
@@ -101,7 +109,7 @@ export function mealOptions(cell, info, data) {
     /^(node|way|relation)\/\d+$/.test(p.osmId) &&
     ["restaurant", "fast_food", "cafe", "food_court"].includes(p.tags?.amenity))
     .map(p => [p.osmId, p])).values()];
-  return [basic, ...localMeals(info, data).map(meal => ({ ...meal, kind: "specialty" })),
+  return [basic, ...localMeals(info, data, cell.countryCodes).map(meal => ({ ...meal, kind: "specialty" })),
     ...restaurants.map(venue => ({ ...basic, id: `basic-meal@${venue.osmId}`, kind: "restaurant", venue }))];
 }
 
@@ -129,6 +137,16 @@ export function marketPrice(cell, units, data, info) {
 export function refreshPricing(savedEconomy, currentEconomy) {
   validateEconomy(currentEconomy);
   return validateEconomy({ ...structuredClone(savedEconomy), pricing: structuredClone(currentEconomy.pricing) });
+}
+
+export function refreshMeals(savedEconomy, currentEconomy) {
+  validateEconomy(savedEconomy);
+  validateEconomy(currentEconomy);
+  const meals = new Map(savedEconomy.meals.map(meal => [meal.id, structuredClone(meal)]));
+  for (const meal of currentEconomy.meals) {
+    if (!meals.has(meal.id)) meals.set(meal.id, structuredClone(meal));
+  }
+  return validateEconomy({ ...structuredClone(savedEconomy), meals: [...meals.values()] });
 }
 
 export function refreshNightRest(savedEconomy, currentEconomy) {

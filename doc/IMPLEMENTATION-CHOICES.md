@@ -1322,3 +1322,38 @@ helper. Two-cell offsets remain outside; legacy local trails remain exact.
 No target or save coordinate is rewritten. Regression tests exercise every
 offset in a 5 x 5 square, successful clue save/resume at each accepted offset,
 both hint languages and the old exact-cell rule.
+
+### European dishes and fictional shelter at places of worship
+
+The curated meal catalogue grows from four to nineteen entries, with additions
+in fifteen European countries. New regional and national entries require one
+confirmed country plus geographic bounds. National dishes are labelled as
+country traditions, not a particular town's specialty. Source links include
+national tourism sites and Wikipedia; descriptions are short original summaries.
+There is no live web discovery or claim that a real restaurant serves the dish.
+On resume, an explicit catalogue refresh adds missing IDs without replacing
+pinned meals or changing survival rules, tarot, balances or progress.
+
+Mapped active current-cell places of worship now offer fictional hospitality,
+across religions and outside named settlement cells too. The user chose the
+existing 30-minute request and tarot-adjusted chance, immediate free sheltered
+sleep if welcomed, no food, and one request per place per UTC game day.
+Private/inaccessible, abandoned and disused POIs are excluded. An OSM building
+tag alone is not evidence of a place of worship or accommodation. Relations
+are accepted by the action/save validator if supplied as POIs, but the existing
+map extractor currently supplies nodes and ways only. No cache regeneration
+or new provider request is needed for already mapped eligible POIs.
+
+Worship outcomes are stored in existing hospitality history with an optional
+place-kind marker; legacy town records remain valid. They appear immediately
+under the disabled action with focused, visible FR/EN feedback. Text clearly
+separates fictional shelter from actual religious communities or real lodging.
+Layer 15's future journal requirements include these events.
+
+Validation: 42 focused tests pass; the isolated release based on live town-arrival
+code passes all 242 JavaScript tests using the existing Python environment.
+Browser checks at 320 px verify focused, fully visible refusal feedback with
+no sleep/time ambiguity, plus regional and national meal scope/source labels.
+The development worktree's wider tests remain blocked by the user's unrelated
+uncommitted configuration lacking its map section; it is left untouched.
+No unfinished Layer 9 narrative code is included in this isolated release.

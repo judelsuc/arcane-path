@@ -1,5 +1,37 @@
 # Requirements tracked outside the design PDF
 
+## R-082 - Fictional shelter requests at places of worship
+
+- Churches and other mapped places of worship, across religions, can provide
+  fictional shelter in the game. No named settlement is required.
+- **User decision:** Ask for free shelter, with a chance of refusal and one
+  request per mapped place per game day (UTC), not automatic accommodation.
+- Use the existing hospitality rules: 30 minutes to ask, tarot-adjusted chance,
+  then an immediate free eight-hour sheltered night if accepted; no meal.
+- Only active current-cell `amenity=place_of_worship` POIs with stable OSM IDs
+  are eligible. Exclude mapped private, inaccessible, disused or abandoned
+  places. Do not infer access or accommodation from a religious building alone.
+- Show acceptance/refusal immediately beside the action. Persist its place,
+  time and outcome across save/resume, independently of town hospitality.
+- State explicitly that this is fictional gameplay, not a real accommodation
+  offer or a statement about a religious community's actual hospitality.
+- Include these requests in Layer 15's future chronological journal.
+
+## R-081 - More frequent European specialty meals
+
+- Expand documented dishes across Europe, not just French sources or areas.
+- Current catalogue: 19 dishes, including 15 additions covering 15 European
+  countries. Each has a documentary URL and original short FR/EN description.
+- Distinguish regional specialties from national traditional dishes in the
+  menu. New entries require an unambiguous mapped/resolved country plus their
+  geographic bounds; never offer a neighbouring country's dish as local.
+- Regional rectangles are approximate associations, not administrative
+  boundaries. National dishes are not claims about a particular town's menu.
+- Refresh additions when resuming old saves while preserving their existing
+  meals, rules, tarot and progress. Basic meals and mapped restaurants remain.
+- This is a curated catalogue, not live web discovery or verified restaurant
+  availability. Portions, energy and prices remain fictional game rules.
+
 ## R-080 - Layer 15 personal journey journal
 
 - **Priority:** Keep for Layer 15, after completing Layer 9. Requirements only;
