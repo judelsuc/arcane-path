@@ -649,6 +649,18 @@ dialog p { margin: 12px 0; }
 }
 #needs-notice-dialog { width: min(560px, 94vw); max-height: 90dvh; overflow: auto; }
 #needs-notice-dialog p { line-height: 1.7; }
+#death-fade {
+  position: fixed; inset: 0; z-index: 10000; pointer-events: none;
+  background: #000; opacity: 0; transition: opacity 5s ease-in;
+}
+#death-fade.active { opacity: 1; }
+#needs-notice-dialog.death-notice { text-align: center; border-color: #b9a477; }
+#needs-death-card { margin: 12px auto; }
+#needs-death-card .tarot-card-image { display: block; max-height: 42dvh; width: auto; max-width: 100%; margin: auto; }
+.tile--player.tile--dead { color: #f0dfb0; font-weight: bold; }
+@media (prefers-reduced-motion: reduce) {
+  #death-fade { transition: none; }
+}
 #player-tarot, #outdoor-status { font-size: 0.65rem; color: var(--muted); }
 #music-dialog { width: min(620px, 94vw); max-height: 90dvh; overflow: auto; }
 #music-track { display: flex; gap: 5px; margin-block: 20px; }

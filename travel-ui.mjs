@@ -35,7 +35,8 @@ import { setupAbandonedJournals } from "./abandoned-journals-ui.mjs";
 import { encodeNotebook } from "./notebook-transfer.mjs";
 import { updateWeatherPanel } from "./weather-panel.mjs";
 import { beginPressures, sympathy, policePresence, washingAvailable } from "./pressures.mjs";
-import { recordJourneyPosition } from "./journey-map.mjs";
+import { recordJourneyPosition, createJourneyTerrainLoader } from "./journey-map.mjs";
+import { renderJourneyMarker } from "./death.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, pinPhoto, pinTarot, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats }) {
   const start = document.querySelector("#start-travel");
@@ -531,9 +532,11 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const chunk = position && stream?.get(position.x, position.y);
     const cell = chunk?.rows[position.row][position.col];
     const ended = Boolean(state?.ended);
+    const marker = document.querySelector(".tile--player");
+    if (marker && state) renderJourneyMarker(marker, state, t);
     if (state && survivalConfig && economyData) {
       updateNotebookStats?.({ state, survival: survivalConfig, economy: economyData,
-        cellSizeMeters: base.cellSizeMeters });
+        cellSizeMeters: base.cellSizeMeters, mapTerrain: stream?.journeyTerrain });
     }
     if (ended) {
       backgroundDownloads?.stop();
@@ -795,8 +798,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     }
     const tile = document.querySelector(`.tile[data-row="${position.row + 8}"][data-col="${position.col + 8}"]`);
     tile.classList.add("tile--player");
-    tile.textContent = "@";
-    tile.setAttribute("aria-current", "location");
+    renderJourneyMarker(tile, state, t);
     inspectPosition();
     localize();
     towns.update(data, position.row + 8, position.col + 8, !state.ended);
@@ -970,6 +972,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       stream = createChunkStream(region, { onUpdate: () => {
         if (currentToken === token) draw();
       } });
+      stream.journeyTerrain = createJourneyTerrainLoader(region, stream.chunks);
       backgroundDownloads = createChunkPrefetcher(stream, {
         cached: targets => stream.restoreCached(targets),
         onError(reason) {

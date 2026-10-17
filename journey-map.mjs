@@ -1,4 +1,75 @@
 export const MAX_JOURNEY_POINTS = 8192;
+const TERRAIN = {
+  plain: ["#ddd5ac", "."], water: ["#8ebbc4", "~"], road: ["#c9b58f", "+"],
+  major_road: ["#b8a07c", "+"], rail: ["#aaa49d", "="], cable: ["#bca68f", "-"],
+  cable_station: ["#bca68f", "T"], mountain: ["#aca99a", "^"], hill: ["#b7b18d", "n"],
+  forest: ["#8eab78", "♣"], grass: ["#bec594", '"'], field: ["#d9c28b", ":"],
+  vineyard: ["#c2a2ac", "¥"], park: ["#a8bc87", ","], church: ["#cbbfa4", "†"],
+  station: ["#b3aaa0", "≡"], place: ["#d2b79b", "○"], building: ["#c4b39e", "#"],
+};
+
+export function createJourneyTerrainLoader(region, chunks, fetcher = fetch) {
+  const memo = new Map();
+  return async view => {
+    const all = [...view.points, ...view.stops];
+    const minX = Math.floor(Math.min(...all.map(p => p.col)) / 8) - 1;
+    const maxX = Math.floor(Math.max(...all.map(p => p.col)) / 8) + 1;
+    const minY = Math.floor(Math.min(...all.map(p => p.row)) / 8) - 1;
+    const maxY = Math.floor(Math.max(...all.map(p => p.row)) / 8) + 1;
+    const width = maxX - minX + 1, height = maxY - minY + 1;
+    const total = width * height, count = Math.min(256, total);
+    const positions = new Map();
+    const add = (x, y) => {
+      if (Math.abs(x) <= 1000 && Math.abs(y) <= 1000) positions.set(`${x},${y}`, [x, y]);
+    };
+    for (let index = 0; index < count; index++) {
+      const offset = count === 1 ? 0 : Math.floor(index * (total - 1) / (count - 1));
+      add(minX + offset % width, minY + Math.floor(offset / width));
+    }
+    for (const stop of view.stops) add(Math.floor(stop.col / 8), Math.floor(stop.row / 8));
+    for (const chunk of chunks.values()) {
+      const { x, y } = chunk.chunk;
+      if (x >= minX && x <= maxX && y >= minY && y <= maxY) add(x, y);
+    }
+    const requested = [...positions.values()];
+    for (const [x, y] of requested) {
+      const loaded = chunks.get(`${x},${y}`);
+      if (loaded) memo.set(`${x},${y}`, loaded);
+    }
+    const missing = requested.filter(([x, y]) => !memo.has(`${x},${y}`));
+    for (let offset = 0; offset < missing.length; offset += 9) {
+      const batch = missing.slice(offset, offset + 9);
+      const response = await fetcher(`/api/chunks-cached?${new URLSearchParams({
+        region, positions: JSON.stringify(batch),
+      })}`, { signal: AbortSignal.timeout(15_000) });
+      if (!response.ok) throw new Error(`Cached journey terrain: HTTP ${response.status}`);
+      const data = await response.json();
+      const allowed = new Set(batch.map(p => p.join(","))), seen = new Set();
+      if (!Array.isArray(data.chunks) || data.chunks.length > batch.length) throw new Error("Invalid cached terrain response.");
+      for (const chunk of data.chunks) {
+        const key = `${chunk?.chunk?.x},${chunk?.chunk?.y}`;
+        if (!allowed.has(key) || seen.has(key) || chunk.chunk.region !== region ||
+            chunk.width !== 8 || chunk.height !== 8 || !Array.isArray(chunk.rows) ||
+            chunk.rows.length !== 8 || chunk.rows.some(row => !Array.isArray(row) ||
+              row.length !== 8 || row.some(cell => !cell || !Object.hasOwn(TERRAIN, cell.terrain)))) {
+          throw new Error("Invalid cached terrain chunk.");
+        }
+        seen.add(key);
+      }
+      for (const chunk of data.chunks) memo.set(`${chunk.chunk.x},${chunk.chunk.y}`, chunk);
+      for (const [x, y] of batch) if (!memo.has(`${x},${y}`)) memo.set(`${x},${y}`, null);
+    }
+    const cells = [];
+    for (const [x, y] of requested) {
+      const chunk = memo.get(`${x},${y}`);
+      if (!chunk) continue;
+      chunk.rows.forEach((row, r) => row.forEach((cell, col) => {
+        if (!cell.unavailable) cells.push({ col: x * 8 + col, row: y * 8 + r, terrain: cell.terrain });
+      }));
+    }
+    return { cells, sampled: total > count, missing: requested.some(([x, y]) => !memo.get(`${x},${y}`)) };
+  };
+}
 
 const point = p => p && Number.isSafeInteger(p.col) && Number.isSafeInteger(p.row) &&
   p.col >= -8000 && p.col <= 8007 && p.row >= -8000 && p.row <= 8007;
@@ -47,7 +118,7 @@ export function journeyMapView(state, cellSizeMeters = 250) {
     col: state.trail.origin.col, row: state.trail.origin.row, kind: "start",
   });
   else if (!recorded?.partial && recorded) stops.push({ ...points[0], kind: "start" });
-  for (const arrival of state.trail?.arrivals ?? []) {
+  for (const arrival of [...(state.trail?.arrivals ?? [])].sort((a, b) => a.elapsedMinutes - b.elapsedMinutes)) {
     const stage = state.trail.stages[arrival.stage];
     if (point(stage)) stops.push({ col: stage.col, row: stage.row, name: stage.name, kind: "town" });
   }
@@ -58,8 +129,10 @@ export function journeyMapView(state, cellSizeMeters = 250) {
 }
 
 export function journeyMapDescription(view, t) {
-  return [t("journalMapNote"), ...(view.partial ? [t("journalMapPartial")] : []),
-    ...(view.simplified ? [t("journalMapSimplified")] : [])].join(" ");
+  return [t("journalMapNote"), ...(view.partial ? [t("journalMapPartial"), t("journalMapConnections")] : []),
+    ...(view.simplified ? [t("journalMapSimplified")] : []),
+    ...(view.terrain ? [t("journalMapCached"), ...(view.terrain.sampled || view.terrain.missing
+      ? [t("journalMapTerrainGaps")] : [])] : [])].join(" ");
 }
 
 export function drawJourneyMap(canvas, view, t, progress = 1) {
@@ -75,6 +148,19 @@ export function drawJourneyMap(canvas, view, t, progress = 1) {
     400 + (p.row - (minY + maxY) / 2) * scale];
   c.fillStyle = "#eddfbb";
   c.fillRect(0, 0, 1200, 800);
+  for (const cell of view.terrain?.cells ?? []) {
+    const [x, y] = project(cell);
+    if (x < 15 || y < 80 || x > 1185 || y > 690) continue;
+    const [color, glyph] = TERRAIN[cell.terrain];
+    c.fillStyle = color;
+    c.fillRect(x - scale / 2, y - scale / 2, scale + 0.5, scale + 0.5);
+    if (scale >= 12) {
+      c.fillStyle = "#635c49";
+      c.font = `${Math.min(24, scale * 0.65)}px monospace`;
+      c.textAlign = "center";
+      c.fillText(glyph, x, y + Math.min(8, scale / 4));
+    }
+  }
   c.strokeStyle = "#c9b78f";
   c.lineWidth = 1;
   c.setLineDash([]);
@@ -93,6 +179,15 @@ export function drawJourneyMap(canvas, view, t, progress = 1) {
   c.fillText(`${km.toFixed(1)} km`, 45, 760);
   c.strokeStyle = "#59472c";
   c.beginPath(); c.moveTo(45, 725); c.lineTo(205, 725); c.stroke();
+  if (view.partial && view.stops.length > 1) {
+    c.strokeStyle = "#8b7048";
+    c.lineWidth = 3;
+    c.setLineDash([4, 9]);
+    c.beginPath();
+    c.moveTo(...project(view.stops[0]));
+    for (const stop of view.stops.slice(1)) c.lineTo(...project(stop));
+    c.stroke();
+  }
   c.strokeStyle = "#ac3029";
   c.lineWidth = 5;
   c.setLineDash([14, 10]);

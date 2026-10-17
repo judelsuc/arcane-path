@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { recordJourneyPosition, validateJourneyMap, journeyMapView, drawJourneyMap,
   journeyMapDescription, MAX_JOURNEY_POINTS } from "../journey-map.mjs";
+import { createJourneyTerrainLoader } from "../journey-map.mjs";
 import { moveJourney, initialJourney } from "../travel.mjs";
 import { translate } from "../i18n.mjs";
 import { createSave, validateSave } from "../journey-save.mjs";
@@ -80,9 +81,9 @@ test("save roundtrip preserves route and rejects malformed data while old saves 
 });
 
 for (const locale of ["fr", "en"]) {
-  test(`${locale} schematic map fits both singleton and long routes, shows north/scale and no fake links`, () => {
-    const labels = [], coordinates = [];
-    const ctx = { fillRect() {}, setLineDash() {}, beginPath() {}, stroke() {}, fill() {},
+  test(`${locale} map fits routes, shows north/scale and labels straight links as distinct from walking`, () => {
+    const labels = [], coordinates = [], dashes = [];
+    const ctx = { fillRect() {}, setLineDash(value) { dashes.push(value); }, beginPath() {}, stroke() {}, fill() {},
       moveTo(...p) { coordinates.push(p); }, lineTo(...p) { coordinates.push(p); },
       arc(x, y) { coordinates.push([x, y]); }, fillText(text) { labels.push(text); } };
     const canvas = { getContext: () => ctx };
@@ -99,5 +100,78 @@ for (const locale of ["fr", "en"]) {
       assert.ok(coordinates.every(([x, y]) => x >= 0 && x <= 1200 && y >= 0 && y <= 800));
       assert.ok(journeyMapDescription(view, t).includes(t("journalMapNote")));
     }
+
+    const cachedChunk = (x, y) => ({ chunk: { x, y, region: "firmi" }, width: 8, height: 8,
+      rows: Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => ({ terrain: "forest" }))) });
+
+    test("overview requests only cached chunks in batches of nine, reuses memory, preserves negative cell positions", async () => {
+      const calls = [];
+      const load = createJourneyTerrainLoader("firmi", new Map([["-1,-1", cachedChunk(-1, -1)]]), async url => {
+        const parsed = new URL(url, "http://localhost");
+        assert.equal(parsed.pathname, "/api/chunks-cached");
+        assert.equal(parsed.searchParams.get("region"), "firmi");
+        const positions = JSON.parse(parsed.searchParams.get("positions"));
+        assert.ok(positions.length <= 9);
+        assert.ok(!positions.some(([x, y]) => x === -1 && y === -1));
+        calls.push(positions);
+        return { ok: true, json: async () => ({ chunks: positions
+          .filter(([x, y]) => x === 0 && y === 0).map(([x, y]) => cachedChunk(x, y)) }) };
+      });
+      const view = journeyMapView({ col: -1, row: -1, distanceMeters: 0 });
+      const terrain = await load(view);
+      assert.equal(terrain.cells.length, 128);
+      assert.ok(terrain.cells.some(cell => cell.col === -8 && cell.row === -8));
+      assert.equal(terrain.missing, true);
+      assert.equal(terrain.sampled, false);
+      await load(view);
+      assert.equal(calls.length, 1);
+    });
+
+    test("large cache-only views bound requests and visibly label sampled coverage", async () => {
+      let batches = 0;
+      const load = createJourneyTerrainLoader("firmi", new Map(), async url => {
+        assert.ok(url.startsWith("/api/chunks-cached?"));
+        batches++;
+        return { ok: true, json: async () => ({ chunks: [] }) };
+      });
+      const view = journeyMapView({ col: 1000, row: 1000, distanceMeters: 1000,
+        trail: { origin: { col: 0, row: 0 } } });
+      const terrain = await load(view);
+      assert.ok(batches <= 29);
+      assert.equal(terrain.sampled, true);
+      assert.equal(terrain.missing, true);
+      const text = journeyMapDescription({ ...view, terrain }, key => translate("en", key));
+      assert.match(text, /cache only/);
+      assert.match(text, /Incomplete background/);
+    });
+
+    test("cached lookup fails explicitly and rejects remote or malformed chunk substitution", async () => {
+      const view = journeyMapView({ col: 0, row: 0, distanceMeters: 0 });
+      for (const result of [
+        { ok: false, status: 503 },
+        { ok: true, json: async () => ({ chunks: [cachedChunk(500, 500)] }) },
+        { ok: true, json: async () => ({ chunks: [{ ...cachedChunk(0, 0), rows: [] }] }) },
+        { ok: true, json: async () => ({ chunks: [cachedChunk(0, 0), cachedChunk(0, 0)] }) },
+      ]) {
+        const load = createJourneyTerrainLoader("firmi", new Map(), async () => result);
+        await assert.rejects(load(view), /Cached journey terrain|Invalid cached terrain/);
+      }
+    });
+
+    test("cached cells render scaled underneath route strokes rather than obscuring them", () => {
+      const events = [];
+      const context = { fillRect() { events.push(`fill:${this.fillStyle}`); }, setLineDash() {},
+        beginPath() {}, moveTo() {}, lineTo() {}, stroke() { events.push(`stroke:${this.strokeStyle}`); },
+        fillText() {}, arc() {}, fill() {} };
+      const view = journeyMapView({ col: 0, row: 0, distanceMeters: 0 });
+      view.terrain = { cells: [{ col: 0, row: 0, terrain: "forest" }] };
+      drawJourneyMap({ getContext: () => context }, view, key => translate("en", key));
+      assert.ok(events.indexOf("fill:#8eab78") < events.indexOf("stroke:#ac3029"));
+    });
+    const view = journeyMapView({ col: 10, row: 10, distanceMeters: 10000,
+      trail: { origin: { col: 0, row: 0 } } });
+    drawJourneyMap(canvas, view, t);
+    assert.ok(dashes.some(pattern => String(pattern) === "4,9"));
+    assert.ok(journeyMapDescription(view, t).includes(t("journalMapConnections")));
   });
 }

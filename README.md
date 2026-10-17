@@ -825,6 +825,15 @@ bonne destination ; le temoin peut toujours se tromper.
 
 ### Carnet de photos
 
+En cas de deces (faim, ou anciennes fins par fatigue/manque de sommeil),
+une croix remplace le personnage a sa derniere position. L'ecran s'assombrit
+en cinq secondes et une fenetre montre l'arcane XIII historique et la cause
+du deces. La fenetre reste lisible au-dessus du fondu ; la fermer rend acces
+au carnet et aux commandes de nouveau voyage sans ressusciter le personnage.
+Le mouvement reduit supprime l'animation. Les evanouissements recuperables,
+placements au foyer et retrouvailles ne declenchent pas cet effet. Ce n'est
+pas un nouveau tirage de tarot et cela ne modifie pas le depot du carnet.
+
 La page **Carte du voyage** propose une vue schematique sur papier vieilli :
 chemin reel en pointilles rouges, depart, destinations effectivement atteintes,
 position actuelle, nord et echelle. **Rejouer le trace** anime la ligne sans
@@ -832,9 +841,16 @@ avancer le temps de jeu ; la preference de mouvement reduit est respectee.
 Ce n'est pas un fond de carte geographique ni le trajet secret du parent.
 Les deplacements sont enregistres dans la sauvegarde locale ; les anciennes
 sauvegardes commencent l'enregistrement a la reprise, sans inventer le chemin
-anterieur. Les tres longs parcours sont simplifies et explicitement signales.
+anterieur : des pointilles bruns relient alors les lieux connus a vol d'oiseau,
+dans l'ordre des visites, distincts du chemin reel rouge. Les tres longs
+parcours sont simplifies et explicitement signales.
 La carte et sa legende figurent aussi dans l'export PDF. Les carnets abandonnes
 ne montrent jamais la carte personnelle de leur lecteur.
+Le fond affiche les cellules de terrain reduites depuis le cache uniquement :
+aucune preparation ni requete fournisseur n'est lancee. Les zones absentes
+restent vierges et sont signalees. Les grands rectangles sont echantillonnes
+a 256 chunks, completes par les arrets connus et les chunks deja en memoire ;
+le fond peut donc etre partiel, sans affecter le trace du voyage.
 
 **Exporter en PDF** telecharge le carnet complet, pas seulement les deux pages
 visibles : photos, cartes de tarot, notes et credits avec leurs liens sources,
