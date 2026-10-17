@@ -14,6 +14,7 @@ const KEYS = {
   "open-journal": "A",
   "journal-previous": "ArrowLeft", "journal-next": "ArrowRight",
   "journal-export-pdf": "P",
+  "journal-map-page": "M",
   "copy-coordinates": "D",
   "needs-notice-cell": "F",
   "retry-travel": "Y", "stop-travel": "Q", "show-photo": "P",

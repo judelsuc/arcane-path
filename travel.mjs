@@ -1,3 +1,5 @@
+import { recordJourneyPosition } from "./journey-map.mjs";
+
 export const TRAVEL_MODEL = {
   baseSpeedKmh: 4.5,
   bodyMassKg: 40,
@@ -53,13 +55,13 @@ export function moveJourney(state, dc, dr, from, to, meters = 250) {
     throw new Error("Travel requires one orthogonal cell step.");
   }
   const cost = travelCost(from, to, meters, state.fatigue, state.character);
-  return {
-    ...state, col: state.col + dc, row: state.row + dr,
+  return recordJourneyPosition({
+    ...recordJourneyPosition(state), col: state.col + dc, row: state.row + dr,
     distanceMeters: state.distanceMeters + meters, elapsedMinutes: state.elapsedMinutes + cost.minutes,
     fatigue: Math.min(100, state.fatigue + cost.fatigueGain),
     energyKcal: state.energyKcal + cost.energyKcal, ascentMeters: state.ascentMeters + cost.ascentMeters,
     descentMeters: state.descentMeters + cost.descentMeters, lastMove: cost,
-  };
+  });
 }
 
 export function restJourney(state) {

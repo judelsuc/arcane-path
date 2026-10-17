@@ -4,6 +4,7 @@ import { setFeedback } from "./feedback.mjs";
 import { createTarotJournalPinner, tarotJournalEntry } from "./tarot-cards.mjs";
 import { journeyStats } from "./journey-stats.mjs";
 import { notebookPdf, downloadNotebookPdf } from "./notebook-pdf.mjs";
+import { journeyMapView, journeyMapDescription, drawJourneyMap } from "./journey-map.mjs";
 
 export function validateJournalPhoto(photo) {
   if (!photo || typeof photo.sourceUrl !== "string" || typeof photo.licenseUrl !== "string" ||
@@ -131,10 +132,16 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   const next = document.querySelector("#journal-next");
   const photosButton = document.querySelector("#journal-photos-page");
   const statsButton = document.querySelector("#journal-stats-page");
+  const mapButton = document.querySelector("#journal-map-page");
   const exportButton = document.querySelector("#journal-export-pdf");
   let exporting = false, exported = false, exportEpoch = 0;
   let abandonedClues = [];
   let statsContext = null, statistics = false;
+  let mapping = false, animation;
+  function stopAnimation() {
+    if (animation !== undefined) cancelAnimationFrame(animation);
+    animation = undefined;
+  }
   let entries = [], spread = 0, generation = 0, loading = false, error = "";
   const urls = new Set();
   const drafts = new Map();
@@ -158,15 +165,17 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     document.querySelector("#journal-retry").textContent = t("journalRetry");
     photosButton.textContent = t("journalPhotosPage");
     statsButton.textContent = t("journalStatsPage");
-    photosButton.hidden = statsButton.hidden = readOnly;
-    photosButton.disabled = !statistics;
+    mapButton.textContent = t("journalMapPage");
+    photosButton.hidden = statsButton.hidden = mapButton.hidden = readOnly;
+    photosButton.disabled = !statistics && !mapping;
     statsButton.disabled = statistics || !statsContext;
+    mapButton.disabled = mapping || !statsContext;
     exportButton.textContent = t(exporting ? "journalPdfPreparing" : "journalExportPdf");
     exportButton.disabled = exporting || loading;
-    previous.disabled = statistics || loading || spread === 0;
-    next.disabled = statistics || loading || (spread + 1) * 2 >= entries.length;
+    previous.disabled = mapping || statistics || loading || spread === 0;
+    next.disabled = mapping || statistics || loading || (spread + 1) * 2 >= entries.length;
     document.querySelector("#journal-count").textContent =
-      statistics ? t("journalStatsPage") :
+      mapping ? t("journalMapPage") : statistics ? t("journalStatsPage") :
         t("journalCount", { spread: spread + 1, total: Math.max(1, Math.ceil(entries.length / 2)) });
     status.textContent = error ? t("journalError", { error }) : exporting ? t("journalPdfPreparing") :
       loading ? t("journalLoading") : exported ? t("journalPdfReady") : "";
@@ -174,11 +183,56 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   }
   async function render() {
     const current = ++generation;
+    stopAnimation();
     loading = true;
     error = "";
     localize();
     try {
       pages.dataset.statistics = String(statistics);
+      pages.dataset.mapping = String(mapping);
+      if (mapping && statsContext && !readOnly) {
+        revoke();
+        pages.replaceChildren();
+        const view = journeyMapView(statsContext.state, statsContext.cellSizeMeters);
+        const page = document.createElement("section");
+        page.className = "notebook-page journal-map";
+        const title = document.createElement("h3");
+        title.textContent = t("journalMapPage");
+        const canvas = document.createElement("canvas");
+        canvas.className = "journey-map-canvas";
+        canvas.role = "img";
+        canvas.ariaLabel = t("journalMapPage");
+        drawJourneyMap(canvas, view, t);
+        const note = document.createElement("p");
+        note.textContent = journeyMapDescription(view, t);
+        const legend = document.createElement("ol");
+        for (const stop of view.stops) {
+          const item = document.createElement("li");
+          item.textContent = stop.name ?? t(`journalMap.${stop.kind}`);
+          legend.append(item);
+        }
+        const replay = document.createElement("button");
+        replay.type = "button";
+        replay.textContent = t("journalMapReplay");
+        replay.disabled = view.points.length < 2;
+        replay.addEventListener("click", () => {
+          stopAnimation();
+          if (globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+            drawJourneyMap(canvas, view, t);
+            return;
+          }
+          const started = performance.now();
+          const frame = now => {
+            const progress = Math.min(1, (now - started) / 4000);
+            drawJourneyMap(canvas, view, t, progress);
+            animation = progress < 1 ? requestAnimationFrame(frame) : undefined;
+          };
+          animation = requestAnimationFrame(frame);
+        });
+        page.append(title, canvas, note, legend, replay);
+        pages.append(page);
+        return;
+      }
       if (statistics && statsContext && !readOnly) {
         revoke();
         pages.replaceChildren();
@@ -330,11 +384,19 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   photosButton.addEventListener("click", () => {
     if (readOnly) return;
     statistics = false;
+    mapping = false;
     void load();
   });
   statsButton.addEventListener("click", () => {
     if (readOnly || !statsContext) return;
     statistics = true;
+    mapping = false;
+    void render();
+  });
+  mapButton.addEventListener("click", () => {
+    if (readOnly || !statsContext) return;
+    mapping = true;
+    statistics = false;
     void render();
   });
   previous.addEventListener("click", () => { if (!statistics && !loading && spread > 0) { spread--; void render(); } });
@@ -356,6 +418,8 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     try {
       const groups = !foreign && statsContext
         ? journeyStats(statsContext, t, document.documentElement.lang) : [];
+      const route = !foreign && statsContext
+        ? journeyMapView(statsContext.state, statsContext.cellSizeMeters) : null;
       await Promise.all(pendingPins);
       if (!stillCurrent()) return;
       const failed = [...failedPins.values()].find(entry => entry.scope === owner);
@@ -375,7 +439,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       }
       if (!stillCurrent()) return;
       const pdf = await makePdf({ title: t(foreign ? "journalAbandonedTitle" : "journalTitle"),
-        photos, groups, clues, t });
+        photos, groups, clues, route, t });
       if (!stillCurrent()) return;
       downloadPdf(pdf);
       exported = true;
@@ -388,21 +452,23 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   });
   dialog.addEventListener("close", () => {
     exportEpoch++;
+    stopAnimation();
     generation++; loading = false; revoke(); pages.replaceChildren();
     store = liveStore;
     readOnly = false;
     statistics = false;
+    mapping = false;
     abandonedClues = [];
     exported = false;
     document.querySelector("#journal-abandoned-clues")?.replaceChildren();
   });
   return {
     updateStats(context) {
-      const wasStatistics = statistics;
+      const wasSpecialPage = statistics || mapping;
       statsContext = context;
-      if (!context) statistics = false;
+      if (!context) statistics = mapping = false;
       if (dialog.open && !readOnly) {
-        if (statistics || wasStatistics) void render();
+        if (statistics || mapping || wasSpecialPage) void render();
         else localize();
       }
     },
@@ -410,6 +476,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       const nextScope = notebookScope(state);
       if (nextScope === scope) return;
       exportEpoch++;
+      stopAnimation();
       for (const [id, note] of drafts) await liveStore.note(id, note);
       const scoped = rootStore.scope ? await rootStore.scope(nextScope, { adoptLegacy }) : rootStore;
       generation++;
@@ -419,6 +486,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       entries = [];
       spread = 0;
       statistics = false;
+      mapping = false;
       statsContext = null;
       store = scoped;
       liveStore = scoped;
@@ -441,6 +509,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       exportEpoch++;
       readOnly = true;
       statistics = false;
+      mapping = false;
       abandonedClues = [...clues];
       exported = false;
       const evidence = document.querySelector("#journal-abandoned-clues");

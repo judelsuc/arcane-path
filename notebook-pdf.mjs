@@ -1,3 +1,5 @@
+import { journeyMapPhoto } from "./journey-map.mjs";
+
 const WIDTH = 1240, HEIGHT = 1754, MARGIN = 80;
 const encoder = new TextEncoder();
 
@@ -40,7 +42,7 @@ export function jpegPagesPdf(pages) {
   return new Blob(chunks, { type: "application/pdf" });
 }
 
-export async function notebookPdf({ title, photos, groups = [], clues = [], t }) {
+export async function notebookPdf({ title, photos, groups = [], clues = [], route = null, t }) {
   const canvas = document.createElement("canvas");
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
@@ -99,8 +101,9 @@ export async function notebookPdf({ title, photos, groups = [], clues = [], t })
     for (const row of group.rows) await text(`${row.label}: ${row.value}`);
   }
   if (groups.length) await flush();
-  if (!photos.length && !groups.length && !clues.length) await text(t("journalEmpty"));
-  for (const photo of photos) {
+  if (!photos.length && !groups.length && !clues.length && !route) await text(t("journalEmpty"));
+  const map = route ? await journeyMapPhoto(route, t) : null;
+  for (const photo of [...(map ? [map] : []), ...photos]) {
     if (dirty) await flush();
     await text(photo.caption || (photo.unannotated ? t("fieldClue.photo") : photo.title), 34, true);
     const url = URL.createObjectURL(photo.blob);
@@ -119,9 +122,11 @@ export async function notebookPdf({ title, photos, groups = [], clues = [], t })
       throw new Error(t("journalImageError"), { cause: reason });
     } finally { URL.revokeObjectURL(url); }
     if (photo.note) await text(photo.note);
-    await text(`${photo.attribution} · ${photo.license}`, 22);
-    await text(`${t("journalSource")}: ${photo.sourceUrl}`, 20);
-    await text(`${t("contentLicense")}: ${photo.licenseUrl}`, 20);
+    if (photo !== map) {
+      await text(`${photo.attribution} · ${photo.license}`, 22);
+      await text(`${t("journalSource")}: ${photo.sourceUrl}`, 20);
+      await text(`${t("contentLicense")}: ${photo.licenseUrl}`, 20);
+    }
     await flush();
   }
   await flush();

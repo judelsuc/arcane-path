@@ -61,6 +61,7 @@ for (const locale of ["fr", "en"]) {
     assert.equal(calls[0].photos.length, 3);
     assert.equal(calls[0].photos[0].note, "Unblurred PDF note");
     assert.ok(calls[0].groups.length);
+    assert.ok(calls[0].route);
     assert.deepEqual(calls[0].clues, []);
     assert.equal(element("#journal-export-pdf").disabled, false);
     failWrite = true;
@@ -76,6 +77,7 @@ for (const locale of ["fr", "en"]) {
     assert.equal(downloads, 2);
     assert.equal(calls[1].photos.length, 1);
     assert.deepEqual(calls[1].groups, []);
+    assert.equal(calls[1].route, null);
     assert.deepEqual(calls[1].clues, ["Previously collected clue"]);
     failPdf = true;
     await element("#journal-export-pdf").events.click();

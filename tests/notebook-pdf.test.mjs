@@ -80,6 +80,7 @@ test("download uses a PDF filename and cleans up its link and object URL", test 
     URL.createObjectURL = original.createObjectURL;
     URL.revokeObjectURL = original.revokeObjectURL;
   });
+
   const blob = new Blob(["%PDF"], { type: "application/pdf" });
   let clicked = false, removed = false, appended = false, cleanup, revoked;
   const link = { click() { clicked = true; }, remove() { removed = true; } };
@@ -93,4 +94,26 @@ test("download uses a PDF filename and cleans up its link and object URL", test 
   assert.equal(link.href, "blob:pdf");
   cleanup();
   assert.equal(revoked, "blob:pdf");
+});
+
+test("PDF includes the actual journey map and its legend, without hidden future stops", async t => {
+  const original = { document: globalThis.document, Image: globalThis.Image };
+  t.after(() => Object.assign(globalThis, original));
+  const lines = [];
+  const context = {
+    fillRect() {}, measureText: () => ({ width: 10 }), fillText: text => lines.push(text),
+    drawImage() {}, setLineDash() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {}, arc() {}, fill() {},
+  };
+  globalThis.document = { createElement: () => ({ getContext: () => context,
+    toBlob(callback, type) { callback(new Blob([new Uint8Array([255, 216])], { type })); } }) };
+  globalThis.Image = class { naturalWidth = 1200; naturalHeight = 800; async decode() {} };
+  const tr = (key, args) => translate("en", key, args);
+  const pdf = await notebookPdf({ title: "Notebook", photos: [], t: tr, route: {
+    points: [{ col: 0, row: 0 }, { col: 2, row: 3 }], cellSizeMeters: 250, partial: true,
+    stops: [{ col: 0, row: 0, kind: "start" }, { col: 2, row: 3, name: "Visited town", kind: "town" }],
+  } });
+  assert.ok(lines.includes(tr("journalMapPage")));
+  assert.ok(lines.includes("2. Visited town"));
+  assert.ok(lines.join(" ").includes(tr("journalMapPartial")));
+  assert.match(await pdf.text(), /\/Type \/Page /);
 });

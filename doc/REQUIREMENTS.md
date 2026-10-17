@@ -1,5 +1,20 @@
 # Requirements tracked outside the design PDF
 
+## R-116 - Adventure-style journey overview in the notebook
+
+- **User request:** Add a high-level travel view, in the spirit of adventure
+  film journey maps. Implement and publish it before resuming mini-game work.
+- Separate Journey map page: parchment styling, red dashed actual route,
+  departure, physically reached destinations and current position, north/scale,
+  with an optional replay animation respecting reduced-motion preferences.
+- Record the player's movements persistently; never reveal the parent's
+  hidden path or destinations. Legacy saves show known stops and start recording
+  from resume, clearly marking missing earlier route history.
+- Initial view is an explicitly labelled schematic, without an external
+  geographic basemap. Bound saved route size and label any simplification.
+- Include the map and legend in PDF exports. Do not substitute the reader's
+  personal map when displaying or exporting somebody else's abandoned notebook.
+
 ## R-114 - Download the complete notebook as PDF
 
 - **User request:** Implement the missing notebook PDF generation now.
