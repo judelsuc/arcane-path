@@ -5,6 +5,7 @@ import { validateTownTrail } from "./trail.mjs";
 import { CLUE_ACTIONS } from "./trail-actions.mjs";
 import { validateHospitality } from "./hospitality.mjs";
 import { validateStoryProgress } from "./parent-story.mjs";
+import { validateExploration } from "./trail-search.mjs";
 
 export const SAVE_VERSION = 1;
 const PREFIX = "arcane-journey-v1:";
@@ -95,6 +96,7 @@ export function validateSave(save) {
         p.witnessId !== `fictional-traveler-${index + 1}`)) fail();
   if (trail.version === 2) validateTownTrail(trail);
   validateStoryProgress(s);
+  validateExploration(s);
   if (trail.version === 2 && trail.discovery !== undefined) {
     const d = trail.discovery;
     if (!d || !Object.hasOwn(CLUE_ACTIONS, d.kind) || ["directions", "rumor"].includes(d.kind) ||

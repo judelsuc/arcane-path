@@ -480,12 +480,15 @@ def make_handler(store, jobs, path_pool=None):
                                 result.append(cached)
                         return self.send_json(200, {"chunks": result})
                     if url.path == "/api/parent-path":
-                        if (set(query) - {"journey", "stage", "retry"}
+                        if (set(query) - {"journey", "stage", "retry", "col", "row", "recognize"}
                                 or any(len(v) != 1 for v in query.values())
+                                or ("col" in query) != ("row" in query)
                                 or query.get("retry", ["0"])[0] not in {"0", "1"}):
                             raise ValueError("Invalid parent path request.")
                         status, payload = parent_paths.request(query["journey"][0],
-                            int(query["stage"][0]), query.get("retry", ["0"])[0] == "1")
+                            int(query["stage"][0]), query.get("retry", ["0"])[0] == "1",
+                            position=(int(query["col"][0]), int(query["row"][0])) if "col" in query else None,
+                            recognize=query.get("recognize", [None])[0])
                         return self.send_json(status, payload)
                     if url.path == "/api/trail":
                         region, seed = query["region"][0], query["seed"][0]

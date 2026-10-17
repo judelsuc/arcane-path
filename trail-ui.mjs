@@ -6,9 +6,15 @@ import { clueActions, CLUE_ACTIONS, searchClueOptions, prepareClueSearch } from 
 import { marketPrice } from "./economy.mjs";
 import { parentSighting } from "./parent-story.mjs";
 import { DIRECTIONS_RULES, directionsChance } from "./directions.mjs";
+import { fieldSearchAvailable, fieldSearchRules, prepareFieldSearch, fieldClueText, vagueLead,
+  recognitionHint, prepareRecognition } from "./trail-search.mjs";
 
 export function parentClueText(state, discovery, t) {
   if (!discovery.nextName) return t("trailReunion", { parent: state.trail.parentName });
+  if (state.trail.exploration && discovery.step >= state.trail.exploration.firstStage && !discovery.pending) {
+    const hint = state.trail.exploration.hints.find(h => h.stage === discovery.step + 1);
+    return t("fieldLead", { clue: hint ? fieldClueText(state, hint, t) : vagueLead(state, discovery.step + 1, t) });
+  }
   const hint = discovery.pending ? discovery.venue : discovery.nextName;
   if (discovery.kind !== "discuss") {
     return t(`clueText.${discovery.kind}`, { hint, parent: state.trail.parentName });
@@ -27,6 +33,13 @@ export function trailReminder(state, t) {
   const trail = state.trail;
   if (trail.completed) return t("trailReunion", { parent: trail.parentName });
   if (trail.discovery?.pending) return t("clueAskDirections", { venue: trail.discovery.venue });
+  if (trail.exploration && trail.exploration.knownStage !== trail.index) {
+    const hints = trail.exploration.hints.filter(h => h.stage === trail.index);
+    const best = hints.find(h => h.kind === "place") ??
+      hints.find(h => h.precision === "partial" && h.kind === "prefix") ??
+      hints.find(h => h.kind === "prefix") ?? hints.find(h => h.kind === "direction");
+    return best ? fieldClueText(state, best, t) : vagueLead(state, trail.index, t);
+  }
   return t("trailKnownDestination", { place: trailTarget(state).name });
 }
 
@@ -37,6 +50,9 @@ export function playerHint(state, info, t) {
   if (atTrailTarget(state)) {
     if (state.trail.discovery?.pending) return t("hintDirections", { venue: state.trail.discovery.venue });
     return t(state.trail.version === 2 ? "hintInvestigate" : "hintInterview", { place: target.name });
+  }
+  if (state.trail.exploration && state.trail.exploration.knownStage !== state.trail.index) {
+    return trailReminder(state, t);
   }
   const meters = state.trail.version === 2
     ? distanceMeters(info, target.latitude, target.longitude)
@@ -49,7 +65,7 @@ export function playerHint(state, info, t) {
     distance: t(`hintDistance.${distance}`) });
 }
 
-export function setupTrail(t, { context, interview, discover, askDirections }) {
+export function setupTrail(t, { context, interview, discover, askDirections, searchField, recognizeField }) {
   const dialog = document.querySelector("#trail-dialog");
   const hintDialog = document.querySelector("#hint-dialog");
   const action = document.querySelector("#trail-interview");
@@ -58,6 +74,8 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
   let directionsOutcome;
   let searching = false, searchGeneration = 0, preparedPhoto, photoUnavailable = false;
   let photoKey, objectUrl, photoGeneration = 0, service;
+  let searchController, fieldPhoto, fieldPhotoUnavailable = false;
+  let viewedFieldPhoto;
 
   function clearPhoto() {
     photoGeneration++;
@@ -65,8 +83,8 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     objectUrl = photoKey = undefined;
     photo.replaceChildren();
   }
-  async function resolveCluePhoto(state, index) {
-    const place = state.trail.stages[index + 1] ?? state.trail.stages[index];
+  async function resolveCluePhoto(state, index, currentTarget = false) {
+    const place = state.trail.stages[index + (currentTarget ? 0 : 1)] ?? state.trail.stages[index];
     const step = 250 / 6371008.8 * 180 / Math.PI;
     const lonStep = step / Math.cos(place.latitude * Math.PI / 180);
     const info = { latitude: place.latitude, longitude: place.longitude, meters: 250,
@@ -96,24 +114,25 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     }
     return content;
   }
-  async function availablePhoto(state, index) {
+  async function availablePhoto(state, index, currentTarget = false) {
     try {
-      return await resolveCluePhoto(state, index);
+      return await resolveCluePhoto(state, index, currentTarget);
     } catch (error) {
       console.error("Clue photo unavailable:", error);
       return null;
     }
   }
-  async function renderPhoto(state, discovery) {
-    const key = `${discovery.step}:${document.documentElement.lang}`;
+  async function renderPhoto(state, discovery, unannotated = false, currentTarget = unannotated) {
+    const key = `${discovery.step}:${unannotated}:${currentTarget}:${document.documentElement.lang}`;
     if (photoKey === key) return;
     clearPhoto();
     photoKey = key;
     const generation = photoGeneration;
     paragraph(photo, t("cluePhotoLoading"));
     try {
-      const content = preparedPhoto?.step === discovery.step
-        ? preparedPhoto.content : await availablePhoto(state, discovery.step);
+      const prepared = currentTarget ? fieldPhoto : preparedPhoto;
+      const content = prepared?.step === discovery.step && prepared.content
+        ? prepared.content : await availablePhoto(state, discovery.step, currentTarget);
       if (generation !== photoGeneration) return;
       photo.replaceChildren();
       if (!content) {
@@ -126,8 +145,9 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
       image.alt = t("cluePhotoAlt");
       image.onerror = () => { if (generation === photoGeneration) paragraph(photo, t("cluePhotoMissing")); };
       photo.append(image);
-      paragraph(photo, t("contentCredit", content));
-      for (const [url, label] of [[content.sourceUrl, content.title], [content.licenseUrl, t("contentLicense")]]) {
+      paragraph(photo, t("contentCredit", unannotated ? { ...content, title: t("fieldClue.photo") } : content));
+      for (const [url, label] of [[content.sourceUrl, unannotated ? t("fieldPhotoSource") : content.title],
+        [content.licenseUrl, t("contentLicense")]]) {
         const parsed = new URL(url);
         if (parsed.protocol !== "https:") throw new Error("Unsafe clue-photo source.");
         const link = document.createElement("a");
@@ -149,6 +169,37 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     const p = document.createElement("p");
     p.textContent = text;
     container.append(p);
+  }
+  function reportText(report) {
+    return t(`fieldReport.${report.outcome === "suggestion" ? report.kind : report.outcome}`, {
+      place: report.town?.name,
+    });
+  }
+  async function askCollectedClue(hint) {
+    const current = context();
+    if (!current || current.blocked || searching) return;
+    searching = true;
+    const generation = ++searchGeneration;
+    const controller = searchController = new AbortController();
+    document.querySelector("#hint-action-error").textContent = "";
+    document.querySelector("#trail-action-error").textContent = "";
+    localize();
+    try {
+      const prepared = await prepareRecognition(current.state, hint, controller.signal);
+      if (generation !== searchGeneration || context()?.state !== current.state || context()?.blocked) return;
+      recognizeField(prepared);
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      console.error("Clue recognition failed:", error);
+      for (const selector of ["#hint-action-error", "#trail-action-error"]) {
+        document.querySelector(selector).textContent = t("fieldRecognitionError", { error: error.message });
+      }
+    } finally {
+      if (generation === searchGeneration) {
+        searching = false;
+        localize();
+      }
+    }
   }
   function renderStory(state) {
     const { trail } = state, story = trail.story;
@@ -180,7 +231,8 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
       const item = document.createElement("li");
       paragraph(item, t("parentStory.falseLead", {
         traveler: branch.traveler, place: trail.stages[rumor.stage].name,
-        next: trail.stages[rumor.stage + 1].name,
+        next: trail.exploration && rumor.stage >= trail.exploration.firstStage
+          ? vagueLead(state, rumor.stage + 1, t) : trail.stages[rumor.stage + 1].name,
       }));
       records.append(item);
     }
@@ -189,14 +241,16 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     const current = context();
     document.querySelector("#open-hint").disabled = !current?.state.trail || current.blocked || Boolean(current.state.ended);
     if (current?.state.trail) {
-      ask.disabled = current.blocked || Boolean(current.state.ended);
+      ask.disabled = current.blocked || Boolean(current.state.ended) || searching;
       document.querySelector("#hint-cost").textContent = t("hintCost", {
         minutes: DIRECTIONS_RULES.minutes, fatigue: DIRECTIONS_RULES.fatigue,
         chance: Math.round(directionsChance(current.cell) * 100),
       });
-      document.querySelector("#hint-guidance").textContent = directionsOutcome === "helped"
-        ? playerHint(current.state, current.info, t)
-        : t(directionsOutcome ? `hintOutcome.${directionsOutcome}` : "hintBeforeAsk");
+      const report = current.state.trail.exploration?.lastReport;
+      document.querySelector("#hint-guidance").textContent = report?.stage === current.state.trail.index
+        ? reportText(report)
+        : directionsOutcome === "helped" ? playerHint(current.state, current.info, t)
+          : t(directionsOutcome ? `hintOutcome.${directionsOutcome}` : "hintBeforeAsk");
     }
     document.querySelector("#open-trail").disabled = !current?.state.trail;
     document.querySelector("#town-trail").disabled = !current?.state.trail;
@@ -220,7 +274,8 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     for (const [index, facts] of trail.history.entries()) {
       const item = document.createElement("li");
       if (facts.next && modern) {
-        paragraph(item, `${t(`clueFound.${facts.clueKind}`)} — ${t("clueHistory", {
+        const progressive = trail.exploration && index >= trail.exploration.firstStage;
+        paragraph(item, `${t(progressive && facts.clueKind === "photo" ? "fieldClue.photo" : `clueFound.${facts.clueKind}`)} — ${t(progressive ? "fieldClueAt" : "clueHistory", {
           place: facts.place, next: facts.next.name,
         })}`);
         paragraph(item, parentClueText(state, {
@@ -233,9 +288,86 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
       else paragraph(item, t("trailReunion", { parent: facts.parentName }));
       history.append(item);
     }
+    for (const hint of trail.exploration?.hints ?? []) {
+      const item = document.createElement("li");
+      paragraph(item, fieldClueText(state, hint, t));
+      if (hint.kind === "photo") {
+        const view = document.createElement("button");
+        view.type = "button";
+        view.textContent = t("fieldViewPhoto");
+        view.addEventListener("click", () => {
+          viewedFieldPhoto = hint.stage;
+          photo.hidden = false;
+          void renderPhoto(state, { step: hint.stage }, true);
+        });
+        item.append(view);
+      }
+      if (hint.stage === trail.index && ["prefix", "photo"].includes(hint.kind) && !state.ended) {
+        const askButton = document.createElement("button");
+        askButton.type = "button";
+        askButton.textContent = t("fieldAsk");
+        askButton.disabled = blocked || searching;
+        askButton.addEventListener("click", () => askCollectedClue(hint));
+        item.append(askButton);
+      }
+      history.append(item);
+    }
+    for (const report of trail.exploration?.reports ?? []) {
+      const item = document.createElement("li");
+      paragraph(item, reportText(report));
+      history.append(item);
+    }
     const actions = document.querySelector("#trail-actions");
     actions.replaceChildren();
-    if (modern && !atTrailTarget(state) && !trail.completed) paragraph(actions, t("clueTravelFirst"));
+    const lastReport = trail.exploration?.lastReport;
+    if (lastReport?.stage === trail.index) paragraph(actions, reportText(lastReport));
+    if (modern && !atTrailTarget(state) && !trail.completed && !trail.exploration) paragraph(actions, t("clueTravelFirst"));
+    if (fieldSearchAvailable(state, current.cell) && !atTrailTarget(state)) {
+      const item = document.createElement("div"), button = document.createElement("button");
+      const rules = fieldSearchRules(state);
+      button.id = "clue-field-search";
+      button.type = "button";
+      button.textContent = t(searching ? "clueSearchLoading" : "clueSearch");
+      button.disabled = blocked || searching || !state.serverJourney;
+      paragraph(item, t("fieldSearchCosts", rules));
+      if (!state.serverJourney) paragraph(item, t("fieldSearchServer"));
+      const last = trail.exploration.lastSearch;
+      if (last?.stage === trail.index) {
+        paragraph(item, t(`fieldOutcome.${last.outcome}`, last));
+        if (fieldPhotoUnavailable) paragraph(item, t("fieldPhotoFallback"));
+      }
+      button.addEventListener("click", async () => {
+        const latest = context();
+        if (searching || !latest || latest.blocked || latest.state !== state) return;
+        searching = true;
+        fieldPhotoUnavailable = false;
+        const controller = searchController = new AbortController();
+        const generation = ++searchGeneration;
+        document.querySelector("#trail-action-error").textContent = "";
+        localize();
+        try {
+          const found = await prepareFieldSearch(state, current.cell, availablePhoto, controller.signal);
+          if (generation !== searchGeneration) return;
+          const latest = context();
+          if (!latest || latest.blocked || latest.state !== state) return;
+          fieldPhoto = found.content ? { step: found.stage, content: found.content } : undefined;
+          viewedFieldPhoto = found.content ? found.stage : undefined;
+          fieldPhotoUnavailable = found.photoUnavailable;
+          searchField(found);
+        } catch (error) {
+          if (controller.signal.aborted) return;
+          console.error("Field clue search failed:", error);
+          document.querySelector("#trail-action-error").textContent = t("fieldSearchError", { error: error.message });
+        } finally {
+          if (generation === searchGeneration) {
+            searching = false;
+            localize();
+          }
+        }
+      });
+      item.append(button);
+      actions.append(item);
+    }
     const available = clueActions(state);
     const options = searchClueOptions(state, current.cell, current.info, current.data);
     if (options.length) {
@@ -274,7 +406,7 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
       paragraph(item, t("clueSearchCosts"));
       for (const kind of options) {
         const rule = CLUE_ACTIONS[kind];
-        paragraph(item, `${t(`clueFound.${kind}`)} — ${t("clueCost", {
+        paragraph(item, `${t(kind === "photo" && trail.exploration ? "fieldClue.photo" : `clueFound.${kind}`)} — ${t("clueCost", {
           minutes: rule.minutes, fatigue: rule.fatigue, kcal: rule.kcal,
           money: ((rule.mealUnits ? marketPrice(current.cell, rule.mealUnits, current.data, current.info).cents : 0) / 100).toFixed(2),
         })}`);
@@ -302,13 +434,24 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     const discovery = trail.discovery;
     document.querySelector("#trail-discovery").hidden = !discovery;
     if (discovery) {
-      document.querySelector("#trail-discovery-title").textContent = t(`clueFound.${discovery.kind}`);
+      document.querySelector("#trail-discovery-title").textContent =
+        t(discovery.kind === "photo" && trail.exploration ? "fieldClue.photo" : `clueFound.${discovery.kind}`);
       document.querySelector("#trail-discovery-text").textContent =
         `${photoUnavailable ? `${t("cluePhotoFallback")} ` : ""}${parentClueText(state, discovery, t)}`;
-      photo.hidden = discovery.kind !== "photo";
-      if (discovery.kind === "photo") void renderPhoto(state, discovery);
-      else clearPhoto();
-    } else clearPhoto();
+    }
+    const last = trail.exploration?.lastSearch;
+    const latestPhoto = trail.exploration?.hints.find(h => h.kind === "photo" &&
+      h.elapsedMinutes === last?.elapsedMinutes);
+    if (viewedFieldPhoto !== undefined || latestPhoto && last.stage === trail.index && last.outcome === "found") {
+      photo.hidden = false;
+      void renderPhoto(state, { step: viewedFieldPhoto ?? latestPhoto.stage }, true);
+    } else if (discovery?.kind === "photo") {
+      photo.hidden = false;
+      void renderPhoto(state, discovery, Boolean(trail.exploration), false);
+    } else {
+      photo.hidden = true;
+      clearPhoto();
+    }
   }
   function open() {
     if (!context()?.state.trail || document.querySelector("dialog[open]")) return;
@@ -327,6 +470,11 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
   ask.addEventListener("click", () => {
     const current = context();
     if (!current || current.blocked || current.state.ended) return;
+    const hint = recognitionHint(current.state);
+    if (hint) {
+      void askCollectedClue(hint);
+      return;
+    }
     document.querySelector("#hint-action-error").textContent = "";
     const outcome = askDirections();
     if (!outcome) return;
@@ -346,7 +494,17 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     document.querySelector("#restart-travel").click();
   });
   dialog.addEventListener("close", () => {
+    if (dialog.open) return;
     if (searching) {
+      searchController?.abort();
+      searchGeneration++;
+      searching = false;
+    }
+  });
+  hintDialog.addEventListener("close", () => {
+    if (hintDialog.open) return;
+    if (searching) {
+      searchController?.abort();
       searchGeneration++;
       searching = false;
     }
@@ -358,9 +516,13 @@ export function setupTrail(t, { context, interview, discover, askDirections }) {
     }
   });
   return { open, localize, reset() {
+    searchController?.abort();
     searchGeneration++;
     searching = false;
     preparedPhoto = undefined;
+    fieldPhoto = undefined;
+    viewedFieldPhoto = undefined;
+    fieldPhotoUnavailable = false;
     photoUnavailable = false;
     dialog.close();
     hintDialog.close();

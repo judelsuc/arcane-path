@@ -9,6 +9,10 @@ import math
 import threading
 import time
 import xml.etree.ElementTree as ET
+import unicodedata
+
+from local_towns import LocalTowns
+from town_trail import grid_position
 
 VERSION = "grid-walk-v1"
 GROUND_COST = {
@@ -101,6 +105,7 @@ class ParentPaths:
         self.pool = pool or ThreadPoolExecutor(max_workers=1, thread_name_prefix="parent-path")
         self.lock = threading.Lock()
         self.jobs, self.progress, self.errors = {}, {}, {}
+        self.towns = None
 
     def location(self, journey_id, stage):
         return self.cache / "journeys" / journey_id / f"{stage}.json"
@@ -124,12 +129,44 @@ class ParentPaths:
         return {key: data[key] for key in ("version", "distanceMeters", "walkingMinutes",
                 "elevationComplete", "expanded", "corridorCells", "chunks", "downloads")}
 
-    def request(self, journey_id, stage, retry=False):
+    def recognition(self, record, stage, position, kind):
+        if kind not in {"vague-prefix", "partial-prefix", "vague-photo", "partial-photo"} or position is None:
+            raise ValueError("Invalid clue recognition request.")
+        with self.lock:
+            if self.towns is None:
+                self.towns = LocalTowns()
+        target = record["state"]["trail"]["stages"][stage]
+        base = self.chunks.bases[record["region"]]
+        prefix_length = min(max(1, len(target["name"]) // 2), 5 if kind.startswith("partial") else 2)
+        normalize = lambda text: "".join(c for c in unicodedata.normalize("NFKD", text.casefold())
+                                         if not unicodedata.combining(c))
+        prefix = normalize(target["name"][:prefix_length])
+        candidates = []
+        for rows in self.towns.buckets.values():
+            for row in rows:
+                if kind.endswith("prefix") and not normalize(row[1]).startswith(prefix):
+                    continue
+                point = grid_position(base, row[2], row[3])
+                player_distance = math.hypot(point["col"] - position[0], point["row"] - position[1])
+                target_distance = math.hypot(point["col"] - target["col"], point["row"] - target["row"])
+                candidates.append((player_distance if kind.endswith("prefix") else target_distance,
+                                   row[0], {"name": row[1], "latitude": row[2], "longitude": row[3]}))
+        candidates.sort(key=lambda c: c[:2])
+        towns = [c[2] for c in candidates[:8]]
+        return {"status": "recognition", "stage": stage, "col": position[0], "row": position[1],
+                "kind": kind, "towns": towns, "sourceUrl": "https://www.geonames.org/"}
+
+    def request(self, journey_id, stage, retry=False, position=None, recognize=None):
+        if position is not None and (len(position) != 2 or any(
+                type(v) is not int or abs(v // 8) > 1000 for v in position)):
+            raise ValueError("Invalid clue search position.")
         record = self.journeys.read(journey_id)
         if record is None:
             return 404, {"error": "Server journey not found."}
         if type(stage) is not int or not 0 <= stage < len(record["state"]["trail"]["stages"]):
             raise ValueError("Invalid parent path stage.")
+        if recognize is not None:
+            return 200, self.recognition(record, stage, position, recognize)
         key = (journey_id, stage)
         with self.lock:
             for finished_key, job in list(self.jobs.items()):
@@ -144,7 +181,11 @@ class ParentPaths:
                     self.errors[finished_key] = str(error)
             path = self.location(*key)
             if path.exists():
-                return 200, {"status": "ready", "stage": stage, **self.summary(self.decode(path))}
+                data = self.decode(path)
+                proximity = {} if position is None else {"pathDistanceMeters": min(
+                    math.hypot(position[0] - col, position[1] - row) * CELL_METERS
+                    for col, row in data["points"]), "col": position[0], "row": position[1]}
+                return 200, {"status": "ready", "stage": stage, **self.summary(data), **proximity}
             if key in self.errors:
                 if not retry:
                     return 422, {"error": self.errors[key], "stage": stage}

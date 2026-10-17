@@ -2,6 +2,7 @@ import { atTrailTarget, witnessFacts } from "./trail.mjs";
 import { restSurvival } from "./survival.mjs";
 import { finishAction, marketPrice, didFaint } from "./economy.mjs";
 import { parentClues } from "./parent-story.mjs";
+import { fieldSearchRules } from "./trail-search.mjs";
 
 export const CLUE_ACTIONS = Object.freeze({
   discuss: { minutes: 15, fatigue: 1, kcal: 10 },
@@ -64,14 +65,24 @@ export function trailClue(state, kind, cell, info, survival, economy) {
   } };
   const facts = witnessFacts(next);
   const target = facts.next;
-  const pending = kind !== "directions" && Boolean(target?.venue);
+  const pending = !state.trail.exploration && kind !== "directions" && Boolean(target?.venue);
   const discovery = { kind: kind === "directions" ? state.trail.discovery.kind : kind,
     step: state.trail.index, pending, place: state.trail.stages[state.trail.index].name,
     nextName: target?.name ?? null, venue: target?.venue?.name ?? null };
   if (pending) return { ...next, trail: { ...state.trail, discovery } };
   const index = state.trail.index + 1;
   const completed = !target;
+  let exploration = state.trail.exploration;
+  if (exploration && !completed) {
+    const precision = fieldSearchRules({ ...next, trail: { ...state.trail, index } }).precision;
+    const hint = { stage: index, kind: precision === "precise" ? "place"
+      : discovery.kind === "photo" ? "photo"
+        : ["letter", "search", "ticket", "buy"].includes(discovery.kind) ? "prefix" : "direction",
+    precision, col: state.col, row: state.row, elapsedMinutes: next.elapsedMinutes };
+    exploration = { ...exploration, hints: [...exploration.hints, hint] };
+  }
   return { ...next, ended: completed ? "reunion" : null, trail: { ...state.trail,
+    ...(exploration ? { exploration } : {}),
     index, completed, discovery, history: [...state.trail.history, {
       ...facts, clueKind: discovery.kind, usedDirections: kind === "directions",
     }] } };
