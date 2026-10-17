@@ -1,5 +1,29 @@
 # Infrastructure OVHcloud - rapport du 18 octobre 2026
 
+## Derniere livraison - carte du voyage, fond en cache et deces
+
+- Runtime `c572c0f`, tag `deploy-2026-10-18-death-terrain`,
+  developpement `35b1232`, base live `bcf0a48`. Huit assets et manifeste
+  verifies octet par octet sur HTTPS, sans redemarrage.
+- Carte du carnet : terrain reduit depuis les chunks en cache uniquement,
+  aucune preparation cartographique. Couverture incomplete/echantillonnee
+  signalee ; fond identique dans le PDF. Pointilles bruns entre lieux connus
+  quand l'ancien chemin manque, distincts du trace reel rouge.
+- R-113 : croix au deces, fondu noir de cinq secondes, arcane XIII et cause
+  explicite dans une fenetre native au-dessus du fondu. Fermeture sans
+  resurrection, mouvement reduit respecte et reessai des images disponible.
+  Evanouissement, placement et retrouvailles exclus.
+- **419 tests JS passes** sur runtime isole. Verification visuelle indisponible
+  (connexion navigateur CDP en timeout). API disponible et services actifs.
+- Deux bases sauvegardees avant/apres ; **16 genesis initiales inchangees**.
+  Retour code : `/home/ubuntu/arcane-path-before-deploy-c572c0f.tar.gz` (0600).
+- Livraison intermediaire `bcf0a48`, tag `deploy-2026-10-18-journey-map`,
+  developpement `af64eda` : trace persistant, page dediee, animation et PDF.
+  407 tests JS passes, dix assets et manifeste verifies sur HTTPS, sans
+  redemarrage ; 16 genesis inchangees et deux bases sauvegardees.
+  Retour code : `/home/ubuntu/arcane-path-before-deploy-bcf0a48.tar.gz` (0600).
+- Mini-jeux locaux exclus des deux livraisons.
+
 ## Derniere livraison - export PDF du carnet
 
 - **18 octobre 2026 (heure locale)** : runtime `8169e9a`, tag
