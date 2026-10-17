@@ -918,7 +918,8 @@ Le mini-jeu a sa propre melodie originale avec basse et accompagnement,
 synthetisee localement en WAV PCM, lue par le meme lecteur audio natif que
 les musiques de fond (sans contexte Web Audio separe ni fichier externe).
 La lecture est recalee sur les memes reperes visuels : une phrase de 12 cases (8 notes,
-4 silences), repetee trois fois. Les cases vides ne donnent aucun point.
+4 silences), tiree au hasard au debut de chaque prestation puis repetee trois
+fois pour permettre de l'apprendre. Les cases vides ne donnent aucun point.
 Le pas est de 400 ms, la tolerance de 150 ms ; les silences rendent les attaques
 irregulieres. Le compteur indique la boucle courante sur trois. Les 24 notes
 partagent le meme plafond de gain qu'avant, sans tripler le revenu.

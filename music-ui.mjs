@@ -1,4 +1,4 @@
-import { MUSIC, MUSIC_PATTERN, rhythm, beatTime, rhythmEnd, tapRhythm } from "./music.mjs";
+import { MUSIC, rhythm, beatTime, rhythmEnd, tapRhythm } from "./music.mjs";
 
 export function setupMusic(t, { begin, settle, available, audio }) {
   const dialog = document.querySelector("#music-dialog");
@@ -24,7 +24,7 @@ export function setupMusic(t, { begin, settle, available, audio }) {
       Math.floor((now - game.startedAt - MUSIC.leadMs) / (MUSIC.slots * MUSIC.intervalMs))));
     let note = loop * MUSIC.beats / MUSIC.loops;
     for (let i = 0; i < beats.length; i++) {
-      if (!MUSIC_PATTERN[i]) {
+      if (!game.pattern[i]) {
         beats[i].className = "music-beat rest";
         beats[i].textContent = "";
         continue;

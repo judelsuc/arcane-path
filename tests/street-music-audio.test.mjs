@@ -21,7 +21,8 @@ function fixture(options = {}) {
 }
 
 test("native PCM melody contains audible cues on the exact visual beat clock, including all three loops", () => {
-  const bytes = streetMusicWav(), view = new DataView(bytes.buffer);
+  const game = rhythm(1000, () => 0.42);
+  const bytes = streetMusicWav(undefined, game), view = new DataView(bytes.buffer);
   assert.equal(new TextDecoder().decode(bytes.subarray(0, 4)), "RIFF");
   assert.equal(new TextDecoder().decode(bytes.subarray(8, 12)), "WAVE");
   assert.equal(view.getUint32(4, true), bytes.length - 8);
@@ -30,16 +31,23 @@ test("native PCM melody contains audible cues on the exact visual beat clock, in
   assert.equal(view.getUint32(40, true), bytes.length - 44);
   function peak(at, duration) {
     let max = 0;
-    for (let i = Math.round(at * 22050); i < (at + duration) * 22050; i++) {
+    for (let i = Math.round(at * 22050); i < (at + duration) * 22050 && 44 + i * 2 < bytes.length; i++) {
       max = Math.max(max, Math.abs(view.getInt16(44 + i * 2, true)));
     }
     return max;
   }
   assert.equal(peak(0, MUSIC.leadMs / 1000), 0);
   for (let i = 0; i < MUSIC.beats; i++) {
-    assert.ok(peak(beatTime(rhythm(0), i) / 1000, 0.1) > 8000);
+    assert.ok(peak((beatTime(game, i) - game.startedAt) / 1000, 0.1) > 8000);
   }
-  assert.equal(peak((MUSIC.leadMs + MUSIC.intervalMs * 2) / 1000, 0.1), 0);
+  for (let loop = 0; loop < MUSIC.loops; loop++) {
+    for (let slot = 0; slot < MUSIC.slots; slot++) {
+      if (!game.pattern[slot]) {
+        assert.equal(peak((MUSIC.leadMs + MUSIC.intervalMs * (loop * MUSIC.slots + slot)) / 1000, 0.1), 0);
+      }
+    }
+  }
+  assert.notDeepEqual(bytes, streetMusicWav(undefined, rhythm(1000, () => 0.99)));
   assert.notDeepEqual(streetMusicWav(true), streetMusicWav(false));
 });
 
@@ -78,6 +86,19 @@ test("loading latency seeks to the visual clock and never plays an expired perfo
   const expired = fixture({ now: () => rhythmEnd(rhythm(1000)) + 1000 });
   await expired.player.start(rhythm(1000));
   assert.equal(expired.voices[0].paused, true);
+});
+
+test("each start regenerates backing audio from that performance's drawn rhythm", async () => {
+  const { player, voices } = fixture();
+  const first = rhythm(1000, () => 0), second = rhythm(1000, () => 0.99);
+  await player.start(first);
+  const firstBytes = new Uint8Array(await (await fetch(voices[0].url)).arrayBuffer());
+  await player.start(second);
+  const secondBytes = new Uint8Array(await (await fetch(voices[1].url)).arrayBuffer());
+  assert.deepEqual(firstBytes, streetMusicWav(undefined, first));
+  assert.deepEqual(secondBytes, streetMusicWav(undefined, second));
+  assert.notDeepEqual(firstBytes, secondBytes);
+  player.stop();
 });
 
 test("cancelled loading cannot revive music, later performances work and ended tap URLs are released", async () => {

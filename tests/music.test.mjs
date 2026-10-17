@@ -32,15 +32,34 @@ test("perfect sequence hits all 24 notes over three irregular loops; rests never
   assert.equal(game.hits.filter(Boolean).length, 24);
   const empty = rhythm(0);
   for (let loop = 0; loop < 3; loop++) {
-    for (const slot of [2, 4, 7, 9]) {
+    for (const slot of empty.pattern.flatMap((note, slot) => note ? [] : [slot])) {
       assert.equal(tapRhythm(empty, MUSIC.leadMs + (loop * 12 + slot) * MUSIC.intervalMs), empty);
     }
-    assert.equal(beatTime(empty, loop * 8), MUSIC.leadMs + loop * 12 * MUSIC.intervalMs);
+    assert.equal(beatTime(empty, loop * 8), MUSIC.leadMs +
+      (loop * 12 + empty.pattern.indexOf(1)) * MUSIC.intervalMs);
   }
-  assert.equal(beatTime(empty, 2) - beatTime(empty, 1), 2 * MUSIC.intervalMs);
   let spam = rhythm(0);
-  for (let i = 0; i < 50; i++) spam = tapRhythm(spam, 1500 + i);
+  const first = beatTime(spam, 0);
+  for (let i = 0; i < 50; i++) spam = tapRhythm(spam, first + i);
   assert.equal(spam.hits.filter(Boolean).length, 1);
+});
+
+test("each performance draws its own eight-note four-rest phrase and retains it throughout all loops", () => {
+  const first = rhythm(0, () => 0), second = rhythm(0, () => 0.99);
+  assert.notDeepEqual(first.pattern, second.pattern);
+  for (const game of [first, second]) {
+    assert.equal(game.pattern.length, 12);
+    assert.equal(game.pattern.filter(Boolean).length, 8);
+    assert.equal(game.pattern.filter(note => !note).length, 4);
+    let played = game;
+    for (let i = 0; i < MUSIC.beats; i++) played = tapRhythm(played, beatTime(played, i));
+    assert.equal(played.pattern, game.pattern);
+    assert.equal(played.hits.filter(Boolean).length, 24);
+    for (let i = 0; i < 8; i++) {
+      assert.equal(beatTime(game, i + 8) - beatTime(game, i), 12 * MUSIC.intervalMs);
+    }
+  }
+  for (const roll of [-1, 1, NaN]) assert.throws(() => rhythm(0, () => roll), /draw/);
 });
 
 test("performances cost time, energy and fatigue up front, even with no money", () => {

@@ -6,6 +6,18 @@ All survival numbers below are gameplay approximations, not medical advice.
 Sections are chronological checkpoint records: later layers supersede earlier
 shortcuts, especially free meals and unrestricted outdoor sleep.
 
+## Random street-performance rhythms
+
+- R-092: Fisher-Yates shuffle draws eight notes/four rests into twelve slots
+  once per performance. The frozen pattern travels with the rhythm state and
+  repeats three times; no timing, scoring or reward rebalance.
+- UI tiles, tap matching and native PCM backing all use the same pattern.
+  Generate new backing PCM each start rather than caching a fixed melody.
+- Deterministic injected draws test different phrases, exact note/rest counts,
+  full-score timing, silence in rest slots, immutable phrase reuse, changed UI
+  layouts between starts and different PCM output. Existing cancellation and
+  audio error checks remain in place.
+
 ## Weather, random clues, sleep pressure and native street audio
 
 - R-087/R-088: shared outdoor finalization samples altitude-adjusted historical

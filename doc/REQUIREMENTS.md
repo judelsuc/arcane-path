@@ -1,5 +1,16 @@
 # Requirements tracked outside the design PDF
 
+## R-092 - Random rhythm for each street performance
+
+- Draw a fresh 12-slot phrase at the start of each performance by uniformly
+  shuffling eight notes and four rests. Repeat the drawn phrase three times,
+  retaining 24 scored notes, the existing tempo, tolerance, costs and rewards.
+- Use that same immutable phrase for visual tiles, tap scoring, end time and
+  generated native melody/bass. Regenerate backing audio for each performance;
+  never reuse an earlier performance's fixed soundtrack.
+- Random draws are independent: a previous phrase may occur again by chance.
+  Preserve hit/miss sounds, mute, volume and cancellation behavior.
+
 ## R-091 - Reliable street-music playback
 
 - **User report:** Background music plays, but the street-music minigame is silent.
