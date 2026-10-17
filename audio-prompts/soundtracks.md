@@ -168,17 +168,28 @@ fanfare, voices, whispers, choral pads, existing themes or startling effects.
 
 Use: **source material only** for the Layer 7 rhythm game. See timing warnings
 in the directory README. Target: 85.7142857 BPM, short repeated 8-beat phrases.
+Palette exception: predominantly real instruments with subtle chip/glitch
+details, rather than the other tracks' pure 8-bit arrangement.
 
 ```text
-Original instrumental 8-bit street-performance practice tune. One simple
-friendly melody, exactly eight evenly spaced quarter-note target beats per
-phrase, target tempo 85.7142857 BPM, equivalent to 700 milliseconds per beat.
-Plain pulse-wave lead, quiet triangle bass and very restrained noise clicks.
-Keep the beat easy to hear, with no swing, rubato, tempo changes, syncopated
-target accents, pickup notes or dramatic transitions. Repeat the same simple
-8-beat phrase several times to provide editable material. No count-in voice,
-vocals, speech, applause, success/failure effects or real street recordings.
-Pure chip timbres, warm modest tone, clean isolated phrases, no borrowed tune.
+Original instrumental acoustic-electronic street-performance practice tune.
+Real instruments lead: close, warm fingerpicked acoustic guitar playing a
+simple friendly melody, rounded upright bass, soft felt-piano answers and
+restrained brushed percussion. Intimate small-ensemble feel, modest and
+hopeful, not a polished arena production. Add a thin thread of 8-bit pulse
+tones and playful low-volume digital glitches: tiny granular fragments of
+guitar tails, short bitcrushed echoes and clipped electronic textures in
+the spaces between notes. Acoustic instruments remain clearly dominant.
+Exactly eight evenly spaced quarter-note target beats per phrase, target
+tempo 85.7142857 BPM, equivalent to 700 milliseconds per beat. Mark every
+target beat with a clean guitar pluck and gentle percussion tap. Keep those
+attacks intact and easy to hear; glitches decorate only the decaying tails
+and gaps, never shift, duplicate, mask or interrupt a target attack.
+No swing, rubato, tempo changes, syncopated target accents, pickup notes,
+glitch fills resembling extra target beats, harsh distortion or dramatic
+transitions. Repeat the same simple 8-beat phrase several times for editing,
+with a stable mix and clean phrase boundaries. No count-in voice, vocals,
+speech, applause, success/failure effects, street recordings or borrowed tune.
 ```
 
 Do not wire this output directly to the game clock. Cut/quantize an 8-beat
