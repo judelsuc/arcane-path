@@ -3,11 +3,12 @@ const TRACKS = [
   "music-town", "music-city", "music-coast", "music-night",
   "music-shelter", "music-tarot-trail", "music-street-practice",
   "music-reunion", "music-journey-ended",
+  "music-title-song",
 ];
 
 export function musicTrack({ active, ended, terrain, sources = [], night, dialog, sleeping } = {}) {
   if (dialog === "music-dialog") return null;
-  if (!active) return "music-title";
+  if (!active) return "music-title-song";
   if (ended) return ended === "reunion" ? "music-reunion" : "music-journey-ended";
   if (dialog === "trail-dialog") return "music-tarot-trail";
   if (dialog === "economy-dialog" && sleeping) return "music-shelter";
@@ -25,7 +26,7 @@ export function musicTrack({ active, ended, terrain, sources = [], night, dialog
 export function musicCandidates(track) {
   const index = TRACKS.indexOf(track);
   if (index < 0) throw new Error(`Unknown music track: ${track}`);
-  const number = String(index + 1).padStart(2, "0");
+  const number = track === "music-title-song" ? "16" : String(index + 1).padStart(2, "0");
   const legacy = { "music-city": "music-paris", "music-coast": "music-tahiti" }[track];
   const names = [track, ...(legacy ? [legacy] : [])].flatMap(id =>
     [id, `${number}-${id}`, `${number} - ${id}`]);
@@ -37,6 +38,7 @@ export function musicCandidates(track) {
 export function musicFallbacks(track) {
   if (track === null) return [];
   musicCandidates(track);
+  if (track === "music-title-song") return ["music-title-song", "music-title"];
   return [...new Set([track, ...(track === "music-title" ? [] : ["music-road-day", "music-title"])])];
 }
 

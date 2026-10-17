@@ -30,7 +30,7 @@ function harness(available = new Set()) {
 
 test("music context follows map features, solar phase, menus and outcomes, never region names", () => {
   const travel = { active: true, terrain: "field", region: "firmi" };
-  assert.equal(musicTrack(), "music-title");
+  assert.equal(musicTrack(), "music-title-song");
   assert.equal(musicTrack(travel), "music-road-day");
   for (const [context, expected] of [
     [{ terrain: "forest" }, "music-forest"], [{ region: "alps" }, "music-road-day"],
@@ -60,8 +60,28 @@ test("accepts canonical and numbered filenames without renaming user downloads",
   assert.ok(musicCandidates("music-city").includes("./public/audio/music/music-city.wav"));
   assert.deepEqual(musicFallbacks("music-road-day"), ["music-road-day", "music-title"]);
   assert.deepEqual(musicFallbacks("music-title"), ["music-title"]);
+  assert.deepEqual(musicFallbacks("music-title-song"), ["music-title-song", "music-title"]);
+  assert.ok(musicCandidates("music-title-song").includes("./public/audio/music/16%20-%20music-title-song.wav"));
   assert.deepEqual(musicFallbacks(null), []);
   assert.throws(() => musicCandidates("untrusted"));
+});
+
+test("English vocal song is title-only and falls back to the instrumental title", async () => {
+  const song = musicCandidates("music-title-song")[0];
+  const available = new Set([song]), h = harness(available);
+  await h.player.select(musicTrack());
+  await h.player.enable(true);
+  assert.equal(h.last().track, "music-title-song");
+  available.add(musicCandidates("music-road-day")[0]);
+  await h.player.select(musicTrack({ active: true, terrain: "field" }));
+  assert.equal(h.last().track, "music-road-day");
+  assert.ok(h.sounds[0].paused);
+  const instrumental = harness(new Set(musicCandidates("music-title")));
+  await instrumental.player.select(musicTrack());
+  await instrumental.player.enable(true);
+  assert.equal(instrumental.last().status, "fallback");
+  assert.equal(instrumental.last().track, "music-title");
+  assert.ok(!musicFallbacks("music-forest").includes("music-title-song"));
 });
 
 test("requires explicit enable, loops at a quiet adjustable volume and mutes completely", async () => {

@@ -31,6 +31,7 @@ export function setupAudio(t) {
   new MutationObserver(sync).observe(document.body, {
     subtree: true, attributes: true, attributeFilter: ["open"],
   });
+  sync();
   localize();
   return { localize, update(next) { context = next; sync(); } };
 }

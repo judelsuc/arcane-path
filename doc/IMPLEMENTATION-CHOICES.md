@@ -518,3 +518,22 @@ Renamed prompt concepts to music-city/music-coast while retaining numbered
 music-paris/music-tahiti download aliases. Their prompts no longer specify
 Paris/Papeete. More detailed cultural palettes can be discussed later; they
 are not inferred from a starting map.
+
+## English vocal title song
+
+The user selected title-screen-only vocals. Added original English lyrics
+and a separate Suno Custom-mode prompt for "One More Little Light", a gentle
+8-bit song about the parent search, kindness and resting along the way.
+Instrumental must be OFF for this prompt, unlike the background catalog.
+
+Optional asset `music-title-song` uses number 16 so reserved future numbers
+14/15 do not move. The title/static map requests it first, then instrumental
+title, then silence. Travel context and fallback chains never request vocals.
+Existing explicit enable/mute/volume and hidden-tab rules apply; the complete
+song loops like other tracks. No recording is bundled or claimed generated.
+
+15 focused audio/localization tests pass, including title-only selection,
+transition to instrumental travel, vocal filename aliases and missing-vocal
+fallback to the existing title track. Generate/download the recording to
+audition singing, pronunciation, mix and song repeats before considering
+the audio production complete.

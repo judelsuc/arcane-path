@@ -336,6 +336,12 @@ L'onglet masque et le dialogue du minijeu de rythme mettent la musique en
 pause ; aucune piste Suno non synchronisee n'influence les notes/recompenses.
 Les effets sonores et pistes `future-` ne sont pas encore connectes.
 
+Une [chanson originale en anglais](audio-prompts/title-song.md) est prevue
+uniquement sur l'ecran titre/carte fixe : generer dans Suno avec Instrumental
+desactive, puis telecharger `music-title-song.wav` dans le dossier musique.
+En son absence, le titre instrumental reste utilise, puis le silence.
+Le voyage utilise uniquement les pistes instrumentales.
+
 ## Sauvegarde et reprise locales
 
 - Une sauvegarde **par region et par origine navigateur** (hote + port).

@@ -30,3 +30,9 @@ to retry files marked unavailable in this session.
 Music pauses in hidden tabs and throughout the rhythm-game dialog; generated
 practice audio is not used as a timing source. New context tracks restart
 from the beginning, with no crossfade or custom loop-point editing yet.
+
+The optional English vocal title song uses `music-title-song.wav` (or MP3/
+OGG), also accepted as `16 - music-title-song.wav`. Generate it from the
+[original lyrics and prompt](../../../audio-prompts/title-song.md).
+Only the title/static-map screen requests it; missing vocals fall back to
+instrumental `music-title`, then silence. Travel fallbacks never use vocals.

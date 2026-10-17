@@ -533,6 +533,17 @@ This file records additions to the design without modifying the source PDF,
   names. City/coast are reusable moods selected only from explicit map tags;
   previous Paris/Tahiti filenames remain compatible aliases.
 
+## R-036 — Original English vocal title song
+
+- **User request/choice:** Add a song with English lyrics, title screen only.
+- **Delivery:** Original lyrics and vocal-generation prompt, optional
+  `music-title-song` asset (number 16; 14/15 remain future tracks).
+- **Playback:** Same opt-in/volume/mute controls; static title screen only.
+  Missing song falls back to instrumental title then silence. Starting or
+  resuming travel stops the vocal; travel fallbacks never select vocals.
+- Audio must be generated/downloaded separately; no claim that a prompt is
+  a playable recording.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,
