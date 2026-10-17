@@ -1,5 +1,17 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - retrait du bouton Nouveau voyage dans J
+
+- **17 octobre 2026** : runtime `0a8dff8`, tag
+  `deploy-2026-10-17-trail-remove-restart`, developpement `fe1ff59`,
+  base live `69f2970`. Deux assets et manifeste, sans redemarrage serveur.
+- Bouton et gestionnaire retires de J ; Nouveau voyage reste disponible
+  sur l'ecran principal. Aucun changement aux sauvegardes.
+- 24 tests cibles passent, dont l'absence du bouton dans J, sa presence
+  sur l'ecran principal et les interactions J/I en francais et anglais.
+- Deux assets et manifeste HTTPS verifies octet par octet ; API jeu verifiee.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-0a8dff8.tar.gz` (0600).
+
 ## Derniere livraison - piste du parent et position des villes proposees
 
 - **17 octobre 2026** : runtime `69f2970`, tag
