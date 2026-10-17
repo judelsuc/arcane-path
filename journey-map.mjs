@@ -9,65 +9,27 @@ const TERRAIN = {
 };
 
 export function createJourneyTerrainLoader(region, chunks, fetcher = fetch) {
-  const memo = new Map();
   return async view => {
     const all = [...view.points, ...view.stops];
-    const minX = Math.floor(Math.min(...all.map(p => p.col)) / 8) - 1;
-    const maxX = Math.floor(Math.max(...all.map(p => p.col)) / 8) + 1;
-    const minY = Math.floor(Math.min(...all.map(p => p.row)) / 8) - 1;
-    const maxY = Math.floor(Math.max(...all.map(p => p.row)) / 8) + 1;
-    const width = maxX - minX + 1, height = maxY - minY + 1;
-    const total = width * height, count = Math.min(256, total);
-    const positions = new Map();
-    const add = (x, y) => {
-      if (Math.abs(x) <= 1000 && Math.abs(y) <= 1000) positions.set(`${x},${y}`, [x, y]);
-    };
-    for (let index = 0; index < count; index++) {
-      const offset = count === 1 ? 0 : Math.floor(index * (total - 1) / (count - 1));
-      add(minX + offset % width, minY + Math.floor(offset / width));
+    const bounds = [
+      Math.max(-8000, Math.min(...all.map(p => p.col)) - 8),
+      Math.max(-8000, Math.min(...all.map(p => p.row)) - 8),
+      Math.min(8007, Math.max(...all.map(p => p.col)) + 8),
+      Math.min(8007, Math.max(...all.map(p => p.row)) + 8),
+    ];
+    const response = await fetcher(`/api/journey-terrain?${new URLSearchParams({
+      region, bounds: JSON.stringify(bounds),
+    })}`, { signal: AbortSignal.timeout(30_000) });
+    if (!response.ok) throw new Error(`Cached journey terrain: HTTP ${response.status}`);
+    const data = await response.json();
+    if (!Array.isArray(data.cells) || data.cells.length > 240000 ||
+        !Number.isSafeInteger(data.stride) || data.stride < 1 || data.stride > 41 ||
+        typeof data.missing !== "boolean" || typeof data.sampled !== "boolean" ||
+        data.cells.some(cell => !point(cell) || !Object.hasOwn(TERRAIN, cell.terrain) ||
+          cell.col < bounds[0] || cell.col > bounds[2] || cell.row < bounds[1] || cell.row > bounds[3])) {
+      throw new Error("Invalid cached terrain response.");
     }
-    for (const stop of view.stops) add(Math.floor(stop.col / 8), Math.floor(stop.row / 8));
-    for (const chunk of chunks.values()) {
-      const { x, y } = chunk.chunk;
-      if (x >= minX && x <= maxX && y >= minY && y <= maxY) add(x, y);
-    }
-    const requested = [...positions.values()];
-    for (const [x, y] of requested) {
-      const loaded = chunks.get(`${x},${y}`);
-      if (loaded) memo.set(`${x},${y}`, loaded);
-    }
-    const missing = requested.filter(([x, y]) => !memo.has(`${x},${y}`));
-    for (let offset = 0; offset < missing.length; offset += 9) {
-      const batch = missing.slice(offset, offset + 9);
-      const response = await fetcher(`/api/chunks-cached?${new URLSearchParams({
-        region, positions: JSON.stringify(batch),
-      })}`, { signal: AbortSignal.timeout(15_000) });
-      if (!response.ok) throw new Error(`Cached journey terrain: HTTP ${response.status}`);
-      const data = await response.json();
-      const allowed = new Set(batch.map(p => p.join(","))), seen = new Set();
-      if (!Array.isArray(data.chunks) || data.chunks.length > batch.length) throw new Error("Invalid cached terrain response.");
-      for (const chunk of data.chunks) {
-        const key = `${chunk?.chunk?.x},${chunk?.chunk?.y}`;
-        if (!allowed.has(key) || seen.has(key) || chunk.chunk.region !== region ||
-            chunk.width !== 8 || chunk.height !== 8 || !Array.isArray(chunk.rows) ||
-            chunk.rows.length !== 8 || chunk.rows.some(row => !Array.isArray(row) ||
-              row.length !== 8 || row.some(cell => !cell || !Object.hasOwn(TERRAIN, cell.terrain)))) {
-          throw new Error("Invalid cached terrain chunk.");
-        }
-        seen.add(key);
-      }
-      for (const chunk of data.chunks) memo.set(`${chunk.chunk.x},${chunk.chunk.y}`, chunk);
-      for (const [x, y] of batch) if (!memo.has(`${x},${y}`)) memo.set(`${x},${y}`, null);
-    }
-    const cells = [];
-    for (const [x, y] of requested) {
-      const chunk = memo.get(`${x},${y}`);
-      if (!chunk) continue;
-      chunk.rows.forEach((row, r) => row.forEach((cell, col) => {
-        if (!cell.unavailable) cells.push({ col: x * 8 + col, row: y * 8 + r, terrain: cell.terrain });
-      }));
-    }
-    return { cells, sampled: total > count, missing: requested.some(([x, y]) => !memo.get(`${x},${y}`)) };
+    return data;
   };
 }
 
@@ -149,12 +111,13 @@ export function drawJourneyMap(canvas, view, t, progress = 1) {
   c.fillStyle = "#eddfbb";
   c.fillRect(0, 0, 1200, 800);
   for (const cell of view.terrain?.cells ?? []) {
-    const [x, y] = project(cell);
+    const size = view.terrain.stride ?? 1;
+    const [x, y] = project({ col: cell.col + (size - 1) / 2, row: cell.row + (size - 1) / 2 });
     if (x < 15 || y < 80 || x > 1185 || y > 690) continue;
     const [color, glyph] = TERRAIN[cell.terrain];
     c.fillStyle = color;
-    c.fillRect(x - scale / 2, y - scale / 2, scale + 0.5, scale + 0.5);
-    if (scale >= 12) {
+    c.fillRect(x - scale * size / 2, y - scale * size / 2, scale * size + 0.5, scale * size + 0.5);
+    if (size === 1 && scale >= 12) {
       c.fillStyle = "#635c49";
       c.font = `${Math.min(24, scale * 0.65)}px monospace`;
       c.textAlign = "center";

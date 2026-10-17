@@ -848,9 +848,11 @@ La carte et sa legende figurent aussi dans l'export PDF. Les carnets abandonnes
 ne montrent jamais la carte personnelle de leur lecteur.
 Le fond affiche les cellules de terrain reduites depuis le cache uniquement :
 aucune preparation ni requete fournisseur n'est lancee. Les zones absentes
-restent vierges et sont signalees. Les grands rectangles sont echantillonnes
-a 256 chunks, completes par les arrets connus et les chunks deja en memoire ;
-le fond peut donc etre partiel, sans affecter le trace du voyage.
+restent vierges et sont signalees. Le serveur inventorie les chunks reellement
+en cache dans le rectangle, au lieu de deviner des coordonnees a sonder.
+Jusqu'a 4096 chunks sont lus avec verification ; les grandes vues regroupent
+les cellules par terrain dominant. Les limites sont signalees, sans affecter
+le trace du voyage.
 
 **Exporter en PDF** telecharge le carnet complet, pas seulement les deux pages
 visibles : photos, cartes de tarot, notes et credits avec leurs liens sources,
