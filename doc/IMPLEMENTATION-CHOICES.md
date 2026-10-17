@@ -1261,3 +1261,10 @@ remains for other towns/days without duplicating the current outcome. No history
 is deleted, no new confirmation or gameplay rule is introduced. Tests cover
 visible refusal, read-only menu opening, another town and the user's exact
 previous-day timestamps in both languages.
+
+The user's subsequent new-town test confirmed the request worked but the
+daily-lock wording remained ambiguous. Refusal now explicitly says the attempt
+failed and no sleep occurred. The lock explains that even a refusal consumes
+the single town/day attempt, and offers the next UTC game day or another town.
+French and English assertions cover these explanations; probabilities and
+hospitality history are unchanged.

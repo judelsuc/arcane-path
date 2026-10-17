@@ -76,10 +76,10 @@ test("sleep menu explains missing OSM lodging, offers hospitality, and saves/dis
   assert.equal(h.buttons()[0].disabled, true);
   assert.equal(h.element("#economy-hospitality-result").textContent, "");
   const feedback = h.element("#economy-options").children[0].children[1];
-  assert.match(feedback.textContent, /Firmi, 2026-10-17:/);
+  assert.match(feedback.textContent, /Firmi, (?:on )?2026-10-17:/);
   assert.equal(feedback.focused, true);
   assert.deepEqual(feedback.scrolled, { block: "nearest" });
-  assert.match(h.element("#economy-options").children[0].children[1].textContent, /already asked/);
+  assert.match(h.element("#economy-options").children[0].children[1].textContent, /Only one request/);
   h.buttons()[0].click();
   assert.equal(h.actions.length, 1);
   h.buttons()[1].click();
@@ -124,9 +124,11 @@ for (const language of ["fr", "en"]) {
     assert.equal(h.buttons()[0].disabled, false);
     h.buttons()[0].click();
     const feedback = h.element("#economy-options").children[0].children[1];
-    assert.match(feedback.textContent, language === "fr" ? /personne n'a pu vous accueillir/ : /nobody could host you/);
+    assert.match(feedback.textContent, language === "fr" ? /Hospitalité refusée/ : /Hospitality refused/);
+    assert.match(feedback.textContent, language === "fr" ? /Vous n'avez pas dormi/ : /You did not sleep/);
     assert.match(feedback.textContent, /30 min/);
-    assert.match(feedback.textContent, language === "fr" ? /déjà demandé/ : /already asked/);
+    assert.match(feedback.textContent, language === "fr" ? /même en cas de refus/ : /even if refused/);
+    assert.match(feedback.textContent, language === "fr" ? /prochain jour de jeu/ : /next game day/);
     assert.equal(feedback.role, "status");
     assert.equal(feedback.focused, true);
     assert.deepEqual(feedback.scrolled, { block: "nearest" });
