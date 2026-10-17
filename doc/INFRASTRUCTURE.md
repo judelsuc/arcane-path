@@ -253,6 +253,27 @@ joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
   algorithme parent et resolubilite), puis passer directement a la couche 15
   (photos et carnet). Ce checkpoint ne termine pas la couche 9.
 
+### Checkpoint deploye : fallback cartographique Paris / Louis Blanc
+
+- **17 octobre 2026** : commit `cd562013f727a8836c421ce8bc231aebe7ce902d`,
+  tag pousse `deploy-2026-10-17-paris-map`.
+- Les cellules manquantes sont des telechargements inacheves, pas des cellules
+  vides. Logs reels : quota OSM HTTP 509, erreurs 502/500 des deux Overpass.
+  Les grilles deja conservees se lisent en 8--23 ms sur le serveur.
+- Le fallback ne descend plus recursivement dans toutes les relations de
+  transport/administration, potentiellement nationales : noeuds, chemins,
+  multipolygones et leurs membres restent demandes.
+- Essai reel depuis OVH : morceau Paris `(1,-2)`, au nord de Louis Blanc,
+  source complete recue par Overpass en 34,35 s, grille 8 x 8 construite et
+  cache disque verifie. Reprise des autres morceaux de la vue en cours ;
+  ce checkpoint ne garantit pas la disponibilite des fournisseurs.
+- 16 tests du telechargeur passes. Service et Nginx actifs, cache persistant
+  conserve. Manifeste HTTPS authentifie egal au commit exact, API voyage 200.
+  Archive de retour code hors cache :
+  `/home/ubuntu/arcane-path-before-deploy-cd56201.tar.gz`, mode 0600.
+- Correctif deploye depuis un worktree propre, sans le routage couche 9
+  encore en cours dans le worktree principal.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026

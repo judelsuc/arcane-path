@@ -31,7 +31,9 @@ export function setupSurvivalChoices(t, { context, act }) {
       });
     }
     const result = current.state.lastSurvivalChoice;
-    document.querySelector("#survival-choice-result").textContent = result
+    const resultElement = document.querySelector("#survival-choice-result");
+    resultElement.hidden = !result;
+    resultElement.textContent = result
       ? `${t(`choice.${result.kind}`)} — ${t(`choiceResult.${result.outcome}`, {
         kcal: Math.round(result.foodKcal), money: (result.moneyCents / 100).toFixed(2),
         minutes: Math.round(result.minutes), hours: result.detentionMinutes / 60,
@@ -40,6 +42,7 @@ export function setupSurvivalChoices(t, { context, act }) {
   function open() {
     if (!context() || context().blocked || document.querySelector("dialog[open]")) return;
     document.querySelector("#survival-choice-error").textContent = "";
+    document.querySelector("#survival-choice-error").hidden = true;
     dialog.showModal();
     localize();
   }
@@ -53,6 +56,13 @@ export function setupSurvivalChoices(t, { context, act }) {
       document.querySelector("#survival-choice-error").textContent = "";
       act(kind);
       localize();
+      const error = document.querySelector("#survival-choice-error");
+      error.hidden = !error.textContent;
+      const feedback = error.hidden ? document.querySelector("#survival-choice-result") : error;
+      if (!feedback.hidden && dialog.open) {
+        feedback.focus({ preventScroll: true });
+        feedback.scrollIntoView({ block: "nearest" });
+      }
     });
   }
   for (const [id, target] of Object.entries({

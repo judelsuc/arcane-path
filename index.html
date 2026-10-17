@@ -407,6 +407,8 @@
     <dialog id="survival-choices-dialog" aria-labelledby="survival-choices-title">
       <h2 id="survival-choices-title" data-i18n="survivalChoices"></h2>
       <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
+      <p id="survival-choice-result" role="status" tabindex="-1" hidden></p>
+      <p id="survival-choice-error" role="alert" tabindex="-1" hidden></p>
       <p data-i18n="survivalChoicesFiction"></p>
       <p id="cell-action-context"></p>
       <div class="cell-action-services">
@@ -423,9 +425,7 @@
       <p id="choice-beg-note"></p>
       <button id="choice-steal" type="button" data-i18n="choice.steal"></button>
       <p id="choice-steal-note"></p>
-      <p id="survival-choice-result" role="status"></p>
       <p id="survival-choice-save" role="status"></p>
-      <p id="survival-choice-error" role="alert"></p>
     </dialog>
     <dialog id="economy-dialog" aria-labelledby="economy-title">
       <h2 id="economy-title"></h2>

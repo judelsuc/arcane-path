@@ -1143,3 +1143,16 @@ movement triggered a real collapse: 491 total minutes (11 walking + 480
 unconscious), fatigue 40, one persisted event and a displayed 10.32 EUR loss
 at 30% risk; no terminal state or movement-finalizer error. The notice waits
 for existing modals to close. The browser test's prior local save was restored.
+
+## Keep food-search feedback visible
+
+The user reported that food-search outcomes were hidden at the bottom of the
+cell-actions modal. Result and error messages now sit below its heading and
+close button, above the action list. After an action, focus and scroll the
+new result (or explicit error) into view without closing the modal. Keep
+status/alert semantics, hide empty messages and preserve action costs/rewards.
+
+Four regression tests cover FR/EN results, error priority and actual markup
+order. Browser validation in a 320px-high scrolling modal started at the
+bottom, performed a real food search, and confirmed the result was visible
+and focused. No saved journey was changed by this UI-only test.
