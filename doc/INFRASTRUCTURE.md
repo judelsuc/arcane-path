@@ -1,5 +1,26 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - progression reelle de recherche d'hebergements
+
+- **17 octobre 2026** : runtime `b2ebd65`, tag
+  `deploy-2026-10-17-lodging-progress`, developpement `a50b5bb`,
+  base live `45cc324`. Quatre modules client, deux scripts Python et
+  manifeste ; redemarrage du service Python uniquement.
+- Etapes transmises par le job serveur : attente, cartes disponibles,
+  source OSM avec son nom, disponibilite du catalogue complementaire,
+  distances/classement et cache. Secondes ecoulees cote client, sans
+  pourcentage invente ; les etapes tres rapides peuvent etre sautees
+  entre deux polls. Les mises a jour ne reconstruisent pas les actions.
+- 34 tests JS, neuf tests Python hebergements et vingt tests de transport
+  OSM passent. Navigateur avec reponses controlees : passage de l'attente
+  OSM au fournisseur avec temps ecoule, puis annulation explicite.
+- Quatre modules HTTPS et deux scripts serveur compares au runtime teste.
+  Manifeste et API jeu verifies, services actifs. A la position signalee,
+  l'API live transmet `phase=provider`, `provider=overpass-api.de`.
+- Les quinze journaux de depart existants restent inchanges. Aucune baisse
+  des probabilites d'accueil activee. Retour code :
+  `/home/ubuntu/arcane-path-before-deploy-b2ebd65.tar.gz` (0600).
+
 ## Derniere livraison - recherche d'hebergements annulable
 
 - **17 octobre 2026** : runtime `45cc324`, tag
