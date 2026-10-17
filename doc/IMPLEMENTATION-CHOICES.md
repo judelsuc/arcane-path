@@ -6,6 +6,38 @@ All survival numbers below are gameplay approximations, not medical advice.
 Sections are chronological checkpoint records: later layers supersede earlier
 shortcuts, especially free meals and unrestricted outdoor sleep.
 
+## Weather, random clues, sleep pressure and native street audio
+
+- R-087/R-088: shared outdoor finalization samples altitude-adjusted historical
+  temperature every ten minutes, charges actual consumed calories for cold,
+  and adds heat/rain fatigue. Rain/storm walking uses temporary speed factors.
+  Shelter is exempt; outdoor unconsciousness remains exposed. Missing weather
+  is explicitly reported rather than replaced with invented observations.
+- R-089: one F search selects an available, affordable existing clue and its
+  normal cost. A photo is prepared and decoded before state mutation; failure
+  substitutes a non-photo result with explicit feedback. Generation/state
+  guards prevent cancelled or duplicate searches committing. ImageBitmap
+  preflight also completes in hidden tabs, unlike the observed Image.decode
+  stall. Actual cached Commons Eiffel Tower photo displayed with credit/license
+  in the browser and charged exactly 30 minutes, advancing one stage.
+- R-090: integrate equivalent waking hours across UTC 22:00/02:00/06:00
+  boundaries at 2x/4x/1x. Cap the sleep bar at its configured maximum.
+  Reaching it uses existing collapse finalization, not a fatal sleep ending
+  or an unconditional 02:00 event. Optional lastFaint.reason distinguishes
+  sleep from exertion; legacy saves remain valid. Hunger keeps precedence.
+- R-091: background music worked while the independent oscillator path was
+  reported silent. Replace that path with locally generated PCM WAV played by
+  native Audio, matching the working background mechanism. Melody/bass use
+  the exact beat timestamps; hit/miss cues differ. Loading seeks to the visual
+  clock; mute/volume apply to every voice. Stop/error/ended release media and
+  object URLs; stale loading cannot restart cancelled playback. Errors remain
+  explicit. Browser verified native decoding and playback start, plus UI start
+  and stop. Device-level audible output still needs confirmation by the player.
+- Validation: 35 focused tests passed; the isolated live-base release passes
+  all 265 JavaScript tests. Development's server-journey test remains blocked
+  by its pre-existing malformed local config.yml; no configuration repair or
+  unfinished parent-story generator is included in this static release.
+
 ## Testing checkpoints independently
 
 - Existing Layer 3 baseline: commit `6bbe4c4`.

@@ -24,6 +24,28 @@ export function clueActions(state) {
   return actions;
 }
 
+export function searchClueOptions(state, cell, info, economy) {
+  return clueActions(state).filter(kind => !["directions", "rumor"].includes(kind) &&
+    (!CLUE_ACTIONS[kind].mealUnits ||
+      state.walletCents >= marketPrice(cell, CLUE_ACTIONS[kind].mealUnits, economy, info).cents));
+}
+
+export async function prepareClueSearch(state, cell, info, economy, resolvePhoto, random = Math.random) {
+  const options = searchClueOptions(state, cell, info, economy);
+  if (!options.length) throw new Error("No affordable clue search available here.");
+  const choose = values => {
+    const roll = random();
+    if (!Number.isFinite(roll) || roll < 0 || roll >= 1) throw new Error("Invalid clue search draw.");
+    return values[Math.floor(roll * values.length)];
+  };
+  let kind = choose(options);
+  if (kind !== "photo") return { kind, photoUnavailable: false };
+  const content = await resolvePhoto(state, state.trail.index);
+  if (content) return { kind, content, photoUnavailable: false };
+  kind = choose(options.filter(option => option !== "photo"));
+  return { kind, photoUnavailable: true };
+}
+
 export function trailClue(state, kind, cell, info, survival, economy) {
   if (!clueActions(state).includes(kind)) throw new Error("This clue action is unavailable here.");
   const rule = CLUE_ACTIONS[kind];

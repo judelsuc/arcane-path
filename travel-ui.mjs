@@ -1,7 +1,7 @@
 import { chunkPosition, journeyDate } from "./travel.mjs";
 import { createChunkStream, createChunkPrefetcher, visibleDownloads } from "./travel-stream.mjs";
 import { cellInfo } from "./cell-info.mjs";
-import { skyState, estimatedTemperature, altitudeTemperatureOffset } from "./sky.mjs";
+import { skyState, altitudeTemperatureOffset } from "./sky.mjs";
 import {
   walkSurvival, hungerPercent, canEat, normalizeCharacterName,
 } from "./survival.mjs";
@@ -19,6 +19,7 @@ import { askHospitality } from "./hospitality.mjs";
 import { agendaClock } from "./agenda-clock.mjs";
 import { setupTrail } from "./trail-ui.mjs";
 import { askDirections } from "./directions.mjs";
+import { exposureTemperature, temperatureModifiers, precipitationModifiers } from "./weather-effects.mjs";
 import { createJourneyStore, mapIdentity } from "./journey-save.mjs";
 import { tarotArt } from "./tarot-art.mjs";
 import { trailClue } from "./trail-actions.mjs";
@@ -167,7 +168,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const country = pricingCountries.get(`${state.col},${state.row}`);
     const cell = !(mappedCell.countryCodes?.length) && country
       ? { ...mappedCell, countryCodes: [country] } : mappedCell;
-    return { state, cell, info: cellInfo(chunk, p.row, p.col),
+    return { state, cell, info: exposureInfo(chunk, p.row, p.col),
       data: economyData, survival: survivalConfig, blocked: busy || Boolean(cursor) || Boolean(state.ended) };
   }
   const economyUI = setupEconomyUI(t, {
@@ -291,11 +292,21 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const weatherCache = new Map();
   let weatherKey, weatherData, weatherError = "", weatherController;
 
+  function chunkWeatherKey(chunk) {
+    const b = chunk.bounds;
+    return [Math.floor((b.minLatitude + b.maxLatitude) / 2 * 10 + 0.5),
+      Math.floor((b.minLongitude + b.maxLongitude) / 2 * 10 + 0.5)].join(",");
+  }
+  function exposureInfo(chunk, row, col) {
+    const info = cellInfo(chunk, row, col);
+    const weather = weatherCache.get(chunkWeatherKey(chunk));
+    return { ...info, ...(weather ? { weather } : {}),
+      elevationMeters: chunk.rows[row][col].elevationMeters };
+  }
+
   function updateWeather(chunk) {
     if (!chunk || !state) return;
-    const b = chunk.bounds;
-    const key = [Math.floor((b.minLatitude + b.maxLatitude) / 2 * 10 + 0.5),
-      Math.floor((b.minLongitude + b.maxLongitude) / 2 * 10 + 0.5)].join(",");
+    const key = chunkWeatherKey(chunk);
     if (key === weatherKey) return;
     weatherKey = key;
     weatherError = "";
@@ -410,7 +421,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       eat.textContent = t("mealTitle");
       document.querySelector("#rest-effect").textContent = cell ? t("restEffect", {
         minutes: survivalConfig.rest_minutes, before: state.fatigue.toFixed(1),
-        after: restEffect(state, cellInfo(chunk, position.row, position.col), survivalConfig, economyData).fatigue.toFixed(1),
+        after: restEffect(state, exposureInfo(chunk, position.row, position.col), survivalConfig, economyData).fatigue.toFixed(1),
       }) : "";
       document.querySelector("#meal-location").textContent = canEat(cell)
         ? t("needsMealAvailable") : t("needsMealUnavailable");
@@ -427,14 +438,23 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       const number = value => new Intl.NumberFormat(document.documentElement.lang, {
         maximumFractionDigits: 1,
       }).format(value);
-      const player = cellInfo(chunk, position.row, position.col);
       const elevationKnown = Number.isFinite(cell?.elevationMeters) &&
         Number.isFinite(weatherData.elevationMeters);
       const offset = elevationKnown
         ? altitudeTemperatureOffset(cell.elevationMeters, weatherData.elevationMeters) : 0;
-      const temperature = estimatedTemperature(journeyDate(state), player.latitude, player.longitude,
-        month.minC + offset, month.maxC + offset);
+      const temperature = exposureTemperature(journeyDate(state), exposureInfo(chunk, position.row, position.col));
       document.querySelector("#weather-temperature").textContent = `${number(temperature)} °C`;
+      const effects = temperatureModifiers(temperature);
+      document.querySelector("#weather-effects").textContent = t(effects.extraCaloriesFactor
+        ? "temperatureCold" : effects.fatiguePerHour ? "temperatureHot" : "temperatureMild", {
+        percent: number(effects.extraCaloriesFactor * 100), fatigue: number(effects.fatiguePerHour),
+      });
+      const precipitation = precipitationModifiers(month.condition);
+      if (precipitation.fatiguePerHour) {
+        document.querySelector("#weather-effects").textContent += ` ${t("weatherRainEffect", {
+          fatigue: precipitation.fatiguePerHour, percent: Math.round((1 - precipitation.speedFactor) * 100),
+        })}`;
+      }
       document.querySelector("#weather-condition").textContent = t(`weather.${month.condition}`);
       document.querySelector("#weather-range").textContent =
         t("weatherRange", { min: number(month.minC + offset), max: number(month.maxC + offset) });
@@ -456,6 +476,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       weatherSource.href = weatherData.sourceUrl;
       weatherSource.textContent = `${weatherData.source} · ${weatherData.license}`;
     } else {
+      document.querySelector("#weather-effects").textContent = active ? t("temperatureUnavailable") : "";
       weatherSummary.textContent = weatherError
         ? t("weatherError", { error: weatherError }) : active ? t("weatherLoading") : "";
     }
@@ -632,8 +653,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       if (currentToken !== token) return;
       const fromCell = stream.get(from.x, from.y).rows[from.row][from.col];
       const previous = state;
-      state = walkSurvival(state, dc, dr, fromCell, target.rows[to.row][to.col], survivalConfig);
-      state = finishAction(previous, state, cellInfo(target, to.row, to.col), economyData,
+      const weatherInfo = exposureInfo(stream.get(from.x, from.y), from.row, from.col);
+      state = walkSurvival(state, dc, dr, fromCell, target.rows[to.row][to.col], survivalConfig, weatherInfo);
+      state = finishAction(previous, state, { ...weatherInfo, terrain: target.rows[to.row][to.col].terrain }, economyData,
         { survival: survivalConfig });
       autosave();
       onStep?.(target.rows[to.row][to.col].terrain);

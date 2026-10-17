@@ -1,5 +1,78 @@
 # Requirements tracked outside the design PDF
 
+## R-091 - Reliable street-music playback
+
+- **User report:** Background music plays, but the street-music minigame is silent.
+- Use native HTML audio playback, like the working background tracks, rather
+  than a separate Web Audio context. Generate original PCM WAV melody/bass and
+  distinct hit/miss cues locally; no external music or added dependency.
+- Keep the three-loop rhythm, scoring, shared mute/volume and visible errors.
+  Start from a player gesture, synchronize to the visual performance clock
+  after loading, and cancel/release audio on finish, close, reset or hidden tab.
+
+## R-090 - Nighttime sleep pressure and forced sleep
+
+- **User decision:** Use the displayed game clock (UTC), but do not force
+  sleep simply because 02:00 passes. Collapse is linked to a full sleep bar.
+- While awake, equivalent waking hours accrue at 2x from 22:00 to 02:00,
+  4x from 02:00 to 06:00, and 1x otherwise. Split actions at time boundaries.
+  Applies indoors too; sleeping retains its normal recovery, not these rates.
+- At 100% sleep pressure, apply the existing fainting penalty: eight hours
+  unconscious in the same cell, fatigue reset to 40 before weather exposure,
+  normal unconscious metabolism/recovery and possible money theft.
+- Interrupt the action's clue/reward/music outcome, autosave normally and
+  explain sleep collapse separately from exertion collapse. Preserve hunger
+  precedence, legacy ended journeys and saves without a collapse reason.
+
+## R-089 - One random clue search with real photo discoveries
+
+- **User decision:** Replace choosing a photo/notebook/letter ahead of time
+  with one Search for a clue action. Reveal what was found afterwards.
+- Randomly select among that stage's existing available clue types. Preserve
+  each selected type's existing minutes, fatigue, extra calories and any price.
+  Show possible costs before searching; charge only the obtained result.
+  Exclude unaffordable purchases so a clue never requires money the player lacks.
+- A photo result requires a real geographical image from the existing cache
+  or web providers, checked for successful image decoding before commitment.
+  Show the image, credit, source and license; fictional annotations remain
+  explicitly separate from the real photograph.
+- **User decision:** If no usable photo can be retrieved, select a non-photo
+  result and explicitly explain the substitution. Charge only its normal cost.
+- Disable duplicate searches during preparation. Cancelling before a result
+  is committed costs nothing and grants no clue; reset invalidates late results.
+- Preserve pending venue-directions and optional lead actions. Old discoveries
+  remain valid and are not rewritten; unavailable old photos retain explicit
+  error text without blocking their already obtained clue.
+
+## R-088 - Rain and storms affect outdoor effort
+
+- **User decision:** Rain adds two fatigue/hour outdoors; storms add four.
+  Walking speed is reduced by 15% in rain and 25% in storms, subject to
+  existing movement speed limits. Longer walking consumes normal extra time
+  and metabolism. These effects stack with temperature and night exposure.
+- Sheltered actions are exempt. No new wet-clothes or live-weather simulation.
+  Use the existing estimated monthly historical weather condition, not actual
+  observations at the player's real location.
+
+## R-087 - Temperature affects outdoor survival
+
+- **User decision:** Below 10 C, add 25% calorie consumption per ten degrees
+  below the threshold, continuously, capped at +100%. Above 30 C, add two
+  fatigue/hour per five degrees above threshold, capped at +10/hour.
+  No temperature surcharge at exactly 10 C or 30 C.
+- Apply to walking and other outdoor actions using the existing altitude-
+  adjusted, time-of-day temperature estimate. Sample exposure over long actions,
+  including month changes, rather than applying the departure temperature
+  unchanged to a full night's sleep.
+- **Outdoor sleep decision:** No fatigue recovery, but retain the usual
+  reduced sleep-pressure recovery. This matches the existing outdoor-sleep
+  rule; temperature/rain penalties still apply during the night.
+- Sheltered meals/sleep/detention are exempt. Requests for hospitality remain
+  outdoors until accepted. Cold/heat also apply during outdoor unconsciousness.
+- Display active effects. If weather is unavailable, clearly state that
+  weather effects are not applied yet; never invent a temperature.
+- These are fictional balance rules, not medical or real-world safety advice.
+
 ## R-086 - High fatigue when crossing water
 
 - **User decision:** Add forty fatigue per 250 m step into a water cell, in
@@ -1250,8 +1323,8 @@ This file records additions to the design without modifying the source PDF,
 ## R-070 — Audible street performance
 
 - **User report:** Street-music minigame has neither sound nor music.
-- **Implemented:** Original synthesized melody, bass and offbeat accompaniment,
-  scheduled on the existing eight visual beat timestamps using Web Audio.
+- **Implemented:** Original synthesized melody and bass, synchronized to
+  the visual beat timestamps. R-091 replaces Web Audio with native PCM playback.
   Distinct successful/failed tap notes. No downloaded backing track dependency
   or change to score, tolerance, upfront cost or rewards.
 - **Controls:** Start resumes audio from the player's gesture; shared Options

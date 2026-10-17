@@ -60,4 +60,5 @@ test("cell services and clue forms keep stable, non-conflicting action keys", ()
   const original = new Map(buttonBindings(clues.map(id => ({ id }))).map(b => [b.button.id, b.key]));
   assert.equal(new Set(original.values()).size, clues.length);
   for (const id of clues) assert.equal(buttonBindings([{ id }])[0].key, original.get(id));
+  assert.equal(buttonBindings([{ id: "clue-investigate" }])[0].key, "F");
 });

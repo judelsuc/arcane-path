@@ -10,7 +10,7 @@ export function setupAudio(t) {
   let footstepError = "";
   let streetMusicError = "";
   const busking = createStreetMusicAudio({
-    createContext: () => new AudioContext(),
+    createAudio: url => new Audio(url),
     onError(error) { streetMusicError = error; localize(); },
   });
   const footsteps = createFootstepPlayer({

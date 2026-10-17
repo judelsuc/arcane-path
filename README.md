@@ -489,8 +489,14 @@ reste la base ; le profil ajuste masse de jeu, allure et endurance.
   de prototype, pas une promesse de nourriture ou d'accueil dans le lieu reel.
   Les boutiques et l'argent viendront dans la couche economie.
 - Les avertissements expliquent les besoins eleves. Faim et manque de sommeil
-  ralentissent la marche. Reserve vide, fatigue a 100 ou 32 h d'eveil equivalent
-  terminent le voyage avec une explication et **Nouveau voyage**.
+  ralentissent la marche. La reserve vide termine le voyage. Fatigue a 100 ou
+  barre de sommeil pleine (32 h d'eveil equivalent) provoquent huit heures
+  d'inconscience, fatigue ramenee a 40 avant meteo et risque de vol d'argent.
+  La faim continue ; les anciennes parties deja terminees ne sont pas ranimees.
+  La pression de sommeil croit deux fois plus vite de 22:00 a 02:00, quatre fois
+  plus vite de 02:00 a 06:00, selon l'horloge UTC du jeu, meme a l'abri.
+  Dormir conserve sa recuperation habituelle. Passer 02:00 ne suffit pas a
+  provoquer le sommeil force si la barre n'est pas pleine.
 - Les actions de survie sont desactivees en observation et dans les dialogues.
   Attendre reellement ou telecharger ne consomme aucune ressource.
 
@@ -776,6 +782,24 @@ Chaque pas de 250 m entrant dans une case d'eau ajoute 40 fatigue aux couts
 ordinaires, sans reduction par endurance. Les ponts cartographies comme route
 gardent leur cout normal ; a 100 fatigue, les regles d'evanouissement s'appliquent.
 
+La meteo estimee influence les actions exterieures : sous 10 C, +25 % de
+consommation calorique par tranche de dix degres (progressif, plafond +100 %) ;
+au-dessus de 30 C, +2 fatigue/heure par cinq degres (plafond +10/heure).
+Pluie : +2 fatigue/heure et vitesse de marche -15 % ; orage : +4/heure et
+vitesse -25 %, avec les limites de vitesse habituelles. Les effets s'ajoutent
+a l'exposition nocturne. Les actions abritees sont exemptees. Dormir dehors
+ne recupere pas de fatigue, mais conserve la recuperation reduite du sommeil.
+Sans donnees meteo chargees, le panneau indique explicitement que ces effets
+ne sont pas encore appliques. Il ne s'agit pas de meteo observee en direct.
+
+Sur une etape, **Chercher un indice (F)** choisit au hasard un type de
+decouverte accessible. Les couts possibles sont presentes avant l'action ;
+seul celui du resultat obtenu est facture. Les photos sont de vraies images
+geographiques du cache ou d'Internet avec source/licence, pas des illustrations
+generees. Si aucune image utilisable ne charge, un autre indice est choisi,
+avec une explication et son seul cout. Les lieux non resolus gardent leur
+action de demande de precision ; les indices futurs ne sont pas devoiles.
+
 Le journal de piste indique les directions depuis le joueur avec des nombres
 positifs et des fleches : est →, ouest ←, nord ↑, sud ↓. Par exemple, « 1 case
 vers l'est et 1 vers le nord » signifie une case a droite et une vers le haut.
@@ -891,8 +915,9 @@ Les pistes bouclent, sans fondu ni correction automatique des raccords.
 L'onglet masque et le dialogue du minijeu de rythme mettent la musique en
 pause ; aucune piste Suno non synchronisee n'influence les notes/recompenses.
 Le mini-jeu a sa propre melodie originale avec basse et accompagnement,
-synthetisee par Web Audio sans fichier musical a telecharger. Les notes sont
-programmees sur les memes reperes visuels : une phrase de 12 cases (8 notes,
+synthetisee localement en WAV PCM, lue par le meme lecteur audio natif que
+les musiques de fond (sans contexte Web Audio separe ni fichier externe).
+La lecture est recalee sur les memes reperes visuels : une phrase de 12 cases (8 notes,
 4 silences), repetee trois fois. Les cases vides ne donnent aucun point.
 Le pas est de 400 ms, la tolerance de 150 ms ; les silences rendent les attaques
 irregulieres. Le compteur indique la boucle courante sur trois. Les 24 notes
