@@ -1,5 +1,34 @@
 # Requirements tracked outside the design PDF
 
+## R-102 - Frequent narrative clues and protection against unlucky streaks
+
+- **User request:** Clue searches are too rare and give too little reassurance
+  about staying on the trail. Approved more frequent signs, gentler probability
+  decay, informative empty searches, anti-streak protection and clear journal
+  evidence categories, without an exact warmer/colder navigation meter.
+- Full-clue chance is 0.08 + 0.82 exp(-routeDistance / 6000): about 90% on the
+  actual reference route, 38% at 6 km and 23% at 10 km. Destination proximity
+  still controls vague/partial/precise information and randomized action costs.
+- Within 6 km of that route, additional small signs can support the lead
+  without naming a destination. After three empty searches in distinct cells
+  near the route, a search in a new nearby cell guarantees at least a sign.
+  Repeated cells do not build or trigger that guarantee; successful clues/signs
+  clear it. The streak is stage-specific and survives save/resume.
+- Signs never advance the quest, unlock precise knowledge, or count as name/
+  photo recognition evidence. Keep at most four signs per stage in the journal.
+  Preserve all existing time, fatigue, hunger and fainting consequences.
+- Empty searches explicitly say they do not prove a wrong direction and
+  recommend other locations/people or reviewing collected clues. Do not invent
+  corrective compass directions or imply an absence proves the parent never
+  passed through.
+- Journal entries distinguish collected clues, small signs and unconfirmed
+  opinions. Record the player's discovery cell/time, and explain that a
+  direction starts there, not at their current position.
+- Twenty deterministic FR/EN narrative direction discoveries replace the
+  abstract compass sentence: overheard talk, newspaper, postcard, guestbook,
+  witness, note and other small discoveries. Preserve broad directions and
+  avoid revealing future town names or exact distances.
+
 ## R-099 - Find real nearby accommodation before walking there
 
 - **User request:** Hotels/hostels are offered too rarely. Show real nearby

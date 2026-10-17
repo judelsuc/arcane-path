@@ -80,9 +80,9 @@ test("precision boundaries are exact and random cost ranges shrink with proximit
 
 test("actual route proximity determines success rather than distance to target; errors have no action cost", async () => {
   const state = start(), before = structuredClone(state);
-  assert.equal(fieldSearchChance(0), 0.85);
+  assert.ok(Math.abs(fieldSearchChance(0) - 0.90) < 1e-10);
   assert.ok(fieldSearchChance(3000) < fieldSearchChance(1000));
-  assert.ok(fieldSearchChance(15000) < 0.03);
+  assert.ok(fieldSearchChance(15000) > 0.14 && fieldSearchChance(15000) < 0.15);
   assert.ok((await search(state, { chance: 0.5, pathDistance: 0 })).kind);
   assert.equal((await search(state, { chance: 0.5, pathDistance: 15000 })).kind, null);
   for (const bad of [-1, NaN, Infinity]) assert.throws(() => fieldSearchChance(bad), /proximity/);
@@ -91,6 +91,96 @@ test("actual route proximity determines success rather than distance to target; 
     proximity: async () => { throw new Error("Offline"); },
   }), /Offline/);
   assert.deepEqual(state, before);
+});
+
+test("gentler success probabilities meet the near and far thresholds without a route meter", () => {
+  assert.ok(fieldSearchChance(6000) > .38 && fieldSearchChance(6000) < .39);
+  assert.ok(fieldSearchChance(10000) > .23 && fieldSearchChance(10000) < .24);
+  assert.ok(fieldSearchChance(1000000) >= .08);
+});
+
+test("small signs are frequent near the route, saved separately and never identify or advance a town", async () => {
+  const state = start();
+  const result = await search(state, { chance: .92 });
+  assert.equal(result.kind, "sign");
+  const next = applyFieldSearch(state, result, cell, info, survival, economy);
+  assert.equal(next.trail.index, 0);
+  assert.equal(next.trail.exploration.hints.length, 0);
+  assert.equal(next.trail.exploration.signs.length, 1);
+  assert.equal(next.trail.exploration.lastSearch.outcome, "sign");
+  assert.equal(recognitionHint(next), undefined);
+  assert.deepEqual(validateSave(JSON.parse(JSON.stringify(save(next)))).state, next);
+  assert.equal((await search(state, { chance: .92, pathDistance: 6001 })).kind, null);
+  assert.ok(!trailReminder(next, (key, args) => translate("en", key, args)).includes("Secret"));
+});
+
+test("three distinct nearby misses guarantee at least a sign at the next new nearby cell, including after resume", async () => {
+  let state = start();
+  const commit = async s => applyFieldSearch(s, await search(s, { chance: .999 }), cell, info, survival, economy);
+  state = await commit(state);
+  state = await commit(state);
+  assert.equal(state.trail.exploration.searchStreak.misses.length, 1);
+  for (let i = 0; i < 2; i++) state = await commit({ ...state, row: state.row + 1 });
+  assert.equal(state.trail.exploration.searchStreak.misses.length, 3);
+  const repeated = await search(state, { chance: .999 });
+  assert.equal(repeated.kind, null);
+  state = validateSave(JSON.parse(JSON.stringify(save(state)))).state;
+  const moved = { ...state, row: state.row + 1 };
+  assert.equal((await search(moved, { chance: .999, pathDistance: 6001 })).kind, null);
+  const sign = await search(moved, { chance: .999, pathDistance: 6000 });
+  assert.equal(sign.kind, "sign");
+  state = applyFieldSearch(moved, sign, cell, info, survival, economy);
+  assert.equal(state.trail.exploration.searchStreak.misses.length, 0);
+  assert.equal(state.trail.exploration.signs.length, 1);
+  assert.equal(state.trail.index, 0);
+});
+
+test("successful evidence clears the unlucky streak, earlier stages cannot guarantee a sign", async () => {
+  const state = start();
+  state.trail.exploration.searchStreak = { stage: 0, misses: [
+    { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 3, row: 1 },
+  ] };
+  const next = applyFieldSearch(state, await search(state), cell, info, survival, economy);
+  assert.equal(next.trail.exploration.searchStreak.misses.length, 0);
+  const later = { ...state, trail: { ...state.trail, index: 1 } };
+  assert.equal((await search(later, { chance: .999 })).kind, null);
+});
+
+test("reassurance history is bounded and malformed or future streak/sign records are rejected", async () => {
+  let state = start();
+  for (let i = 0; i < 6; i++) {
+    state = { ...state, row: state.row + 1 };
+    state = applyFieldSearch(state, await search(state, { chance: .92 }), cell, info, survival, economy);
+  }
+  assert.equal(state.trail.exploration.signs.length, 4);
+  assert.deepEqual(validateSave(JSON.parse(JSON.stringify(save(state)))).state, state);
+  for (const mutate of [
+    e => { e.signs[0].stage = 9; },
+    e => { e.signs[0].elapsedMinutes = 9999; },
+    e => { e.searchStreak.misses = [{ col: 1, row: 1 }, { col: 1, row: 1 }]; },
+    e => { e.searchStreak.misses = [{ col: NaN, row: 0 }]; },
+    e => { e.signs.push({ ...e.signs[0] }); },
+  ]) {
+    const bad = structuredClone(state);
+    mutate(bad.trail.exploration);
+    assert.throws(() => save(bad), /field clue/);
+  }
+});
+
+test("twenty narrative direction discoveries stay stable, anchored and localized without destination leaks", () => {
+  const state = start(), texts = new Set();
+  for (const locale of ["fr", "en"]) {
+    const t = (key, args) => translate(locale, key, args);
+    for (let col = 0; col < 20; col++) {
+      const hint = { stage: 0, col, row: 10, kind: "direction" };
+      const text = fieldClueText(state, hint, t);
+      assert.match(text, /Camille/);
+      assert.doesNotMatch(text, /Secret|fieldDirection|undefined/);
+      assert.equal(fieldClueText({ ...state, col: 500 }, hint, t), text);
+      texts.add(text);
+    }
+  }
+  assert.equal(texts.size, 40);
 });
 
 test("successful and empty searches both consume rolled time, energy and fatigue without advancing", async () => {
@@ -297,6 +387,7 @@ for (const locale of ["fr", "en"]) {
       Math.random = original.random;
     });
     class Element {
+      dataset = {};
       children = []; events = {}; textContent = ""; open = false;
       nextElementSibling = { hidden: false };
       addEventListener(type, listener) { this.events[type] = listener; }

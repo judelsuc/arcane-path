@@ -36,7 +36,7 @@ export function fieldSearchChance(pathDistanceMeters) {
   if (!Number.isFinite(pathDistanceMeters) || pathDistanceMeters < 0) {
     throw new Error("Invalid parent-path proximity.");
   }
-  return 0.02 + 0.83 * Math.exp(-pathDistanceMeters / 3000);
+  return 0.08 + 0.82 * Math.exp(-pathDistanceMeters / 6000);
 }
 
 export async function loadSearchProximity(state, signal, fetcher = fetch) {
@@ -70,15 +70,22 @@ export async function prepareFieldSearch(state, cell, resolvePhoto, signal,
   const rules = fieldSearchRules(state);
   const minutes = rules.minMinutes + Math.floor(draw() * (rules.maxMinutes - rules.minMinutes + 1));
   const fatigue = rules.minFatigue + Math.floor(draw() * (rules.maxFatigue - rules.minFatigue + 1));
-  const success = draw() < fieldSearchChance(pathDistance);
+  const roll = draw();
+  const success = roll < fieldSearchChance(pathDistance);
   let kind = success ? rules.precision === "precise" ? "place"
     : ["direction", "prefix", "photo"][Math.floor(draw() * 3)] : null;
+  const nearRoute = pathDistance <= 6000;
+  const streak = state.trail.exploration.searchStreak;
+  const misses = streak?.stage === state.trail.index ? streak.misses : [];
+  const newLocation = !misses.some(p => p.col === state.col && p.row === state.row);
+  if (!kind && nearRoute &&
+      (roll < 0.95 - 0.2 * pathDistance / 6000 || misses.length === 3 && newLocation)) kind = "sign";
   const content = kind === "photo" ? await resolvePhoto(state, state.trail.index, true) : undefined;
   signal.throwIfAborted();
   const photoUnavailable = kind === "photo" && !content;
   if (photoUnavailable) kind = "prefix";
   return { stage: state.trail.index, col: state.col, row: state.row,
-    precision: rules.precision, minutes, fatigue, kind, content, photoUnavailable };
+    precision: rules.precision, minutes, fatigue, kind, content, photoUnavailable, nearRoute };
 }
 
 export function applyFieldSearch(state, result, cell, info, survival, economy) {
@@ -88,8 +95,11 @@ export function applyFieldSearch(state, result, cell, info, survival, economy) {
   if (result.precision !== rules.precision ||
       !Number.isInteger(result.minutes) || result.minutes < rules.minMinutes || result.minutes > rules.maxMinutes ||
       !Number.isInteger(result.fatigue) || result.fatigue < rules.minFatigue || result.fatigue > rules.maxFatigue ||
-      ![null, "place", "direction", "prefix", "photo"].includes(result.kind) ||
-      (result.kind === "place") !== (Boolean(result.kind) && rules.precision === "precise")) {
+      typeof result.nearRoute !== "boolean" ||
+      ![null, "place", "direction", "prefix", "photo", "sign"].includes(result.kind) ||
+      (result.kind === "sign" && !result.nearRoute) ||
+      (result.kind !== "sign" &&
+        (result.kind === "place") !== (Boolean(result.kind) && rules.precision === "precise"))) {
     throw new Error("Invalid field search result.");
   }
   const rested = restSurvival({ ...state, lastExpenseCents: 0 }, { ...survival,
@@ -99,15 +109,27 @@ export function applyFieldSearch(state, result, cell, info, survival, economy) {
   let next = finishAction(state, { ...rested, reserveKcal,
     energyKcal: rested.energyKcal + kcal, fatigue: Math.min(100, rested.fatigue + result.fatigue),
     ended: rested.ended ?? (reserveKcal <= 0 ? "hunger" : null) }, info, economy, { survival });
-  const outcome = next.ended ? "exhausted" : didFaint(state, next) ? "fainted" : result.kind ? "found" : "nothing";
+  const outcome = next.ended ? "exhausted" : didFaint(state, next) ? "fainted"
+    : result.kind === "sign" ? "sign" : result.kind ? "found" : "nothing";
   const exploration = state.trail.exploration;
   const hint = outcome === "found" ? { stage: result.stage, kind: result.kind,
     precision: result.precision, col: result.col, row: result.row, elapsedMinutes: next.elapsedMinutes } : null;
   const hints = hint && !exploration.hints.some(h => h.stage === hint.stage &&
     h.kind === hint.kind && h.precision === hint.precision) ? [...exploration.hints, hint] : exploration.hints;
+  const oldMisses = exploration.searchStreak?.stage === result.stage ? exploration.searchStreak.misses : [];
+  const position = { col: result.col, row: result.row };
+  const misses = ["found", "sign"].includes(outcome) ? []
+    : outcome === "nothing" && result.nearRoute &&
+      !oldMisses.some(p => p.col === position.col && p.row === position.row)
+      ? [...oldMisses, position].slice(-3) : oldMisses;
+  const signs = exploration.signs ?? [];
+  const sign = outcome === "sign" ? { ...position, stage: result.stage, elapsedMinutes: next.elapsedMinutes } : null;
+  const retainedSigns = sign ? [...signs.filter(s => s.stage !== sign.stage),
+    ...signs.filter(s => s.stage === sign.stage).slice(-3), sign] : signs;
   next = { ...next, trail: { ...state.trail, exploration: { ...exploration, hints,
+    signs: retainedSigns, searchStreak: { stage: result.stage, misses },
     lastSearch: { stage: result.stage, outcome, minutes: result.minutes, fatigue: result.fatigue,
-      elapsedMinutes: next.elapsedMinutes },
+      ...position, elapsedMinutes: next.elapsedMinutes },
   } } };
   return next;
 }
@@ -122,7 +144,9 @@ export function fieldClueText(state, hint, t) {
       hint.precision === "partial" ? 5 : 2);
     return t("fieldClue.prefix", { prefix: chars.slice(0, length).join("") });
   }
-  return t("fieldClue.direction", {
+  const variant = Math.abs(hint.col * 31 + hint.row * 17 + hint.stage * 13) % 20;
+  return t(`fieldDirection.${variant}`, {
+    parent: state.trail.parentName,
     direction: t(`hintCompass.${clueDirection(hint, target)}`),
   });
 }
@@ -226,11 +250,34 @@ export function validateExploration(state) {
     if (seen.has(key)) fail();
     seen.add(key);
   }
+  const validPosition = p => p && Number.isSafeInteger(p.col) && Number.isSafeInteger(p.row) &&
+    Math.abs(Math.floor(p.col / 8)) <= 1000 && Math.abs(Math.floor(p.row / 8)) <= 1000;
+  const validStage = p => p && Number.isInteger(p.stage) && p.stage >= e.firstStage &&
+    p.stage <= state.trail.index && p.stage < state.trail.stages.length;
+  if (e.signs !== undefined) {
+    if (!Array.isArray(e.signs) || e.signs.length > state.trail.stages.length * 4) fail();
+    const counts = new Map();
+    for (const sign of e.signs) {
+      if (!validPosition(sign) || !validStage(sign) || !Number.isFinite(sign.elapsedMinutes) ||
+          sign.elapsedMinutes < 8 || sign.elapsedMinutes > state.elapsedMinutes) fail();
+      counts.set(sign.stage, (counts.get(sign.stage) ?? 0) + 1);
+      if (counts.get(sign.stage) > 4) fail();
+    }
+  }
+  if (e.searchStreak !== undefined) {
+    const streak = e.searchStreak;
+    if (!validStage(streak) || !Array.isArray(streak.misses) || streak.misses.length > 3 ||
+        streak.misses.some(p => !validPosition(p)) ||
+        new Set(streak.misses.map(p => `${p.col},${p.row}`)).size !== streak.misses.length) fail();
+  }
   if (e.lastSearch !== undefined) {
     const r = e.lastSearch;
     if (!r || !Number.isInteger(r.stage) || r.stage < e.firstStage || r.stage > state.trail.index ||
         r.stage >= state.trail.stages.length ||
-        !["found", "nothing", "fainted", "exhausted"].includes(r.outcome) ||
+        !["found", "sign", "nothing", "fainted", "exhausted"].includes(r.outcome) ||
+        ((r.col !== undefined || r.row !== undefined) && !validPosition(r)) ||
+        (r.outcome === "sign" && !e.signs?.some(s => s.stage === r.stage &&
+          s.col === r.col && s.row === r.row && s.elapsedMinutes === r.elapsedMinutes)) ||
         !Number.isInteger(r.minutes) || r.minutes < 8 || r.minutes > 60 ||
         !Number.isInteger(r.fatigue) || r.fatigue < 1 || r.fatigue > 7 ||
         !Number.isFinite(r.elapsedMinutes) || r.elapsedMinutes < r.minutes ||

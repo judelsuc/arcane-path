@@ -9,6 +9,8 @@
   --muted: #96a18f;
   --line: #354239;
   --accent: #e6b767;
+  --feedback-success: #8fe3a0;
+  --feedback-failure: #ff9b9b;
 }
 
 * {
@@ -30,6 +32,19 @@
   overflow-wrap: anywhere;
 }
 #save-feedback[data-state="error"] { background: #39251c; }
+
+[data-feedback="success"],
+#trail-actions [data-feedback="success"],
+#trail-history [data-feedback="success"],
+#save-feedback[data-feedback="success"] { color: var(--feedback-success); }
+[role="alert"],
+.map-error,
+[data-feedback="failure"],
+#trail-actions [data-feedback="failure"],
+#trail-history [data-feedback="failure"],
+#save-feedback[data-feedback="failure"] { color: var(--feedback-failure); }
+.notebook-page [data-feedback="success"] { color: #216232; }
+.notebook-page [data-feedback="failure"] { color: #a12727; }
 
 body {
   min-width: 320px;
@@ -617,7 +632,7 @@ dialog p { margin: 12px 0; }
   padding: 12px;
   line-height: 1.6;
 }
-#survival-choice-error { color: #f4cc80; }
+#survival-choice-error { color: var(--feedback-failure); }
 #economy-options { padding-left: 1.2em; }
 #economy-options li { margin-block: 16px; overflow-wrap: anywhere; }
 #economy-options button { max-width: 100%; white-space: normal; }

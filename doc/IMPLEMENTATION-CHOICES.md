@@ -6,6 +6,24 @@ All survival numbers below are gameplay approximations, not medical advice.
 Sections are chronological checkpoint records: later layers supersede earlier
 shortcuts, especially free meals and unrestricted outdoor sleep.
 
+## Clue reassurance follow-up
+
+- R-102 uses a gentler full-clue probability plus a separate small-sign outcome
+  within 6 km of the actual stored parent route. These signs never enter
+  recognition hints and cannot advance or identify a destination.
+- Optional exploration `signs` and stage-specific `searchStreak` fields retain
+  up to four signs per stage and three distinct empty-search positions. Save
+  validation bounds/validates positions, stage, time, counts and duplicates.
+  Legacy saves remain accepted without these fields. A fourth new nearby
+  search guarantees a sign; repeated cells and earlier stages do not qualify.
+- UI labels distinguish evidence, signs and opinions, with discovery-cell/
+  elapsed-time anchors. Twenty stable narrative variants replace direction
+  boilerplate in FR/EN. Empty searches give honest next-step suggestions,
+  not a fabricated corrective compass heading.
+- Targeted tests cover probability thresholds, signs versus clues, strict
+  6 km guarantee boundary, repeated cells, stage resets, save/resume, bounded
+  storage, malformed saves, all 40 localized narratives and no destination leak.
+
 ## Nearby accommodation discovery
 
 - R-099: `/api/accommodations` uses the existing bounded asynchronous job
