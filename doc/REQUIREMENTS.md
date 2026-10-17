@@ -80,6 +80,10 @@
   a provider is unavailable, explicitly label results incomplete, not proof
   that no accommodation exists. Retry, cancellation and a total timeout
   prevent an indefinitely loading menu.
+- While searching, keep the search control usable as "Cancel search" rather
+  than greying out an unchanged label. Explain the four-minute maximum wait,
+  confirm cancellation and permit an immediate retry. Ignore late replies
+  from cancelled searches without interrupting a newer lookup.
 - Optional administrator-imported DATAtourisme data supplements sparse
   mainland-France OSM coverage. No player-triggered downloads/imports or
   catalogue/cache deletion. This French source is not worldwide coverage.

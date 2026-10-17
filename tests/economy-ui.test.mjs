@@ -106,6 +106,35 @@ test("lodging lookup errors stay visible and the search can be retried", async t
   assert.match(h.element("#accommodation-status").textContent, /Catalogue not imported/);
 });
 
+for (const language of ["fr", "en"]) {
+  test(`${language} a pending lodging search remains cancellable and can be restarted safely`, async t => {
+    const pending = [];
+    const h = harness(t, language, signal => new Promise(resolve => pending.push({ signal, resolve })));
+    const opening = h.ui.open("sleep");
+    const button = h.element("#accommodation-search");
+    assert.equal(button.disabled, false);
+    assert.equal(button.dataset.i18n, "accommodationCancel");
+    assert.match(button.textContent, language === "fr" ? /Annuler/ : /Cancel/);
+    assert.match(h.element("#accommodation-status").textContent, /4 minutes/);
+    await button.events.click();
+    assert.equal(pending[0].signal.aborted, true);
+    assert.equal(button.disabled, false);
+    assert.equal(button.dataset.i18n, "accommodationSearch");
+    assert.match(h.element("#accommodation-status").textContent, language === "fr" ? /annulée/ : /cancelled/);
+    const retry = button.events.click();
+    assert.equal(pending.length, 2);
+    pending[0].resolve({ places: [], warnings: ["Stale result"] });
+    await opening;
+    assert.equal(button.dataset.i18n, "accommodationCancel");
+    assert.doesNotMatch(h.element("#accommodation-status").textContent, /Stale result/);
+    pending[1].resolve({ places: [], warnings: [] });
+    await retry;
+    assert.equal(button.dataset.i18n, "accommodationSearch");
+    assert.equal(button.disabled, false);
+    assert.doesNotMatch(h.element("#accommodation-status").textContent, /cancelled|annulée|4 minutes/);
+  });
+}
+
 test("closing sleep cancels lookup and ignores late responses", async t => {
   let complete, signal;
   const h = harness(t, "en", currentSignal => {

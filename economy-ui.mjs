@@ -6,6 +6,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
   let mode = "eat";
   let resolving = false, countryError = "", generation = 0;
   let accommodationController, accommodationResult, accommodationError = "", accommodationLoading = false;
+  let accommodationCancelled = false;
   const money = cents => `${(cents / 100).toFixed(2)} ${t("gameMoney")}`;
   const hospitalityResult = result => t(`${result.placeKind === "worship" ? "worshipResult" : "hospitalityResult"}.${result.outcome}`, {
     town: result.townName, day: result.day,
@@ -29,10 +30,13 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     });
     if (!dialog.open) return;
     document.querySelector("#nearby-accommodation").hidden = mode !== "sleep" || !findAccommodations;
-    document.querySelector("#accommodation-search").disabled = accommodationLoading || current.blocked;
+    const searchButton = document.querySelector("#accommodation-search");
+    searchButton.disabled = current.blocked;
+    searchButton.dataset.i18n = accommodationLoading ? "accommodationCancel" : "accommodationSearch";
+    searchButton.textContent = t(searchButton.dataset.i18n);
     const nearbyStatus = document.querySelector("#accommodation-status");
     nearbyStatus.textContent = accommodationError ? t("accommodationError", { error: accommodationError })
-      : t(accommodationLoading ? "accommodationLoading" : accommodationResult
+      : t(accommodationLoading ? "accommodationLoading" : accommodationCancelled ? "accommodationCancelled" : accommodationResult
         ? accommodationResult.warnings.length ? "accommodationIncomplete"
           : accommodationResult.places.length ? "accommodationReady" : "accommodationEmpty"
         : "accommodationHint");
@@ -187,6 +191,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     mode = nextMode;
     accommodationController?.abort();
     accommodationLoading = false;
+    accommodationCancelled = false;
     accommodationResult = undefined;
     accommodationError = "";
     dialog.dataset.activity = mode;
@@ -216,6 +221,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     accommodationController = new AbortController();
     const controller = accommodationController;
     accommodationLoading = true;
+    accommodationCancelled = false;
     accommodationError = "";
     localize();
     try {
@@ -233,8 +239,16 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       }
     }
   }
-  document.querySelector("#accommodation-search").addEventListener("click", searchAccommodations);
-  dialog.addEventListener("close", () => { if (!dialog.open) accommodationController?.abort(); });
+  function cancelAccommodationSearch() {
+    accommodationController?.abort();
+    accommodationController = undefined;
+    accommodationLoading = false;
+    accommodationCancelled = true;
+    localize();
+  }
+  document.querySelector("#accommodation-search").addEventListener("click", () =>
+    accommodationLoading ? cancelAccommodationSearch() : searchAccommodations());
+  dialog.addEventListener("close", () => { if (!dialog.open) cancelAccommodationSearch(); });
   dialog.addEventListener("keydown", event => {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -253,6 +267,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     generation++; resolving = false; countryError = "";
     accommodationController?.abort();
     accommodationLoading = false;
+    accommodationCancelled = false;
     accommodationResult = undefined;
     accommodationError = "";
     dialog.close();
