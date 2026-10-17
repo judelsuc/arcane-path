@@ -65,6 +65,9 @@
             <section class="player-needs" aria-labelledby="needs-title">
               <h4 id="needs-title" data-i18n="needsTitle"></h4>
               <p id="player-character"></p>
+              <p id="player-wallet"></p>
+              <p id="player-tarot"></p>
+              <p id="outdoor-status"></p>
               <label><span data-i18n="needsHunger"></span><meter id="needs-hunger" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-hunger-value"></output></label>
               <label><span data-i18n="needsFatigue"></span><meter id="needs-fatigue" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-fatigue-value"></output></label>
               <label><span data-i18n="needsSleep"></span><meter id="needs-sleep" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-sleep-value"></output></label>
@@ -221,12 +224,23 @@
       <p data-i18n="townScope"></p>
       <div id="town-welcome" role="status"></div>
       <button id="town-refresh" type="button" data-i18n="townRefresh"></button>
+      <button id="town-services" type="button" data-i18n="mealTitle"></button>
       <h3 data-i18n="townPlacesTitle"></h3>
       <p id="town-empty" data-i18n="townEmpty"></p>
       <ul id="town-places"></ul>
       <div id="town-place-detail" role="status"></div>
       <p data-i18n="townFiction"></p>
       <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" data-i18n="attribution"></a>
+    </dialog>
+    <dialog id="economy-dialog" aria-labelledby="economy-title">
+      <h2 id="economy-title"></h2>
+      <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
+      <p id="economy-pricing"></p>
+      <a id="economy-price-source" target="_blank" rel="noopener noreferrer" data-i18n="priceSource"></a>
+      <p data-i18n="economyFiction"></p>
+      <p id="economy-empty" data-i18n="noLocalMeal"></p>
+      <ul id="economy-options"></ul>
+      <p id="economy-action-error" role="alert"></p>
     </dialog>
   </body>
 </html>

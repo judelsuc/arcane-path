@@ -625,7 +625,8 @@
             "longitude": -149.5325713,
             "tags": {
               "amenity": "shower",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -664,7 +665,8 @@
             "longitude": -149.53298325000003,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -674,7 +676,8 @@
             "longitude": -149.53307745,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -693,7 +696,8 @@
             "longitude": -149.5338866,
             "tags": {
               "amenity": "parking",
-              "access": "customers"
+              "access": "customers",
+              "fee": "no"
             }
           }
         ],
@@ -1132,7 +1136,8 @@
             "latitude": -17.5255029,
             "longitude": -149.5584547,
             "tags": {
-              "amenity": "social_facility"
+              "amenity": "social_facility",
+              "fee": "yes"
             },
             "name": "Centre PAPA NUI"
           },
@@ -1448,7 +1453,8 @@
             "longitude": -149.54588820000004,
             "tags": {
               "amenity": "parking",
-              "access": "customers"
+              "access": "customers",
+              "fee": "no"
             }
           }
         ]
@@ -1960,7 +1966,8 @@
             "latitude": -17.5252859,
             "longitude": -149.52900599999998,
             "tags": {
-              "amenity": "charging_station"
+              "amenity": "charging_station",
+              "fee": "no"
             }
           },
           {
@@ -2785,7 +2792,8 @@
             "latitude": -17.5282042,
             "longitude": -149.5490362,
             "tags": {
-              "amenity": "parking"
+              "amenity": "parking",
+              "fee": "no"
             },
             "name": "Stationnement Aorai Tini Hau"
           },
@@ -2796,7 +2804,8 @@
             "longitude": -149.5493664,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             },
             "name": "Stationnement Aorai Tini Hau"
           },
@@ -3031,7 +3040,8 @@
             "longitude": -149.53761135,
             "tags": {
               "amenity": "parking",
-              "access": "customers"
+              "access": "customers",
+              "fee": "no"
             }
           },
           {
@@ -3041,7 +3051,8 @@
             "longitude": -149.53822865,
             "tags": {
               "amenity": "parking",
-              "access": "customers"
+              "access": "customers",
+              "fee": "no"
             }
           },
           {
@@ -3119,7 +3130,8 @@
             "longitude": -149.53810435,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -3129,7 +3141,8 @@
             "longitude": -149.53765505,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -3139,7 +3152,8 @@
             "longitude": -149.5376641,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -3177,7 +3191,8 @@
             "longitude": -149.53739259999998,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           }
         ]
@@ -4396,7 +4411,8 @@
             "longitude": -149.5568871,
             "tags": {
               "amenity": "parking",
-              "access": "customers"
+              "access": "customers",
+              "fee": "no"
             }
           },
           {
@@ -4406,7 +4422,8 @@
             "longitude": -149.55544785,
             "tags": {
               "amenity": "parking",
-              "access": "private"
+              "access": "private",
+              "fee": "no"
             }
           },
           {
@@ -4416,7 +4433,8 @@
             "longitude": -149.55582195,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -4668,7 +4686,8 @@
             "latitude": -17.53087305,
             "longitude": -149.5527636,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "public_transport"
             }
           },
           {
@@ -4698,7 +4717,8 @@
             "latitude": -17.5306034,
             "longitude": -149.549728,
             "tags": {
-              "amenity": "motorcycle_parking"
+              "amenity": "motorcycle_parking",
+              "fee": "no"
             }
           },
           {
@@ -4717,7 +4737,8 @@
             "latitude": -17.5306083,
             "longitude": -149.54974979999997,
             "tags": {
-              "amenity": "bicycle_parking"
+              "amenity": "bicycle_parking",
+              "fee": "no"
             }
           },
           {
@@ -5103,7 +5124,8 @@
             "longitude": -149.53786614999999,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             },
             "name": "Parking école Tamahana"
           },
@@ -5153,7 +5175,8 @@
             "longitude": -149.53803675,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           }
         ]
@@ -6049,7 +6072,8 @@
             "latitude": -17.5335935,
             "longitude": -149.5593254,
             "tags": {
-              "amenity": "atm"
+              "amenity": "atm",
+              "fee": "no"
             }
           },
           {
@@ -6191,7 +6215,8 @@
             "latitude": -17.5328031,
             "longitude": -149.5575581,
             "tags": {
-              "amenity": "atm"
+              "amenity": "atm",
+              "fee": "no"
             }
           },
           {
@@ -7323,7 +7348,8 @@
             "longitude": -149.5688906,
             "tags": {
               "amenity": "toilets",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -7474,7 +7500,8 @@
             "longitude": -149.56863214999998,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             }
           },
           {
@@ -7484,7 +7511,8 @@
             "longitude": -149.56868055000004,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           }
         ],
@@ -9027,7 +9055,8 @@
             "latitude": -17.5345793,
             "longitude": -149.54710129999998,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "pavilion"
             }
           },
           {
@@ -9910,7 +9939,8 @@
             "latitude": -17.53779065,
             "longitude": -149.56847395000003,
             "tags": {
-              "amenity": "toilets"
+              "amenity": "toilets",
+              "fee": "no"
             }
           },
           {
@@ -9961,7 +9991,8 @@
             "longitude": -149.56736795000003,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             }
           },
           {
@@ -9971,7 +10002,8 @@
             "longitude": -149.56856625,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           }
         ],
@@ -10388,7 +10420,8 @@
             "longitude": -149.565371,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             }
           }
         ],
@@ -11162,7 +11195,8 @@
             "latitude": -17.5383634,
             "longitude": -149.5522361,
             "tags": {
-              "amenity": "telephone"
+              "amenity": "telephone",
+              "fee": "yes"
             }
           },
           {
@@ -11180,7 +11214,8 @@
             "latitude": -17.5380173,
             "longitude": -149.5524172,
             "tags": {
-              "amenity": "parking"
+              "amenity": "parking",
+              "fee": "no"
             }
           },
           {
@@ -11481,7 +11516,8 @@
             "longitude": -149.57197399999998,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             }
           }
         ]
@@ -12187,7 +12223,8 @@
             "longitude": -149.5686292,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             }
           },
           {
@@ -12232,7 +12269,8 @@
             "latitude": -17.5390261,
             "longitude": -149.5674815,
             "tags": {
-              "amenity": "toilets"
+              "amenity": "toilets",
+              "fee": "no"
             }
           },
           {
@@ -12661,7 +12699,8 @@
             "longitude": -149.56536339999997,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             }
           },
           {
@@ -12910,7 +12949,8 @@
             "longitude": -149.566153,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             },
             "name": "Parking Aorai"
           },
@@ -13349,7 +13389,8 @@
             "longitude": -149.55297325,
             "tags": {
               "amenity": "parking",
-              "access": "private"
+              "access": "private",
+              "fee": "no"
             }
           },
           {
@@ -13485,7 +13526,8 @@
             "latitude": -17.5394565,
             "longitude": -149.55282310000004,
             "tags": {
-              "amenity": "telephone"
+              "amenity": "telephone",
+              "fee": "yes"
             }
           },
           {
@@ -13494,7 +13536,8 @@
             "latitude": -17.5392365,
             "longitude": -149.55267959999998,
             "tags": {
-              "amenity": "telephone"
+              "amenity": "telephone",
+              "fee": "yes"
             }
           },
           {
@@ -13796,7 +13839,8 @@
             "longitude": -149.5755754,
             "tags": {
               "amenity": "toilets",
-              "access": "permissive"
+              "access": "permissive",
+              "fee": "no"
             }
           },
           {
@@ -13806,7 +13850,8 @@
             "longitude": -149.5755277,
             "tags": {
               "amenity": "toilets",
-              "access": "permissive"
+              "access": "permissive",
+              "fee": "no"
             }
           },
           {
@@ -13835,7 +13880,8 @@
             "longitude": -149.575492,
             "tags": {
               "amenity": "shower",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -14090,7 +14136,8 @@
             "longitude": -149.57353110000003,
             "tags": {
               "amenity": "toilets",
-              "access": "permissive"
+              "access": "permissive",
+              "fee": "no"
             }
           },
           {
@@ -14100,7 +14147,8 @@
             "longitude": -149.57353089999998,
             "tags": {
               "amenity": "toilets",
-              "access": "permissive"
+              "access": "permissive",
+              "fee": "no"
             }
           },
           {
@@ -14577,7 +14625,8 @@
             "latitude": -17.5410683,
             "longitude": -149.5699615,
             "tags": {
-              "amenity": "toilets"
+              "amenity": "toilets",
+              "fee": "no"
             }
           },
           {
@@ -14586,7 +14635,8 @@
             "latitude": -17.5419615,
             "longitude": -149.56959330000004,
             "tags": {
-              "amenity": "toilets"
+              "amenity": "toilets",
+              "fee": "no"
             }
           },
           {
@@ -14742,7 +14792,8 @@
             "longitude": -149.56990415,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             },
             "name": "Parking Public Tarahoi"
           },
@@ -14798,7 +14849,8 @@
             "longitude": -149.56741280000003,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             },
             "name": "Toriki"
           },
@@ -15249,7 +15301,8 @@
             "longitude": -149.56916315,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             },
             "name": "Parking public Place Pomare"
           },
@@ -15906,7 +15959,8 @@
             "longitude": -149.55300920000002,
             "tags": {
               "amenity": "parking",
-              "access": "customers"
+              "access": "customers",
+              "fee": "no"
             }
           },
           {
@@ -16028,7 +16082,8 @@
             "longitude": -149.55260565,
             "tags": {
               "amenity": "parking",
-              "access": "private"
+              "access": "private",
+              "fee": "no"
             }
           },
           {
@@ -16288,7 +16343,8 @@
             "latitude": -17.5441005,
             "longitude": -149.5793451,
             "tags": {
-              "amenity": "toilets"
+              "amenity": "toilets",
+              "fee": "no"
             }
           },
           {
@@ -16730,7 +16786,8 @@
             "longitude": -149.57612960000003,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             },
             "name": "Parking Paofai"
           },
@@ -16902,7 +16959,8 @@
             "longitude": -149.57364330000001,
             "tags": {
               "shop": "yes",
-              "tourism": "museum"
+              "tourism": "museum",
+              "fee": "no"
             },
             "name": "Musée de la perle Robert Wan"
           },
@@ -17108,7 +17166,8 @@
             "latitude": -17.5431072,
             "longitude": -149.5680447,
             "tags": {
-              "amenity": "atm"
+              "amenity": "atm",
+              "fee": "yes"
             }
           },
           {
@@ -17292,7 +17351,8 @@
             "latitude": -17.5443529,
             "longitude": -149.55295550000002,
             "tags": {
-              "amenity": "parking"
+              "amenity": "parking",
+              "fee": "no"
             },
             "name": "Sationnement Peintures Fuller"
           },
@@ -17897,7 +17957,8 @@
             "latitude": -17.546881600000003,
             "longitude": -149.5862184,
             "tags": {
-              "amenity": "toilets"
+              "amenity": "toilets",
+              "fee": "no"
             }
           },
           {
@@ -18074,7 +18135,8 @@
             "longitude": -149.58577680000002,
             "tags": {
               "amenity": "parking",
-              "access": "customers"
+              "access": "customers",
+              "fee": "no"
             },
             "name": "Parking Carrefour Faaa"
           },
@@ -18372,7 +18434,8 @@
             "latitude": -17.547057099999996,
             "longitude": -149.57769875,
             "tags": {
-              "amenity": "school"
+              "amenity": "school",
+              "fee": "no"
             },
             "name": "Gymnase"
           },
@@ -21494,7 +21557,8 @@
             "longitude": -149.60788235,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             }
           },
           {
@@ -22420,7 +22484,8 @@
             "longitude": -149.60943085,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             }
           },
           {
@@ -24919,7 +24984,8 @@
             "longitude": -149.60897265000003,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -24929,7 +24995,8 @@
             "longitude": -149.60890295,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -26019,13 +26086,13 @@
   "cache": {
     "schemaVersion": 1,
     "sourceSha256": "e332dcb9fd318afd180715278435a4e588146204e35fb0d11fd469c859e5b735",
-    "pipelineSha256": "0f06b225aac3d9af831252cb2293bfa72ad5fb1cc15237fb3186015f3d7d5eaa",
+    "pipelineSha256": "8d224a3c7f2cd498d50df4d95031ecd58076548fbe458b08345f101094a8c624",
     "name": "Tahiti — Papeete",
     "cellSizeMeters": 250,
     "configuration": {
       "water_coverage_percent": 50
     },
-    "key": "204338c823ece85704e96c85a01b097e5d0f4a6c7a862b02069247189aaffd9f",
-    "payloadSha256": "19882733b0f1780dca197e543f2fa4e136efb5c186eba085b2519c5eb1ea3326"
+    "key": "9c135c152b27e7e44bcb65eaadc1fcd3bb379846114414d5332415439936ffe9",
+    "payloadSha256": "cbc502ad57408364c35e16573d41b407601ad6b8ab39fed0801daaa2d0eb3f75"
   }
 }

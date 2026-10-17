@@ -660,7 +660,8 @@
             "latitude": 45.919896400000006,
             "longitude": 6.866762450000001,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "public_transport"
             }
           },
           {
@@ -669,7 +670,8 @@
             "latitude": 45.91963245,
             "longitude": 6.8651171500000014,
             "tags": {
-              "amenity": "parking"
+              "amenity": "parking",
+              "fee": "yes"
             }
           },
           {
@@ -1057,7 +1059,8 @@
             "longitude": 6.8701772,
             "tags": {
               "amenity": "parking",
-              "access": "private"
+              "access": "private",
+              "fee": "no"
             }
           }
         ],
@@ -1131,7 +1134,8 @@
             "longitude": 6.87254235,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           }
         ]
@@ -1581,7 +1585,8 @@
             "latitude": 45.9170537,
             "longitude": 6.867081999999998,
             "tags": {
-              "amenity": "charging_station"
+              "amenity": "charging_station",
+              "fee": "yes"
             }
           },
           {
@@ -1684,7 +1689,8 @@
             "longitude": 6.865767300000001,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             },
             "name": "Entrèves"
           },
@@ -1980,7 +1986,8 @@
             "longitude": 6.870182299999999,
             "tags": {
               "amenity": "toilets",
-              "access": "customers"
+              "access": "customers",
+              "fee": "no"
             },
             "name": "Téléphérique de l'Aiguille du Midi"
           },
@@ -2224,7 +2231,8 @@
             "latitude": 45.9170635,
             "longitude": 6.871686699999999,
             "tags": {
-              "amenity": "charging_station"
+              "amenity": "charging_station",
+              "fee": "yes"
             }
           },
           {
@@ -2233,7 +2241,8 @@
             "latitude": 45.9171341,
             "longitude": 6.871446,
             "tags": {
-              "amenity": "toilets"
+              "amenity": "toilets",
+              "fee": "no"
             }
           },
           {
@@ -2242,7 +2251,8 @@
             "latitude": 45.9171528,
             "longitude": 6.871464100000001,
             "tags": {
-              "amenity": "toilets"
+              "amenity": "toilets",
+              "fee": "no"
             }
           },
           {
@@ -2291,7 +2301,8 @@
             "longitude": 6.874054299999999,
             "tags": {
               "amenity": "sanitary_dump_station",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -2300,7 +2311,8 @@
             "latitude": 45.91863459999999,
             "longitude": 6.874013000000001,
             "tags": {
-              "amenity": "water_point"
+              "amenity": "water_point",
+              "fee": "no"
             }
           },
           {
@@ -2319,7 +2331,8 @@
             "longitude": 6.873257799999999,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             },
             "name": "Parking autocars du Grépon"
           }
@@ -2367,7 +2380,8 @@
             "longitude": 6.875013600000001,
             "tags": {
               "amenity": "parking",
-              "access": "customers"
+              "access": "customers",
+              "fee": "no"
             }
           },
           {
@@ -2377,7 +2391,8 @@
             "longitude": 6.8744282000000005,
             "tags": {
               "amenity": "parking",
-              "access": "customers"
+              "access": "customers",
+              "fee": "no"
             }
           },
           {
@@ -2597,7 +2612,8 @@
             "longitude": 6.8483201,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             },
             "name": "Lac à l'Anglais"
           }
@@ -2678,7 +2694,8 @@
             "latitude": 45.915902,
             "longitude": 6.8505172,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "public_transport"
             }
           },
           {
@@ -2714,7 +2731,8 @@
             "latitude": 45.9159193,
             "longitude": 6.8499017,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "public_transport"
             }
           },
           {
@@ -2910,7 +2928,8 @@
             "latitude": 45.916655299999995,
             "longitude": 6.858864949999999,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "public_transport"
             }
           }
         ]
@@ -2970,7 +2989,8 @@
             "longitude": 6.8617695,
             "tags": {
               "tourism": "camp_site",
-              "access": "customers"
+              "access": "customers",
+              "fee": "yes"
             },
             "name": "Camping Île des Barrats"
           },
@@ -2980,7 +3000,8 @@
             "latitude": 45.91477875,
             "longitude": 6.862833,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "public_transport"
             }
           }
         ]
@@ -3062,7 +3083,8 @@
             "longitude": 6.86703955,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             },
             "name": "Courmayeur"
           },
@@ -3159,7 +3181,8 @@
             "latitude": 45.9160457,
             "longitude": 6.869297499999999,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "public_transport"
             }
           },
           {
@@ -3206,7 +3229,8 @@
             "tags": {
               "amenity": "parking",
               "tourism": "caravan_site",
-              "access": "customers"
+              "access": "customers",
+              "fee": "yes"
             },
             "name": "Parking camping-car"
           },
@@ -3227,7 +3251,8 @@
             "longitude": 6.870803049999999,
             "tags": {
               "amenity": "parking",
-              "access": "customers"
+              "access": "customers",
+              "fee": "yes"
             },
             "name": "Centre Ville (Grépon)"
           },
@@ -3557,7 +3582,8 @@
             "longitude": 6.84764735,
             "tags": {
               "amenity": "toilets",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -3576,7 +3602,8 @@
             "latitude": 45.912717750000006,
             "longitude": 6.8474862000000005,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "public_transport"
             }
           }
         ],
@@ -3842,7 +3869,8 @@
             "latitude": 45.91458065,
             "longitude": 6.852214850000001,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "public_transport"
             }
           }
         ]
@@ -3995,7 +4023,8 @@
             "longitude": 6.862143649999999,
             "tags": {
               "amenity": "parking",
-              "access": "customers"
+              "access": "customers",
+              "fee": "no"
             }
           },
           {
@@ -4040,7 +4069,8 @@
             "latitude": 45.9142886,
             "longitude": 6.8653407,
             "tags": {
-              "tourism": "camp_site"
+              "tourism": "camp_site",
+              "fee": "yes"
             },
             "name": "Camping Les Arolles"
           }
@@ -5151,7 +5181,8 @@
             "latitude": 45.90585610000001,
             "longitude": 6.83641145,
             "tags": {
-              "tourism": "camp_site"
+              "tourism": "camp_site",
+              "fee": "yes"
             },
             "name": "Camping les Ecureuils"
           },
@@ -5162,7 +5193,8 @@
             "longitude": 6.8374741000000006,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           }
         ],
@@ -5289,7 +5321,8 @@
             "longitude": 6.8392889,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -5327,7 +5360,8 @@
             "longitude": 6.838934899999999,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             }
           },
           {
@@ -5345,7 +5379,8 @@
             "latitude": 45.906414399999996,
             "longitude": 6.83918195,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "public_transport"
             }
           },
           {
@@ -5795,7 +5830,8 @@
             "longitude": 6.839181050000002,
             "tags": {
               "amenity": "toilets",
-              "access": "customers"
+              "access": "customers",
+              "fee": "no"
             }
           },
           {
@@ -6235,7 +6271,8 @@
             "latitude": 45.90188814999999,
             "longitude": 6.836009600000001,
             "tags": {
-              "tourism": "camp_site"
+              "tourism": "camp_site",
+              "fee": "yes"
             },
             "name": "Camping Les Cimes"
           },
@@ -6390,7 +6427,8 @@
             "latitude": 45.90206280000001,
             "longitude": 6.8574396,
             "tags": {
-              "amenity": "toilets"
+              "amenity": "toilets",
+              "fee": "no"
             }
           },
           {
@@ -6400,7 +6438,8 @@
             "longitude": 6.85812885,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           }
         ]
@@ -6476,7 +6515,8 @@
             "longitude": 6.860507,
             "tags": {
               "amenity": "toilets",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -6486,7 +6526,8 @@
             "longitude": 6.860323700000001,
             "tags": {
               "amenity": "charging_station",
-              "access": "yes"
+              "access": "yes",
+              "fee": "yes"
             },
             "name": "Eborn"
           },
@@ -6525,7 +6566,8 @@
             "longitude": 6.86057345,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -6797,7 +6839,8 @@
             "latitude": 45.901185149999996,
             "longitude": 6.837007050000001,
             "tags": {
-              "tourism": "camp_site"
+              "tourism": "camp_site",
+              "fee": "yes"
             },
             "name": "Les 2 Glaciers"
           },
@@ -6892,7 +6935,8 @@
             "longitude": 6.840873,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -6956,7 +7000,8 @@
             "longitude": 6.844849250000001,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           }
         ]
@@ -7055,7 +7100,8 @@
             "longitude": 6.856009600000002,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           }
         ]
@@ -7776,7 +7822,9 @@
             "category": "summit",
             "latitude": 45.8949457,
             "longitude": 6.9014862,
-            "tags": {},
+            "tags": {
+              "fee": "no"
+            },
             "name": "Aiguille des Pèlerins - Secteur du Plan"
           }
         ],
@@ -9553,13 +9601,13 @@
   "cache": {
     "schemaVersion": 1,
     "sourceSha256": "038ce9ab3199f133836e82d93c0c7edce8af1fa3e37974ba5cc299dd45192117",
-    "pipelineSha256": "0f06b225aac3d9af831252cb2293bfa72ad5fb1cc15237fb3186015f3d7d5eaa",
+    "pipelineSha256": "8d224a3c7f2cd498d50df4d95031ecd58076548fbe458b08345f101094a8c624",
     "name": "Alpes — Chamonix",
     "cellSizeMeters": 250,
     "configuration": {
       "water_coverage_percent": 50
     },
-    "key": "55d139143d7f4fe9ece58dfa33cec3485d34f3afebd1d350398ebe796e53024a",
-    "payloadSha256": "907c046248dd838efd062501ffe0c82093fdf1bab895a4a00e5e056197ec7d83"
+    "key": "8e88f266d9c5cb89c95228bdfa350938ee875e7255acca9b9a22143f8bf6e872",
+    "payloadSha256": "5e0dd398a06a9eb0170736532eb7faba7d1e8df5d3fe2e3d6f420cdd69288eb4"
   }
 }

@@ -1,6 +1,6 @@
 # Les Arcanes du Chemin
 
-Prototype des **couches 1 — Carte, 2 — Voyage, 3 — Temps, 4 — Besoins et 5 — Localites** : donnees OSM reelles,
+Prototype des **couches 1 a 6 — Carte, Voyage, Temps, Besoins, Localites et Economie** : donnees OSM reelles,
 grille ASCII de 250 m, exploration a pied, horloge simulee, effort et streaming.
 
 Les ajouts au document de conception sont suivis dans [doc/REQUIREMENTS.md](./doc/REQUIREMENTS.md).
@@ -208,6 +208,51 @@ Les identifiants, associations Wikipedia et restrictions proviennent du
 rasteriseur. Apres modification du pipeline, `scripts/prepare_regions.py`
 regenere les snapshots depuis les sources en cache ; redemarrer le serveur
 regenere aussi les chunks rendus sans redemander les sources OSM ou altitudes.
+
+## Couche 6 : tarot, repas locaux et nuits
+
+Cette couche remplace les repas gratuits et le sommeil partout sans consequence
+du checkpoint 4. Au depart, une des 22 arcanes majeures est tiree au hasard ;
+sa dotation provisoire vaut 4 a 10 repas de reference, soit 24,76 a 61,90
+euros **de jeu**. La carte du jour change au prochain jour UTC simule,
+sans nouvelle dotation. Aucun tirage n'est payant.
+
+**Repas locaux** propose une specialite documentee selon les coordonnees :
+aligot autour de Firmi/Aveyron, croque-monsieur a Paris, tartiflette autour
+de Chamonix/Savoie, poisson cru au lait de coco a Tahiti. Sources touristiques
+et descriptions originales dans [public/economy.json](./public/economy.json).
+Chaque repas vaut pour le jeu 900 kcal de reserve et 20 minutes ; ce ne sont
+pas des mesures nutritionnelles. Les zones sont des boites de curation,
+pas des frontieres culinaires exactes. Hors zone couverte, absence explicite.
+Les repas restent limites aux cases de localite.
+
+L'echelle des tarifs utilise les observations Big Mac du **1 juillet 2026**
+publiees par The Economist, pas Eurostat. Les valeurs en dollars permettent
+une comparaison entre marches, convertie en euros de jeu sur la reference
+zone euro (6,19). Ce ne sont pas les prix reels de ces plats ou etablissements.
+FR utilise l'observation zone euro, CH/GB/US leurs observations propres.
+Pays cartographique absent/ambigu ou marche absent (notamment PF) :
+**tarif de reference signale dans le menu**, jamais un pays devine ou
+un faux indice local. Aucun change monetaire ni paiement reel.
+
+**Sommeil et abri** propose les hebergements OSM de la case actuelle :
+hotel, auberge, chambre d'hotes, motel ou refuge alpin. Tarif de jeu : quatre
+repas de reference locale ; un abri n'est gratuit que si `fee=no` est
+explicitement cartographie. Acces prive/interdit et lieux desaffectes exclus.
+Un hotel dans le menu des environs n'est pas utilisable a distance.
+
+Dormir dehors reste possible, mais sans recuperation de fatigue d'effort,
+avec seulement 25 % de recuperation du besoin de sommeil. Toute action dehors
+accumule +2 fatigue par heure nocturne (marche, repos et sommeil) ; le repos
+nocturne ne recupere pas la fatigue. La nuit utilise le cycle solaire
+geographique, pas une heure fixe. Les repas et nuits payees sont proteges.
+Les futurs evenements nocturnes dangereux dependront du tarot du jour ;
+leurs mini-jeux ne sont pas encore actifs. Attendre reellement ou regarder
+la carte ne passe toujours pas de temps.
+
+La base culinaire est remplie manuellement pour cette version. Un futur LLM
+pourra proposer des entrees a partir de sources web, mais ne devra pas
+inventer de specialite, de provenance, de tarif ou de promesse d'accueil.
 
 ### Couche 3 : temps et cadran du ciel
 

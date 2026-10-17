@@ -448,6 +448,32 @@ This file records additions to the design without modifying the source PDF,
 - **Review:** A larger town area, richer venue categories and actual game
   interactions await subsequent layers and balancing feedback.
 
+## R-030 — Tarot budget, localized meals and index-based economy
+
+- **User decision:** Starting money depends on a randomly drawn tarot card.
+  Initial 22-card budget table is provisional; daily draws do not award money.
+- **Meals:** Manually curate internet-sourced local specialties now, with
+  source/publisher/check date, coordinates and original short summaries.
+  Later a source-grounded LLM will populate this database. Meals replenish
+  hunger reserves; nutritional values are explicit gameplay approximations.
+- **Pricing:** Use the Big Mac Index rather than Eurostat for this prototype.
+  Prices remain fictional index-scaled game tariffs, never real venue offers.
+  Missing mapped country or index uses a visibly labelled reference tariff,
+  not an invented country or local observation.
+- **Status:** Layer 6 implemented for the four initial geographic areas;
+  paid meals, integer-cent wallet and current-cell mapped lodging/free shelters.
+
+## R-031 — Unsheltered night danger and future tarot events
+
+- **User decision:** Find shelter at night or suffer increased fatigue.
+  Outdoor sleep has reduced recovery. Random dangerous events will later
+  depend on the daily tarot card and may require survival minigames.
+- **Status:** Solar-night fatigue, poor outdoor sleep and daily tarot draw
+  implemented in Layer 6. Each card retains a provisional event-risk weight.
+  **No random night event or survival minigame is active yet.**
+- **Target:** Layer 13 Events, with Layer 6 exposure/daily-card foundations.
+  Street-music earnings come first in Layer 7. No real-time idle penalties.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

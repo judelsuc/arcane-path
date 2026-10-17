@@ -319,7 +319,8 @@
             "latitude": 44.5630553,
             "longitude": 2.2651909999999997,
             "tags": {
-              "amenity": "toilets"
+              "amenity": "toilets",
+              "fee": "no"
             }
           },
           {
@@ -1113,7 +1114,8 @@
             "latitude": 44.55585845,
             "longitude": 2.2624318,
             "tags": {
-              "amenity": "parking"
+              "amenity": "parking",
+              "fee": "no"
             }
           }
         ]
@@ -1447,7 +1449,8 @@
             "latitude": 44.55719225,
             "longitude": 2.2767430500000003,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "public_transport"
             }
           },
           {
@@ -3167,7 +3170,8 @@
             "latitude": 44.54630805,
             "longitude": 2.30285645,
             "tags": {
-              "amenity": "parking"
+              "amenity": "parking",
+              "fee": "no"
             }
           }
         ]
@@ -3581,7 +3585,8 @@
             "latitude": 44.54267010000001,
             "longitude": 2.3070668,
             "tags": {
-              "amenity": "charging_station"
+              "amenity": "charging_station",
+              "fee": "yes"
             }
           },
           {
@@ -4041,7 +4046,8 @@
             "longitude": 2.30753595,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           },
           {
@@ -4059,7 +4065,8 @@
             "latitude": 44.540406000000004,
             "longitude": 2.30691245,
             "tags": {
-              "amenity": "parking_space"
+              "amenity": "parking_space",
+              "fee": "no"
             }
           },
           {
@@ -4068,7 +4075,8 @@
             "latitude": 44.54037645,
             "longitude": 2.30692055,
             "tags": {
-              "amenity": "parking_space"
+              "amenity": "parking_space",
+              "fee": "no"
             }
           },
           {
@@ -4086,7 +4094,8 @@
             "latitude": 44.541743,
             "longitude": 2.3071333000000003,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "public_transport"
             }
           },
           {
@@ -5481,7 +5490,8 @@
             "latitude": 44.534614649999995,
             "longitude": 2.31951705,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "public_transport"
             }
           },
           {
@@ -5491,7 +5501,8 @@
             "longitude": 2.320051350000001,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           }
         ],
@@ -6038,7 +6049,8 @@
             "latitude": 44.5291508,
             "longitude": 2.2762296,
             "tags": {
-              "amenity": "bicycle_parking"
+              "amenity": "bicycle_parking",
+              "fee": "no"
             }
           },
           {
@@ -6530,7 +6542,8 @@
             "latitude": 44.5280969,
             "longitude": 2.2636253000000006,
             "tags": {
-              "amenity": "shelter"
+              "amenity": "shelter",
+              "shelter_type": "public_transport"
             }
           },
           {
@@ -6797,7 +6810,8 @@
             "longitude": 2.2665063500000002,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           }
         ],
@@ -6880,7 +6894,8 @@
             "latitude": 44.5277758,
             "longitude": 2.27513515,
             "tags": {
-              "amenity": "parking"
+              "amenity": "parking",
+              "fee": "yes"
             },
             "name": "Parc de camping-car Cransac"
           },
@@ -6891,7 +6906,8 @@
             "longitude": 2.2752891,
             "tags": {
               "amenity": "parking",
-              "access": "customers"
+              "access": "customers",
+              "fee": "no"
             }
           },
           {
@@ -6901,7 +6917,8 @@
             "longitude": 2.2759988499999997,
             "tags": {
               "amenity": "parking",
-              "access": "customers"
+              "access": "customers",
+              "fee": "no"
             }
           }
         ],
@@ -7181,7 +7198,8 @@
             "latitude": 44.5263744,
             "longitude": 2.2611335000000006,
             "tags": {
-              "amenity": "sanitary_dump_station"
+              "amenity": "sanitary_dump_station",
+              "fee": "yes"
             }
           },
           {
@@ -7210,7 +7228,8 @@
             "latitude": 44.52626720000001,
             "longitude": 2.2607846,
             "tags": {
-              "tourism": "caravan_site"
+              "tourism": "caravan_site",
+              "fee": "yes"
             },
             "name": "Camping-car Park Aubin"
           }
@@ -7744,7 +7763,8 @@
             "latitude": 44.526248700000004,
             "longitude": 2.2797879999999995,
             "tags": {
-              "amenity": "vending_machine"
+              "amenity": "vending_machine",
+              "fee": "no"
             }
           },
           {
@@ -8156,7 +8176,8 @@
             "longitude": 2.28756235,
             "tags": {
               "amenity": "parking",
-              "access": "yes"
+              "access": "yes",
+              "fee": "no"
             }
           }
         ]
@@ -8700,13 +8721,13 @@
   "cache": {
     "schemaVersion": 1,
     "sourceSha256": "ec6578c2f0ad33f60168d49680ed297afae3694254697cf7fe1db02e217788b0",
-    "pipelineSha256": "0f06b225aac3d9af831252cb2293bfa72ad5fb1cc15237fb3186015f3d7d5eaa",
+    "pipelineSha256": "8d224a3c7f2cd498d50df4d95031ecd58076548fbe458b08345f101094a8c624",
     "name": "Firmi",
     "cellSizeMeters": 250,
     "configuration": {
       "water_coverage_percent": 50
     },
-    "key": "acda3a46558a5934a05438166c54f0305bc3eaeacf1fb9a9eee390d39e67764d",
-    "payloadSha256": "519321d7eaf8706e4a0d6c07d23e7f52d58d63d10cdc4823d4b6f75aa8cd6bf9"
+    "key": "65959fe62fa040d06bceb1a753fd1bb63ffad9bc04ac37033165e876b97a9419",
+    "payloadSha256": "19c23ad7d549571660d7731c898769f9aa2b559012fbeec33fa1b4e40b3756dd"
   }
 }

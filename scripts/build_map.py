@@ -548,6 +548,7 @@ def rasterize(
                 "tags": {key: tags[key] for key in (
                     "amenity", "shop", "tourism", "historic", "access", "disused",
                     "abandoned", "railway", "aerialway",
+                    "fee", "shelter_type",
                 ) if key in tags},
             }
             if tags.get("name"):

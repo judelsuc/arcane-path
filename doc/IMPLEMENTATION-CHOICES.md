@@ -9,6 +9,7 @@ All survival numbers below are gameplay approximations, not medical advice.
 - Existing Layer 3 baseline: commit `6bbe4c4`.
 - Layer 4 checkpoint: Git tag `layer-4-needs` (created after validation).
 - Layer 5 checkpoint: Git tag `layer-5-towns`.
+- Layer 6 checkpoint: Git tag `layer-6-economy`.
 - Each completed further stage gets its own commit/tag and section here.
 - Nothing is pushed remotely automatically.
 
@@ -208,3 +209,77 @@ Layer 4 and legacy travel tests remain green.
    Do not silently replace missing country with France or arbitrary prices.
 7. Layer 7 street music, Layer 8 parent trail, saving, and later geocache
    dungeons remain unimplemented, not hidden behind success-looking buttons.
+
+## Layer 6 - user decisions superseding the earlier economy questions
+
+- User approved a random starting tarot card and provisional per-card budget.
+  22 major arcana, 4-10 reference meals, no paid draw or new daily cash.
+  Birth card stays fixed; the daily card changes when an action crosses UTC
+  midnight. Merely refreshing labels does not draw. No persistence yet:
+  restarting a journey rerolls, intentionally allowed in this prototype.
+- User selected Big Mac Index instead of Eurostat. Pin observations to
+  2026-07-01 from The Economist's public data. Euro area: EUR 6.19,
+  dollar equivalent 7.07922094259998; CH/GB/US dollar observations are included.
+  Compare dollar prices, then express tariffs in reference-euro game units.
+  Do not compare unrelated local currencies directly.
+- FR is explicitly associated with the euro-area observation, not a fabricated
+  France row. PF has no observation. Missing/ambiguous map country or missing
+  index uses a reference tariff with visible explanation. Country display
+  remains exclusively map-derived; food location boxes never set country.
+- This explicit reference-tariff policy replaces the earlier proposed block
+  on all purchases when country is missing. It keeps Firmi playable without
+  calling it France from region selection. No supposed real-world local price.
+- One meal per curated area: aligot, croque-monsieur, tartiflette, poisson cru.
+  Source/publisher/check date included. Text is a short original ingredient
+  summary, not a copied recipe. Geographic boxes are approximate curation
+  areas. All portions provide 900 gameplay kcal for balancing, not factual
+  nutritional data. Food is a fictional town service, not a claim that any
+  named OSM venue sells the dish. No inventory/foraging yet.
+- Meal tariff: one local index unit. Lodging: four units. Source links and
+  distinction between observed index and game multipliers visible in menus.
+  Integer cents prevent floating-point balance drift; insufficient funds
+  rejects the transaction without spending time, energy or money.
+- Lodging must be in the player's actual cell, never the Look cell or a nearby
+  town-menu venue. Allow hotel/hostel/guest_house/motel/alpine_hut. Shelters or
+  wilderness huts are free only with explicit fee=no. OSM access restrictions
+  and disused/abandoned tags are respected. No actual reservation or guarantee.
+- Outdoor sleep restores no exertion fatigue, only 25% of normal sleep
+  recovery. Every outdoor nighttime hour adds 2 fatigue; nighttime rest has
+  zero exertion recovery. Exposure accumulates across actions, not real time.
+  Solar phase is sampled at 15-minute midpoints, including dawn/dusk crossings;
+  this is a bounded gameplay approximation, not an exposure/safety calculator.
+  Sheltered sleep and town meals avoid exposure during their own duration.
+- Future nightly events use the daily card's stored provisional risk weight.
+  They are intentionally not rolled yet: user deferred dangerous-event
+  minigames to a later layer. No hidden placeholder harm or unplayable event.
+- A future LLM ingestion pipeline must preserve source URL, publisher,
+  retrieval date and location and validate schema. It must not generate actual
+  prices or fictional claims about real venues/people.
+
+### Layer 6 manual test
+
+1. Start Firmi: read birth card, daily card and purse. Restart to draw afresh.
+2. Walk south to Lestrunie, choose Local meals. Expect sourced aligot and
+   the explicit reference-tariff warning when map country is absent.
+3. Purchase: purse -6.19 game EUR, clock +20 minutes, hunger reserve recovers.
+   Repeat until money is insufficient: option disables, no negative purse.
+4. Sleep and shelter: only outdoor sleep when the cell lacks mapped shelter.
+   A hotel named in the nearby menu is not sufficient; walk to its actual cell.
+5. Sleep through a night: exposed minutes and fatigue grow; sleep pressure
+   only partially recovers. Sleeping outside during day has no night penalty
+   but still does not recover exertion fatigue.
+6. In Tahiti, local meals offer poisson cru; PF's missing index is labelled,
+   never a pretend euro-area local observation.
+7. Cross UTC midnight by an action: daily card changes once, purse does not.
+8. Look and dialogs cannot buy/sleep from an inspected remote cell. Browsing
+   does not change time or needs. Check both languages and narrow screens.
+
+Automated tests cover all 22 budgets, price normalization, exact transactions,
+source-area matching, missing-country policy, mapped shelter restrictions,
+night walking/rest/sleep penalties and exhaustion.
+
+Validation: 90 JavaScript tests and 62 Python tests passed. Browser validation
+covered a real tarot purse, paid sourced aligot with exact wallet deduction,
+modal input isolation, outdoor-sleep selection and the reference-price notice.
+The meal dialog fits 375 x 800 without horizontal overflow. Shelter outcomes
+and nighttime thresholds are asserted in deterministic model tests.

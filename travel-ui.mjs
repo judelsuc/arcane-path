@@ -3,10 +3,12 @@ import { createChunkStream, neighborDownloads } from "./travel-stream.mjs";
 import { cellInfo } from "./cell-info.mjs";
 import { skyState, estimatedTemperature, altitudeTemperatureOffset } from "./sky.mjs";
 import {
-  startSurvival, walkSurvival, restSurvival, sleepSurvival, eatSurvival,
+  startSurvival, walkSurvival,
   validateSurvivalConfig, hungerPercent, canEat,
 } from "./survival.mjs";
 import { setupTowns } from "./towns-ui.mjs";
+import { validateEconomy, startEconomy, buyMeal, sleepEconomy, restEconomy, finishAction } from "./economy.mjs";
+import { setupEconomyUI } from "./economy-ui.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }) {
   const start = document.querySelector("#start-travel");
@@ -28,7 +30,16 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
   let transient = "", missingHeightMoves = 0;
   let heading = [0, 0];
   let cursor, cameraData;
-  let survivalConfig;
+  let survivalConfig, economyData;
+  function economyContext() {
+    if (!state || !stream || !economyData) return null;
+    const p = chunkPosition(state.col, state.row);
+    const chunk = stream.get(p.x, p.y);
+    if (!chunk) return null;
+    return { state, cell: chunk.rows[p.row][p.col], info: cellInfo(chunk, p.row, p.col),
+      data: economyData, survival: survivalConfig, blocked: busy || Boolean(cursor) || Boolean(state.ended) };
+  }
+  const economyUI = setupEconomyUI(t, { context: economyContext, act: economyAction });
   const weatherCache = new Map();
   let weatherKey, weatherData, weatherError = "", weatherController;
 
@@ -71,6 +82,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
 
   function localize() {
     towns.localize(document.documentElement.lang);
+    economyUI.localize();
     document.querySelector("#map-workspace").classList.toggle("travel-active", active);
     document.body.classList.toggle("is-travelling", active);
     controls.hidden = !active;
@@ -117,8 +129,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       document.querySelector("#needs-warning").textContent = warnings.join(" ");
       document.querySelector("#journey-outcome").textContent = ended ? t(`journeyEnded.${state.ended}`) : "";
       rest.textContent = t("needsRestAction", { minutes: survivalConfig.rest_minutes });
-      sleep.textContent = t("needsSleepHours", { hours: survivalConfig.sleep_hours });
-      eat.textContent = t("needsMeal", { minutes: survivalConfig.meal_minutes });
+      sleep.textContent = t("sleepTitle");
+      eat.textContent = t("mealTitle");
       document.querySelector("#meal-location").textContent = canEat(cell)
         ? t("needsMealAvailable") : t("needsMealUnavailable");
     }
@@ -338,7 +350,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       const target = await stream.load(to.x, to.y, true);
       if (currentToken !== token) return;
       const fromCell = stream.get(from.x, from.y).rows[from.row][from.col];
+      const previous = state;
       state = walkSurvival(state, dc, dr, fromCell, target.rows[to.row][to.col], survivalConfig);
+      state = finishAction(previous, state, cellInfo(target, to.row, to.col), economyData);
       if (!state.lastMove.elevationKnown) missingHeightMoves++;
       if (target.elevation.error) error = target.elevation.error;
       resetContent();
@@ -381,9 +395,14 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       });
       if (!settingsResponse.ok) throw new Error(`Survival configuration: HTTP ${settingsResponse.status}`);
       survivalConfig = validateSurvivalConfig((await settingsResponse.json()).survival);
+      const economyResponse = await fetch("./public/economy.json", {
+        cache: "no-cache", signal: AbortSignal.timeout(5000),
+      });
+      if (!economyResponse.ok) throw new Error(`Economy database: HTTP ${economyResponse.status}`);
+      economyData = validateEconomy(await economyResponse.json());
       if (currentToken !== token) return;
-      state = startSurvival(Math.floor(base.width / 2), Math.floor(base.height / 2),
-        Date.now(), profile.value, survivalConfig);
+      state = startEconomy(startSurvival(Math.floor(base.width / 2), Math.floor(base.height / 2),
+        Date.now(), profile.value, survivalConfig), economyData);
       const p = chunkPosition(state.col, state.row);
       stream = createChunkStream(region, { onUpdate: () => {
         if (currentToken === token) draw();
@@ -409,6 +428,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
   function reset() {
     token++;
     towns.reset();
+    economyUI.reset();
     stream?.stop();
     stream = undefined;
     state = undefined;
@@ -438,15 +458,30 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
   function survivalAction(action) {
     if (!state || busy || cursor || state.ended) return;
     try {
-      const p = chunkPosition(state.col, state.row);
-      const cell = stream.get(p.x, p.y)?.rows[p.row][p.col];
-      if (!cell) throw new Error("Current cell is not loaded.");
-      state = action === "eat" ? eatSurvival(state, cell, survivalConfig)
-        : action === "sleep" ? sleepSurvival(state, survivalConfig) : restSurvival(state, survivalConfig);
+      const current = economyContext();
+      if (!current) throw new Error("Current cell is not loaded.");
+      if (action !== "rest") return economyUI.open(action);
+      state = restEconomy(state, current.info, survivalConfig, economyData);
       localize();
       document.querySelector("#ascii-map").focus({ preventScroll: true });
     } catch (reason) {
       report(reason);
+    }
+  }
+  function economyAction(action) {
+    const current = economyContext();
+    if (!current || current.blocked) return false;
+    try {
+      state = action.kind === "meal"
+        ? buyMeal(state, current.cell, current.info, action.id, survivalConfig, economyData)
+        : sleepEconomy(state, current.cell, current.info, action.id, survivalConfig, economyData);
+      error = "";
+      localize();
+      return true;
+    } catch (reason) {
+      report(reason);
+      document.querySelector("#economy-action-error").textContent = reason.message;
+      return false;
     }
   }
   rest.addEventListener("click", () => survivalAction("rest"));

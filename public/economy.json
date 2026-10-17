@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "pricing": {
+    "date": "2026-07-01",
+    "source": "https://github.com/TheEconomist/big-mac-data",
+    "referenceCents": 619,
+    "referenceDollarPrice": 7.07922094259998,
+    "markets": {
+      "FR": {"name": "Euro area", "dollarPrice": 7.07922094259998},
+      "CH": {"name": "Switzerland", "dollarPrice": 9.0419272929956},
+      "GB": {"name": "Britain", "dollarPrice": 7.40021836709936},
+      "US": {"name": "United States", "dollarPrice": 6.22}
+    }
+  },
+  "rules": {
+    "lodgingMealUnits": 4,
+    "outdoorFatiguePerNightHour": 2,
+    "outdoorSleepRecoveryFactor": 0.25,
+    "nightRestRecoveryFactor": 0,
+    "performanceMinutes": 30,
+    "performanceFatigue": 4
+  },
+  "tarot": [
+    {"id":"fool","fr":"Le Mat","en":"The Fool","mealUnits":5,"nightRisk":0.5},
+    {"id":"magician","fr":"Le Bateleur","en":"The Magician","mealUnits":6,"nightRisk":0.3},
+    {"id":"priestess","fr":"La Papesse","en":"The High Priestess","mealUnits":5,"nightRisk":0.2},
+    {"id":"empress","fr":"L'Impératrice","en":"The Empress","mealUnits":8,"nightRisk":0.2},
+    {"id":"emperor","fr":"L'Empereur","en":"The Emperor","mealUnits":9,"nightRisk":0.3},
+    {"id":"hierophant","fr":"Le Pape","en":"The Hierophant","mealUnits":7,"nightRisk":0.2},
+    {"id":"lovers","fr":"L'Amoureux","en":"The Lovers","mealUnits":6,"nightRisk":0.3},
+    {"id":"chariot","fr":"Le Chariot","en":"The Chariot","mealUnits":8,"nightRisk":0.4},
+    {"id":"justice","fr":"La Justice","en":"Justice","mealUnits":7,"nightRisk":0.3},
+    {"id":"hermit","fr":"L'Hermite","en":"The Hermit","mealUnits":4,"nightRisk":0.2},
+    {"id":"wheel","fr":"La Roue de Fortune","en":"Wheel of Fortune","mealUnits":10,"nightRisk":0.5},
+    {"id":"strength","fr":"La Force","en":"Strength","mealUnits":7,"nightRisk":0.2},
+    {"id":"hanged","fr":"Le Pendu","en":"The Hanged Man","mealUnits":4,"nightRisk":0.4},
+    {"id":"nameless","fr":"L'Arcane sans nom","en":"The Nameless Arcana","mealUnits":5,"nightRisk":0.4},
+    {"id":"temperance","fr":"Tempérance","en":"Temperance","mealUnits":6,"nightRisk":0.2},
+    {"id":"devil","fr":"Le Diable","en":"The Devil","mealUnits":9,"nightRisk":0.5},
+    {"id":"tower","fr":"La Maison Dieu","en":"The Tower","mealUnits":4,"nightRisk":0.6},
+    {"id":"star","fr":"L'Étoile","en":"The Star","mealUnits":6,"nightRisk":0.2},
+    {"id":"moon","fr":"La Lune","en":"The Moon","mealUnits":5,"nightRisk":0.6},
+    {"id":"sun","fr":"Le Soleil","en":"The Sun","mealUnits":8,"nightRisk":0.2},
+    {"id":"judgement","fr":"Le Jugement","en":"Judgement","mealUnits":6,"nightRisk":0.3},
+    {"id":"world","fr":"Le Monde","en":"The World","mealUnits":10,"nightRisk":0.2}
+  ],
+  "meals": [
+    {
+      "id":"aligot","name":"Aligot","area":"Aveyron / Aubrac",
+      "bounds":[1.85,43.7,3.45,44.95],"mealUnits":1,"reserveKcal":900,
+      "fr":"Pommes de terre et tome fraîche, avec crème et beurre.",
+      "en":"Potatoes and fresh tome cheese, with cream and butter.",
+      "source":"https://www.rodez-tourisme.fr/inspirations/gastronomie/specialites-aveyron/aligot/",
+      "publisher":"Office de tourisme Rodez Agglomération","checked":"2026-10-17"
+    },
+    {
+      "id":"croque","name":"Croque-monsieur","area":"Paris",
+      "bounds":[2.22,48.8,2.43,48.92],"mealUnits":1,"reserveKcal":900,
+      "fr":"Pain, jambon et fromage gratiné ; une spécialité des cafés parisiens.",
+      "en":"Bread, ham and toasted cheese; a Parisian café specialty.",
+      "source":"https://parisjetaime.com/article/cuisine-paris-en-10-specialites-a682",
+      "publisher":"Paris je t'aime — Office de tourisme","checked":"2026-10-17"
+    },
+    {
+      "id":"tartiflette","name":"Tartiflette","area":"Savoie / Haute-Savoie",
+      "bounds":[5.65,45.05,7.05,46.45],"mealUnits":1,"reserveKcal":900,
+      "fr":"Pommes de terre, reblochon, oignons et lardons.",
+      "en":"Potatoes, reblochon cheese, onions and bacon.",
+      "source":"https://www.reblochon.fr/nos-recettes/tartiflette-reblochon-de-savoie/",
+      "publisher":"Syndicat Interprofessionnel du Reblochon","checked":"2026-10-17"
+    },
+    {
+      "id":"poisson-cru","name":"Poisson cru au lait de coco","area":"Tahiti",
+      "bounds":[-149.7,-17.95,-149.1,-17.45],"mealUnits":1,"reserveKcal":900,
+      "fr":"Poisson, citron vert et lait de coco, accompagné de légumes.",
+      "en":"Fish, lime and coconut milk, accompanied by vegetables.",
+      "source":"https://www.tahititourisme.com/cooking-raw-fish-with-coconut-milk/",
+      "publisher":"Tahiti Tourisme","checked":"2026-10-17"
+    }
+  ]
+}
