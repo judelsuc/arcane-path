@@ -621,6 +621,18 @@ This file records additions to the design without modifying the source PDF,
 - Journal counts and final-action labels use the actual stored route length.
   Existing three-stage saves retain their route/progress and remain playable.
 
+## R-044 — Daily tarot popup
+
+- **User request:** Reveal daily tarot in a popup like the initial card,
+  rather than silently changing it in the background.
+- At a UTC game-day transition, show a concealed card followed by its
+  matching artwork, localized meaning and combined event tendency.
+- Wait for existing dialogs/actions to finish. Save the draw before display
+  and persist acknowledgment, so reload cannot reroll or lose an unread card.
+  Legacy saves start with their current daily card treated as already seen.
+- No extra time, money or attribute changes for revealing; terminal journeys
+  keep their outcome without an intervening daily popup.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

@@ -62,8 +62,8 @@ body:not(.is-title) .audio-controls { margin-bottom: 0; }
 }
 #title-heading span { color: #e5e7d9; }
 .birth-card-art { color: var(--accent); text-align: center; line-height: 1.2; }
-#birth-tarot-dialog { width: min(540px, 94vw); max-height: 90dvh; overflow: auto; }
-#birth-tarot-name { color: var(--accent); }
+#birth-tarot-dialog, #daily-tarot-dialog { width: min(540px, 94vw); max-height: 90dvh; overflow: auto; }
+#birth-tarot-name, #daily-tarot-name { color: var(--accent); }
 #button-tooltip {
   position: fixed;
   z-index: 10000;

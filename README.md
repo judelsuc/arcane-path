@@ -346,6 +346,10 @@ endurance et allure sont definies par carte (9 points au total). Les anciennes
 sauvegardes conservent leur profil. Chaque carte a son illustration ASCII.
 Le tarot de depart et celui du jour donnent ensemble une tendance pour les
 futurs evenements nocturnes ; aucun evenement n'est encore declenche.
+Au changement de jour UTC du jeu, une fenetre permet de reveler la carte
+quotidienne avec son dessin et sa signification. Elle attend la fermeture
+des autres dialogues, conserve le tirage apres rechargement et ne change
+ni la bourse ni les caracteristiques. Continuer memorise sa lecture.
 
 ## Musique
 

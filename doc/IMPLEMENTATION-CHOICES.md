@@ -654,3 +654,18 @@ sequential witness ids through ten. No route is silently extended on resume.
 20 focused trail/save/localization tests pass, covering ten-stage generation
 across all regions and fixed draws, ordered five-minute encounters, reunion
 only on stage ten, and old three-stage saves through completion.
+
+## Daily tarot reveal
+
+Added a daily popup with patterned back, matching ASCII artwork, original
+meaning and future event tendency. The existing model still draws once when
+an action crosses a UTC date. A saved dailyTarotSeenDay records acknowledgment,
+not a second random draw. Equal cards on consecutive dates still get a popup.
+Legacy saves without the field treat the current day as seen on resume.
+The popup waits for busy actions and other dialogs, and is suppressed for
+terminal outcomes. Acknowledgment is saved; revealing adds no gameplay cost.
+
+128 JavaScript tests pass. Browser validation crossed midnight with rest,
+revealed the Tower, confirmed matching art/meaning, then persisted the seen
+date without rerolling, spending extra time or changing money. The original
+save was restored after validation.

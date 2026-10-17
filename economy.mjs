@@ -42,6 +42,7 @@ export function startEconomy(state, data, random = Math.random) {
   const card = data.tarot.find(c => c.id === birthCard);
   return { ...state, birthCard, dailyCard: birthCard,
     tarotDay: journeyDate(state).toISOString().slice(0, 10),
+    dailyTarotSeenDay: journeyDate(state).toISOString().slice(0, 10),
     walletCents: Math.round(card.mealUnits * data.pricing.referenceCents),
     outdoorNightMinutes: 0, lastExpenseCents: 0 };
 }
@@ -56,10 +57,21 @@ export function tarotEventChance(baseChance, state, data) {
   if (!Number.isFinite(baseChance) || baseChance < 0 || baseChance > 1) {
     throw new Error("Invalid base event probability.");
   }
+
   const birth = data.tarot.find(c => c.id === state.birthCard);
   const daily = data.tarot.find(c => c.id === state.dailyCard);
   if (!birth || !daily) throw new Error("Unknown event tarot card.");
   return Math.min(1, baseChance * (0.5 + (birth.nightRisk + daily.nightRisk) / 2));
+}
+
+export function dailyTarotPending(state) {
+  return Boolean(state && !state.ended && state.dailyTarotSeenDay !== undefined &&
+    state.dailyTarotSeenDay !== state.tarotDay);
+}
+
+export function acknowledgeDailyTarot(state) {
+  if (!dailyTarotPending(state)) throw new Error("No daily tarot reveal is pending.");
+  return { ...state, dailyTarotSeenDay: state.tarotDay };
 }
 
 export function localMeals(info, data) {
@@ -103,6 +115,7 @@ export function finishAction(previous, next, info, data, { sheltered = false, ra
   return { ...next, fatigue, ended: next.ended ?? (fatigue >= 100 ? "fatigue" : null),
     outdoorNightMinutes: previous.outdoorNightMinutes + exposed,
     dailyCard: day === previous.tarotDay ? previous.dailyCard : drawTarot(data, random),
+    dailyTarotSeenDay: previous.dailyTarotSeenDay ?? previous.tarotDay,
     tarotDay: day };
 }
 

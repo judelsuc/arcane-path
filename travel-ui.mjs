@@ -7,7 +7,8 @@ import {
   validateSurvivalConfig, hungerPercent, canEat,
 } from "./survival.mjs";
 import { setupTowns } from "./towns-ui.mjs";
-import { validateEconomy, startEconomy, applyBirthTarot, tarotEventChance, buyMeal, sleepEconomy, restEconomy, finishAction } from "./economy.mjs";
+import { validateEconomy, startEconomy, applyBirthTarot, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, finishAction } from "./economy.mjs";
+import { setupDailyTarot } from "./daily-tarot-ui.mjs";
 import { setupEconomyUI } from "./economy-ui.mjs";
 import { beginBusking, settleBusking } from "./music.mjs";
 import { setupMusic } from "./music-ui.mjs";
@@ -86,6 +87,16 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     trailUI.open();
   });
   birthDialog.addEventListener("cancel", event => event.preventDefault());
+  const dailyTarotUI = setupDailyTarot(t, {
+    context: () => active && state && economyData ? {
+      state, data: economyData, busy, saveStatus: saveStatus.textContent,
+    } : null,
+    acknowledge() {
+      state = acknowledgeDailyTarot(state);
+      autosave();
+      localize();
+    },
+  });
   function readJourney() {
     savedJourney = undefined;
     slotOccupied = false;
@@ -391,6 +402,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     onAudioContext?.({ active, ended: state?.ended, terrain: cell?.terrain,
       sources: cell?.contentSources ?? [],
       night: Boolean(cell) && sky.dataset.phase === "night" });
+    dailyTarotUI.update();
   }
 
   function draw() {
@@ -546,6 +558,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       if (currentToken !== token) return;
       if (restored) {
         state = structuredClone(restored.state);
+        state.dailyTarotSeenDay ??= state.tarotDay;
         survivalConfig = structuredClone(restored.survival);
         economyData = structuredClone(restored.economy);
         profile.value = state.profileId;
@@ -595,6 +608,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   function reset() {
     token++;
     birthDialog.close();
+    dailyTarotUI.reset();
     birthPending = false;
     musicUI.reset();
     trailUI.reset();

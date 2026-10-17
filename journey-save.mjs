@@ -38,6 +38,11 @@ export function validateSave(save) {
       !save.economy.tarot.some(c => c.id === s.birthCard) ||
       !save.economy.tarot.some(c => c.id === s.dailyCard) ||
       s.tarotDay !== new Date(s.startedAt + s.elapsedMinutes * 60000).toISOString().slice(0, 10)) fail();
+  if (s.dailyTarotSeenDay !== undefined && (typeof s.dailyTarotSeenDay !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(s.dailyTarotSeenDay) ||
+      !finite(Date.parse(`${s.dailyTarotSeenDay}T00:00:00Z`)) ||
+      new Date(`${s.dailyTarotSeenDay}T00:00:00Z`).toISOString().slice(0, 10) !== s.dailyTarotSeenDay ||
+      s.dailyTarotSeenDay > s.tarotDay)) fail();
   const attributes = s.profileId === "tarot"
     ? save.economy.tarot.find(c => c.id === s.birthCard)?.attributes
     : save.survival.profiles[s.profileId];

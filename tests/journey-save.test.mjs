@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createSave, validateSave, createJourneyStore, mapIdentity } from "../journey-save.mjs";
 import { startSurvival, walkSurvival } from "../survival.mjs";
-import { startEconomy, buyMeal, finishAction, applyBirthTarot, tarotEventChance } from "../economy.mjs";
+import { startEconomy, buyMeal, finishAction, applyBirthTarot, tarotEventChance,
+  dailyTarotPending, acknowledgeDailyTarot } from "../economy.mjs";
 import { createTrail, interviewTrail, trailTarget } from "../trail.mjs";
 import { beginBusking, settleBusking } from "../music.mjs";
 
@@ -125,6 +126,22 @@ test("existing three-stage saves retain their route and can still finish", () =>
     assert.equal(createSave(d, i + 2).state.trail.index, i + 1);
   }
   assert.equal(d.state.ended, "reunion");
+});
+
+test("pending and acknowledged daily reveals survive reloads, and legacy saves remain readable", () => {
+  const d = details();
+  d.state = finishAction(d.state, { ...d.state, elapsedMinutes: 1440 }, info, economy, { random: () => 0.5 });
+  const pending = createSave(d, 1);
+  assert.equal(dailyTarotPending(validateSave(JSON.parse(JSON.stringify(pending))).state), true);
+  d.state = acknowledgeDailyTarot(pending.state);
+  assert.equal(dailyTarotPending(createSave(d, 2).state), false);
+  delete d.state.dailyTarotSeenDay;
+  assert.equal(createSave(d, 3).state.dailyTarotSeenDay, undefined);
+  const broken = createSave(d, 4);
+  broken.state.dailyTarotSeenDay = "9999-12-31";
+  assert.throws(() => validateSave(broken));
+  broken.state.dailyTarotSeenDay = "2026-02-30";
+  assert.throws(() => validateSave(broken));
 });
 
 test("corrupt, incompatible and invalid saves are rejected without deleting original data", () => {

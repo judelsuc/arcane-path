@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { startSurvival, walkSurvival } from "../survival.mjs";
 import { validateEconomy, drawTarot, startEconomy, localMeals, marketPrice, shelters,
-  nightMinutes, finishAction, buyMeal, sleepEconomy, restEconomy } from "../economy.mjs";
+  nightMinutes, finishAction, buyMeal, sleepEconomy, restEconomy,
+  dailyTarotPending, acknowledgeDailyTarot } from "../economy.mjs";
 
 const data = validateEconomy(JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url))));
 const survival = JSON.parse(readFileSync(new URL("../public/config.json", import.meta.url))).survival;
@@ -27,6 +28,24 @@ test("all 22 tarot draws have explicit budgets; daily draw never grants money ag
   assert.notEqual(next.dailyCard, state.dailyCard);
   assert.equal(next.birthCard, state.birthCard);
   assert.equal(next.walletCents, state.walletCents);
+});
+
+test("daily reveal is pending on a new date even for the same card, and acknowledgment never rerolls", () => {
+  const initial = start(23);
+  assert.equal(dailyTarotPending(initial), false);
+  const next = finishAction(initial, { ...initial, elapsedMinutes: 120 }, info, data, { random: () => 0 });
+  assert.equal(next.dailyCard, initial.dailyCard);
+  assert.equal(dailyTarotPending(next), true);
+  const acknowledged = acknowledgeDailyTarot(next);
+  assert.equal(dailyTarotPending(acknowledged), false);
+  assert.deepEqual(acknowledged, { ...next, dailyTarotSeenDay: next.tarotDay });
+  assert.throws(() => acknowledgeDailyTarot(acknowledged), /No daily/);
+  const another = finishAction(acknowledged, { ...acknowledged, elapsedMinutes: 1560 }, info, data, { random: () => 0.5 });
+  assert.equal(dailyTarotPending(another), true);
+  assert.equal(another.birthCard, initial.birthCard);
+  assert.deepEqual(another.character, initial.character);
+  assert.equal(another.walletCents, initial.walletCents);
+  assert.equal(dailyTarotPending({ ...another, ended: "hunger" }), false);
 });
 
 test("sourced specialties follow coordinates, not selected region or guessed country", () => {
