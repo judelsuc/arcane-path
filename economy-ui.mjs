@@ -76,6 +76,7 @@ export function setupEconomyUI(t, { context, act }) {
   function open(nextMode) {
     if (!context() || context().blocked || document.querySelector("dialog[open]")) return;
     mode = nextMode;
+    dialog.dataset.activity = mode;
     document.querySelector("#economy-action-error").textContent = "";
     dialog.showModal();
     localize();

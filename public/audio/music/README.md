@@ -12,4 +12,18 @@ Download generated music here, using the IDs from
 
 WAV is preferred for editing; MP3 is fine if WAV is unavailable.
 Keep full-length originals until loop points have been edited and verified.
-No audio playback is wired into the game yet.
+Click **Enable music** in the game (off on each page load). Tracks loop at
+25% volume by default; use the volume slider or mute button at any time.
+The player accepts WAV, MP3 or OGG, with canonical or numbered prompt names:
+`music-title.wav`, `01-music-title.wav` and `01 - music-title.wav` all work.
+Do not keep multiple versions unless you want the first matching one used:
+WAV before MP3 before OGG, canonical before compact/spaced numbered names.
+
+Missing/context-specific tracks fall back to `music-road-day`, then
+`music-title`, then silence. The status explains any fallback; the console
+records file/decode errors. Re-enable music after downloading a missing file
+to retry files marked unavailable in this session.
+
+Music pauses in hidden tabs and throughout the rhythm-game dialog; generated
+practice audio is not used as a timing source. New context tracks restart
+from the beginning, with no crossfade or custom loop-point editing yet.

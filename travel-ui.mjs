@@ -15,7 +15,7 @@ import { createTrail, interviewTrail } from "./trail.mjs";
 import { setupTrail } from "./trail-ui.mjs";
 import { createJourneyStore, mapIdentity } from "./journey-save.mjs";
 
-export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }) {
+export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext }) {
   const start = document.querySelector("#start-travel");
   const resume = document.querySelector("#resume-travel");
   const saveStatus = document.querySelector("#journey-save-status");
@@ -338,6 +338,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       document.querySelector("#sky-title").textContent =
         `${t(cycle.phase === "day" ? "skyDay" : "skyNight")} · ${text} · ${t("skyNote")}`;
     }
+    onAudioContext?.({ active, ended: state?.ended, region, terrain: cell?.terrain,
+      night: Boolean(cell) && sky.dataset.phase === "night" });
   }
 
   function draw() {

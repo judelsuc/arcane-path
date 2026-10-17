@@ -515,6 +515,21 @@ This file records additions to the design without modifying the source PDF,
   until explicitly replaced, detect stale-tab writes. No cloud sync,
   import/export, cross-device transfer, migration or anti-cheat claims.
 
+## R-035 — Downloaded background music with missing-file fallback
+
+- **User request:** Play the music being downloaded without requiring all
+  tracks to be present.
+- **Status:** Opt-in background loops with mute and volume controls, accepting
+  canonical/numbered prompt filenames in WAV, MP3 or OGG.
+- **Context:** Title, actual player terrain/region/solar night, town/shelter/
+  journal menus, reunion and exhaustion. Inspection does not move the player.
+- **Fallback:** Requested track, daytime road, title, then explicit silence.
+  Missing/undecodable files and autoplay blocks are visible/logged. Re-enabling
+  retries newly added files. No gameplay dependence on audio availability.
+- **Timing:** Pause while hidden and during the rhythm-game dialog. Do not
+  use unaligned generated practice music as the rhythm clock. SFX and future
+  event/dungeon tracks remain separate unimplemented audio surfaces.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

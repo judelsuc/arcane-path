@@ -51,6 +51,19 @@ body {
   font-size: 0.78rem;
 }
 
+.audio-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.audio-controls input { width: 100px; }
+#audio-status { overflow-wrap: anywhere; }
+
 .language-picker select {
   padding: 6px;
   border: 1px solid var(--line);

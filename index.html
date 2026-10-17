@@ -22,6 +22,12 @@
             </select>
           </label>
         </div>
+        <div class="audio-controls">
+          <button id="audio-toggle" type="button" aria-pressed="false"></button>
+          <label for="audio-volume" data-i18n="audioVolume"></label>
+          <input id="audio-volume" type="range" min="0" max="100" value="25">
+          <span id="audio-status" role="status"></span>
+        </div>
         <h1 data-i18n="headline">La route commence quelque part.</h1>
         <p class="intro" data-i18n="intro">Une carte, un enfant, et toute l'Europe devant soi.</p>
       </header>

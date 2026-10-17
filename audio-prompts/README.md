@@ -2,7 +2,8 @@
 
 Original prompts for **Les Arcanes du Chemin**. Music is intended for Suno;
 sound-effect prompts can also be used in a dedicated SFX generator.
-These are production briefs, not generated audio or runtime integration.
+These are production briefs, not generated audio. The game can now play
+downloaded background music; individual sound effects are not wired yet.
 
 Download generated tracks into [public/audio/music/](../public/audio/music/),
 and individual sound effects into [public/audio/sfx/](../public/audio/sfx/).
@@ -41,8 +42,12 @@ recognizable melodies from other works.
    every small cue into a loud transient. Listen at comfortable volume.
 
 Names beginning `future-` are reserved for later mechanics. Generating them
-does not mean those mechanics exist. The game currently has no audio loader,
-mixer, music playback or sound settings; these prompts do not enable sound.
+does not mean those mechanics exist. Click **Enable music** to opt into
+background playback; use the volume slider or mute button. Missing tracks
+fall back to daytime travel, title music, then silence. See the
+[music delivery notes](../public/audio/music/README.md) for supported filenames.
+Music pauses in hidden tabs and during the visual rhythm exercise. Generated
+`music-street-practice` is still production material, not a synchronized beat.
 
 ## Generating sound effects
 

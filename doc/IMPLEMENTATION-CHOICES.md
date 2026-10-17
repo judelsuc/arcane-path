@@ -459,3 +459,51 @@ slots, bad values/versions, quota/access errors and stale writes. Browser
 checks verified exact reload/resume, preserved profile/tarot/money/journal,
 music costs without duplicate reward, explicit quota and stale-write errors,
 recovery via Save now, region switching and cancelled replacement.
+
+## Downloaded background music
+
+### Choices
+
+- Explicit Enable music each page load, quiet 25% default, volume slider and
+  mute available on both static map and active journey. No autoplay surprise
+  or music preference written into journey saves.
+- Accept prompt IDs with or without the two-digit numbering, including spaces
+  around the hyphen. Try WAV, MP3 and OGG in that order. Existing downloaded
+  masters are not renamed, transcoded or modified.
+- Choose from actual player terrain/region and computed solar phase, never
+  Look inspection. Menus and terminal outcomes override travel music.
+- Requested track falls back to road-day, title, then visible silence.
+  Missing files/decode failures are logged and remembered for the session;
+  mute/re-enable clears this memory to discover later downloads.
+- No synthesized substitute or dependence of gameplay on successful loading.
+  Autoplay denial asks for another user gesture rather than marking all
+  files missing. A stalled load times out instead of blocking indefinitely.
+- One looping HTML audio element at a time; cancel stale loads on transitions.
+  No crossfade/custom loop points. Switching context or resuming from pause
+  starts the chosen track from its beginning.
+- Pause on hidden tabs and throughout the rhythm dialog. The generated
+  practice track is not tempo-aligned, so it must not accompany scored notes.
+  Future dungeon/event tracks and sound effects are still not connected.
+- Audio downloads remain local user assets; this code change does not stage
+  large generated masters or unrelated filesystem metadata into Git.
+
+### Validation and testing
+
+116 JavaScript tests pass, including context precedence, filename aliases,
+missing/corrupt files, fallback chain, mute, volume, hidden/rhythm pauses,
+late downloads, autoplay rejection, stale load cancellation and playback
+failure recovery. Browser playback decoded the actual numbered title and
+road WAVs, advanced their playheads and kept only one active sound. Verified
+missing-town fallback, volume/mute, hidden/rhythm pause and resume, and an
+all-files-404 simulation reaching silence without changing the journey save.
+
+Manual test: reload, Enable music; resume a journey and close/open its menus.
+Download additional prompt-named tracks, mute/re-enable, then visit the matching
+terrain/menu. Try muting or hiding the tab while loading; no old sound should
+start afterward. Use the status to distinguish real playback from fallback.
+
+### Open questions
+
+- Listen and tune relative loudness/loop points of the generated masters.
+- WAV masters are large; choose web delivery encodings once tracks are final.
+  No automatic conversion, offline audio cache or audio downloads UI yet.

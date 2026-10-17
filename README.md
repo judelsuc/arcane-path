@@ -308,6 +308,27 @@ permet maintenant de reprendre la piste apres rechargement ou changement de regi
 Le serveur de voyage local existe deja, mais la creation serveur et les
 parcours complets de la couche 9 ne sont pas encore implementes.
 
+## Musique
+
+Telecharger les pistes dans [public/audio/music/](public/audio/music/) puis
+cliquer **Activer la musique** (desactivee a chaque chargement). Volume initial
+25 %, reglable et pouvant etre coupe depuis l'en-tete. WAV, MP3 et OGG sont acceptes ;
+les noms `music-title.wav`, `01-music-title.wav` ou `01 - music-title.wav`
+fonctionnent sans renommer les telechargements existants.
+
+La musique suit le vrai joueur : carte fixe/titre, terrain, region, nuit
+solaire, menus de ville/sommeil/journal et issue du voyage. Un curseur Look
+ne change pas la musique selon la case inspectee. Une piste absente ou
+illisible utilise `music-road-day`, puis `music-title`, puis le silence.
+Le statut indique ce remplacement et les erreurs sont journalisees.
+Couper/reactiver apres un nouveau telechargement pour reessayer les fichiers
+manquants. Le jeu et les sauvegardes fonctionnent meme sans aucun fichier.
+
+Les pistes bouclent, sans fondu ni correction automatique des raccords.
+L'onglet masque et le dialogue du minijeu de rythme mettent la musique en
+pause ; aucune piste Suno non synchronisee n'influence les notes/recompenses.
+Les effets sonores et pistes `future-` ne sont pas encore connectes.
+
 ## Sauvegarde et reprise locales
 
 - Une sauvegarde **par region et par origine navigateur** (hote + port).

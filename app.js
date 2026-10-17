@@ -3,6 +3,7 @@ import { osmReferenceUrls } from "./osm-reference.mjs";
 import { cellInfo } from "./cell-info.mjs";
 import { setupCellContent } from "./cell-content-ui.mjs";
 import { setupTravel } from "./travel-ui.mjs";
+import { setupAudio } from "./audio-ui.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
 const viewport = document.querySelector("#map-viewport");
@@ -22,8 +23,10 @@ let loadFailed = false;
 let activeRequest;
 let inspectedTile;
 const cellContent = setupCellContent(t);
+const audio = setupAudio(t);
 const travel = setupTravel({
   t, renderMap,
+  onAudioContext: context => audio.update(context),
   selectPlayer(data, tile) {
     inspectTile(tile);
     if (data.rows[Number(tile.dataset.row)][Number(tile.dataset.col)].unavailable) {
@@ -129,6 +132,7 @@ function localize() {
   languageSelect.value = locale;
   updateCountry([]);
   cellContent.localize(locale);
+  audio.localize();
   travel.localize();
   mapElement.setAttribute("aria-label", t("mapLabel"));
   document.querySelector("#cell-info").textContent = t("cellHint");
