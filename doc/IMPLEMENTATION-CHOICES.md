@@ -17,6 +17,9 @@ shortcuts, especially free meals and unrestricted outdoor sleep.
   full-score timing, silence in rest slots, immutable phrase reuse, changed UI
   layouts between starts and different PCM output. Existing cancellation and
   audio error checks remain in place.
+- Validation: 20 focused tests and all 267 isolated live-base JavaScript tests
+  passed. Four deployed modules matched authenticated HTTPS byte for byte;
+  release manifest and travel API verified. No config.yml changes.
 
 ## Weather, random clues, sleep pressure and native street audio
 

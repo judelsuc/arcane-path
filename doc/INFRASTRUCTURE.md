@@ -1,5 +1,19 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - rythmes musicaux aleatoires
+
+- **17 octobre 2026** : runtime `dd1d6b9`, tag
+  `deploy-2026-10-17-random-rhythm`, base live `e86befe`.
+  Developpement correspondant : `5687384`.
+- Quatre assets statiques et manifeste : nouvelle phrase de huit notes et
+  quatre silences tiree a chaque prestation, partagee par affichage, score
+  et accompagnement WAV natif. Trois repetitions, couts et gains inchanges.
+- 267 tests JavaScript du runtime isole reussis ; quatre assets HTTPS compares
+  octet par octet, manifeste et `/api/travel` verifies. Services actifs, aucun
+  restart, changement de configuration ou modification des caches serveur.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-dd1d6b9.tar.gz`,
+  archive privee des quatre anciens assets et du manifeste.
+
 ## Derniere livraison - meteo, indices, sommeil et audio du mini-jeu
 
 - **17 octobre 2026** : runtime `e86befe`, tag
