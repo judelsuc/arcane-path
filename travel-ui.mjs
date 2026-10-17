@@ -203,10 +203,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
   const economyUI = setupEconomyUI(t, {
     context: economyContext, act: economyAction,
-    async findAccommodations(signal) {
+    async findAccommodations(signal, onProgress) {
       const current = economyContext(), currentToken = token;
       if (!current || current.blocked) throw new Error("Accommodation lookup requires a loaded player cell.");
-      const result = await loadAccommodations(region, current.info, signal);
+      const result = await loadAccommodations(region, current.info, signal, fetch, onProgress);
       signal.throwIfAborted();
       if (currentToken !== token) throw new Error("Journey changed during accommodation lookup.");
       discoveredLodging = result.places;

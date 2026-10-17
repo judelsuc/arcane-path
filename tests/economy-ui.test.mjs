@@ -107,6 +107,24 @@ test("lodging lookup errors stay visible and the search can be retried", async t
 });
 
 for (const language of ["fr", "en"]) {
+  test(`${language} accommodation progress displays phase, provider and elapsed time without stale updates`, async t => {
+    let report;
+    const h = harness(t, language, (signal, onProgress) => {
+      report = onProgress;
+      return new Promise(() => {});
+    });
+    void h.ui.open("sleep");
+    const options = h.buttons();
+    report({ phase: "provider", provider: "overpass.example.org", elapsedSeconds: 12 });
+    assert.deepEqual(h.buttons(), options);
+    assert.match(h.element("#accommodation-status").textContent, /OpenStreetMap/);
+    assert.match(h.element("#accommodation-status").textContent, /overpass.example.org/);
+    assert.match(h.element("#accommodation-status").textContent, /12 s/);
+    await h.element("#accommodation-search").events.click();
+    report({ phase: "saving", elapsedSeconds: 15 });
+    assert.doesNotMatch(h.element("#accommodation-status").textContent, /15 s|overpass.example.org/);
+  });
+
   test(`${language} a pending lodging search remains cancellable and can be restarted safely`, async t => {
     const pending = [];
     const h = harness(t, language, signal => new Promise(resolve => pending.push({ signal, resolve })));

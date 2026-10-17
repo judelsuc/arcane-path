@@ -8,6 +8,7 @@ import json
 import logging
 import math
 import sqlite3
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -68,6 +69,12 @@ class Accommodations:
     def __init__(self, chunks, write):
         self.chunks, self.write = chunks, write
         self.cache = chunks.cache / "accommodations"
+        self.lock = threading.Lock()
+        self.progress = {}
+
+    def get_progress(self, region, latitude, longitude):
+        with self.lock:
+            return dict(self.progress.get((region, latitude, longitude), {"phase": "queued"}))
 
     def path(self, region, latitude, longitude):
         identity = hashlib.sha256(json.dumps([region, latitude, longitude]).encode()).hexdigest()
@@ -79,8 +86,8 @@ class Accommodations:
             return None
         return json.loads(path.read_text())
 
-    def osm(self, latitude, longitude):
-        return fetch_accommodations(latitude, longitude)
+    def osm(self, latitude, longitude, on_progress=None):
+        return fetch_accommodations(latitude, longitude, on_progress)
 
     def mapped(self, region, latitude, longitude):
         base = self.chunks.bases[region]
@@ -125,11 +132,26 @@ class Accommodations:
                  "licenseUrl": LICENSE} for row in rows], None
 
     def build(self, region, latitude, longitude):
+        key = (region, latitude, longitude)
+
+        def update(event):
+            with self.lock:
+                self.progress[key] = event
+
+        try:
+            return self.build_with_progress(region, latitude, longitude, update)
+        finally:
+            with self.lock:
+                self.progress.pop(key, None)
+
+    def build_with_progress(self, region, latitude, longitude, update):
         origin = {"latitude": latitude, "longitude": longitude}
         places, warnings = [], []
+        update({"phase": "maps"})
         elements = self.mapped(region, latitude, longitude)
         try:
-            elements += self.osm(latitude, longitude)
+            update({"phase": "osm"})
+            elements += self.osm(latitude, longitude, update)
         except ValueError as error:
             logging.warning("Accommodation source unavailable: %s", error)
             warnings.append("OpenStreetMap live lookup unavailable; only cached maps and imported catalogues could be checked.")
@@ -164,6 +186,7 @@ class Accommodations:
                            "licenseUrl": "https://www.openstreetmap.org/copyright"})
         # Supplement sparse OSM coverage, not just a completely empty result.
         if len(places) < 5 and 41 <= latitude <= 52 and -6 <= longitude <= 10:
+            update({"phase": "catalogue"})
             extra, warning = self.datatourisme(latitude, longitude)
             if warning:
                 warnings.append(warning)
@@ -171,6 +194,7 @@ class Accommodations:
                 if not any(distance(place, found) < 100 and
                            place["name"].casefold() == found["name"].casefold() for found in places):
                     places.append(place)
+        update({"phase": "filtering"})
         found = []
         for place in places:
             meters = distance(origin, place)
@@ -180,6 +204,7 @@ class Accommodations:
         found.sort(key=lambda place: (place["distance"], place["id"]))
         result = {"places": found[:40], "warnings": warnings, "radiusMeters": 5000}
         if not warnings:
+            update({"phase": "saving"})
             self.write(self.path(region, latitude, longitude), json.dumps(result).encode())
         return result
 

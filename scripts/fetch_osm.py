@@ -229,11 +229,11 @@ def fetch_towns(latitude, longitude, venues=False, on_progress=None):
     return fetch_catalogue(query, on_progress)
 
 
-def fetch_accommodations(latitude, longitude):
+def fetch_accommodations(latitude, longitude, on_progress=None):
     query = ('[out:json][timeout:20];nwr(around:5000,'
              f'{latitude:.6f},{longitude:.6f})'
              '["tourism"~"^(hotel|hostel|guest_house|motel|alpine_hut)$"];out center tags;')
-    return fetch_catalogue(query)["elements"]
+    return fetch_catalogue(query, on_progress)["elements"]
 
 
 def fetch_catalogue(query, on_progress=None):
