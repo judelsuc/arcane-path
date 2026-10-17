@@ -84,6 +84,13 @@
   than greying out an unchanged label. Explain the four-minute maximum wait,
   confirm cancellation and permit an immediate retry. Ignore late replies
   from cancelled searches without interrupting a newer lookup.
+- **Agreed follow-up, not active:** Only after the user confirms that nearby
+  accommodation discovery works, reduce fictional hospitality acceptance.
+  Use base refusal probabilities of 0.8 for locals and 0.7 for places of
+  worship with the existing birth-card/day-card event modifier. With the
+  current deck, acceptance ranges are respectively 12-44% and 23-51%.
+  Preserve stable place/day draws, saved outcomes, request costs and daily
+  limits. Paid lodging is unaffected. Do not activate before confirmation.
 - Optional administrator-imported DATAtourisme data supplements sparse
   mainland-France OSM coverage. No player-triggered downloads/imports or
   catalogue/cache deletion. This French source is not worldwide coverage.
