@@ -1,10 +1,11 @@
 import { mealOffers, marketPrice, shelters, tarotEventChance } from "./economy.mjs";
 import { HOSPITALITY_RULES, hospitalityStatus, worshipPlaces } from "./hospitality.mjs";
 
-export function setupEconomyUI(t, { context, act, resolveCountry }) {
+export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodations }) {
   const dialog = document.querySelector("#economy-dialog");
   let mode = "eat";
   let resolving = false, countryError = "", generation = 0;
+  let accommodationController, accommodationResult, accommodationError = "", accommodationLoading = false;
   const money = cents => `${(cents / 100).toFixed(2)} ${t("gameMoney")}`;
   const hospitalityResult = result => t(`${result.placeKind === "worship" ? "worshipResult" : "hospitalityResult"}.${result.outcome}`, {
     town: result.townName, day: result.day,
@@ -16,6 +17,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
     if (!current) return;
     const { state, cell, info, data, survival } = current;
     document.querySelector("#town-services").disabled = current.blocked;
+    document.querySelector("#town-accommodation").disabled = current.blocked;
     const language = document.documentElement.lang === "en" ? "en" : "fr";
     const birth = data.tarot.find(card => card.id === state.birthCard);
     const daily = data.tarot.find(card => card.id === state.dailyCard);
@@ -26,6 +28,39 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
       hours: (state.outdoorNightMinutes / 60).toFixed(1),
     });
     if (!dialog.open) return;
+    document.querySelector("#nearby-accommodation").hidden = mode !== "sleep" || !findAccommodations;
+    document.querySelector("#accommodation-search").disabled = accommodationLoading || current.blocked;
+    const nearbyStatus = document.querySelector("#accommodation-status");
+    nearbyStatus.textContent = accommodationError ? t("accommodationError", { error: accommodationError })
+      : t(accommodationLoading ? "accommodationLoading" : accommodationResult
+        ? accommodationResult.warnings.length ? "accommodationIncomplete"
+          : accommodationResult.places.length ? "accommodationReady" : "accommodationEmpty"
+        : "accommodationHint");
+    if (accommodationResult?.warnings.length) nearbyStatus.textContent += ` ${accommodationResult.warnings.join(" ")}`;
+    const nearby = document.querySelector("#accommodation-results");
+    nearby.replaceChildren();
+    for (const place of accommodationResult?.places ?? []) {
+      const item = document.createElement("li"), text = document.createElement("p");
+      const east = place.col - state.col, north = state.row - place.row;
+      const sectors = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
+      const direction = t(`hintCompass.${sectors[(Math.round(Math.atan2(east, north) / (Math.PI / 4)) + 8) % 8]}`);
+      text.textContent = `${place.name || t("mappedShelter")} — ${east || north
+        ? t("accommodationLocation", { meters: place.distance, direction })
+        : t("accommodationHere")}`;
+      const credit = document.createElement("p"), source = document.createElement("a");
+      credit.textContent = `${place.credit} · ${place.license}${place.updated ? ` · ${place.updated}` : ""}`;
+      source.href = place.sourceUrl;
+      source.textContent = place.source;
+      source.target = "_blank";
+      source.rel = "noopener noreferrer";
+      const license = document.createElement("a");
+      license.href = place.licenseUrl;
+      license.textContent = t("contentLicense");
+      license.target = "_blank";
+      license.rel = "noopener noreferrer";
+      item.append(text, credit, source, " ", license);
+      nearby.append(item);
+    }
     const quote = marketPrice(cell, 1, data, info);
     document.querySelector("#economy-pricing").textContent = t(quote.estimated ? "priceEuropeanEstimate"
       : quote.reference ? "priceReference" : "priceMarket",
@@ -139,16 +174,21 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
       add(t("outdoorSleep"), 0, { kind: "sleep", id: null }, t("outdoorSleepNote"));
       for (const shelter of mapped) {
         const cents = shelter.free ? 0 : marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents;
-        add(shelter.name ?? t("mappedShelter"), cents, { kind: "sleep", id: shelter.osmId },
-          t("shelterNote", { hours: survival.sleep_hours }),
-          `https://www.openstreetmap.org/${shelter.osmId}`, t("townOsm"));
+        const credit = shelter.credit ? ` ${shelter.credit} · ${shelter.license}${shelter.updated ? ` · ${shelter.updated}` : ""}` : "";
+        add(shelter.name || t("mappedShelter"), cents, { kind: "sleep", id: shelter.osmId },
+          t("shelterNote", { hours: survival.sleep_hours }) + credit,
+          shelter.sourceUrl ?? `https://www.openstreetmap.org/${shelter.osmId}`, shelter.source ?? t("townOsm"));
       }
     }
   }
 
   async function open(nextMode) {
-    if (!context() || context().blocked || document.querySelector("dialog[open]")) ;
+    if (!context() || context().blocked || document.querySelector("dialog[open]")) return;
     mode = nextMode;
+    accommodationController?.abort();
+    accommodationLoading = false;
+    accommodationResult = undefined;
+    accommodationError = "";
     dialog.dataset.activity = mode;
     document.querySelector("#economy-action-error").textContent = "";
     dialog.showModal();
@@ -156,6 +196,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
     resolving = Boolean(resolveCountry);
     countryError = "";
     localize();
+    const accommodationSearch = mode === "sleep" ? searchAccommodations() : undefined;
     try {
       await resolveCountry?.();
     } catch (error) {
@@ -167,7 +208,33 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
         localize();
       }
     }
+    await accommodationSearch;
   }
+  async function searchAccommodations() {
+    const current = context();
+    if (!findAccommodations || accommodationLoading || !current || current.blocked) return;
+    accommodationController = new AbortController();
+    const controller = accommodationController;
+    accommodationLoading = true;
+    accommodationError = "";
+    localize();
+    try {
+      const result = await findAccommodations(controller.signal);
+      if (controller.signal.aborted) return;
+      accommodationResult = result;
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      console.error("Accommodation lookup failed:", error);
+      accommodationError = error.message;
+    } finally {
+      if (controller === accommodationController) {
+        accommodationLoading = false;
+        localize();
+      }
+    }
+  }
+  document.querySelector("#accommodation-search").addEventListener("click", searchAccommodations);
+  dialog.addEventListener("close", () => { if (!dialog.open) accommodationController?.abort(); });
   dialog.addEventListener("keydown", event => {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -178,5 +245,16 @@ export function setupEconomyUI(t, { context, act, resolveCountry }) {
     document.querySelector("#town-dialog").close();
     open("eat");
   });
-  return { open, localize, reset() { generation++; resolving = false; countryError = ""; dialog.close(); }, money };
+  document.querySelector("#town-accommodation").addEventListener("click", () => {
+    document.querySelector("#town-dialog").close();
+    void open("sleep");
+  });
+  return { open, localize, reset() {
+    generation++; resolving = false; countryError = "";
+    accommodationController?.abort();
+    accommodationLoading = false;
+    accommodationResult = undefined;
+    accommodationError = "";
+    dialog.close();
+  }, money };
 }

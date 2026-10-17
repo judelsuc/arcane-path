@@ -1,5 +1,26 @@
 # Requirements tracked outside the design PDF
 
+## R-099 - Find real nearby accommodation before walking there
+
+- **User request:** Hotels/hostels are offered too rarely. Show real nearby
+  accommodation with distance and direction, while requiring the player to
+  reach its cell before sleeping there.
+- Opening sleep searches within 5 km, including beyond the cells downloaded
+  by that browser. The town menu also offers an accommodation entry.
+- Look up OSM nodes, ways and relations worldwide. Include hotels, hostels,
+  guest houses, motels and alpine huts; exclude private, closed and abandoned
+  places. Keep real names, source links and licensing. Do not invent hotels.
+- Supplement the lookup with lodging in the server's base/cached maps. If
+  a provider is unavailable, explicitly label results incomplete, not proof
+  that no accommodation exists. Retry, cancellation and a total timeout
+  prevent an indefinitely loading menu.
+- Optional administrator-imported DATAtourisme data supplements sparse
+  mainland-France OSM coverage. No player-triggered downloads/imports or
+  catalogue/cache deletion. This French source is not worldwide coverage.
+- List at most 40 nearest results. A listed place only becomes a sleep action
+  in its actual cell; existing prices, time costs and recovery still apply.
+  Searching itself does not spend in-game time or money.
+
 ## R-097 - Search anywhere, progressive clues and fallible recognition
 
 - **User request:** Allow searches away from scheduled town encounters. Useful

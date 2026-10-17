@@ -29,6 +29,7 @@ from starting_places import PlaceLookup, coordinates
 from town_trail import TownTrailStore
 from journeys import JourneyStore, JourneyRequest, JourneyConflict, JourneyCapacity, JourneyGeneration
 from parent_paths import ParentPaths
+from accommodations import Accommodations
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_SIZE = 8
@@ -363,6 +364,7 @@ def make_handler(store, jobs, path_pool=None):
     trails = ChunkJobs(TownTrailStore(store, atomic_write), capacity=2, pool=jobs.pool)
     journeys = JourneyStore(store, atomic_write)
     parent_paths = ParentPaths(store, journeys, atomic_write, pool=path_pool)
+    accommodations = ChunkJobs(Accommodations(store, atomic_write), capacity=2, pool=jobs.pool)
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, directory=str(store.root), **kwargs)
@@ -459,9 +461,23 @@ def make_handler(store, jobs, path_pool=None):
                             return self.send_json(404, {"error": "Server journey not found."})
                         return self.send_json(200, record)
                     if url.path not in {"/api/chunk", "/api/chunks-cached", "/api/weather", "/api/places", "/api/parent-path",
-                                        "/api/location", "/api/origin", "/api/origin-map", "/api/trail", "/api/pricing-country"}:
+                                        "/api/location", "/api/origin", "/api/origin-map", "/api/trail", "/api/pricing-country",
+                                        "/api/accommodations"}:
                         return self.send_json(404, {"error": "Unknown API endpoint."})
                     query = urllib.parse.parse_qs(url.query, strict_parsing=True)
+                    if url.path == "/api/accommodations":
+                        if set(query) != {"region", "latitude", "longitude"} or any(len(v) != 1 for v in query.values()):
+                            raise ValueError("Invalid accommodation lookup.")
+                        region = query["region"][0]
+                        if region not in store.bases:
+                            raise ValueError("Unknown accommodation region.")
+                        latitude, longitude = float(query["latitude"][0]), float(query["longitude"][0])
+                        if (not math.isfinite(latitude) or not math.isfinite(longitude)
+                                or not -90 < latitude < 90 or not -180 <= longitude <= 180):
+                            raise ValueError("Invalid accommodation coordinates.")
+                        latitude, longitude = round(latitude, 6), round(longitude, 6)
+                        status, payload = accommodations.request(region, latitude, longitude)
+                        return self.send_json(status, payload)
                     if url.path == "/api/chunks-cached":
                         if set(query) != {"region", "positions"} or any(len(v) != 1 for v in query.values()):
                             raise ValueError("Invalid cached-chunk lookup.")

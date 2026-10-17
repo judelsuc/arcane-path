@@ -6,6 +6,34 @@ All survival numbers below are gameplay approximations, not medical advice.
 Sections are chronological checkpoint records: later layers supersede earlier
 shortcuts, especially free meals and unrestricted outdoor sleep.
 
+## Nearby accommodation discovery
+
+- R-099: `/api/accommodations` uses the existing bounded asynchronous job
+  queue, validates region/coordinates globally (not Europe-only start rules),
+  and caches complete results for seven days. The 5 km OSM query includes
+  nodes, ways and relations; the browser receives at most 40 nearest places,
+  with grid position, distance, source and license.
+- Base-map and nearby cached-chunk POIs supplement live data without starting
+  map downloads. Provider outages remain visible, incomplete results are not
+  cached as complete, and optional French DATAtourisme catalogue imports are
+  administrator-only and transactional. Mountain resorts are not huts.
+- Opening sleep automatically searches; the town dialog offers the same
+  entry. The client cancels on close/reset, bounds polling to four minutes,
+  validates data/links, and retains only the latest 40 discoveries. Discovered
+  lodging is merged into economy context only at matching global col/row,
+  without mutating maps or journey saves. Existing sleep validation remains
+  the final exact-cell gate. Search does not spend game time or money.
+- Targeted tests cover global API validation, relation geometry, distance
+  filtering, result limits, expiry, source failure, offline map fallback,
+  French import rollback/credits, polling/cancellation/deadline, FR/EN menus,
+  retry and exact-cell sleep with unchanged price/recovery semantics.
+- Browser validation used a real local HTTP lookup: nine actual OSM lodgings
+  near Firmi appeared, including places beyond the base map. No remote sleep
+  action appeared. On entering Les Carillons' cell it became selectable;
+  sleeping charged 1,987 game cents and advanced the normal eight hours.
+- DATAtourisme import support is present but no production catalogue is
+  claimed imported. Provider availability and OSM completeness still vary.
+
 ## Lightweight Layer 9 completion
 
 - R-096/R-083: activate the deterministic parent-story generator for new server
