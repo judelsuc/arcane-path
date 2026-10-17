@@ -19,6 +19,7 @@ import { setupTrail } from "./trail-ui.mjs";
 import { createJourneyStore, mapIdentity } from "./journey-save.mjs";
 import { tarotArt } from "./tarot-art.mjs";
 import { trailClue } from "./trail-actions.mjs";
+import { setupNeedsNotices } from "./needs-notices.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onActiveChange }) {
   const start = document.querySelector("#start-travel");
@@ -105,6 +106,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       autosave();
       localize();
     },
+  });
+  const needsNotices = setupNeedsNotices(t, {
+    context: () => active && state && survivalConfig ? { state, survival: survivalConfig, busy } : null,
   });
   function readJourney() {
     savedJourney = undefined;
@@ -295,6 +299,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         attempt: trailProgress.attempt ?? 1,
         seconds: Math.max(0, Math.ceil((trailProgress.retryAt ?? 0) - Date.now() / 1000)),
       })}`;
+      document.querySelector("#journey-start-status").textContent += ` ${t("trailRequestCounts", {
+        requests: trailProgress.requests ?? 0, cache: trailProgress.cacheHits ?? 0,
+      })}`;
     }
     document.querySelector("#journey-start-status").classList.toggle("is-loading", !active && busy);
     document.querySelector("#cancel-journey-start").hidden = active || !busy;
@@ -322,6 +329,12 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const ended = Boolean(state?.ended);
     document.querySelector("#journey-ended").hidden = !ended;
     if (state && survivalConfig) {
+      document.querySelector("#player-wallet").textContent = t("wallet", {
+        money: `${(state.walletCents / 100).toFixed(2)} ${t("gameMoney")}`,
+      });
+      document.querySelector("#player-food").textContent = t("foodEnergy", {
+        kcal: Math.floor(state.reserveKcal), max: survivalConfig.reserve_kcal,
+      });
       document.querySelector("#player-name").textContent = state.name ?? t("unnamedCharacter");
       const character = state.character;
       document.querySelector("#player-character").textContent = t("characterStats", {
@@ -339,12 +352,12 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         const meter = document.querySelector(`#needs-${key}`);
         meter.value = value;
         meter.low = survivalConfig.warning_percent * 0.6;
-        meter.high = survivalConfig.warning_percent;
+        meter.high = key === "hunger" ? 75 : survivalConfig.warning_percent;
         document.querySelector(`#needs-${key}-value`).textContent = `${Math.round(value)}%`;
       }
       document.querySelector("#needs-sleep").title = t("needsAwake", { hours: state.awakeHours.toFixed(1) });
       const warnings = [];
-      if (values.hunger >= survivalConfig.warning_percent) warnings.push(t("needsHungry"));
+      if (values.hunger >= 75) warnings.push(t("needsHungry"));
       if (values.fatigue >= survivalConfig.warning_percent) warnings.push(t("needsTired"));
       if (state.awakeHours >= survivalConfig.sleep_warning_hours) warnings.push(t("needsSleepy"));
       document.querySelector("#needs-warning").textContent = warnings.join(" ");
@@ -464,6 +477,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     onAudioContext?.({ active, ended: state?.ended, terrain: cell?.terrain,
       sources: cell?.contentSources ?? [],
       night: Boolean(cell) && sky.dataset.phase === "night" });
+    needsNotices.update();
     dailyTarotUI.update();
   }
 
@@ -658,7 +672,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         trailController = new AbortController();
         const trail = await loadTownTrail(region, trailController.signal, fetch, progress => {
           if (currentToken !== token) return;
-          if (!["queued", "towns", "venues", "provider", "retry", "cache"].includes(progress?.phase)) {
+          if (!["queued", "towns", "venues", "provider", "retry", "cache", "local"].includes(progress?.phase)) {
             throw new Error("Invalid route preparation progress.");
           }
           trailProgress = progress;
@@ -708,6 +722,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     trailProgress = undefined;
     birthDialog.close();
     dailyTarotUI.reset();
+    needsNotices.reset();
     birthPending = false;
     musicUI.reset();
     trailUI.reset();

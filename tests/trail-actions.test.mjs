@@ -76,6 +76,19 @@ test("POI-only clues hide town until paid-in-time directions; pending and comple
   assert.throws(() => save(bad));
 });
 
+test("offline GeoNames journeys and discoveries roundtrip without a network or fabricated OSM identity", () => {
+  const s = state();
+  for (const [index, stage] of s.trail.stages.entries()) {
+    delete stage.osmId;
+    stage.geonameId = index + 1000;
+    stage.sourceUrl = "https://www.geonames.org/";
+  }
+  assert.deepEqual(validateSave(JSON.parse(JSON.stringify(save(s)))).state, s);
+  const found = trailClue(s, "letter", cell, info, survival, economy);
+  assert.equal(found.trail.index, 1);
+  assert.deepEqual(validateSave(JSON.parse(JSON.stringify(save(found)))).state, found);
+});
+
 test("exhaustion and insufficient money never grant a clue, final discovery completes reunion", () => {
   const s = state();
   assert.throws(() => trailClue({ ...s, walletCents: 0 }, "buy", cell, info, survival, economy), /Insufficient/);

@@ -13,7 +13,6 @@ export function setupEconomyUI(t, { context, act }) {
     const language = document.documentElement.lang === "en" ? "en" : "fr";
     const birth = data.tarot.find(card => card.id === state.birthCard);
     const daily = data.tarot.find(card => card.id === state.dailyCard);
-    document.querySelector("#player-wallet").textContent = t("wallet", { money: money(state.walletCents) });
     document.querySelector("#player-tarot").textContent = t("tarotStatus", {
       birth: birth[language], daily: daily[language],
     });

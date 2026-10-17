@@ -782,6 +782,65 @@ This file records additions to the design without modifying the source PDF,
   Cancellation stops client waiting; already-running server work may finish
   into its shared cache rather than being forcibly terminated.
 
+## R-055 — Offline town catalogue and random-coordinate journeys
+
+- **Confirmed user choice:** Generate new European journeys from a local
+  settlement catalogue. Sample random candidate coordinates, snap to a real
+  admissible town locally and retain exact 30–60 km leg checks.
+- No live Overpass dependency for route generation. Optional online public
+  POI enrichment is deferred, not required or silently fabricated.
+- Bundle an attributed GeoNames European subset with source/date/license
+  and a reproducible refresh script. Use populated settlements with recorded
+  population >=2,000; disclose that this differs from OSM city/town tags.
+- Preserve existing local and OSM long-route saves, identities and clues.
+  Store genuine GeoNames IDs separately; never fabricate OSM identifiers.
+- Show actual external request/cache counts for the retained online path;
+  new local routes show ten local town searches and zero Overpass calls.
+- Distinguish route generation from live map/elevation/weather/photo services.
+  No connectivity guarantee or invented result for sparse areas. Existing
+  Tahiti saves remain playable, but new offline town trails support Europe.
+
+## R-056 — Public scenic webcam snapshots alongside place photos
+
+- **User request:** Query publicly available online cameras and display a
+  camera screenshot alongside the cell's photos.
+- **Status:** Recorded for future implementation; no camera integration yet.
+- Prefer intentionally published scenic/tourism webcams with a documented
+  snapshot API or explicitly permitted image reuse. Public accessibility alone
+  does not grant permission to capture, redistribute or cache an image.
+  Do not discover exposed/private cameras, scan devices, bypass authentication
+  or paywalls, or access surveillance feeds not intended for public tourism.
+- Present an optional nearby-camera card within place photos, clearly
+  distinguished from ordinary photographs and historical game conditions.
+  Display camera location/distance, source link, attribution/license,
+  capture timestamp when supplied, and freshness/unknown-time status.
+- Avoid person-focused or sensitive-location feeds. No identification,
+  face recognition, tracking, audio collection or recording of people.
+  Never describe a current webcam image as matching the game's simulated
+  time, historical weather, or the exact player cell unless actually verified.
+- Respect provider terms, quotas, privacy and permitted cache lifetime.
+  Keep any secret API keys server-side. A provider/source link is the fallback
+  when embedding or snapshot reuse is not permitted.
+- Camera lookup is optional and on demand, not a journey-start requirement.
+  Missing, stale, disabled or unavailable feeds must be labelled explicitly
+  without blocking existing photos, clues or travel. Do not synthesize a
+  supposedly live snapshot. Begin with one documented provider before expansion.
+
+## R-057 — Visible money/food and hunger notifications
+
+- **User confirmation:** Money and food must be displayed; a warning popup
+  appears at 75% hunger; 100% hunger remains game over.
+- Make the existing wallet and food-energy reserve prominent in the character
+  panel, with current/max kcal. Do not imply a portable provisions inventory.
+- Trigger at exactly 75% or higher, including resumed hungry saves; avoid
+  repeat popups until hunger drops below 75% and rises again. Wait for other
+  modal actions to finish; keep the persistent hunger warning visible.
+- Explain ways to obtain food/money and that resting still consumes reserves.
+  Do not promise success, free food or universal shop access.
+- Explain terminal hunger/fatigue/sleep outcomes in a popup instead of leaving
+  disabled navigation unexplained. Existing terminal rules are unchanged;
+  recoverable fatigue and portable provisions are not approved by this change.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

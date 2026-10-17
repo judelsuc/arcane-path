@@ -16,11 +16,14 @@ export function validateTownTrail(trail) {
     Math.abs(chunkPosition(p.col, p.row).y) <= 1000;
   if (!trail || trail.version !== 2 || !point(trail.origin) ||
       !Array.isArray(trail.stages) || trail.stages.length !== TRAIL_STAGES ||
-      new Set(trail.stages.map(p => p?.osmId)).size !== TRAIL_STAGES) fail();
+      new Set(trail.stages.map(p => p?.geonameId === undefined ? p?.osmId : `geoname/${p.geonameId}`)).size !== TRAIL_STAGES) fail();
   let previous = trail.origin;
   for (const stage of trail.stages) {
     if (!point(stage) || !["city", "town"].includes(stage.placeType) ||
-        !/^node\/\d+$/.test(stage.osmId) || typeof stage.name !== "string" || !stage.name.trim() ||
+        !(stage.geonameId === undefined ? /^node\/\d+$/.test(stage.osmId)
+          : Number.isSafeInteger(stage.geonameId) && stage.geonameId > 0 && stage.osmId === undefined &&
+            stage.sourceUrl === "https://www.geonames.org/") ||
+        typeof stage.name !== "string" || !stage.name.trim() ||
         !Number.isFinite(stage.legMeters) || stage.legMeters < 30000 || stage.legMeters > 60000 ||
         Math.abs(distanceMeters(previous, stage.latitude, stage.longitude) - stage.legMeters) > 1 ||
         typeof stage.sourceUrl !== "string" || !stage.sourceUrl.startsWith("https://") ||

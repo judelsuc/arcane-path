@@ -43,7 +43,7 @@ export function setupTrail(t, { context, interview, discover }) {
   }
   async function renderPhoto(state, discovery) {
     const place = state.trail.stages[discovery.step + 1] ?? state.trail.stages[discovery.step];
-    const key = `${discovery.step}:${place.osmId}:${document.documentElement.lang}`;
+    const key = `${discovery.step}:${place.osmId ?? `geoname/${place.geonameId}`}:${document.documentElement.lang}`;
     if (photoKey === key) return;
     clearPhoto();
     photoKey = key;
@@ -114,6 +114,9 @@ export function setupTrail(t, { context, interview, discover }) {
     document.querySelector("#trail-title").textContent = t(trail.completed ? "trailReunionTitle" : "trailTitle");
     document.querySelector("#trail-intro").textContent = t(trail.version === 2 ? "trailTownIntro" : "trailIntro",
       { parent: trail.parentName, total: trail.stages.length });
+    const local = trail.stages.some(stage => stage.geonameId !== undefined);
+    document.querySelector("#trail-catalogue-credit").hidden = !local;
+    if (local) document.querySelector("#trail-intro").textContent += ` ${t("trailLocalSummary")}`;
     document.querySelector("#trail-target").textContent = target
       ? t("trailTarget", { step: trail.index + 1, total: trail.stages.length, place: target.name,
         directions: modern && atTrailTarget(state) ? t("clueChooseAction") : trailDirections(state, target, t) })
@@ -132,7 +135,9 @@ export function setupTrail(t, { context, interview, discover }) {
     }
     const mapLink = document.querySelector("#trail-map-link");
     mapLink.hidden = !target || Boolean(trail.discovery?.pending);
-    if (target) mapLink.href = `https://www.openstreetmap.org/${target.osmId}`;
+    if (target) mapLink.href = target.geonameId
+      ? `https://www.openstreetmap.org/?mlat=${target.latitude}&mlon=${target.longitude}#map=14/${target.latitude}/${target.longitude}`
+      : `https://www.openstreetmap.org/${target.osmId}`;
     action.disabled = blocked || !atTrailTarget(state);
     action.hidden = modern;
     action.nextElementSibling.hidden = modern;

@@ -593,7 +593,14 @@ dialog p { margin: 12px 0; }
 #economy-options { padding-left: 1.2em; }
 #economy-options li { margin-block: 16px; overflow-wrap: anywhere; }
 #economy-options button { max-width: 100%; white-space: normal; }
-#player-wallet { color: var(--accent); }
+#player-wallet, #player-food {
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-block: 10px;
+}
+#needs-notice-dialog { width: min(560px, 94vw); max-height: 90dvh; overflow: auto; }
+#needs-notice-dialog p { line-height: 1.7; }
 #player-tarot, #outdoor-status { font-size: 0.65rem; color: var(--muted); }
 #music-dialog { width: min(620px, 94vw); max-height: 90dvh; overflow: auto; }
 #music-track { display: flex; gap: 5px; margin-block: 20px; }

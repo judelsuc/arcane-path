@@ -131,6 +131,7 @@
               <p id="player-name"></p>
               <p id="player-character"></p>
               <p id="player-wallet"></p>
+              <p id="player-food"></p>
               <p id="player-tarot"></p>
               <p id="outdoor-status"></p>
               <label><span data-i18n="needsHunger"></span><meter id="needs-hunger" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-hunger-value"></output></label>
@@ -407,6 +408,14 @@
       <p id="music-score" role="status"></p>
       <p id="music-result" role="status"></p>
     </dialog>
+    <dialog id="needs-notice-dialog" aria-labelledby="needs-notice-title" aria-describedby="needs-notice-text">
+      <h2 id="needs-notice-title"></h2>
+      <p id="needs-notice-text"></p>
+      <div id="needs-notice-actions">
+        <button id="needs-notice-cell" type="button" data-i18n="survivalChoices"></button>
+      </div>
+      <form method="dialog"><button data-i18n="needsNoticeClose" autofocus></button></form>
+    </dialog>
     <dialog id="hint-dialog" aria-labelledby="hint-title">
       <h2 id="hint-title" data-i18n="hintTitle"></h2>
       <p data-i18n="hintFree"></p>
@@ -417,6 +426,7 @@
       <h2 id="trail-title"></h2>
       <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
       <p id="trail-intro"></p>
+      <p id="trail-catalogue-credit" hidden><a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames contributors</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
       <p data-i18n="trailFiction"></p>
       <p id="trail-target" role="status"></p>
       <a id="trail-map-link" target="_blank" rel="noopener noreferrer" data-i18n="townOsm"></a>

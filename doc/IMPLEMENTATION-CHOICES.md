@@ -931,3 +931,35 @@ A real Firmi route was validated against the frontend geographic validator:
 ten towns, 479 km total, every leg 30–60 km, with sourced public venues.
 Both public providers failed on earlier attempts; cached catalogues allowed
 a later attempt to complete. This is not an availability guarantee.
+
+## Offline catalogue replaces online route preparation
+
+The user selected a bundled European town catalogue after repeated public
+Overpass failures. The old cold-cache path needed ten town queries plus five
+optional venue queries, potentially up to six HTTP attempts per catalogue
+with two providers and three retry rounds. More public providers would not
+remove this architectural dependency or provide an availability guarantee.
+
+The current default TownTrailStore uses LocalTowns: a 1-degree spatial index
+over an attributed GeoNames subset (38,081 populated places, population >=2,000).
+The 768 KB gzip is bundled; prepare_town_catalogue.py refreshes it from the
+licensed cities500 daily extract and applies the existing European filter.
+Exact spherical leg validation happens after a conservative bounding lookup.
+For each leg the seeded RNG generates a coordinate 30–60 km away, within
+60 degrees of the current heading, then selects the nearest eligible town.
+Revisits, separation, global-grid bounds and source metadata remain enforced.
+No backtracking or pedestrian/land connectivity verification is added.
+
+New routes make zero external requests and no optional venue calls. They
+record generation statistics and show the ten local searches/zero requests
+in the journal, with GeoNames/CC BY attribution. Optional POI enrichment is
+deferred rather than assigned fabricated data or made a startup dependency.
+Map streaming and other online services remain unchanged and can still fail.
+The online catalogue path remains tested, with actual request/cache counters
+in progress snapshots, but is not used by default for new journeys.
+
+Version 2 accepts either the existing OSM ID or a separate positive geonameId;
+GeoNames stages must cite GeoNames and cannot also claim an OSM ID. Map links
+use coordinates for GeoNames, original OSM object URLs for existing saves.
+Saved OSM/v1 routes are never regenerated. New Tahiti routes fail explicitly
+outside Europe; existing Tahiti saves still bypass generation and resume.

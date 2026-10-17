@@ -11,6 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from town_trail import build_town_trail, starting_point, distance, grid_position, TownTrailStore
 from travel_server import ChunkStore, atomic_write, ChunkJobs
 from fetch_osm import fetch_towns, OVERPASS_URLS, _COOLDOWNS, SourceUnavailable
+from local_towns import LocalTowns
+from prepare_town_catalogue import extract_towns
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = json.loads((ROOT / "public/map.json").read_text())
@@ -31,9 +33,52 @@ class TownTrailTests(unittest.TestCase):
     def tearDown(self):
         _COOLDOWNS.clear()
 
+    def test_offline_routes_use_random_coordinates_real_towns_and_zero_external_requests(self):
+        store = TownTrailStore(ChunkStore(), atomic_write)
+        catalogue = LocalTowns()
+        ids = {row[0] for bucket in catalogue.buckets.values() for row in bucket}
+        self.assertGreater(len(ids), 10000)
+        with patch("town_trail.fetch_towns", side_effect=AssertionError("Network forbidden")):
+            for region in ["firmi", "paris", "alps"]:
+                for seed in ["1234abcd", "abcdef01", "00000000", "ffffffff"]:
+                    trail = store.build(region, seed)
+                    self.assertEqual(trail, store.build(region, seed))
+                    self.assertEqual(trail["generation"]["requests"], 0)
+                    self.assertEqual(trail["generation"]["townSearches"], 10)
+                    previous = trail["origin"]
+                    seen = set()
+                    for stage in trail["stages"]:
+                        self.assertIn(stage["geonameId"], ids)
+                        self.assertNotIn(stage["geonameId"], seen)
+                        seen.add(stage["geonameId"])
+                        self.assertNotIn("osmId", stage)
+                        self.assertNotIn("venue", stage)
+                        self.assertEqual(stage["sourceUrl"], "https://www.geonames.org/")
+                        self.assertGreaterEqual(distance(previous, stage), 30000)
+                        self.assertLessEqual(distance(previous, stage), 60000)
+                        self.assertEqual(grid_position(store.chunks.bases[region], stage["latitude"], stage["longitude"]),
+                                         {"col": stage["col"], "row": stage["row"]})
+                        previous = stage
+            with self.assertRaisesRegex(ValueError, "Europe only"):
+                store.build("tahiti", "1234abcd")
+        self.assertEqual(store.progress, {})
+
+    def test_catalogue_preparation_excludes_non_european_small_and_non_populated_records(self):
+        def row(id, lat, lon, population, code="PPL", country="FR"):
+            fields = [str(id), "Town", "", "", str(lat), str(lon), "P", code, country,
+                      "", "", "", "", "", str(population), "", "", "", ""]
+            return "\t".join(fields)
+        result = extract_towns([
+            row(1, 44, 2, 2000), row(2, 44, 2, 1999), row(3, 44, 2, 3000, "PPLX"),
+            row(4, -17, -149, 20000, country="PF"), row(5, 44, 2, 3000, country="US"),
+        ])
+        self.assertEqual(result, [[1, "Town", 44.0, 2.0, "FR", 2000]])
+        with self.assertRaisesRegex(ValueError, "Invalid GeoNames"):
+            extract_towns(["incomplete"])
+
     def test_catalogue_retries_respect_cooldowns_report_progress_and_keep_cached_success(self):
         with tempfile.TemporaryDirectory() as directory:
-            store = TownTrailStore(ChunkStore(cache=Path(directory)), atomic_write)
+            store = TownTrailStore(ChunkStore(cache=Path(directory)), atomic_write, offline=False)
             progress = []
             data = towns(44, 2)
             with patch("town_trail.fetch_towns", side_effect=[
@@ -59,7 +104,7 @@ class TownTrailTests(unittest.TestCase):
         import threading
         entered, release = threading.Event(), threading.Event()
         with tempfile.TemporaryDirectory() as directory:
-            store = TownTrailStore(ChunkStore(cache=Path(directory)), atomic_write)
+            store = TownTrailStore(ChunkStore(cache=Path(directory)), atomic_write, offline=False)
             def fetch(latitude, longitude, venues=False, on_progress=None):
                 on_progress({"phase": "provider", "provider": "overpass.kumi.systems", "backup": True})
                 entered.set()
@@ -73,7 +118,8 @@ class TownTrailTests(unittest.TestCase):
                     status, payload = jobs.request("firmi", "abcdef01")
                     self.assertEqual(status, 202)
                     self.assertEqual(payload["progress"], {
-                        "phase": "provider", "stage": 1, "provider": "overpass.kumi.systems", "backup": True})
+                        "phase": "provider", "stage": 1, "provider": "overpass.kumi.systems", "backup": True,
+                        "requests": 1, "cacheHits": 0})
                     release.set()
                     jobs.jobs[("firmi", "abcdef01")].result(timeout=5)
                     self.assertEqual(store.progress, {})
@@ -156,12 +202,12 @@ class TownTrailTests(unittest.TestCase):
     def test_catalogues_are_persistent_and_job_results_are_deduplicated(self):
         with tempfile.TemporaryDirectory() as directory:
             store = ChunkStore(cache=Path(directory))
-            trails = TownTrailStore(store, atomic_write)
+            trails = TownTrailStore(store, atomic_write, offline=False)
             with patch("town_trail.fetch_towns", side_effect=towns) as fetch:
                 first = trails.build("firmi", "abcdef01")
                 self.assertEqual(fetch.call_count, 15)
             with patch("town_trail.fetch_towns", side_effect=AssertionError("Network forbidden")):
-                self.assertEqual(TownTrailStore(store, atomic_write).build("firmi", "abcdef01"), first)
+                self.assertEqual(TownTrailStore(store, atomic_write, offline=False).build("firmi", "abcdef01"), first)
             jobs = ChunkJobs(trails)
             try:
                 self.assertEqual(jobs.request("firmi", "abcdef01")[0], 202)

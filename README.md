@@ -74,11 +74,12 @@ l'annulation ; aucun pourcentage artificiel n'est affiche. L'animation
 respecte la preference systeme de reduction des mouvements.
 Une file serveur temporairement pleine conserve l'attente et sa roue,
 avec nouvelle tentative automatique et annulation possible.
-Pendant la creation de la piste, le message precise l'etape sur dix,
-la recherche de villes/lieux publics, la reutilisation du cache et le
-serveur interroge. Chaque catalogue essaie Overpass Allemagne puis Kumi ;
-si les deux echouent, jusqu'a trois tentatives respectent leur delai de
-refroidissement, avec compte a rebours visible. Un echec final reste explicite.
+Les nouvelles pistes sont creees dans le catalogue europeen local :
+dix recherches de villes, **zero requete Overpass**. Le journal rappelle
+ce bilan ; les phases plus longues du chargement de carte gardent leur roue.
+L'ancien chemin de catalogues en ligne conserve ses compteurs de requetes,
+lectures du cache, replis Allemagne/Kumi et trois tentatives par catalogue,
+mais n'est plus utilise pour creer les nouvelles pistes.
 Pendant la marche, une roue apparait aussi au centre de chaque morceau
 visible en attente de streaming. Elle disparait au chargement ou en cas
 d'echec ; les zones inconnues non demandees gardent simplement leurs « ? ».
@@ -362,15 +363,27 @@ personnes ou etablissements ; ce n'est pas une autorisation de jouer sur place.
 
 ## Piste du parent : un long voyage de ville en ville
 
-Les **nouveaux voyages** preparent dix etapes dans de vraies villes OSM
-(`place=city|town`), espacees de **30 a 60 km a vol d'oiseau**, y compris
+Les **nouveaux voyages europeens** preparent dix etapes dans de vraies
+localites du catalogue GeoNames, espacees de **30 a 60 km a vol d'oiseau**, y compris
 du depart a la premiere ville : 300 a 600 km au total, soit un voyage de
 plusieurs semaines. Les cases sont projetees dans la grille globale,
 y compris au nord ou a l'ouest du depart ; la carte continue a charger en marchant.
-Le serveur consulte Overpass Allemagne puis Kumi, conserve ses catalogues dans
-`.cache/travel/towns/` et signale explicitement les echecs. Il ne remplace pas
-une ville manquante par un commerce voisin. Un echec ne remplace pas la
+Le serveur choisit des coordonnees candidates aleatoires dans la direction
+du voyage, puis cherche la localite reelle admissible la plus proche dans
+un index spatial local. Les distances reelles, doublons et limites de grille
+sont verifies apres ce choix. Les donnees comprennent 38 081 localites
+europeennes d'au moins 2 000 habitants recenses, pas les objets `place=town`
+d'OSM : les classifications peuvent differer.
+Le catalogue [GeoNames](https://www.geonames.org/) est inclus sous
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) dans
+`data/europe-towns.json.gz`, avec provenance et date. Aucune requete externe
+n'est faite pour ces dix recherches ; aucun abonnement ni cle API necessaire.
+Pour mettre a jour les donnees : `.venv/bin/python scripts/prepare_town_catalogue.py`
+(telechargement du seul extrait `cities500.zip`, puis filtrage).
+Une localite manquante n'est pas remplacee par un commerce. Un echec ne remplace pas la
 sauvegarde precedente et ne tire pas le tarot du nouveau personnage.
+Les telechargements de carte, altitude, meteo et photos restent distincts
+et peuvent encore rencontrer des limites de leurs fournisseurs.
 
 **Piste du parent** ouvre gratuitement le carnet. Il indique la ville de
 l'etape actuelle, sa direction et sa distance ; les suivantes restent cachees.
@@ -393,10 +406,13 @@ Chaque forme presente la prochaine destination differemment :
 
 Le metabolisme et les risques nocturnes habituels s'ajoutent a ces couts.
 L'epuisement peut terminer la partie avant qu'un indice soit obtenu.
-Quand un lieu public nomme est disponible dans la prochaine ville, certains
+Dans les anciennes pistes longues qui contiennent un lieu public nomme, certains
 indices ne donnent que son nom : il faut ensuite **demander son chemin**
 sur place pour identifier la ville. Le carnet ne devoile alors ni distance
 ni lien cartographique. Cette attente et les decouvertes sont sauvegardees.
+Les nouvelles pistes locales ne font plus de recherche de lieux publics
+au depart : cet enrichissement optionnel est differe, pas simule.
+Elles revelent directement les villes par les memes formes d'indices.
 
 La photo cherche une vraie image geographique sous licence, autour de la
 destination, avec auteur, source et licence. Le petit indice est affiche
@@ -408,6 +424,8 @@ aucun habitant ou etablissement reel n'est implique dans l'histoire.
 La derniere decouverte declenche les retrouvailles et termine le voyage.
 Les anciennes sauvegardes a trois ou dix reperes locaux restent **inchangees**,
 avec leur ancienne rencontre de cinq minutes ; elles ne sont pas converties.
+Les pistes longues OSM deja sauvegardees restent egalement inchangees,
+y compris leurs indices de lieux et demandes de directions.
 Commencer un nouveau voyage pour obtenir la longue piste et ses nouvelles actions.
 
 Limites : distances geographiques, pas un itineraire pieton calcule ; le
@@ -415,8 +433,24 @@ trajet reel peut etre plus long ou interrompu par la mer ou des obstacles.
 Pas de garantie de continuite routiere, de deplacement du parent, de fausses
 pistes ou de calendrier narratif. La generation serveur couvre cette partie
 de la couche 9, pas l'ensemble de ses fonctionnalites prevues.
+Le catalogue utilise le filtre europeen deja applique aux nouveaux departs.
+Les nouvelles pistes de Tahiti ne sont pas prises en charge ; les anciennes
+sauvegardes y restent lisibles et jouables. Sur une ile ou une zone trop peu
+peuplee, l'absence de dix etapes admissibles est signalee explicitement.
 
 ## Boutons et raccourcis
+
+La bourse et l'energie alimentaire restante (kcal actuelles / capacite) sont
+affichees en evidence dans le panneau du personnage. Il s'agit des reserves
+deja consommees par le personnage, pas d'un inventaire de provisions portables.
+La nourriture achetee ou trouvee recharge directement cette reserve.
+Un message s'ouvre a partir de **75 % de faim**, avec les moyens de se nourrir
+et le rappel que **100 % de faim termine la partie**. Il ne se repete pas a
+chaque pas ; manger pour repasser sous 75 % rearme l'avertissement. Une reprise
+de sauvegarde deja affamee avertit aussi. Le message attend la fermeture des
+autres dialogues pour ne pas interrompre une action en cours.
+Un arret pour faim, fatigue ou manque de sommeil ouvre egalement une explication.
+Ces changements n'ajoutent ni provisions ni reanimation d'une partie terminee.
 
 **Un coup de pouce (I)** donne gratuitement la prochaine action utile et la
 direction/distance vers l'objectif deja connu. Sur une etape, il rappelle

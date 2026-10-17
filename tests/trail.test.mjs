@@ -90,6 +90,22 @@ test("free hints guide known objectives without revealing future towns or changi
   }
 });
 
+test("offline GeoNames stages retain real source identity without inventing OSM IDs", () => {
+  const route = townTrailFixture();
+  for (const [index, stage] of route.stages.entries()) {
+    delete stage.osmId;
+    stage.geonameId = index + 1;
+    stage.sourceUrl = "https://www.geonames.org/";
+  }
+  assert.equal(validateTownTrail(route), route);
+  const invalid = structuredClone(route);
+  invalid.stages[0].osmId = "node/1";
+  assert.throws(() => validateTownTrail(invalid), /Invalid town/);
+  const duplicate = structuredClone(route);
+  duplicate.stages[1].geonameId = duplicate.stages[0].geonameId;
+  assert.throws(() => validateTownTrail(duplicate), /Invalid town/);
+});
+
 test("town route loading validates new routes, propagates failures and requests one origin", async () => {
   const signal = new AbortController().signal;
   const urls = [];

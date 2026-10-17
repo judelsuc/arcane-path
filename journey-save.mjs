@@ -75,7 +75,9 @@ export function validateSave(save) {
       new Set(trail.stages.map(p => `${p?.col},${p?.row}`)).size !== trail.stages.length ||
       trail.stages.some((p, index) => !p || !integer(p.col) || !integer(p.row) ||
         (trail.version === 1 && (p.col < 0 || p.row < 0)) ||
-        typeof p.name !== "string" || !p.name.trim() || !/^(node|way)\/\d+$/.test(p.osmId) ||
+        typeof p.name !== "string" || !p.name.trim() ||
+        !(trail.version === 2 && Number.isSafeInteger(p.geonameId) && p.geonameId > 0 ||
+          /^(node|way)\/\d+$/.test(p.osmId)) ||
         p.witnessId !== `fictional-traveler-${index + 1}`)) fail();
   if (trail.version === 2) validateTownTrail(trail);
   if (trail.version === 2 && trail.discovery !== undefined) {
