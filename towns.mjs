@@ -11,7 +11,7 @@ const PUBLIC_TOURISM = new Set([
   "guest_house", "camp_site", "viewpoint", "information", "picnic_site",
 ]);
 
-function publicPlace(poi) {
+export function publicPlace(poi) {
   const tags = poi.tags;
   if (!poi.name?.trim() || !/^(node|way)\/\d+$/.test(poi.osmId) || !tags ||
       ["no", "private"].includes(tags.access) ||

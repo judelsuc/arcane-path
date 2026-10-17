@@ -485,6 +485,20 @@ This file records additions to the design without modifying the source PDF,
 - **Milestone:** Walk, earn, buy a meal and sleep in mapped shelter. A model
   test verifies three full simulated days of paid meals/lodging and earnings.
 
+## R-033 — Layer 8 minimal generated parent trail
+
+- **Design milestone:** A generated parent, three stages, fictional witnesses
+  with fact sheets and hand-written dialogue, then a reunion screen. One
+  journey has a beginning, objective and end.
+- **Status:** Implemented three distinct nearby named OSM cells on all four
+  initial maps, provisional parent name generation, sequential clues, a
+  free-to-read journal, five-minute actual-position encounters and a terminal
+  reunion outcome. Survival failure takes precedence over progress.
+- **Bounds:** No OSRM itinerary, parent movement, real-person witness roles,
+  false leads, photos-as-parent identity, save/load, server-created campaign,
+  or long-distance route generation. Geographic landmarks do not imply
+  real staff participation or guaranteed physical access.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

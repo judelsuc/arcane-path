@@ -3,6 +3,8 @@
 This document records the unattended work requested after Layer 3.
 The design PDF remains the reference; additions are tracked in REQUIREMENTS.md.
 All survival numbers below are gameplay approximations, not medical advice.
+Sections are chronological checkpoint records: later layers supersede earlier
+shortcuts, especially free meals and unrestricted outdoor sleep.
 
 ## Testing checkpoints independently
 
@@ -11,6 +13,7 @@ All survival numbers below are gameplay approximations, not medical advice.
 - Layer 5 checkpoint: Git tag `layer-5-towns`.
 - Layer 6 checkpoint: Git tag `layer-6-economy`.
 - Layer 7 checkpoint: Git tag `layer-7-music`.
+- Layer 8 checkpoint: Git tag `layer-8-parent-trail`.
 - Each completed further stage gets its own commit/tag and section here.
 - Nothing is pushed remotely automatically.
 
@@ -208,8 +211,9 @@ Layer 4 and legacy travel tests remain green.
    choose a versioned price dataset with provenance and missing-country rules,
    then wire real purchases/accommodation as a separate Layer 6 checkpoint.
    Do not silently replace missing country with France or arbitrary prices.
-7. Layer 7 street music, Layer 8 parent trail, saving, and later geocache
-   dungeons remain unimplemented, not hidden behind success-looking buttons.
+7. At the Layer 5 checkpoint, street music, parent trail, saving and later
+   geocache dungeons were unimplemented. Layers 7-8 below now add music/trail;
+   saving and dungeons remain deferred.
 
 ## Layer 6 - user decisions superseding the earlier economy questions
 
@@ -317,3 +321,69 @@ Browser verified 8/8 timing, exact 12.38 earnings, upfront costs, cancellation
 without refund and 375-pixel layout without horizontal overflow.
 Unit tests cover timing endpoints, spam resistance, exactly-once settlement,
 zero-money earning, exhaustion and three full 24-hour survival cycles.
+
+## Layer 8 - beginning, objective and reunion
+
+- Generate a fictional parent name from four neutral names, and three
+  distinct map cells. At each step choose randomly among the four nearest
+  remaining named locations, using the previous step as origin. This keeps
+  the first campaign short rather than sending a new character across Europe.
+- Use named settlement nodes where available, otherwise a named public-facing
+  POI using the same access/type filter as town menus. This matters in Paris
+  and Chamonix, whose included extracts have only one settlement node each.
+  No invented geographic location is used to force three stages.
+- One fictional traveler at each clue stage, identified independently of the
+  OSM place. No role or personal behavior assigned to real venue staff.
+  A fact sheet records parent name, seen-at place and next destination.
+  Dialogue is a hand-written template constrained to these facts.
+- Reveal only the next objective, with regional row/column and relative
+  cardinal cell offsets; the underlying future stages remain model data.
+  Journal retains found dialogues/facts and links the current landmark's OSM
+  record. Display indices are regional, not the moving camera indices.
+- Interview/reunion requires the exact player's cell, costs five simulated
+  minutes plus basal consumption and outdoor night exposure. Reading is free.
+  Repeated clicking cannot grant another clue from the old witness.
+- Parent remains at the final stage. Third encounter ends in a positive
+  reunion, freezes survival/movement like other terminal outcomes, and offers
+  a new journey. Exhaustion during an encounter takes precedence over victory.
+- No photograph is misrepresented as the fictional parent. No LLM, OSRM,
+  generated biographies, travel calendar, false leads or dynamic parent yet.
+- No persistence was added silently: reload/region switch/new journey resets
+  story, tarot and wallet, as stated in the README. A proper versioned save
+  remains a high-priority follow-up before longer campaigns.
+
+### Layer 8 manual test
+
+1. Start a new journey: journal opens with parent and first objective.
+2. Close it and follow the relative offsets. Negative east/south means
+   west/north. Reopen to check your remaining offset.
+3. At the exact target, interview unlocks. Spend five minutes; next objective
+   appears and the previous fact sheet stays in the journal.
+4. Follow the second clue, then the third stage. Reunion completes the game.
+   Movement/food/rest/music freeze; Look and journal remain available.
+5. New journey draws a new tarot/parent/route. Another region also generates
+   three stages. No saved progress is implied.
+
+Validation: 101 JavaScript tests passed, including generation across all four
+maps with multiple fixed draws, distinct real landmark identities, immutable
+fact progression, repeat prevention and hunger taking priority over reunion.
+The browser completed a deterministic Firmi route (Lestrunie, Firmi,
+Saint-Saturnin), with two clues and the terminal reunion screen. The reunion
+dialog fits a 375 x 800 viewport without horizontal overflow.
+The latest full Python suite remains 62 passing tests; Layer 8 changes no
+Python pipeline logic.
+
+### Remaining decisions and next checkpoint
+
+- **Layer 9:** The loopback map server is not the full game server. Server-side
+  game creation, route generation/validation, OSRM integration and versioned
+  content/persistence need a separate design and playable checkpoint.
+- Confirm whether the parent should already move, which profile/biography
+  choices belong to character creation, and whether local starts should remain
+  a short tutorial before a larger trip.
+- Define saves/autosaves and how a daily tarot draw is persisted, before
+  introducing consequences that must survive reloads.
+- Night events/survival minigames remain deferred to the Events layer, as
+  explicitly requested. The daily tarot/risk data are foundations only.
+- First-pass budgets, 900-kcal meals, lodging multiplier, exposure penalties
+  and rhythm difficulty need playtesting rather than claims of realism.

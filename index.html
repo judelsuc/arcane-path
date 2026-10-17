@@ -139,6 +139,7 @@
               <button id="eat-travel" type="button" data-i18n="needsEatAction"></button>
               <button id="open-town" type="button" disabled data-i18n="townOpen"></button>
               <button id="open-music" type="button" disabled data-i18n="musicOpen"></button>
+              <button id="open-trail" type="button" disabled data-i18n="trailTitle"></button>
               <button id="look-travel" type="button" aria-pressed="false" data-i18n="travelLook"></button>
               <button id="retry-travel" type="button" data-i18n="travelRetry"></button>
               <button id="stop-travel" type="button" data-i18n="travelStop"></button>
@@ -227,6 +228,7 @@
       <button id="town-refresh" type="button" data-i18n="townRefresh"></button>
       <button id="town-services" type="button" data-i18n="mealTitle"></button>
       <button id="town-music" type="button" data-i18n="musicOpen"></button>
+      <button id="town-trail" type="button" data-i18n="trailTitle"></button>
       <h3 data-i18n="townPlacesTitle"></h3>
       <p id="town-empty" data-i18n="townEmpty"></p>
       <ul id="town-places"></ul>
@@ -255,6 +257,18 @@
       <button id="music-tap" type="button" disabled data-i18n="musicTap"></button>
       <p id="music-score" role="status"></p>
       <p id="music-result" role="status"></p>
+    </dialog>
+    <dialog id="trail-dialog" aria-labelledby="trail-title">
+      <h2 id="trail-title"></h2>
+      <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
+      <p id="trail-intro"></p>
+      <p data-i18n="trailFiction"></p>
+      <p id="trail-target" role="status"></p>
+      <a id="trail-map-link" target="_blank" rel="noopener noreferrer" data-i18n="townOsm"></a>
+      <button id="trail-interview" type="button" disabled></button>
+      <p data-i18n="trailCost"></p>
+      <ol id="trail-history"></ol>
+      <button id="trail-restart" type="button" data-i18n="journeyRestart"></button>
     </dialog>
   </body>
 </html>

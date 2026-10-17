@@ -1,9 +1,11 @@
 # Les Arcanes du Chemin
 
-Prototype des **couches 1 a 7 — Carte, Voyage, Temps, Besoins, Localites, Economie et Musique** : donnees OSM reelles,
+Prototype jouable des **couches 1 a 8** : carte OSM, voyage, temps, besoins,
+localites, economie, musique de rue et piste minimale du parent.
 grille ASCII de 250 m, exploration a pied, horloge simulee, effort et streaming.
 
 Les ajouts au document de conception sont suivis dans [doc/REQUIREMENTS.md](./doc/REQUIREMENTS.md).
+Les prompts musicaux 8-bit et sons de jeu sont dans [audio-prompts](./audio-prompts/README.md).
 
 ## Lancer le prototype
 
@@ -93,7 +95,8 @@ par la configuration ; les sources OSM et altitudes restent reutilisees.
   lors du changement de jour. Le temps reel entre actions ne les fait pas avancer.
 - Le panneau indique distance, duree, vitesse du dernier pas, fatigue sur 100,
   kcal cumulees et denivele positif/negatif. La couche 4 ajoute faim, sommeil,
-  profils de personnage et repas de prototype ; aucun inventaire pour l'instant.
+  profils de personnage et repas ; la couche 6 ajoute leur achat. Aucun
+  inventaire pour l'instant.
 - Les commandes, l'horloge et les statistiques occupent une barre laterale a
   droite sur grand ecran, sous la carte sur mobile. Les explications du modele
   sont repliees dans « Aide et modele de voyage ».
@@ -143,6 +146,9 @@ estimation de pente nulle, et le compteur de pas estimes reste visible.
 **Reessayer les telechargements** relance les altitudes manquantes.
 
 ## Couche 4 : personnage et besoins
+
+Les regles suivantes decrivent le checkpoint `layer-4-needs`. Dans la version
+actuelle, les repas sont payants et le sommeil dehors est penalise (couche 6).
 
 Avant de partir, choisir **Equilibre**, **Robuste** ou **Endurant**. Le robuste
 marche un peu plus vite et consomme davantage ; l'endurant accumule moins de
@@ -201,8 +207,9 @@ L'observation d'une localite a distance n'ouvre pas ce menu.
   s'enrichit pendant les chargements sans requete OSM supplementaire dediee.
 - Consulter menus/fiches ne consomme rien et ne laisse pas passer les
   raccourcis de marche, repos ou photos vers la carte. Achats, travail et
-  hebergement ne sont pas encore disponibles ; les repas de prototype de
-  couche 4 restent accessibles apres fermeture du menu.
+  hebergement ne sont pas disponibles dans le checkpoint `layer-5-towns`.
+  Dans la version actuelle, les commandes des couches 6 et 7 ajoutent les
+  repas payants, le choix d'abri et la musique de rue.
 
 Les identifiants, associations Wikipedia et restrictions proviennent du
 rasteriseur. Apres modification du pipeline, `scripts/prepare_regions.py`
@@ -272,6 +279,33 @@ depense. Aucun temps reel supplementaire ne passe pendant le jeu ; les
 30 minutes sont comptabilisees au depart. Les autres commandes restent
 bloquees par le dialogue. Les cadeaux ne sont pas attribues a de vraies
 personnes ou etablissements ; ce n'est pas une autorisation de jouer sur place.
+
+## Couche 8 : une courte piste du parent
+
+Chaque nouveau voyage genere un parent fictif et trois etapes proches dans
+la region de depart, a partir de localites ou de lieux publics nommes OSM.
+Un carnet s'ouvre au depart. **Piste du parent** le rouvre sans cout.
+Le carnet indique la prochaine etape et le nombre de cases est/ouest,
+nord/sud a parcourir ; il ne revele pas d'avance les suivantes.
+
+Sur la case cible, **Interroger le voyageur imaginaire** prend 5 minutes et
+donne un indice ecrit a la main, base sur une fiche de faits : parent,
+lieu de rencontre, prochaine destination. Les temoins sont entierement
+inventes ; aucun habitant, employe ou proprietaire reel ne recoit de role.
+Les fiches et dialogues trouves restent dans le carnet pendant ce voyage.
+
+A la troisieme etape, **Retrouver votre parent** ouvre les retrouvailles :
+objectif atteint, partie terminee, nouveau voyage possible. Les besoins
+restent actifs pendant les rencontres : l'epuisement peut terminer le voyage
+avant son objectif. Les etapes ne sont pas atteignables par le curseur Look.
+
+Raccourcis assumes : parent immobile au dernier repere, quatre prenoms,
+un seul modele de dialogue, trois etapes choisies parmi les quatre reperes
+proches successifs, sans OSRM, fausses pistes ni calendrier du parent.
+La generation fonctionne sur les quatre cartes incluses. **Pas de sauvegarde
+de partie : recharger ou changer de region recommence toujours le voyage.**
+Le serveur de voyage local existe deja, mais la creation serveur et les
+parcours complets de la couche 9 ne sont pas encore implementes.
 
 ### Couche 3 : temps et cadran du ciel
 
@@ -534,6 +568,6 @@ python3 -m unittest discover -s tests
 node --test tests/*.test.mjs
 ```
 
-Node.js est uniquement necessaire pour les tests de traduction, pas pour lancer le prototype.
+Node.js est necessaire pour les tests JavaScript, pas pour lancer le prototype.
 
 Les tests regionaux couvrent les vrais snapshots de Paris, Chamonix et Firmi a 250 m et 50 m par case : provenance, licence, dimensions, presence des terrains attendus, glyphes, determinisme et reutilisation hors ligne. Les tests unitaires separes couvrent notamment les champs, les priorites de rendu, les limites geographiques, l'invalidation et la corruption du cache.

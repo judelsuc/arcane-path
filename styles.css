@@ -446,6 +446,8 @@ dialog p { margin: 12px 0; }
 .music-beat.hit { background: #375d3b; color: white; }
 .music-beat.missed { opacity: 0.5; }
 #music-progress { width: 100%; }
+#trail-dialog { width: min(680px, 94vw); max-height: 90dvh; overflow: auto; overflow-wrap: anywhere; }
+#trail-history { padding-left: 1.3em; }
 
 .travel-panel {
   padding: 16px 24px;

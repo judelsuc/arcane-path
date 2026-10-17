@@ -11,6 +11,8 @@ import { validateEconomy, startEconomy, buyMeal, sleepEconomy, restEconomy, fini
 import { setupEconomyUI } from "./economy-ui.mjs";
 import { beginBusking, settleBusking } from "./music.mjs";
 import { setupMusic } from "./music-ui.mjs";
+import { createTrail, interviewTrail } from "./trail.mjs";
+import { setupTrail } from "./trail-ui.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }) {
   const start = document.querySelector("#start-travel");
@@ -71,6 +73,21 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       }
     },
   });
+  const trailUI = setupTrail(t, {
+    context: economyContext,
+    interview() {
+      const current = economyContext();
+      if (!current || current.blocked) return false;
+      try {
+        state = interviewTrail(state, current.info, survivalConfig, economyData);
+        localize();
+        return true;
+      } catch (reason) {
+        report(reason);
+        return false;
+      }
+    },
+  });
   const weatherCache = new Map();
   let weatherKey, weatherData, weatherError = "", weatherController;
 
@@ -115,6 +132,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
     towns.localize(document.documentElement.lang);
     economyUI.localize();
     musicUI.localize();
+    trailUI.localize();
     document.querySelector("#map-workspace").classList.toggle("travel-active", active);
     document.body.classList.toggle("is-travelling", active);
     controls.hidden = !active;
@@ -435,6 +453,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       if (currentToken !== token) return;
       state = startEconomy(startSurvival(Math.floor(base.width / 2), Math.floor(base.height / 2),
         Date.now(), profile.value, survivalConfig), economyData);
+      state = { ...state, trail: createTrail(base, state.col, state.row) };
       const p = chunkPosition(state.col, state.row);
       stream = createChunkStream(region, { onUpdate: () => {
         if (currentToken === token) draw();
@@ -443,6 +462,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
       if (currentToken !== token) return;
       if (first.elevation.error) error = first.elevation.error;
       resetContent();
+      trailUI.open();
       draw();
       prefetch();
       document.querySelector("#ascii-map").focus({ preventScroll: true });
@@ -460,6 +480,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
   function reset() {
     token++;
     musicUI.reset();
+    trailUI.reset();
     towns.reset();
     economyUI.reset();
     stream?.stop();
