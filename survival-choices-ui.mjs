@@ -1,5 +1,6 @@
 import { CHOICE_RULES, choiceAvailable } from "./survival-choices.mjs";
 import { tarotEventChance } from "./economy.mjs";
+import { socialFailureChance } from "./pressures.mjs";
 import { canEat } from "./survival.mjs";
 import { atTrailTarget } from "./trail.mjs";
 import { setFeedback } from "./feedback.mjs";
@@ -27,7 +28,9 @@ export function setupSurvivalChoices(t, { context, act }) {
         current.blocked || !choiceAvailable(kind, current.cell);
       document.querySelector(`#choice-${kind}-note`).textContent = t(`choiceNote.${kind}`, {
         minutes: rule.minutes, fatigue: rule.fatigue,
-        risk: Math.round(tarotEventChance(rule.failureChance, current.state, current.data) * 100),
+        risk: Math.round((kind === "beg"
+          ? socialFailureChance(tarotEventChance(rule.failureChance, current.state, current.data), current.state)
+          : tarotEventChance(rule.failureChance, current.state, current.data)) * 100),
         kcal: rule.foodKcal ?? 0, hours: rule.detentionHours ?? 0,
       });
     }

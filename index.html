@@ -215,6 +215,17 @@
               <label><span data-i18n="needsFatigue"></span><meter id="needs-fatigue" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-fatigue-value"></output></label>
               <label><span data-i18n="needsSleep"></span><meter id="needs-sleep" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-sleep-value"></output></label>
               <p id="needs-warning" role="status"></p>
+              <details id="pressure-panel" hidden>
+                <summary data-i18n="pressureTitle"></summary>
+                <label><span data-i18n="pressureVigilance"></span><meter id="pressure-vigilance" min="0" max="100" low="40" high="75" optimum="0"></meter><output id="pressure-vigilance-value"></output></label>
+                <label><span data-i18n="pressureCleanliness"></span><meter id="pressure-cleanliness" min="0" max="100" low="30" high="70" optimum="100"></meter><output id="pressure-cleanliness-value"></output></label>
+                <label><span data-i18n="pressureSympathy"></span><meter id="pressure-sympathy" min="0" max="100" low="30" high="70" optimum="100"></meter><output id="pressure-sympathy-value"></output></label>
+                <p id="pressure-status"></p>
+                <p id="pressure-tarot"></p>
+                <p data-i18n="pressureHelp"></p>
+                <button id="wash-travel" type="button" disabled></button>
+                <p data-i18n="washHelp"></p>
+              </details>
               <div id="journey-ended" role="alert" hidden>
                 <p id="journey-outcome"></p>
                 <button id="restart-travel" type="button" data-i18n="journeyRestart"></button>
@@ -396,6 +407,10 @@
         <form method="dialog"><button data-i18n="closePhoto"></button></form>
       </header>
       <p class="journal-storage-note" data-i18n="journalStorage"></p>
+      <nav class="content-actions" aria-label="Carnet">
+        <button id="journal-photos-page" type="button" data-i18n="journalPhotosPage"></button>
+        <button id="journal-stats-page" type="button" data-i18n="journalStatsPage" disabled></button>
+      </nav>
       <div id="journal-pages" class="notebook-spread"></div>
       <footer class="notebook-navigation">
         <button id="journal-previous" type="button"></button>

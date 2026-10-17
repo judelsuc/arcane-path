@@ -1,6 +1,6 @@
 import { publicPlace } from "./towns.mjs";
 import { restSurvival } from "./survival.mjs";
-import { finishAction, didFaint } from "./economy.mjs";
+import { finishAction, actionInterrupted } from "./economy.mjs";
 import { distanceMeters } from "./cell-content.mjs";
 import { chunkPosition } from "./travel.mjs";
 import { validateParentStory, parentReunion } from "./parent-story.mjs";
@@ -145,7 +145,7 @@ export function interviewTrail(state, info, survival, economy) {
   }
   const next = finishAction(state, restSurvival(state, { ...survival,
     rest_minutes: 5, rest_fatigue_recovery: 0 }), info, economy, { survival });
-  if (next.ended || didFaint(state, next)) return next;
+  if (actionInterrupted(state, next)) return next;
   const facts = witnessFacts(state);
   const index = state.trail.index + 1;
   const completed = index === state.trail.stages.length;

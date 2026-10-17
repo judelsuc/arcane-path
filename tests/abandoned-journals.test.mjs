@@ -37,6 +37,23 @@ test("death outbox survives offline failure, reload and replacement with another
     calls.push({ url, options });
     return response({});
   });
+
+  test("terminal placement is durably published but recoverable episodes remain private", async () => {
+    const local = storage(), calls = [];
+    const client = createJournalClient(local, async (url, options) => {
+      calls.push(JSON.parse(options.body));
+      return response({});
+    });
+    client.queueDeath({ ...state, ended: null, pressures: { placements: [{}] } });
+    await client.flush();
+    assert.equal(calls.length, 0);
+    client.queueDeath({ ...state, ended: "placement" });
+    await client.flush();
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].ended, "placement");
+    assert.equal(calls[0].col, state.col);
+    assert.equal(calls[0].row, state.row);
+  });
   await online.flush();
   await online.flush();
   assert.equal(calls.length, 1);

@@ -1,6 +1,7 @@
 import { journeyDate } from "./travel.mjs";
 import { restSurvival, sleepSurvival } from "./survival.mjs";
 import { finishAction, tarotEventChance, didFaint } from "./economy.mjs";
+import { didPlace, socialFailureChance, PLACEMENT_MINUTES } from "./pressures.mjs";
 
 export const HOSPITALITY_RULES = Object.freeze({ minutes: 30, failureChance: 0.5 });
 
@@ -49,10 +50,11 @@ export function askHospitality(state, cell, info, survival, economy, random = Ma
     : "This mapped place of worship is unavailable for a shelter request.");
   if (!available) throw new Error("You have already asked at this place today.");
   const accepted = dailyDraw(state, town.osmId, day) >=
-    tarotEventChance(HOSPITALITY_RULES.failureChance, state, economy);
+    socialFailureChance(tarotEventChance(HOSPITALITY_RULES.failureChance, state, economy), state);
   let next = finishAction(state, restSurvival(state, { ...survival,
     rest_minutes: HOSPITALITY_RULES.minutes, rest_fatigue_recovery: 0 }), info, economy, { random, survival });
-  let outcome = didFaint(state, next) ? "fainted" : next.ended ? "exhausted" : accepted ? "hosted" : "refused";
+  let outcome = didPlace(state, next) ? "placed" : didFaint(state, next) ? "fainted"
+    : next.ended ? "exhausted" : accepted ? "hosted" : "refused";
   if (outcome === "hosted") {
     const sleeping = sleepSurvival({ ...next, lastExpenseCents: 0 }, survival);
     next = finishAction(next, sleeping, info, economy, { sheltered: true, random, survival });
@@ -77,7 +79,7 @@ export function validateHospitality(state, survival) {
         !(attempt.placeKind === "worship" ? /^(node|way|relation)\/\d+$/ : /^(node|way)\/\d+$/).test(attempt.townId) ||
         (attempt.placeKind !== undefined && attempt.placeKind !== "worship") ||
         typeof attempt.townName !== "string" || !attempt.townName.trim() ||
-        !["hosted", "refused", "exhausted", "fainted"].includes(attempt.outcome) ||
+        !["hosted", "refused", "exhausted", "fainted", "placed"].includes(attempt.outcome) ||
         !Number.isFinite(attempt.startedMinutes) || attempt.startedMinutes < previousEnd ||
         !Number.isFinite(attempt.finishedMinutes) || attempt.finishedMinutes > state.elapsedMinutes ||
         attempt.finishedMinutes < attempt.startedMinutes + HOSPITALITY_RULES.minutes ||
@@ -85,10 +87,15 @@ export function validateHospitality(state, survival) {
         !Number.isFinite(new Date(state.startedAt + attempt.startedMinutes * 60_000).getTime())) fail();
     const duration = attempt.finishedMinutes - attempt.startedMinutes;
     const night = HOSPITALITY_RULES.minutes + survival.sleep_hours * 60;
-    const expected = attempt.outcome === "fainted" ? HOSPITALITY_RULES.minutes + 480
+    const placement = state.pressures?.placements.find(p => p.startedMinutes >= attempt.startedMinutes &&
+      p.finishedMinutes === attempt.finishedMinutes);
+    if (attempt.outcome === "placed" && !placement) fail();
+    const expected = attempt.outcome === "placed" ? HOSPITALITY_RULES.minutes + PLACEMENT_MINUTES
+      : attempt.outcome === "fainted" ? HOSPITALITY_RULES.minutes + 480
       : attempt.outcome === "hosted" ? night : HOSPITALITY_RULES.minutes;
     if (Math.abs(duration - expected) > 1e-6 &&
-        !(attempt.outcome === "exhausted" && Math.abs(duration - night) < 1e-6)) fail();
+        !(attempt.outcome === "exhausted" && Math.abs(duration - night) < 1e-6) &&
+        !(attempt.outcome === "placed" && Math.abs(duration - expected - 480) < 1e-6)) fail();
     const day = new Date(state.startedAt + attempt.startedMinutes * 60_000).toISOString().slice(0, 10);
     const key = `${attempt.townId}:${day}`;
     if (attempt.day !== day || keys.has(key)) fail();

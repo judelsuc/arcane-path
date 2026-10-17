@@ -46,8 +46,12 @@ verifiee, pas seulement du code prepare. Voir le
   - [x] Dialogues varies, souvenirs vieillissants sans perte des indices et presentation claire du motif/sejours (code).
 - [ ] Plus tard (R-083) : validation terrain 30–60 km, budget de survie,
   nuits/achats sur le trajet et destinations guidees par le motif.
-- [ ] Couche 15 apres le jalon narratif leger : photos et carnet de voyage, export PDF,
-  sans attendre les simulations avancees reportees.
+- [x] Couche 15, jalon accepte : photos, cartes historiques et carnet par voyage,
+  pages d'indices et carnets abandonnes. Export PDF et conversion ASCII restent reportes.
+- [x] Couche 10 : vigilance, sympathie locale, hygiene, temoins vieillissants et
+  deux placements recuperables avant une troisieme fin de voyage.
+- [x] Page Statistiques dans le carnet : besoins, chemin, argent, compteurs,
+  pressions et effets combines des cartes de naissance et du jour.
 - [ ] Autres couches du document de conception, avec checkpoints testes.
 - [ ] R-062 : caches d'objets persistantes, pour les autres joueurs et ses prochaines parties.
 - [ ] R-063 : indices d'arcanes plus precis avec la proximite ; habillage narratif LLM ulterieur.
@@ -57,6 +61,59 @@ Le DNS resout maintenant l'IP de la VM ; le site est accessible en HTTPS
 avec un mot de passe de previsualisation. Le jalon leger de la couche 9 est
 termine ; la simulation avancee du terrain et du budget de survie reste reportee.
 Les couts sont des estimations, pas un plafond de facturation automatise.
+
+## Pressions et statistiques du voyage
+
+Les pressions commencent au lancement ou a la reprise d'un voyage actif ;
+les sauvegardes anterieures restent lisibles, sans modifier le depart serveur.
+La vigilance (0–100) augmente avec le temps dans un secteur de 2 km, davantage
+en ville, pres d'une police cartographiee, avec forte fatigue ou mauvaise
+proprete. Apres quatre heures dans le meme secteur, rester sur place ajoute
+une pression. Mendier et voler attirent aussi l'attention. Marcher et dormir
+a l'abri la reduisent. Se laver en ville ou aux sanitaires publics cartographies
+coute 20 minutes et un quart de repas, rend la proprete a 100 et retire 5 de
+vigilance avant la pression du temps passe. Dormir a l'abri restaure aussi
+une partie de la proprete.
+
+A 100, un placement fictif ajoute 24 heures a l'abri, repas et repos,
+et fait perdre 25 % de l'argent restant, arrondi vers le bas. Aucun gain,
+indice ou avancement n'est accorde pour l'action interrompue. Les deux
+premiers episodes laissent reprendre au meme endroit, avec carnet et piste
+intacts ; le troisieme termine le voyage et depose le carnet a la derniere
+position. Les heures au foyer ne sont pas facturees comme exposition dehors.
+Un besoin deja fatal garde priorite.
+
+La sympathie depend de la proprete, de la fatigue et de la reputation du
+secteur. Une prestation reussie ameliore celle-ci ; mendier la reduit
+legerement et voler la degrade. Elle influence demandes d'argent, accueil,
+rencontres pour les directions et gains musicaux. La reputation est bornee
+a ±25 et conservee pour les 64 derniers secteurs concernes. Aucune competence
+linguistique de la future couche 17 n'est ajoutee.
+
+**Les deux cartes ont un effet direct** : on reutilise leur facteur existant
+`0.5 + (risque_naissance + risque_jour) / 2` pour le rythme de vigilance et
+l'oubli des nouveaux temoins ; le bonus de sympathie vaut
+`30 * (1 - facteur)` et l'usure de proprete est multipliee par
+`0.75 + facteur / 4`. Une nouvelle carte quotidienne actualise ces effets
+pour les actions suivantes, sans recalculer les indices deja collectes.
+Le panneau Pressions, le tirage quotidien et la page Statistiques affichent
+ces effets.
+
+Les nouveaux temoignages deviennent moins precis apres l'equivalent d'une
+semaine, puis ne donnent plus qu'une direction apres un mois, selon l'age
+du sejour du parent et les cartes. Sans chronologie du parent, l'anciennete
+commence a l'activation de ces pressions. Les indices et photos deja obtenus
+restent intacts : heure et facteur de collecte sont enregistres.
+Dans les 3 km de la destination, toute recherche terminee sans interruption
+permet toujours de l'identifier, meme si les temoins ont oublie ou le trajet
+de reference n'est pas pret.
+
+Dans le carnet, **Photos et cartes** et **Statistiques du voyage** sont deux
+pages distinctes. Les statistiques suivent la partie sauvegardee, montrent
+les besoins, argent, distance, temps, denivele, destinations atteintes et
+compteurs d'actions, ainsi que les deux cartes et les pressions. Aucun
+nom d'etape cachee n'apparait. Elles ne sont pas partagees avec les photos
+d'un carnet abandonne et ne remplacent ni les photos ni les notes.
 
 ## Infrastructure OVHcloud
 
@@ -214,9 +271,12 @@ precision de pont, cloture ou chemin pieton reel n'est inventee.
 `GET /api/parent-path?journey=IDENTIFIANT&stage=0` lance ou consulte la
 preparation ; `retry=1` relance seulement un echec. Reponse 202 avec compteurs,
 200 avec resume sans geometrie, 422 en cas d'echec, 429 si la file est pleine.
-Le trace reste cache, conserve cote serveur pour les futurs indices ; aucun
-indice intermediaire n'est encore ajoute. Les anciennes parties locales
-sans identifiant serveur ne sont ni modifiees ni regenerees.
+Le trace reste cache cote serveur. Ajouter `col` et `row` retourne uniquement
+la proximite de cette position au trace conserve, pour les recherches d'indices.
+`recognize=vague-prefix|partial-prefix|vague-photo|partial-photo` avec une
+position propose des villes reelles du catalogue, sans geometrie ni indication
+de la bonne reponse. Les anciennes parties locales sans identifiant serveur
+ne sont ni regenerees ni dotees d'un faux chemin.
 
 Un seul worker de chemins, au plus deux travaux en cours/file, couloirs de
 8/16/32 cases elargis si aucun passage, 50 000 expansions au total, 256
@@ -642,6 +702,18 @@ Les futurs evenements nocturnes dangereux dependront du tarot du jour ;
 leurs mini-jeux ne sont pas encore actifs. Attendre reellement ou regarder
 la carte ne passe toujours pas de temps.
 
+L'agenda, le cadran et la meteo partagent un meme panneau. Son fond devient
+bleu jusqu'a 0 C, bleu-vert sous 10 C, vert jusqu'a 25 C, ambre jusqu'a 30 C
+et rouge au-dela, selon la temperature estimee a la position du joueur.
+Des gouttes decoratives apparaissent sous la pluie ou l'orage, sans animation.
+Sans donnees meteo, le fond reste neutre et les gouttes disparaissent.
+Le soleil ou la lune suit son arc en arriere-plan du meme panneau, sans
+cadran separe. Les effets de temperature et de pluie sont dans une infobulle
+au survol ou au focus clavier de la meteo, plutot qu'en texte permanent.
+Le petit calendrier reste a gauche ; le cadran analogique, l'icone meteo,
+la temperature et la condition sont empiles dans la colonne de droite.
+Pas d'heure numerique ni de petites legendes permanentes : moyennes,
+estimations et sources sont accessibles dans l'infobulle.
 L'agenda et le cadran affichent la date et l'heure simulees en UTC, avec
 libelles francais/anglais et texte accessible complet. Les aiguilles n'avancent
 pas en temps reel. **Copier les coordonnees** copie le centre de la case du joueur
@@ -707,6 +779,92 @@ pas interpretee comme l'absence d'hotels. Un catalogue DATAtourisme francais
 peut etre importe par l'administrateur, mais il n'est pas installe par les
 joueurs et ne constitue pas une couverture internationale.
 
+Dans la liste des hebergements, **Aller a cet hebergement** choisit un repere :
+la carte signale sa case quand elle est visible, et la distance et la direction
+s'actualisent pendant la marche. Le bouton ne deplace pas le personnage.
+Les directions sont a vol d'oiseau, pas un itineraire garanti ; il faut rejoindre
+la case a pied puis ouvrir le sommeil avec H. Le repere peut etre annule et
+n'est pas conserve apres fermeture ou rechargement du voyage.
+
+La fenetre de la piste du parent (J) separe les consignes et le rappel de la
+piste dans une colonne laterale, des boutons d'enquete et des resultats dans
+la zone principale. Sur petit ecran, le contenu principal precede les consignes.
+Le bouton Nouveau voyage reste sur l'ecran principal, pas dans le journal J.
+Le bouton de recherche et son cout resume restent en haut ; les longues
+explications se deploient a la demande. Les indices portent leur date de jeu
+(UTC), du plus recent au plus ancien, dans une page par etape. Une destination
+atteinte est marquee et ouvre immediatement une nouvelle page pour chercher
+la piste suivante, sans avancer la quete avant l'enquete sur place.
+Les pages precedentes restent consultables, sans devoiler les futures villes.
+Les anciennes entrees sans date le signalent, sans inventer un horodatage.
+J s'ouvre sur **Indices actuels** ; **Enqueter** affiche les actions sur une
+page separee et **Destinations precedentes** permet de feuilleter les archives.
+Chaque indice est classe par la destination qu'il concerne, pas par le lieu
+ou il a ete recueilli : un temoignage obtenu a A pour rejoindre B figure avec B.
+La date precede chaque entree et le dernier indice date est marque clairement.
+Les recits de sejour du parent ne s'affichent que dans l'archive concernee.
+Dans I, **Villes deja citees** permet de choisir une ville deja nommee par un
+temoin, un indice precis ou une destination atteinte, puis de demander sa
+direction depuis la position actuelle. Les propositions anciennes restent
+disponibles avec leur etape et leur statut non confirme. Chaque demande paie
+les 10 minutes et 2 points de fatigue habituels, avec la meme chance de
+rencontrer quelqu'un ; elle ne change ni la quete ni la destination active.
+Retrouver un indice deja connu ne cree pas de doublon : le resultat signale
+explicitement qu'aucun nouvel indice n'a ete ajoute, avec les couts payes.
+Lorsqu'un temoin propose un nom de ville dans I, son avis indique aussi la
+distance a vol d'oiseau, la direction depuis votre position actuelle et les
+coordonnees de la ville proposee. Cela ne confirme pas qu'il s'agit de la
+bonne destination ; le temoin peut toujours se tromper.
+
+### Carnet de photos
+
+Les tirages de naissance et du jour utilisent les scans du Tarot de Marseille
+de Jean Dodal (vers 1701, domaine public), servis localement avec leur source.
+Les 22 arcanes et le dos historique remplacent les dessins ASCII des tirages.
+Chaque tirage est automatiquement epingle dans le carnet avec son role,
+son nom, sa date de jeu et une interpretation modifiable comme note.
+Une meme carte tiree deux jours differents reste deux souvenirs distincts.
+Reprendre un voyage ajoute sa carte de naissance et sa carte du jour deja
+revelee si elles manquent, sans ecraser les notes. Les anciennes cartes
+des jours passes non conserves dans la sauvegarde ne sont pas reconstruites.
+Les erreurs d'image ou de stockage sont visibles ; l'epinglage propose
+de reessayer et n'empeche pas de poursuivre le voyage.
+
+Le bouton **Mon carnet** dans l'en-tete (A) ouvre un carnet a deux pages
+avec une reliure spirale centrale. Dans la fenetre d'une photo de carte,
+de nature ou d'indice, **Epingler dans mon carnet** conserve l'image affichee,
+son auteur, sa source et sa licence. Les photos apparaissent dans des cadres
+blancs, avec un champ de note a l'ecriture manuscrite sous l'image.
+La note est enregistree en quittant le champ ou avec **Garder ma note**.
+Les fleches tournent les doubles pages ; retirer une photo demande confirmation.
+
+Chaque voyage possede son propre carnet IndexedDB, independant du cache photo.
+Un nouveau depart ne reprend pas les photos et notes du voyage precedent.
+Au deces ou avant de remplacer la sauvegarde, le carnet complet est laisse
+a la derniere position du personnage sur le serveur. Photos, notes, cartes
+et indices sont alors partageables : n'y inscrivez pas de donnees privees.
+Le nouveau depart avertit de ce partage et attend la confirmation du serveur ;
+en cas d'echec, l'ancien carnet et la sauvegarde restent conserves.
+Les depots complets attendent dans une file IndexedDB en cas de panne reseau.
+Les anciens carnets sans voyage sont rattaches au voyage repris ou remplace
+lors de la migration ; leur provenance entre anciennes parties est inconnue.
+Le partage accepte JPEG, PNG, WebP et GIF, 12 Mo par image et 48 Mio au total
+(1000 entrees maximum). Un depassement est signale sans publication partielle.
+
+Le panneau **SIDEQUEST - Journaux abandonnes** recherche a votre position
+(200 m), permet une prise exclusive puis la lecture du carnet recueilli.
+Il reste distinct du votre et n'est pas modifiable. Suivez ses etapes pour
+le rendre a son parent, sans modifier votre propre quete. Pour un parent
+mobile, cette livraison conserve sa position au moment du depot ; elle ne
+simule pas un second parent mobile. Les reclamations expirent apres sept
+jours d'inactivite ; les carnets portes sont relaches a la derniere position
+signalee du porteur a son deces ou nouveau depart, une fois connecte.
+La base serveur `abandoned-journals.sqlite3` est distincte des genese immuables
+et doit etre sauvegardee avec celles-ci. Les images et notes deposees restent
+sur le serveur meme si les donnees locales du navigateur sont effacees.
+Les photos d'indices vagues restent sans titre geographique dans le carnet,
+et les notes personnelles ne constituent pas des indices confirmes.
+
 Les **nouveaux voyages europeens** preparent dix etapes dans de vraies
 localites du catalogue GeoNames, espacees de **30 a 60 km a vol d'oiseau**, y compris
 du depart a la premiere ville : 300 a 600 km au total, soit un voyage de
@@ -729,17 +887,41 @@ sauvegarde precedente et ne tire pas le tarot du nouveau personnage.
 Les telechargements de carte, altitude, meteo et photos restent distincts
 et peuvent encore rencontrer des limites de leurs fournisseurs.
 
-**Piste du parent** ouvre gratuitement le carnet. Il indique la ville de
-l'etape actuelle, sa direction et sa distance ; les suivantes restent cachees.
+**Piste du parent** (J) ouvre gratuitement le carnet. Chaque nouvelle piste
+commence vaguement : direction generale depuis la precedente halte, fragment
+du nom de ville ou photo sans annotation. Le carnet ne fournit ni distances,
+ni coordonnees, ni trace et ne nomme pas les villes encore inconnues.
+Dans une case terrestre chargee, **Chercher un indice** (F dans le carnet)
+consomme du temps, de la fatigue et de l'energie, meme sans resultat.
+Les chances diminuent avec l'eloignement du chemin cache du parent.
+Les couts tires au hasard diminuent en approchant de la ville recherchee :
+30–60 min/+4–7 fatigue loin, jusqu'a 8–14 min/+1–2 fatigue a proximite.
+Les indices deviennent progressivement plus precis : fragment plus long
+dans les 15 km, ville identifiable dans les 3 km.
+Si le chemin de reference est encore en preparation, en echec ou sa file
+occupee, la recherche utilise explicitement la distance a la destination,
+sans inventer de trajet. Les couts et resultats normaux s'appliquent et ce
+mode est signale dans le resultat. Les erreurs reseau, de donnees ou de
+partie inconnue restent visibles sans facturer l'action.
+
+On peut **montrer un fragment ou une photo a quelqu'un**, dans le carnet
+ou avec I : 10 min/+2 fatigue, avec les chances habituelles de rencontrer
+quelqu'un selon le terrain. Les personnes suggerent de vraies villes :
+la plus proche commencant par ces lettres, ou une ville qui rappelle la photo.
+Elles peuvent confondre des noms similaires ou se tromper sur l'image.
+Ces avis restent explicitement **non confirmes**, sont sauvegardes a part
+des indices et n'avancent jamais la quete.
+
 Pour les parcours de villes, l'enquete est accessible sur la case du point
 repere et ses huit voisines (250 m par axe), afin de ne pas exiger le pixel
 exact d'un centre GeoNames/OSM. A deux cases sur un axe, il faut encore avancer.
 Les anciens parcours locaux gardent leur regle de case exacte.
-Seule la **case exacte de l'etape prevue** propose des indices du parent,
-jamais une autre case de la meme ville ni le curseur Look.
-Quatre actions differentes sont proposees a chaque etape, selon une rotation :
-discussion, photo annotee, lettre, fouille, note achetee, livre d'or ou billet.
-Chaque forme presente la prochaine destination differemment :
+Seule l'arrivee dans ce rayon permet de **passer a l'etape suivante** ;
+une recherche en pleine campagne ne saute jamais une ville. Le curseur Look
+ne deplace pas le personnage et n'autorise pas de recherche distante.
+A l'arrivee, la decouverte est tiree parmi quatre formes accessibles :
+discussion, photo, lettre, fouille, note achetee, livre d'or ou billet.
+Chaque forme amorce une nouvelle piste vague, avec ses couts propres :
 
 | Action | Temps | Fatigue ajoutee | Effort supplementaire |
 | --- | --- | --- | --- |
@@ -760,12 +942,13 @@ sur place pour identifier la ville. Le carnet ne devoile alors ni distance
 ni lien cartographique. Cette attente et les decouvertes sont sauvegardees.
 Les nouvelles pistes locales ne font plus de recherche de lieux publics
 au depart : cet enrichissement optionnel est differe, pas simule.
-Elles revelent directement les villes par les memes formes d'indices.
+Une ancienne sauvegarde conserve sa destination deja connue lors de la
+reprise ; ses nouvelles pistes utilisent ensuite les indices progressifs.
 
 La photo cherche une vraie image geographique sous licence, autour de la
-destination, avec auteur, source et licence. Le petit indice est affiche
-separement comme une **annotation fictive**, jamais comme une inscription
-authentique sur l'image. Une indisponibilite est affichee sans bloquer l'indice.
+destination, avec auteur, source et licence, mais sans titre geographique
+ni annotation revelant la ville. Lors d'une recherche hors etape, une photo
+indisponible est remplacee explicitement par un fragment de nom.
 Lettres, temoins, billets et autres objets narratifs sont egalement fictifs :
 aucun habitant ou etablissement reel n'est implique dans l'histoire.
 

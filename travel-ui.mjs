@@ -6,7 +6,7 @@ import {
   walkSurvival, hungerPercent, canEat, normalizeCharacterName,
 } from "./survival.mjs";
 import { setupTowns } from "./towns-ui.mjs";
-import { refreshPricing, refreshMeals, refreshNightRest, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, restEffect, finishAction } from "./economy.mjs";
+import { refreshPricing, refreshMeals, refreshNightRest, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, restEffect, finishAction, washEconomy, marketPrice } from "./economy.mjs";
 import { setupDailyTarot } from "./daily-tarot-ui.mjs";
 import { survivalChoice } from "./survival-choices.mjs";
 import { setupSurvivalChoices } from "./survival-choices-ui.mjs";
@@ -34,8 +34,9 @@ import { pendingJournalCreation, finishJournalCreation, ensureJournalAccess, cre
 import { setupAbandonedJournals } from "./abandoned-journals-ui.mjs";
 import { encodeNotebook } from "./notebook-transfer.mjs";
 import { updateWeatherPanel } from "./weather-panel.mjs";
+import { beginPressures, sympathy, policePresence, washingAvailable } from "./pressures.mjs";
 
-export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, pinPhoto, pinTarot, useNotebook, snapshotNotebook, showNotebook }) {
+export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, pinPhoto, pinTarot, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats }) {
   const start = document.querySelector("#start-travel");
   const resume = document.querySelector("#resume-travel");
   const saveStatus = document.querySelector("#journey-save-status");
@@ -436,6 +437,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const info = cellInfo(chunk, row, col);
     const weather = weatherCache.get(chunkWeatherKey(chunk));
     return { ...info, ...(weather ? { weather } : {}),
+      police: policePresence(chunk.rows[row][col]),
       elevationMeters: chunk.rows[row][col].elevationMeters };
   }
 
@@ -528,6 +530,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const chunk = position && stream?.get(position.x, position.y);
     const cell = chunk?.rows[position.row][position.col];
     const ended = Boolean(state?.ended);
+    if (state && survivalConfig && economyData) {
+      updateNotebookStats?.({ state, survival: survivalConfig, economy: economyData });
+    }
     if (ended) {
       backgroundDownloads?.stop();
       parentPathController?.abort();
@@ -566,6 +571,31 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       if (values.fatigue >= survivalConfig.warning_percent) warnings.push(t("needsTired"));
       if (state.awakeHours >= survivalConfig.sleep_warning_hours) warnings.push(t("needsSleepy"));
       document.querySelector("#needs-warning").textContent = warnings.join(" ");
+      const pressures = state.pressures;
+      document.querySelector("#pressure-panel").hidden = !pressures;
+      if (pressures) {
+        for (const [key, value] of Object.entries({ vigilance: pressures.vigilance,
+          cleanliness: pressures.cleanliness, sympathy: sympathy(state) })) {
+          document.querySelector(`#pressure-${key}`).value = value;
+          document.querySelector(`#pressure-${key}-value`).textContent = `${Math.round(value)}%`;
+        }
+        document.querySelector("#pressure-status").textContent = t("pressureStatus", {
+          count: pressures.placements.length, hours: (pressures.localMinutes / 60).toFixed(1),
+        });
+        const language = document.documentElement.lang === "en" ? "en" : "fr";
+        document.querySelector("#pressure-tarot").textContent = t("pressureTarot", {
+          birth: economyData.tarot.find(c => c.id === state.birthCard)[language],
+          daily: economyData.tarot.find(c => c.id === state.dailyCard)[language],
+          factor: Math.round(pressures.tarotFactor * 100),
+          sympathy: ((1 - pressures.tarotFactor) * 30).toFixed(1),
+        });
+        const washing = document.querySelector("#wash-travel");
+        const price = cell ? marketPrice(cell, 0.25, economyData,
+          exposureInfo(chunk, position.row, position.col)).cents : null;
+        washing.textContent = t("washAction", { money: price === null ? "—" : (price / 100).toFixed(2) });
+        washing.disabled = busy || Boolean(cursor) || ended || !washingAvailable(cell) ||
+          price === null || state.walletCents < price;
+      }
       document.querySelector("#journey-outcome").textContent = ended ? t(`journeyEnded.${state.ended}`) : "";
       setFeedback(document.querySelector("#journey-outcome"),
         ended ? state.ended === "reunion" ? "success" : "failure" : "");
@@ -827,7 +857,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       const previous = state;
       const weatherInfo = exposureInfo(stream.get(from.x, from.y), from.row, from.col);
       state = walkSurvival(state, dc, dr, fromCell, target.rows[to.row][to.col], survivalConfig, weatherInfo);
-      state = finishAction(previous, state, { ...weatherInfo, terrain: target.rows[to.row][to.col].terrain }, economyData,
+      state = finishAction(previous, state, { ...weatherInfo, terrain: target.rows[to.row][to.col].terrain,
+        police: policePresence(target.rows[to.row][to.col]) }, economyData,
         { survival: survivalConfig });
       autosave();
       onStep?.(target.rows[to.row][to.col].terrain);
@@ -924,6 +955,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       }
       if (currentToken !== token) return;
       state = beginExploration(state, Boolean(restored));
+      state = beginPressures(state, economyData);
       await useNotebook?.(state, Boolean(restored));
       if (restored) {
         pinTarot?.(document.querySelector("#restored-birth-tarot-journal"), state, "birth", economyData);
@@ -1072,6 +1104,17 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   rest.addEventListener("click", () => survivalAction("rest"));
   sleep.addEventListener("click", () => survivalAction("sleep"));
   eat.addEventListener("click", () => survivalAction("eat"));
+  document.querySelector("#wash-travel").addEventListener("click", () => {
+    const current = economyContext();
+    if (!current || current.blocked) return;
+    try {
+      state = washEconomy(state, current.cell, current.info, survivalConfig, economyData);
+      autosave();
+      localize();
+    } catch (reason) {
+      report(reason);
+    }
+  });
   document.querySelector("#journey-path-retry").addEventListener("click", () => {
     prepareCurrentParentPath(true);
     localize();

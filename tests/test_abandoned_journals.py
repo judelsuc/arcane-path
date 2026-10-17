@@ -72,6 +72,16 @@ class JournalsTests(unittest.TestCase):
         with self.assertRaises(JournalForbidden):
             self.store.bind(self.ids[0], self.tokens[1])
 
+    def test_terminal_placement_publishes_at_last_position_and_releases_carried_journal(self):
+        self.publish()
+        self.call(1, action="claim", journal=self.ids[0])
+        result = self.call(1, ended="placement", row=5, index=1)
+        self.assertTrue(result["published"])
+        nearby = self.call(2, row=5)["nearby"]
+        self.assertIn(self.ids[1], [q["id"] for q in nearby])
+        self.assertIn(self.ids[0], [q["id"] for q in nearby])
+        self.assertEqual(self.records, self.genesis)
+
     def test_atomic_claim_and_same_finder_retry(self):
         self.publish()
         def claim(n):

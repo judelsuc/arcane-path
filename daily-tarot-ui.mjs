@@ -22,7 +22,11 @@ export function setupDailyTarot(t, { context, acknowledge, pinTarot }) {
     document.querySelector("#daily-tarot-meaning").textContent = t(`tarotMeaning.${card.id}`);
     document.querySelector("#daily-tarot-events").textContent = t("birthTarotEvents", {
       factor: (tarotEventChance(0.1, state, data) / 0.1).toFixed(2),
-    });
+    }) + (state.pressures ? ` ${t("pressureTarot", {
+      birth: data.tarot.find(c => c.id === state.birthCard)[language], daily: card[language],
+      factor: Math.round(state.pressures.tarotFactor * 100),
+      sympathy: ((1 - state.pressures.tarotFactor) * 30).toFixed(1),
+    })}` : "");
     document.querySelector("#daily-tarot-save").textContent = saveStatus;
   }
   function update() {

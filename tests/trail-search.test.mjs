@@ -247,6 +247,8 @@ test("photo preparation is free until committed, falls back explicitly, deduplic
   assert.equal(again.trail.exploration.lastSearch.repeated, true);
   assert.equal(again.elapsedMinutes, 60);
   assert.throws(() => applyFieldSearch({ ...state, col: state.col + 1 }, result, cell, info, survival, economy), /Stale/);
+  assert.throws(() => applyFieldSearch({ ...state, elapsedMinutes: state.elapsedMinutes + 1 },
+    result, cell, info, survival, economy), /Stale/);
   assert.throws(() => applyFieldSearch(state, { ...result, minutes: 0 }, cell, info, survival, economy), /Invalid/);
   assert.deepEqual(validateSave(JSON.parse(JSON.stringify(save(again)))).state, again);
   for (const invalid of ["yes", 1]) {
