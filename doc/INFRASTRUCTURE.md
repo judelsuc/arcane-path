@@ -1,5 +1,22 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - erreurs musicales et charisme du tarot de depart
+
+- **17 octobre 2026** : runtime `ec80dd6`, tag
+  `deploy-2026-10-17-music-charisma`, base live `2b5977e`.
+  Developpement correspondant : `dec65ef`.
+- Cinq assets statiques et manifeste : frappes incorrectes penalisees,
+  arret immediat sans gain a 3-8 erreurs selon le charisme de la carte de
+  depart uniquement. Charisme, seuil et erreurs visibles dans le mini-jeu.
+- 274 tests JavaScript du runtime isole reussis ; navigateur FR/EN verifie
+  avec l'Hermite (3) et le Bateleur (8), une note reussie puis echec sans gain,
+  couts de 30 minutes et quatre fatigue conserves. Cinq assets HTTPS compares
+  octet par octet, manifeste et `/api/travel` verifies.
+- Services actifs sans restart ; sauvegardes, configuration et caches
+  serveur preserves. Travaux hebergements et piste du parent non inclus.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-ec80dd6.tar.gz`,
+  archive privee mode 0600 des cinq anciens assets et du manifeste.
+
 ## Derniere livraison - prix et portions des repas
 
 - **17 octobre 2026** : runtime `2b5977e`, tag
