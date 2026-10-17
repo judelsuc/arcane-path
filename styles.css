@@ -766,6 +766,11 @@ dialog p { margin: 12px 0; }
 .notebook-spread[data-mapping="true"]::after { display: none; }
 .journey-map-canvas { display: block; width: 100%; height: auto; border: 1px solid #c9b78f; }
 .journal-map ol { padding-inline-start: 1.5em; overflow-wrap: anywhere; }
+.notebook-spread[data-covering="true"] { display: block; }
+.notebook-spread[data-covering="true"]::after { display: none; }
+.journal-cover { text-align: center; padding: 60px 24px; min-height: 420px; overflow-wrap: anywhere; }
+.journal-cover h3 { font-size: clamp(1.5rem, 4vw, 2.5rem); }
+.journal-cover-subtitle { font-style: italic; margin: 32px auto 60px; max-width: 40ch; }
 .journal-print img { width: 100%; height: 240px; object-fit: contain; margin: 0 0 12px; }
 .journal-print label { display: block; font-size: 0.8rem; }
 .journal-print textarea {

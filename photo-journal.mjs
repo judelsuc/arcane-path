@@ -5,6 +5,7 @@ import { createTarotJournalPinner, tarotJournalEntry } from "./tarot-cards.mjs";
 import { journeyStats } from "./journey-stats.mjs";
 import { notebookPdf, downloadNotebookPdf } from "./notebook-pdf.mjs";
 import { journeyMapView, journeyMapDescription, drawJourneyMap } from "./journey-map.mjs";
+import { notebookCover } from "./notebook-cover.mjs";
 
 export function validateJournalPhoto(photo) {
   if (!photo || typeof photo.sourceUrl !== "string" || typeof photo.licenseUrl !== "string" ||
@@ -131,6 +132,8 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   const previous = document.querySelector("#journal-previous");
   const next = document.querySelector("#journal-next");
   const photosButton = document.querySelector("#journal-photos-page");
+  const coverButton = document.querySelector("#journal-cover-page");
+  let covering = false;
   const statsButton = document.querySelector("#journal-stats-page");
   const mapButton = document.querySelector("#journal-map-page");
   const exportButton = document.querySelector("#journal-export-pdf");
@@ -164,18 +167,21 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     next.textContent = t("journalNext");
     document.querySelector("#journal-retry").textContent = t("journalRetry");
     photosButton.textContent = t("journalPhotosPage");
+    coverButton.textContent = t("journalCoverPage");
+    coverButton.hidden = readOnly;
+    coverButton.disabled = covering || !statsContext;
     statsButton.textContent = t("journalStatsPage");
     mapButton.textContent = t("journalMapPage");
     photosButton.hidden = statsButton.hidden = mapButton.hidden = readOnly;
-    photosButton.disabled = !statistics && !mapping;
+    photosButton.disabled = !statistics && !mapping && !covering;
     statsButton.disabled = statistics || !statsContext;
     mapButton.disabled = mapping || !statsContext;
     exportButton.textContent = t(exporting ? "journalPdfPreparing" : "journalExportPdf");
     exportButton.disabled = exporting || loading;
-    previous.disabled = mapping || statistics || loading || spread === 0;
-    next.disabled = mapping || statistics || loading || (spread + 1) * 2 >= entries.length;
+    previous.disabled = covering || mapping || statistics || loading || spread === 0;
+    next.disabled = covering || mapping || statistics || loading || (spread + 1) * 2 >= entries.length;
     document.querySelector("#journal-count").textContent =
-      mapping ? t("journalMapPage") : statistics ? t("journalStatsPage") :
+      covering ? t("journalCoverPage") : mapping ? t("journalMapPage") : statistics ? t("journalStatsPage") :
         t("journalCount", { spread: spread + 1, total: Math.max(1, Math.ceil(entries.length / 2)) });
     status.textContent = error ? t("journalError", { error }) : exporting ? t("journalPdfPreparing") :
       loading ? t("journalLoading") : exported ? t("journalPdfReady") : "";
@@ -190,6 +196,25 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     try {
       pages.dataset.statistics = String(statistics);
       pages.dataset.mapping = String(mapping);
+      pages.dataset.covering = String(covering);
+      if (covering && statsContext && !readOnly) {
+        revoke();
+        const cover = notebookCover(statsContext, t, document.documentElement.lang);
+        const page = document.createElement("section");
+        page.className = "notebook-page journal-cover";
+        const title = document.createElement("h3"), subtitle = document.createElement("p");
+        title.textContent = cover.title;
+        subtitle.className = "journal-cover-subtitle";
+        subtitle.textContent = cover.subtitle;
+        page.append(title, subtitle);
+        for (const row of cover.rows) {
+          const paragraph = document.createElement("p");
+          paragraph.textContent = `${row.label} : ${row.value}`;
+          page.append(paragraph);
+        }
+        pages.replaceChildren(page);
+        return;
+      }
       if (mapping && statsContext && !readOnly) {
         revoke();
         pages.replaceChildren();
@@ -380,6 +405,8 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   }
   document.querySelector("#open-journal").addEventListener("click", () => {
     if (document.querySelector("dialog[open]")) return;
+    covering = Boolean(statsContext);
+    statistics = mapping = false;
     dialog.showModal();
     void load();
   });
@@ -387,18 +414,27 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     if (readOnly) return;
     statistics = false;
     mapping = false;
+    covering = false;
     void load();
   });
   statsButton.addEventListener("click", () => {
     if (readOnly || !statsContext) return;
     statistics = true;
     mapping = false;
+    covering = false;
     void render();
   });
   mapButton.addEventListener("click", () => {
     if (readOnly || !statsContext) return;
     mapping = true;
     statistics = false;
+    covering = false;
+    void render();
+  });
+  coverButton.addEventListener("click", () => {
+    if (readOnly || !statsContext) return;
+    covering = true;
+    statistics = mapping = false;
     void render();
   });
   previous.addEventListener("click", () => { if (!statistics && !loading && spread > 0) { spread--; void render(); } });
@@ -420,6 +456,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     try {
       const groups = !foreign && statsContext
         ? journeyStats(statsContext, t, document.documentElement.lang) : [];
+      const cover = !foreign && statsContext ? notebookCover(statsContext, t, document.documentElement.lang) : null;
       const route = !foreign && statsContext
         ? journeyMapView(statsContext.state, statsContext.cellSizeMeters) : null;
       if (route && statsContext.mapTerrain) route.terrain = await statsContext.mapTerrain(route);
@@ -442,7 +479,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       }
       if (!stillCurrent()) return;
       const pdf = await makePdf({ title: t(foreign ? "journalAbandonedTitle" : "journalTitle"),
-        photos, groups, clues, route, t });
+        photos, groups, clues, route, cover, t });
       if (!stillCurrent()) return;
       downloadPdf(pdf);
       exported = true;
@@ -461,20 +498,21 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     readOnly = false;
     statistics = false;
     mapping = false;
+    covering = false;
     abandonedClues = [];
     exported = false;
     document.querySelector("#journal-abandoned-clues")?.replaceChildren();
   });
   return {
     updateStats(context) {
-      const wasSpecialPage = statistics || mapping;
+      const wasSpecialPage = statistics || mapping || covering;
       const unchangedMap = mapping && context?.state === statsContext?.state &&
         context?.mapTerrain === statsContext?.mapTerrain;
       statsContext = context;
-      if (!context) statistics = mapping = false;
+      if (!context) statistics = mapping = covering = false;
       if (dialog.open && !readOnly) {
         if (unchangedMap) return;
-        if (statistics || mapping || wasSpecialPage) void render();
+        if (statistics || mapping || covering || wasSpecialPage) void render();
         else localize();
       }
     },
@@ -493,6 +531,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       spread = 0;
       statistics = false;
       mapping = false;
+      covering = false;
       statsContext = null;
       store = scoped;
       liveStore = scoped;
@@ -516,6 +555,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       readOnly = true;
       statistics = false;
       mapping = false;
+      covering = false;
       abandonedClues = [...clues];
       exported = false;
       const evidence = document.querySelector("#journal-abandoned-clues");

@@ -536,7 +536,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     if (marker && state) renderJourneyMarker(marker, state, t);
     if (state && survivalConfig && economyData) {
       updateNotebookStats?.({ state, survival: survivalConfig, economy: economyData,
-        cellSizeMeters: base.cellSizeMeters, mapTerrain: stream?.journeyTerrain });
+        cellSizeMeters: base.cellSizeMeters, mapTerrain: stream?.journeyTerrain,
+        startingPoint: base.origin?.name ?? base.name });
     }
     if (ended) {
       backgroundDownloads?.stop();
