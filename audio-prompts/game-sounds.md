@@ -5,6 +5,11 @@ precise one-shots; use a dedicated SFX generator/synth editor when necessary.
 Every duration below is an editing target. Suggested master: mono WAV.
 These are prompts only; none is connected to game events yet.
 
+First-version cues have now been synthesized locally, without Suno or any
+backing music: [WAV files and audition page](../public/audio/sfx/index.html).
+The briefs below remain the design reference; reproduce the assets with
+`scripts/generate_sfx.py`. They are not yet connected to gameplay events.
+
 ## Shared suffix
 
 Append this to any prompt if the generator adds accompaniment:

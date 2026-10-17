@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arcane Path — Sound effects audition</title>
+  <style>
+    body { max-width: 760px; margin: 40px auto; padding: 0 20px; background: #101711; color: #e5e7d9; font: 16px system-ui; }
+    a { color: #b9d99a; }
+    li { margin: 12px 0; }
+    audio { display: block; width: 100%; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Sound effects — first version</h1>
+  <p>Original synthesized one-shots, without music. Start at low volume.
+    Play one at a time; the two “future” cues do not imply implemented features.</p>
+  <p><a href="../../../">Back to game</a></p>
+  <ul id="cues"></ul>
+  <script type="module">
+    const names = [
+      "sfx-ui-focus", "sfx-ui-confirm", "sfx-ui-back", "sfx-action-unavailable",
+      "sfx-look-toggle", "sfx-photo-open", "sfx-step-road", "sfx-step-grass",
+      "sfx-step-forest", "sfx-step-stone", "sfx-step-water", "sfx-town-enter",
+      "sfx-coins-earned", "sfx-purchase", "sfx-meal", "sfx-shelter", "sfx-wake",
+      "sfx-needs-warning", "sfx-tarot-draw", "sfx-clue-found", "sfx-reunion",
+      "sfx-journey-ended", "sfx-music-cue", "sfx-music-hit", "sfx-music-miss",
+      "future-sfx-hidden-entrance", "future-sfx-night-event",
+    ];
+    for (const name of names) {
+      const item = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = `./${name}.wav`;
+      link.textContent = name;
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      audio.preload = "none";
+      audio.src = link.href;
+      audio.volume = 0.35;
+      audio.setAttribute("aria-label", name);
+      audio.addEventListener("play", () => {
+        document.querySelectorAll("audio").forEach(other => {
+          if (other !== audio) other.pause();
+        });
+      });
+      audio.addEventListener("error", () => {
+        console.error(`Unable to play ${name}:`, audio.error);
+        link.textContent = `${name} — playback unavailable; try downloading`;
+      });
+      item.append(link, audio);
+      document.querySelector("#cues").append(item);
+    }
+  </script>
+</body>
+</html>

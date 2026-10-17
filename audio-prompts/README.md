@@ -14,6 +14,8 @@ Use the prompt IDs as filenames (for example, `music-road-day.wav`).
 - [Soundtracks](./soundtracks.md): instrumental 8-bit music, including the
   street-music exercise and optional future events/dungeons.
 - [Game sounds](./game-sounds.md): short, isolated interface/gameplay cues.
+  A first set of 27 synthesized WAVs is available in
+  [the listening gallery](../public/audio/sfx/index.html), without Suno.
 - [English title song](./title-song.md): original lyrics and a vocal Suno
   prompt. **Instrumental OFF** for this song only; title screen only.
 

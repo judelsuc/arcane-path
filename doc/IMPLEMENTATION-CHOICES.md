@@ -537,3 +537,24 @@ transition to instrumental travel, vocal filename aliases and missing-vocal
 fallback to the existing title track. Generate/download the recording to
 audition singing, pronunciation, mix and song repeats before considering
 the audio production complete.
+
+## Directly synthesized first-version sound effects
+
+The user reported that Suno kept adding music to one-shots and asked for
+direct generation. Added a standard-library Python synth and 27 mono PCM16
+44.1 kHz WAV assets, about 724 KB including the gallery/docs. Seeded filtered
+noise, rounded pulse/triangle tones and pitch bends follow the existing
+briefs. All cues have short attack/release envelopes and fixed headroom;
+quiet footsteps/misses are not normalized up to fanfare volume.
+
+The generator refuses to replace existing cues without explicit --overwrite.
+No downloaded music or unrelated files were changed. Two future cues remain
+assets only. No gameplay triggers were introduced in this sound-production
+step; the gallery allows individual audition before integration.
+
+Two focused Python tests verify all 27 briefs, deterministic rendering,
+exact sample counts, mono WAV format, nonzero output, onset within 5 ms,
+zero endpoints, peaks below 70% full scale and overwrite protection. All 27
+WAVs decoded successfully in the browser, including the 140 ms water cue.
+These checks validate files, not subjective listening quality; the user
+should audition at low volume and request adjustments to the palette.

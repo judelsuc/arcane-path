@@ -544,6 +544,16 @@ This file records additions to the design without modifying the source PDF,
 - Audio must be generated/downloaded separately; no claim that a prompt is
   a playable recording.
 
+## R-037 — Locally synthesized sound effects
+
+- **User request:** Generate SFX directly because Suno adds unwanted music.
+- **Status:** 27 original deterministic synthesized mono WAV cues following
+  the sound briefs, including two explicitly future-only assets. No music
+  backing, external service, samples or new Python dependencies.
+- **Delivery:** Reproducible generator, overwrite protection, tests for cue
+  coverage/format/duration/headroom/envelopes, and a manual listening gallery.
+  Gameplay triggers remain a separate integration step.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,
