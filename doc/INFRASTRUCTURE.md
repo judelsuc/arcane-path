@@ -1,5 +1,21 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - recherches retrouvant un indice connu
+
+- **17 octobre 2026** : runtime `2db306c`, tag
+  `deploy-2026-10-17-repeated-clues`, developpement `8a3a375`,
+  base live `1905873`. Trois modules et manifeste, sans redemarrage.
+- Une recherche retrouvant le meme type et la meme precision d'indice pour
+  la meme etape ne pretend plus ajouter un indice : message explicite rouge,
+  couts conserves, pas de doublon. Probabilites et garantie inchangees.
+- Marqueur facultatif repeated sur lastSearch, valide en sauvegarde ;
+  anciennes sauvegardes lisibles. Les anciens resultats deja sauvegardes
+  sans marqueur ne sont pas reinterpretes.
+- 37 tests recherche/sauvegarde passent : nouveau puis doublon, couts,
+  reprise exacte, marqueurs invalides rejetes et vrais handlers FR/EN rouges.
+- Trois modules et manifeste HTTPS verifies octet par octet ; API jeu verifiee.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-2db306c.tar.gz` (0600).
+
 ## Derniere livraison - indices en premier dans J
 
 - **17 octobre 2026** : runtime `1905873`, tag
