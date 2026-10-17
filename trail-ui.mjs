@@ -533,10 +533,6 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     if (!interview()) return;
     localize();
   });
-  document.querySelector("#trail-restart").addEventListener("click", () => {
-    dialog.close();
-    document.querySelector("#restart-travel").click();
-  });
   dialog.addEventListener("close", () => {
     if (dialog.open) return;
     if (searching) {

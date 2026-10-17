@@ -6,6 +6,8 @@ import { translate } from "../i18n.mjs";
 test("parent trail separates guidance from investigation while keeping action/result hooks intact", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const dialog = html.split('<dialog id="trail-dialog"')[1].split("</dialog>")[0];
+  assert.doesNotMatch(dialog, /trail-restart|journeyRestart/);
+  assert.match(html, /id="restart-travel"[^>]*data-i18n="journeyRestart"/);
   const guide = dialog.split('<aside class="trail-guide"')[1].split("</aside>")[0];
   const main = dialog.split('<section class="trail-main"')[1];
   for (const id of ["trail-intro", "trail-target", "parent-story", "trail-save-status"]) {
