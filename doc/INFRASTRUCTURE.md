@@ -1,5 +1,34 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - indices progressifs et reconnaissance incertaine
+
+- **17 octobre 2026** : runtime `8962aa0`, tag
+  `deploy-2026-10-17-progressive-clues`, base live `49ba8c7`.
+  Developpement : `63c4002`. Neuf fichiers runtime et manifeste, sans
+  hebergements en cours ni changement de configuration/proxy.
+- Recherche dans les cases terrestres chargees, probabilite selon la proximite
+  du chemin de reference cache, precision et cout aleatoire selon la proximite
+  de la ville recherchee. Nouvelles pistes vagues ; fragments et photos
+  peuvent etre montres a des temoins susceptibles de se tromper.
+- 310 tests JavaScript reussis ; Python 135/137, avec les deux memes echecs
+  preexistants de configuration photo. Les quatorze tests de chemin,
+  proximite et reconnaissance HTTP passent.
+- Verification navigateur FR/EN sur fixtures explicites : fragment vague,
+  suggestion erronee non confirmee, indice precis moins couteux a proximite,
+  sauvegarde/relecture sans saut d'etape ni fuite de la ville suivante.
+- Sept modules compares octet par octet via HTTPS authentifie ; deux scripts
+  serveur compares par SHA-256 ; manifeste, API et reconnaissance GeoNames
+  reelle verifies. Aucune geometrie ni marqueur de bonne reponse expose.
+- Backup SQLite coherent :
+  `/var/lib/arcane-path/backups/journeys-before-8962aa0.sqlite3` (0600).
+  Les quatorze departs existants sont strictement identiques apres livraison ;
+  aucun nouveau depart de controle ni modification des donnees joueurs.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-8962aa0.tar.gz`
+  (0600). Le nouveau module trail-search.mjs reste inerte avec les anciens
+  imports. En cas de retour code, ne pas restaurer la base SQLite sur les
+  nouvelles creations. Service redemarre et API verifiee avec attente de
+  disponibilite ; Nginx actif et cache partage inchange.
+
 ## Derniere livraison - couche 9, jalon narratif leger termine
 
 - **17 octobre 2026** : runtime `49ba8c7`, tag

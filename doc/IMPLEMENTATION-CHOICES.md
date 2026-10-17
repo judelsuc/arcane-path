@@ -1650,3 +1650,7 @@ twenty minutes/four fatigue total and no future-town disclosure.
   fragment, a wrong unconfirmed suggestion, lower-cost precise nearby clue,
   and save/reload of both evidence and guesses. No external route download
   or player save was used for that UI check.
+- Live runtime 8962aa0 (deploy-2026-10-17-progressive-clues) matches the
+  validated isolated code. HTTPS module bytes, backend hashes, live GeoNames
+  recognition, service readiness and all fourteen existing genesis records
+  were verified after deployment. No shared cache or player data was removed.
