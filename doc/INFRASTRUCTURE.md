@@ -1,5 +1,23 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - piste du parent et position des villes proposees
+
+- **17 octobre 2026** : runtime `69f2970`, tag
+  `deploy-2026-10-17-trail-layout`, developpement `9b8d51b`,
+  base live `5ffd3c2`. Quatre assets et manifeste, sans redemarrage serveur.
+- J affiche les consignes dans une colonne laterale et les actions,
+  photos et resultats dans la zone principale ; empilement sur mobile.
+- Les propositions de villes dans I et leur historique affichent aussi
+  direction et distance a vol d'oiseau depuis la position actuelle, ainsi
+  que les coordonnees. L'avis reste explicitement non confirme.
+- 349 tests JS passent dans le runtime isole, dont le vrai parcours
+  J puis I en francais et anglais. Navigateur : colonnes a 1280 px,
+  empilement sans debordement horizontal a 390 px, texte de position verifie.
+- Quatre assets et manifeste HTTPS verifies octet par octet ; API jeu et
+  services actifs. Sauvegardes et journaux serveur inchanges.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-69f2970.tar.gz`
+  (0600). Le partage des journaux abandonnes reste hors de cette livraison.
+
 ## Derniere livraison - repere de marche vers un hebergement
 
 - **17 octobre 2026** : runtime `5ffd3c2`, tag
