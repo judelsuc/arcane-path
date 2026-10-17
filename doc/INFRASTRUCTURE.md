@@ -307,6 +307,39 @@ joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
   Ancien Nginx : `/home/ubuntu/arcane-nginx-before-1d97170.conf`, mode 0600.
   Cache et base des departs preserves. Aucune ressource payante ajoutee.
 
+### Checkpoint deploye : voisins caches hors file et rotation des sources
+
+- **17 octobre 2026** : commit `f4fba25`, tag pousse
+  `deploy-2026-10-17-cache-queue-rotation`.
+- Corrige un second probleme distinct de l'identite du cache : deux preparations
+  lentes bloquaient les voisins pourtant deja caches dans la file du navigateur.
+  Lecture groupee de neuf morceaux maximum, sans nouveau travail ni appel
+  fournisseur, puis preparation des seuls morceaux absents.
+- La capture concernee demandait Paris x=4..6, y=-3..-1, et non les neuf morceaux
+  Louis Blanc testes auparavant. Des morceaux n'avaient aucune ancienne copie ;
+  les attentes HTTP 509 fournisseur ne venaient donc pas toutes du cache.
+- API OSM et deux sources Overpass alternees a partir de la derniere source
+  selectionnee. Catalogues villes/lieux egalement alternes ; cooldowns partages,
+  acces reseau toujours serialise et Retry-After respecte pour les catalogues.
+  Cela ne garantit pas le premier chargement si les fournisseurs sont indisponibles.
+- 55 tests cibles passes : 14 JavaScript streaming, 11 Python serveur,
+  20 telechargement OSM et 10 parcours de villes. Test de regression avec les
+  deux preparations bloquees et voisins caches disponibles avant leur resolution.
+  Validation serveur dans un worktree propre au commit exact ; modification
+  locale utilisateur du nombre de photos conservee et exclue du deploiement.
+- Identite de grille avant/apres strictement egale :
+  `7ccc8a3695deecf956b432b48ccdb8f58f9c773b52e4328bcd1f8feb6baf0886`.
+  Aucune migration ni invalidation. Lien cache preserve, Nginx teste/recharge,
+  services actifs, manifeste et nouveaux modules verifies en HTTPS authentifie.
+- Verification HTTPS groupee : neuf morceaux Louis Blanc en 0,637 s ; sept
+  morceaux deja termines dans la zone de la capture en 0,18 s. Deux morceaux
+  y restent absents du cache. Sonde absente explicite : liste vide en 0,063 s,
+  sans telechargement. Pas de promesse de couverture complete de Paris.
+- Rollback hors cache :
+  `/home/ubuntu/arcane-path-before-deploy-f4fba25.tar.gz`, mode 0600 ;
+  ancien Nginx `/home/ubuntu/arcane-nginx-before-f4fba25.conf`, mode 0600.
+  Aucune ressource payante supplementaire ni import regional massif.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026
