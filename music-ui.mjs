@@ -1,4 +1,5 @@
 import { MUSIC, rhythm, beatTime, rhythmEnd, tapRhythm } from "./music.mjs";
+import { setFeedback } from "./feedback.mjs";
 
 export function setupMusic(t, { begin, settle, available, audio, mistakeLimit = () => MUSIC.minMistakes }) {
   const dialog = document.querySelector("#music-dialog");
@@ -8,6 +9,7 @@ export function setupMusic(t, { begin, settle, available, audio, mistakeLimit = 
   const track = document.querySelector("#music-track");
   const beats = [];
   let game, timer, settled, feedback = "";
+  let feedbackOutcome = "";
 
   function localize() {
     document.querySelector("#open-music").disabled = !available();
@@ -16,6 +18,7 @@ export function setupMusic(t, { begin, settle, available, audio, mistakeLimit = 
     play.textContent = t("musicStart");
     tap.disabled = !game;
     result.textContent = feedback;
+    setFeedback(result, feedback ? feedbackOutcome : "");
     const limit = game?.mistakeLimit ?? mistakeLimit();
     document.querySelector("#music-card-effect").textContent = limit === null ? ""
       : t("musicCardEffect", { charisma: limit - 2, limit });
@@ -55,6 +58,7 @@ export function setupMusic(t, { begin, settle, available, audio, mistakeLimit = 
     const hits = cancelled || failed ? 0 : game.hits.filter(Boolean).length;
     game = undefined;
     settled = settle(hits, mistakes);
+    feedbackOutcome = settled === null || cancelled || failed || settled <= 0 ? "failure" : "success";
     feedback = settled === null ? t("musicFailed") : t(failed ? "musicTooManyMistakes"
       : cancelled ? "musicCancelled" : "musicReward", {
       hits, total: MUSIC.beats, money: (settled / 100).toFixed(2), limit,
@@ -66,6 +70,7 @@ export function setupMusic(t, { begin, settle, available, audio, mistakeLimit = 
     if (game || !available()) return;
     if (!begin()) {
       feedback = t("musicFailed");
+      feedbackOutcome = "failure";
       localize();
       return;
     }

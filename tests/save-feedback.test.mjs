@@ -28,6 +28,7 @@ for (const language of ["fr", "en"]) {
     assert.equal(h.status.hidden, false);
     assert.equal(h.status.role, "status");
     assert.equal(h.status.dataset.state, "saved");
+    assert.equal(h.status.dataset.feedback, "success");
     assert.match(h.status.children[0].textContent, language === "fr" ? /Voyage sauvegardé/ : /Journey saved/);
     assert.match(h.status.children[0].textContent, language === "fr" ? /dans ce navigateur/ : /in this browser/);
     const first = h.status.children[0];
@@ -44,6 +45,7 @@ test("storage errors are alerts, never success confirmations; unavailable action
   h.button.click();
   assert.equal(h.status.role, "alert");
   assert.equal(h.status.dataset.state, "error");
+  assert.equal(h.status.dataset.feedback, "failure");
   assert.match(h.status.children[0].textContent, /Quota exceeded/);
   assert.doesNotMatch(h.status.children[0].textContent, /Journey saved/);
   h.disable();

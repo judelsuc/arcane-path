@@ -136,7 +136,8 @@ class Accommodations:
 
         def update(event):
             with self.lock:
-                self.progress[key] = event
+                previous = self.progress.get(key, {})
+                self.progress[key] = {**({"cached": previous["cached"]} if "cached" in previous else {}), **event}
 
         try:
             return self.build_with_progress(region, latitude, longitude, update)
@@ -145,16 +146,36 @@ class Accommodations:
                 self.progress.pop(key, None)
 
     def build_with_progress(self, region, latitude, longitude, update):
-        origin = {"latitude": latitude, "longitude": longitude}
-        places, warnings = [], []
+        warnings = []
         update({"phase": "maps"})
         elements = self.mapped(region, latitude, longitude)
+        cached = self.ranked(region, latitude, longitude, self.osm_places(elements), [])
+        update({"phase": "osm", "cached": cached})
         try:
-            update({"phase": "osm"})
             elements += self.osm(latitude, longitude, update)
         except ValueError as error:
             logging.warning("Accommodation source unavailable: %s", error)
             warnings.append("OpenStreetMap live lookup unavailable; only cached maps and imported catalogues could be checked.")
+        places = self.osm_places(elements)
+        # Supplement sparse OSM coverage, not just a completely empty result.
+        if len(places) < 5 and 41 <= latitude <= 52 and -6 <= longitude <= 10:
+            update({"phase": "catalogue"})
+            extra, warning = self.datatourisme(latitude, longitude)
+            if warning:
+                warnings.append(warning)
+            for place in extra:
+                if not any(distance(place, found) < 100 and
+                           place["name"].casefold() == found["name"].casefold() for found in places):
+                    places.append(place)
+        update({"phase": "filtering"})
+        result = self.ranked(region, latitude, longitude, places, warnings)
+        if not warnings:
+            update({"phase": "saving"})
+            self.write(self.path(region, latitude, longitude), json.dumps(result).encode())
+        return result
+
+    def osm_places(self, elements):
+        places = []
         unique = {}
         for item in elements:
             if (not isinstance(item, dict) or item.get("type") not in {"node", "way", "relation"}
@@ -184,17 +205,10 @@ class Accommodations:
                            "sourceUrl": f"https://www.openstreetmap.org/{osm_id}",
                            "credit": "OpenStreetMap contributors", "license": "ODbL",
                            "licenseUrl": "https://www.openstreetmap.org/copyright"})
-        # Supplement sparse OSM coverage, not just a completely empty result.
-        if len(places) < 5 and 41 <= latitude <= 52 and -6 <= longitude <= 10:
-            update({"phase": "catalogue"})
-            extra, warning = self.datatourisme(latitude, longitude)
-            if warning:
-                warnings.append(warning)
-            for place in extra:
-                if not any(distance(place, found) < 100 and
-                           place["name"].casefold() == found["name"].casefold() for found in places):
-                    places.append(place)
-        update({"phase": "filtering"})
+        return places
+
+    def ranked(self, region, latitude, longitude, places, warnings):
+        origin = {"latitude": latitude, "longitude": longitude}
         found = []
         for place in places:
             meters = distance(origin, place)
@@ -202,11 +216,7 @@ class Accommodations:
                 found.append({**place, "distance": round(meters),
                               **grid_position(self.chunks.bases[region], place["latitude"], place["longitude"])})
         found.sort(key=lambda place: (place["distance"], place["id"]))
-        result = {"places": found[:40], "warnings": warnings, "radiusMeters": 5000}
-        if not warnings:
-            update({"phase": "saving"})
-            self.write(self.path(region, latitude, longitude), json.dumps(result).encode())
-        return result
+        return {"places": found[:40], "warnings": warnings, "radiusMeters": 5000}
 
 
 if __name__ == "__main__":

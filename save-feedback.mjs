@@ -1,3 +1,5 @@
+import { setFeedback } from "./feedback.mjs";
+
 export function setupSaveFeedback(t, { save, available }) {
   const status = document.querySelector("#save-feedback");
   let result;
@@ -5,6 +7,7 @@ export function setupSaveFeedback(t, { save, available }) {
     status.hidden = !result;
     if (!result) return;
     const failed = Boolean(result.error);
+    setFeedback(status, failed ? "failure" : "success");
     status.dataset.state = failed ? "error" : "saved";
     status.setAttribute("role", failed ? "alert" : "status");
     const text = document.createElement("span");

@@ -16,7 +16,8 @@ import { setupMusic } from "./music-ui.mjs";
 import { interviewTrail } from "./trail.mjs";
 import { createServerJourney } from "./server-journey.mjs";
 import { prepareParentPaths } from "./parent-path.mjs";
-import { loadAccommodations, withDiscoveredAccommodations } from "./accommodations.mjs";
+import { loadAccommodations, cachedAccommodations, mergeAccommodations, withDiscoveredAccommodations } from "./accommodations.mjs";
+import { setFeedback } from "./feedback.mjs";
 import { askHospitality } from "./hospitality.mjs";
 import { agendaClock } from "./agenda-clock.mjs";
 import { setupTrail } from "./trail-ui.mjs";
@@ -206,7 +207,17 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     async findAccommodations(signal, onProgress) {
       const current = economyContext(), currentToken = token;
       if (!current || current.blocked) throw new Error("Accommodation lookup requires a loaded player cell.");
-      const result = await loadAccommodations(region, current.info, signal, fetch, onProgress);
+      const cached = cachedAccommodations(base, stream.chunks.values(), current.info);
+      discoveredLodging = cached.places;
+      onProgress({ phase: "maps", cached, elapsedSeconds: 0 });
+      const result = await loadAccommodations(region, current.info, signal, fetch, progress => {
+        if (signal.aborted || currentToken !== token) return;
+        if (progress.cached) {
+          progress = { ...progress, cached: mergeAccommodations(cached, progress.cached) };
+          discoveredLodging = progress.cached.places;
+        }
+        onProgress(progress);
+      });
       signal.throwIfAborted();
       if (currentToken !== token) throw new Error("Journey changed during accommodation lookup.");
       discoveredLodging = result.places;
@@ -428,6 +439,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     document.querySelector("#journey-start-status").textContent = active ? ""
       : error ? t("journeyStartError", { error }) : busy && transient ? t(transient) : "";
     document.querySelector("#journey-start-status").classList.toggle("is-loading", !active && busy);
+    setFeedback(document.querySelector("#journey-start-status"), !active && error ? "failure" : "");
     document.querySelector("#cancel-journey-start").hidden = active || !busy;
     document.querySelector("#save-travel").disabled = !state || busy;
     saveStatus.textContent = saveError ? t("saveError", { error: saveError })
@@ -436,15 +448,22 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       }) : t("saveNone");
     document.querySelector("#birth-tarot-save").textContent = saveStatus.textContent;
     document.querySelector("#journey-play-save").textContent = saveStatus.textContent;
+    for (const element of [saveStatus, document.querySelector("#birth-tarot-save"),
+      document.querySelector("#journey-play-save")]) {
+      setFeedback(element, saveError ? "failure" : savedAt ? "success" : "");
+    }
     choicesUI.localize();
     document.querySelector("#character-setup").hidden = active;
     retry.disabled = busy;
     stop.disabled = busy;
     status.textContent = error ? t("travelError", { error }) : transient ? t(transient) : "";
+    setFeedback(status, error ? "failure" : "");
     if (state?.ended) parentPathStatus = "";
     document.querySelector("#journey-path-status").textContent = parentPathStatus
       ? t(`journeyPath.${parentPathStatus}`, { error: parentPathError }) : "";
     document.querySelector("#journey-path-retry").hidden = parentPathStatus !== "error";
+    setFeedback(document.querySelector("#journey-path-status"),
+      parentPathStatus === "error" ? "failure" : parentPathStatus === "ready" ? "success" : "");
     stats.textContent = state ? t("travelStats", {
       distance: (state.distanceMeters / 1000).toFixed(2),
       time: state.elapsedMinutes.toFixed(0), fatigue: state.fatigue.toFixed(1),
@@ -494,6 +513,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       if (state.awakeHours >= survivalConfig.sleep_warning_hours) warnings.push(t("needsSleepy"));
       document.querySelector("#needs-warning").textContent = warnings.join(" ");
       document.querySelector("#journey-outcome").textContent = ended ? t(`journeyEnded.${state.ended}`) : "";
+      setFeedback(document.querySelector("#journey-outcome"),
+        ended ? state.ended === "reunion" ? "success" : "failure" : "");
       rest.textContent = t("needsRestAction", { minutes: survivalConfig.rest_minutes });
       sleep.textContent = t("sleepTitle");
       eat.textContent = t("mealTitle");
@@ -511,6 +532,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     document.querySelector("#weather-display").hidden = !weatherData;
     document.querySelector("#weather-state").textContent = weatherData ? "" : weatherError
       ? t("weatherError", { error: weatherError }) : active ? t("weatherLoading") : "";
+    setFeedback(document.querySelector("#weather-state"), !weatherData && weatherError ? "failure" : "");
     if (weatherData) {
       const month = weatherData.months[journeyDate(state).getUTCMonth()];
       const number = value => new Intl.NumberFormat(document.documentElement.lang, {

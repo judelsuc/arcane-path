@@ -98,12 +98,37 @@ test("lodging lookup errors stay visible and the search can be retried", async t
     if (!calls++) throw new Error("Provider offline");
     return { places: [], warnings: ["Catalogue not imported"] };
   });
+
   await h.ui.open("sleep");
   assert.match(h.element("#accommodation-status").textContent, /Provider offline/);
   assert.equal(h.element("#accommodation-search").disabled, false);
   await h.element("#accommodation-search").events.click();
   assert.match(h.element("#accommodation-status").textContent, /may be incomplete/);
   assert.match(h.element("#accommodation-status").textContent, /Catalogue not imported/);
+});
+
+test("cached lodging is shown before online search finishes and stays available after cancellation", async t => {
+  let report, complete;
+  const cached = { places: [{ id: "node/42", name: "Cached hostel", col: 16, row: 10, distance: 500,
+    credit: "OpenStreetMap contributors", license: "ODbL", source: "OpenStreetMap",
+    sourceUrl: "https://www.openstreetmap.org/node/42", licenseUrl: "https://www.openstreetmap.org/copyright" }], warnings: [] };
+  const h = harness(t, "en", (signal, onProgress) => {
+    report = onProgress;
+    onProgress({ phase: "maps", cached, elapsedSeconds: 0 });
+    return new Promise(resolve => { complete = resolve; });
+  });
+  const opening = h.ui.open("sleep");
+  assert.match(h.element("#accommodation-results").children[0].children[0].textContent, /Cached hostel/);
+  assert.match(h.element("#accommodation-status").textContent, /Provisional/);
+  const item = h.element("#accommodation-results").children[0];
+  report({ phase: "provider", cached, provider: "overpass.example.org", elapsedSeconds: 10 });
+  assert.equal(h.element("#accommodation-results").children[0], item);
+  await h.element("#accommodation-search").events.click();
+  assert.match(h.element("#accommodation-status").textContent, /cancelled.*Provisional/);
+  assert.equal(h.element("#accommodation-results").children.length, 1);
+  complete({ places: [], warnings: [] });
+  await opening;
+  assert.equal(h.element("#accommodation-results").children.length, 1);
 });
 
 for (const language of ["fr", "en"]) {
@@ -201,6 +226,8 @@ test("sleep menu explains missing OSM lodging, offers hospitality, and saves/dis
   assert.equal(h.buttons()[0].disabled, true);
   assert.equal(h.element("#economy-hospitality-result").textContent, "");
   const feedback = h.element("#economy-options").children[0].children[1];
+  assert.equal(feedback.dataset.feedback, h.current().state.hospitalityAttempts.at(-1).outcome === "hosted"
+    ? "success" : "failure");
   assert.match(feedback.textContent, /Firmi, (?:on )?2026-10-17:/);
   assert.equal(feedback.focused, true);
   assert.deepEqual(feedback.scrolled, { block: "nearest" });
@@ -293,6 +320,7 @@ for (const language of ["fr", "en"]) {
     h.buttons()[0].click();
     const feedback = h.element("#economy-options").children[0].children[1];
     assert.match(feedback.textContent, language === "fr" ? /Hospitalité refusée/ : /Hospitality refused/);
+    assert.equal(feedback.dataset.feedback, "failure");
     assert.match(feedback.textContent, language === "fr" ? /Vous n'avez pas dormi/ : /You did not sleep/);
     assert.match(feedback.textContent, /30 min/);
     assert.match(feedback.textContent, language === "fr" ? /même en cas de refus/ : /even if refused/);

@@ -1,6 +1,7 @@
 import { cellInfo } from "./cell-info.mjs";
 import { createContentService } from "./cell-content.mjs";
 import { openContentCache } from "./content-cache.mjs";
+import { setFeedback } from "./feedback.mjs";
 
 export function setupCellContent(t) {
   const cache = openContentCache();
@@ -94,9 +95,10 @@ export function setupCellContent(t) {
     displayedBlob = undefined;
   }
 
-  function paragraph(container, text) {
+  function paragraph(container, text, outcome = "") {
     const p = document.createElement("p");
     p.textContent = text;
+    setFeedback(p, outcome);
     container.append(p);
   }
 
@@ -115,7 +117,7 @@ export function setupCellContent(t) {
     container.replaceChildren();
     if (!result) return;
     if (result.failed) {
-      paragraph(container, t("contentError"));
+      paragraph(container, t("contentError"), "failure");
       return;
     }
     const content = result.content;
@@ -129,7 +131,7 @@ export function setupCellContent(t) {
         const image = document.createElement("img");
         image.src = objectUrl;
         image.alt = content.title;
-        image.onerror = () => paragraph(container, t("contentError"));
+        image.onerror = () => paragraph(container, t("contentError"), "failure");
         container.append(image);
       } else {
         paragraph(container, content.text);
@@ -143,17 +145,17 @@ export function setupCellContent(t) {
       paragraph(container, t("contentCredit", content));
       link(container, content.licenseUrl, t("contentLicense"));
     } else {
-      paragraph(container, t(result.errors.length ? "contentError" : "contentMissing"));
+      paragraph(container, t(result.errors.length ? "contentError" : "contentMissing"), "failure");
     }
     if (result.errors.length) {
-      paragraph(container, t("contentWarnings", { errors: result.errors.join("; ") }));
+      paragraph(container, t("contentWarnings", { errors: result.errors.join("; ") }), "failure");
     }
     if (result.loading) {
       paragraph(container, t("contentLoading"));
     } else if (content || !result.errors.length) {
       paragraph(container, t(result.cached ? "contentCached" : "contentStored", {
         date: new Date(result.retrievedAt).toLocaleString(locale),
-      }));
+      }), "success");
     }
   }
 
@@ -286,6 +288,7 @@ export function setupCellContent(t) {
   document.querySelector("#clear-content").addEventListener("click", async () => {
     const status = document.querySelector("#cache-status");
     if (pending.size) {
+      setFeedback(status);
       status.textContent = t("contentLoading");
       return;
     }
@@ -293,9 +296,11 @@ export function setupCellContent(t) {
       await cache.clear();
       reset();
       status.textContent = t("cacheCleared");
+      setFeedback(status, "success");
     } catch (error) {
       console.error("Unable to clear content cache:", error);
       status.textContent = t("contentError");
+      setFeedback(status, "failure");
     }
   });
   return { select, reset, localize };

@@ -1,5 +1,6 @@
 import { mealOffers, marketPrice, shelters, tarotEventChance } from "./economy.mjs";
 import { HOSPITALITY_RULES, hospitalityStatus, worshipPlaces } from "./hospitality.mjs";
+import { setFeedback } from "./feedback.mjs";
 
 export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodations }) {
   const dialog = document.querySelector("#economy-dialog");
@@ -8,6 +9,8 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
   let accommodationController, accommodationResult, accommodationError = "", accommodationLoading = false;
   let accommodationCancelled = false;
   let accommodationProgress;
+  let accommodationPartial = false;
+  let accommodationCachedKey;
   const money = cents => `${(cents / 100).toFixed(2)} ${t("gameMoney")}`;
   const hospitalityResult = result => t(`${result.placeKind === "worship" ? "worshipResult" : "hospitalityResult"}.${result.outcome}`, {
     town: result.townName, day: result.day,
@@ -41,7 +44,10 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
         ? accommodationResult.warnings.length ? "accommodationIncomplete"
           : accommodationResult.places.length ? "accommodationReady" : "accommodationEmpty"
         : "accommodationHint");
+    setFeedback(nearbyStatus, accommodationError || accommodationResult?.warnings.length ? "failure"
+      : accommodationLoading || !accommodationResult ? "" : accommodationResult.places.length ? "success" : "failure");
     if (accommodationResult?.warnings.length) nearbyStatus.textContent += ` ${accommodationResult.warnings.join(" ")}`;
+    if (accommodationPartial && !accommodationLoading) nearbyStatus.textContent += ` ${t("accommodationCached")}`;
     if (accommodationLoading && accommodationProgress) showAccommodationProgress();
     const nearby = document.querySelector("#accommodation-results");
     nearby.replaceChildren();
@@ -149,6 +155,8 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
           hospitality.attempt ? `${hospitalityResult(hospitality.attempt)} ${note}` : note,
           undefined, undefined, !hospitality.available);
         feedback.id = "economy-hospitality-feedback";
+        setFeedback(feedback, hospitality.attempt
+          ? hospitality.attempt.outcome === "hosted" ? "success" : "failure" : "");
         feedback.tabIndex = -1;
         feedback.setAttribute("role", "status");
         feedback.setAttribute("aria-atomic", "true");
@@ -168,11 +176,15 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
           status.attempt ? `${hospitalityResult(status.attempt)} ${note}` : note,
           `https://www.openstreetmap.org/${place.osmId}`, t("townOsm"), !status.available);
         feedback.id = `economy-worship-${place.osmId.replace("/", "-")}`;
+        setFeedback(feedback, status.attempt
+          ? status.attempt.outcome === "hosted" ? "success" : "failure" : "");
         feedback.tabIndex = -1;
         feedback.setAttribute("role", "status");
         feedback.setAttribute("aria-atomic", "true");
       }
       const result = state.hospitalityAttempts?.at(-1);
+      setFeedback(document.querySelector("#economy-hospitality-result"),
+        result ? result.outcome === "hosted" ? "success" : "failure" : "");
       if (result && result !== hospitality.attempt && !places.some(place =>
         hospitalityStatus(state, cell, place.osmId).attempt === result)) {
         document.querySelector("#economy-hospitality-result").textContent = hospitalityResult(result);
@@ -194,6 +206,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     accommodationController?.abort();
     accommodationLoading = false;
     accommodationCancelled = false;
+    accommodationPartial = false;
     accommodationResult = undefined;
     accommodationError = "";
     dialog.dataset.activity = mode;
@@ -222,6 +235,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       t(`accommodationPhase.${accommodationProgress.phase}`)}${
       accommodationProgress.provider ? ` (${accommodationProgress.provider})` : ""} · ${
       t("accommodationElapsed", { seconds: accommodationProgress.elapsedSeconds })}`;
+    if (accommodationPartial) document.querySelector("#accommodation-status").textContent += ` ${t("accommodationCached")}`;
   }
   async function searchAccommodations() {
     const current = context();
@@ -231,16 +245,26 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     accommodationLoading = true;
     accommodationCancelled = false;
     accommodationProgress = undefined;
+    accommodationCachedKey = undefined;
     accommodationError = "";
     localize();
     try {
       const result = await findAccommodations(controller.signal, progress => {
         if (controller.signal.aborted || controller !== accommodationController) return;
         accommodationProgress = progress;
+        const cachedKey = progress.cached && JSON.stringify(progress.cached);
+        if (progress.cached && cachedKey !== accommodationCachedKey) {
+          accommodationCachedKey = cachedKey;
+          accommodationResult = progress.cached;
+          accommodationPartial = true;
+          localize();
+          return;
+        }
         showAccommodationProgress();
       });
       if (controller.signal.aborted) return;
       accommodationResult = result;
+      accommodationPartial = false;
     } catch (error) {
       if (controller.signal.aborted) return;
       console.error("Accommodation lookup failed:", error);
@@ -281,6 +305,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     accommodationController?.abort();
     accommodationLoading = false;
     accommodationCancelled = false;
+    accommodationPartial = false;
     accommodationResult = undefined;
     accommodationError = "";
     dialog.close();

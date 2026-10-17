@@ -2,6 +2,7 @@ import { CHOICE_RULES, choiceAvailable } from "./survival-choices.mjs";
 import { tarotEventChance } from "./economy.mjs";
 import { canEat } from "./survival.mjs";
 import { atTrailTarget } from "./trail.mjs";
+import { setFeedback } from "./feedback.mjs";
 
 export function setupSurvivalChoices(t, { context, act }) {
   const dialog = document.querySelector("#survival-choices-dialog");
@@ -33,6 +34,7 @@ export function setupSurvivalChoices(t, { context, act }) {
     const result = current.state.lastSurvivalChoice;
     const resultElement = document.querySelector("#survival-choice-result");
     resultElement.hidden = !result;
+    setFeedback(resultElement, result ? ["food", "money"].includes(result.outcome) ? "success" : "failure" : "");
     resultElement.textContent = result
       ? `${t(`choice.${result.kind}`)} — ${t(`choiceResult.${result.outcome}`, {
         kcal: Math.round(result.foodKcal), money: (result.moneyCents / 100).toFixed(2),

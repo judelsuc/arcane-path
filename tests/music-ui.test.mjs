@@ -9,7 +9,7 @@ test("street performance wires melody, successful and failed taps, finish and hi
   const nodes = new Map();
   function element() {
     return {
-      handlers: {}, children: [],
+      handlers: {}, children: [], dataset: {},
       addEventListener(name, listener) { this.handlers[name] = listener; },
       replaceChildren() { this.children = []; }, append(child) { this.children.push(child); },
       focus() {}, showModal() { this.open = true; }, close() { this.open = false; },
@@ -60,6 +60,7 @@ test("street performance wires melody, successful and failed taps, finish and hi
   assert.deepEqual(settled, [1]);
   assert.deepEqual(mistakes, [2]);
   assert.equal(stops, 1);
+  assert.equal(nodes.get("#music-result").dataset.feedback, "success");
   assert.equal(nodes.get("#music-tap").disabled, true);
   roll = 0.99;
   nodes.get("#music-start").handlers.click();
@@ -88,6 +89,7 @@ test("street performance wires melody, successful and failed taps, finish and hi
   nodes.get("#music-dialog").handlers.keydown(key);
   assert.match(nodes.get("#music-score").textContent, /"mistakes":3,"limit":3/);
   assert.match(nodes.get("#music-result").textContent, /musicTooManyMistakes/);
+  assert.equal(nodes.get("#music-result").dataset.feedback, "failure");
   assert.deepEqual(settled, [1, 0, 0]);
   assert.deepEqual(mistakes, [2, 0, 3]);
   assert.equal(stops, 3);
