@@ -1,5 +1,21 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - calendrier reduit et colonne horloge/meteo
+
+- **17 octobre 2026** : runtime `f4ceb07`, tag
+  `deploy-2026-10-17-simple-weather`, developpement `088f113`,
+  base live `e64e055`. Trois assets et manifeste, sans redemarrage.
+- Date plus petite a gauche, sans coupure des deux chiffres du jour.
+  Horloge analogique, icone, temperature et condition empilees a droite.
+  Heure numerique, legendes UTC/marche, titre meteo, moyennes et sources
+  permanents retires. Details et attribution conserves dans l'infobulle.
+- 369 tests JS passent. Navigateur 1280/390 px : alignement exact de
+  l'horloge et de la meteo, aucun debordement des dates ou temperatures,
+  panneau de 202 px de haut, infobulle accessible au clavier.
+- Trois assets et manifeste HTTPS verifies octet par octet ; API disponible,
+  services actifs et les 16 lignes de genesis initiales inchangees.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-f4ceb07.tar.gz` (0600).
+
 ## Derniere livraison - carnets, tarot et panneau meteo compact
 
 - **17 octobre 2026** : runtime `e64e055`, tag
