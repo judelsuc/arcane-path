@@ -1,5 +1,24 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - carnet photo a spirale
+
+- **17 octobre 2026** : runtime `342b1e7`, tag
+  `deploy-2026-10-17-photo-notebook`, developpement `5320159`,
+  base live `09cfca4`. Dix assets et manifeste, sans redemarrage serveur
+  ni modification des sauvegardes ou des journaux de depart.
+- A ouvre le carnet a deux pages et spirale centrale. Toutes les photos
+  affichees peuvent etre epinglees avec leurs credits/licence, cadre blanc
+  et note manuscrite. Les indices photo vagues gardent leur titre masque.
+  IndexedDB distinct du cache photo ; aucune synchronisation serveur.
+- 343 tests JS passent dans le runtime isole. Navigateur : vraie image IGN
+  decodee 512x512, note sauvegardee puis relue apres rechargement et apres
+  effacement du cache photo, deux pages et reliure verifiees. Attendre
+  la confirmation d'enregistrement avant de recharger la page.
+- Manifeste, dix assets HTTPS compares octet par octet et API jeu verifies.
+  Le partage des journaux abandonnes n'est pas inclus dans cette livraison.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-342b1e7.tar.gz`
+  (0600). Le carnet navigateur reste local et n'est pas efface par ce retour.
+
 ## Derniere livraison - separation des dialogues J et I
 
 - **17 octobre 2026** : runtime `09cfca4`, tag
