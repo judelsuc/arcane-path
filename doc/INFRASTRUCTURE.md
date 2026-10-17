@@ -1,5 +1,37 @@
 # Infrastructure OVHcloud - rapport du 18 octobre 2026
 
+## Derniere livraison - export PDF du carnet
+
+- **18 octobre 2026 (heure locale)** : runtime `8169e9a`, tag
+  `deploy-2026-10-18-notebook-pdf`, developpement `6862b7b`,
+  base live `cd9b157`. Cinq assets et manifeste installes et verifies
+  octet par octet sur HTTPS, sans redemarrage ni changement de configuration.
+- **Exporter en PDF** telecharge toutes les pages du carnet : photos, tarot,
+  notes et credits, avec les statistiques du voyage quand disponibles.
+  Un carnet abandonne inclut ses indices, sans statistiques du lecteur.
+  Generation locale en pages A4 rasterisees ; brouillons sauvegardes avant
+  export, erreurs visibles, aucun service tiers.
+- **400 tests JS passes** sur le runtime isole, dont export FR/EN, brouillons,
+  isolation des carnets trouves, erreurs, annulation par fermeture, structure
+  PDF et nettoyage du telechargement. Validation independante stricte par
+  pypdf : pages A4, images incorporees et commandes de dessin.
+  Verification visuelle navigateur indisponible (connexion CDP en timeout).
+- Les mini-jeux et autres modifications locales en cours sont exclus.
+  Deux bases SQLite sauvegardees avant et apres ; les **16 lignes de genesis
+  initiales restent inchangees**. API disponible, services actifs.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-8169e9a.tar.gz` (0600).
+  Conserver les bases actuelles en cas de retour au code precedent.
+
+## Livraison precedente - recuperation complete en hebergement payant
+
+- Runtime `cd9b157`, tag `deploy-2026-10-18-hotel-recovery`,
+  developpement `fee127b`, base live `91e274d`.
+- Repas du soir et petit-dejeuner inclus ; reserve alimentaire pleine,
+  fatigue et pression de sommeil a zero au reveil. Abris gratuits inchanges.
+- 393 tests JS passes ; trois assets et manifeste verifies sur HTTPS.
+  Services actifs et 16 lignes de genesis inchangees.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-cd9b157.tar.gz` (0600).
+
 ## Derniere livraison - couche 10, effets du tarot et statistiques du carnet
 
 - **18 octobre 2026 (heure locale)** : runtime `91e274d`, tag
