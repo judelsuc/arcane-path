@@ -6,6 +6,7 @@ import { clueActions, CLUE_ACTIONS } from "./trail-actions.mjs";
 import { marketPrice } from "./economy.mjs";
 import { createParentPathLoader } from "./parent-path.mjs";
 import { parentSighting } from "./parent-story.mjs";
+import { DIRECTIONS_RULES, directionsChance } from "./directions.mjs";
 
 export function parentClueText(state, discovery, t) {
   if (!discovery.nextName) return t("trailReunion", { parent: state.trail.parentName });
@@ -50,11 +51,13 @@ export function playerHint(state, info, t) {
     distance: t(`hintDistance.${distance}`) });
 }
 
-export function setupTrail(t, { context, interview, discover }) {
+export function setupTrail(t, { context, interview, discover, askDirections }) {
   const dialog = document.querySelector("#trail-dialog");
   const hintDialog = document.querySelector("#hint-dialog");
   const action = document.querySelector("#trail-interview");
   const photo = document.querySelector("#trail-clue-photo");
+  const ask = document.querySelector("#hint-ask");
+  let directionsOutcome;
   let photoKey, objectUrl, photoGeneration = 0, service;
   const pathLoader = createParentPathLoader({ onUpdate: renderPath });
   function renderPath() {
@@ -174,9 +177,16 @@ export function setupTrail(t, { context, interview, discover }) {
   }
   function localize() {
     const current = context();
-    document.querySelector("#open-hint").disabled = !current?.state.trail || current.blocked;
+    document.querySelector("#open-hint").disabled = !current?.state.trail || current.blocked || Boolean(current.state.ended);
     if (current?.state.trail) {
-      document.querySelector("#hint-guidance").textContent = playerHint(current.state, current.info, t);
+      ask.disabled = current.blocked || Boolean(current.state.ended);
+      document.querySelector("#hint-cost").textContent = t("hintCost", {
+        minutes: DIRECTIONS_RULES.minutes, fatigue: DIRECTIONS_RULES.fatigue,
+        chance: Math.round(directionsChance(current.cell) * 100),
+      });
+      document.querySelector("#hint-guidance").textContent = directionsOutcome === "helped"
+        ? playerHint(current.state, current.info, t)
+        : t(directionsOutcome ? `hintOutcome.${directionsOutcome}` : "hintBeforeAsk");
     }
     document.querySelector("#open-trail").disabled = !current?.state.trail;
     document.querySelector("#town-trail").disabled = !current?.state.trail;
@@ -279,9 +289,20 @@ export function setupTrail(t, { context, interview, discover }) {
   document.querySelector("#open-trail").addEventListener("click", open);
   document.querySelector("#open-hint").addEventListener("click", () => {
     const current = context();
-    if (!current?.state.trail || current.blocked || document.querySelector("dialog[open]")) return;
+    if (!current?.state.trail || current.blocked || current.state.ended || document.querySelector("dialog[open]")) return;
+    directionsOutcome = undefined;
+    document.querySelector("#hint-action-error").textContent = "";
     localize();
     hintDialog.showModal();
+  });
+  ask.addEventListener("click", () => {
+    const current = context();
+    if (!current || current.blocked || current.state.ended) return;
+    document.querySelector("#hint-action-error").textContent = "";
+    const outcome = askDirections();
+    if (!outcome) return;
+    directionsOutcome = outcome;
+    localize();
   });
   document.querySelector("#town-trail").addEventListener("click", () => {
     document.querySelector("#town-dialog").close();
@@ -305,6 +326,7 @@ export function setupTrail(t, { context, interview, discover }) {
     pathLoader.stop();
     dialog.close();
     hintDialog.close();
+    directionsOutcome = undefined;
     clearPhoto();
   } };
 }
