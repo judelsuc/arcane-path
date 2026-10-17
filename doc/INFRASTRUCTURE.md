@@ -1,4 +1,50 @@
-# Infrastructure OVHcloud - rapport du 17 octobre 2026
+# Infrastructure OVHcloud - rapport du 18 octobre 2026
+
+## Derniere livraison - couche 10, effets du tarot et statistiques du carnet
+
+- **18 octobre 2026 (heure locale)** : runtime `91e274d`, tag
+  `deploy-2026-10-18-layer-ten-stats`, developpement `0392dbd`,
+  base live `dafb019`. 27 fichiers installes, 26 assets/manifeste HTTPS
+  verifies octet par octet ; redemarrage du backend, proxy inchange.
+- Vigilance, proprete et sympathie/reputation locale, action d'hygiene payante,
+  contexte policier cartographie et temps dans un secteur de 2 km.
+  Toutes les actions passent par le meme bilan ; les actions interrompues
+  ne donnent ni gain ni indice ni avancement.
+- A 100 vigilance, deux placements recuperables : 24 h a l'abri, repas/repos,
+  perte arrondie de 25 % de l'argent, retour au meme endroit, carnet et piste
+  preserves. Le troisieme termine le voyage et publie le carnet a la derniere
+  position. Aucun temps au foyer compte comme exposition dehors ; un besoin
+  deja fatal reste prioritaire.
+- Cartes de naissance et du jour : effets directs sur vigilance, sympathie,
+  proprete et oubli des nouveaux temoins, chiffres visibles dans le panneau,
+  le tirage quotidien et les statistiques. Effets actualises au nouveau jour.
+  Les indices conservent leur heure/facteur de collecte ; une recherche locale
+  terminee dans les 3 km identifie toujours la destination.
+- Carnet : page **Statistiques du voyage** distincte des photos/cartes, avec
+  totaux reels du voyage, besoins, argent, compteurs, pressions et deux arcanes.
+  Ni destination cachee ni statistiques personnelles dans les carnets trouves.
+- **392 tests JS** et **24 tests Python** passes (carnets et chemins parent).
+  Navigateur avec vrais modules et DOM : FR/EN, statistiques a jour sans
+  debordement a 1280/390 px, isolation des carnets trouves. Reprise UI puis
+  placement verifie : 1470 minutes, 1 placement, vigilance 20, aucune exposition
+  nocturne supplementaire, sauvegarde reussie. Hygiene UI : 20 minutes,
+  proprete 100, vigilance 17,4, prix correctement debite et statistiques a jour.
+- Deux bases SQLite sauvegardees avant et apres par l'API backup, sans retour
+  arriere des donnees. Les **16 lignes de genesis initiales sont inchangees**.
+  API disponible et services `arcane-path`/`nginx` actifs.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-91e274d.tar.gz` (0600).
+  Ne jamais restaurer les bases vers un etat anterieur pour revenir au code.
+
+## Livraison precedente - recherche sans trajet de reference
+
+- Runtime `dafb019`, tag `deploy-2026-10-18-destination-search`,
+  developpement `d8c9574`, base live `eba26f1`.
+- Chemin en attente/en echec ou worker occupe : recherche explicitement fondee
+  sur la distance a la destination, sans inventer de trajet, couts usuels.
+  Autres erreurs et reponses invalides restent visibles, sans cout d'action.
+- 24 tests JS cibles passes ; trois assets et manifeste verifies octet par
+  octet sur HTTPS, sans redemarrage. Les 16 genesis restent inchangees.
+- Retour code : `/home/ubuntu/arcane-path-before-deploy-dafb019.tar.gz` (0600).
 
 ## Derniere livraison - pages de piste et directions vers les villes citees
 
