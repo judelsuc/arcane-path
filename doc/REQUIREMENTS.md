@@ -458,8 +458,9 @@ This file records additions to the design without modifying the source PDF,
   hunger reserves; nutritional values are explicit gameplay approximations.
 - **Pricing:** Use the Big Mac Index rather than Eurostat for this prototype.
   Prices remain fictional index-scaled game tariffs, never real venue offers.
-  Missing mapped country or index uses a visibly labelled reference tariff,
-  not an invented country or local observation.
+  Missing mapped country or index uses a visibly labelled European-average
+  estimate with stable per-cell variation (R-058), not an invented country
+  or local observation.
 - **Status:** Layer 6 implemented for the four initial geographic areas;
   paid meals, integer-cent wallet and current-cell mapped lodging/free shelters.
 
@@ -840,6 +841,42 @@ This file records additions to the design without modifying the source PDF,
 - Explain terminal hunger/fatigue/sleep outcomes in a popup instead of leaving
   disabled navigation unexplained. Existing terminal rules are unchanged;
   recoverable fatigue and portable provisions are not approved by this change.
+
+## R-058 — National pricing and stable European fallback
+
+- **User confirmation:** Include known Italian prices and update pricing in
+  both existing and new journeys, preserving balances and progress.
+- Use same-date national Big Mac source observations where available,
+  including Italy and France rather than treating France as the euro area.
+  Cover all supported European country codes, including Moldova; import
+  every available national row and report missing current observations.
+- If no national price is available, use the unweighted arithmetic mean of
+  available European national observations in comparable USD, converted to
+  game euros, with a random-looking **-10% to +10% variation stable per cell**.
+  Reloading, reopening menus or changing language must not reroll the delta.
+  The variation applies only to estimates, not published national prices.
+- Quotes, charges and index-scaled rewards share the same calculation.
+  Distinguish the estimate from an observed local price; show source/date.
+- Missing map country may be checked explicitly through the existing
+  cached/rate-limited Nominatim service when opening meal/shelter menus.
+  Never guess country from a selected region or food box. An unavailable
+  lookup must visibly fall back to the estimate, not block gameplay.
+- Resume refreshes pricing only; saved rules, meals, tarot, wallet and route
+  remain unchanged. Loading errors leave the original save intact.
+- National pricing does not imply new meal availability in uncurated areas.
+
+## R-059 — Explain real-map preparation activity
+
+- During preparation of a searched starting point, display actual backend
+  activity alongside the spinner, not just a generic multi-minute wait.
+- Show location lookup, queue/provider access, current download server,
+  backup/cooldown, dense-area subdivision, cached reuse, geometry processing,
+  24 x 24 cell rasterization and saving when those stages occur.
+- Report elapsed wait and actual map HTTP requests, including failed requests,
+  backup providers and subdivision requests. The total varies; do not invent
+  percentages or count polling/location lookup as map download requests.
+- Progress polling must not block worker progress; reset stale activity and
+  stop timers on completion, error or cancellation. Keep errors explicit.
 
 ## R-027 — Geocache-linked fictional dungeons
 

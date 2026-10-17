@@ -175,7 +175,7 @@ export function setupTrail(t, { context, interview, discover }) {
       const item = document.createElement("div");
       item.append(button);
       paragraph(item, t("clueCost", { minutes: rule.minutes, fatigue: rule.fatigue, kcal: rule.kcal,
-        money: ((rule.mealUnits ? marketPrice(current.cell, rule.mealUnits, current.data).cents : 0) / 100).toFixed(2) }));
+        money: ((rule.mealUnits ? marketPrice(current.cell, rule.mealUnits, current.data, current.info).cents : 0) / 100).toFixed(2) }));
       actions.append(item);
     }
     const discovery = trail.discovery;

@@ -43,9 +43,11 @@ def _map_url(bounds):
     return f"https://api.openstreetmap.org/api/0.6/map?bbox={bbox}"
 
 
-def _request_map(bounds, depth=0):
+def _request_map(bounds, depth=0, on_progress=None):
     url = _map_url(bounds)
     request = urllib.request.Request(url, headers={"User-Agent": "ArcanePath/0.1 (OSM map prototype)"})
+    if on_progress:
+        on_progress({"phase": "download", "provider": "api.openstreetmap.org", "depth": depth})
     try:
         with urllib.request.urlopen(request, timeout=120) as response:
             root = ET.fromstring(response.read())
@@ -56,6 +58,8 @@ def _request_map(bounds, depth=0):
         if error.code != 400 or "too many nodes" not in reason.lower() or depth >= 4:
             raise _http_failure(error, reason) from error
         print(f"OSM node limit reached; splitting bounds {bounds}.", file=sys.stderr)
+        if on_progress:
+            on_progress({"phase": "split", "depth": depth + 1})
         west, south, east, north = bounds
         middle = (west + east) / 2
         if (east - west) * math.cos(math.radians((south + north) / 2)) >= north - south:
@@ -63,8 +67,8 @@ def _request_map(bounds, depth=0):
         else:
             middle = (south + north) / 2
             halves = ([west, south, east, middle], [west, middle, east, north])
-        first, first_urls = _request_map(halves[0], depth + 1)
-        second, second_urls = _request_map(halves[1], depth + 1)
+        first, first_urls = _request_map(halves[0], depth + 1, on_progress)
+        second, second_urls = _request_map(halves[1], depth + 1, on_progress)
         root = ET.Element("osm", first.attrib)
         ET.SubElement(root, "bounds", {
             "minlon": str(west), "minlat": str(south),
@@ -85,7 +89,7 @@ def _request_map(bounds, depth=0):
     return root, [url]
 
 
-def _request_overpass(bounds, url):
+def _request_overpass(bounds, url, on_progress=None):
     west, south, east, north = bounds
     bbox = ",".join(format(value, ".12g") for value in (south, west, north, east))
     # Recursive descent includes way nodes and relation members for rasterization.
@@ -94,6 +98,9 @@ def _request_overpass(bounds, url):
         url, data=urllib.parse.urlencode({"data": query}).encode("ascii"),
         headers={"User-Agent": "ArcanePath/0.1 (OSM map prototype)"},
     )
+    if on_progress:
+        on_progress({"phase": "download", "provider": urllib.parse.urlparse(url).hostname,
+                     "backup": True})
     try:
         with urllib.request.urlopen(request, timeout=75) as response:
             root = ET.fromstring(response.read())
@@ -111,18 +118,23 @@ def _request_overpass(bounds, url):
     return root, [url]
 
 
-def _request_sources(bounds):
+def _request_sources(bounds, on_progress=None):
     failures = []
     # Serialize provider access across chunk workers, including cooldown checks.
+    if on_progress:
+        on_progress({"phase": "sourceQueue"})
     with _SOURCE_LOCK:
         for source in ("https://api.openstreetmap.org", *OVERPASS_URLS):
             remaining = _COOLDOWNS.get(source, 0) - time.monotonic()
             if remaining > 0:
+                if on_progress:
+                    on_progress({"phase": "cooldown", "provider": urllib.parse.urlparse(source).hostname,
+                                 "seconds": math.ceil(remaining)})
                 failures.append(f"{source}: cooldown ({math.ceil(remaining)} seconds)")
                 continue
             try:
-                return (_request_map(bounds) if source == "https://api.openstreetmap.org"
-                        else _request_overpass(bounds, source))
+                return (_request_map(bounds, on_progress=on_progress) if source == "https://api.openstreetmap.org"
+                        else _request_overpass(bounds, source, on_progress))
             except (SourceUnavailable, OSError, ET.ParseError) as error:
                 _COOLDOWNS[source] = time.monotonic() + (
                     error.retry_after if isinstance(error, SourceUnavailable) else 60
@@ -130,6 +142,8 @@ def _request_sources(bounds):
                 message = f"{source}: {error}"
                 failures.append(message)
                 print(f"OSM source unavailable; trying fallback: {message}", file=sys.stderr)
+                if on_progress:
+                    on_progress({"phase": "fallback", "provider": urllib.parse.urlparse(source).hostname})
     raise SourceUnavailable("All OSM sources unavailable. " + " | ".join(failures))
 
 
@@ -171,7 +185,7 @@ def fetch_towns(latitude, longitude, venues=False, on_progress=None):
     raise SourceUnavailable("Town catalogue unavailable. " + " | ".join(failures), delay)
 
 
-def download_region(bounds, name, output, refresh=False, reference_bounds=None):
+def download_region(bounds, name, output, refresh=False, reference_bounds=None, on_progress=None):
     west, south, east, north = bounds
     if (
         not all(math.isfinite(value) for value in bounds)
@@ -195,8 +209,10 @@ def download_region(bounds, name, output, refresh=False, reference_bounds=None):
                 and cached.attrib.get("reference_bbox") == reference_bbox):
             if cached.find("bounds") is None or cached.find("node") is None:
                 raise ValueError("Incomplete cached OSM snapshot; use --refresh to download again.")
+            if on_progress:
+                on_progress({"phase": "cache"})
             return url, output.stat().st_size, True
-    root, source_urls = _request_sources(bounds)
+    root, source_urls = _request_sources(bounds, on_progress)
     root.set("source_url", url)
     root.set("source_urls", json.dumps(source_urls))
     root.set("region_name", name)

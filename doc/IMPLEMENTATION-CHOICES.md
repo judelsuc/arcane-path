@@ -228,10 +228,32 @@ Layer 4 and legacy travel tests remain green.
   dollar equivalent 7.07922094259998; CH/GB/US dollar observations are included.
   Compare dollar prices, then express tariffs in reference-euro game units.
   Do not compare unrelated local currencies directly.
-- FR is explicitly associated with the euro-area observation, not a fabricated
-  France row. PF has no observation. Missing/ambiguous map country or missing
-  index uses a reference tariff with visible explanation. Country display
-  remains exclusively map-derived; food location boxes never set country.
+- The original FR=euro-area association and reference fallback below are
+  superseded by R-058: import the raw national source CSV, giving Italy
+  EUR 6.56 and France EUR 5.60 on 2026-07-01. The 30 available European
+  national USD observations contribute equally to the fallback mean; this
+  is not an EU, population-weighted or eurozone average.
+  Map source ISO alpha-3 codes for every supported European country, not a
+  selected list of country names. Include Moldova; report countries without
+  current observations instead of relabelling historical prices as current.
+- Missing/ambiguous country or missing national observation uses that mean
+  with a deterministic per-cell delta in [-10%, +10%]. FNV-1a over the
+  geographic cell centre rounded to six decimals yields 2,001 possible
+  deltas (0.01 percentage-point steps). No Math.random on renders or actions;
+  coordinates survive reloads and selected map/food regions never set country.
+  National prices have no delta. All monetary actions pass the same cell
+  coordinates to the shared quote function; round the final amount to cents.
+- When opening meal/shelter menus, absent country tags can be resolved by a
+  Nominatim country-level reverse lookup using the existing cache/throttle.
+  Menu purchases wait for this optional lookup; errors are logged and shown
+  before enabling estimated prices. This economics-only country overlay does
+  not change map identity, country labels or terrain. Border ambiguity remains
+  an estimate. Non-European legacy starts do not trigger this lookup.
+- On resume, fetch and validate current pricing, replacing only the saved
+  pricing object; keep saved rules, meals, tarot, wallet and all progress.
+  Autosave persists the update after successful preparation. Legacy economy
+  snapshots without fallback remain valid. Failed refresh uses the existing
+  preparation error path without overwriting the saved journey.
 - This explicit reference-tariff policy replaces the earlier proposed block
   on all purchases when country is missing. It keeps Firmi playable without
   calling it France from region selection. No supposed real-world local price.
@@ -266,8 +288,9 @@ Layer 4 and legacy travel tests remain green.
 
 1. Start Firmi: read birth card, daily card and purse. Restart to draw afresh.
 2. Walk south to Lestrunie, choose Local meals. Expect sourced aligot and
-   the explicit reference-tariff warning when map country is absent.
-3. Purchase: purse -6.19 game EUR, clock +20 minutes, hunger reserve recovers.
+   country check, or a labelled European estimate when lookup is unavailable.
+3. Purchase: purse -5.60 game EUR for confirmed France (otherwise the displayed
+   estimate), clock +20 minutes, hunger reserve recovers.
    Repeat until money is insufficient: option disables, no negative purse.
 4. Sleep and shelter: only outdoor sleep when the cell lacks mapped shelter.
    A hotel named in the nearby menu is not sufficient; walk to its actual cell.
@@ -910,6 +933,22 @@ have stable explicit bindings; other dynamic choices keep numbered keys.
 Begging uses A to avoid conflicting with street music B in the cell menu.
 Browser checks verified Enter, C, Escape, F and R end to end, including
 one suffix per button and the same R action in the toolbar and cell dialog.
+
+## Real-map origin preparation activity (R-059)
+
+Origin jobs expose thread-safe progress snapshots through the existing 202
+polling responses. A separate progress lock avoids blocking snapshots on the
+origin/download locks. The downloader emits real provider attempts, cooldowns,
+fallbacks and subdivision events; only actual map HTTP attempts increment the
+counter. Cached reads do not. Origin preparation reports location lookup,
+geometry parsing, rasterization and cache writing. Snapshots are cleared when
+the worker succeeds or fails.
+
+The starting-point UI translates snapshots in FR/EN, keeps the existing spinner,
+and updates elapsed waiting seconds while polling. Request totals are variable,
+not a percentage. Cancellation aborts polling, clears its clock and prevents
+late progress from replacing a new selection. Server work can finish and cache
+its result after the browser stops waiting, as before.
 
 ## Retry and activity feedback for long-route preparation
 

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { createSave, validateSave, createJourneyStore, mapIdentity } from "../journey-save.mjs";
 import { startSurvival, walkSurvival } from "../survival.mjs";
 import { startEconomy, buyMeal, finishAction, applyBirthTarot, tarotEventChance,
-  dailyTarotPending, acknowledgeDailyTarot } from "../economy.mjs";
+  dailyTarotPending, acknowledgeDailyTarot, refreshPricing } from "../economy.mjs";
 import { createTrail, interviewTrail, trailTarget } from "../trail.mjs";
 import { beginBusking, settleBusking } from "../music.mjs";
 
@@ -47,6 +47,27 @@ test("names survive actions and exact saves while nameless legacy journeys remai
   for (const name of ["", "  Alex ", "E\u0301milie", "A".repeat(41), 42, "A\nB"]) {
     assert.throws(() => createSave({ ...d, state: { ...d.state, name } }, 1));
   }
+});
+
+test("legacy national-pricing refresh persists without changing wallet, character or progress", () => {
+  const memory = storage(), store = createJourneyStore(memory), d = details();
+  const legacy = structuredClone(economy);
+  delete legacy.pricing.fallback;
+  legacy.pricing.markets = { FR: { name: "Euro area", dollarPrice: legacy.pricing.referenceDollarPrice } };
+  legacy.rules.lodgingMealUnits = 3;
+  d.state = finishAction(d.state, walkSurvival(d.state, 1, 0, cell, cell, survival), info, economy);
+  store.read(d.region);
+  store.write({ ...d, economy: legacy });
+  const restored = store.read(d.region);
+  const refreshed = refreshPricing(restored.economy, economy);
+  store.write({ ...d, state: restored.state, economy: refreshed });
+  const saved = store.read(d.region);
+  assert.deepEqual(saved.state, restored.state);
+  assert.deepEqual(saved.survival, restored.survival);
+  assert.deepEqual(saved.economy.rules, legacy.rules);
+  assert.deepEqual(saved.economy.meals, legacy.meals);
+  assert.deepEqual(saved.economy.tarot, legacy.tarot);
+  assert.deepEqual(saved.economy.pricing, economy.pricing);
 });
 
 test("tarot determines balanced-budget attributes and survives saves without changing old profiles", () => {

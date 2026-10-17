@@ -72,6 +72,13 @@ Une petite roue accompagne le message pendant les recherches et la
 preparation de la carte ou du voyage. Elle disparait a la fin ou a
 l'annulation ; aucun pourcentage artificiel n'est affiche. L'animation
 respecte la preference systeme de reduction des mouvements.
+Pour un depart recherche, le message indique l'etape reelle : identification
+Nominatim, attente d'acces aux fournisseurs, telechargement et serveur utilise,
+secours ou pause fournisseur, subdivision d'une zone dense, lecture des
+geometries, construction des 24 x 24 cases, puis enregistrement en cache.
+Le nombre de requetes cartographiques reellement envoyees (y compris secours
+et subdivisions, hors recherche du lieu) et le temps d'attente sont affiches.
+Le total de requetes n'est pas connu a l'avance ; aucun pourcentage n'est deduit.
 Une file serveur temporairement pleine conserve l'attente et sa roue,
 avec nouvelle tentative automatique et annulation possible.
 Les nouvelles pistes sont creees dans le catalogue europeen local :
@@ -318,10 +325,24 @@ L'echelle des tarifs utilise les observations Big Mac du **1 juillet 2026**
 publiees par The Economist, pas Eurostat. Les valeurs en dollars permettent
 une comparaison entre marches, convertie en euros de jeu sur la reference
 zone euro (6,19). Ce ne sont pas les prix reels de ces plats ou etablissements.
-FR utilise l'observation zone euro, CH/GB/US leurs observations propres.
-Pays cartographique absent/ambigu ou marche absent (notamment PF) :
-**tarif de reference signale dans le menu**, jamais un pays devine ou
-un faux indice local. Aucun change monetaire ni paiement reel.
+Les 31 marches nationaux disponibles (30 en Europe) ont leurs propres observations :
+France 5,60 EUR, Italie 6,56 EUR, notamment. Le menu peut confirmer un pays
+absent des donnees de la case via Nominatim/OSM (coordonnees de la case
+envoyees uniquement a l'ouverture du menu, reponse mise en cache) ; ni la
+region choisie ni la specialite culinaire ne permettent de deviner le pays.
+Pays absent/ambigu ou prix national absent (notamment PF) :
+**moyenne arithmetique non ponderee des 30 observations nationales europeennes**,
+comparees en dollars puis converties en euros de jeu, avec un ecart de
+**-10 % a +10 % stable par case**. Le meme emplacement garde son ecart apres
+rechargement ; les menus, achats et recompenses utilisent le meme calcul.
+Cette estimation est signalee, y compris si la verification du pays echoue.
+Aucun change monetaire ni paiement reel. Actualiser les observations avec
+`python scripts/update_prices.py` ; source et date figurent dans le menu.
+L'import couvre les codes ISO de tous les pays europeens pris en charge et
+signale ceux sans observation a la date courante ; aucun ancien prix n'est
+presente comme actuel. La Moldavie est incluse, sans dependre du nom du pays
+dans le fichier source.
+Les prix ne completent pas la couverture geographique des specialites.
 
 **Sommeil et abri** propose les hebergements OSM de la case actuelle :
 hotel, auberge, chambre d'hotes, motel ou refuge alpin. Tarif de jeu : quatre
@@ -590,7 +611,10 @@ Le voyage utilise uniquement les pistes instrumentales.
   argent, tarot de depart/du jour, depenses/gains et piste complete sont
   conserves. Attendre reellement pendant une interruption ne coute rien.
 - Les regles de survie et la base economique de la partie sont incluses :
-  une modification de YAML ou des tarifs n'altere pas un voyage repris.
+  les regles YAML, repas et tarots restent ceux de la sauvegarde.
+  Seules les observations tarifaires sont actualisees a la reprise, sans
+  modifier le portefeuille, le personnage, la piste ou les actions passees.
+  Un echec de chargement est signale et laisse la sauvegarde intacte.
   Un nouveau voyage utilise la configuration courante.
 - Une prestation interrompue est reprise **comme annulee** : couts conserves,
   aucun gain. Une prestation terminee conserve exactement ses gains,

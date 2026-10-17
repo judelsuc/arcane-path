@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { placeRequest, validateStartingMap, locatePosition } from "../starting-point-ui.mjs";
+import { placeRequest, validateStartingMap, locatePosition, startingMapProgress } from "../starting-point-ui.mjs";
+import { translate } from "../i18n.mjs";
 import { readFileSync } from "node:fs";
 
 test("starting maps validate geometry without requiring ten nearby landmarks", () => {
@@ -10,6 +11,28 @@ test("starting maps validate geometry without requiring ten nearby landmarks", (
     width: 1, height: 1, cellSizeMeters: 250, rows: [[{ terrain: "grass" }]],
   }));
   assert.throws(() => validateStartingMap({ width: 1, height: 1, rows: [] }), /Invalid starting/);
+});
+
+test("map preparation reports real phases, request count and elapsed time in both languages", () => {
+  for (const language of ["fr", "en"]) {
+    const t = (key, parameters) => translate(language, key, parameters);
+    for (const phase of ["queued", "location", "sourceQueue", "download", "split", "cooldown",
+      "fallback", "cache", "geometry", "rasterize", "saving"]) {
+      const text = startingMapProgress(t, {
+        phase, provider: "api.openstreetmap.org", requests: 7, seconds: 42,
+      }, 93.8);
+      assert.ok(text.includes("7"));
+      assert.ok(text.includes("93"));
+      assert.ok(!text.includes("undefined"));
+      assert.ok(!text.includes("%"));
+      if (phase === "cooldown") assert.ok(text.includes("42"));
+    }
+    const backup = startingMapProgress(t, { phase: "download", backup: true,
+      provider: "overpass.kumi.systems", requests: 3 }, 10);
+    assert.ok(backup.includes("overpass.kumi.systems"));
+    assert.match(backup, /secours|backup/);
+    assert.match(startingMapProgress(t, undefined, 0), /attente|Queued/);
+  }
 });
 
 test("location retries provider failures with higher accuracy, not permission denials", async () => {

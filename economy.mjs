@@ -9,6 +9,15 @@ export function validateEconomy(data) {
       !positive(data.pricing.referenceCents) || !positive(data.pricing.referenceDollarPrice) ||
       !source(data.pricing.source) || !data.pricing.markets ||
       Object.values(data.pricing.markets).some(m => !m.name || !positive(m.dollarPrice)) ||
+      (data.pricing.fallback !== undefined && (!data.pricing.fallback ||
+        data.pricing.fallback.method !== "european-national-arithmetic-mean" ||
+        !positive(data.pricing.fallback.dollarPrice) ||
+        !Array.isArray(data.pricing.fallback.countries) || !data.pricing.fallback.countries.length ||
+        new Set(data.pricing.fallback.countries).size !== data.pricing.fallback.countries.length ||
+        data.pricing.fallback.countries.some(code => !data.pricing.markets[code]) ||
+        Math.abs(data.pricing.fallback.dollarPrice -
+          data.pricing.fallback.countries.reduce((sum, code) =>
+            sum + data.pricing.markets[code].dollarPrice, 0) / data.pricing.fallback.countries.length) > 1e-9)) ||
       !data.rules || !["lodgingMealUnits", "outdoorFatiguePerNightHour",
         "performanceMinutes", "performanceFatigue"].every(k => positive(data.rules[k])) ||
       !["outdoorSleepRecoveryFactor", "nightRestRecoveryFactor"].every(k =>
@@ -79,12 +88,30 @@ export function localMeals(info, data) {
     info.longitude >= west && info.longitude <= east && info.latitude >= south && info.latitude <= north);
 }
 
-export function marketPrice(cell, units, data) {
+export function marketPrice(cell, units, data, info) {
+  if (!Number.isFinite(units) || units <= 0) throw new Error("Invalid price units.");
   const codes = [...new Set(cell.countryCodes ?? [])];
   const market = codes.length === 1 ? data.pricing.markets[codes[0]] : null;
-  const factor = market ? market.dollarPrice / data.pricing.referenceDollarPrice : 1;
+  let variation = 0;
+  if (!market && data.pricing.fallback) {
+    if (!Number.isFinite(info?.latitude) || !Number.isFinite(info?.longitude)) {
+      throw new Error("Cell coordinates are required for estimated pricing.");
+    }
+    const identity = `${info.latitude.toFixed(6)},${info.longitude.toFixed(6)}`;
+    let hash = 2166136261;
+    for (const char of identity) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0;
+    variation = (hash % 2001 - 1000) / 10000;
+  }
+  const base = market?.dollarPrice ?? data.pricing.fallback?.dollarPrice ?? data.pricing.referenceDollarPrice;
+  const factor = base / data.pricing.referenceDollarPrice * (1 + variation);
   return { cents: Math.round(data.pricing.referenceCents * factor * units),
-    reference: !market, market: market?.name ?? null };
+    reference: !market, market: market?.name ?? null, variation,
+    estimated: !market && Boolean(data.pricing.fallback) };
+}
+
+export function refreshPricing(savedEconomy, currentEconomy) {
+  validateEconomy(currentEconomy);
+  return validateEconomy({ ...structuredClone(savedEconomy), pricing: structuredClone(currentEconomy.pricing) });
 }
 
 export function shelters(cell) {
@@ -129,7 +156,7 @@ function charge(state, cents) {
 export function buyMeal(state, cell, info, mealId, survival, data) {
   const meal = localMeals(info, data).find(m => m.id === mealId);
   if (!meal) throw new Error("No sourced local meal available.");
-  const paid = charge(state, marketPrice(cell, meal.mealUnits, data).cents);
+  const paid = charge(state, marketPrice(cell, meal.mealUnits, data, info).cents);
   const next = eatSurvival(paid, cell, { ...survival, meal_kcal: meal.reserveKcal });
   return finishAction(state, next, info, data, { sheltered: true });
 }
@@ -137,7 +164,7 @@ export function buyMeal(state, cell, info, mealId, survival, data) {
 export function sleepEconomy(state, cell, info, shelterId, survival, data) {
   const shelter = shelterId === null ? null : shelters(cell).find(s => s.osmId === shelterId);
   if (shelterId !== null && !shelter) throw new Error("Shelter is not available in the player's cell.");
-  const cents = shelter && !shelter.free ? marketPrice(cell, data.rules.lodgingMealUnits, data).cents : 0;
+  const cents = shelter && !shelter.free ? marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents : 0;
   const paid = charge(state, cents);
   const config = shelter ? survival : { ...survival,
     sleep_fatigue_recovery_per_hour: 0,

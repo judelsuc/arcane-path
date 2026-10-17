@@ -27,7 +27,7 @@ export function clueActions(state) {
 export function trailClue(state, kind, cell, info, survival, economy) {
   if (!clueActions(state).includes(kind)) throw new Error("This clue action is unavailable here.");
   const rule = CLUE_ACTIONS[kind];
-  const cents = rule.mealUnits ? marketPrice(cell, rule.mealUnits, economy).cents : 0;
+  const cents = rule.mealUnits ? marketPrice(cell, rule.mealUnits, economy, info).cents : 0;
   if (state.walletCents < cents) throw new Error("Insufficient funds.");
   const rested = restSurvival({ ...state, walletCents: state.walletCents - cents,
     lastExpenseCents: cents }, { ...survival, rest_minutes: rule.minutes, rest_fatigue_recovery: 0 });

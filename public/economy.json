@@ -2,14 +2,232 @@
   "version": 1,
   "pricing": {
     "date": "2026-07-01",
-    "source": "https://github.com/TheEconomist/big-mac-data",
+    "source": "https://raw.githubusercontent.com/TheEconomist/big-mac-data/master/source-data/big-mac-source-data-v2.csv",
     "referenceCents": 619,
-    "referenceDollarPrice": 7.07922094259998,
+    "referenceDollarPrice": 7.079220942599984,
     "markets": {
-      "FR": {"name": "Euro area", "dollarPrice": 7.07922094259998},
-      "CH": {"name": "Switzerland", "dollarPrice": 9.0419272929956},
-      "GB": {"name": "Britain", "dollarPrice": 7.40021836709936},
-      "US": {"name": "United States", "dollarPrice": 6.22}
+      "AT": {
+        "name": "Austria",
+        "dollarPrice": 6.438774459909194,
+        "localPrice": 5.63,
+        "currency": "EUR"
+      },
+      "BE": {
+        "name": "Belgium",
+        "dollarPrice": 6.1642973958988545,
+        "localPrice": 5.39,
+        "currency": "EUR"
+      },
+      "BG": {
+        "name": "Bulgaria",
+        "dollarPrice": 6.495957181578014,
+        "localPrice": 5.68,
+        "currency": "EUR"
+      },
+      "CH": {
+        "name": "Switzerland",
+        "dollarPrice": 9.041927292995602,
+        "localPrice": 7.3,
+        "currency": "CHF"
+      },
+      "CZ": {
+        "name": "Czech Republic",
+        "dollarPrice": 5.434140578854104,
+        "localPrice": 115.0,
+        "currency": "CZK"
+      },
+      "DE": {
+        "name": "Germany",
+        "dollarPrice": 7.994144489301113,
+        "localPrice": 6.99,
+        "currency": "EUR"
+      },
+      "DK": {
+        "name": "Denmark",
+        "dollarPrice": 7.037297677691766,
+        "localPrice": 46.0,
+        "currency": "DKK"
+      },
+      "EE": {
+        "name": "Estonia",
+        "dollarPrice": 5.375175836869132,
+        "localPrice": 4.7,
+        "currency": "EUR"
+      },
+      "ES": {
+        "name": "Spain",
+        "dollarPrice": 6.747561156920825,
+        "localPrice": 5.9,
+        "currency": "EUR"
+      },
+      "FI": {
+        "name": "Finland",
+        "dollarPrice": 7.262205651940209,
+        "localPrice": 6.35,
+        "currency": "EUR"
+      },
+      "FR": {
+        "name": "France",
+        "dollarPrice": 6.404464826907901,
+        "localPrice": 5.6,
+        "currency": "EUR"
+      },
+      "GB": {
+        "name": "Britain",
+        "dollarPrice": 7.400218367099357,
+        "localPrice": 5.49,
+        "currency": "GBP"
+      },
+      "GR": {
+        "name": "Greece",
+        "dollarPrice": 5.603906723544414,
+        "localPrice": 4.9,
+        "currency": "EUR"
+      },
+      "HR": {
+        "name": "Croatia",
+        "dollarPrice": 5.718272166882055,
+        "localPrice": 5.0,
+        "currency": "EUR"
+      },
+      "HU": {
+        "name": "Hungary",
+        "dollarPrice": 5.297556741300519,
+        "localPrice": 1660.0,
+        "currency": "HUF"
+      },
+      "IE": {
+        "name": "Ireland",
+        "dollarPrice": 7.548119260284312,
+        "localPrice": 6.6,
+        "currency": "EUR"
+      },
+      "IT": {
+        "name": "Italy",
+        "dollarPrice": 7.502373082949256,
+        "localPrice": 6.56,
+        "currency": "EUR"
+      },
+      "LT": {
+        "name": "Lithuania",
+        "dollarPrice": 5.089262228525029,
+        "localPrice": 4.45,
+        "currency": "EUR"
+      },
+      "LV": {
+        "name": "Latvia",
+        "dollarPrice": 4.231521403492721,
+        "localPrice": 3.7,
+        "currency": "EUR"
+      },
+      "MD": {
+        "name": "Moldova",
+        "dollarPrice": 4.5584045584045585,
+        "localPrice": 80.0,
+        "currency": "MDL"
+      },
+      "NL": {
+        "name": "Netherlands",
+        "dollarPrice": 7.159276752936332,
+        "localPrice": 6.26,
+        "currency": "EUR"
+      },
+      "NO": {
+        "name": "Norway",
+        "dollarPrice": 8.05315079524864,
+        "localPrice": 78.0,
+        "currency": "NOK"
+      },
+      "PL": {
+        "name": "Poland",
+        "dollarPrice": 6.21832951854253,
+        "localPrice": 23.5,
+        "currency": "PLN"
+      },
+      "PT": {
+        "name": "Portugal",
+        "dollarPrice": 6.461647548576723,
+        "localPrice": 5.65,
+        "currency": "EUR"
+      },
+      "RO": {
+        "name": "Romania",
+        "dollarPrice": 4.005107330328594,
+        "localPrice": 18.35,
+        "currency": "RON"
+      },
+      "SE": {
+        "name": "Sweden",
+        "dollarPrice": 7.161427926455249,
+        "localPrice": 69.0,
+        "currency": "SEK"
+      },
+      "SI": {
+        "name": "Slovenia",
+        "dollarPrice": 5.26081039353149,
+        "localPrice": 4.6,
+        "currency": "EUR"
+      },
+      "SK": {
+        "name": "Slovakia",
+        "dollarPrice": 5.718272166882055,
+        "localPrice": 5.0,
+        "currency": "EUR"
+      },
+      "TR": {
+        "name": "Turkey",
+        "dollarPrice": 6.91085003455425,
+        "localPrice": 325.0,
+        "currency": "TRY"
+      },
+      "UA": {
+        "name": "Ukraine",
+        "dollarPrice": 3.33555703802535,
+        "localPrice": 149.0,
+        "currency": "UAH"
+      },
+      "US": {
+        "name": "United States",
+        "dollarPrice": 6.22,
+        "localPrice": 6.22,
+        "currency": "USD"
+      }
+    },
+    "fallback": {
+      "method": "european-national-arithmetic-mean",
+      "countries": [
+        "AT",
+        "BE",
+        "BG",
+        "CH",
+        "CZ",
+        "DE",
+        "DK",
+        "EE",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "GR",
+        "HR",
+        "HU",
+        "IE",
+        "IT",
+        "LT",
+        "LV",
+        "MD",
+        "NL",
+        "NO",
+        "PL",
+        "PT",
+        "RO",
+        "SE",
+        "SI",
+        "SK",
+        "TR",
+        "UA"
+      ],
+      "dollarPrice": 6.254333686214339
     }
   },
   "rules": {

@@ -10,13 +10,50 @@ from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from travel_server import ChunkJobs, ChunkStore, CHUNK_SIZE, chunk_geometry, fetch_elevations, make_handler
+from travel_server import ChunkJobs, ChunkStore, OriginStore, CHUNK_SIZE, chunk_geometry, fetch_elevations, make_handler
 from http.server import ThreadingHTTPServer
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class TravelServerTests(unittest.TestCase):
+    def test_origin_progress_is_polled_without_blocking_and_counts_only_requests(self):
+        store = ChunkStore()
+        origins = OriginStore(store)
+        jobs = ChunkJobs(origins, workers=1)
+        started, release = threading.Event(), threading.Event()
+
+        def prepare(latitude, longitude, on_progress):
+            on_progress({"phase": "sourceQueue"})
+            on_progress({"phase": "download", "provider": "api.openstreetmap.org"})
+            on_progress({"phase": "split"})
+            on_progress({"phase": "download", "provider": "api.openstreetmap.org"})
+            started.set()
+            release.wait(timeout=3)
+            return {"region": "test"}
+
+        try:
+            with patch.object(store, "prepare_origin", side_effect=prepare):
+                self.assertEqual(jobs.request(42, 12)[0], 202)
+                self.assertTrue(started.wait(timeout=3))
+                status, payload = jobs.request(42, 12)
+                self.assertEqual(status, 202)
+                self.assertEqual(payload["progress"]["requests"], 2)
+                self.assertEqual(payload["progress"]["provider"], "api.openstreetmap.org")
+                payload["progress"]["requests"] = 999
+                self.assertEqual(origins.get_progress(42, 12)["requests"], 2)
+                release.set()
+                jobs.jobs[(42, 12)].result(timeout=3)
+                self.assertEqual(jobs.request(42, 12), (200, {"region": "test"}))
+                self.assertEqual(origins.progress, {})
+        finally:
+            release.set()
+            jobs.pool.shutdown()
+        with patch.object(store, "prepare_origin", side_effect=ValueError("Unavailable")):
+            with self.assertRaisesRegex(ValueError, "Unavailable"):
+                origins.build(42, 12)
+        self.assertEqual(origins.progress, {})
+
     def test_adjacent_chunks_share_exact_seams_and_fixed_resolution(self):
         base = json.loads((ROOT / "public/map.json").read_text())
         a, lat, centers = chunk_geometry(base, 0, 0)
@@ -123,6 +160,15 @@ class TravelServerTests(unittest.TestCase):
                     with urllib.request.urlopen(url + "/api/location?latitude=44.5&longitude=2.3") as response:
                         self.assertEqual(json.load(response), place)
                     reverse.assert_called_once_with(44.5, 2.3)
+                with patch.object(store.places, "country", return_value={"countryCode": "IT"}) as country:
+                    with urllib.request.urlopen(url + "/api/pricing-country?latitude=42&longitude=12") as response:
+                        self.assertEqual(json.load(response), {"countryCode": "IT"})
+                    country.assert_called_once_with(42, 12)
+                with patch.object(store.places, "country", side_effect=OSError("Country offline")):
+                    with self.assertRaises(urllib.error.HTTPError) as raised:
+                        urllib.request.urlopen(url + "/api/pricing-country?latitude=42&longitude=12")
+                    self.assertEqual(raised.exception.code, 502)
+                    raised.exception.close()
                 with patch.object(store.places, "search", side_effect=OSError("Lookup offline")):
                     with self.assertRaises(urllib.error.HTTPError) as raised:
                         urllib.request.urlopen(url + "/api/places?q=Firmi")

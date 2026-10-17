@@ -47,7 +47,7 @@ export function survivalChoice(state, kind, cell, info, survival, economy, rando
       detentionMinutes = rule.detentionHours * 60;
       outcome = "detained";
     } else if (!failure && kind === "beg") {
-      moneyCents = marketPrice(cell, rule.mealUnits, economy).cents;
+      moneyCents = marketPrice(cell, rule.mealUnits, economy, info).cents;
       next = { ...next, walletCents: next.walletCents + moneyCents };
       outcome = "money";
     } else if (!failure) {

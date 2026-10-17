@@ -34,7 +34,7 @@ export function beginBusking(state, cell, info, survival, data) {
     rest_minutes: data.rules.performanceMinutes, rest_fatigue_recovery: 0 });
   const next = finishAction(state, performing, info, data);
   return { ...next, performancePending: next.ended ? null : {
-    maxRewardCents: marketPrice(cell, 2, data).cents,
+    maxRewardCents: marketPrice(cell, 2, data, info).cents,
   } };
 }
 

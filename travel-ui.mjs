@@ -7,7 +7,7 @@ import {
   validateSurvivalConfig, hungerPercent, canEat, normalizeCharacterName,
 } from "./survival.mjs";
 import { setupTowns } from "./towns-ui.mjs";
-import { validateEconomy, startEconomy, applyBirthTarot, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, finishAction } from "./economy.mjs";
+import { validateEconomy, refreshPricing, startEconomy, applyBirthTarot, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, finishAction } from "./economy.mjs";
 import { setupDailyTarot } from "./daily-tarot-ui.mjs";
 import { survivalChoice } from "./survival-choices.mjs";
 import { setupSurvivalChoices } from "./survival-choices-ui.mjs";
@@ -45,6 +45,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   let preparingOrigin = false;
   let trailController;
   let trailProgress;
+  const pricingCountries = new Map();
   let transient = "", missingHeightMoves = 0;
   let heading = [0, 0];
   let cursor, cameraData;
@@ -148,10 +149,30 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const p = chunkPosition(state.col, state.row);
     const chunk = stream.get(p.x, p.y);
     if (!chunk) return null;
-    return { state, cell: chunk.rows[p.row][p.col], info: cellInfo(chunk, p.row, p.col),
+    const mappedCell = chunk.rows[p.row][p.col];
+    const country = pricingCountries.get(`${state.col},${state.row}`);
+    const cell = !(mappedCell.countryCodes?.length) && country
+      ? { ...mappedCell, countryCodes: [country] } : mappedCell;
+    return { state, cell, info: cellInfo(chunk, p.row, p.col),
       data: economyData, survival: survivalConfig, blocked: busy || Boolean(cursor) || Boolean(state.ended) };
   }
-  const economyUI = setupEconomyUI(t, { context: economyContext, act: economyAction });
+  const economyUI = setupEconomyUI(t, {
+    context: economyContext, act: economyAction,
+    async resolveCountry() {
+      const current = economyContext();
+      if (!current || current.cell.countryCodes?.length ||
+          current.info.latitude < 34 || current.info.latitude > 72 ||
+          current.info.longitude < -32 || current.info.longitude > 60) return;
+      const currentToken = token, key = `${state.col},${state.row}`;
+      const response = await fetch(`/api/pricing-country?${new URLSearchParams({
+        latitude: current.info.latitude, longitude: current.info.longitude,
+      })}`, { signal: AbortSignal.timeout(30000) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? `Country lookup: HTTP ${response.status}`);
+      if (!/^[A-Z]{2}$/.test(result.countryCode)) throw new Error("Invalid pricing country.");
+      if (currentToken === token) pricingCountries.set(key, result.countryCode);
+    },
+  });
   const choicesUI = setupSurvivalChoices(t, {
     context: () => {
       const current = economyContext();
@@ -653,7 +674,12 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         nameInput.value = state.name ?? "";
         state.dailyTarotSeenDay ??= state.tarotDay;
         survivalConfig = structuredClone(restored.survival);
-        economyData = structuredClone(restored.economy);
+        const response = await fetch("./public/economy.json", {
+          cache: "no-cache", signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) throw new Error(`Economy database: HTTP ${response.status}`);
+        economyData = refreshPricing(restored.economy, await response.json());
+        if (currentToken !== token) return;
         profile.value = state.profileId;
       } else {
         const settingsResponse = await fetch("./public/config.json", {
@@ -720,6 +746,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     trailController?.abort();
     trailController = undefined;
     trailProgress = undefined;
+    pricingCountries.clear();
     birthDialog.close();
     dailyTarotUI.reset();
     needsNotices.reset();

@@ -50,6 +50,16 @@ class StartingPlaceTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "no usable"):
                 lookup.reverse(44.5, 2.3)
 
+    def test_pricing_country_is_explicitly_resolved_not_inferred_from_region(self):
+        lookup = PlaceLookup()
+        with patch.object(lookup, "request", return_value={"address": {"country_code": "it"}}) as request:
+            self.assertEqual(lookup.country(42, 12)["countryCode"], "IT")
+            self.assertEqual(request.call_args.args, ("reverse", {"lat": 42.0, "lon": 12.0, "zoom": 3}))
+        for response in [{}, {"address": {"country_code": "unknown"}}, []]:
+            with patch.object(lookup, "request", return_value=response):
+                with self.assertRaisesRegex(ValueError, "no usable country"):
+                    lookup.country(42, 12)
+
     def test_requests_are_identified_cached_and_rate_limited(self):
         lookup = PlaceLookup()
         class Response:
@@ -74,7 +84,10 @@ class StartingPlaceTests(unittest.TestCase):
             store = ChunkStore(cache=Path(directory))
             latitude, longitude = 44.540499, 2.309377
             place = {"latitude": latitude, "longitude": longitude, "name": "Test place"}
-            def download(bounds, name, output):
+            events = []
+            def download(bounds, name, output, on_progress=None):
+                if on_progress:
+                    on_progress({"phase": "download", "provider": "test.example"})
                 output.parent.mkdir(parents=True, exist_ok=True)
                 with gzip.open(output, "wt") as stream:
                     stream.write(f"""<osm><bounds minlon="{bounds[0]}" minlat="{bounds[1]}"
@@ -82,8 +95,12 @@ class StartingPlaceTests(unittest.TestCase):
                         <node id="1" lon="{longitude}" lat="{latitude}"/></osm>""")
             with patch.object(store.places, "reverse", return_value=place), \
                     patch("travel_server.download_region", side_effect=download) as fetch:
-                origin = store.prepare_origin(latitude, longitude)
-                self.assertEqual(store.prepare_origin(latitude, longitude), origin)
+                origin = store.prepare_origin(latitude, longitude, on_progress=events.append)
+                self.assertEqual([event["phase"] for event in events],
+                                 ["queued", "location", "download", "geometry", "rasterize", "saving"])
+                events.clear()
+                self.assertEqual(store.prepare_origin(latitude, longitude, on_progress=events.append), origin)
+                self.assertEqual([event["phase"] for event in events], ["queued", "cache"])
                 self.assertEqual(fetch.call_count, 1)
             data, key = origin["map"], origin["region"]
             self.assertEqual((data["width"], data["height"]), (24, 24))

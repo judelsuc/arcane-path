@@ -114,12 +114,19 @@ class ChunkStore:
         self.fingerprints[key] = fingerprint
         self.regions[key] = {"name": data["name"], "snapshot": str(source.resolve())}
 
-    def prepare_origin(self, latitude, longitude):
+    def prepare_origin(self, latitude, longitude, on_progress=None):
         latitude, longitude = coordinates(latitude, longitude)
         key = "origin-" + hashlib.sha256(f"{latitude:.6f},{longitude:.6f}".encode()).hexdigest()[:20]
+        def progress(phase):
+            if on_progress:
+                on_progress({"phase": phase})
+
+        progress("queued")
         with self.origin_lock:
             if key in self.bases:
+                progress("cache")
                 return {"region": key, "map": self.bases[key]}
+            progress("location")
             place = self.places.reverse(latitude, longitude)
             lat_step = CELL_METERS / RADIUS * 180 / math.pi
             lon_step = lat_step / math.cos(math.radians(latitude))
@@ -128,17 +135,20 @@ class ChunkStore:
                       longitude + 11.5 * lon_step, latitude + 12.5 * lat_step]
             directory = self.cache / "origins" / key
             source = directory / "source.osm.gz"
-            download_region(bounds, place["name"], source)
+            download_region(bounds, place["name"], source, on_progress=on_progress)
+            progress("geometry")
             with gzip.open(source, "rb") as stream:
                 root = ET.parse(stream).getroot()
             root.set("projection_latitude", str(latitude))
             atomic_write(source, gzip.compress(ET.tostring(root), mtime=0))
+            progress("rasterize")
             data = rasterize(source, place["name"], CELL_METERS)
             data["rows"] = [row[:24] for row in data["rows"][:24]]
             if len(data["rows"]) != 24 or any(len(row) != 24 for row in data["rows"]):
                 raise ValueError("Unexpected starting map dimensions.")
             data["width"] = data["height"] = 24
             data["origin"] = place
+            progress("saving")
             atomic_write(directory / "map.json", json.dumps(data).encode())
             self.register_origin(key, data, source)
             return {"region": key, "map": data}
@@ -264,13 +274,33 @@ class ChunkJobs:
 class OriginStore:
     def __init__(self, chunks):
         self.chunks = chunks
+        self.lock = threading.Lock()
+        self.progress = {}
+
+    def get_progress(self, latitude, longitude):
+        with self.lock:
+            return dict(self.progress.get((latitude, longitude), {"phase": "queued", "requests": 0}))
 
     def read(self, latitude, longitude):
         # prepare_origin already handles the persistent cache under its lock.
         return None
 
     def build(self, latitude, longitude):
-        return self.chunks.prepare_origin(latitude, longitude)
+        key = (latitude, longitude)
+
+        def update(event):
+            with self.lock:
+                previous = self.progress.get(key, {"requests": 0})
+                self.progress[key] = {
+                    **event,
+                    "requests": previous["requests"] + (event["phase"] == "download"),
+                }
+
+        try:
+            return self.chunks.prepare_origin(latitude, longitude, on_progress=update)
+        finally:
+            with self.lock:
+                self.progress.pop(key, None)
 
 
 class WeatherStore:
@@ -346,7 +376,7 @@ def make_handler(store, jobs):
                             {"region": key, "name": data["name"]}
                             for key, data in list(store.bases.items()) if key.startswith("origin-")])
                     if url.path not in {"/api/chunk", "/api/weather", "/api/places",
-                                        "/api/location", "/api/origin", "/api/origin-map", "/api/trail"}:
+                                        "/api/location", "/api/origin", "/api/origin-map", "/api/trail", "/api/pricing-country"}:
                         return self.send_json(404, {"error": "Unknown API endpoint."})
                     query = urllib.parse.parse_qs(url.query, strict_parsing=True)
                     if url.path == "/api/trail":
@@ -356,11 +386,13 @@ def make_handler(store, jobs):
                             raise ValueError("Invalid town-trail origin or seed.")
                         status, payload = trails.request(region, seed)
                         return self.send_json(status, payload)
-                    if url.path in {"/api/places", "/api/location", "/api/origin"}:
+                    if url.path in {"/api/places", "/api/location", "/api/origin", "/api/pricing-country"}:
                         try:
                             if url.path == "/api/places":
                                 return self.send_json(200, store.places.search(query["q"][0]))
                             latitude, longitude = coordinates(query["latitude"][0], query["longitude"][0])
+                            if url.path == "/api/pricing-country":
+                                return self.send_json(200, store.places.country(latitude, longitude))
                             if url.path == "/api/location":
                                 return self.send_json(200, store.places.reverse(latitude, longitude))
                             status, payload = origins.request(latitude, longitude)

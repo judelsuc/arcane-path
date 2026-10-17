@@ -55,8 +55,8 @@ test("foraging costs metabolism/time/fatigue, caps food and has no inventory or 
 test("asking for money is possible at zero funds and uses local half-meal pricing", () => {
   const state = { ...start(), walletCents: 0 };
   const won = act(state, "beg", town, 0.99), lost = act(state, "beg", town, 0);
-  assert.equal(won.walletCents, 310);
-  assert.equal(won.lastSurvivalChoice.moneyCents, 310);
+  assert.equal(won.walletCents, 280);
+  assert.equal(won.lastSurvivalChoice.moneyCents, 280);
   assert.equal(won.elapsedMinutes, 30);
   assert.equal(won.fatigue, 2);
   assert.equal(lost.walletCents, 0);

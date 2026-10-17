@@ -91,3 +91,11 @@ class PlaceLookup:
         return self.place(self.request("reverse", {
             "lat": latitude, "lon": longitude, "zoom": 10,
         }), latitude, longitude)
+
+    def country(self, latitude, longitude):
+        latitude, longitude = coordinates(latitude, longitude)
+        data = self.request("reverse", {"lat": latitude, "lon": longitude, "zoom": 3})
+        code = data.get("address", {}).get("country_code") if isinstance(data, dict) else None
+        if not isinstance(code, str) or len(code) != 2 or not code.isascii() or not code.isalpha():
+            raise ValueError("The country service returned no usable country code.")
+        return {"countryCode": code.upper(), "sourceUrl": "https://nominatim.openstreetmap.org/"}

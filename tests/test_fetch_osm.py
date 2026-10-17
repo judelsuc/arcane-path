@@ -60,14 +60,31 @@ class FetchOsmTests(unittest.TestCase):
             "https://api.openstreetmap.org", 400, "Bad Request", {},
             io.BytesIO(b"You requested too many nodes (limit is 50000)."),
         )
+        events = []
         with patch("fetch_osm.urllib.request.urlopen", side_effect=[
             error, io.BytesIO(OSM_RESPONSE), io.BytesIO(OSM_RESPONSE),
         ]) as request:
-            root, urls = _request_map([0, 0, 0.009, 0.009])
+            root, urls = _request_map([0, 0, 0.009, 0.009], on_progress=events.append)
         self.assertEqual(request.call_count, 3)
         self.assertEqual(len(root.findall("node")), 1)
         self.assertEqual(len(urls), 2)
         self.assertEqual(root.find("bounds").attrib["maxlon"], "0.009")
+        self.assertEqual([e["phase"] for e in events], ["download", "split", "download", "download"])
+        self.assertEqual([e["depth"] for e in events if e["phase"] == "download"], [0, 1, 1])
+
+    def test_progress_reports_shared_queue_cooldown_and_actual_backup_requests(self):
+        events = []
+        _COOLDOWNS["https://api.openstreetmap.org"] = 142
+        with patch("fetch_osm.time.monotonic", return_value=100), \
+                patch("fetch_osm.urllib.request.urlopen", side_effect=[
+                    OSError("Provider offline"), io.BytesIO(OSM_RESPONSE),
+                ]):
+            _request_sources([0, 0, 0.009, 0.009], on_progress=events.append)
+        self.assertEqual([e["phase"] for e in events],
+                         ["sourceQueue", "cooldown", "download", "fallback", "download"])
+        self.assertEqual(events[1]["seconds"], 42)
+        self.assertEqual(events[-1]["provider"], "overpass.kumi.systems")
+        self.assertTrue(events[-1]["backup"])
 
     def test_reports_other_http_errors_without_splitting(self):
         error = urllib.error.HTTPError(

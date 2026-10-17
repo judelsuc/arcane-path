@@ -45,6 +45,20 @@ export async function placeRequest(path, parameters, signal, fetcher = fetch) {
   return { pending: response.status === 202, data };
 }
 
+export function startingMapProgress(t, progress, elapsedSeconds) {
+  const phases = ["queued", "location", "sourceQueue", "download", "split", "cooldown",
+    "fallback", "cache", "geometry", "rasterize", "saving"];
+  const phase = phases.includes(progress?.phase) ? progress.phase : "queued";
+  const activity = t(`placeProgress.${phase === "download" && progress.backup ? "backup" : phase}`, {
+    provider: progress?.provider ?? "",
+    seconds: Number.isFinite(progress?.seconds) ? progress.seconds : 0,
+  });
+  return t("placeProgressDetails", { activity,
+    requests: Number.isSafeInteger(progress?.requests) && progress.requests >= 0 ? progress.requests : 0,
+    elapsed: Math.max(0, Math.floor(elapsedSeconds)),
+  });
+}
+
 export function setupStartingPoint(t, { select, addOrigin, setPreparing }) {
   const form = document.querySelector("#place-search");
   const input = document.querySelector("#place-name");
@@ -54,9 +68,13 @@ export function setupStartingPoint(t, { select, addOrigin, setPreparing }) {
   const cancel = document.querySelector("#cancel-place");
   let controller, statusKey = "", detail = "", busy = false, matches = [];
   let selectionPending = false;
+  let progress, preparationStarted = 0;
 
   function localize() {
     status.textContent = statusKey ? t(statusKey, { error: detail }) : "";
+    if (statusKey === "placePreparing") {
+      status.textContent += ` ${startingMapProgress(t, progress, (Date.now() - preparationStarted) / 1000)}`;
+    }
     status.classList.toggle("is-loading", busy);
     form.querySelector("button").disabled = locate.disabled = input.disabled = busy;
     cancel.hidden = !busy && !selectionPending;
@@ -69,6 +87,7 @@ export function setupStartingPoint(t, { select, addOrigin, setPreparing }) {
     selectionPending = false;
     setPreparing(false);
     statusKey = detail = "";
+    progress = undefined;
     matches = [];
     results.replaceChildren();
     localize();
@@ -80,6 +99,10 @@ export function setupStartingPoint(t, { select, addOrigin, setPreparing }) {
     busy = true;
     setPreparing(true);
     statusKey = key;
+    if (key === "placePreparing") {
+      preparationStarted = Date.now();
+      progress = undefined;
+    }
     detail = "";
     localize();
     try {
@@ -99,23 +122,34 @@ export function setupStartingPoint(t, { select, addOrigin, setPreparing }) {
   }
   async function choose(place, signal) {
     statusKey = "placePreparing";
+    preparationStarted = Date.now();
+    progress = undefined;
     localize();
+    const ticker = setInterval(() => { if (!signal.aborted) localize(); }, 1000);
     let result;
-    const deadline = Date.now() + 15 * 60_000;
-    do {
-      if (Date.now() > deadline) throw new Error(t("placeTimeout"));
-      result = await placeRequest("/api/origin", {
-        latitude: place.latitude, longitude: place.longitude,
-      }, signal);
-      if (result.pending) await new Promise((resolve, reject) => {
-        const abort = () => { clearTimeout(timer); reject(signal.reason); };
-        const timer = setTimeout(() => {
-          signal.removeEventListener("abort", abort);
-          resolve();
-        }, 1000);
-        signal.addEventListener("abort", abort, { once: true });
-      });
-    } while (result.pending);
+    try {
+      const deadline = Date.now() + 15 * 60_000;
+      do {
+        signal.throwIfAborted();
+        if (Date.now() > deadline) throw new Error(t("placeTimeout"));
+        result = await placeRequest("/api/origin", {
+          latitude: place.latitude, longitude: place.longitude,
+        }, signal);
+        if (signal.aborted) return;
+        progress = result.data.progress;
+        localize();
+        if (result.pending) await new Promise((resolve, reject) => {
+          const abort = () => { clearTimeout(timer); reject(signal.reason); };
+          const timer = setTimeout(() => {
+            signal.removeEventListener("abort", abort);
+            resolve();
+          }, 1000);
+          signal.addEventListener("abort", abort, { once: true });
+        });
+      } while (result.pending);
+    } finally {
+      clearInterval(ticker);
+    }
     if (signal.aborted) return;
     const { region, map } = result.data;
     validateStartingMap(map);
@@ -168,11 +202,11 @@ export function setupStartingPoint(t, { select, addOrigin, setPreparing }) {
       if (signal.aborted) return;
       await choose({ latitude: position.coords.latitude, longitude: position.coords.longitude }, signal);
     });
-    cancel.addEventListener("click", () => {
-      reset();
-      statusKey = "placeCancelled";
-      localize();
-    });
+  });
+  cancel.addEventListener("click", () => {
+    reset();
+    statusKey = "placeCancelled";
+    localize();
   });
   async function loadOrigins() {
     try {

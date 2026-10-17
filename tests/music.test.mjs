@@ -50,7 +50,7 @@ test("rewards are score-proportional integer cents and settle exactly once", () 
   const state = beginBusking(start(), cell, info, survival, data);
   for (const hits of [0, 4, 8]) {
     const next = settleBusking(state, hits);
-    assert.equal(next.walletCents - state.walletCents, Math.round(1238 * hits / 8));
+    assert.equal(next.walletCents - state.walletCents, Math.round(1120 * hits / 8));
     assert.equal(next.elapsedMinutes, 30);
     assert.equal(next.performancePending, null);
     assert.throws(() => settleBusking(next, hits), /No active/);
