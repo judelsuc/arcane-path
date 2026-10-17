@@ -18,9 +18,9 @@ export function setupTrail(t, { context, interview }) {
     const trail = state.trail;
     const target = trailTarget(state);
     document.querySelector("#trail-title").textContent = t(trail.completed ? "trailReunionTitle" : "trailTitle");
-    document.querySelector("#trail-intro").textContent = t("trailIntro", { parent: trail.parentName });
+    document.querySelector("#trail-intro").textContent = t("trailIntro", { parent: trail.parentName, total: trail.stages.length });
     document.querySelector("#trail-target").textContent = target
-      ? t("trailTarget", { step: trail.index + 1, place: target.name,
+      ? t("trailTarget", { step: trail.index + 1, total: trail.stages.length, place: target.name,
         row: target.row + 1, col: target.col + 1,
         east: target.col - state.col, south: target.row - state.row })
       : t("trailReunion", { parent: trail.parentName });
@@ -28,7 +28,7 @@ export function setupTrail(t, { context, interview }) {
     mapLink.hidden = !target;
     if (target) mapLink.href = `https://www.openstreetmap.org/${target.osmId}`;
     action.disabled = blocked || !atTrailTarget(state);
-    action.textContent = t(trail.index === 2 ? "trailMeet" : "trailInterview");
+    action.textContent = t(trail.index === trail.stages.length - 1 ? "trailMeet" : "trailInterview");
     const history = document.querySelector("#trail-history");
     history.replaceChildren();
     for (const facts of trail.history) {

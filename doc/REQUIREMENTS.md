@@ -613,6 +613,14 @@ This file records additions to the design without modifying the source PDF,
   Ignore repeats, Ctrl/Meta chords and input/select/editable targets.
   Existing movement, Look/rest/photo and rhythm keys remain unchanged.
 
+## R-043 — Ten-stage parent trail
+
+- **User choice:** Increase new parent trails from three stages to ten.
+- Generate ten distinct named OSM destination cells on all included maps;
+  preserve ordered clues and reunion only at the final stage.
+- Journal counts and final-action labels use the actual stored route length.
+  Existing three-stage saves retain their route/progress and remain playable.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

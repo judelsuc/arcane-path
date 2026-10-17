@@ -49,15 +49,15 @@ export function validateSave(save) {
     .every(k => nonnegative(s.lastMove[k])) || typeof s.lastMove.elevationKnown !== "boolean")) fail();
   const trail = s.trail;
   if (!trail || trail.version !== 1 || typeof trail.parentName !== "string" || !trail.parentName.trim() ||
-      !Array.isArray(trail.stages) || trail.stages.length !== 3 ||
-      !integer(trail.index) || trail.index < 0 || trail.index > 3 ||
-      trail.completed !== (trail.index === 3) ||
+      !Array.isArray(trail.stages) || ![3, 10].includes(trail.stages.length) ||
+      !integer(trail.index) || trail.index < 0 || trail.index > trail.stages.length ||
+      trail.completed !== (trail.index === trail.stages.length) ||
       (s.ended === "reunion") !== trail.completed ||
       !Array.isArray(trail.history) || trail.history.length !== trail.index ||
-      new Set(trail.stages.map(p => `${p?.col},${p?.row}`)).size !== 3 ||
-      trail.stages.some(p => !p || !integer(p.col) || !integer(p.row) || p.col < 0 || p.row < 0 ||
+      new Set(trail.stages.map(p => `${p?.col},${p?.row}`)).size !== trail.stages.length ||
+      trail.stages.some((p, index) => !p || !integer(p.col) || !integer(p.row) || p.col < 0 || p.row < 0 ||
         typeof p.name !== "string" || !p.name.trim() || !/^(node|way)\/\d+$/.test(p.osmId) ||
-        !/^fictional-traveler-[1-3]$/.test(p.witnessId))) fail();
+        p.witnessId !== `fictional-traveler-${index + 1}`)) fail();
   for (let i = 0; i < trail.history.length; i++) {
     const fact = trail.history[i], stage = trail.stages[i], next = trail.stages[i + 1] ?? null;
     if (!fact || fact.fictional !== true || fact.parentName !== trail.parentName ||

@@ -105,7 +105,7 @@ test("interrupted music keeps upfront costs and no reward, without changing the 
 
 test("terminal reunion and exhaustion states resume rather than revive", () => {
   const d = details();
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < d.state.trail.stages.length; i++) {
     const target = trailTarget(d.state);
     d.state = interviewTrail({ ...d.state, col: target.col, row: target.row }, info, survival, economy);
   }
@@ -113,6 +113,18 @@ test("terminal reunion and exhaustion states resume rather than revive", () => {
   const hungry = details();
   hungry.state = { ...hungry.state, reserveKcal: 0, ended: "hunger" };
   assert.equal(createSave(hungry, 1).state.ended, "hunger");
+});
+
+test("existing three-stage saves retain their route and can still finish", () => {
+  const d = details();
+  d.state.trail.stages = d.state.trail.stages.slice(0, 3);
+  assert.equal(createSave(d, 1).state.trail.stages.length, 3);
+  for (let i = 0; i < 3; i++) {
+    const target = trailTarget(d.state);
+    d.state = interviewTrail({ ...d.state, col: target.col, row: target.row }, info, survival, economy);
+    assert.equal(createSave(d, i + 2).state.trail.index, i + 1);
+  }
+  assert.equal(d.state.ended, "reunion");
 });
 
 test("corrupt, incompatible and invalid saves are rejected without deleting original data", () => {

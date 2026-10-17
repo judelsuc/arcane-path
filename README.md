@@ -283,7 +283,7 @@ personnes ou etablissements ; ce n'est pas une autorisation de jouer sur place.
 
 ## Couche 8 : une courte piste du parent
 
-Chaque nouveau voyage genere un parent fictif et trois etapes proches dans
+Chaque nouveau voyage genere un parent fictif et dix etapes proches dans
 la region de depart, a partir de localites ou de lieux publics nommes OSM.
 Un carnet s'ouvre au depart. **Piste du parent** le rouvre sans cout.
 Le carnet indique la prochaine etape et le nombre de cases est/ouest,
@@ -295,16 +295,18 @@ lieu de rencontre, prochaine destination. Les temoins sont entierement
 inventes ; aucun habitant, employe ou proprietaire reel ne recoit de role.
 Les fiches et dialogues trouves restent dans le carnet pendant ce voyage.
 
-A la troisieme etape, **Retrouver votre parent** ouvre les retrouvailles :
+A la dixieme etape, **Retrouver votre parent** ouvre les retrouvailles :
 objectif atteint, partie terminee, nouveau voyage possible. Les besoins
 restent actifs pendant les rencontres : l'epuisement peut terminer le voyage
 avant son objectif. Les etapes ne sont pas atteignables par le curseur Look.
 
 Raccourcis assumes : parent immobile au dernier repere, quatre prenoms,
-un seul modele de dialogue, trois etapes choisies parmi les quatre reperes
+un seul modele de dialogue, dix etapes choisies parmi les quatre reperes
 proches successifs, sans OSRM, fausses pistes ni calendrier du parent.
 La generation fonctionne sur les quatre cartes incluses. La sauvegarde locale
 permet maintenant de reprendre la piste apres rechargement ou changement de region.
+Les anciennes sauvegardes a trois etapes gardent leur parcours et leur
+progression ; commencer un nouveau voyage pour obtenir dix etapes.
 Le serveur de voyage local existe deja, mais la creation serveur et les
 parcours complets de la couche 9 ne sont pas encore implementes.
 

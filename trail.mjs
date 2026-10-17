@@ -3,6 +3,7 @@ import { restSurvival } from "./survival.mjs";
 import { finishAction } from "./economy.mjs";
 
 const PARENTS = ["Camille", "Alex", "Sacha", "Noa"];
+export const TRAIL_STAGES = 10;
 
 export function createTrail(map, col, row, random = Math.random) {
   const pick = values => {
@@ -22,10 +23,10 @@ export function createTrail(map, col, row, random = Math.random) {
       if (place) candidates.push({ col: c, row: r, name: place.name, osmId: place.osmId });
     }
   }
-  if (candidates.length < 3) throw new Error("The local map needs three distinct named public locations for a parent trail.");
+  if (candidates.length < TRAIL_STAGES) throw new Error(`The local map needs ${TRAIL_STAGES} distinct named public locations for a parent trail.`);
   const stages = [];
   let origin = { col, row };
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < TRAIL_STAGES; i++) {
     const nearby = candidates.filter(candidate =>
       !stages.some(s => s.col === candidate.col && s.row === candidate.row))
       .sort((a, b) => Math.hypot(a.col - origin.col, a.row - origin.row) -

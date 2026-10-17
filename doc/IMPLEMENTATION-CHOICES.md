@@ -640,3 +640,17 @@ Focused tests check physical-key handling, chord guards, mnemonic bindings,
 dynamic uniqueness and overflow errors. Browser checks covered all 41 static
 buttons, title entry, modal opening/closing, selector guards, modal isolation,
 localized titles and focus tooltips both inside/outside a dialog.
+
+## Ten-stage parent trail
+
+The user chose ten stages. New trails now choose ten distinct named cells
+using the existing nearest-four randomized algorithm. All four bundled maps
+have enough candidates (100 Firmi, 130 Paris, 55 Alps, 187 Tahiti).
+The journal denominator, intro and final encounter label follow actual route
+length. Old three-stage saves retain their routes and can still reach reunion.
+Save validation accepts existing three-stage and new ten-stage routes, with
+sequential witness ids through ten. No route is silently extended on resume.
+
+20 focused trail/save/localization tests pass, covering ten-stage generation
+across all regions and fixed draws, ordered five-minute encounters, reunion
+only on stage ten, and old three-stage saves through completion.

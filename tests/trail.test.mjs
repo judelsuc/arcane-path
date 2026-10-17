@@ -17,13 +17,13 @@ const start = () => {
   return { ...state, trail: createTrail(maps[0], state.col, state.row, () => 0) };
 };
 
-test("all four real maps support three distinct local stages using existing named OSM objects", () => {
+test("all four real maps support ten distinct local stages using existing named OSM objects", () => {
   for (const map of maps) {
     for (let seed = 0; seed < 12; seed++) {
       const col = Math.floor(map.width / 2), row = Math.floor(map.height / 2);
       const trail = createTrail(map, col, row, () => (seed + 0.5) / 12);
-      assert.equal(trail.stages.length, 3);
-      assert.equal(new Set(trail.stages.map(s => `${s.col},${s.row}`)).size, 3);
+      assert.equal(trail.stages.length, 10);
+      assert.equal(new Set(trail.stages.map(s => `${s.col},${s.row}`)).size, 10);
       for (const stage of trail.stages) {
         const cell = map.rows[stage.row][stage.col];
         assert.ok([...(cell.settlements ?? []), ...(cell.pois ?? [])].some(p =>
@@ -37,7 +37,7 @@ test("all four real maps support three distinct local stages using existing name
 test("generation is deterministic for fixed draws and fails explicitly with insufficient map locations", () => {
   assert.deepEqual(createTrail(maps[0], 14, 10, () => 0.5),
     createTrail(maps[0], 14, 10, () => 0.5));
-  assert.throws(() => createTrail({ width: 1, height: 1, rows: [[{ terrain: "plain" }]] }, 0, 0), /three distinct/);
+  assert.throws(() => createTrail({ width: 1, height: 1, rows: [[{ terrain: "plain" }]] }, 0, 0), /10 distinct/);
   assert.throws(() => createTrail(maps[0], 14, 10, () => 1), /draw/);
 });
 
@@ -52,9 +52,9 @@ test("witness sheets constrain dialogue to the parent, current place and next re
   assert.throws(() => interviewTrail(state, info, survival, economy), /player's position/);
 });
 
-test("three ordered encounters consume exactly five minutes each, record facts and end in reunion", () => {
+test("ten ordered encounters consume exactly five minutes each and only the last ends in reunion", () => {
   let state = start();
-  for (let index = 0; index < 3; index++) {
+  for (let index = 0; index < 10; index++) {
     const target = trailTarget(state);
     state = { ...state, col: target.col, row: target.row };
     const previous = state;
@@ -65,6 +65,7 @@ test("three ordered encounters consume exactly five minutes each, record facts a
     assert.ok(state.reserveKcal < previous.reserveKcal);
     assert.equal(previous.trail.index, index);
     assert.equal(state.walletCents, previous.walletCents);
+    assert.equal(state.ended, index === 9 ? "reunion" : null);
   }
   assert.equal(state.ended, "reunion");
   assert.equal(state.trail.completed, true);
