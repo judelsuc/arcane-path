@@ -53,6 +53,8 @@ for (const locale of ["fr", "en"]) {
     ui.updateStats({ state, survival, economy });
     element("#open-journal").events.click();
     await new Promise(resolve => setImmediate(resolve));
+    element("#journal-photos-page").events.click();
+    await new Promise(resolve => setImmediate(resolve));
     const note = element("#journal-pages").children[0].children[0].children[1].children[0].children[0];
     note.value = "Unblurred PDF note";
     note.events.input();
@@ -62,6 +64,7 @@ for (const locale of ["fr", "en"]) {
     assert.equal(calls[0].photos[0].note, "Unblurred PDF note");
     assert.ok(calls[0].groups.length);
     assert.ok(calls[0].route);
+    assert.ok(calls[0].cover.title);
     assert.deepEqual(calls[0].clues, []);
     assert.equal(element("#journal-export-pdf").disabled, false);
     failWrite = true;
@@ -78,6 +81,7 @@ for (const locale of ["fr", "en"]) {
     assert.equal(calls[1].photos.length, 1);
     assert.deepEqual(calls[1].groups, []);
     assert.equal(calls[1].route, null);
+    assert.equal(calls[1].cover, null);
     assert.deepEqual(calls[1].clues, ["Previously collected clue"]);
     failPdf = true;
     await element("#journal-export-pdf").events.click();

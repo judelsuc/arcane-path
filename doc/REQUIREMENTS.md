@@ -1,5 +1,14 @@
 # Requirements tracked outside the design PDF
 
+## R-118 - Notebook title page
+
+- Open the personal notebook on a title page reading "Journey of [name]"
+  / "Voyage de [nom]", with a funny localized subtitle.
+- Show the actual starting point and original starting date, not the current
+  position or date. Explicitly label missing legacy data rather than invent it.
+- Include the title page first in PDF exports. Do not use the reader's identity
+  or journey details for an abandoned notebook belonging to somebody else.
+
 ## R-116 - Adventure-style journey overview in the notebook
 
 - **User request:** Add a high-level travel view, in the spirit of adventure

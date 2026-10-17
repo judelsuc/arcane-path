@@ -825,6 +825,13 @@ bonne destination ; le temoin peut toujours se tromper.
 
 ### Carnet de photos
 
+Le carnet s'ouvre sur une page de titre **Voyage de [nom]**, accompagnee de
+« Parti chercher un parent. A surtout trouve des ampoules. », du point de
+depart et de la date initiale en UTC. La couverture est aussi la premiere
+page du PDF. Les donnees absentes des anciennes sauvegardes sont signalees,
+jamais remplacees par un lieu invente. Aucun renseignement du lecteur n'est
+ajoute a la couverture d'un carnet abandonne.
+
 En cas de deces (faim, ou anciennes fins par fatigue/manque de sommeil),
 une croix remplace le personnage a sa derniere position. L'ecran s'assombrit
 en cinq secondes et une fenetre montre l'arcane XIII historique et la cause

@@ -81,6 +81,8 @@ for (const locale of ["fr", "en"]) {
     ui.updateStats(current);
     element("#open-journal").events.click();
     await new Promise(resolve => setImmediate(resolve));
+    assert.equal(element("#journal-pages").dataset.covering, "true");
+    assert.ok(element("#journal-pages").children[0].children[0].textContent.includes("Alex"));
     element("#journal-stats-page").events.click();
     const text = node => [node.textContent, ...node.children.map(text)].join(" ");
     assert.equal(element("#journal-pages").dataset.statistics, "true");
@@ -106,6 +108,7 @@ for (const locale of ["fr", "en"]) {
     await ui.showAbandoned([], ["A shared clue"]);
     assert.equal(element("#journal-stats-page").hidden, true);
     assert.equal(element("#journal-map-page").hidden, true);
+    assert.equal(element("#journal-cover-page").hidden, true);
     element("#journal-map-page").events.click();
     element("#journal-stats-page").events.click();
     assert.doesNotMatch(text(element("#journal-pages")), /98\.76|12\.34 km/);

@@ -42,7 +42,7 @@ export function jpegPagesPdf(pages) {
   return new Blob(chunks, { type: "application/pdf" });
 }
 
-export async function notebookPdf({ title, photos, groups = [], clues = [], route = null, t }) {
+export async function notebookPdf({ title, photos, groups = [], clues = [], route = null, cover = null, t }) {
   const canvas = document.createElement("canvas");
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
@@ -91,6 +91,15 @@ export async function notebookPdf({ title, photos, groups = [], clues = [], rout
     y += 12;
   }
   clear();
+  if (cover) {
+    y = 300;
+    await text(cover.title, 48, true);
+    y += 60;
+    await text(cover.subtitle, 32);
+    y += 120;
+    for (const row of cover.rows) await text(`${row.label}: ${row.value}`, 30);
+    await flush();
+  }
   await text(title, 42, true);
   if (clues.length) {
     for (const clue of clues) await text(clue);
