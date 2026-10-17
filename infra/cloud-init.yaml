@@ -1,0 +1,78 @@
+#cloud-config
+package_update: true
+packages:
+  - python3
+  - python3-yaml
+  - unattended-upgrades
+  - nftables
+ssh_pwauth: false
+disable_root: true
+write_files:
+  - path: /etc/nftables.conf
+    permissions: '0600'
+    content: |
+      #!/usr/sbin/nft -f
+      flush ruleset
+      table inet arcane {
+        chain input {
+          type filter hook input priority 0; policy drop;
+          iifname "lo" accept
+          ct state established,related accept
+          ct state invalid drop
+          ip protocol icmp accept
+          meta l4proto ipv6-icmp accept
+          ip saddr ${admin_ipv4_cidr} tcp dport 22 ct state new accept
+        }
+        chain forward {
+          type filter hook forward priority 0; policy drop;
+        }
+        chain output {
+          type filter hook output priority 0; policy accept;
+        }
+      }
+  - path: /etc/ssh/sshd_config.d/00-arcane-path.conf
+    permissions: '0644'
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      AllowUsers ubuntu
+      AllowTcpForwarding local
+      PermitOpen 127.0.0.1:8766
+      X11Forwarding no
+      AllowAgentForwarding no
+  - path: /etc/systemd/system/arcane-path.service
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=Arcane Path private preview
+      After=network-online.target
+      Wants=network-online.target
+      ConditionPathExists=/opt/arcane-path/scripts/travel_server.py
+
+      [Service]
+      Type=simple
+      User=arcane
+      Group=arcane
+      WorkingDirectory=/opt/arcane-path
+      ExecStart=/usr/bin/python3 scripts/travel_server.py --port 8766
+      Restart=on-failure
+      RestartSec=5
+      UMask=0077
+      NoNewPrivileges=true
+      PrivateTmp=true
+      ProtectSystem=strict
+      ProtectHome=true
+      ReadWritePaths=/var/lib/arcane-path
+
+      [Install]
+      WantedBy=multi-user.target
+runcmd:
+  - [sh, -ec, 'nft --check --file /etc/nftables.conf && systemctl enable --now nftables']
+  - [sh, -ec, 'sshd -t && systemctl reload ssh']
+  - [useradd, --system, --home-dir, /var/lib/arcane-path, --shell, /usr/sbin/nologin, arcane]
+  - [install, -d, -o, root, -g, root, -m, '0755', /opt/arcane-path]
+  - [install, -d, -o, arcane, -g, arcane, -m, '0700', /var/lib/arcane-path/cache]
+  - [ln, -s, /var/lib/arcane-path/cache, /opt/arcane-path/.cache]
+  - [systemctl, daemon-reload]
+  - [systemctl, enable, arcane-path.service]

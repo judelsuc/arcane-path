@@ -878,6 +878,60 @@ This file records additions to the design without modifying the source PDF,
 - Progress polling must not block worker progress; reset stale activity and
   stop timers on completion, error or cancellation. Keep errors explicit.
 
+## R-060 — Random positive and negative journey events
+
+- **User requirement:** Random positive or negative events can happen during
+  the journey, not only during unsheltered nights.
+- **Target layer:** Layer 13 — Events, building on the survival/economy
+  foundations and the starting/daily tarot tendencies (R-031, R-041).
+- Possible positive events include unexpected help, a useful encounter or
+  finding supplies; possible negative events include a delay, losing supplies
+  or additional fatigue. These are examples, not a fixed event catalogue.
+- Clearly explain each event and its effects to the player. Any choices and
+  resulting changes to time, needs, money or resources must remain consistent
+  with the game's rules.
+- Resolve events through gameplay actions or simulated journey time, not
+  real-world idle time, menu browsing or page reloads. Save resolved outcomes
+  so resuming neither applies effects twice nor rerolls an existing event.
+- Event frequency, effect ranges and exact tarot influence remain balance
+  decisions for Layer 13; this requirement does not change current terminal
+  survival rules.
+- **Status:** Recorded for later implementation; no random journey-event
+  system is introduced by this documentation update.
+
+## R-061 — French hosting and controlled infrastructure automation
+
+- **User decision:** Use the existing OVHcloud account; prefer a French
+  datacentre. Aim near EUR 50/month and never exceed EUR 100/month.
+  Confirm VAT, recurring extras, renewal charges and any AI usage before
+  ordering; billing alerts alone do not enforce a hard budget ceiling.
+- **Initial authorization:** Prepare Terraform, inspect existing services
+  read-only after local authentication is configured, and guide subscription
+  to missing services. No purchases, infrastructure changes, deletions or
+  replacements are authorized by this initial inventory step.
+- **Subsequent authorization:** The user explicitly approved creating the
+  necessary services within the agreed budget, then continuing subsequent
+  gameplay layers after server verification, with frequent tested checkpoints.
+  Provide a final report of actual infrastructure and estimated costs.
+  Do not treat this as permission for unbounded usage or unrelated changes.
+- Keep credentials outside Git and conversation history, use limited-scope
+  access, and protect Terraform state and plans as potentially sensitive.
+- Start with CPU hosting for the game; GPU subscription and autonomous
+  development execution require a separately approved purpose and budget.
+- **Preferred domain selected by the user:** arcane-path.eu.
+  Availability, trademark checks, .eu registration eligibility and purchase
+  price remain to be confirmed; no domain has been reserved or purchased.
+- **Scope:** Deployment/operations across layers, not a new gameplay layer.
+  OpenStack authentication and Paris inventory succeeded. Terraform is
+  validated; the user approved the default OVH group with guest firewall
+  instead of a custom group after the quota failure. One Paris CPU VM and
+  its public SSH key were created; guest firewall and SSH were verified.
+  Actual state and costs are recorded in
+  [INFRASTRUCTURE.md](./INFRASTRUCTURE.md).
+- **Progress reporting:** Maintain a checked/unchecked progress list in README
+  and push frequent tested checkpoints to GitHub. Email updates are requested
+  if possible, but no sending service or recipient is configured.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

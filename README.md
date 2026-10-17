@@ -7,6 +7,96 @@ grille ASCII de 250 m, exploration a pied, horloge simulee, effort et streaming.
 Les ajouts au document de conception sont suivis dans [doc/REQUIREMENTS.md](./doc/REQUIREMENTS.md).
 Les prompts musicaux 8-bit et sons de jeu sont dans [audio-prompts](./audio-prompts/README.md).
 
+## Suivi des prochaines etapes
+
+Mise a jour : 17 octobre 2026. Une coche signifie une etape effectivement
+verifiee, pas seulement du code prepare. Voir le
+[rapport infrastructure et couts](./doc/INFRASTRUCTURE.md).
+
+- [x] Prototype jouable des couches 1 a 8, sauvegarde locale et besoins.
+- [x] Tarifs nationaux europeens et estimation de secours stable par case.
+- [x] Details reels du chargement des cartes et compteurs de requetes.
+- [x] Acces OpenStack au bon projet et inventaire de Paris verifies.
+- [x] Tarif CPU verifie : 45,71 EUR TTC maximum pour 744 heures, hors extras.
+- [x] Terraform valide : une VM CPU, aucun GPU ni volume additionnel.
+- [x] VM b3-8 creee a Paris : 2 vCPU, 8 Go RAM, disque local 50 Go.
+- [x] Cloud-init termine ; pare-feu IPv4/IPv6 et SSH par cle verifies.
+- [x] Fichiers du prototype transferes sur la VM, hors secrets et etat Terraform.
+- [x] Service du jeu operationnel et tests HTTP distants termines.
+- [x] Acces prive par tunnel SSH verifie ; parcours distant de dix etapes genere.
+- [ ] CI GitHub Actions : publication du workflow bloquee par les droits OAuth actuels.
+- [ ] Sauvegarde distante et restauration testee.
+- [ ] Domaine arcane-path.eu reserve et DNS configure.
+- [ ] HTTPS et protections necessaires avant publication publique.
+- [ ] Couche 9 : creation de partie serveur, parcours routables et validation.
+- [ ] Couches suivantes du document de conception, avec checkpoints testes.
+- [ ] Notifications par mail : aucun service d'envoi configure.
+
+Le domaine et les couches suivantes ne sont pas declares implementes.
+Les couts sont des estimations, pas un plafond de facturation automatise.
+
+## Infrastructure OVHcloud (preparation uniquement)
+
+Le dossier [infra](./infra/) contient la configuration Terraform OpenStack
+pour OVH Paris, fournisseur 3.4.0 verrouille. Une instance CPU b3-8 est prevue,
+desactivee par defaut, SSH limite a l'IP administrateur. Le prototype reste
+prive, sans port HTTP public. Le [rapport infrastructure](./doc/INFRASTRUCTURE.md)
+detaille les ressources reelles, les couts et la reprise.
+
+**Etat :** VM CPU et cle SSH creees ; cloud-init, pare-feu Ubuntu, service du
+jeu et acces par tunnel verifies. Le service ecoute seulement sur 127.0.0.1.
+Le groupe reseau OVH `default` est utilise sans modification, selon le choix
+de simplification approuve. Le domaine n'est pas reserve.
+
+Les credentials restent hors Git : `~/Downloads/openrc.sh` et
+`~/.config/arcane-path/openstack-token`, permissions 600. Le wrapper lit
+uniquement les parametres OpenRC litteraux, sans executer ce script ni charger
+un mot de passe. Ne jamais coller le jeton dans le chat ou la ligne de commande.
+Apres installation de Terraform (>= 1.7) :
+
+```sh
+terraform -chdir=infra init
+terraform -chdir=infra fmt -check
+terraform -chdir=infra validate
+terraform -chdir=infra test
+python3 scripts/terraform_ovh.py -- -chdir=infra plan -input=false
+```
+
+Ces commandes ne creent pas de serveur. Les tests utilisent un fournisseur
+simule. Les variables locales `*.tfvars.json`, etats, plans et credentials
+sont ignores par Git ; ils restent sensibles et ne doivent pas etre partages.
+Terraform suit la VM et la cle SSH : conserver l'etat local prive
+et regenerer le plan avant toute modification. Aucun backend distant partage
+n'est configure ; ne pas executer depuis plusieurs postes.
+
+Budget cible : environ 50 EUR/mois, plafond absolu 100 EUR/mois, TVA et
+extras a confirmer avant commande. Terraform n'impose pas ce plafond.
+Le GPU n'est pas inclus. Le calcul seul est estime a 45,71 EUR TTC pour
+744 heures au tarif public releve le 17 octobre 2026, hors extras.
+
+Depuis le poste administrateur, obtenir l'IP avec `terraform -chdir=infra output -raw preview_ipv4`,
+puis ouvrir un tunnel en remplacant `ADRESSE_VM` par cette IP :
+
+```sh
+ssh -N -i ~/.ssh/arcane-path-ovh \
+  -o IdentitiesOnly=yes \
+  -o UserKnownHostsFile=~/.ssh/arcane-path-known-hosts \
+  -o StrictHostKeyChecking=yes \
+  -L 127.0.0.1:18766:127.0.0.1:8766 ubuntu@ADRESSE_VM
+```
+
+Ouvrir ensuite `http://127.0.0.1:18766`. Fermer le tunnel avec Ctrl+C.
+Une autre IP administrateur necessite une mise a jour prudente du pare-feu
+depuis une session ouverte ou la console OVH ; changer cloud-init apres
+creation pourrait remplacer la VM et est bloque par `prevent_destroy`.
+Les sauvegardes navigateur du port 8766 ne sont pas automatiquement presentes
+sur le port 18766 : chaque origine navigateur garde ses propres voyages.
+
+Pour preparer un transfert sans credentials ni fichiers non suivis :
+`python3 scripts/package_preview.py /chemin/prive/preview.tar.gz`.
+Le paquet normalise les permissions des fichiers a 0644 pour le service non
+privilegie. Ne pas inclure l'etat Terraform ou le cache local dans le transfert.
+
 ## Lancer le prototype
 
 Depuis la racine du projet :
