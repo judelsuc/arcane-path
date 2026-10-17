@@ -114,7 +114,9 @@ export function trailTarget(state) {
 
 export function atTrailTarget(state) {
   const target = trailTarget(state);
-  return Boolean(target && state.col === target.col && state.row === target.row);
+  const radius = state.trail?.version === 2 ? 1 : 0;
+  return Boolean(target && Math.abs(state.col - target.col) <= radius &&
+    Math.abs(state.row - target.row) <= radius);
 }
 
 export function witnessFacts(state) {
