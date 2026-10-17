@@ -25,6 +25,16 @@ OVERPASS_URLS = (
 )
 _SOURCE_LOCK = threading.Lock()
 _COOLDOWNS = {}
+_SOURCE_CURSORS = {}
+
+
+def _rotating_sources(sources):
+    """Rotate after the last selected source; caller holds _SOURCE_LOCK."""
+    start = _SOURCE_CURSORS.get(sources, 0)
+    for offset in range(len(sources)):
+        index = (start + offset) % len(sources)
+        _SOURCE_CURSORS[sources] = (index + 1) % len(sources)
+        yield sources[index]
 
 
 class SourceUnavailable(ValueError):
@@ -187,7 +197,7 @@ def _request_sources(bounds, on_progress=None):
     if on_progress:
         on_progress({"phase": "sourceQueue"})
     with _SOURCE_LOCK:
-        for source in ("https://api.openstreetmap.org", *OVERPASS_URLS):
+        for source in _rotating_sources(("https://api.openstreetmap.org", *OVERPASS_URLS)):
             remaining = _COOLDOWNS.get(source, 0) - time.monotonic()
             if remaining > 0:
                 if on_progress:
@@ -218,7 +228,7 @@ def fetch_towns(latitude, longitude, venues=False, on_progress=None):
               if venues else '["place"~"^(city|town)$"]["name"];out body;'))
     failures = []
     with _SOURCE_LOCK:
-        for source in OVERPASS_URLS:
+        for source in _rotating_sources(OVERPASS_URLS):
             remaining = _COOLDOWNS.get(source, 0) - time.monotonic()
             if remaining > 0:
                 failures.append(f"{source}: cooldown ({math.ceil(remaining)} seconds)")
@@ -239,7 +249,11 @@ def fetch_towns(latitude, longitude, venues=False, on_progress=None):
                 return {"elements": data["elements"], "sourceUrl": source,
                         "retrievedAt": datetime.now(timezone.utc).isoformat()}
             except (OSError, ValueError) as error:
-                _COOLDOWNS[source] = time.monotonic() + 60
+                if isinstance(error, urllib.error.HTTPError):
+                    error = _http_failure(error, error.read(4096).decode("utf-8", errors="replace"))
+                _COOLDOWNS[source] = time.monotonic() + (
+                    error.retry_after if isinstance(error, SourceUnavailable) else 60
+                )
                 failures.append(f"{source}: {error}")
                 print(f"Town catalogue unavailable; trying fallback: {source}: {error}", file=sys.stderr)
     delay = max(1, math.ceil(min(

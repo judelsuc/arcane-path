@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from fetch_osm import (_request_map, _request_overpass, _request_sources, _COOLDOWNS, OVERPASS_URLS,
-                       download_region, incomplete_landcover)
+                       _SOURCE_CURSORS, download_region, incomplete_landcover, fetch_towns)
 
 OSM_RESPONSE = b"""<osm version="0.6" copyright="OpenStreetMap and contributors">
   <bounds minlat="0" minlon="0" maxlat="0.009" maxlon="0.009"/>
@@ -98,9 +98,69 @@ class FetchOsmTests(unittest.TestCase):
 
     def setUp(self):
         _COOLDOWNS.clear()
+        _SOURCE_CURSORS.clear()
 
     def tearDown(self):
         _COOLDOWNS.clear()
+        _SOURCE_CURSORS.clear()
+
+    def test_healthy_map_sources_rotate_and_wrap_without_parallel_requests(self):
+        urls = []
+        def response(request, **kwargs):
+            urls.append(request.full_url.split("/api/0.6/map?")[0])
+            return io.BytesIO(OSM_RESPONSE)
+        with patch("fetch_osm.urllib.request.urlopen", side_effect=response):
+            for _ in range(6):
+                _request_sources([0, 0, 0.009, 0.009])
+        self.assertEqual(urls, ["https://api.openstreetmap.org", *OVERPASS_URLS] * 2)
+
+    def test_map_rotation_skips_cooldown_until_expiry_and_advances_after_fallback(self):
+        sources = ("https://api.openstreetmap.org", *OVERPASS_URLS)
+        _COOLDOWNS[OVERPASS_URLS[0]] = 142
+        with patch("fetch_osm.time.monotonic", return_value=100), \
+                patch("fetch_osm._request_map", return_value=("map", [])) as primary, \
+                patch("fetch_osm._request_overpass", return_value=("overpass", [])) as overpass:
+            _request_sources([0, 0, 0.009, 0.009])
+            _request_sources([0, 0, 0.009, 0.009])
+            self.assertEqual(primary.call_count, 1)
+            self.assertEqual(overpass.call_args.args[1], OVERPASS_URLS[1])
+            self.assertEqual(_SOURCE_CURSORS[sources], 0)
+        with patch("fetch_osm.time.monotonic", return_value=143), \
+                patch("fetch_osm._request_map", return_value=("map", [])), \
+                patch("fetch_osm._request_overpass", return_value=("overpass", [])) as overpass:
+            _request_sources([0, 0, 0.009, 0.009])
+            _request_sources([0, 0, 0.009, 0.009])
+            self.assertEqual(overpass.call_args.args[1], OVERPASS_URLS[0])
+
+    def test_town_catalogues_rotate_and_share_provider_cooldowns_with_maps(self):
+        responses = lambda *args, **kwargs: io.BytesIO(b'{"elements":[]}')
+        with patch("fetch_osm.urllib.request.urlopen", side_effect=responses):
+            self.assertEqual([fetch_towns(44, 2)["sourceUrl"] for _ in range(4)],
+                             list(OVERPASS_URLS) * 2)
+        error = urllib.error.HTTPError(
+            OVERPASS_URLS[0], 429, "Too many requests", {"Retry-After": "120"}, io.BytesIO(b"Slow down"))
+        with patch("fetch_osm.time.monotonic", return_value=100), \
+                patch("fetch_osm.urllib.request.urlopen", side_effect=[
+                    error, io.BytesIO(b'{"elements":[]}')]):
+            self.assertEqual(fetch_towns(44, 2)["sourceUrl"], OVERPASS_URLS[1])
+        self.assertEqual(_COOLDOWNS[OVERPASS_URLS[0]], 220)
+        _SOURCE_CURSORS[("https://api.openstreetmap.org", *OVERPASS_URLS)] = 1
+        with patch("fetch_osm.time.monotonic", return_value=150), \
+                patch("fetch_osm._request_overpass", return_value=("map", [])) as overpass:
+            _request_sources([0, 0, 0.009, 0.009])
+            self.assertEqual(overpass.call_args.args[1], OVERPASS_URLS[1])
+
+    def test_all_cooling_sources_make_no_network_requests(self):
+        for source in ("https://api.openstreetmap.org", *OVERPASS_URLS):
+            _COOLDOWNS[source] = 200
+        with patch("fetch_osm.time.monotonic", return_value=100), \
+                patch("fetch_osm.urllib.request.urlopen") as request:
+            from fetch_osm import SourceUnavailable
+            with self.assertRaises(SourceUnavailable):
+                _request_sources([0, 0, 0.009, 0.009])
+            with self.assertRaises(SourceUnavailable):
+                fetch_towns(44, 2)
+            request.assert_not_called()
 
     def test_throttle_uses_overpass_and_honors_server_cooldown(self):
         error = urllib.error.HTTPError(

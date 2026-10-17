@@ -1008,9 +1008,13 @@ Les OSM compresses, altitudes, provenance et grilles sont conserves dans
 [.cache/travel/](./.cache/travel/) (ignore par Git). Les extraits inclus sont
 reutilises lorsque le morceau est entierement couvert ; sinon le serveur
 telecharge OSM avec la subdivision existante. En cas d'indisponibilite,
-deux API Overpass peuvent prendre le relais
-de l'API OSM. Les delais HTTP et messages de limitation sont respectes par source
+deux API Overpass et l'API OSM sont selectionnees a tour de role, apres la derniere
+source essayee, plutot que de toujours solliciter le meme serveur en premier.
+Les catalogues de villes/lieux alternent aussi leurs deux sources Overpass.
+Les delais HTTP et messages de limitation sont respectes par source
 (60 secondes par defaut), avec acces reseau serialise et erreurs journalisees.
+Les cooldowns Overpass sont partages entre cartes et catalogues ; une source
+en pause est sautee, sans requete ni contournement de sa limite.
 Les sources effectivement utilisees sont conservees dans le snapshot.
 Ces services publics ne garantissent pas la disponibilite ; les caches restent
 prioritaires. Les grilles terminees portent un
@@ -1018,6 +1022,13 @@ checksum et leur identite depend du pipeline, du snapshot initial et de la
 resolution. Les remplacements sont atomiques. Les donnees deja en cache sont
 servies sans requete fournisseur, meme apres redemarrage du serveur.
 Une panne d'altitude ne fige pas une fausse altitude dans le cache final.
+
+Le cache grandit avec les zones effectivement explorees, pas automatiquement
+avec toute la France. Pour reduire la dependance aux API publiques, des extraits
+regionaux [Geofabrik](https://download.geofabrik.de/europe/france.html) ou des
+extraits personnalises [BBBike](https://extract.bbbike.org/) constituent une
+piste distincte d'import local ; ils ne sont pas des endpoints interchangeables
+avec les requetes actuelles et leur import PBF n'est pas encore implemente.
 
 Le serveur local est un outil de prototype, pas le serveur multijoueur :
 aucune synchronisation distante de cache ou autorite de jeu n'est implementee.

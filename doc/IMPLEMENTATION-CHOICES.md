@@ -1224,3 +1224,22 @@ neighbors render, including a new neighbor after a viewport update. HTTP tests
 assert cache misses neither build terrain nor enqueue jobs, and reject oversized
 or invalid coordinate batches. This handler-only change does not change grid
 identity or require cache migration.
+
+### Rotating live OSM sources while respecting provider limits
+
+Map requests now start after the last selected provider, rotating through the
+OSM map API and the two existing Overpass instances. Town/venue catalogues rotate
+through their two Overpass providers too. Rotation is serialized under the
+existing shared provider lock, attempts each source at most once per request,
+and skips cooling providers without HTTP calls. Map and catalogue requests
+share the same per-provider cooldowns. Catalogue HTTP failures now honor the
+existing Retry-After parser instead of always applying 60 seconds.
+
+Tests cover repeated healthy rotations and wraparound, fallback cursor
+advancement, skipping until cooldown expiry, catalogue/map shared cooldowns
+and zero network requests when every provider is cooling down. Existing
+snapshot provenance, completeness checks and terrain identities are unchanged.
+This distributes requests; it does not make public APIs reliable or permit
+quota evasion. Geofabrik regional extracts and BBBike custom extracts are
+better candidates for a future local-data importer, not live API replacements.
+No regional download, import dependency or new service is added here.
