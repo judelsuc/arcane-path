@@ -1,5 +1,40 @@
 # Infrastructure OVHcloud - rapport du 17 octobre 2026
 
+## Derniere livraison - indices narratifs et petits signes
+
+- **17 octobre 2026** : runtime `58f4f51`, tag
+  `deploy-2026-10-17-clue-reassurance`, developpement `68da9d5`,
+  base live `98e91ef`. Livraison statique isolee : cinq assets et manifeste,
+  sans carnet photo, IGN, partage de journaux ni changement serveur.
+- Probabilite plus douce, petits signes sans destination, garantie apres
+  trois cases distinctes sans resultat pres du trajet, historique persistant
+  compatible avec les anciennes sauvegardes, vingt formulations FR/EN.
+- 62 tests cibles JS reussis sur base live valide : indices, actions,
+  sauvegardes, non-divulgation et couleurs. Navigateur : quatrieme recherche
+  distincte donnant un signe, aucun saut d'etape, statut vert effectivement
+  calcule, lieu/temps de decouverte et absence de nom futur verifies.
+- Cinq assets HTTPS compares octet par octet au runtime teste ; manifeste
+  exact et `/api/travel` verifie. Aucun redemarrage ni ecriture en base joueur.
+- Retour code prive : `/home/ubuntu/arcane-path-before-deploy-58f4f51.tar.gz`
+  (0600). Ne pas restaurer de base SQLite pour ce retour statique.
+
+## Livraison precedente - hebergements reels a proximite
+
+- Runtime `98e91ef`, tag `deploy-2026-10-17-nearby-lodging`,
+  developpement `99970d3`, base live `8962aa0`.
+- Recherche 5 km depuis le sommeil et la ville, OSM noeuds/ways/relations,
+  positions mondiales, cache serveur et avertissements de sources incompletes.
+  Dormir requiert toujours la case exacte. Aucun catalogue DATAtourisme importe.
+- 55 tests JS et sept tests Python cibles reussis ; navigateur avec neuf
+  hebergements reels pres de Firmi, aucun sommeil distant, arrivee aux
+  Carillons puis paiement/avance de huit heures verifies.
+- Six assets HTTPS compares octet par octet, scripts serveur et proxy hashes
+  verifies ; API live retournant neuf lieux sans avertissement. Nginx et
+  service actifs. Les quinze journaux de depart immuables inchanges.
+- Backups : `/var/lib/arcane-path/backups/journeys-before-98e91ef.sqlite3`
+  et `/home/ubuntu/arcane-path-before-deploy-98e91ef.tar.gz` (0600).
+  Ne pas restaurer une ancienne base sur les creations posterieures.
+
 ## Derniere livraison - indices progressifs et reconnaissance incertaine
 
 - **17 octobre 2026** : runtime `8962aa0`, tag

@@ -1,5 +1,23 @@
 # Requirements tracked outside the design PDF
 
+## R-103 - Abandoned journals and independent side quests
+
+- **User request:** On a failed game over, leave the quest journal at the
+  player's location and persist it on the server. Another player or a later
+  run can find it, finish finding its owner's parent and return the journal.
+- Confirmed scope: publish quest clues and fictional journey history only,
+  not pinned photos or player-written notes. Publish automatically after failed
+  journeys, not after successful reunions.
+- Finding a journal adds a delivery side quest and must not replace or alter
+  the finder's own parent search.
+- Claim each journal atomically on the server for one finder at a time.
+  Release after seven days without playing, and immediately when that finder
+  dies. Persist progress and handle reloads, retries and concurrent pickups.
+- Arcane-object searches are also side quests. Their gameplay is explicitly
+  deferred; do not implement it as part of abandoned-journal delivery.
+- Status: requirements agreed; server persistence, claims and delivery gameplay
+  are not implemented yet.
+
 ## R-102 - Frequent narrative clues and protection against unlucky streaks
 
 - **User request:** Clue searches are too rare and give too little reassurance
