@@ -4,6 +4,7 @@ import { cellInfo } from "./cell-info.mjs";
 import { setupCellContent } from "./cell-content-ui.mjs";
 import { setupTravel } from "./travel-ui.mjs";
 import { setupAudio } from "./audio-ui.mjs";
+import { setupButtonShortcuts } from "./button-shortcuts.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
 const viewport = document.querySelector("#map-viewport");
@@ -299,4 +300,5 @@ async function loadRegion() {
 }
 
 regionSelect.addEventListener("change", loadRegion);
+setupButtonShortcuts(t);
 loadRegion();

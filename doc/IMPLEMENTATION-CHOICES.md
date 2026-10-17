@@ -620,3 +620,23 @@ Current curated cards give multipliers 0.7-1.1. This is provisional gameplay
 balance, not event execution: the future Events layer must call the helper.
 Birth attributes never change with daily draws. The reveal explicitly shows
 the attributes, budget and future tendency without claiming events are live.
+
+## Button tooltips and shortcuts
+
+Centralized metadata for all buttons, including dynamically generated options.
+Use Alt+Shift chords rather than consuming ordinary typing keys or changing
+existing arrow/L/R/P/Space controls. Interpret physical event.code so Option
+characters on macOS do not break letter shortcuts. Every button gets native
+title, aria-keyshortcuts and a localized hover/focus tooltip. Tooltips move
+inside open dialogs so the browser top layer does not obscure them.
+
+Bindings are scoped to the open dialog or the main screen, and skip hidden,
+disabled and inert controls. Dynamic options use digits then unused letters,
+with no collisions with fixed dialog actions. Key repeat and form fields are
+ignored; activating a shortcut invokes the existing button click path, so
+confirmation, costs, validation and save behavior remain centralized.
+
+Focused tests check physical-key handling, chord guards, mnemonic bindings,
+dynamic uniqueness and overflow errors. Browser checks covered all 41 static
+buttons, title entry, modal opening/closing, selector guards, modal isolation,
+localized titles and focus tooltips both inside/outside a dialog.

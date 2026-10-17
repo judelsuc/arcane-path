@@ -600,6 +600,17 @@ This file records additions to the design without modifying the source PDF,
   Values are provisional balance choices, not predictions. No events or
   minigames are triggered before their later layer.
 
+## R-042 — Button tooltips and keyboard shortcuts
+
+- **User request:** Tooltips and keyboard shortcuts for every button.
+- Localized hover/focus tooltips show the action and Alt+Shift chord
+  (Option+Shift on Mac); native title and aria-keyshortcuts also expose it.
+- Static buttons have mnemonic bindings; dynamic meal/shelter/venue buttons
+  receive distinct number/letter bindings within their dialog.
+- Only visible, enabled buttons in the current modal/screen can activate.
+  Ignore repeats, Ctrl/Meta chords and input/select/editable targets.
+  Existing movement, Look/rest/photo and rhythm keys remain unchanged.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

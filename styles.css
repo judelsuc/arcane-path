@@ -53,6 +53,18 @@ body {
 .birth-card-art { color: var(--accent); text-align: center; line-height: 1.2; }
 #birth-tarot-dialog { width: min(540px, 94vw); max-height: 90dvh; overflow: auto; }
 #birth-tarot-name { color: var(--accent); }
+#button-tooltip {
+  position: fixed;
+  z-index: 10000;
+  max-width: min(400px, calc(100vw - 16px));
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  background: #101711;
+  color: #e5e7d9;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  pointer-events: none;
+}
 .title-art {
   color: #b9c7a6;
   font-size: clamp(8px, 2vw, 13px);

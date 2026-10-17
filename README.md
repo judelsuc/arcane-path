@@ -308,6 +308,22 @@ permet maintenant de reprendre la piste apres rechargement ou changement de regi
 Le serveur de voyage local existe deja, mais la creation serveur et les
 parcours complets de la couche 9 ne sont pas encore implementes.
 
+## Boutons et raccourcis
+
+Survoler un bouton ou lui donner le focus avec Tab affiche son action et son
+raccourci **Alt + Maj + touche** (Option + Maj sur Mac). Chaque bouton dispose
+aussi de `title` et `aria-keyshortcuts`. Exemples : M musique, N nouveau
+voyage, C reprise, E repas, H sommeil, T ville, B musique de rue, J journal,
+S sauvegarde, Q retour carte. Entree ouvre la carte depuis le titre ; D
+revele le tarot, puis Entree continue (avec Alt + Maj pour ces raccourcis).
+
+Dans les dialogues, seuls leurs boutons repondent ; les options dynamiques
+utilisent 1-9, 0 puis les lettres disponibles, indiquees dans leurs info-bulles.
+Les boutons caches/desactives et les appuis repetes sont ignores. Aucun
+raccourci ne s'active pendant l'utilisation d'un champ ou selecteur.
+Les commandes existantes restent disponibles sans modificateurs : fleches,
+L observation, R repos, P photo, Espace rythme et Echap pour fermer.
+
 ## Ecran titre
 
 Au chargement, un ecran titre presente le voyage avec une illustration ASCII
