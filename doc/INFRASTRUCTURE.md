@@ -209,6 +209,27 @@ joueurs. Aucun test de charge ou audit de securite complet n'est revendique.
 - Archive de retour code, hors cache :
   `/home/ubuntu/arcane-path-before-deploy-7100f2b.tar.gz`, mode 0600.
 
+### Checkpoint deploye : aide des raccourcis
+
+- **17 octobre 2026** : commit `b94763e500a9355c7a3eaee08797aad340a3cbd1`,
+  tag pousse `deploy-2026-10-17-controls`, PR #5.
+- Popup Commandes a la premiere preparation de chaque visite, rouvrable
+  par ? ou le bouton. Liste derivee des vrais raccourcis, usages FR/EN,
+  fermeture Echap et defilement mobile.
+- 205 tests JavaScript passes ; derniere suite Python : 109 tests passes,
+  aucun changement Python depuis. Navigateur : 20 lignes, focus dans le
+  dialogue, pas de debordement a 375 px, fermeture Echap, reouverture ? et
+  absence d'ouverture pendant la saisie.
+- Nginx et service jeu actifs, API voyage 200. Verification HTTPS authentifiee :
+  manifeste egal au commit exact, page avec le dialogue et les deux modules
+  de commandes effectivement servis en 200. Les correctifs repas/musique du
+  checkpoint precedent sont inclus.
+- Archive de retour code hors cache :
+  `/home/ubuntu/arcane-path-before-deploy-b94763e.tar.gz`, mode 0600.
+- Ce checkpoint termine les corrections de jouabilite en cours, pas la couche 9
+  complete : itineraires pietons, algorithme complet du parent et validateur
+  de resolubilite restent explicitement non implementes.
+
 ## Reprise
 
 1. Renouveler le jeton si necessaire : expiration relevee au 18 octobre 2026
