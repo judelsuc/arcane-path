@@ -379,8 +379,8 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       if (!state.serverJourney) paragraph(item, t("fieldSearchServer"));
       const last = trail.exploration.lastSearch;
       if (last?.stage === trail.index) {
-        paragraph(item, t(`fieldOutcome.${last.outcome}`, last),
-          ["found", "sign"].includes(last.outcome) ? "success" : "failure");
+        paragraph(item, t(`fieldOutcome.${last.repeated ? "repeated" : last.outcome}`, last),
+          !last.repeated && ["found", "sign"].includes(last.outcome) ? "success" : "failure");
         if (last.outcome === "nothing") paragraph(item, t("fieldNothingAdvice"));
         if (fieldPhotoUnavailable) paragraph(item, t("fieldPhotoFallback"));
       }

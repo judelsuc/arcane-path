@@ -724,6 +724,8 @@ Le bouton Nouveau voyage reste sur l'ecran principal, pas dans le journal J.
 Les indices et photos precedent les actions de recherche, y compris sur
 mobile. Les couts restent visibles ; les explications detaillees de la
 recherche se deploient a la demande.
+Retrouver un indice deja connu ne cree pas de doublon : le resultat signale
+explicitement qu'aucun nouvel indice n'a ete ajoute, avec les couts payes.
 Lorsqu'un temoin propose un nom de ville dans I, son avis indique aussi la
 distance a vol d'oiseau, la direction depuis votre position actuelle et les
 coordonnees de la ville proposee. Cela ne confirme pas qu'il s'agit de la

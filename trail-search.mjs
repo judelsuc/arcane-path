@@ -116,6 +116,7 @@ export function applyFieldSearch(state, result, cell, info, survival, economy) {
     precision: result.precision, col: result.col, row: result.row, elapsedMinutes: next.elapsedMinutes } : null;
   const hints = hint && !exploration.hints.some(h => h.stage === hint.stage &&
     h.kind === hint.kind && h.precision === hint.precision) ? [...exploration.hints, hint] : exploration.hints;
+  const repeated = Boolean(hint && hints === exploration.hints);
   const oldMisses = exploration.searchStreak?.stage === result.stage ? exploration.searchStreak.misses : [];
   const position = { col: result.col, row: result.row };
   const misses = ["found", "sign"].includes(outcome) ? []
@@ -129,6 +130,7 @@ export function applyFieldSearch(state, result, cell, info, survival, economy) {
   next = { ...next, trail: { ...state.trail, exploration: { ...exploration, hints,
     signs: retainedSigns, searchStreak: { stage: result.stage, misses },
     lastSearch: { stage: result.stage, outcome, minutes: result.minutes, fatigue: result.fatigue,
+      ...(repeated ? { repeated: true } : {}),
       ...position, elapsedMinutes: next.elapsedMinutes },
   } } };
   return next;
@@ -272,6 +274,7 @@ export function validateExploration(state) {
   }
   if (e.lastSearch !== undefined) {
     const r = e.lastSearch;
+    if (r?.repeated !== undefined && (typeof r.repeated !== "boolean" || r.outcome !== "found")) fail();
     if (!r || !Number.isInteger(r.stage) || r.stage < e.firstStage || r.stage > state.trail.index ||
         r.stage >= state.trail.stages.length ||
         !["found", "sign", "nothing", "fainted", "exhausted"].includes(r.outcome) ||

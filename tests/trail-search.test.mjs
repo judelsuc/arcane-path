@@ -242,10 +242,17 @@ test("photo preparation is free until committed, falls back explicitly, deduplic
   const next = applyFieldSearch(state, result, cell, info, survival, economy);
   const again = applyFieldSearch(next, await search(next, { kind: 0.5 }), cell, info, survival, economy);
   assert.equal(again.trail.exploration.hints.length, 1);
+  assert.equal(next.trail.exploration.lastSearch.repeated, undefined);
+  assert.equal(again.trail.exploration.lastSearch.repeated, true);
   assert.equal(again.elapsedMinutes, 60);
   assert.throws(() => applyFieldSearch({ ...state, col: state.col + 1 }, result, cell, info, survival, economy), /Stale/);
   assert.throws(() => applyFieldSearch(state, { ...result, minutes: 0 }, cell, info, survival, economy), /Invalid/);
   assert.deepEqual(validateSave(JSON.parse(JSON.stringify(save(again)))).state, again);
+  for (const invalid of ["yes", 1]) {
+    const malformed = structuredClone(again);
+    malformed.trail.exploration.lastSearch.repeated = invalid;
+    assert.throws(() => validateSave(save(malformed)));
+  }
 });
 
 test("search interrupted by fainting or hunger cannot award hints", async () => {
@@ -457,6 +464,17 @@ for (const locale of ["fr", "en"]) {
     assert.match(text, /Seaside/);
     assert.match(text, locale === "fr" ? /non confirmé/ : /Unconfirmed/);
     assert.doesNotMatch(text, /Secret Town|45 km|194/);
+    state = applyFieldSearch(state, await search(state, { kind: 0.5 }), cell, info, survival, economy);
+    const repeatedCount = state.trail.exploration.hints.length;
+    ui.localize();
+    const repeatedItem = element("#trail-actions").children.find(c =>
+      c.children.some(b => b.id === "clue-field-search"));
+    const feedback = repeatedItem.children.find(c => c.textContent ===
+      translate(locale, "fieldOutcome.repeated", state.trail.exploration.lastSearch));
+    assert.ok(feedback);
+    assert.equal(feedback.dataset.feedback, "failure");
+    assert.equal(state.trail.exploration.hints.length, repeatedCount);
+    state = validateSave(JSON.parse(JSON.stringify(save(state)))).state;
     state = { ...state, col: state.trail.stages[0].col - 8 };
     ui.localize();
     const nextSearch = element("#trail-actions").children.flatMap(c => c.children)
@@ -465,7 +483,7 @@ for (const locale of ["fr", "en"]) {
     const pending = nextSearch.events.click();
     element("#trail-dialog").events.close();
     await pending;
-    assert.equal(state.elapsedMinutes, 49);
+    assert.equal(state.elapsedMinutes, 79);
     assert.match(element("#trail-target").textContent, /Secret Town 1/);
     assert.doesNotMatch(texts(element("#trail-history")).join(" "), /Secret Town 2/);
     assert.equal(state.trail.index, 0);
