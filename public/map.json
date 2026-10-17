@@ -109,11 +109,21 @@
         "pois": [
           {
             "osmId": "node/1222958246",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5661698,
+            "longitude": 2.3061579000000005,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "way/106748625",
             "category": "amenity",
+            "latitude": 44.56622230000001,
+            "longitude": 2.3064404,
+            "tags": {
+              "amenity": "school"
+            },
             "name": "École élémentaire publique La Bessenoits"
           }
         ]
@@ -148,11 +158,21 @@
           {
             "osmId": "node/12978317152",
             "category": "tourism",
+            "latitude": 44.5657578,
+            "longitude": 2.3254578,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "D 580 Fonteilles"
           },
           {
             "osmId": "node/6479129820",
             "category": "tourism",
+            "latitude": 44.5657727,
+            "longitude": 2.3254806000000006,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "GR 65 Firmi"
           }
         ],
@@ -176,15 +196,30 @@
           {
             "osmId": "node/12183795401",
             "category": "amenity",
+            "latitude": 44.5667495,
+            "longitude": 2.3298216,
+            "tags": {
+              "amenity": "food_court"
+            },
             "name": "Camino gourmand - 15.04 au 15.09"
           },
           {
             "osmId": "node/5844310603",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.566732,
+            "longitude": 2.3297962000000005,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/6479129582",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5668419,
+            "longitude": 2.3299371,
+            "tags": {
+              "amenity": "drinking_water"
+            }
           }
         ]
       },
@@ -195,6 +230,11 @@
           {
             "osmId": "way/371358827",
             "category": "tourism",
+            "latitude": 44.56695605,
+            "longitude": 2.3300216,
+            "tags": {
+              "tourism": "picnic_site"
+            },
             "name": "Aire de Fonteilles"
           }
         ]
@@ -241,6 +281,11 @@
           {
             "osmId": "node/9905808255",
             "category": "tourism",
+            "latitude": 44.5630119,
+            "longitude": 2.2634737,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Decazeville"
           }
         ]
@@ -251,31 +296,68 @@
         "names": [
           "Viviole"
         ],
+        "settlements": [
+          {
+            "osmId": "node/837532264",
+            "name": "Viviole",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/10159463117",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.56307520000001,
+            "longitude": 2.2658978999999997,
+            "tags": {
+              "amenity": "toilets"
+            }
           },
           {
             "osmId": "node/10159463119",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5630553,
+            "longitude": 2.2651909999999997,
+            "tags": {
+              "amenity": "toilets"
+            }
           },
           {
             "osmId": "node/1226536791",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.56305580000001,
+            "longitude": 2.2649501,
+            "tags": {
+              "amenity": "drinking_water"
+            }
           },
           {
             "osmId": "node/12978307769",
             "category": "tourism",
+            "latitude": 44.5631922,
+            "longitude": 2.2643257,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Vivioles"
           },
           {
             "osmId": "node/3934037142",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.56306090000001,
+            "longitude": 2.264906,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/3934037143",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5630363,
+            "longitude": 2.2650072999999997,
+            "tags": {
+              "amenity": "bench"
+            }
           }
         ]
       },
@@ -285,7 +367,10 @@
         "pois": [
           {
             "osmId": "node/13767121405",
-            "category": "summit"
+            "category": "summit",
+            "latitude": 44.5625879,
+            "longitude": 2.268119,
+            "tags": {}
           }
         ]
       },
@@ -303,14 +388,31 @@
         "names": [
           "La Combe"
         ],
+        "settlements": [
+          {
+            "osmId": "node/837532243",
+            "name": "La Combe",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/12978327047",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5637879,
+            "longitude": 2.276924,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9905727983",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5636164,
+            "longitude": 2.2772938,
+            "tags": {
+              "amenity": "drinking_water"
+            }
           }
         ]
       },
@@ -327,6 +429,13 @@
         "terrain": "place",
         "names": [
           "Le Fromental"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/2122289761",
+            "name": "Le Fromental",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -400,6 +509,9 @@
           {
             "osmId": "node/11646994133",
             "category": "summit",
+            "latitude": 44.564687600000006,
+            "longitude": 2.3229783000000004,
+            "tags": {},
             "name": "Puy de Fraysse"
           }
         ],
@@ -482,6 +594,11 @@
           {
             "osmId": "node/9905808254",
             "category": "tourism",
+            "latitude": 44.561693,
+            "longitude": 2.2648578,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "La Métamorphose d'une Terre de Fer et de Feu"
           }
         ]
@@ -538,6 +655,13 @@
         ],
         "names": [
           "Laubarède"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/858425263",
+            "name": "Laubarède",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -640,6 +764,13 @@
         ],
         "names": [
           "Le Soulacre"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/930230426",
+            "name": "Le Soulacre",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -663,11 +794,21 @@
           {
             "osmId": "node/4163095205",
             "category": "amenity",
+            "latitude": 44.5593542,
+            "longitude": 2.2714844,
+            "tags": {
+              "amenity": "college"
+            },
             "name": "Centre AFPA"
           },
           {
             "osmId": "way/70108956",
             "category": "amenity",
+            "latitude": 44.55811655,
+            "longitude": 2.2726529,
+            "tags": {
+              "amenity": "vehicle_inspection"
+            },
             "name": "Autosur"
           }
         ]
@@ -681,10 +822,22 @@
         "names": [
           "Saint-Michel"
         ],
+        "settlements": [
+          {
+            "osmId": "node/837422769",
+            "name": "Saint-Michel",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/1222962691",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5593205,
+            "longitude": 2.2761355,
+            "tags": {
+              "amenity": "recycling"
+            }
           }
         ]
       },
@@ -698,19 +851,39 @@
           {
             "osmId": "node/4163135493",
             "category": "amenity",
+            "latitude": 44.5586956,
+            "longitude": 2.2777177000000006,
+            "tags": {
+              "amenity": "school"
+            },
             "name": "École primaire François Fabié"
           },
           {
             "osmId": "node/6735904830",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5582977,
+            "longitude": 2.2773202,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9905738598",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5590931,
+            "longitude": 2.2773144000000003,
+            "tags": {
+              "amenity": "drinking_water"
+            }
           },
           {
             "osmId": "way/69732936",
             "category": "amenity",
+            "latitude": 44.55923285,
+            "longitude": 2.2770427499999997,
+            "tags": {
+              "amenity": "place_of_worship"
+            },
             "name": "Église Saint-Michel"
           }
         ]
@@ -767,11 +940,21 @@
           {
             "osmId": "node/10579796027",
             "category": "tourism",
+            "latitude": 44.560146200000005,
+            "longitude": 2.3100357,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Le Puy de Wolf"
           },
           {
             "osmId": "node/6479104657",
             "category": "tourism",
+            "latitude": 44.56014330000001,
+            "longitude": 2.3100089,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Carrefour GR 65 - 62B"
           }
         ]
@@ -852,6 +1035,13 @@
         ],
         "names": [
           "Lagarrigue"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/914629887",
+            "name": "Lagarrigue",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -873,28 +1063,58 @@
           {
             "osmId": "node/5988361496",
             "category": "shop",
+            "latitude": 44.5578011,
+            "longitude": 2.2605655,
+            "tags": {
+              "shop": "electronics"
+            },
             "name": "Pulsat"
           },
           {
             "osmId": "node/5988361497",
             "category": "shop",
+            "latitude": 44.5577111,
+            "longitude": 2.2608632,
+            "tags": {
+              "shop": "doityourself"
+            },
             "name": "Point P"
           },
           {
             "osmId": "way/106364738",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55707305,
+            "longitude": 2.26340605,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/106375328",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55672895,
+            "longitude": 2.263523,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/106375329",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55681920000001,
+            "longitude": 2.2632309500000005,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/315724707",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55585845,
+            "longitude": 2.2624318,
+            "tags": {
+              "amenity": "parking"
+            }
           }
         ]
       },
@@ -908,96 +1128,206 @@
           {
             "osmId": "node/10129696581",
             "category": "shop",
+            "latitude": 44.5563245,
+            "longitude": 2.2647609,
+            "tags": {
+              "shop": "bakery"
+            },
             "name": "Pon-Pon"
           },
           {
             "osmId": "node/10248949031",
-            "category": "shop"
+            "category": "shop",
+            "latitude": 44.5562209,
+            "longitude": 2.2645778000000005,
+            "tags": {
+              "shop": "alcohol"
+            }
           },
           {
             "osmId": "node/10248949032",
-            "category": "shop"
+            "category": "shop",
+            "latitude": 44.5561179,
+            "longitude": 2.2645122000000004,
+            "tags": {
+              "shop": "butcher"
+            }
           },
           {
             "osmId": "node/12387457787",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5565041,
+            "longitude": 2.2637643,
+            "tags": {
+              "tourism": "artwork"
+            }
           },
           {
             "osmId": "node/13058293528",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55644780000001,
+            "longitude": 2.2650404000000006,
+            "tags": {
+              "amenity": "bicycle_parking"
+            }
           },
           {
             "osmId": "node/13058293529",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5564691,
+            "longitude": 2.2650419,
+            "tags": {
+              "amenity": "motorcycle_parking"
+            }
           },
           {
             "osmId": "node/1497216953",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5562626,
+            "longitude": 2.2637789,
+            "tags": {
+              "amenity": "bicycle_parking"
+            }
           },
           {
             "osmId": "node/3327044584",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5567756,
+            "longitude": 2.2643345,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/4402488676",
             "category": "amenity",
+            "latitude": 44.55610620000001,
+            "longitude": 2.2651839,
+            "tags": {
+              "amenity": "public_building"
+            },
             "name": "Centre technique intercommunal"
           },
           {
             "osmId": "node/4402488678",
             "category": "shop",
+            "latitude": 44.556012,
+            "longitude": 2.2659357,
+            "tags": {
+              "shop": "car"
+            },
             "name": "Peugeot"
           },
           {
             "osmId": "node/846865298",
             "category": "tourism",
+            "latitude": 44.5560446,
+            "longitude": 2.2646007000000004,
+            "tags": {
+              "tourism": "artwork"
+            },
             "name": "Idéogrammes"
           },
           {
             "osmId": "node/9757319452",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5575829,
+            "longitude": 2.2643545,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/9905808190",
             "category": "tourism",
+            "latitude": 44.5567161,
+            "longitude": 2.2643741,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Du Berceau de la Ville au Tremplin pour l'Avenir"
           },
           {
             "osmId": "way/106364736",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55641525,
+            "longitude": 2.26384505,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/106618568",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55630790000001,
+            "longitude": 2.26676995,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/1107374090",
             "category": "shop",
+            "latitude": 44.556234849999996,
+            "longitude": 2.2646874,
+            "tags": {
+              "shop": "convenience"
+            },
             "name": "Les Halles de la Découverte"
           },
           {
             "osmId": "way/1418268472",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.556246400000006,
+            "longitude": 2.26437335,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/1418268473",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.556469650000004,
+            "longitude": 2.2645560500000004,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/1418268474",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5565373,
+            "longitude": 2.2649890999999998,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/1418268475",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.556523049999996,
+            "longitude": 2.2650186999999997,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/1420980993",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55653064999999,
+            "longitude": 2.26500505,
+            "tags": {
+              "amenity": "charging_station"
+            }
           },
           {
             "osmId": "way/1436116491",
             "category": "shop",
+            "latitude": 44.55676285,
+            "longitude": 2.2668436,
+            "tags": {
+              "shop": "supermarket"
+            },
             "name": "Aldi"
           }
         ]
@@ -1011,15 +1341,30 @@
         "pois": [
           {
             "osmId": "node/1222964033",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5560146,
+            "longitude": 2.2681702,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "way/106618567",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55665725,
+            "longitude": 2.2694204,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/98608629",
-            "category": "shop"
+            "category": "shop",
+            "latitude": 44.5563328,
+            "longitude": 2.26766615,
+            "tags": {
+              "shop": "vacant"
+            }
           }
         ]
       },
@@ -1030,11 +1375,21 @@
         "pois": [
           {
             "osmId": "way/71887126",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.557630200000006,
+            "longitude": 2.2703524,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/71887130",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55795785,
+            "longitude": 2.27245405,
+            "tags": {
+              "amenity": "parking"
+            }
           }
         ]
       },
@@ -1051,30 +1406,67 @@
         "names": [
           "Le Combal"
         ],
+        "settlements": [
+          {
+            "osmId": "node/5962177708",
+            "name": "Le Combal",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/11601631574",
-            "category": "shop"
+            "category": "shop",
+            "latitude": 44.5568466,
+            "longitude": 2.2774266999999995,
+            "tags": {
+              "shop": "vacant"
+            }
           },
           {
             "osmId": "node/1222962688",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5572295,
+            "longitude": 2.276678,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/9905774322",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55703739999999,
+            "longitude": 2.2765712,
+            "tags": {
+              "amenity": "post_box"
+            }
           },
           {
             "osmId": "way/1531000746",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55719225,
+            "longitude": 2.2767430500000003,
+            "tags": {
+              "amenity": "shelter"
+            }
           },
           {
             "osmId": "way/204637992",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5571089,
+            "longitude": 2.2773566499999998,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/69736518",
             "category": "amenity",
+            "latitude": 44.557128399999996,
+            "longitude": 2.27728705,
+            "tags": {
+              "amenity": "public_building"
+            },
             "name": "Pépinière d'Entreprises Chrysalis"
           }
         ]
@@ -1089,10 +1481,27 @@
           "La Buscalie",
           "La Buscalie Haute"
         ],
+        "settlements": [
+          {
+            "osmId": "node/1638221187",
+            "name": "La Buscalie",
+            "wikipedia": null
+          },
+          {
+            "osmId": "node/1638221191",
+            "name": "La Buscalie Haute",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "way/717200493",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55591054999999,
+            "longitude": 2.28098845,
+            "tags": {
+              "amenity": "shelter"
+            }
           }
         ]
       },
@@ -1142,7 +1551,12 @@
         "pois": [
           {
             "osmId": "node/6479099710",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.556383600000004,
+            "longitude": 2.3050019,
+            "tags": {
+              "tourism": "information"
+            }
           }
         ],
         "contentSources": [
@@ -1183,6 +1597,13 @@
         ],
         "names": [
           "Mascles"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/858121337",
+            "name": "Mascles",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -1212,6 +1633,13 @@
         "terrain": "place",
         "names": [
           "Centrès"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/914621952",
+            "name": "Centrès",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -1222,6 +1650,13 @@
         ],
         "names": [
           "Le Cazals"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/914528549",
+            "name": "Le Cazals",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -1260,30 +1695,60 @@
         "pois": [
           {
             "osmId": "node/10709947898",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.55510499999999,
+            "longitude": 2.2628698,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/12068823263",
             "category": "amenity",
+            "latitude": 44.55483770000001,
+            "longitude": 2.2631702,
+            "tags": {
+              "amenity": "car_wash"
+            },
             "name": "Bleu Lavage"
           },
           {
             "osmId": "node/12068846083",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5547089,
+            "longitude": 2.2629597,
+            "tags": {
+              "amenity": "vending_machine"
+            }
           },
           {
             "osmId": "node/5988361494",
             "category": "tourism",
+            "latitude": 44.5549355,
+            "longitude": 2.2617067999999994,
+            "tags": {
+              "tourism": "artwork"
+            },
             "name": "gorille"
           },
           {
             "osmId": "way/69735678",
             "category": "shop",
+            "latitude": 44.5546193,
+            "longitude": 2.26104995,
+            "tags": {
+              "shop": "doityourself"
+            },
             "name": "Bricorama"
           },
           {
             "osmId": "way/69739891",
             "category": "historic",
+            "latitude": 44.555175399999996,
+            "longitude": 2.2615940000000005,
+            "tags": {
+              "historic": "yes"
+            },
             "name": "Les Soufflantes"
           }
         ],
@@ -1309,32 +1774,69 @@
         "names": [
           "Fontvergne"
         ],
+        "settlements": [
+          {
+            "osmId": "node/837572254",
+            "name": "Fontvergne",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/1448783813",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5550874,
+            "longitude": 2.2664207999999997,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/6502484366",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.555357,
+            "longitude": 2.2656603,
+            "tags": {
+              "tourism": "artwork"
+            }
           },
           {
             "osmId": "node/6715967629",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55544810000001,
+            "longitude": 2.2649187,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "way/204632515",
             "category": "amenity",
+            "latitude": 44.5557746,
+            "longitude": 2.2647171,
+            "tags": {
+              "amenity": "parking"
+            },
             "name": "Fontvergne"
           },
           {
             "osmId": "way/69736892",
             "category": "amenity",
+            "latitude": 44.55467140000001,
+            "longitude": 2.2649383000000003,
+            "tags": {
+              "amenity": "place_of_worship"
+            },
             "name": "Église Saint-Antoine"
           },
           {
             "osmId": "way/69739088",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.55565425,
+            "longitude": 2.26499585,
+            "tags": {
+              "amenity": "toilets"
+            }
           }
         ],
         "contentSources": [
@@ -1355,6 +1857,13 @@
         "terrain": "place",
         "names": [
           "L'Igue de Fontvergne"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/5962177707",
+            "name": "L'Igue de Fontvergne",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -1366,6 +1875,13 @@
         "terrain": "place",
         "names": [
           "La Lindardie"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/858660797",
+            "name": "La Lindardie",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -1385,15 +1901,30 @@
         "pois": [
           {
             "osmId": "node/1222961213",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.554437,
+            "longitude": 2.2855308,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/6735904806",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.555211,
+            "longitude": 2.2827543,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "way/70139789",
             "category": "shop",
+            "latitude": 44.55379055,
+            "longitude": 2.28559595,
+            "tags": {
+              "shop": "car_repair"
+            },
             "name": "Garage Grialou"
           }
         ]
@@ -1437,15 +1968,30 @@
         "pois": [
           {
             "osmId": "node/3379534986",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5539976,
+            "longitude": 2.3047366000000005,
+            "tags": {
+              "tourism": "viewpoint"
+            }
           },
           {
             "osmId": "node/858156916",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.554005,
+            "longitude": 2.3047961000000003,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/858156918",
             "category": "summit",
+            "latitude": 44.5541069,
+            "longitude": 2.3048044000000005,
+            "tags": {
+              "tourism": "attraction"
+            },
             "name": "Puy de Wolf"
           }
         ]
@@ -1544,27 +2090,57 @@
         "pois": [
           {
             "osmId": "node/11152507705",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5516834,
+            "longitude": 2.2618461,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/12538639628",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5516175,
+            "longitude": 2.2613176,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/12538639629",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5520348,
+            "longitude": 2.2631585000000003,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/4349809626",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.552987800000004,
+            "longitude": 2.2635756,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "node/9905803957",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5525144,
+            "longitude": 2.262382,
+            "tags": {
+              "tourism": "artwork"
+            }
           },
           {
             "osmId": "node/9905803958",
             "category": "tourism",
+            "latitude": 44.55250720000001,
+            "longitude": 2.262355,
+            "tags": {
+              "tourism": "artwork"
+            },
             "name": "Le faon et l’enfant"
           }
         ]
@@ -1575,11 +2151,21 @@
         "pois": [
           {
             "osmId": "node/4349807693",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.551531,
+            "longitude": 2.2643987,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "node/6583691305",
             "category": "tourism",
+            "latitude": 44.5527856,
+            "longitude": 2.2637576,
+            "tags": {
+              "tourism": "artwork"
+            },
             "name": "La Découverte"
           }
         ]
@@ -1590,10 +2176,22 @@
         "names": [
           "Lassalle"
         ],
+        "settlements": [
+          {
+            "osmId": "node/858662536",
+            "name": "Lassalle",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/9905761739",
             "category": "tourism",
+            "latitude": 44.5529605,
+            "longitude": 2.2696517,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Fontvergne"
           }
         ]
@@ -1604,11 +2202,21 @@
         "pois": [
           {
             "osmId": "node/838750198",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5517705,
+            "longitude": 2.2706345000000003,
+            "tags": {
+              "tourism": "viewpoint"
+            }
           },
           {
             "osmId": "node/9905761743",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.551788800000004,
+            "longitude": 2.2706401,
+            "tags": {
+              "amenity": "bench"
+            }
           }
         ]
       },
@@ -1622,6 +2230,9 @@
           {
             "osmId": "node/3355795746",
             "category": "summit",
+            "latitude": 44.55169349999999,
+            "longitude": 2.2758458999999998,
+            "tags": {},
             "name": "Plan aérien"
           }
         ],
@@ -1667,35 +2278,70 @@
         "pois": [
           {
             "osmId": "node/1222961210",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5515082,
+            "longitude": 2.2867482000000003,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "way/70132739",
             "category": "amenity",
+            "latitude": 44.552158000000006,
+            "longitude": 2.2870148500000003,
+            "tags": {
+              "amenity": "car_wash"
+            },
             "name": "Station de Lavage"
           },
           {
             "osmId": "way/70132822",
             "category": "shop",
+            "latitude": 44.55238215,
+            "longitude": 2.2880975500000003,
+            "tags": {
+              "shop": "outpost"
+            },
             "name": "E.Leclerc Drive"
           },
           {
             "osmId": "way/70134526",
             "category": "amenity",
+            "latitude": 44.55249085,
+            "longitude": 2.2877718,
+            "tags": {
+              "amenity": "vehicle_inspection"
+            },
             "name": "DEKRA"
           },
           {
             "osmId": "way/70138435",
-            "category": "shop"
+            "category": "shop",
+            "latitude": 44.55289809999999,
+            "longitude": 2.28662925,
+            "tags": {
+              "shop": "car_repair"
+            }
           },
           {
             "osmId": "way/70139061",
             "category": "shop",
+            "latitude": 44.552173,
+            "longitude": 2.2885329,
+            "tags": {
+              "shop": "alcohol"
+            },
             "name": "Bassin boissons"
           },
           {
             "osmId": "way/70139405",
             "category": "shop",
+            "latitude": 44.55208145000001,
+            "longitude": 2.2887435999999997,
+            "tags": {
+              "shop": "computer"
+            },
             "name": "abor"
           }
         ]
@@ -1707,6 +2353,11 @@
           {
             "osmId": "way/70136571",
             "category": "shop",
+            "latitude": 44.551577550000005,
+            "longitude": 2.2896213999999997,
+            "tags": {
+              "shop": "doityourself"
+            },
             "name": "Gédimat"
           }
         ]
@@ -1759,6 +2410,13 @@
         ],
         "names": [
           "Wolf"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/2106262214",
+            "name": "Wolf",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -1853,6 +2511,11 @@
           {
             "osmId": "node/9905761748",
             "category": "tourism",
+            "latitude": 44.5496241,
+            "longitude": 2.2717331,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "La Poudrière"
           }
         ]
@@ -1870,6 +2533,13 @@
         "terrain": "place",
         "names": [
           "Tramont Village"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/845639752",
+            "name": "Tramont Village",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -1901,11 +2571,21 @@
           {
             "osmId": "node/6739055120",
             "category": "shop",
+            "latitude": 44.5499806,
+            "longitude": 2.2942690999999997,
+            "tags": {
+              "shop": "car_repair"
+            },
             "name": "Carrosserie Rigal"
           },
           {
             "osmId": "node/6739055130",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.550469,
+            "longitude": 2.2929349999999995,
+            "tags": {
+              "amenity": "waste_disposal"
+            }
           }
         ]
       },
@@ -1942,7 +2622,12 @@
         "pois": [
           {
             "osmId": "node/1222957727",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5500577,
+            "longitude": 2.3139862,
+            "tags": {
+              "amenity": "recycling"
+            }
           }
         ]
       },
@@ -1955,7 +2640,12 @@
         "pois": [
           {
             "osmId": "node/6479042980",
-            "category": "historic"
+            "category": "historic",
+            "latitude": 44.5502358,
+            "longitude": 2.3143399999999996,
+            "tags": {
+              "historic": "wayside_cross"
+            }
           }
         ]
       },
@@ -1981,6 +2671,13 @@
         ],
         "names": [
           "Sauterusque Le Haut"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/911864877",
+            "name": "Sauterusque Le Haut",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -2038,7 +2735,12 @@
         "pois": [
           {
             "osmId": "node/12538639627",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.548779599999996,
+            "longitude": 2.2629438999999993,
+            "tags": {
+              "amenity": "bench"
+            }
           }
         ]
       },
@@ -2053,6 +2755,11 @@
           {
             "osmId": "node/6366151978",
             "category": "tourism",
+            "latitude": 44.5468524,
+            "longitude": 2.267459,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Les Terrasses"
           }
         ]
@@ -2063,11 +2770,21 @@
         "pois": [
           {
             "osmId": "node/6366151979",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5469126,
+            "longitude": 2.2703786,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/6366151980",
             "category": "tourism",
+            "latitude": 44.547057,
+            "longitude": 2.2708105000000005,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Les Bouleaux - Buddleïa"
           }
         ]
@@ -2085,6 +2802,13 @@
         "terrain": "place",
         "names": [
           "La Planconie"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/845662739",
+            "name": "La Planconie",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -2115,7 +2839,12 @@
         "pois": [
           {
             "osmId": "way/71885843",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.547362150000005,
+            "longitude": 2.2972518,
+            "tags": {
+              "amenity": "parking"
+            }
           }
         ]
       },
@@ -2128,7 +2857,12 @@
         "pois": [
           {
             "osmId": "node/1222959460",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54696580000001,
+            "longitude": 2.2994551,
+            "tags": {
+              "amenity": "recycling"
+            }
           }
         ]
       },
@@ -2150,6 +2884,13 @@
         ],
         "names": [
           "Capendu"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/4425022479",
+            "name": "Capendu",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -2195,7 +2936,12 @@
         "pois": [
           {
             "osmId": "node/6479207210",
-            "category": "historic"
+            "category": "historic",
+            "latitude": 44.5481723,
+            "longitude": 2.3355885000000005,
+            "tags": {
+              "historic": "wayside_cross"
+            }
           }
         ]
       },
@@ -2204,6 +2950,13 @@
         "terrain": "place",
         "names": [
           "Fualdes"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/911912441",
+            "name": "Fualdes",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -2244,11 +2997,21 @@
         "pois": [
           {
             "osmId": "node/5085778240",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5446009,
+            "longitude": 2.2641208,
+            "tags": {
+              "tourism": "viewpoint"
+            }
           },
           {
             "osmId": "node/5085778242",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5446009,
+            "longitude": 2.2642173000000003,
+            "tags": {
+              "amenity": "bench"
+            }
           }
         ]
       },
@@ -2262,7 +3025,12 @@
         "pois": [
           {
             "osmId": "node/6366151981",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5458986,
+            "longitude": 2.2713750999999998,
+            "tags": {
+              "tourism": "information"
+            }
           }
         ]
       },
@@ -2272,7 +3040,12 @@
         "pois": [
           {
             "osmId": "node/6366151982",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.54521329999999,
+            "longitude": 2.2741136000000006,
+            "tags": {
+              "tourism": "information"
+            }
           }
         ]
       },
@@ -2301,6 +3074,13 @@
         "terrain": "place",
         "names": [
           "La Gouzinie"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/845674101",
+            "name": "La Gouzinie",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -2316,15 +3096,32 @@
         "names": [
           "Cité de la Forézie"
         ],
+        "settlements": [
+          {
+            "osmId": "node/854373667",
+            "name": "Cité de la Forézie",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "way/71795552",
             "category": "amenity",
+            "latitude": 44.546733100000004,
+            "longitude": 2.30002705,
+            "tags": {
+              "amenity": "restaurant"
+            },
             "name": "Le Puy de Wolf"
           },
           {
             "osmId": "way/71885842",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.546625450000015,
+            "longitude": 2.2989091000000004,
+            "tags": {
+              "amenity": "parking"
+            }
           }
         ]
       },
@@ -2338,20 +3135,40 @@
         "pois": [
           {
             "osmId": "node/13655038641",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5463518,
+            "longitude": 2.3015587,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "way/1489735960",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54631405000001,
+            "longitude": 2.3032078000000005,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/71794172",
             "category": "shop",
+            "latitude": 44.546243999999994,
+            "longitude": 2.3034875500000003,
+            "tags": {
+              "shop": "bakery"
+            },
             "name": "Chaudel Pains et Plaisirs"
           },
           {
             "osmId": "way/71884308",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54630805,
+            "longitude": 2.30285645,
+            "tags": {
+              "amenity": "parking"
+            }
           }
         ]
       },
@@ -2370,6 +3187,13 @@
         ],
         "names": [
           "La Roque"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/1157522289",
+            "name": "La Roque",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -2385,6 +3209,13 @@
         "terrain": "place",
         "names": [
           "La Nau"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/4425017723",
+            "name": "La Nau",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -2395,6 +3226,13 @@
         ],
         "names": [
           "Lacoste"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/1567427415",
+            "name": "Lacoste",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -2430,6 +3268,13 @@
         "terrain": "place",
         "names": [
           "Le Poux"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/911933957",
+            "name": "Le Poux",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -2465,7 +3310,12 @@
         "pois": [
           {
             "osmId": "node/6366151972",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5423659,
+            "longitude": 2.2620088,
+            "tags": {
+              "tourism": "information"
+            }
           }
         ]
       },
@@ -2476,6 +3326,11 @@
           {
             "osmId": "node/6366151977",
             "category": "tourism",
+            "latitude": 44.5430569,
+            "longitude": 2.2663513000000006,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Giratoire"
           }
         ]
@@ -2489,6 +3344,13 @@
         "terrain": "place",
         "names": [
           "Peyrolles"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/843206009",
+            "name": "Peyrolles",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -2501,14 +3363,31 @@
         "names": [
           "Nauquière"
         ],
+        "settlements": [
+          {
+            "osmId": "node/858655649",
+            "name": "Nauquière",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/6366129865",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5424251,
+            "longitude": 2.2787109,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/6366151984",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.544160000000005,
+            "longitude": 2.2789629999999996,
+            "tags": {
+              "tourism": "information"
+            }
           }
         ]
       },
@@ -2518,10 +3397,22 @@
         "names": [
           "Les Escabrins"
         ],
+        "settlements": [
+          {
+            "osmId": "node/858655661",
+            "name": "Les Escabrins",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/6366154686",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5430206,
+            "longitude": 2.2797072999999997,
+            "tags": {
+              "tourism": "information"
+            }
           }
         ]
       },
@@ -2551,11 +3442,21 @@
         "pois": [
           {
             "osmId": "node/12036677441",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5444736,
+            "longitude": 2.2999866,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/12036677443",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.544464000000005,
+            "longitude": 2.3000104,
+            "tags": {
+              "amenity": "bench"
+            }
           }
         ]
       },
@@ -2568,11 +3469,21 @@
         "pois": [
           {
             "osmId": "node/13654689540",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5443245,
+            "longitude": 2.3035338,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13654689541",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5445307,
+            "longitude": 2.3038145999999995,
+            "tags": {
+              "amenity": "bench"
+            }
           }
         ]
       },
@@ -2585,67 +3496,147 @@
         "pois": [
           {
             "osmId": "node/13418564336",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5427203,
+            "longitude": 2.3070478999999997,
+            "tags": {
+              "amenity": "toilets"
+            }
           },
           {
             "osmId": "node/13654689592",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5426939,
+            "longitude": 2.3074747999999996,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13654689593",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5427193,
+            "longitude": 2.3072181,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13654689594",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5427252,
+            "longitude": 2.3073185,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13654694622",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.542759600000004,
+            "longitude": 2.3071655,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13654694641",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5427883,
+            "longitude": 2.3072520000000005,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13654694642",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5428598,
+            "longitude": 2.307177,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13654694645",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54283,
+            "longitude": 2.3070862,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/6479043107",
-            "category": "historic"
+            "category": "historic",
+            "latitude": 44.5438292,
+            "longitude": 2.3074910000000006,
+            "tags": {
+              "historic": "wayside_cross"
+            }
           },
           {
             "osmId": "node/8204934011",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54267010000001,
+            "longitude": 2.3070668,
+            "tags": {
+              "amenity": "charging_station"
+            }
           },
           {
             "osmId": "way/108446012",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.54257895,
+            "longitude": 2.3076114000000003,
+            "tags": {
+              "tourism": "picnic_site"
+            }
           },
           {
             "osmId": "way/1489735976",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.542411,
+            "longitude": 2.30746795,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/1489735977",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.542796700000004,
+            "longitude": 2.3069938000000003,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/1489735978",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54265145000001,
+            "longitude": 2.3070750500000003,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/1489735979",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.542668049999996,
+            "longitude": 2.30703845,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/445019882",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54253895,
+            "longitude": 2.3072578999999998,
+            "tags": {
+              "amenity": "parking"
+            }
           }
         ]
       },
@@ -2659,11 +3650,21 @@
         "pois": [
           {
             "osmId": "node/6739054944",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.543077000000004,
+            "longitude": 2.3084767,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/71791917",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54315725000001,
+            "longitude": 2.30837275,
+            "tags": {
+              "amenity": "pharmacy"
+            }
           }
         ]
       },
@@ -2680,6 +3681,13 @@
         "terrain": "place",
         "names": [
           "Le Clauzel"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/7812345971",
+            "name": "Le Clauzel",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -2780,11 +3788,21 @@
         "pois": [
           {
             "osmId": "node/6366129867",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5410343,
+            "longitude": 2.2785634000000003,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/6366129868",
             "category": "tourism",
+            "latitude": 44.54078290000001,
+            "longitude": 2.2785687,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "La Valseyrie"
           }
         ]
@@ -2798,7 +3816,12 @@
         "pois": [
           {
             "osmId": "node/1597688293",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5402989,
+            "longitude": 2.2794961999999996,
+            "tags": {
+              "tourism": "picnic_site"
+            }
           }
         ]
       },
@@ -2811,6 +3834,13 @@
         "terrain": "place",
         "names": [
           "Pomaret"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/845764730",
+            "name": "Pomaret",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -2822,6 +3852,13 @@
         "terrain": "place",
         "names": [
           "Le Bac"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/856775417",
+            "name": "Le Bac",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -2842,124 +3879,272 @@
         "names": [
           "Lestrunie"
         ],
+        "settlements": [
+          {
+            "osmId": "node/854541992",
+            "name": "Lestrunie",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/1222956075",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54077589999999,
+            "longitude": 2.3051876,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/12236193801",
             "category": "amenity",
+            "latitude": 44.5414155,
+            "longitude": 2.3071154,
+            "tags": {
+              "amenity": "restaurant"
+            },
             "name": "Iguana"
           },
           {
             "osmId": "node/13899898806",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54053630000001,
+            "longitude": 2.3070335,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13899898807",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5404319,
+            "longitude": 2.3070087,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13899898808",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.540504199999994,
+            "longitude": 2.3069366,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13899898809",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54058830000001,
+            "longitude": 2.3069103000000006,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13899898813",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.540739200000004,
+            "longitude": 2.3070843,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13899898815",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.541115899999994,
+            "longitude": 2.3075415,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13899898816",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.541099,
+            "longitude": 2.3076123,
+            "tags": {
+              "amenity": "fountain"
+            }
           },
           {
             "osmId": "node/13899898874",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5408598,
+            "longitude": 2.3071209,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13953740465",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54222320000001,
+            "longitude": 2.3078448,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13953740466",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.542152200000004,
+            "longitude": 2.3078561000000004,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13953740467",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.542066,
+            "longitude": 2.3078273999999994,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13953740472",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54173140000001,
+            "longitude": 2.3071801,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "node/1727928645",
             "category": "amenity",
+            "latitude": 44.54073300000001,
+            "longitude": 2.3067238,
+            "tags": {
+              "amenity": "library"
+            },
             "name": "Médiathèque"
           },
           {
             "osmId": "node/4453080347",
             "category": "amenity",
+            "latitude": 44.5411068,
+            "longitude": 2.3073052,
+            "tags": {
+              "amenity": "townhall"
+            },
             "name": "Hôtel de ville de Firmi"
           },
           {
             "osmId": "way/100134020",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54201565,
+            "longitude": 2.30753595,
+            "tags": {
+              "amenity": "parking",
+              "access": "yes"
+            }
           },
           {
             "osmId": "way/1489735975",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54223360000001,
+            "longitude": 2.30730885,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/1524973260",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.540406000000004,
+            "longitude": 2.30691245,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/1524973261",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54037645,
+            "longitude": 2.30692055,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/1524973274",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.541840150000006,
+            "longitude": 2.3060182,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/1531000745",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.541743,
+            "longitude": 2.3071333000000003,
+            "tags": {
+              "amenity": "shelter"
+            }
           },
           {
             "osmId": "way/445157378",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.54016945,
+            "longitude": 2.3069219,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/71787748",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.540387249999995,
+            "longitude": 2.3067588999999997,
+            "tags": {
+              "amenity": "toilets"
+            }
           },
           {
             "osmId": "way/71790834",
             "category": "amenity",
+            "latitude": 44.5413298,
+            "longitude": 2.3064687,
+            "tags": {
+              "amenity": "post_office"
+            },
             "name": "Firmi"
           },
           {
             "osmId": "way/71791561",
             "category": "shop",
+            "latitude": 44.541159449999995,
+            "longitude": 2.3071755,
+            "tags": {
+              "shop": "bakery"
+            },
             "name": "Boulangerie des Quatre Clochers"
           },
           {
             "osmId": "way/71794481",
             "category": "amenity",
+            "latitude": 44.54104875,
+            "longitude": 2.3074714500000004,
+            "tags": {
+              "amenity": "bank"
+            },
             "name": "Caisse d'Épargne"
           },
           {
             "osmId": "way/71794606",
             "category": "amenity",
+            "latitude": 44.542081499999995,
+            "longitude": 2.3058932499999996,
+            "tags": {
+              "amenity": "social_facility"
+            },
             "name": "EHPAD Paul Mouysset"
           }
         ]
@@ -2970,19 +4155,41 @@
         "names": [
           "Firmi"
         ],
+        "settlements": [
+          {
+            "osmId": "node/26697450",
+            "name": "Firmi",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "way/1489735964",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.541536400000005,
+            "longitude": 2.3081796000000003,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/71787803",
             "category": "amenity",
+            "latitude": 44.540932000000005,
+            "longitude": 2.30792135,
+            "tags": {
+              "amenity": "bank"
+            },
             "name": "Crédit Agricole"
           },
           {
             "osmId": "way/71793554",
             "category": "amenity",
+            "latitude": 44.54060465,
+            "longitude": 2.309869,
+            "tags": {
+              "amenity": "school"
+            },
             "name": "Collège Paul Ramadier"
           }
         ]
@@ -3017,6 +4224,13 @@
         ],
         "names": [
           "Les Coulons"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/4425014490",
+            "name": "Les Coulons",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -3062,6 +4276,13 @@
         ],
         "names": [
           "Massagal"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/912012730",
+            "name": "Massagal",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -3083,23 +4304,48 @@
         "pois": [
           {
             "osmId": "node/2584777430",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5389953,
+            "longitude": 2.2619127000000003,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/2584777431",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5390397,
+            "longitude": 2.2624374999999994,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/2584777433",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.539215600000006,
+            "longitude": 2.2627003,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/4349809570",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5390724,
+            "longitude": 2.2616339,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "node/6258508142",
             "category": "tourism",
+            "latitude": 44.5390528,
+            "longitude": 2.2633793999999994,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Le Tabarin"
           }
         ]
@@ -3113,16 +4359,31 @@
         "pois": [
           {
             "osmId": "node/9995707374",
-            "category": "historic"
+            "category": "historic",
+            "latitude": 44.53975230000001,
+            "longitude": 2.2658120000000004,
+            "tags": {
+              "historic": "memorial"
+            }
           },
           {
             "osmId": "way/70136258",
             "category": "amenity",
+            "latitude": 44.539527400000004,
+            "longitude": 2.2668481000000003,
+            "tags": {
+              "amenity": "post_office"
+            },
             "name": "Aubin Combes"
           },
           {
             "osmId": "way/70678807",
             "category": "amenity",
+            "latitude": 44.538923399999995,
+            "longitude": 2.2667028000000005,
+            "tags": {
+              "amenity": "school"
+            },
             "name": "École Marcel Pagnol"
           }
         ]
@@ -3136,59 +4397,132 @@
         "names": [
           "Combes"
         ],
+        "settlements": [
+          {
+            "osmId": "node/843117346",
+            "name": "Combes",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/1222950019",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5393143,
+            "longitude": 2.2678745999999994,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/2585265044",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.53846250000001,
+            "longitude": 2.2682424999999995,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/2585265050",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.53855,
+            "longitude": 2.2683798000000004,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/2585265060",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5386977,
+            "longitude": 2.2682848,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/2585265063",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.538703899999994,
+            "longitude": 2.268205,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/2585265065",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.53871250000001,
+            "longitude": 2.2683658000000007,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/2585265066",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5387206,
+            "longitude": 2.2681436000000006,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/6258498558",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5392363,
+            "longitude": 2.2676428,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/6258498560",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5390375,
+            "longitude": 2.2682087000000006,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/6258498562",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5384773,
+            "longitude": 2.2693272,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "way/446088849",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.539463649999995,
+            "longitude": 2.2678662,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/70130684",
             "category": "amenity",
+            "latitude": 44.53979185,
+            "longitude": 2.2683068,
+            "tags": {
+              "amenity": "place_of_worship",
+              "tourism": "attraction"
+            },
             "name": "Notre-Dame des Mines"
           },
           {
             "osmId": "way/70972800",
             "category": "amenity",
+            "latitude": 44.539209250000006,
+            "longitude": 2.2683020000000003,
+            "tags": {
+              "amenity": "community_centre"
+            },
             "name": "Salle Émile Zola"
           }
         ],
@@ -3212,15 +4546,30 @@
           {
             "osmId": "node/6258498563",
             "category": "tourism",
+            "latitude": 44.5388434,
+            "longitude": 2.2701909000000002,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "La Buenhe"
           },
           {
             "osmId": "node/6258498571",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.53875260000001,
+            "longitude": 2.2730756,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/6258498576",
             "category": "tourism",
+            "latitude": 44.53853850000001,
+            "longitude": 2.2730607999999997,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Le Tunnel"
           }
         ]
@@ -3235,7 +4584,12 @@
         "pois": [
           {
             "osmId": "node/6366129878",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5379525,
+            "longitude": 2.2781047,
+            "tags": {
+              "tourism": "information"
+            }
           }
         ]
       },
@@ -3283,6 +4637,13 @@
         "terrain": "place",
         "names": [
           "Les Rials"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/856739453",
+            "name": "Les Rials",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -3290,6 +4651,13 @@
         "terrain": "place",
         "names": [
           "Les Acacias"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/856739498",
+            "name": "Les Acacias",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -3298,7 +4666,12 @@
         "pois": [
           {
             "osmId": "node/13633092951",
-            "category": "historic"
+            "category": "historic",
+            "latitude": 44.5397929,
+            "longitude": 2.3069314,
+            "tags": {
+              "historic": "memorial"
+            }
           }
         ]
       },
@@ -3308,34 +4681,69 @@
         "pois": [
           {
             "osmId": "way/1524918370",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.53960225,
+            "longitude": 2.30860435,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/1524918374",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.53936065,
+            "longitude": 2.3108053500000003,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/71787100",
             "category": "amenity",
+            "latitude": 44.53974939999999,
+            "longitude": 2.3087923500000005,
+            "tags": {
+              "amenity": "place_of_worship"
+            },
             "name": "Église Saint-Saturnin"
           },
           {
             "osmId": "way/71790046",
             "category": "amenity",
+            "latitude": 44.5391408,
+            "longitude": 2.3104953999999998,
+            "tags": {
+              "amenity": "school"
+            },
             "name": "École primaire Marie Curie"
           },
           {
             "osmId": "way/71889779",
             "category": "amenity",
+            "latitude": 44.538413049999996,
+            "longitude": 2.3105594,
+            "tags": {
+              "amenity": "school"
+            },
             "name": "École maternelle Jean Zay"
           },
           {
             "osmId": "way/71894251",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.53950915,
+            "longitude": 2.3088093999999995,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/71894254",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5389878,
+            "longitude": 2.3096939499999998,
+            "tags": {
+              "amenity": "parking"
+            }
           }
         ]
       },
@@ -3423,11 +4831,21 @@
         "pois": [
           {
             "osmId": "node/6366163459",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.53690770000001,
+            "longitude": 2.2609372,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/6366184721",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5362099,
+            "longitude": 2.2611719,
+            "tags": {
+              "tourism": "information"
+            }
           }
         ]
       },
@@ -3441,15 +4859,30 @@
         "pois": [
           {
             "osmId": "node/2586471310",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5372282,
+            "longitude": 2.2696046,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/2586471313",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5373461,
+            "longitude": 2.2695677000000005,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "way/252597363",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5372661,
+            "longitude": 2.26955965,
+            "tags": {
+              "tourism": "picnic_site"
+            }
           }
         ]
       },
@@ -3459,11 +4892,21 @@
         "pois": [
           {
             "osmId": "node/6258483576",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5369669,
+            "longitude": 2.2730702,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/838752105",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5370032,
+            "longitude": 2.2731362,
+            "tags": {
+              "amenity": "bench"
+            }
           }
         ]
       },
@@ -3478,7 +4921,12 @@
         "pois": [
           {
             "osmId": "node/6366129877",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.53774800000001,
+            "longitude": 2.2784467,
+            "tags": {
+              "tourism": "information"
+            }
           }
         ]
       },
@@ -3489,11 +4937,21 @@
           {
             "osmId": "node/6258427308",
             "category": "tourism",
+            "latitude": 44.5356,
+            "longitude": 2.2814950000000005,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Les Genets"
           },
           {
             "osmId": "node/6815789497",
             "category": "tourism",
+            "latitude": 44.5360579,
+            "longitude": 2.2817324,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Les Douglas"
           }
         ]
@@ -3538,10 +4996,22 @@
         "names": [
           "La Font"
         ],
+        "settlements": [
+          {
+            "osmId": "node/4425436413",
+            "name": "La Font",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/2943363644",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5374479,
+            "longitude": 2.3071609,
+            "tags": {
+              "amenity": "recycling"
+            }
           }
         ]
       },
@@ -3554,6 +5024,13 @@
         "terrain": "place",
         "names": [
           "Ligue"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/4424873007",
+            "name": "Ligue",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -3572,10 +5049,22 @@
         "names": [
           "Cité de Cerles"
         ],
+        "settlements": [
+          {
+            "osmId": "node/914384094",
+            "name": "Cité de Cerles",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/1222954464",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.536296199999995,
+            "longitude": 2.3195051,
+            "tags": {
+              "amenity": "recycling"
+            }
           }
         ]
       },
@@ -3601,6 +5090,13 @@
         ],
         "names": [
           "Les Pioles"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/4425014491",
+            "name": "Les Pioles",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -3655,15 +5151,30 @@
         "pois": [
           {
             "osmId": "node/6258521134",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.53403980000001,
+            "longitude": 2.2646803,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/6258565983",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5341765,
+            "longitude": 2.2646091999999998,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "way/146451978",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.533990450000005,
+            "longitude": 2.2649009999999996,
+            "tags": {
+              "amenity": "parking"
+            }
           }
         ]
       },
@@ -3673,14 +5184,31 @@
         "names": [
           "La Buenhe"
         ],
+        "settlements": [
+          {
+            "osmId": "node/845767650",
+            "name": "La Buenhe",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/6366129911",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5338276,
+            "longitude": 2.2675395000000003,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/6366129912",
             "category": "tourism",
+            "latitude": 44.5337549,
+            "longitude": 2.267388,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Le Montet"
           }
         ],
@@ -3700,7 +5228,12 @@
         "pois": [
           {
             "osmId": "node/13992764069",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.533659300000004,
+            "longitude": 2.2712463,
+            "tags": {
+              "tourism": "artwork"
+            }
           }
         ]
       },
@@ -3711,11 +5244,21 @@
         "pois": [
           {
             "osmId": "node/13992764068",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5349805,
+            "longitude": 2.2743992,
+            "tags": {
+              "tourism": "artwork"
+            }
           },
           {
             "osmId": "node/6366129883",
             "category": "tourism",
+            "latitude": 44.5338362,
+            "longitude": 2.2748780000000006,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Le Robinier"
           }
         ]
@@ -3727,16 +5270,31 @@
           {
             "osmId": "node/2691230642",
             "category": "tourism",
+            "latitude": 44.53447479999999,
+            "longitude": 2.2771026,
+            "tags": {
+              "tourism": "artwork"
+            },
             "name": "Le Rocher troué"
           },
           {
             "osmId": "node/6258427299",
             "category": "tourism",
+            "latitude": 44.534296,
+            "longitude": 2.2777587,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "La Martine Basse"
           },
           {
             "osmId": "node/6258484298",
             "category": "tourism",
+            "latitude": 44.53468229999999,
+            "longitude": 2.276541,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Le Rocher Troué"
           }
         ]
@@ -3747,19 +5305,39 @@
         "pois": [
           {
             "osmId": "node/13992764067",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.53349800000001,
+            "longitude": 2.282024,
+            "tags": {
+              "tourism": "artwork"
+            }
           },
           {
             "osmId": "node/3198754253",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5338017,
+            "longitude": 2.2814128999999994,
+            "tags": {
+              "tourism": "viewpoint"
+            }
           },
           {
             "osmId": "node/6258416962",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.534218100000004,
+            "longitude": 2.2818471,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/6258427309",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5343725,
+            "longitude": 2.2825424,
+            "tags": {
+              "tourism": "information"
+            }
           }
         ]
       },
@@ -3770,6 +5348,11 @@
           {
             "osmId": "node/6258416966",
             "category": "tourism",
+            "latitude": 44.53329990000001,
+            "longitude": 2.2826685000000007,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "La Martine Haute"
           }
         ]
@@ -3829,41 +5412,87 @@
         "pois": [
           {
             "osmId": "node/3327044573",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.53540720000001,
+            "longitude": 2.3184171,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/6715292415",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5345713,
+            "longitude": 2.3197225999999995,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/6739043074",
             "category": "amenity",
+            "latitude": 44.534187,
+            "longitude": 2.3196896999999996,
+            "tags": {
+              "amenity": "restaurant"
+            },
             "name": "Chez-nous"
           },
           {
             "osmId": "node/6739043082",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5345914,
+            "longitude": 2.3197581,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/6739043083",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5345828,
+            "longitude": 2.3197407000000005,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/6739043084",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5346043,
+            "longitude": 2.3195334999999995,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/6739054898",
             "category": "amenity",
+            "latitude": 44.5350675,
+            "longitude": 2.3186718,
+            "tags": {
+              "amenity": "fast_food"
+            },
             "name": "Pizza ChichiBelli"
           },
           {
             "osmId": "way/1329386751",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.534614649999995,
+            "longitude": 2.31951705,
+            "tags": {
+              "amenity": "shelter"
+            }
           },
           {
             "osmId": "way/445047659",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.534479600000004,
+            "longitude": 2.320051350000001,
+            "tags": {
+              "amenity": "parking",
+              "access": "yes"
+            }
           }
         ],
         "contentSources": [
@@ -3969,15 +5598,30 @@
         "pois": [
           {
             "osmId": "node/4130380537",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.532558599999994,
+            "longitude": 2.2659880000000006,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/838750810",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5326282,
+            "longitude": 2.2637646,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "way/70679212",
             "category": "amenity",
+            "latitude": 44.5327001,
+            "longitude": 2.26624485,
+            "tags": {
+              "amenity": "recycling"
+            },
             "name": "Déchèterie du Montet"
           }
         ]
@@ -3993,7 +5637,12 @@
         "pois": [
           {
             "osmId": "node/13992764072",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5320685,
+            "longitude": 2.271603,
+            "tags": {
+              "tourism": "artwork"
+            }
           }
         ]
       },
@@ -4003,21 +5652,41 @@
         "pois": [
           {
             "osmId": "node/6258418100",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5311967,
+            "longitude": 2.2762875,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/6366129891",
             "category": "tourism",
+            "latitude": 44.53264789999999,
+            "longitude": 2.2737448,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Lou Caminol"
           },
           {
             "osmId": "node/6815782494",
             "category": "tourism",
+            "latitude": 44.53145380000001,
+            "longitude": 2.2741457999999994,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "La Tranchée"
           },
           {
             "osmId": "node/6815808569",
             "category": "tourism",
+            "latitude": 44.5310666,
+            "longitude": 2.2734860000000006,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "La Pyrite"
           }
         ]
@@ -4047,6 +5716,13 @@
         "terrain": "place",
         "names": [
           "Sauguières"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/858644952",
+            "name": "Sauguières",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -4107,10 +5783,22 @@
         "names": [
           "Les Cambouroux"
         ],
+        "settlements": [
+          {
+            "osmId": "node/4424982576",
+            "name": "Les Cambouroux",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "way/71794924",
             "category": "shop",
+            "latitude": 44.5322035,
+            "longitude": 2.3254337000000005,
+            "tags": {
+              "shop": "car"
+            },
             "name": "Garage Fayet"
           }
         ]
@@ -4170,11 +5858,21 @@
         "pois": [
           {
             "osmId": "node/1839843561",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.528968799999994,
+            "longitude": 2.2613787,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/6366129918",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5309548,
+            "longitude": 2.262682,
+            "tags": {
+              "amenity": "bench"
+            }
           }
         ]
       },
@@ -4184,14 +5882,33 @@
         "names": [
           "Le Gua"
         ],
+        "settlements": [
+          {
+            "osmId": "node/858643364",
+            "name": "Le Gua",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "way/1453568628",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52903265,
+            "longitude": 2.2644238000000003,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/70134020",
             "category": "amenity",
+            "latitude": 44.5289059,
+            "longitude": 2.2642945,
+            "tags": {
+              "amenity": "place_of_worship",
+              "tourism": "attraction",
+              "disused": "yes"
+            },
             "name": "Église du Gua"
           }
         ],
@@ -4211,7 +5928,12 @@
         "pois": [
           {
             "osmId": "node/6258391352",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.53036780000001,
+            "longitude": 2.2693433,
+            "tags": {
+              "tourism": "information"
+            }
           }
         ]
       },
@@ -4221,16 +5943,31 @@
         "pois": [
           {
             "osmId": "node/1597688292",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5304627,
+            "longitude": 2.2730599,
+            "tags": {
+              "tourism": "picnic_site"
+            }
           },
           {
             "osmId": "node/6815808568",
             "category": "tourism",
+            "latitude": 44.5309777,
+            "longitude": 2.2720617,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Château du Montet"
           },
           {
             "osmId": "node/838861345",
             "category": "tourism",
+            "latitude": 44.530303200000006,
+            "longitude": 2.2730843,
+            "tags": {
+              "tourism": "viewpoint"
+            },
             "name": "Pt de vue"
           }
         ]
@@ -4242,60 +5979,131 @@
           {
             "osmId": "node/13053119980",
             "category": "tourism",
+            "latitude": 44.5293802,
+            "longitude": 2.2756687,
+            "tags": {
+              "tourism": "artwork"
+            },
             "name": "Renaissance"
           },
           {
             "osmId": "node/13418570687",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.529062100000004,
+            "longitude": 2.2761944,
+            "tags": {
+              "amenity": "bicycle_parking"
+            }
           },
           {
             "osmId": "node/13992764066",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5304815,
+            "longitude": 2.2733062000000004,
+            "tags": {
+              "tourism": "artwork"
+            }
           },
           {
             "osmId": "node/6258418106",
             "category": "tourism",
+            "latitude": 44.5301747,
+            "longitude": 2.2758959,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Puech Que Ard"
           },
           {
             "osmId": "node/846949393",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.529365199999994,
+            "longitude": 2.2758533,
+            "tags": {
+              "amenity": "parking_entrance"
+            }
           },
           {
             "osmId": "node/846951405",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52940370000001,
+            "longitude": 2.2758349000000004,
+            "tags": {
+              "amenity": "parking_entrance"
+            }
           },
           {
             "osmId": "node/9125007954",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5291508,
+            "longitude": 2.2762296,
+            "tags": {
+              "amenity": "bicycle_parking"
+            }
           },
           {
             "osmId": "node/9125007959",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5291613,
+            "longitude": 2.2762528,
+            "tags": {
+              "amenity": "waste_disposal"
+            }
           },
           {
             "osmId": "node/9251502442",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5290366,
+            "longitude": 2.2756756,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/9251533133",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5292758,
+            "longitude": 2.2760491,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/9251533147",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5294573,
+            "longitude": 2.2754013,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9251533148",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5294571,
+            "longitude": 2.2754347999999998,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/9252777225",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52909660000001,
+            "longitude": 2.2761541000000003,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "way/71128878",
             "category": "amenity",
+            "latitude": 44.52928905,
+            "longitude": 2.2754807500000003,
+            "tags": {
+              "amenity": "public_bath",
+              "tourism": "apartment"
+            },
             "name": "Thermes"
           }
         ]
@@ -4306,64 +6114,139 @@
         "pois": [
           {
             "osmId": "node/1597688291",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.53007989999999,
+            "longitude": 2.2773677,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/4349809566",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5301099,
+            "longitude": 2.2771272999999996,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/6258418103",
             "category": "tourism",
+            "latitude": 44.5295331,
+            "longitude": 2.27649,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Les Thermes"
           },
           {
             "osmId": "node/6258418104",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5295064,
+            "longitude": 2.2763814000000004,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/9251533118",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5288503,
+            "longitude": 2.2776355,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9251533119",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5288487,
+            "longitude": 2.2775468,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9251533122",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5291774,
+            "longitude": 2.2774032,
+            "tags": {
+              "tourism": "chalet"
+            }
           },
           {
             "osmId": "node/9251533123",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5291849,
+            "longitude": 2.2774873,
+            "tags": {
+              "tourism": "chalet"
+            }
           },
           {
             "osmId": "node/9251533124",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.52902929999999,
+            "longitude": 2.2772736,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/9251533126",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5301017,
+            "longitude": 2.2771475,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9251533131",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5294304,
+            "longitude": 2.2765243000000006,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9251533132",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52944990000001,
+            "longitude": 2.2765066,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "way/1002428304",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52884155,
+            "longitude": 2.27784705,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/1002428305",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5288321,
+            "longitude": 2.2778959499999996,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/593117642",
             "category": "amenity",
+            "latitude": 44.5302019,
+            "longitude": 2.27716395,
+            "tags": {
+              "amenity": "parking"
+            },
             "name": "Parking la Vaysse"
           }
         ]
@@ -4378,7 +6261,12 @@
         "pois": [
           {
             "osmId": "node/838748252",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5289816,
+            "longitude": 2.2853929,
+            "tags": {
+              "amenity": "bench"
+            }
           }
         ]
       },
@@ -4413,6 +6301,13 @@
         "terrain": "place",
         "names": [
           "Le Puech"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/923891513",
+            "name": "Le Puech",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -4436,7 +6331,12 @@
         "pois": [
           {
             "osmId": "node/9227603484",
-            "category": "historic"
+            "category": "historic",
+            "latitude": 44.5289775,
+            "longitude": 2.316358,
+            "tags": {
+              "historic": "wayside_cross"
+            }
           }
         ]
       },
@@ -4472,7 +6372,12 @@
         "pois": [
           {
             "osmId": "node/1222953560",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.53080239999999,
+            "longitude": 2.3268342,
+            "tags": {
+              "amenity": "recycling"
+            }
           }
         ]
       },
@@ -4539,56 +6444,121 @@
         "pois": [
           {
             "osmId": "node/1222932386",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5279786,
+            "longitude": 2.2635256,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/12980225817",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5267454,
+            "longitude": 2.2622549,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/12980225818",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5267337,
+            "longitude": 2.2620323,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/12980225819",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.526727099999995,
+            "longitude": 2.2617665,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/4181187669",
             "category": "amenity",
+            "latitude": 44.5284153,
+            "longitude": 2.2624837000000007,
+            "tags": {
+              "amenity": "school"
+            },
             "name": "École Jules Ferry"
           },
           {
             "osmId": "node/4349809067",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.526617099999996,
+            "longitude": 2.2616595,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/5659092368",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52687310000001,
+            "longitude": 2.2612296,
+            "tags": {
+              "amenity": "toilets"
+            }
           },
           {
             "osmId": "node/6492722235",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52760189999999,
+            "longitude": 2.2617593,
+            "tags": {
+              "amenity": "post_box"
+            }
           },
           {
             "osmId": "way/1412496511",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52662565,
+            "longitude": 2.2630665499999996,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/1412504110",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5280969,
+            "longitude": 2.2636253000000006,
+            "tags": {
+              "amenity": "shelter"
+            }
           },
           {
             "osmId": "way/445629229",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52792135,
+            "longitude": 2.2632971000000004,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/70133302",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.528416449999995,
+            "longitude": 2.2624882000000004,
+            "tags": {
+              "tourism": "attraction"
+            }
           },
           {
             "osmId": "way/71222081",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52841585,
+            "longitude": 2.2626184000000005,
+            "tags": {
+              "amenity": "school"
+            }
           }
         ],
         "contentSources": [
@@ -4610,104 +6580,225 @@
         "pois": [
           {
             "osmId": "node/10065254250",
-            "category": "historic"
+            "category": "historic",
+            "latitude": 44.528087600000006,
+            "longitude": 2.2657934,
+            "tags": {
+              "historic": "wayside_cross"
+            }
           },
           {
             "osmId": "node/11518407453",
             "category": "amenity",
+            "latitude": 44.528272,
+            "longitude": 2.2645655,
+            "tags": {
+              "amenity": "restaurant"
+            },
             "name": "Le Grizou"
           },
           {
             "osmId": "node/12980047920",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5268696,
+            "longitude": 2.2643943,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/12980047921",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52681870000001,
+            "longitude": 2.2643979999999995,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/12980047922",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5268696,
+            "longitude": 2.2645507000000005,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/12980047923",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5268148,
+            "longitude": 2.2645526,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/12980047943",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5269529,
+            "longitude": 2.2644168,
+            "tags": {
+              "tourism": "viewpoint"
+            }
           },
           {
             "osmId": "node/12980145650",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5279614,
+            "longitude": 2.2637155,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/12980225841",
             "category": "historic",
+            "latitude": 44.52777379999999,
+            "longitude": 2.2660049,
+            "tags": {
+              "historic": "memorial"
+            },
             "name": "Ambroise Croizat"
           },
           {
             "osmId": "node/12980225842",
             "category": "tourism",
+            "latitude": 44.527875,
+            "longitude": 2.2661345,
+            "tags": {
+              "tourism": "artwork"
+            },
             "name": "Bestiaire"
           },
           {
             "osmId": "node/12980225844",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52782440000001,
+            "longitude": 2.2658996,
+            "tags": {
+              "amenity": "public_bookcase"
+            }
           },
           {
             "osmId": "node/1417176602",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5283551,
+            "longitude": 2.2664700000000004,
+            "tags": {
+              "amenity": "toilets"
+            }
           },
           {
             "osmId": "node/3201727259",
             "category": "historic",
+            "latitude": 44.526842800000004,
+            "longitude": 2.2644748000000003,
+            "tags": {
+              "historic": "monument"
+            },
             "name": "Mémorial des Fusillés des Forges"
           },
           {
             "osmId": "node/4349809567",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5268419,
+            "longitude": 2.2651263,
+            "tags": {
+              "amenity": "drinking_water"
+            }
           },
           {
             "osmId": "node/4349809628",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52684810000001,
+            "longitude": 2.2651248,
+            "tags": {
+              "amenity": "toilets"
+            }
           },
           {
             "osmId": "node/6258391381",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5284354,
+            "longitude": 2.2666973000000006,
+            "tags": {
+              "amenity": "post_box"
+            }
           },
           {
             "osmId": "node/6258391492",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5271248,
+            "longitude": 2.2646441,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/6815745276",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5267662,
+            "longitude": 2.2644523,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/6815745278",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5269528,
+            "longitude": 2.2644250999999995,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "way/1239822330",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5285161,
+            "longitude": 2.2645113,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/1420489265",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.527726699999995,
+            "longitude": 2.2661955000000003,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "way/1453568627",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.528570650000006,
+            "longitude": 2.2641958,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/70134682",
             "category": "amenity",
+            "latitude": 44.52779519999999,
+            "longitude": 2.2661229499999997,
+            "tags": {
+              "amenity": "post_office"
+            },
             "name": "Aubin Le Gua"
           },
           {
             "osmId": "way/71224542",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.528166899999995,
+            "longitude": 2.2665063500000002,
+            "tags": {
+              "amenity": "parking",
+              "access": "yes"
+            }
           }
         ],
         "contentSources": [
@@ -4737,11 +6828,21 @@
           {
             "osmId": "node/4181187664",
             "category": "amenity",
+            "latitude": 44.52757879999999,
+            "longitude": 2.2670024,
+            "tags": {
+              "amenity": "doctors"
+            },
             "name": "Maison de santé d'Aubin"
           },
           {
             "osmId": "node/7348393486",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5275954,
+            "longitude": 2.2694438,
+            "tags": {
+              "amenity": "pharmacy"
+            }
           }
         ]
       },
@@ -4751,7 +6852,12 @@
         "pois": [
           {
             "osmId": "way/1239098541",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.526821000000005,
+            "longitude": 2.27260375,
+            "tags": {
+              "amenity": "parking"
+            }
           }
         ]
       },
@@ -4761,20 +6867,42 @@
         "pois": [
           {
             "osmId": "node/9251533174",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5286916,
+            "longitude": 2.2758278000000005,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "way/1233283629",
             "category": "amenity",
+            "latitude": 44.5277758,
+            "longitude": 2.27513515,
+            "tags": {
+              "amenity": "parking"
+            },
             "name": "Parc de camping-car Cransac"
           },
           {
             "osmId": "way/71501053",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5282156,
+            "longitude": 2.2752891,
+            "tags": {
+              "amenity": "parking",
+              "access": "customers"
+            }
           },
           {
             "osmId": "way/71501155",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5285141,
+            "longitude": 2.2759988499999997,
+            "tags": {
+              "amenity": "parking",
+              "access": "customers"
+            }
           }
         ],
         "contentSources": [
@@ -4793,18 +6921,40 @@
         "names": [
           "Le Fraysse"
         ],
+        "settlements": [
+          {
+            "osmId": "node/850542671",
+            "name": "Le Fraysse",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/12078589401",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52875590000001,
+            "longitude": 2.2781717999999995,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "node/9251533117",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5287804,
+            "longitude": 2.2776927,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "way/71129166",
             "category": "shop",
+            "latitude": 44.5266987,
+            "longitude": 2.2790848500000003,
+            "tags": {
+              "shop": "car_repair"
+            },
             "name": "Garage Da Costa"
           }
         ]
@@ -4815,11 +6965,21 @@
         "pois": [
           {
             "osmId": "node/9265108687",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5286933,
+            "longitude": 2.2795268000000006,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "way/71128502",
             "category": "amenity",
+            "latitude": 44.5268832,
+            "longitude": 2.2824664,
+            "tags": {
+              "amenity": "school"
+            },
             "name": "École maternelle Jacques Prévert"
           }
         ]
@@ -4845,6 +7005,13 @@
         "terrain": "place",
         "names": [
           "La Rengade"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/858667941",
+            "name": "La Rengade",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -4873,10 +7040,22 @@
         "names": [
           "Le Mas del Bosc"
         ],
+        "settlements": [
+          {
+            "osmId": "node/426637991",
+            "name": "Le Mas del Bosc",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/1222953569",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52862569999999,
+            "longitude": 2.3169896000000003,
+            "tags": {
+              "amenity": "recycling"
+            }
           }
         ]
       },
@@ -4897,11 +7076,21 @@
         "pois": [
           {
             "osmId": "node/9273220381",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.528494,
+            "longitude": 2.3266409,
+            "tags": {
+              "amenity": "hitching_post"
+            }
           },
           {
             "osmId": "way/71792812",
             "category": "historic",
+            "latitude": 44.52675510000001,
+            "longitude": 2.3267479499999997,
+            "tags": {
+              "historic": "castle"
+            },
             "name": "Château du Claux"
           }
         ]
@@ -4988,21 +7177,41 @@
         "pois": [
           {
             "osmId": "node/12980047839",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5263744,
+            "longitude": 2.2611335000000006,
+            "tags": {
+              "amenity": "sanitary_dump_station"
+            }
           },
           {
             "osmId": "way/70136498",
             "category": "historic",
+            "latitude": 44.52591185,
+            "longitude": 2.26055115,
+            "tags": {
+              "historic": "building"
+            },
             "name": "Cheminée ornementée de la Compagnie des forges et fonderies d'Aubin"
           },
           {
             "osmId": "way/70139098",
             "category": "historic",
+            "latitude": 44.52574454999999,
+            "longitude": 2.2612209500000002,
+            "tags": {
+              "historic": "building"
+            },
             "name": "Cheminée ornementée de la Compagnie des forges et fonderies d'Aubin"
           },
           {
             "osmId": "way/71220577",
             "category": "tourism",
+            "latitude": 44.52626720000001,
+            "longitude": 2.2607846,
+            "tags": {
+              "tourism": "caravan_site"
+            },
             "name": "Camping-car Park Aubin"
           }
         ],
@@ -5022,15 +7231,32 @@
         "names": [
           "Cité Nouvelle"
         ],
+        "settlements": [
+          {
+            "osmId": "node/894103314",
+            "name": "Cité Nouvelle",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/12980225843",
             "category": "tourism",
+            "latitude": 44.5259153,
+            "longitude": 2.2665070999999997,
+            "tags": {
+              "tourism": "artwork"
+            },
             "name": "Duologue"
           },
           {
             "osmId": "node/4834984422",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.524751200000004,
+            "longitude": 2.2658445,
+            "tags": {
+              "tourism": "guest_house"
+            }
           }
         ],
         "contentSources": [
@@ -5054,45 +7280,96 @@
           {
             "osmId": "node/2613310609",
             "category": "amenity",
+            "latitude": 44.5261562,
+            "longitude": 2.2685339,
+            "tags": {
+              "amenity": "pub"
+            },
             "name": "Bistromarché"
           },
           {
             "osmId": "node/2613310628",
-            "category": "shop"
+            "category": "shop",
+            "latitude": 44.526181,
+            "longitude": 2.2683049,
+            "tags": {
+              "shop": "laundry"
+            }
           },
           {
             "osmId": "node/2613310631",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5263307,
+            "longitude": 2.2682103,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "node/2613310635",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5263384,
+            "longitude": 2.268093,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "node/2613310639",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5263909,
+            "longitude": 2.267904,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "node/2613310642",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5264193,
+            "longitude": 2.2679194,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "node/6815745265",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5262911,
+            "longitude": 2.2697161,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "way/179785503",
             "category": "shop",
+            "latitude": 44.52602339999999,
+            "longitude": 2.26847515,
+            "tags": {
+              "shop": "supermarket"
+            },
             "name": "Intermarché Super"
           },
           {
             "osmId": "way/202386584",
             "category": "amenity",
+            "latitude": 44.52597785,
+            "longitude": 2.2694896499999997,
+            "tags": {
+              "amenity": "fuel",
+              "shop": "gas"
+            },
             "name": "Intermarché"
           },
           {
             "osmId": "way/202386603",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5261918,
+            "longitude": 2.2686465499999997,
+            "tags": {
+              "amenity": "parking"
+            }
           }
         ]
       },
@@ -5107,20 +7384,40 @@
         "pois": [
           {
             "osmId": "node/2613310621",
-            "category": "shop"
+            "category": "shop",
+            "latitude": 44.52539449999999,
+            "longitude": 2.2723064,
+            "tags": {
+              "shop": "electronics"
+            }
           },
           {
             "osmId": "way/179785504",
             "category": "amenity",
+            "latitude": 44.52561265000001,
+            "longitude": 2.2704833499999997,
+            "tags": {
+              "amenity": "vehicle_inspection"
+            },
             "name": "Autovision"
           },
           {
             "osmId": "way/179785506",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52551675,
+            "longitude": 2.2703955500000004,
+            "tags": {
+              "amenity": "car_wash"
+            }
           },
           {
             "osmId": "way/202386581",
             "category": "shop",
+            "latitude": 44.52570405000001,
+            "longitude": 2.27002845,
+            "tags": {
+              "shop": "car_repair"
+            },
             "name": "Garage Lignac"
           }
         ]
@@ -5134,11 +7431,21 @@
         "pois": [
           {
             "osmId": "node/1222944390",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52546410000001,
+            "longitude": 2.2762875999999994,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/9224764201",
-            "category": "shop"
+            "category": "shop",
+            "latitude": 44.5260179,
+            "longitude": 2.2762213,
+            "tags": {
+              "shop": "newsagent"
+            }
           }
         ]
       },
@@ -5152,40 +7459,80 @@
           {
             "osmId": "node/13053119981",
             "category": "tourism",
+            "latitude": 44.5256776,
+            "longitude": 2.277044,
+            "tags": {
+              "tourism": "artwork"
+            },
             "name": "Révélation"
           },
           {
             "osmId": "node/3950656902",
             "category": "amenity",
+            "latitude": 44.525830600000006,
+            "longitude": 2.2783928000000007,
+            "tags": {
+              "amenity": "casino"
+            },
             "name": "Casino Jeux de Cransac"
           },
           {
             "osmId": "node/890490857",
             "category": "shop",
+            "latitude": 44.525855500000006,
+            "longitude": 2.2786798000000004,
+            "tags": {
+              "shop": "clothes"
+            },
             "name": "Secours Populaire"
           },
           {
             "osmId": "node/9224764204",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5260636,
+            "longitude": 2.2764592,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9224764207",
             "category": "shop",
+            "latitude": 44.52640589999999,
+            "longitude": 2.2780546,
+            "tags": {
+              "shop": "sewing"
+            },
             "name": "L'Atelier de Patou"
           },
           {
             "osmId": "way/71129693",
             "category": "amenity",
+            "latitude": 44.5260433,
+            "longitude": 2.2794333500000006,
+            "tags": {
+              "amenity": "community_centre"
+            },
             "name": "Salle d'Accueil"
           },
           {
             "osmId": "way/71192574",
             "category": "amenity",
+            "latitude": 44.525949350000005,
+            "longitude": 2.27638685,
+            "tags": {
+              "amenity": "parking"
+            },
             "name": "Place de la Treille"
           },
           {
             "osmId": "way/71194684",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52623675,
+            "longitude": 2.27896105,
+            "tags": {
+              "amenity": "parking"
+            }
           }
         ]
       },
@@ -5199,173 +7546,372 @@
         "names": [
           "Cransac-les-Thermes"
         ],
+        "settlements": [
+          {
+            "osmId": "node/1669887801",
+            "name": "Cransac-les-Thermes",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/1222944356",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5263236,
+            "longitude": 2.2820796,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/1222944387",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.525495,
+            "longitude": 2.2817360999999994,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/1223118358",
             "category": "tourism",
+            "latitude": 44.5261634,
+            "longitude": 2.2824725,
+            "tags": {
+              "tourism": "museum"
+            },
             "name": "Les mémoires de Cransac"
           },
           {
             "osmId": "node/13053119985",
             "category": "tourism",
+            "latitude": 44.5257261,
+            "longitude": 2.2819818,
+            "tags": {
+              "tourism": "artwork"
+            },
             "name": "Little Abstract and Bird"
           },
           {
             "osmId": "node/13053119986",
             "category": "tourism",
+            "latitude": 44.5257397,
+            "longitude": 2.2818533,
+            "tags": {
+              "tourism": "artwork"
+            },
             "name": "Little Abstract and Bird"
           },
           {
             "osmId": "node/13053119987",
             "category": "tourism",
+            "latitude": 44.5247188,
+            "longitude": 2.2817609,
+            "tags": {
+              "tourism": "artwork"
+            },
             "name": "Heart Love"
           },
           {
             "osmId": "node/13395111822",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5251325,
+            "longitude": 2.2825649,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/1513977663",
             "category": "amenity",
+            "latitude": 44.5259779,
+            "longitude": 2.2818672,
+            "tags": {
+              "amenity": "bar"
+            },
             "name": "Brasserie de la Place"
           },
           {
             "osmId": "node/1513977664",
             "category": "amenity",
+            "latitude": 44.526073700000005,
+            "longitude": 2.2814925,
+            "tags": {
+              "amenity": "atm"
+            },
             "name": "Crédit Agricole"
           },
           {
             "osmId": "node/1513977665",
             "category": "amenity",
+            "latitude": 44.5260542,
+            "longitude": 2.2815613000000003,
+            "tags": {
+              "amenity": "bar"
+            },
             "name": "Le Glacier"
           },
           {
             "osmId": "node/1513977666",
             "category": "amenity",
+            "latitude": 44.526036100000006,
+            "longitude": 2.2816292,
+            "tags": {
+              "amenity": "pharmacy"
+            },
             "name": "Pharmacie Mistral"
           },
           {
             "osmId": "node/1516501023",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5258751,
+            "longitude": 2.2802266,
+            "tags": {
+              "tourism": "artwork"
+            }
           },
           {
             "osmId": "node/4129769950",
             "category": "amenity",
+            "latitude": 44.5247836,
+            "longitude": 2.2802686000000003,
+            "tags": {
+              "amenity": "restaurant",
+              "tourism": "hotel"
+            },
             "name": "Le Tulipier"
           },
           {
             "osmId": "node/4129769960",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52439969999999,
+            "longitude": 2.2802932000000005,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/4202312997",
             "category": "amenity",
+            "latitude": 44.5254185,
+            "longitude": 2.2818293,
+            "tags": {
+              "amenity": "townhall"
+            },
             "name": "Hôtel de Ville de Cransac"
           },
           {
             "osmId": "node/853144856",
             "category": "amenity",
+            "latitude": 44.5261466,
+            "longitude": 2.2823119,
+            "tags": {
+              "amenity": "library"
+            },
             "name": "Médiathèque de Cransac"
           },
           {
             "osmId": "node/853144860",
             "category": "tourism",
+            "latitude": 44.5260708,
+            "longitude": 2.2825879,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Office de tourisme de Cransac"
           },
           {
             "osmId": "node/9125007932",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.525738399999994,
+            "longitude": 2.2814013,
+            "tags": {
+              "amenity": "fountain"
+            }
           },
           {
             "osmId": "node/9178444538",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5262291,
+            "longitude": 2.2801963,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9178444539",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.526248700000004,
+            "longitude": 2.2797879999999995,
+            "tags": {
+              "amenity": "vending_machine"
+            }
           },
           {
             "osmId": "node/9178444540",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5258989,
+            "longitude": 2.2797957,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/9178444543",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5257342,
+            "longitude": 2.2795769,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9178444545",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5257847,
+            "longitude": 2.2794683,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9178444552",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5258901,
+            "longitude": 2.2803993,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/9178444554",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5256231,
+            "longitude": 2.2806691,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9178444555",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5254492,
+            "longitude": 2.2803063,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/9178575352",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5254682,
+            "longitude": 2.2814157,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/9178575353",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52540520000001,
+            "longitude": 2.2814055,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9178575354",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5256671,
+            "longitude": 2.2818000999999994,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/9178575355",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.525688,
+            "longitude": 2.2818007,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/9178575372",
             "category": "tourism",
+            "latitude": 44.52582629999999,
+            "longitude": 2.2823042999999994,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Au coeur du bassin minier"
           },
           {
             "osmId": "node/9223598703",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5263171,
+            "longitude": 2.2797906,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9223598705",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5262017,
+            "longitude": 2.2802843,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/9223598706",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5256292,
+            "longitude": 2.2824983999999997,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "way/1460496520",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.525443949999996,
+            "longitude": 2.28252635,
+            "tags": {
+              "amenity": "parking"
+            }
           },
           {
             "osmId": "way/411261612",
             "category": "amenity",
+            "latitude": 44.524855200000005,
+            "longitude": 2.2807864500000004,
+            "tags": {
+              "amenity": "parking",
+              "access": "customers"
+            },
             "name": "Rue du Général Louis Artous"
           },
           {
             "osmId": "way/71189993",
             "category": "amenity",
+            "latitude": 44.5246408,
+            "longitude": 2.2824355000000005,
+            "tags": {
+              "amenity": "school"
+            },
             "name": "Collège Jean Jaurès"
           },
           {
             "osmId": "way/71192578",
-            "category": "shop"
+            "category": "shop",
+            "latitude": 44.52564735000001,
+            "longitude": 2.28191415,
+            "tags": {
+              "shop": "convenience"
+            }
           }
         ]
       },
@@ -5378,84 +7924,181 @@
         "names": [
           "La Pélonie"
         ],
+        "settlements": [
+          {
+            "osmId": "node/850542673",
+            "name": "La Pélonie",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/10242842869",
             "category": "tourism",
+            "latitude": 44.525475500000006,
+            "longitude": 2.2854406,
+            "tags": {
+              "tourism": "information"
+            },
             "name": "Eau de la Source Saint-Augustin"
           },
           {
             "osmId": "node/13053119990",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5247969,
+            "longitude": 2.2845248,
+            "tags": {
+              "tourism": "artwork"
+            }
           },
           {
             "osmId": "node/13395111823",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5251217,
+            "longitude": 2.2827939,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/13395111824",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5255846,
+            "longitude": 2.2826878999999995,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/1514141049",
             "category": "shop",
+            "latitude": 44.5254168,
+            "longitude": 2.2840914,
+            "tags": {
+              "shop": "newsagent"
+            },
             "name": "Tabac Presse Loto"
           },
           {
             "osmId": "node/4202312998",
             "category": "amenity",
+            "latitude": 44.525238,
+            "longitude": 2.2830236000000004,
+            "tags": {
+              "amenity": "post_office"
+            },
             "name": "La Poste"
           },
           {
             "osmId": "node/4202313001",
             "category": "amenity",
+            "latitude": 44.52596260000001,
+            "longitude": 2.2838724,
+            "tags": {
+              "amenity": "school"
+            },
             "name": "École élémentaire Émile Zola"
           },
           {
             "osmId": "node/5240009640",
-            "category": "historic"
+            "category": "historic",
+            "latitude": 44.5249085,
+            "longitude": 2.2833445000000006,
+            "tags": {
+              "historic": "memorial"
+            }
           },
           {
             "osmId": "node/9125007935",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.525302,
+            "longitude": 2.2831399,
+            "tags": {
+              "amenity": "toilets"
+            }
           },
           {
             "osmId": "node/9125007936",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.525117,
+            "longitude": 2.2836543,
+            "tags": {
+              "amenity": "restaurant"
+            }
           },
           {
             "osmId": "node/9125010600",
             "category": "amenity",
+            "latitude": 44.52532750000001,
+            "longitude": 2.2830151,
+            "tags": {
+              "amenity": "atm"
+            },
             "name": "Crédit Agricole"
           },
           {
             "osmId": "node/9178575374",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.525658899999996,
+            "longitude": 2.2828812,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9178575376",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5256241,
+            "longitude": 2.2829976,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/9223598707",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5253602,
+            "longitude": 2.2829758000000004,
+            "tags": {
+              "amenity": "parking_space"
+            }
           },
           {
             "osmId": "node/9223608118",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5252909,
+            "longitude": 2.2829475,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/9223608126",
-            "category": "historic"
+            "category": "historic",
+            "latitude": 44.525079500000004,
+            "longitude": 2.2833919,
+            "tags": {
+              "historic": "memorial"
+            }
           },
           {
             "osmId": "way/71129029",
             "category": "amenity",
+            "latitude": 44.52456485,
+            "longitude": 2.2835854499999995,
+            "tags": {
+              "amenity": "place_of_worship"
+            },
             "name": "Église Saint-Julien"
           },
           {
             "osmId": "way/71195986",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.525991600000005,
+            "longitude": 2.2839373999999997,
+            "tags": {
+              "amenity": "school"
+            }
           }
         ]
       },
@@ -5469,25 +8112,52 @@
         "pois": [
           {
             "osmId": "node/1222944386",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5245767,
+            "longitude": 2.2873527000000005,
+            "tags": {
+              "amenity": "recycling"
+            }
           },
           {
             "osmId": "node/13053119988",
             "category": "tourism",
+            "latitude": 44.5254153,
+            "longitude": 2.286458,
+            "tags": {
+              "tourism": "artwork"
+            },
             "name": "Symbiose"
           },
           {
             "osmId": "node/5659092105",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5245595,
+            "longitude": 2.2876990000000004,
+            "tags": {
+              "amenity": "toilets"
+            }
           },
           {
             "osmId": "way/71128156",
             "category": "amenity",
+            "latitude": 44.52492720000001,
+            "longitude": 2.2859953,
+            "tags": {
+              "amenity": "restaurant",
+              "tourism": "hotel"
+            },
             "name": "Les Carillons"
           },
           {
             "osmId": "way/71533857",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52448880000001,
+            "longitude": 2.28756235,
+            "tags": {
+              "amenity": "parking",
+              "access": "yes"
+            }
           }
         ]
       },
@@ -5501,15 +8171,30 @@
         "pois": [
           {
             "osmId": "node/12844988679",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5250878,
+            "longitude": 2.2918004,
+            "tags": {
+              "amenity": "waste_basket"
+            }
           },
           {
             "osmId": "node/9227603432",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5250773,
+            "longitude": 2.2918633,
+            "tags": {
+              "amenity": "bench"
+            }
           },
           {
             "osmId": "node/9227603433",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.5251041,
+            "longitude": 2.2917404,
+            "tags": {
+              "amenity": "bench"
+            }
           }
         ]
       },
@@ -5522,7 +8207,12 @@
         "pois": [
           {
             "osmId": "node/5239970105",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.524745,
+            "longitude": 2.2930352999999997,
+            "tags": {
+              "tourism": "information"
+            }
           }
         ]
       },
@@ -5616,6 +8306,13 @@
         ],
         "names": [
           "Le Claux"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/12038223636",
+            "name": "Le Claux",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -5660,6 +8357,13 @@
         "terrain": "place",
         "names": [
           "Les Baraques Perrier"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/4429345780",
+            "name": "Les Baraques Perrier",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -5667,6 +8371,13 @@
         "terrain": "place",
         "names": [
           "Les Baraques Delaure"
+        ],
+        "settlements": [
+          {
+            "osmId": "node/2117881578",
+            "name": "Les Baraques Delaure",
+            "wikipedia": null
+          }
         ]
       },
       {
@@ -5684,6 +8395,11 @@
           {
             "osmId": "way/71506642",
             "category": "tourism",
+            "latitude": 44.523204050000004,
+            "longitude": 2.2750293999999998,
+            "tags": {
+              "tourism": "camp_site"
+            },
             "name": "Camping Les Faysses"
           }
         ]
@@ -5694,7 +8410,12 @@
         "pois": [
           {
             "osmId": "way/1415862486",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.52379145,
+            "longitude": 2.2769993,
+            "tags": {
+              "amenity": "parking"
+            }
           }
         ],
         "contentSources": [
@@ -5713,6 +8434,12 @@
           {
             "osmId": "node/1602366502",
             "category": "amenity",
+            "latitude": 44.5240982,
+            "longitude": 2.2796944,
+            "tags": {
+              "amenity": "restaurant",
+              "tourism": "hotel"
+            },
             "name": "Hôtel du Parc"
           }
         ]
@@ -5735,14 +8462,31 @@
         "names": [
           "Bézelgues"
         ],
+        "settlements": [
+          {
+            "osmId": "node/850938638",
+            "name": "Bézelgues",
+            "wikipedia": null
+          }
+        ],
         "pois": [
           {
             "osmId": "node/5239970120",
-            "category": "tourism"
+            "category": "tourism",
+            "latitude": 44.5238615,
+            "longitude": 2.2930245,
+            "tags": {
+              "tourism": "information"
+            }
           },
           {
             "osmId": "node/5239971221",
-            "category": "amenity"
+            "category": "amenity",
+            "latitude": 44.523740999999994,
+            "longitude": 2.292873,
+            "tags": {
+              "amenity": "bench"
+            }
           }
         ]
       },
@@ -5810,6 +8554,13 @@
         "names": [
           "Cambrins"
         ],
+        "settlements": [
+          {
+            "osmId": "node/913481605",
+            "name": "Cambrins",
+            "wikipedia": null
+          }
+        ],
         "contentSources": [
           {
             "osmId": "way/71789593",
@@ -5835,7 +8586,12 @@
         "pois": [
           {
             "osmId": "node/5406063827",
-            "category": "historic"
+            "category": "historic",
+            "latitude": 44.5242884,
+            "longitude": 2.333941,
+            "tags": {
+              "historic": "wayside_cross"
+            }
           }
         ]
       },
@@ -5944,13 +8700,13 @@
   "cache": {
     "schemaVersion": 1,
     "sourceSha256": "ec6578c2f0ad33f60168d49680ed297afae3694254697cf7fe1db02e217788b0",
-    "pipelineSha256": "932bc7adc58f6290ad6e0945538a60796b08144b781c173058adc62edb5080e6",
+    "pipelineSha256": "0f06b225aac3d9af831252cb2293bfa72ad5fb1cc15237fb3186015f3d7d5eaa",
     "name": "Firmi",
     "cellSizeMeters": 250,
     "configuration": {
       "water_coverage_percent": 50
     },
-    "key": "6b9c67e9883cef9c6bf822322487567870e9d6304fffbf2548ac33904b96ee1d",
-    "payloadSha256": "709b0de934e31bf1fdb8c0062a99764bf9d20312c5c5514ed6969d2b81d5ca2d"
+    "key": "acda3a46558a5934a05438166c54f0305bc3eaeacf1fb9a9eee390d39e67764d",
+    "payloadSha256": "519321d7eaf8706e4a0d6c07d23e7f52d58d63d10cdc4823d4b6f75aa8cd6bf9"
   }
 }

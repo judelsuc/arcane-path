@@ -134,6 +134,7 @@
               <button id="rest-travel" type="button" data-i18n="travelRest"></button>
               <button id="sleep-travel" type="button" data-i18n="needsSleepAction"></button>
               <button id="eat-travel" type="button" data-i18n="needsEatAction"></button>
+              <button id="open-town" type="button" disabled data-i18n="townOpen"></button>
               <button id="look-travel" type="button" aria-pressed="false" data-i18n="travelLook"></button>
               <button id="retry-travel" type="button" data-i18n="travelRetry"></button>
               <button id="stop-travel" type="button" data-i18n="travelStop"></button>
@@ -211,6 +212,21 @@
         <button id="next-photo" type="button" data-i18n="nextPhoto"></button>
       </nav>
       <div id="cell-photo" role="status"></div>
+    </dialog>
+    <dialog id="town-dialog" aria-labelledby="town-title">
+      <div class="drawer-heading">
+        <h2 id="town-title"></h2>
+        <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
+      </div>
+      <p data-i18n="townScope"></p>
+      <div id="town-welcome" role="status"></div>
+      <button id="town-refresh" type="button" data-i18n="townRefresh"></button>
+      <h3 data-i18n="townPlacesTitle"></h3>
+      <p id="town-empty" data-i18n="townEmpty"></p>
+      <ul id="town-places"></ul>
+      <div id="town-place-detail" role="status"></div>
+      <p data-i18n="townFiction"></p>
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" data-i18n="attribution"></a>
     </dialog>
   </body>
 </html>

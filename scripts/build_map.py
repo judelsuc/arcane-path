@@ -447,6 +447,7 @@ def rasterize(
             paint(col, row, "water")
 
     named_points = {}
+    settlements = {}
     for node in node_elements:
         terrain = classify(_tags(node), is_node=True)
         if terrain is not None and terrain != "water" and visible_at_scale(terrain, cell_size_meters):
@@ -458,6 +459,12 @@ def rasterize(
             feature_name = _tags(node).get("name")
             if feature_name:
                 named_points.setdefault((col, row), []).append((terrain, feature_name))
+                if terrain == "place":
+                    tags = _tags(node)
+                    settlements.setdefault((col, row), []).append({
+                        "osmId": f"node/{node.attrib['id']}", "name": feature_name,
+                        "wikipedia": tags.get("wikipedia"),
+                    })
 
     country_cells = {}
     for element in node_elements:
@@ -534,7 +541,15 @@ def rasterize(
                 })
             if category is None:
                 continue
-            poi = {"osmId": f"{kind}/{element.attrib['id']}", "category": category}
+            poi = {
+                "osmId": f"{kind}/{element.attrib['id']}", "category": category,
+                "latitude": math.degrees(point[1] / EARTH_RADIUS_METERS),
+                "longitude": math.degrees(point[0] / EARTH_RADIUS_METERS) / math.cos(math.radians(center_lat)),
+                "tags": {key: tags[key] for key in (
+                    "amenity", "shop", "tourism", "historic", "access", "disused",
+                    "abandoned", "railway", "aerialway",
+                ) if key in tags},
+            }
             if tags.get("name"):
                 poi["name"] = tags["name"]
             cell_pois.setdefault(position, []).append(poi)
@@ -561,6 +576,9 @@ def rasterize(
             })
             if names:
                 output_cell["names"] = names
+            if (col_index, row_index) in settlements:
+                output_cell["settlements"] = sorted(
+                    settlements[col_index, row_index], key=lambda item: item["osmId"])
             pois = cell_pois.get((col_index, row_index))
             if pois:
                 output_cell["pois"] = sorted(pois, key=lambda poi: poi["osmId"])

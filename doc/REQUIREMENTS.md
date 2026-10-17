@@ -432,6 +432,22 @@ This file records additions to the design without modifying the source PDF,
 - **Review:** Decisions, provisional balancing, manual checkpoint tests and
   open questions are recorded in IMPLEMENTATION-CHOICES.md.
 
+## R-029 — Layer 5 real settlement menus
+
+- **Design milestone:** Entering a named settlement opens a text-only welcome
+  and menu of real named OSM venues. Reopening, browsing and leaving cost no
+  time or energy; Look inspection does not trigger entry.
+- **Implemented:** Preserve settlement OSM identities/Wikipedia associations,
+  POI positions, venue types and access restrictions in rendered maps.
+  Show a sourced cached Wikipedia welcome only for an associated or matching
+  settlement article. Show explicit absence/failure otherwise.
+- **Bounds:** Nearby loaded cells within 2 km, at most five public-facing
+  venues per broad category, with source links; no administrative-boundary
+  claims, invented venues, guaranteed opening, real-person story roles,
+  fictional reputational claims, shop prices or economy actions.
+- **Review:** A larger town area, richer venue categories and actual game
+  interactions await subsequent layers and balancing feedback.
+
 ## R-027 — Geocache-linked fictional dungeons
 
 - **Requirement:** Real geocaches can anchor entrances to fictional,

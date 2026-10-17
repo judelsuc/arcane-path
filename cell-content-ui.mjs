@@ -265,9 +265,9 @@ export function setupCellContent(t) {
   }
   show.addEventListener("click", openPhoto);
   document.addEventListener("keydown", (event) => {
-    if (event.key.toLowerCase() !== "p" || event.ctrlKey || event.metaKey ||
+    if (event.defaultPrevented || event.key.toLowerCase() !== "p" || event.ctrlKey || event.metaKey ||
         event.altKey || event.repeat ||
-        document.querySelector("#osm-drawer").open ||
+        document.querySelector("dialog[open]") ||
         event.target.closest("input, select, textarea, [contenteditable]")) return;
     if (selected) {
       event.preventDefault();

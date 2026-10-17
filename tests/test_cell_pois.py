@@ -33,7 +33,8 @@ class CellPoiTests(unittest.TestCase):
                 """<osm version="0.6">
                 <bounds minlat="0" minlon="0" maxlat="0.009" maxlon="0.009"/>
                 <node id="1" lat="0.0045" lon="0.0045">
-                  <tag k="name" v="Town"/><tag k="place" v="village"/></node>
+                  <tag k="name" v="Town"/><tag k="place" v="village"/>
+                  <tag k="wikipedia" v="fr:Town"/></node>
                 <node id="2" lat="0.004" lon="0.0045">
                   <tag k="name" v="Bakery"/><tag k="shop" v="bakery"/></node>
                 <node id="3" lat="0.005" lon="0.004"/>
@@ -44,7 +45,7 @@ class CellPoiTests(unittest.TestCase):
                 <way id="10">
                   <nd ref="2"/><nd ref="3"/><nd ref="4"/><nd ref="5"/><nd ref="2"/>
                   <tag k="building" v="yes"/><tag k="amenity" v="restaurant"/>
-                  <tag k="name" v="Cafe"/></way>
+                  <tag k="name" v="Cafe"/><tag k="access" v="private"/></way>
                 </osm>""", encoding="utf-8",
             )
             result = rasterize(source, "Region")
@@ -52,10 +53,15 @@ class CellPoiTests(unittest.TestCase):
         cell = result["rows"][2][2]
         self.assertEqual(cell["terrain"], "place")
         self.assertEqual(cell["names"], ["Town"])
-        self.assertEqual(cell["pois"], [
+        self.assertEqual([{key: poi[key] for key in ("osmId", "category", "name")} for poi in cell["pois"]], [
             {"osmId": "node/2", "category": "shop", "name": "Bakery"},
             {"osmId": "way/10", "category": "amenity", "name": "Cafe"},
         ])
+        self.assertEqual(cell["settlements"], [{"osmId": "node/1", "name": "Town", "wikipedia": "fr:Town"}])
+        self.assertEqual(cell["pois"][0]["tags"], {"shop": "bakery"})
+        self.assertEqual(cell["pois"][1]["tags"]["access"], "private")
+        self.assertAlmostEqual(cell["pois"][0]["latitude"], 0.004)
+        self.assertAlmostEqual(cell["pois"][0]["longitude"], 0.0045)
         all_pois = [poi for row in result["rows"] for cell in row for poi in cell.get("pois", [])]
         self.assertNotIn("Outside", [poi.get("name") for poi in all_pois])
 

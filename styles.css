@@ -428,6 +428,11 @@ dialog p { margin: 12px 0; }
 #needs-warning, #journey-ended { color: #f4cc80; }
 #needs-warning:empty { display: none; }
 #meal-location { color: var(--muted); font-size: 0.65rem; }
+#town-dialog { width: min(740px, 94vw); max-height: 90dvh; overflow: auto; }
+#town-places { padding-left: 1.2em; }
+#town-places li { margin-block: 8px; }
+#town-places button { width: 100%; text-align: left; overflow-wrap: anywhere; }
+#town-place-detail { padding-block: 10px; border-block: 1px solid var(--line); }
 
 .travel-panel {
   padding: 16px 24px;

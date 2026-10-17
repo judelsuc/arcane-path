@@ -6,6 +6,7 @@ import {
   startSurvival, walkSurvival, restSurvival, sleepSurvival, eatSurvival,
   validateSurvivalConfig, hungerPercent, canEat,
 } from "./survival.mjs";
+import { setupTowns } from "./towns-ui.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }) {
   const start = document.querySelector("#start-travel");
@@ -22,6 +23,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
   const height = document.querySelector("#travel-elevation");
   const note = document.querySelector("#travel-note");
   const directions = [...document.querySelectorAll("[data-move]")];
+  const towns = setupTowns(t);
   let state, stream, region, base, token = 0, busy = false, error = "", active = false;
   let transient = "", missingHeightMoves = 0;
   let heading = [0, 0];
@@ -68,6 +70,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
   const reported = new Set();
 
   function localize() {
+    towns.localize(document.documentElement.lang);
     document.querySelector("#map-workspace").classList.toggle("travel-active", active);
     document.body.classList.toggle("is-travelling", active);
     controls.hidden = !active;
@@ -263,6 +266,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
     tile.setAttribute("aria-current", "location");
     inspectPosition();
     localize();
+    towns.update(data, position.row + 8, position.col + 8, !state.ended);
   }
 
   function inspectPosition() {
@@ -404,6 +408,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
 
   function reset() {
     token++;
+    towns.reset();
     stream?.stop();
     stream = undefined;
     state = undefined;
@@ -480,7 +485,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop }
     button.addEventListener("click", () => step(...button.dataset.move.split(",").map(Number)));
   }
   document.addEventListener("keydown", event => {
-    if (!active || event.ctrlKey || event.metaKey || event.altKey ||
+    if (!active || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey ||
         document.querySelector("dialog[open]") ||
         event.target.closest("input,select,textarea,[contenteditable]")) return;
     const delta = { ArrowUp: [0, -1], ArrowRight: [1, 0], ArrowDown: [0, 1], ArrowLeft: [-1, 0] }[event.key];

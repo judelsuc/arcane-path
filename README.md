@@ -1,6 +1,6 @@
 # Les Arcanes du Chemin
 
-Prototype des **couches 1 — Carte, 2 — Voyage, 3 — Temps et 4 — Besoins** : donnees OSM reelles,
+Prototype des **couches 1 — Carte, 2 — Voyage, 3 — Temps, 4 — Besoins et 5 — Localites** : donnees OSM reelles,
 grille ASCII de 250 m, exploration a pied, horloge simulee, effort et streaming.
 
 Les ajouts au document de conception sont suivis dans [doc/REQUIREMENTS.md](./doc/REQUIREMENTS.md).
@@ -174,6 +174,40 @@ ni blessures, ni eau potable, ni effets medicaux dans cette couche.
 
 Voir [les choix, questions ouvertes et parcours de test](./doc/IMPLEMENTATION-CHOICES.md)
 pour les hypotheses de jeu, les checkpoints Git et la verification couche par couche.
+
+## Couche 5 : localites en menus
+
+Entrer sur une case de localite nommee ouvre un **menu textuel**. Le bouton
+**Visiter la localite** permet de le rouvrir apres fermeture. **Echap** ou
+**Reprendre la route** revient a la meme position, sans temps ni cout.
+L'observation d'une localite a distance n'ouvre pas ce menu.
+
+- Accueil : resume Wikipedia associe au noeud OSM, ou article geographique
+  portant le meme nom a moins de 2 km, avec langue, source et licence.
+  Une absence ou une erreur est affichee explicitement ; un article voisin
+  sans rapport n'est pas presente comme l'histoire de la localite.
+- Lieux : vrais etablissements nommes a moins de 2 km, uniquement dans les
+  cases deja chargees, cinq au maximum par grande categorie OSM. Les
+  coordonnees des POI sont conservees pour calculer les distances.
+  Les commerces vacants, lieux sans nom, acces prives/interdits et lieux
+  explicitement abandonnes/desaffectes sont exclus. Les types retenus
+  sont des lieux accueillant habituellement du public, pas des residences.
+- Chaque entree ouvre une fiche textuelle et son lien OpenStreetMap.
+  Aucun etablissement, prix, horaire, dialogue ou comportement n'est invente.
+  Ni la presence dans OSM ni l'absence d'une restriction ne garantissent
+  l'ouverture ou l'accueil reel. Les personnes reelles n'ont aucun role fictif.
+- Ce rayon est un voisinage cartographique, **pas une limite communale** :
+  les lieux proches peuvent appartenir a une autre commune. La liste
+  s'enrichit pendant les chargements sans requete OSM supplementaire dediee.
+- Consulter menus/fiches ne consomme rien et ne laisse pas passer les
+  raccourcis de marche, repos ou photos vers la carte. Achats, travail et
+  hebergement ne sont pas encore disponibles ; les repas de prototype de
+  couche 4 restent accessibles apres fermeture du menu.
+
+Les identifiants, associations Wikipedia et restrictions proviennent du
+rasteriseur. Apres modification du pipeline, `scripts/prepare_regions.py`
+regenere les snapshots depuis les sources en cache ; redemarrer le serveur
+regenere aussi les chunks rendus sans redemander les sources OSM ou altitudes.
 
 ### Couche 3 : temps et cadran du ciel
 

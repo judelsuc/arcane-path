@@ -8,6 +8,7 @@ All survival numbers below are gameplay approximations, not medical advice.
 
 - Existing Layer 3 baseline: commit `6bbe4c4`.
 - Layer 4 checkpoint: Git tag `layer-4-needs` (created after validation).
+- Layer 5 checkpoint: Git tag `layer-5-towns`.
 - Each completed further stage gets its own commit/tag and section here.
 - Nothing is pushed remotely automatically.
 
@@ -128,3 +129,82 @@ At 375 x 800, the travel map and needs panel fit without horizontal overflow.
 7. Should sleep pressure use circadian time as well as waking duration?
 8. What persistence/autosave policy is desired before long multi-day journeys?
 9. Keep weather cosmetic until Layer 11, or move exposure effects earlier?
+
+## Layer 5 - real settlement menus
+
+### Scope and choices
+
+- Automatic text-only menu on entering a named OSM settlement cell. Closing
+  stays at the same position; a sidebar button reopens it. Looking at a
+  settlement from afar is not entering it.
+- Preserve OSM settlement ids, names and explicit Wikipedia association,
+  as well as POI coordinates and relevant venue/access tags in prepared maps.
+- Reuse the existing description service, IndexedDB cache and Wikipedia
+  provider. Settlement summaries have a separate cache identity, including
+  the settlement id/name/association, so a nearby landmark description cannot
+  silently substitute for a town welcome.
+- Prefer explicit OSM Wikipedia association, respecting its source language
+  and redirects. Otherwise require a geographically nearby article whose
+  title matches the settlement name (allowing accents/disambiguation suffixes).
+  Both paths require coordinates within 2 km. No generated history fallback.
+- Multiple settlement nodes in one coarse cell are displayed together; the
+  deterministic first OSM id supplies the summary until finer town selection.
+- List named, public-facing shops, selected amenities/tourism and transport
+  stations from already-loaded cells within 2 km. Five entries per broad OSM
+  category, sorted by distance and id, deduplicated by OSM identity.
+- Explicit private/no-access, vacant, abandoned/disused, unnamed and
+  residential/irrelevant features are not offered as venues.
+  Public-facing is a category heuristic, never a guarantee of actual access.
+- Radius is visibly labelled a neighborhood, not membership in a city.
+  Small hamlets may show venues in nearby Firmi. Streaming may add venues
+  while the menu stays open; closing does not reopen it on background updates.
+- A venue entry displays provenance and a link, not a fictional merchant,
+  price, opening promise, accusation, quest or real person's dialogue.
+- Browsing is free and pauses map input. Future actions can have explicit
+  time/energy costs; there are no placeholder enabled purchase/work buttons.
+- Layer 4 meals remain a free settlement-cell action outside the dialog.
+  No extra geographic API calls are introduced by the venue menu itself.
+
+### Manual walkthrough
+
+1. Start in Firmi. Walk one cell south: Lestrunie menu opens.
+2. Expect named venues such as the library and bakery, with OSM links.
+   Lestrunie has no identified article in the current snapshot: expect an
+   explicit missing-summary message, not Firmi's article as its own history.
+3. While the menu is open, arrows, R and P do not move, rest or open a photo.
+   Selecting a venue shows its source. Escape returns to the same cell.
+4. After the movement buttons are ready, walk one cell east: Firmi menu opens.
+   Expect the real Firmi Wikipedia summary, attribution, language and license.
+5. Close, use the settlement button to reopen, and verify no time/needs change.
+   Cached summaries remain available after successful prior retrieval.
+6. Leave the cell, use Look to inspect a circle: no settlement menu opens.
+7. Switch language and reopen. The UI translates; a Wikipedia source may stay
+   French when explicitly associated by OSM, and its language is labelled.
+8. Test on a narrow screen: the dialog scrolls vertically; venue buttons wrap.
+
+Validation: 83 JavaScript and 62 Python tests passed. Browser tests verified
+automatic entry, named venues, Lestrunie's explicit absence, Firmi's real
+Wikipedia welcome, venue links, free browsing, modal shortcut isolation and
+rapid close/reentry. The latter caught and fixed a queued-dialog-close race.
+English localization, cached summaries with Wikipedia requests blocked, and
+the 375 x 800 dialog layout (no horizontal overflow) were also verified.
+Layer 4 and legacy travel tests remain green.
+
+### Open questions and intentional stopping point
+
+1. Should the venue menu use finer types (cafe/bakery/museum) rather than the
+   current broad category labels and limit? The raw OSM types are preserved.
+2. Should town bounds follow administrative polygons, built-up area, or a
+   radius varying with city size? The prototype never guesses membership.
+3. Are hamlets intended to have the same menu flow as large towns?
+4. How should multiple settlements in one 250 m cell be chosen?
+5. Layer 6 requires money and sourced national food/accommodation prices.
+   This work intentionally stops before inventing absolute Eurostat prices:
+   a price index alone is not the cost of a meal. The country must still
+   originate in map data, which is sparse in some current snapshots.
+6. Next implementation: agree on currency/start budget and item definitions,
+   choose a versioned price dataset with provenance and missing-country rules,
+   then wire real purchases/accommodation as a separate Layer 6 checkpoint.
+   Do not silently replace missing country with France or arbitrary prices.
+7. Layer 7 street music, Layer 8 parent trail, saving, and later geocache
+   dungeons remain unimplemented, not hidden behind success-looking buttons.

@@ -33,7 +33,8 @@ function commonsTitle(value) {
 }
 
 export async function contentKey(info, locale, kind) {
-  const identity = JSON.stringify([info.bounds, info.meters, info.contentSources]);
+  const identity = JSON.stringify([info.bounds, info.meters, info.contentSources,
+    ...(kind === "settlement" ? [info.settlement] : [])]);
   const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(identity));
   return `${kind === "photo" ? "v3" : "v1"}:${kind}:${locale}:${Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, "0")).join("")}`;
 }
@@ -52,10 +53,12 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
     return Object.values(result.query?.pages ?? {});
   }
 
-  async function wikipedia(info, locale) {
+  async function wikipedia(info, locale, title) {
     const pages = await json(`https://${locale}.wikipedia.org/w/api.php`, {
+      ...(title ? { titles: title, redirects: "1" } : {
       generator: "geosearch", ggscoord: `${info.latitude}|${info.longitude}`,
       ggsradius: "2000", ggslimit: "10", ggsnamespace: "0",
+      }),
       prop: "extracts|coordinates|pageimages|info", exintro: "1", explaintext: "1",
       exsentences: "2", exlimit: "max", piprop: "name", inprop: "url", colimit: "max",
     });
@@ -120,10 +123,10 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
     let content;
     const photos = [];
     const sources = info.contentSources;
-    if (kind === "description") {
+    if (kind === "description" || kind === "settlement") {
       const source = sources.find(s => s.tags[`description:${locale}`]?.trim()) ??
         sources.find(s => s.tags.description?.trim());
-      if (source) {
+      if (source && kind === "description") {
         content = {
           text: (source.tags[`description:${locale}`]?.trim() || source.tags.description.trim()).slice(0, 600),
           title: source.tags.name ?? source.osmId,
@@ -133,14 +136,23 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
           language: source.tags[`description:${locale}`] ? locale : "unspecified",
         };
       } else {
-        const pages = await attempt("Wikipedia", () => wikipedia(info, locale));
-        const page = pages?.find(p => p.extract?.trim());
+        let language = locale;
+        let title;
+        if (kind === "settlement" && info.settlement?.wikipedia) {
+          const match = /^([a-z][a-z0-9-]{0,19}):(.+)$/.exec(info.settlement.wikipedia);
+          if (match) [, language, title] = match;
+        }
+        const pages = await attempt("Wikipedia", () => wikipedia(info, language, title));
+        const normalize = value => value?.normalize("NFD").replace(/\p{M}/gu, "")
+          .toLocaleLowerCase().replace(/[_\s]+/g, " ").trim();
+        const page = pages?.find(p => p.extract?.trim() && (kind !== "settlement" || title ||
+          normalize(p.title?.replace(/\s*\([^)]*\)$/, "")) === normalize(info.settlement?.name)));
         if (page) {
           const coords = page.coordinates[0];
           content = {
             text: page.extract.slice(0, 600), title: page.title,
-            sourceUrl: page.fullurl, attribution: `Wikipedia (${locale}) contributors`,
-            license: "CC BY-SA 4.0", licenseUrl: WIKI_LICENSE, language: locale,
+            sourceUrl: page.fullurl, attribution: `Wikipedia (${language}) contributors`,
+            license: "CC BY-SA 4.0", licenseUrl: WIKI_LICENSE, language,
             nearby: !insideCell(info, coords.lat, coords.lon),
             distance: distanceMeters(info, coords.lat, coords.lon),
           };
