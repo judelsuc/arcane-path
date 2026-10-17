@@ -23,6 +23,14 @@ export function validateSave(save) {
   validateSurvivalConfig(save.survival);
   validateEconomy(save.economy);
   const s = save.state;
+  if (s?.serverJourney !== undefined) {
+    const metadata = s.serverJourney;
+    if (!metadata || typeof metadata.id !== "string" || !/^[a-f0-9]{32}$/.test(metadata.id) ||
+        typeof metadata.seed !== "string" || !/^[a-f0-9]{8}$/.test(metadata.seed) ||
+        typeof metadata.contentVersion !== "string" || !/^[a-f0-9]{64}$/.test(metadata.contentVersion) ||
+        typeof metadata.createdAt !== "string" ||
+        !finite(Date.parse(metadata.createdAt)) || Date.parse(metadata.createdAt) !== s.startedAt) fail();
+  }
   if (s?.name !== undefined && normalizeCharacterName(s.name) !== s.name) fail();
   if (!s || !integer(s.col) || !integer(s.row) ||
       Math.abs(chunkPosition(s.col, s.row).x) > 1000 ||

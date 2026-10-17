@@ -920,7 +920,10 @@ This file records additions to the design without modifying the source PDF,
   development execution require a separately approved purpose and budget.
 - **Preferred domain selected by the user:** arcane-path.eu.
   Availability, trademark checks, .eu registration eligibility and purchase
-  price remain to be confirmed; no domain has been reserved or purchased.
+  price were initially unconfirmed. The user subsequently configured the
+  domain; its A record resolves to 57.130.85.251 locally and on Cloudflare
+  as of 17 October 2026. Registration billing was not inspected. DNS does
+  not imply a public game service or working HTTPS.
 - **Scope:** Deployment/operations across layers, not a new gameplay layer.
   OpenStack authentication and Paris inventory succeeded. Terraform is
   validated; the user approved the default OVH group with guest firewall
@@ -962,3 +965,69 @@ This file records additions to the design without modifying the source PDF,
 - **Resilience:** Dungeons are optional discoveries. Disabled, archived or
   unavailable third-party caches must not block the main story; any mandatory
   clue needs an alternative route or suitable landmark anchor.
+
+## R-062 — Roguelite continuity through persistent player caches
+
+- **Requirement:** Develop the game's roguelite identity. A player can hide
+  in-game belongings at a geographic place so that other players, or the same
+  player on a later run, can discover and retrieve them. These caches connect
+  otherwise separate journeys rather than disappearing with the current run.
+- **Status:** Recorded for future implementation; no item inventory, shared
+  player cache or cross-run item persistence is implemented by this update.
+- **Target:** Persistent shared-world gameplay, building on Layer 9's server
+  foundations. Relates to the PDF's asynchronous signs/caches, R-025's
+  geocache-associated virtual items and R-027's optional discoveries. A virtual
+  player cache must not depend on a real third-party geocache listing.
+- **Continuity:** Associate caches with stable geographic locations, not a
+  camera coordinate or a transient region index. Deposits must survive the
+  end of a run and server restarts. Returning players need a persistent player
+  identity distinct from a journey ID. Ordinary local-save deletion or a new
+  run must not silently erase shared-world deposits.
+- **Integrity:** Deposit transfers the item out of the current inventory;
+  successful retrieval transfers it to the recipient. Server-side atomic
+  updates and idempotent retries must prevent duplication, double claims and
+  resurrection by reloading an old save.
+- **Decisions before implementation:** Define eligible items, deposit/search
+  action costs, discovery cues, sharing/ownership, reservations for one's next
+  run, expiry and what happens after another player claims a shared cache.
+  Supporting future runs does not yet define an unlimited safe bank, guaranteed
+  recovery of shared loot or automatic inheritance of the whole inventory.
+- **Scope and safety:** These are fictional in-game deposits, not instructions
+  to hide real objects, trespass or physically search dangerous places.
+  This requirement does not introduce combat or change current survival/end
+  rules. No free-form player-to-player text is implied.
+
+## R-063 — Proximity-sensitive arcane-item hints and future narrative wording
+
+- **Requirement:** The arcane items scattered across Europe must be discoverable
+  through hints. As a player gets closer to an item, hints become more available
+  and more precise, progressing from broad regional rumours towards town,
+  landmark and local hiding-place clues.
+- **Status:** Recorded for future implementation; scattered arcane items and
+  their proximity-hint system are not implemented by this update.
+- **Target layer:** Layer 20 — Lore / legendary objects, integrated with
+  exploration, NPCs, news and other discoverable narrative surfaces; related
+  to R-062's persistent places and the PDF's unique legendary-item lifecycle.
+- **Factual authority:** The game engine owns each item's identity, current
+  location, availability, discovery conditions and allowed hint precision.
+  Distance/proximity comes from the real geographic position, not screen
+  distance. Increasing proximity should provide additional opportunities and
+  actionable detail, not merely repeat the same vague sentence.
+- **Progression decisions:** Set distance bands, hint frequency, search costs
+  and the point at which an exact location can be revealed before implementation.
+  Do not silently assume every cell exposes every nearby item's coordinates.
+  Hints must remain coherent across reloads, regions and narrative channels.
+- **Shared-world consistency:** When an item is taken or rehidden, update its
+  authoritative location/version and the hints derived from it. Old rumours
+  may remain only if clearly identified as historical or uncertain, not as a
+  guaranteed present hiding place. Discovery must not create duplicate copies
+  of a globally unique arcane item.
+- **Future LLM role:** Later, use the LLM/content factory to express engine-issued
+  hint facts in characters' sentences, news, rumours and other suitable places.
+  It writes the wording, not item locations or discovery rules, and must not
+  contradict facts, exceed the permitted precision or reveal hidden coordinates.
+  Follow the PDF's pre-generated content approach; this requirement does not
+  authorize live per-action LLM calls or new AI spending.
+- **Independent of the LLM:** Structured factual hints and deterministic
+  templates must make discovery playable before generated prose is available.
+  This does not turn LLM text into a required dependency for finding an item.

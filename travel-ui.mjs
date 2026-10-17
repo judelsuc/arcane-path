@@ -3,18 +3,18 @@ import { createChunkStream, neighborDownloads } from "./travel-stream.mjs";
 import { cellInfo } from "./cell-info.mjs";
 import { skyState, estimatedTemperature, altitudeTemperatureOffset } from "./sky.mjs";
 import {
-  startSurvival, walkSurvival,
-  validateSurvivalConfig, hungerPercent, canEat, normalizeCharacterName,
+  walkSurvival, hungerPercent, canEat, normalizeCharacterName,
 } from "./survival.mjs";
 import { setupTowns } from "./towns-ui.mjs";
-import { validateEconomy, refreshPricing, startEconomy, applyBirthTarot, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, finishAction } from "./economy.mjs";
+import { refreshPricing, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, finishAction } from "./economy.mjs";
 import { setupDailyTarot } from "./daily-tarot-ui.mjs";
 import { survivalChoice } from "./survival-choices.mjs";
 import { setupSurvivalChoices } from "./survival-choices-ui.mjs";
 import { setupEconomyUI } from "./economy-ui.mjs";
 import { beginBusking, settleBusking } from "./music.mjs";
 import { setupMusic } from "./music-ui.mjs";
-import { loadTownTrail, interviewTrail } from "./trail.mjs";
+import { interviewTrail } from "./trail.mjs";
+import { createServerJourney } from "./server-journey.mjs";
 import { setupTrail } from "./trail-ui.mjs";
 import { createJourneyStore, mapIdentity } from "./journey-save.mjs";
 import { tarotArt } from "./tarot-art.mjs";
@@ -44,7 +44,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   let state, stream, region, base, token = 0, busy = false, error = "", active = false;
   let preparingOrigin = false;
   let trailController;
-  let trailProgress;
+  let pendingCreation;
   const pricingCountries = new Map();
   let transient = "", missingHeightMoves = 0;
   let heading = [0, 0];
@@ -313,17 +313,6 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     resume.disabled = !base || !savedJourney || preparingOrigin || busy;
     document.querySelector("#journey-start-status").textContent = active ? ""
       : error ? t("journeyStartError", { error }) : busy && transient ? t(transient) : "";
-    if (!active && busy && trailProgress && transient === "trailPreparing") {
-      const phase = trailProgress.phase === "provider" && trailProgress.backup ? "backup" : trailProgress.phase;
-      document.querySelector("#journey-start-status").textContent += ` ${t(`trailProgress.${phase}`, {
-        stage: trailProgress.stage ?? 1, provider: trailProgress.provider ?? "",
-        attempt: trailProgress.attempt ?? 1,
-        seconds: Math.max(0, Math.ceil((trailProgress.retryAt ?? 0) - Date.now() / 1000)),
-      })}`;
-      document.querySelector("#journey-start-status").textContent += ` ${t("trailRequestCounts", {
-        requests: trailProgress.requests ?? 0, cache: trailProgress.cacheHits ?? 0,
-      })}`;
-    }
     document.querySelector("#journey-start-status").classList.toggle("is-loading", !active && busy);
     document.querySelector("#cancel-journey-start").hidden = active || !busy;
     document.querySelector("#save-travel").disabled = !state || busy;
@@ -682,33 +671,18 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         if (currentToken !== token) return;
         profile.value = state.profileId;
       } else {
-        const settingsResponse = await fetch("./public/config.json", {
-          cache: "no-cache", signal: AbortSignal.timeout(5000),
-        });
-        if (!settingsResponse.ok) throw new Error(`Survival configuration: HTTP ${settingsResponse.status}`);
-        survivalConfig = validateSurvivalConfig((await settingsResponse.json()).survival);
-        const economyResponse = await fetch("./public/economy.json", {
-          cache: "no-cache", signal: AbortSignal.timeout(5000),
-        });
-        if (!economyResponse.ok) throw new Error(`Economy database: HTTP ${economyResponse.status}`);
-        economyData = validateEconomy(await economyResponse.json());
-        if (currentToken !== token) return;
-        transient = "trailPreparing";
+        transient = "serverJourneyPreparing";
         localize();
         trailController = new AbortController();
-        const trail = await loadTownTrail(region, trailController.signal, fetch, progress => {
-          if (currentToken !== token) return;
-          if (!["queued", "towns", "venues", "provider", "retry", "cache", "local"].includes(progress?.phase)) {
-            throw new Error("Invalid route preparation progress.");
-          }
-          trailProgress = progress;
-          localize();
-        });
+        if (pendingCreation?.region !== region || pendingCreation?.name !== characterName) {
+          pendingCreation = { region, name: characterName, requestId: crypto.randomUUID() };
+        }
+        const created = await createServerJourney(region, base, characterName,
+          pendingCreation.requestId, trailController.signal);
         if (currentToken !== token) return;
-        state = startEconomy(startSurvival(Math.floor(base.width / 2), Math.floor(base.height / 2),
-          Date.now(), "balanced", survivalConfig), economyData);
-        state = { ...applyBirthTarot(state, economyData), name: characterName };
-        state = { ...state, trail };
+        state = created.state;
+        survivalConfig = created.survival;
+        economyData = created.economy;
         transient = "travelLoading";
         birthPending = true;
       }
@@ -722,6 +696,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       if (first.elevation.error) error = first.elevation.error;
       active = true;
       autosave();
+      pendingCreation = undefined;
       resetContent();
       openJourneyIntro();
       draw();
@@ -745,7 +720,6 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     token++;
     trailController?.abort();
     trailController = undefined;
-    trailProgress = undefined;
     pricingCountries.clear();
     birthDialog.close();
     dailyTarotUI.reset();
