@@ -6,7 +6,7 @@ import {
   walkSurvival, hungerPercent, canEat, normalizeCharacterName,
 } from "./survival.mjs";
 import { setupTowns } from "./towns-ui.mjs";
-import { refreshPricing, refreshNightRest, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, restEffect, finishAction } from "./economy.mjs";
+import { refreshPricing, refreshMeals, refreshNightRest, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, restEffect, finishAction } from "./economy.mjs";
 import { setupDailyTarot } from "./daily-tarot-ui.mjs";
 import { survivalChoice } from "./survival-choices.mjs";
 import { setupSurvivalChoices } from "./survival-choices-ui.mjs";
@@ -680,7 +680,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         });
         if (!response.ok) throw new Error(`Economy database: HTTP ${response.status}`);
         const currentEconomy = await response.json();
-        economyData = refreshNightRest(refreshPricing(restored.economy, currentEconomy), currentEconomy);
+        economyData = refreshMeals(
+          refreshNightRest(refreshPricing(restored.economy, currentEconomy), currentEconomy), currentEconomy);
         if (currentToken !== token) return;
         profile.value = state.profileId;
       } else {
@@ -814,7 +815,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       state = action.kind === "meal"
         ? buyMeal(state, current.cell, current.info, action.id, survivalConfig, economyData)
         : action.kind === "hospitality"
-        ? askHospitality(state, current.cell, current.info, survivalConfig, economyData)
+        ? askHospitality(state, current.cell, current.info, survivalConfig, economyData, Math.random, action.id)
         : sleepEconomy(state, current.cell, current.info, action.id, survivalConfig, economyData);
       autosave();
       error = "";

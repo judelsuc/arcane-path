@@ -4,6 +4,18 @@ import { finishAction, tarotEventChance, didFaint } from "./economy.mjs";
 
 export const HOSPITALITY_RULES = Object.freeze({ minutes: 30, failureChance: 0.5 });
 
+export function worshipPlaces(cell) {
+  if (!cell || cell.unavailable) return [];
+  return [...new Map((cell.pois ?? []).filter(place =>
+    /^(node|way|relation)\/\d+$/.test(place.osmId) &&
+    place.tags?.amenity === "place_of_worship" &&
+    !["no", "private"].includes(place.tags.access) &&
+    (!place.tags.disused || place.tags.disused === "no") &&
+    (!place.tags.abandoned || place.tags.abandoned === "no"))
+    .map(place => [place.osmId, place])).values()]
+    .sort((a, b) => a.osmId.localeCompare(b.osmId));
+}
+
 export function hospitalityTown(cell) {
   if (!cell || cell.unavailable || cell.terrain !== "place") return null;
   return (cell.settlements ?? []).filter(place =>
@@ -11,8 +23,9 @@ export function hospitalityTown(cell) {
     .sort((a, b) => a.osmId.localeCompare(b.osmId))[0] ?? null;
 }
 
-export function hospitalityStatus(state, cell) {
-  const town = hospitalityTown(cell);
+export function hospitalityStatus(state, cell, placeId) {
+  const town = placeId === undefined ? hospitalityTown(cell)
+    : worshipPlaces(cell).find(place => place.osmId === placeId) ?? null;
   const day = journeyDate(state).toISOString().slice(0, 10);
   const attempt = town && (state.hospitalityAttempts ?? []).find(a => a.townId === town.osmId && a.day === day);
   return { town, day, attempt: attempt ?? null,
@@ -28,11 +41,13 @@ function dailyDraw(state, townId, day) {
   return hash / 2 ** 32;
 }
 
-export function askHospitality(state, cell, info, survival, economy, random = Math.random) {
+export function askHospitality(state, cell, info, survival, economy, random = Math.random, placeId) {
   if (state.ended) throw new Error("This journey has ended.");
-  const { town, day, available } = hospitalityStatus(state, cell);
-  if (!town) throw new Error("Ask for hospitality in a mapped, named settlement cell.");
-  if (!available) throw new Error("You have already asked in this town today.");
+  const { town, day, available } = hospitalityStatus(state, cell, placeId);
+  if (!town) throw new Error(placeId === undefined
+    ? "Ask for hospitality in a mapped, named settlement cell."
+    : "This mapped place of worship is unavailable for a shelter request.");
+  if (!available) throw new Error("You have already asked at this place today.");
   const accepted = dailyDraw(state, town.osmId, day) >=
     tarotEventChance(HOSPITALITY_RULES.failureChance, state, economy);
   let next = finishAction(state, restSurvival(state, { ...survival,
@@ -44,7 +59,8 @@ export function askHospitality(state, cell, info, survival, economy, random = Ma
     if (next.ended) outcome = "exhausted";
   }
   return { ...next, hospitalityAttempts: [...(state.hospitalityAttempts ?? []), {
-    townId: town.osmId, townName: town.name, day, outcome,
+    townId: town.osmId, townName: town.name?.trim() || town.osmId, day, outcome,
+    ...(placeId === undefined ? {} : { placeKind: "worship" }),
     startedMinutes: state.elapsedMinutes, finishedMinutes: next.elapsedMinutes,
   }] };
 }
@@ -57,7 +73,9 @@ export function validateHospitality(state, survival) {
   const keys = new Set();
   let previousEnd = 0;
   for (const attempt of attempts) {
-    if (!attempt || typeof attempt.townId !== "string" || !/^(node|way)\/\d+$/.test(attempt.townId) ||
+    if (!attempt || typeof attempt.townId !== "string" ||
+        !(attempt.placeKind === "worship" ? /^(node|way|relation)\/\d+$/ : /^(node|way)\/\d+$/).test(attempt.townId) ||
+        (attempt.placeKind !== undefined && attempt.placeKind !== "worship") ||
         typeof attempt.townName !== "string" || !attempt.townName.trim() ||
         !["hosted", "refused", "exhausted", "fainted"].includes(attempt.outcome) ||
         !Number.isFinite(attempt.startedMinutes) || attempt.startedMinutes < previousEnd ||

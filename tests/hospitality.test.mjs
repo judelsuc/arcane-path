@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { HOSPITALITY_RULES, hospitalityTown, hospitalityStatus, askHospitality } from "../hospitality.mjs";
+import { HOSPITALITY_RULES, hospitalityTown, hospitalityStatus, askHospitality, worshipPlaces } from "../hospitality.mjs";
 import { startSurvival } from "../survival.mjs";
 import { applyBirthTarot, startEconomy, tarotEventChance } from "../economy.mjs";
 import { createTrail } from "../trail.mjs";
@@ -29,6 +29,80 @@ function example(outcome, hour = 12) {
 }
 const details = state => ({ region: "firmi", map, state, survival, economy });
 const result = state => state.hospitalityAttempts.at(-1);
+
+const worship = (osmId, religion, name) => ({
+  osmId, name, tags: { amenity: "place_of_worship", religion },
+});
+const religiousCell = { terrain: "church", pois: [
+  worship("way/201", "christian", "Church"),
+  worship("node/202", "muslim", "Mosque"),
+  worship("relation/203", "jewish", "Synagogue"),
+  worship("way/204", "buddhist", "Temple"),
+  worship("node/205", undefined, undefined),
+] };
+const askWorship = (state, id, cell = religiousCell) =>
+  askHospitality(state, cell, info, survival, economy, () => 0, id);
+
+test("mapped active places of worship of all religions offer requests even outside settlements", () => {
+  assert.equal(hospitalityTown(religiousCell), null);
+  assert.equal(worshipPlaces(religiousCell).length, 5);
+  for (const place of religiousCell.pois) {
+    assert.equal(hospitalityStatus(start(), religiousCell, place.osmId).available, true);
+    const next = askWorship(start(), place.osmId);
+    assert.equal(result(next).placeKind, "worship");
+    assert.equal(result(next).townId, place.osmId);
+    assert.equal(result(next).townName, place.name ?? place.osmId);
+    assert.equal(next.walletCents, 0);
+    assert.equal(next.elapsedMinutes, result(next).outcome === "hosted"
+      ? 30 + survival.sleep_hours * 60 : 30);
+    assert.deepEqual(validateSave(createSave(details(next), 1)).state, next);
+  }
+});
+
+test("worship requests exclude private, inaccessible, abandoned, disused and unavailable places", () => {
+  const place = religiousCell.pois[0];
+  const cell = { ...religiousCell, pois: [place, place,
+    ...[{ access: "private" }, { access: "no" }, { disused: "yes" }, { abandoned: "yes" },
+      { amenity: "school" }].map((tags, i) => ({
+      ...place, osmId: `way/${300 + i}`, tags: { ...place.tags, ...tags },
+    })),
+    { ...place, osmId: "invalid" },
+  ] };
+  assert.deepEqual(worshipPlaces(cell), [place]);
+  for (const invalid of ["way/300", "way/301", "way/302", "way/303", "way/304", "node/999"]) {
+    assert.throws(() => askWorship(start(), invalid, cell), /unavailable/);
+  }
+  assert.deepEqual(worshipPlaces({ ...cell, unavailable: true }), []);
+  assert.deepEqual(worshipPlaces(null), []);
+  assert.throws(() => askWorship(start(), place.osmId, { ...cell, unavailable: true }), /unavailable/);
+});
+
+test("worship refusals and welcomes are stable, per-place/day and survive real save/resume", () => {
+  const id = "relation/203";
+  for (const outcome of ["hosted", "refused"]) {
+    let state;
+    for (let i = 0; i < 1000 && !state; i++) {
+      const candidate = start(i);
+      if (result(askWorship(candidate, id)).outcome === outcome) state = candidate;
+    }
+    assert.ok(state, `found ${outcome}`);
+    const next = askWorship(state, id);
+    assert.equal(next.sleeps, outcome === "hosted" ? state.sleeps + 1 : state.sleeps);
+    assert.equal(next.outdoorNightMinutes, state.outdoorNightMinutes);
+    assert.deepEqual(askWorship(structuredClone(state), id), next);
+    const restored = validateSave(JSON.parse(JSON.stringify(createSave(details(next), 1)))).state;
+    assert.equal(hospitalityStatus(restored, religiousCell, id).available, false);
+    assert.throws(() => askWorship(restored, id), /already asked/);
+    assert.equal(hospitalityStatus(restored, religiousCell, "way/201").available, true);
+    assert.equal(hospitalityStatus(restored, town).available, true);
+    const tomorrow = { ...restored, elapsedMinutes: restored.elapsedMinutes + 1440 };
+    assert.equal(hospitalityStatus(tomorrow, religiousCell, id).available, true);
+    assert.throws(() => askWorship({ ...state, ended: "hunger" }, id), /ended/);
+    const corrupt = createSave(details(next), 1);
+    corrupt.state.hospitalityAttempts[0].placeKind = "unknown";
+    assert.throws(() => validateSave(corrupt), /hospitality/);
+  }
+});
 
 test("hospitality requires a real named settlement cell and a stable OSM identity", () => {
   assert.equal(hospitalityTown(town).osmId, "node/123");

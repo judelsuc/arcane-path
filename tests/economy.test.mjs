@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { startSurvival, walkSurvival } from "../survival.mjs";
 import { validateEconomy, drawTarot, startEconomy, localMeals, mealOptions, marketPrice, shelters, restEffect, refreshNightRest,
   nightMinutes, finishAction, buyMeal, sleepEconomy, restEconomy,
-  dailyTarotPending, acknowledgeDailyTarot, refreshPricing } from "../economy.mjs";
+  dailyTarotPending, acknowledgeDailyTarot, refreshPricing, refreshMeals } from "../economy.mjs";
 
 const data = validateEconomy(JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url))));
 const survival = JSON.parse(readFileSync(new URL("../public/config.json", import.meta.url))).survival;
@@ -55,6 +55,58 @@ test("sourced specialties follow coordinates, not selected region or guessed cou
     [{ latitude: -17.55, longitude: -149.56 }, "poisson-cru"],
   ]) assert.deepEqual(localMeals(point, data).map(m => m.id), [id]);
   assert.deepEqual(localMeals({ latitude: 0, longitude: 0 }, data), []);
+});
+
+test("European dishes cover 15 countries with confirmed country matching and bounded regional coverage", () => {
+  const examples = [
+    ["FR", 49.387, 3.005, "ficelle-picarde"], ["IT", 40.85, 14.27, "pizza-napoletana"],
+    ["ES", 40.42, -3.7, "tortilla"], ["PT", 38.72, -9.14, "bacalhau-bras"],
+    ["CH", 46.95, 7.45, "rosti"], ["AT", 48.21, 16.37, "wiener-schnitzel"],
+    ["DE", 52.52, 13.4, "bratwurst"], ["BE", 50.85, 4.35, "carbonnade"],
+    ["NL", 52.37, 4.9, "stamppot"], ["PL", 50.06, 19.94, "pierogi"],
+    ["HU", 47.5, 19.04, "gulyas"], ["CZ", 50.08, 14.43, "svickova"],
+    ["GR", 37.98, 23.73, "moussaka"], ["IE", 53.35, -6.26, "irish-stew"],
+    ["GB", 55.95, -3.19, "haggis"],
+  ];
+  assert.equal(new Set(examples.map(([code]) => code)).size, 15);
+  for (const [code, latitude, longitude, id] of examples) {
+    const point = { latitude, longitude };
+    assert.ok(localMeals(point, data, [code]).some(m => m.id === id), id);
+    assert.ok(mealOptions({ terrain: "place", countryCodes: [code] }, point, data).some(m => m.id === id));
+    for (const codes of [[], ["US"], [code, "US"]]) {
+      assert.ok(!localMeals(point, data, codes).some(m => m.id === id), `${id}: ${codes}`);
+    }
+    const purchased = buyMeal({ ...start(), reserveKcal: 300, walletCents: 10000 },
+      { terrain: "place", countryCodes: [code] }, point, id, survival, data);
+    assert.equal(purchased.meals, 1);
+    assert.equal(purchased.elapsedMinutes, survival.meal_minutes);
+  }
+  assert.ok(!localMeals({ latitude: 51.5, longitude: -0.12 }, data, ["GB"]).some(m => m.id === "haggis"));
+  assert.ok(!localMeals({ latitude: 45.46, longitude: 9.19 }, data, ["IT"]).some(m => m.id === "pizza-napoletana"));
+  assert.ok(!localMeals({ latitude: 46.2, longitude: 6.14 }, data, ["FR"]).some(m => m.id === "rosti"));
+});
+
+test("new dishes refresh existing saves without replacing pinned meals, rules, prices or tarot", () => {
+  const saved = structuredClone(data);
+  saved.meals = saved.meals.slice(0, 4);
+  saved.meals[0].reserveKcal = 777;
+  const before = structuredClone(saved);
+  const updated = refreshMeals(saved, data);
+  assert.equal(updated.meals.length, 19);
+  assert.deepEqual(updated.meals.slice(0, 4), before.meals);
+  assert.deepEqual({ ...updated, meals: before.meals }, before);
+  assert.deepEqual(saved, before);
+  assert.deepEqual(refreshMeals(updated, data), updated);
+  updated.meals.at(-1).name = "mutated";
+  assert.notEqual(data.meals.at(-1).name, "mutated");
+  for (const invalid of [
+    m => { m.scope = "global"; }, m => { m.countries = []; },
+    m => { m.countries = ["France"]; }, m => { m.area = ""; },
+  ]) {
+    const corrupt = structuredClone(data);
+    invalid(corrupt.meals.at(-1));
+    assert.throws(() => refreshMeals(saved, corrupt), /Invalid economy/);
+  }
 });
 
 test("national prices use comparable dollar values and missing countries use the European mean", () => {
