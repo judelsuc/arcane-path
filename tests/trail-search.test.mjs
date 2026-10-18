@@ -259,7 +259,7 @@ test("photo preparation is free until committed, falls back explicitly, deduplic
 });
 
 test("search interrupted by fainting or hunger cannot award hints", async () => {
-  const state = { ...start(), reserveKcal: 1 };
+  const state = { ...start(), reserveKcal: 1, health: 0.01 };
   const next = applyFieldSearch(state, await search(state), cell, info, survival, economy);
   assert.equal(next.trail.exploration.hints.length, 0);
   assert.notEqual(next.trail.exploration.lastSearch.outcome, "found");
@@ -368,7 +368,7 @@ test("nobody, unknown clues, hunger and stale recognition never grant suggestion
   assert.equal(nobody.outcome, "nobody");
   const unsure = askAboutClue(state, prepared(state, []), cell, info, survival, economy, () => 0);
   assert.equal(unsure.outcome, "unsure");
-  const exhaustedState = { ...state, reserveKcal: 1 };
+  const exhaustedState = { ...state, reserveKcal: 1, health: 0.01 };
   const exhausted = askAboutClue(exhaustedState, prepared(exhaustedState, [town("Seaside")]),
     cell, info, survival, economy, () => 0);
   assert.notEqual(exhausted.outcome, "suggestion");

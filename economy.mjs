@@ -4,6 +4,7 @@ import { eatSurvival, sleepSurvival, restSurvival, faintSurvival, characterProfi
 import { applyWeatherExposure } from "./weather-effects.mjs";
 import { advancePressures, didPlace, washingAvailable, refreshPressureTarot } from "./pressures.mjs";
 import { tarotEventChance } from "./tarot-effects.mjs";
+import { healthValue } from "./health.mjs";
 export { tarotEventChance } from "./tarot-effects.mjs";
 
 export function validateEconomy(data) {
@@ -220,13 +221,13 @@ export function finishAction(previous, next, info, data,
   { sheltered = false, random = Math.random, survival, activity } = {}) {
   if (previous.ended) throw new Error("This journey has ended.");
   if (!sheltered) next = applyWeatherExposure(previous, next, info);
-  if (next.reserveKcal <= 0) next = { ...next, ended: "hunger" };
+  if (healthValue(next) <= 0) next = { ...next, ended: "health" };
   const minutes = next.elapsedMinutes - previous.elapsedMinutes;
   let exposed = sheltered ? 0 : nightMinutes(previous, minutes, info);
   const fatigue = Math.min(100, next.fatigue + exposed / 60 * data.rules.outdoorFatiguePerNightHour);
   next = { ...next, fatigue };
   const sleepy = next.ended === "sleep";
-  if ((fatigue >= 100 || sleepy) && next.ended !== "hunger") {
+  if ((fatigue >= 100 || sleepy) && !["health", "hunger"].includes(next.ended)) {
     const startedMinutes = next.elapsedMinutes;
     const chance = faintingRisk(previous, info, data, sheltered);
     const robbed = collapseDraw(next, "robbery") < chance;
@@ -245,7 +246,8 @@ export function finishAction(previous, next, info, data,
   }
   next = advancePressures(previous, next, info, { sheltered, survival, activity });
   const day = journeyDate(next).toISOString().slice(0, 10);
-  return refreshPressureTarot({ ...next,
+  const { metabolism, ...settled } = next;
+  return refreshPressureTarot({ ...settled,
     outdoorNightMinutes: previous.outdoorNightMinutes + exposed,
     dailyCard: day === previous.tarotDay ? previous.dailyCard : drawTarot(data, random),
     dailyTarotSeenDay: previous.dailyTarotSeenDay ?? previous.tarotDay,

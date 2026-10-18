@@ -282,7 +282,7 @@ test("exposure can cause fainting, shelter cannot bypass hunger, and invalid dat
 });
 
 test("paid accommodation includes food and fully relieves hunger, fatigue and sleep pressure", () => {
-  const state = { ...start(22), reserveKcal: 1, fatigue: 99, awakeHours: survival.sleep_limit_hours - 0.1 };
+  const state = { ...start(22), health: 1, reserveKcal: 1, fatigue: 99, awakeHours: survival.sleep_limit_hours - 0.1 };
   for (const tourism of ["hotel", "hostel", "guest_house", "motel", "alpine_hut"]) {
     const cell = { ...town, pois: [{ ...shelter, tags: { tourism } }] };
     const next = sleepEconomy(state, cell, info, shelter.osmId, survival, data);
@@ -299,8 +299,8 @@ test("paid accommodation includes food and fully relieves hunger, fatigue and sl
     assert.ok(next.energyKcal > state.energyKcal);
   }
   const free = { ...town, pois: [{ ...shelter, tags: { amenity: "shelter", fee: "no" } }] };
-  assert.equal(sleepEconomy(state, free, info, shelter.osmId, survival, data).ended, "hunger");
-  assert.equal(sleepEconomy(state, town, info, null, survival, data).ended, "hunger");
+  assert.equal(sleepEconomy(state, free, info, shelter.osmId, survival, data).ended, "health");
+  assert.equal(sleepEconomy(state, town, info, null, survival, data).ended, "health");
   assert.throws(() => sleepEconomy({ ...state, ended: "hunger" }, { ...town, pois: [shelter] },
     info, shelter.osmId, survival, data), /ended/);
   assert.throws(() => sleepEconomy({ ...state, walletCents: 0 }, { ...town, pois: [shelter] },

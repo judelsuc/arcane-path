@@ -169,8 +169,8 @@ test("washing is paid, takes time, needs facilities and cannot resurrect a fatal
   assert.equal(washingAvailable({ pois: [{ tags: { amenity: "shower", disused: "yes" } }] }), false);
   assert.equal(washingAvailable({ pois: [{ tags: { amenity: "shower" } }] }), true);
   assert.throws(() => washEconomy(state, { terrain: "forest" }, info, survival, economy), /facilities/);
-  const hungry = washEconomy({ ...state, reserveKcal: 1 }, cell, info, survival, economy);
-  assert.equal(hungry.ended, "hunger");
+  const hungry = washEconomy({ ...state, reserveKcal: 1, health: 0.01 }, cell, info, survival, economy);
+  assert.equal(hungry.ended, "health");
   assert.equal(hungry.pressures.placements.length, 0);
 });
 

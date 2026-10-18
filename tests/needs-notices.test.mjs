@@ -24,7 +24,7 @@ test("hunger warning starts at exactly 75%, waits until shown, and rearms only a
 });
 
 test("terminal notice replaces hunger warning, supports ended saves, and does not repeat", () => {
-  for (const ended of ["hunger", "fatigue", "sleep"]) {
+  for (const ended of ["health", "hunger", "fatigue", "sleep"]) {
     const notices = createNeedsNotices();
     assert.equal(notices.pending({ ...state(100), ended }, config), ended);
     notices.shown(ended);
@@ -33,11 +33,11 @@ test("terminal notice replaces hunger warning, supports ended saves, and does no
   assert.equal(createNeedsNotices().pending({ ...state(100), ended: "reunion" }, config), null);
 });
 
-test("zero food energy remains game over and cannot be undone by resting", () => {
+test("zero health is game over and cannot be undone by resting", () => {
   const exhausted = restSurvival({ ...startSurvival(0, 0, 0, "balanced", config),
-    reserveKcal: 1 }, config);
+    reserveKcal: 1, health: 0.01 }, config);
   assert.equal(exhausted.reserveKcal, 0);
-  assert.equal(exhausted.ended, "hunger");
+  assert.equal(exhausted.ended, "health");
   assert.throws(() => restSurvival(exhausted, config), /journey has ended/);
 });
 
@@ -45,7 +45,7 @@ test("only death outcomes replace the marker with a cross; recovery and reunion 
   const classes = new Set(), attributes = {};
   const tile = { classList: { toggle(name, on) { if (on) classes.add(name); else classes.delete(name); } },
     setAttribute(name, value) { attributes[name] = value; } };
-  for (const ended of [null, "hunger", "fatigue", "sleep", "placement", "reunion"]) {
+  for (const ended of [null, "health", "hunger", "fatigue", "sleep", "placement", "reunion"]) {
     const s = { ended };
     renderJourneyMarker(tile, s, key => translate("en", key));
     assert.equal(tile.textContent, isDeath(s) ? "†" : "@");
@@ -85,7 +85,7 @@ for (const locale of ["fr", "en"]) {
       createElement: tag => Object.assign(new Element(), { tag }),
     };
     globalThis.MutationObserver = class { observe() {} };
-    const current = { state: { ...state(100), ended: "hunger" }, survival: config, busy: false };
+    const current = { state: { ...state(100), health: 0, ended: "health" }, survival: config, busy: false };
     const before = structuredClone(current.state);
     const tr = (key, args) => translate(locale, key, args);
     const ui = setupNeedsNotices(tr, { context: () => current });
@@ -97,7 +97,7 @@ for (const locale of ["fr", "en"]) {
     await tick();
     assert.equal(element("#needs-notice-dialog").open, true);
     assert.equal(element("#needs-notice-title").textContent, tr("deathTitle"));
-    assert.ok(element("#needs-notice-text").textContent.includes(tr("deathCause.hunger")));
+    assert.ok(element("#needs-notice-text").textContent.includes(tr("deathCause.health")));
     assert.equal(element("#needs-death-card").hidden, false);
     const card = element("#needs-death-card").querySelector("img");
     assert.equal(card.src, "/public/tarot/nameless.jpg");

@@ -1,5 +1,7 @@
 import { hungerPercent } from "./survival.mjs";
 import { sympathy } from "./pressures.mjs";
+import { journeyEventText, eventChances } from "./journey-events.mjs";
+import { healthValue } from "./health.mjs";
 
 export function journeyStats({ state: s, survival, economy }, t, language = "fr") {
   const number = (value, digits = 0) => value.toFixed(digits);
@@ -10,6 +12,7 @@ export function journeyStats({ state: s, survival, economy }, t, language = "fr"
     if (!found) throw new Error("Unknown statistics tarot card.");
     return found[language === "en" ? "en" : "fr"];
   };
+  const chances = eventChances(s, economy);
   const groups = [
     group("statsJourney", [
       row("statsName", s.name ?? t("unnamedCharacter")),
@@ -23,6 +26,7 @@ export function journeyStats({ state: s, survival, economy }, t, language = "fr"
       row("statsState", s.ended ? t(`journeyEnded.${s.ended}`) : t("statsOngoing")),
     ]),
     group("needsTitle", [
+      row("needsHealth", `${number(healthValue(s))}%`),
       row("needsHunger", `${number(hungerPercent(s, survival))}%`),
       row("needsFatigue", `${number(s.fatigue)}%`),
       row("statsAwake", `${number(s.awakeHours, 1)} h`),
@@ -42,6 +46,8 @@ export function journeyStats({ state: s, survival, economy }, t, language = "fr"
     group("statsCards", [
       row("statsBirthCard", card(s.birthCard)),
       row("statsDailyCard", card(s.dailyCard)),
+      row("journeyEventChance", `${number(chances.occurrence * 100, 1)}%`),
+      row("journeyEventFavourable", `${number(chances.positive * 100, 1)}%`),
     ]),
   ];
   if (s.pressures) {
@@ -60,6 +66,16 @@ export function journeyStats({ state: s, survival, economy }, t, language = "fr"
       row("statsCleanlinessRate", `${number((0.75 + p.tarotFactor * 0.25) * 100)}%`),
       row("statsSympathyBonus", number((1 - p.tarotFactor) * 30, 1)),
     );
+  }
+  if (s.events) {
+    groups.push(group("journeyEventHistory", [
+      row("journeyEventCount", s.events.count),
+      row("journeyEventWalking", `${number(s.events.walkedMinutes)} min`),
+      ...s.events.history.map(event => ({
+        label: t("journeyEventHistoryTime", { minutes: Math.floor(event.elapsedMinutes) }),
+        value: journeyEventText(event, t),
+      })),
+    ]));
   }
   return groups;
 }

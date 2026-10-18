@@ -1,4 +1,5 @@
 import { estimatedTemperature, altitudeTemperatureOffset } from "./sky.mjs";
+import { spendExtraEnergy } from "./health.mjs";
 
 export function temperatureModifiers(celsius) {
   if (!Number.isFinite(celsius)) throw new Error("Invalid exposure temperature.");
@@ -42,8 +43,6 @@ export function applyWeatherExposure(previous, next, info) {
     fatigue += (effects.fatiguePerHour + precipitation.fatiguePerHour) * duration / 60;
   }
   const extraKcal = Math.max(0, next.energyKcal - previous.energyKcal) * calorieMinutes / minutes;
-  const reserveKcal = Math.max(0, next.reserveKcal - extraKcal);
-  return { ...next, reserveKcal, energyKcal: next.energyKcal + extraKcal,
-    fatigue: Math.min(100, next.fatigue + fatigue),
-    ended: reserveKcal <= 0 ? "hunger" : next.ended };
+  return { ...spendExtraEnergy(next, extraKcal),
+    fatigue: Math.min(100, next.fatigue + fatigue) };
 }

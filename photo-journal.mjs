@@ -2,6 +2,7 @@ const STORE = "photos";
 
 import { setFeedback } from "./feedback.mjs";
 import { createTarotJournalPinner, tarotJournalEntry } from "./tarot-cards.mjs";
+import { journeyEventJournalEntry } from "./journey-event-journal.mjs";
 import { journeyStats } from "./journey-stats.mjs";
 import { notebookPdf, downloadNotebookPdf } from "./notebook-pdf.mjs";
 import { journeyMapView, journeyMapDescription, drawJourneyMap } from "./journey-map.mjs";
@@ -578,8 +579,9 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       await load();
     },
     pinTarot(container, state, role, data) {
-      const entry = tarotJournalEntry(state, role, data, t,
-        document.documentElement.lang === "en" ? "en" : "fr");
+      const entry = role === "event" ? journeyEventJournalEntry(state, t)
+        : tarotJournalEntry(state, role, data, t,
+          document.documentElement.lang === "en" ? "en" : "fr");
       const previous = tarotPins.get(container);
       if (previous?.id === entry.id) return;
       tarotPins.set(container, { id: entry.id });
@@ -598,10 +600,11 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         try {
           await pinTarot(entry);
           failedPins.delete(entry.id);
-          feedback.textContent = t("journalTarotPinned", { card: entry.title });
+          feedback.textContent = role === "event" ? t("journalPinned")
+            : t("journalTarotPinned", { card: entry.title });
           setFeedback(feedback, "success");
         } catch (reason) {
-          console.error("Could not pin tarot card:", reason);
+          console.error("Could not pin notebook entry:", reason);
           failedPins.set(entry.id, { scope: pinScope, message: reason.message });
           feedback.textContent = t("journalError", { error: reason.message });
           setFeedback(feedback, "failure");

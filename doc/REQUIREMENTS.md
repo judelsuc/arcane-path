@@ -1,5 +1,28 @@
 # Requirements tracked outside the design PDF
 
+## R-120 / R-121 - Validated journey events and health
+
+- User validated the expanded journey-event mechanism on 2026-10-18 and
+  authorized production publication at the normal rate: one opportunity per
+  90 completed walking minutes, never while stationary. Both tarot cards
+  determine occurrence and favourable/adverse mix; 25% are story-only.
+- Twenty mechanical and eight enigmatic events, terrain eligibility,
+  bounded effects, timed speed modifiers and deterministic saved outcomes.
+  Health maximum 100; starvation damages 10/hour after food depletion,
+  fed sleep heals 5/hour and meals do not instantly heal. Legacy active
+  saves migrate without rewriting immutable server genesis records.
+- Show the original ASCII scene, actual effects and triggering cards.
+  Helpful numbers green, harmful numbers red and zeros neutral; reduced
+  fatigue/sleep pressure is helpful, extra delay harmful.
+- Automatically pin each event once alongside photos and cards with the
+  same drawing, date and effects; preserve notes, journey ownership, retry
+  on storage failure and notebook PDF export.
+- Acknowledgement never rerolls or reapplies effects. Needs/death and daily
+  cards take priority. Record totals and the last 32 events in statistics.
+- Local-only `?eventPlaytest=1` uses a separate save and a visible banner,
+  with a 5-minute interval. Remote hosts always retain 90 minutes.
+- This release excludes the unfinished mini-game journey integration.
+
 ## R-118 - Notebook title page
 
 - Open the personal notebook on a title page reading "Journey of [name]"

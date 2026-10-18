@@ -82,6 +82,16 @@ class JournalsTests(unittest.TestCase):
         self.assertIn(self.ids[0], [q["id"] for q in nearby])
         self.assertEqual(self.records, self.genesis)
 
+    def test_zero_health_death_publishes_and_releases_notebook_without_rewriting_genesis(self):
+        self.publish()
+        self.call(1, action="claim", journal=self.ids[0])
+        result = self.call(1, ended="health", row=5, index=1)
+        self.assertTrue(result["published"])
+        nearby = self.call(2, row=5)["nearby"]
+        self.assertIn(self.ids[0], [q["id"] for q in nearby])
+        self.assertIn(self.ids[1], [q["id"] for q in nearby])
+        self.assertEqual(self.records, self.genesis)
+
     def test_atomic_claim_and_same_finder_retry(self):
         self.publish()
         def claim(n):

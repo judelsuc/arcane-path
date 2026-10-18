@@ -135,10 +135,10 @@ test("temperature uses altitude, changing hours/months, and only affects availab
 });
 
 test("cold hunger and heat collapse finalize correctly, including exposure during unconsciousness and save/resume", () => {
-  const state = { ...start(), reserveKcal: 23 };
+  const state = { ...start(), reserveKcal: 23, health: 0.01 };
   const next = restSurvival(state, { ...survival, rest_fatigue_recovery: 0 });
   assert.equal(next.ended, null);
-  assert.equal(finalize(state, next, weatherInfo(0)).ended, "hunger");
+  assert.equal(finalize(state, next, weatherInfo(0)).ended, "health");
   const hotState = { ...start(), fatigue: 99 };
   const resting = restSurvival(hotState, { ...survival, rest_minutes: 60, rest_fatigue_recovery: 0 });
   const hot = finalize(hotState, resting, weatherInfo(35));

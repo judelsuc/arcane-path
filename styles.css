@@ -1035,3 +1035,17 @@ dialog p { margin: 12px 0; }
   }
 }
 .button-shortcut { white-space: nowrap; }
+.journey-event-illustration { margin: 1rem 0; padding: 1rem; border: 1px solid var(--line); }
+#journey-event-art {
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+  overflow-x: auto;
+  white-space: pre;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: clamp(0.7rem, 2.8vw, 1rem);
+  line-height: 1.2;
+  color: var(--accent);
+  text-align: left;
+}
+.journey-event-illustration figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.75rem; text-align: center; }

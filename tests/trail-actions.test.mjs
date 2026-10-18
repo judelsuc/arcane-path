@@ -130,8 +130,8 @@ test("offline GeoNames journeys and discoveries roundtrip without a network or f
 test("exhaustion and insufficient money never grant a clue, final discovery completes reunion", () => {
   const s = state();
   assert.throws(() => trailClue({ ...s, walletCents: 0 }, "buy", cell, info, survival, economy), /Insufficient/);
-  const exhausted = trailClue({ ...s, reserveKcal: 1 }, "photo", cell, info, survival, economy);
-  assert.equal(exhausted.ended, "hunger");
+  const exhausted = trailClue({ ...s, reserveKcal: 1, health: 0.01 }, "photo", cell, info, survival, economy);
+  assert.equal(exhausted.ended, "health");
   assert.equal(exhausted.trail.index, 0);
   assert.equal(exhausted.trail.discovery, undefined);
   let current = s;
