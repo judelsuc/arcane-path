@@ -1,5 +1,5 @@
 export function isDeath(state) {
-  return ["hunger", "fatigue", "sleep"].includes(state?.ended);
+  return ["health", "hunger", "fatigue", "sleep"].includes(state?.ended);
 }
 
 export function renderJourneyMarker(tile, state, t) {

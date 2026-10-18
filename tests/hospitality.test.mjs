@@ -180,8 +180,8 @@ test("a request is charged to its starting UTC day even if asking crosses midnig
 test("night exposure affects asking but not hosted sleep, and no fatal need is bypassed", () => {
   const state = example("hosted", 23), hosted = ask(state);
   assert.equal(hosted.outdoorNightMinutes - state.outdoorNightMinutes, 30);
-  const exhausted = ask({ ...state, reserveKcal: 1 });
-  assert.equal(exhausted.ended, "hunger");
+  const exhausted = ask({ ...state, reserveKcal: 1, health: 0.01 });
+  assert.equal(exhausted.ended, "health");
   assert.equal(result(exhausted).outcome, "exhausted");
   assert.equal(exhausted.sleeps, 0);
   assert.equal(exhausted.elapsedMinutes, 30);
@@ -198,8 +198,8 @@ test("night exposure affects asking but not hosted sleep, and no fatal need is b
   assert.equal(fainted.sleeps, 0);
   assert.equal(fainted.elapsedMinutes, 510);
   assert.deepEqual(validateSave(createSave(details(fainted), 1)).state, fainted);
-  const hungryOvernight = ask({ ...state, reserveKcal: 40 });
-  assert.equal(hungryOvernight.ended, "hunger");
+  const hungryOvernight = ask({ ...state, reserveKcal: 40, health: 1 });
+  assert.equal(hungryOvernight.ended, "health");
   assert.equal(result(hungryOvernight).outcome, "exhausted");
   assert.throws(() => ask({ ...state, ended: "reunion" }), /ended/);
 });

@@ -211,9 +211,11 @@
               <p id="player-food"></p>
               <p id="player-tarot"></p>
               <p id="outdoor-status"></p>
+              <label><span data-i18n="needsHealth"></span><meter id="needs-health" min="0" max="100" low="25" high="60" optimum="100"></meter><output id="needs-health-value"></output></label>
               <label><span data-i18n="needsHunger"></span><meter id="needs-hunger" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-hunger-value"></output></label>
               <label><span data-i18n="needsFatigue"></span><meter id="needs-fatigue" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-fatigue-value"></output></label>
               <label><span data-i18n="needsSleep"></span><meter id="needs-sleep" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-sleep-value"></output></label>
+              <p id="needs-speed-effect" role="status"></p>
               <p id="needs-warning" role="status"></p>
               <details id="pressure-panel" hidden>
                 <summary data-i18n="pressureTitle"></summary>
@@ -509,6 +511,18 @@
       <button id="music-tap" type="button" disabled data-i18n="musicTap"></button>
       <p id="music-score" role="status"></p>
       <p id="music-result" role="status"></p>
+    </dialog>
+    <dialog id="journey-event-dialog" aria-labelledby="journey-event-title" aria-describedby="journey-event-text">
+      <h2 id="journey-event-title" data-i18n="journeyEventTitle"></h2>
+      <figure class="journey-event-illustration">
+        <pre id="journey-event-art" aria-hidden="true"></pre>
+        <figcaption data-i18n="journeyEventIllustration"></figcaption>
+      </figure>
+      <p id="journey-event-text"></p>
+      <p id="journey-event-cards"></p>
+      <p class="window-help-text" data-i18n="journeyEventRules"></p>
+      <p id="journey-event-save" role="status"></p>
+      <button id="journey-event-continue" type="button" data-i18n="journeyEventContinue"></button>
     </dialog>
     <dialog id="needs-notice-dialog" aria-labelledby="needs-notice-title" aria-describedby="needs-notice-text">
       <h2 id="needs-notice-title"></h2>

@@ -260,7 +260,7 @@ test("corrupt, incompatible and invalid saves are rejected without deleting orig
     s => { s.state.character.bodyMassKg = 0; }, s => { s.state.startedAt = 1e30; },
     s => { s.state.trail.index = 3; }, s => { s.state.trail.stages[1] = s.state.trail.stages[0]; },
     s => { s.state.lastMove = {}; }, s => { s.survival.sleep_hours = 0; },
-    s => { s.economy.version = 99; }, s => { s.state.reserveKcal = 0; },
+    s => { s.economy.version = 99; }, s => { s.state.health = 0; },
     s => { s.savedAt = 0; }, s => { s.state.trail.stages[0].col = -1; },
   ];
   for (const mutate of mutations) {

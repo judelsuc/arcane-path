@@ -64,6 +64,25 @@ Les couts sont des estimations, pas un plafond de facturation automatise.
 
 ## Pressions et statistiques du voyage
 
+### Couche 13 : evenements du voyage
+
+Une occasion toutes les **90 minutes de marche terminee**, avec probabilites
+dependant des cartes de naissance et du jour. Vingt rencontres mecaniques et
+huit histoires sans effet (25 % des rencontres) ; aucune occasion en attendant,
+dans les menus ou pendant le sommeil. Les effets et le tirage sont sauvegardes
+une seule fois avant confirmation. Les nombres favorables sont verts, les
+defavorables rouges et les zeros neutres.
+
+Chaque rencontre est epinglee dans le carnet avec la meme illustration ASCII,
+la date et les effets reels ; notes et export PDF restent disponibles.
+La sante va de 0 a 100 : a reserve vide, perte de 10 points par heure simulee ;
+le sommeil avec nourriture restaure 5 points par heure. La faim ralentit aussi
+la marche. Les anciens voyages actifs commencent avec 100 de sante.
+
+Playtest accelere uniquement sur localhost : `/?eventPlaytest=1` donne une
+occasion toutes les 5 minutes, avec banniere et sauvegarde de test separee.
+Le parametre ne change jamais la frequence sur le site distant.
+
 Une nuit dans un hebergement payant (hotel, auberge, chambre d'hotes, motel
 ou refuge payant) inclut diner et petit-dejeuner dans le prix existant.
 Au reveil, reserve alimentaire pleine, fatigue a zero et pression de sommeil

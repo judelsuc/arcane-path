@@ -1,5 +1,28 @@
 # Requirements tracked outside the design PDF
 
+## R-120 / R-121 - Validated journey events and health
+
+- User validated the expanded journey-event mechanism on 2026-10-18 and
+  authorized production publication at the normal rate: one opportunity per
+  90 completed walking minutes, never while stationary. Both tarot cards
+  determine occurrence and favourable/adverse mix; 25% are story-only.
+- Twenty mechanical and eight enigmatic events, terrain eligibility,
+  bounded effects, timed speed modifiers and deterministic saved outcomes.
+  Health maximum 100; starvation damages 10/hour after food depletion,
+  fed sleep heals 5/hour and meals do not instantly heal. Legacy active
+  saves migrate without rewriting immutable server genesis records.
+- Show the original ASCII scene, actual effects and triggering cards.
+  Helpful numbers green, harmful numbers red and zeros neutral; reduced
+  fatigue/sleep pressure is helpful, extra delay harmful.
+- Automatically pin each event once alongside photos and cards with the
+  same drawing, date and effects; preserve notes, journey ownership, retry
+  on storage failure and notebook PDF export.
+- Acknowledgement never rerolls or reapplies effects. Needs/death and daily
+  cards take priority. Record totals and the last 32 events in statistics.
+- Local-only `?eventPlaytest=1` uses a separate save and a visible banner,
+  with a 5-minute interval. Remote hosts always retain 90 minutes.
+- This release excludes the unfinished mini-game journey integration.
+
 ## R-118 - Notebook title page
 
 - Open the personal notebook on a title page reading "Journey of [name]"
@@ -62,6 +85,585 @@
 - Initial export uses rasterized A4 pages with wrapped text and image fitting;
   text is not selectable. Long notes and credits continue onto further pages.
 
+## R-101 - More photo coverage without increasing the 2 km limit
+
+- **User request:** No photos near 43.992579, 2.397766. Investigate additional
+  sources, keep the existing 2 km limit, and use an explicitly identified
+  aerial photograph when ground-level images are missing.
+- Commons, Wikipedia, iNaturalist and GBIF remain the priority. Do not relax
+  license or positional-accuracy checks to fill an empty cell.
+- If no usable photos remain, request the exact cell bounds from IGN's open
+  orthophotography service, after confirming French coverage. Label it as an
+  aerial image, not a ground view, and disclose that imagery may be older.
+  Preserve IGN attribution and Licence Ouverte 2.0 in cache/notebook.
+- Retry cached photo absences so an old empty result cannot hide the new
+  source. Source failures remain explicit and are not cached as absence.
+- This fallback is mainland-France/Corsica only; it does not promise coverage
+  abroad. Never use aerial imagery as an uncaptioned quest-photo clue.
+- Google login does not grant Maps imagery rights or API billing. A future
+  Google viewer would require its own approved API/billing setup and terms;
+  do not persist Google imagery as notebook blobs.
+
+## R-103 - Abandoned journals and independent side quests
+
+- **User request:** On a failed game over, leave the quest journal at the
+  player's location and persist it on the server. Another player or a later
+  run can find it, finish finding its owner's parent and return the journal.
+- Updated user decision: leave the entire notebook, including pinned photos,
+  handwritten notes, tarot and clues, at the player's last position on death
+  or starting over. A new journey gets an empty separate notebook. Warn that
+  the full abandoned content becomes readable by other players.
+- Finding a journal adds a delivery side quest and must not replace or alter
+  the finder's own parent search.
+- Claim each journal atomically on the server for one finder at a time.
+  Release after seven days without playing, and immediately when that finder
+  dies. Persist progress and handle reloads, retries and concurrent pickups.
+## R-106 - Weather beside the agenda and clock
+
+- Display weather and temperature beside the agenda and clock in one panel.
+- Color its background with the estimated temperature at the player's position:
+  freezing blue, cold blue-green, mild green, warm amber and hot red.
+- Show decorative water drops during rain or storms, remove them when dry
+  or weather is unavailable; keep temperature and condition readable as text.
+- Put temperature/rain effects in a hover/keyboard-focus tooltip. Move the
+  sun/moon position into the panel background and remove the separate sky panel.
+- Compact two-column layout: smaller unbroken date on the left; analog clock,
+  weather and condition stacked on the right. Remove digital time and permanent
+  fine print; keep estimates, ranges and sources in the weather tooltip.
+
+- Arcane-object searches are also side quests. Their gameplay is explicitly
+  deferred; do not implement it as part of abandoned-journal delivery.
+- A separate capability-protected SQLite store retains immutable deposited
+  notebook snapshots; journey genesis is unchanged. Nearby journals (200 m)
+  can be claimed then read without editing in the SIDEQUEST panel. Visit each
+  remaining town (350 m) to return the journal, without changing the finder's quest.
+- Capabilities are generated and durably saved before creation requests; they
+  never appear in public journey lookups. Legacy saves receive a separate
+- Updated layout decision: separate Current clues, Investigate and Past
+  destinations pages. Open on current clues and keep paid actions separate.
+- File clues by the destination they concern, not the town where obtained;
+  merge pending discoveries with dated evidence and label the latest dated clue.
+  Show dates first, undated entries last and parent visit details only in the
+  corresponding past destination, without revealing unconfirmed future names.
+
+## R-109 - Layer 10 pressures and direct tarot effects
+
+- Confirmed: two recoverable foyer episodes, with lost time and some money;
+  the third placement ends the journey.
+- At 100 vigilance: one indoor day, food and rest, loss of 25% of remaining
+  money rounded down, no reward/clue/progression from the interrupted action.
+  Preserve the notebook and quest after recovery; keep the last position.
+- Vigilance responds to sector dwell time, urban/police context, fatigue,
+  cleanliness, begging and theft. Moving, shelter and paid washing offer
+  explicit counterplay. Sympathy uses condition and bounded local reputation,
+  affecting assistance and music. No layer-17 language skills.
+- Both birth and daily cards directly modify vigilance growth, cleanliness
+  decay, sympathy and witness forgetting. Show numerical combined effects;
+  daily draws update future actions, never historical evidence.
+- Confirmed: collected clues stay intact. Newly obtained information loses
+  precision as witnesses forget, using recorded chronology when available.
+  Preserve collection-time metadata; local searches within 3 km always
+  identify the destination when completed, preventing an aging dead end.
+- Pressure state persists with strict validation and legacy-save support.
+  Terminal placement uses the existing abandoned-notebook lifecycle.
+
+## R-110 - A dedicated notebook statistics page
+
+- Keep live journey statistics on their own notebook page, separate from
+  photos and tarot pins, with navigation at the top.
+- Show distance/time/elevation, needs, current money, reached destinations,
+  action counters, pressures and both cards' current effects.
+- Read existing saved state; never expose future destinations or invent
+  totals not tracked by the game.
+- Keep photos, drafts, credits and journey ownership intact. Personal live
+  statistics are not included in another player's abandoned notebook.
+
+## R-108 - Search even before the reference path is known
+
+- Do not block field clue searches on a pending, failed or busy route worker.
+- Use the known destination's straight-line distance for this search mode,
+  explicitly label it, preserve normal action costs and never fabricate a path.
+- Keep malformed responses, unknown journeys and network errors explicit
+  and free of action costs.
+
+## R-107 - Ask directions to previously cited towns
+
+- In I, let the player choose towns named in earlier witness suggestions,
+  precise clues and reached destinations, including previous quest stages.
+- Label town choices by stage and known/visited/unconfirmed status. Never
+  expose unrevealed town names from the hidden itinerary or vague clues.
+- Use the existing paid directions encounter (10 minutes, 2 fatigue,
+  terrain-dependent chance) and show bearing, distance and coordinates from
+  the current position. This is not a guaranteed walkable route.
+- Keep uncertainty explicit: asking a town's location does not confirm it
+  as the parent's destination, advance the quest or replace the active target.
+  random notebook-keeper identity and secret, not ownership of their public
+  genesis ID. Complete deposits use a durable IndexedDB outbox across reloads.
+  Starting over waits for successful publication; offline death release takes
+  effect on reconnection. Seven-day expiry is enforced by the next request.
+- Delivery uses the abandoned quest's fixed itinerary up to the parent's
+  position at abandonment, including mobile parents; it does not simulate a separate moving NPC
+  or generate another routed parent path. Coordinates and town names provide
+  manual navigation. Gameplay positions/outcomes remain client-reported, like
+  the rest of this unauthenticated prototype; capabilities prevent another
+  player using a public journey ID to mutate its journal or claims.
+
+## R-105 - Dated clue pages and top investigation button
+
+- Date clues in game UTC and order all clue types newest first.
+- Keep a page per stage; mark a physically reached destination, immediately
+  open a fresh page for the next lead without advancing the quest before
+  investigation, and retain navigable archives. Final reunion needs no further lead page.
+- Keep the investigation button and concise costs at the top. Long rules
+  stay collapsed. Unknown dates in older saves must be labeled, not invented.
+
+## R-102 - Frequent narrative clues and protection against unlucky streaks
+
+- **User request:** Clue searches are too rare and give too little reassurance
+  about staying on the trail. Approved more frequent signs, gentler probability
+  decay, informative empty searches, anti-streak protection and clear journal
+  evidence categories, without an exact warmer/colder navigation meter.
+- Full-clue chance is 0.08 + 0.82 exp(-routeDistance / 6000): about 90% on the
+  actual reference route, 38% at 6 km and 23% at 10 km. Destination proximity
+  still controls vague/partial/precise information and randomized action costs.
+- Within 6 km of that route, additional small signs can support the lead
+  without naming a destination. After three empty searches in distinct cells
+  near the route, a search in a new nearby cell guarantees at least a sign.
+  Repeated cells do not build or trigger that guarantee; successful clues/signs
+  clear it. The streak is stage-specific and survives save/resume.
+- Signs never advance the quest, unlock precise knowledge, or count as name/
+  photo recognition evidence. Keep at most four signs per stage in the journal.
+  Preserve all existing time, fatigue, hunger and fainting consequences.
+- Empty searches explicitly say they do not prove a wrong direction and
+  recommend other locations/people or reviewing collected clues. Do not invent
+  corrective compass directions or imply an absence proves the parent never
+  passed through.
+- Journal entries distinguish collected clues, small signs and unconfirmed
+  opinions. Record the player's discovery cell/time, and explain that a
+  direction starts there, not at their current position.
+- Twenty deterministic FR/EN narrative direction discoveries replace the
+  abstract compass sentence: overheard talk, newspaper, postcard, guestbook,
+  witness, note and other small discoveries. Preserve broad directions and
+  avoid revealing future town names or exact distances.
+
+## Clue dialog responsibilities
+
+- **User clarification:** J opens the parent trail to search for new clues.
+  I opens conversations about clues already collected, such as a town-name
+  fragment or a photo. Recognition actions belong in I, not in J's history.
+- Keep collected evidence readable in J and allow selecting each current
+  fragment/photo in I. Preserve recognition uncertainty, action costs,
+  cancellation, save compatibility and the existing known-place directions.
+  Shortcut labels and help must describe this distinction in FR and EN.
+
+## R-100 - Green success and red failure feedback
+
+- **User request:** Sentences indicating success should be green; failures red.
+- Classify from actual result state, never by matching translated text.
+  Apply to hospitality/worship, survival choices, music rewards/failures,
+  field searches/directions, saves, lodging lookup and photo-notebook actions.
+- Keep loading, instructions and unconfirmed clue suggestions neutral.
+  Errors and failed actions remain readable explicit messages/alerts: color
+  supplements the wording and is not the only indication of outcome.
+- Use accessible light green/red on the dark UI and darker green/red on the
+  notebook's light paper. Clear old outcome colors when messages reset.
+
+## R-099 - Find real nearby accommodation before walking there
+
+- **User request:** Hotels/hostels are offered too rarely. Show real nearby
+  accommodation with distance and direction, while requiring the player to
+  reach its cell before sleeping there.
+- Opening sleep searches within 5 km, including beyond the cells downloaded
+  by that browser. The town menu also offers an accommodation entry.
+- Look up OSM nodes, ways and relations worldwide. Include hotels, hostels,
+  guest houses, motels and alpine huts; exclude private, closed and abandoned
+  places. Keep real names, source links and licensing. Do not invent hotels.
+- Supplement the lookup with lodging in the server's base/cached maps. If
+  a provider is unavailable, explicitly label results incomplete, not proof
+  that no accommodation exists. Retry, cancellation and a total timeout
+  prevent an indefinitely loading menu.
+- While searching, keep the search control usable as "Cancel search" rather
+  than greying out an unchanged label. Explain the four-minute maximum wait,
+  confirm cancellation and permit an immediate retry. Ignore late replies
+  from cancelled searches without interrupting a newer lookup.
+- Show the server's actual search stage (queue, available maps, OSM source,
+  supplementary catalogue, distance filtering or cache write), the queried
+  provider when available, and elapsed search seconds. Update while polling,
+  discard progress from cancelled/previous searches, and do not invent a
+  completion percentage or imply that an unimported catalogue was queried.
+- Immediately scan the browser's loaded base map and surrounding chunks
+  without a network request, then show additional server-cached lodging as
+  soon as polling returns it. Label these lists provisional while the online
+  search continues; preserve them on cancellation or source errors. Apply
+  the same 5 km limit, real-place filters, credits and exact-cell sleep rule.
+  Final server results replace the provisional list; no cache deletion or
+  fresh chunk download is required for this first pass.
+- **Agreed follow-up, not active:** Only after the user confirms that nearby
+  accommodation discovery works, reduce fictional hospitality acceptance.
+  Use base refusal probabilities of 0.8 for locals and 0.7 for places of
+  worship with the existing birth-card/day-card event modifier. With the
+  current deck, acceptance ranges are respectively 12-44% and 23-51%.
+  Preserve stable place/day draws, saved outcomes, request costs and daily
+  limits. Paid lodging is unaffected. Do not activate before confirmation.
+- Optional administrator-imported DATAtourisme data supplements sparse
+  mainland-France OSM coverage. No player-triggered downloads/imports or
+  catalogue/cache deletion. This French source is not worldwide coverage.
+- List at most 40 nearest results. A listed place only becomes a sleep action
+  in its actual cell; existing prices, time costs and recovery still apply.
+  Searching itself does not spend in-game time or money.
+
+## R-098 - Pin any photo into an open spiral notebook
+
+- **User request:** Any browsed photo, including map photos and clue photos,
+  can be pinned into a journal. Opening the journal should look like an open
+  notebook with a central spiral. Photos have a white frame with a handwritten
+  note underneath.
+- Add a persistent browser-local photo notebook, available from the header
+  with A. Two paper pages flank the central metal binding. Pinned photographs
+  appear as white prints; each has an editable handwritten-style caption.
+- Pin the actual displayed image, source, author and license. Keep vague clue
+  photos uncaptioned; do not reveal their geographic title in the notebook.
+  User-written notes do not count as confirmed quest evidence.
+- Store independent copies of pinned blobs/notes in a dedicated IndexedDB
+  database, not the disposable content cache or the journey's localStorage
+  save. Clearing the content cache must not erase the notebook. This notebook
+  is now scoped per journey (R-103); its full snapshot is shared only when
+  abandoned, while a new journey starts without the old photos or notes.
+- Deduplicate by source URL without overwriting existing notes. Save notes
+  when leaving their input or pressing the save button. Retain unsaved drafts
+  when turning pages and changing language. Removal requires confirmation.
+- Show only two photos at a time, release object URLs on page change/close,
+  and report storage, quota and image failures explicitly. Preserve keyboard
+  controls, credits and responsive layout in FR/EN.
+- Fix related field-photo visibility: the photo viewer must not live inside
+  the hidden town-discovery section when there is no town encounter yet.
+- A whole-tab freeze while loading photos was reported. Normal five-photo
+  browsing and clue-photo rendering did not reproduce it; do not claim that
+  the visibility fix proves the reported browser freeze is resolved.
+
+## R-097 - Search anywhere, progressive clues and fallible recognition
+
+- **User request:** Allow searches away from scheduled town encounters. Useful
+  clues are less likely farther from the parent's hidden path. Each new lead
+  starts vague: an uncaptioned real photo, a town-name fragment or a broad
+  direction. Clues become more precise near the place being sought.
+- Search costs must be randomly drawn, higher far from the destination and
+  lower nearby. Failed attempts still cost time, fatigue and energy.
+- **Implemented balance:** loaded land cells outside arrival range allow
+  field searches. The current persisted reference leg supplies proximity,
+  never a fabricated straight-line route. On-path success is 85%, decaying
+  exponentially over 3 km toward 2%. No route geometry is returned.
+- Beyond 15 km, use broad directions, at most two starting letters, or
+  uncaptioned photos. Within 15 km, name fragments may grow to five letters
+  (never the entire name). Within 3 km a successful search identifies the
+  current town. These distances are not shown in the journal.
+- Search ranges interpolate from 8–14 minutes/+1–2 fatigue at the destination
+  to 30–60 minutes/+4–7 fatigue at 45 km and beyond. Calories and existing
+  survival/fainting rules also apply. A failed provider request costs nothing
+  and displays an error; unavailable photos explicitly become name fragments.
+- Visiting the town still advances the main quest. The clue obtained there
+  starts a new vague lead rather than naming the next town. Existing saves
+  retain their already-known current destination and obtained clues.
+- **User refinement:** People may recognize collected letter fragments or
+  photos, but may be mistaken. Asking costs 10 minutes/+2 fatigue and uses
+  existing terrain-dependent encounter chances. Candidate towns come from
+  the offline GeoNames catalogue, not invented names or unrelated trail stops.
+- Letter recognition normally suggests the nearest matching real town
+  (80% when alternatives exist); another match can be suggested. Photo
+  recognition has 65% accuracy when the intended town and alternatives are
+  available. Other plausible nearby towns can be mistaken for it. Neither
+  successful recognition nor an incorrect answer advances the quest.
+- Suggestions are always explicitly unconfirmed, separate from confirmed
+  clues, and persist in saves and the journal. Never expose which guess was
+  correct, route geometry, exact distances or future town names.
+
+## R-096 - Finish and release lightweight Layer 9
+
+- **User decision:** Finish the lightweight milestone autonomously. Advanced
+  terrain/survival feasibility remains deferred under R-083; do not represent
+  a narrative-solvability check as proof of a survivable walking itinerary.
+- New server journeys include deterministic motives, travel modes, chronology,
+  one-to-three optional false leads, lore and stationary or finite mobile pursuit.
+  No mandatory clue requires money, an external photo, skill or unique object.
+- Validate Python genesis against browser rules, save/resume every main clue
+  transition and optional branch, and finish both early and slow mobile pursuit.
+  Existing server records and local saves must remain unchanged and usable.
+- Prepare the current reference leg automatically from setup/resume and when a
+  new lead is obtained. Limit work to the current leg rather than downloading
+  all ten/thirteen legs per player. Preparation runs in the background:
+  provider errors must not block play or destroy a saved journey.
+- Bound client waiting to five minutes; retry a cached server route failure
+  once, then display the error with an explicit retry outside the parent journal.
+  Cancel stale requests on stage change, reset, stop and journey ending.
+- Show only discovered visits. An ongoing visit must not display a planned
+  departure or future nights/purchases as completed history.
+
+## R-095 - Parent trail recalls clues instead of providing navigation
+
+- Parent trail is a reminder of obtained clues and the known destination, not
+  a navigator. Remove cell offsets, compass arrows, player-to-town distance,
+  inter-stage distance, walking estimates and current-target map links.
+- Repeat the obtained clue text in history for every clue type. Do not expose
+  internal witness fact sheets or a future town hidden by a pending venue clue.
+- Retain inquiry/search actions when applicable, source/license attribution,
+  saved progress and the separate I action for paid vague directions.
+- Remove manual path-preparation controls from this window. Automatic path
+  preparation remains a separate pending change, not part of this UI release.
+
+## R-094 - Music mistakes and starting-card charisma
+
+- Playing on a rest, outside the note's +/-150 ms window, before the phrase,
+  or on an already scored note counts as one mistake. Holding Space does not
+  generate extra mistakes. Missing a note still reduces the normal hit score.
+- **User decision:** The starting card alone determines a failure threshold
+  from 3 to 8 mistakes. More charismatic cards allow more mistakes; the daily
+  card does not affect this limit. Show charisma, limit and the live count.
+- Reaching the limit immediately ends the performance, stops audio and awards
+  nothing, even after successful notes. Time, energy and fatigue already spent
+  remain spent. Fewer mistakes preserve the existing hit-proportional reward.
+- Keep the drawn rhythm and tolerance fixed throughout the performance.
+  Old saves need no migration: derive charisma from their existing birthCard.
+
+## R-093 - Daily meal price and hunger-recovery variation
+
+- **User decision:** Moderate variation, 70-150% of the local price, stable
+  per location, meal and UTC game day. More expensive meals in the same menu
+  restore more hunger. Reopening, purchasing or reloading does not reroll.
+- Deterministically draw each offer using journey identity, cell, day and meal
+  ID; include specialty meals, generic meals and mapped restaurant offers.
+  Preserve existing national pricing and unknown-country fallback as the base.
+- Calculate reserve recovery proportionally to quoted cents relative to one
+  local meal unit (900 kcal at the base unit price). Keep normal capacity cap,
+  meal duration and metabolism. Prices/portions are fictional, not nutrition
+  facts or actual restaurant tariffs.
+- UI quote and purchase must use the same helper for exact price and effect.
+  Show daily-offer explanation and calories before purchase, including FR/EN.
+  No changes to lodging, music rewards, clue costs or saved wallet balances.
+
+## R-092 - Random rhythm for each street performance
+
+- Draw a fresh 12-slot phrase at the start of each performance by uniformly
+  shuffling eight notes and four rests. Repeat the drawn phrase three times,
+  retaining 24 scored notes, the existing tempo, tolerance, costs and rewards.
+- Use that same immutable phrase for visual tiles, tap scoring, end time and
+  generated native melody/bass. Regenerate backing audio for each performance;
+  never reuse an earlier performance's fixed soundtrack.
+- Random draws are independent: a previous phrase may occur again by chance.
+  Preserve hit/miss sounds, mute, volume and cancellation behavior.
+
+## R-091 - Reliable street-music playback
+
+- **User report:** Background music plays, but the street-music minigame is silent.
+- Use native HTML audio playback, like the working background tracks, rather
+  than a separate Web Audio context. Generate original PCM WAV melody/bass and
+  distinct hit/miss cues locally; no external music or added dependency.
+- Keep the three-loop rhythm, scoring, shared mute/volume and visible errors.
+  Start from a player gesture, synchronize to the visual performance clock
+  after loading, and cancel/release audio on finish, close, reset or hidden tab.
+
+## R-090 - Nighttime sleep pressure and forced sleep
+
+- **User decision:** Use the displayed game clock (UTC), but do not force
+  sleep simply because 02:00 passes. Collapse is linked to a full sleep bar.
+- While awake, equivalent waking hours accrue at 2x from 22:00 to 02:00,
+  4x from 02:00 to 06:00, and 1x otherwise. Split actions at time boundaries.
+  Applies indoors too; sleeping retains its normal recovery, not these rates.
+- At 100% sleep pressure, apply the existing fainting penalty: eight hours
+  unconscious in the same cell, fatigue reset to 40 before weather exposure,
+  normal unconscious metabolism/recovery and possible money theft.
+- Interrupt the action's clue/reward/music outcome, autosave normally and
+  explain sleep collapse separately from exertion collapse. Preserve hunger
+  precedence, legacy ended journeys and saves without a collapse reason.
+
+## R-089 - One random clue search with real photo discoveries
+
+- **User decision:** Replace choosing a photo/notebook/letter ahead of time
+  with one Search for a clue action. Reveal what was found afterwards.
+- Randomly select among that stage's existing available clue types. Preserve
+  each selected type's existing minutes, fatigue, extra calories and any price.
+  Show possible costs before searching; charge only the obtained result.
+  Exclude unaffordable purchases so a clue never requires money the player lacks.
+- A photo result requires a real geographical image from the existing cache
+  or web providers, checked for successful image decoding before commitment.
+  Show the image, credit, source and license; fictional annotations remain
+  explicitly separate from the real photograph.
+- **User decision:** If no usable photo can be retrieved, select a non-photo
+  result and explicitly explain the substitution. Charge only its normal cost.
+- Disable duplicate searches during preparation. Cancelling before a result
+  is committed costs nothing and grants no clue; reset invalidates late results.
+- Preserve pending venue-directions and optional lead actions. Old discoveries
+  remain valid and are not rewritten; unavailable old photos retain explicit
+  error text without blocking their already obtained clue.
+
+## R-088 - Rain and storms affect outdoor effort
+
+- **User decision:** Rain adds two fatigue/hour outdoors; storms add four.
+  Walking speed is reduced by 15% in rain and 25% in storms, subject to
+  existing movement speed limits. Longer walking consumes normal extra time
+  and metabolism. These effects stack with temperature and night exposure.
+- Sheltered actions are exempt. No new wet-clothes or live-weather simulation.
+  Use the existing estimated monthly historical weather condition, not actual
+  observations at the player's real location.
+
+## R-087 - Temperature affects outdoor survival
+
+- **User decision:** Below 10 C, add 25% calorie consumption per ten degrees
+  below the threshold, continuously, capped at +100%. Above 30 C, add two
+  fatigue/hour per five degrees above threshold, capped at +10/hour.
+  No temperature surcharge at exactly 10 C or 30 C.
+- Apply to walking and other outdoor actions using the existing altitude-
+  adjusted, time-of-day temperature estimate. Sample exposure over long actions,
+  including month changes, rather than applying the departure temperature
+  unchanged to a full night's sleep.
+- **Outdoor sleep decision:** No fatigue recovery, but retain the usual
+  reduced sleep-pressure recovery. This matches the existing outdoor-sleep
+  rule; temperature/rain penalties still apply during the night.
+- Sheltered meals/sleep/detention are exempt. Requests for hospitality remain
+  outdoors until accepted. Cold/heat also apply during outdoor unconsciousness.
+- Display active effects. If weather is unavailable, clearly state that
+  weather effects are not applied yet; never invent a temperature.
+- These are fictional balance rules, not medical or real-world safety advice.
+
+## R-086 - High fatigue when crossing water
+
+- **User decision:** Add forty fatigue per 250 m step into a water cell, in
+  addition to ordinary terrain/slope/endurance movement fatigue.
+- This fixed surcharge is not reduced by endurance. Leaving water for land
+  does not charge a second water-cell entry. Multiple water entries each cost.
+- Mapped bridges rendered as road cells retain road costs. No automatic
+  bridge detection or safety claim is inferred for cells still mapped as water.
+- Fatigue caps at 100 and uses normal fainting finalization; hunger and
+  sleep remain fatal where appropriate. Existing saves are not rewritten.
+
+## R-085 - Terrain-based directions encounters and paid rerolls
+
+- **User decision:** Directions usually work in towns (90%), less often
+  elsewhere. Every attempt rerolls, costing ten game minutes and +2 fatigue,
+  plus normal metabolism and nighttime exposure. No money charge.
+- Rates: settlements 90%; rail/cable stations 75%; roads, major roads,
+  buildings and places of worship 50%; plains, grass, fields, parks and
+  vineyards 25%; forests and hills 15%; mountains, rails and cable lines 5%;
+  water 0%. These are game probabilities, not real population estimates.
+- I opens a request dialog showing chance and cost before an explicit attempt.
+  Opening/closing is free and never reveals guidance. Each retry pays again,
+  whether or not someone can help. A failed search says so clearly.
+- A successful attempt gives R-084's vague directions. Fainting or fatal needs
+  interrupt the attempt without granting directions. No changes to trail clues.
+- Reopening clears the displayed answer, not the already paid time/fatigue.
+  Autosave preserves costs through reload; no new save schema is needed.
+
+## R-084 - Ask people for vague directions using I
+
+- Keep shortcut I, replacing automatic exact travel guidance with an answer
+  from a fictional passerby about the currently known destination.
+- Use a general eight-sector compass heading and qualitative distance, never
+  exact cell counts or numeric kilometres in this answer.
+- Superseded by R-085 for costs/chances: opening is free; actual attempts cost
+  time/fatigue and can fail. No real person or mapped NPC is required.
+- Preserve useful arrival/investigation guidance and pending venue-only clues
+  without disclosing the unknown next town. No future stops are revealed.
+- These indications are approximate, not verified walkable routes. The
+  separate trail journal's existing numeric navigation is unchanged.
+
+## R-083 - Prioritize lightweight parent-story improvements
+
+- **User decision (17 October 2026):** Do the easy narrative improvements now;
+  advanced simulation is premature and should be kept for later.
+- Vary fictional witness dialogue deterministically without rerolling facts.
+- Make memories sound less precise as sightings age: recent (under seven
+  days), fading (seven to twenty-nine days), distant (thirty days or more).
+  Essential destination/venue clues always remain exact and usable.
+- Do not invent sighting dates for legacy journeys without a parent story.
+  Written/photo clues keep their existing wording and information gates.
+- Explain the parent's motive and distinguish discovered historical stays
+  from their current location. Show only discovered visits.
+- **Deferred, not removed:** whole-journey terrain/30-60 km validation,
+  survival-budget simulation, route-positioned nights/provisions and
+  motive-guided destination generation. These are later enhancements, not
+  prerequisites for finishing the current lightweight narrative milestone.
+- Existing basic correctness, save compatibility and clue-access tests remain
+  required. The full story engine still needs release verification before
+  deploying it; narrative consistency is not proof of terrain feasibility.
+
+## R-082 - Fictional shelter requests at places of worship
+
+- Churches and other mapped places of worship, across religions, can provide
+  fictional shelter in the game. No named settlement is required.
+- **User decision:** Ask for free shelter, with a chance of refusal and one
+  request per mapped place per game day (UTC), not automatic accommodation.
+- Use the existing hospitality rules: 30 minutes to ask, tarot-adjusted chance,
+  then an immediate free eight-hour sheltered night if accepted; no meal.
+- Only active current-cell `amenity=place_of_worship` POIs with stable OSM IDs
+  are eligible. Exclude mapped private, inaccessible, disused or abandoned
+  places. Do not infer access or accommodation from a religious building alone.
+- Show acceptance/refusal immediately beside the action. Persist its place,
+  time and outcome across save/resume, independently of town hospitality.
+- State explicitly that this is fictional gameplay, not a real accommodation
+  offer or a statement about a religious community's actual hospitality.
+- Include these requests in Layer 15's future chronological journal.
+
+## R-081 - More frequent European specialty meals
+
+- Expand documented dishes across Europe, not just French sources or areas.
+- Current catalogue: 19 dishes, including 15 additions covering 15 European
+  countries. Each has a documentary URL and original short FR/EN description.
+- Distinguish regional specialties from national traditional dishes in the
+  menu. New entries require an unambiguous mapped/resolved country plus their
+  geographic bounds; never offer a neighbouring country's dish as local.
+- Regional rectangles are approximate associations, not administrative
+  boundaries. National dishes are not claims about a particular town's menu.
+- Refresh additions when resuming old saves while preserving their existing
+  meals, rules, tarot and progress. Basic meals and mapped restaurants remain.
+- This is a curated catalogue, not live web discovery or verified restaurant
+  availability. Portions, energy and prices remain fictional game rules.
+
+## R-080 - Layer 15 personal journey journal
+
+- **Priority:** Keep for Layer 15, after the lightweight Layer 9 milestone,
+  without waiting for deferred advanced simulation. Requirements only;
+  journal implementation has not started.
+- **Pinned photos:** The player can pin a discovered photo in the journal and
+  attach a personal note. Preserve its image, source, attribution/license,
+  associated location and game timestamp across save/resume and journal export.
+- **Journey history:** Maintain a chronological record using game dates/times
+  and locations, including:
+  - Where the player slept, including outdoor sleep and accommodation or
+    fictional hospitality when applicable.
+  - Hospitality requests and outcomes, explicitly including refusals by
+    townspeople.
+  - Meals: when and where the player ate, and what they ate.
+  - Other meaningful journey events as the journal scope is finalized.
+- **Historical accuracy:** Capture event details when actions happen, rather
+  than reconstructing them from current counters or only the latest result.
+  Do not invent missing events for older saves.
+- **Map vignette (proposed):** A small patch of the ASCII grid could accompany
+  entries to show their local setting. Keep as a candidate feature; patch
+  dimensions and exact presentation remain to be decided during Layer 15.
+- **Integration:** Include these requirements in Layer 15's photo/travel-journal
+  and PDF-export design. The later explicit R-103 decision permits free-text
+  notes to be shared as part of an abandoned notebook.
+
+## R-078 - Music with rests and repeated phrases
+
+- The rhythm must have empty squares (rests), not equally spaced notes only,
+  and repeat at least three times.
+- Implemented and deployed: twelve-slot phrase, eight notes and four rests,
+  repeated three times. Twenty-four scoring notes, unchanged maximum reward.
+  Visual and audio clocks agree; blank rests never award points.
+
+## R-079 - Mobile parents may go beyond the original ten towns
+
+- Finish the lightweight Layer 9 milestone before Layer 15; advanced route
+  and survival simulation is deferred by R-083.
+- The user explicitly allows extra towns when the parent keeps moving.
+- Current implementation under validation: up to three pre-generated, sourced
+  continuation towns, still 30-60 km apart. The parent advances after seven,
+  fourteen and twenty-one game days, then waits at the final town. The child
+  can catch the parent at town ten, eleven or twelve before that point.
+- Existing immutable beginnings and local saves are not rewritten. New story
+  facts apply only to new journeys after the story milestone is deployed.
+- Narrative solvability is not proof of terrain or survival-budget feasibility.
+
 This file records additions to the design without modifying the source PDF,
 [Les Arcanes du Chemin — Document de conception.pdf](./Les%20Arcanes%20du%20Chemin%20%E2%80%94%20Document%20de%20conception.pdf).
 
@@ -123,38 +725,6 @@ This file records additions to the design without modifying the source PDF,
 - **Server dependency:** Synchronization remains required for the server layer
   (layer 9), not implemented by a local static server. It must compare cache
   versions/content hashes, transfer missing or changed regions, validate
-## R-109 - Layer 10 pressures and direct tarot effects
-
-- Confirmed: two recoverable foyer episodes, with lost time and some money;
-  the third placement ends the journey.
-- At 100 vigilance: one indoor day, food and rest, loss of 25% of remaining
-  money rounded down, no reward/clue/progression from the interrupted action.
-  Preserve the notebook and quest after recovery; keep the last position.
-- Vigilance responds to sector dwell time, urban/police context, fatigue,
-  cleanliness, begging and theft. Moving, shelter and paid washing offer
-  explicit counterplay. Sympathy uses condition and bounded local reputation,
-  affecting assistance and music. No layer-17 language skills.
-- Both birth and daily cards directly modify vigilance growth, cleanliness
-  decay, sympathy and witness forgetting. Show numerical combined effects;
-  daily draws update future actions, never historical evidence.
-- Confirmed: collected clues stay intact. Newly obtained information loses
-  precision as witnesses forget, using recorded chronology when available.
-  Preserve collection-time metadata; local searches within 3 km always
-  identify the destination when completed, preventing an aging dead end.
-- Pressure state persists with strict validation and legacy-save support.
-  Terminal placement uses the existing abandoned-notebook lifecycle.
-
-## R-110 - A dedicated notebook statistics page
-
-- Keep live journey statistics on their own notebook page, separate from
-  photos and tarot pins, with navigation at the top.
-- Show distance/time/elevation, needs, current money, reached destinations,
-  action counters, pressures and both cards' current effects.
-- Read existing saved state; never expose future destinations or invent
-  totals not tracked by the game.
-- Keep photos, drafts, credits and journey ownership intact. Personal live
-  statistics are not included in another player's abandoned notebook.
-
   downloaded content before replacement, and preserve cached offline play.
   Server authority, upload permissions, and conflict handling must be defined
   when implementing that layer.
@@ -856,6 +1426,8 @@ This file records additions to the design without modifying the source PDF,
 
 ## R-053 — Free guidance when lost
 
+- **Updated by R-084:** I now asks a fictional passerby for vague directions,
+  not exact cell counts or numeric distances.
 - **User request and confirmed choice:** Add a hint button explaining the
   next action and direction/distance to the current known objective, for free.
 - Show the shortcut in its caption. No time, energy or money cost, state
@@ -1202,8 +1774,8 @@ This file records additions to the design without modifying the source PDF,
 ## R-070 — Audible street performance
 
 - **User report:** Street-music minigame has neither sound nor music.
-- **Implemented:** Original synthesized melody, bass and offbeat accompaniment,
-  scheduled on the existing eight visual beat timestamps using Web Audio.
+- **Implemented:** Original synthesized melody and bass, synchronized to
+  the visual beat timestamps. R-091 replaces Web Audio with native PCM playback.
   Distinct successful/failed tap notes. No downloaded backing track dependency
   or change to score, tolerance, upfront cost or rewards.
 - **Controls:** Start resumes audio from the player's gesture; shared Options
@@ -1311,6 +1883,20 @@ This file records additions to the design without modifying the source PDF,
   reuse of arbitrarily old/incompatible grids.
 - A genuinely changed rasterizer still invalidates grids. Existing source and
   elevation caches remain reusable. Missing cells are not invented terrain.
+
+## R-104 - Historical tarot illustrations and automatic notebook pins
+
+- User chose historical public-domain Tarot de Marseille illustrations.
+- Replace birth/daily ASCII reveals with the complete Jean Dodal major
+  arcana deck and historical back; ship the images locally with provenance.
+- Automatically retain the birth draw and each revealed daily draw in the
+  notebook, recording role, name and game date with an editable interpretation.
+- Distinguish draws by journey, role and date, even when the same card returns;
+  retries and resume must not overwrite notes or duplicate a draw.
+- On resume, recover the birth card and currently acknowledged daily card.
+  Do not invent earlier daily draws missing from old saves.
+- Preserve tarot probabilities and character rules. Storage/image errors
+  must be visible, offer retry and not block gameplay.
 
 ## R-077 — Visible food-search and manual-save results
 

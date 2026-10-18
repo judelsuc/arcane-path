@@ -1,5 +1,6 @@
 import { initialJourney, moveJourney } from "./travel.mjs";
 import { weatherWalkingFactor } from "./weather-effects.mjs";
+import { applyMetabolism, healthValue } from "./health.mjs";
 
 export function validateSurvivalConfig(config) {
   const limits = {
@@ -55,7 +56,7 @@ export function startSurvival(col, row, startedAt, profileId, config) {
   if (!Object.hasOwn(config.profiles, profileId)) throw new Error("Unknown character profile.");
   return { ...initialJourney(col, row, startedAt), profileId,
     character: characterProfile(config.profiles[profileId]),
-    reserveKcal: config.reserve_kcal, awakeHours: 0, ended: null, meals: 0, sleeps: 0 };
+    reserveKcal: config.reserve_kcal, health: 100, awakeHours: 0, ended: null, meals: 0, sleeps: 0 };
 }
 
 export function hungerPercent(state, config) {
@@ -68,10 +69,6 @@ export function canEat(cell) {
 
 function ensureActive(state) {
   if (state.ended) throw new Error("This journey has ended. Start a new journey.");
-}
-
-function outcome(state) {
-  return state.reserveKcal <= 0 ? "hunger" : null;
 }
 
 export function wakingSleepHours(state, minutes) {
@@ -105,8 +102,8 @@ function consume(state, minutes, extraEnergy, config, sleeping = false) {
       ? Math.max(0, state.awakeHours - minutes / 60 * config.sleep_recovery_per_hour)
       : Math.min(config.sleep_limit_hours, state.awakeHours + wakingSleepHours(state, minutes)),
   };
-  return { ...next, ended: outcome(next) ??
-    (next.awakeHours >= config.sleep_limit_hours ? "sleep" : null) };
+  return applyMetabolism({ ...next, ended: next.awakeHours >= config.sleep_limit_hours ? "sleep" : null },
+    minutes, basal + extraEnergy, state.reserveKcal, sleeping);
 }
 
 export function walkSurvival(state, dc, dr, from, to, config, weatherInfo) {
@@ -118,7 +115,19 @@ export function walkSurvival(state, dc, dr, from, to, config, weatherInfo) {
   const moving = { ...state, character: { ...state.character,
     baseSpeedKmh: state.character.baseSpeedKmh * (1 - hungerPenalty) * (1 - sleepPenalty) *
       weatherWalkingFactor(state, weatherInfo) } };
-  const moved = moveJourney(moving, dc, dr, from, to);
+  let moved = moveJourney(moving, dc, dr, from, to);
+  const effect = state.speedEffect;
+  if (effect && effect.expiresMinutes > state.elapsedMinutes) {
+    const base = moved.lastMove, remaining = effect.expiresMinutes - state.elapsedMinutes;
+    const speedFactor = Math.max(0.5, Math.min(6, base.speedKmh * effect.factor)) / base.speedKmh;
+    const minutes = base.minutes <= remaining * speedFactor ? base.minutes / speedFactor
+      : remaining + base.minutes - remaining * speedFactor;
+    const fatigueGain = base.fatigueGain +
+      (minutes - base.minutes) * 0.08 * base.terrainCost / state.character.enduranceFactor;
+    moved = { ...moved, elapsedMinutes: state.elapsedMinutes + minutes,
+      fatigue: Math.min(100, state.fatigue + fatigueGain),
+      lastMove: { ...base, minutes, fatigueGain, speedKmh: base.meters / 1000 / minutes * 60 } };
+  }
   const next = consume(state, moved.lastMove.minutes, moved.lastMove.energyKcal, config);
   return { ...next, col: moved.col, row: moved.row, distanceMeters: moved.distanceMeters,
     ascentMeters: moved.ascentMeters, descentMeters: moved.descentMeters,
@@ -127,7 +136,7 @@ export function walkSurvival(state, dc, dr, from, to, config, weatherInfo) {
 
 export function faintSurvival(state, config) {
   validateSurvivalConfig(config);
-  if (state.ended === "hunger" || state.fatigue < 100 && state.ended !== "sleep") {
+  if (healthValue(state) <= 0 || state.ended === "hunger" || state.fatigue < 100 && state.ended !== "sleep") {
     throw new Error("No fatigue or sleep collapse to resolve.");
   }
   return consume({ ...state, ended: null, fatigue: 40, lastMove: null },

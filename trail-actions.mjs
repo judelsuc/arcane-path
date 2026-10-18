@@ -4,6 +4,7 @@ import { finishAction, marketPrice, actionInterrupted } from "./economy.mjs";
 import { parentClues } from "./parent-story.mjs";
 import { fieldSearchRules } from "./trail-search.mjs";
 import { witnessCooling } from "./pressures.mjs";
+import { spendExtraEnergy } from "./health.mjs";
 
 export const CLUE_ACTIONS = Object.freeze({
   discuss: { minutes: 15, fatigue: 1, kcal: 10 },
@@ -55,11 +56,9 @@ export function trailClue(state, kind, cell, info, survival, economy) {
   if (state.walletCents < cents) throw new Error("Insufficient funds.");
   const rested = restSurvival({ ...state, walletCents: state.walletCents - cents,
     lastExpenseCents: cents }, { ...survival, rest_minutes: rule.minutes, rest_fatigue_recovery: 0 });
-  const reserveKcal = Math.max(0, rested.reserveKcal - rule.kcal);
   const fatigue = Math.min(100, rested.fatigue + rule.fatigue);
-  let next = finishAction(state, { ...rested, reserveKcal, fatigue,
-    energyKcal: rested.energyKcal + rule.kcal,
-    ended: rested.ended ?? (reserveKcal <= 0 ? "hunger" : null) }, info, economy, { survival });
+  let next = finishAction(state, { ...spendExtraEnergy(rested, rule.kcal), fatigue },
+    info, economy, { survival });
   if (actionInterrupted(state, next)) return next;
   if (kind === "rumor") return { ...next, trail: { ...state.trail,
     rumors: [...(state.trail.rumors ?? []), { stage: state.trail.index, elapsedMinutes: next.elapsedMinutes }],

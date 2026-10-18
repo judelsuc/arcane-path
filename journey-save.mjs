@@ -8,9 +8,12 @@ import { validateStoryProgress } from "./parent-story.mjs";
 import { validateExploration } from "./trail-search.mjs";
 import { validatePressures } from "./pressures.mjs";
 import { validateJourneyMap } from "./journey-map.mjs";
+import { validateJourneyEvents, eventPlaytestEnabled } from "./journey-events.mjs";
+import { validateHealth } from "./health.mjs";
 
 export const SAVE_VERSION = 1;
-const PREFIX = "arcane-journey-v1:";
+export const JOURNEY_SAVE_PREFIX = eventPlaytestEnabled() ? "arcane-event-playtest-v1:" : "arcane-journey-v1:";
+const PREFIX = JOURNEY_SAVE_PREFIX;
 
 export function mapIdentity(map) {
   return JSON.stringify([map.width, map.height, map.cellSizeMeters, map.bounds, map.projectionLatitude ?? null]);
@@ -75,7 +78,7 @@ export function validateSave(save) {
       !["meals", "sleeps", "walletCents", "lastExpenseCents"].every(k => integer(s[k]) && s[k] >= 0) ||
       (s.performances !== undefined && (!integer(s.performances) || s.performances < 0)) ||
       (s.lastEarningsCents !== undefined && (!integer(s.lastEarningsCents) || s.lastEarningsCents < 0)) ||
-      ![null, "hunger", "fatigue", "sleep", "reunion", "placement"].includes(s.ended) ||
+      ![null, "health", "hunger", "fatigue", "sleep", "reunion", "placement"].includes(s.ended) ||
       (s.performancePending !== undefined && s.performancePending !== null) ||
       (s.profileId !== "tarot" && !Object.hasOwn(save.survival.profiles, s.profileId)) ||
       !save.economy.tarot.some(c => c.id === s.birthCard) ||
@@ -126,6 +129,8 @@ export function validateSave(save) {
   if (trail.version === 2) validateTownTrail(trail);
   validateStoryProgress(s);
   validateJourneyMap(s);
+  validateJourneyEvents(s, save.economy, save.survival);
+  validateHealth(s);
   validatePressures(s, save.economy);
   validateExploration(s);
   if (trail.version === 2 && trail.discovery !== undefined) {
@@ -147,7 +152,7 @@ export function validateSave(save) {
     if (trail.version === 2 && (!Object.hasOwn(CLUE_ACTIONS, fact.clueKind) ||
         ["directions", "rumor"].includes(fact.clueKind) || typeof fact.usedDirections !== "boolean")) fail();
   }
-  if (s.ended === null && (s.reserveKcal <= 0 || s.fatigue >= 100 ||
+  if (s.ended === null && (s.reserveKcal <= 0 && s.health === undefined || s.fatigue >= 100 ||
       s.awakeHours >= save.survival.sleep_limit_hours)) fail();
   validateHospitality(s, save.survival);
   validateFainting(s);

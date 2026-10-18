@@ -119,10 +119,8 @@ export function applyFieldSearch(state, result, cell, info, survival, economy) {
   const rested = restSurvival({ ...state, lastExpenseCents: 0 }, { ...survival,
     rest_minutes: result.minutes, rest_fatigue_recovery: 0 });
   const kcal = result.minutes;
-  const reserveKcal = Math.max(0, rested.reserveKcal - kcal);
-  let next = finishAction(state, { ...rested, reserveKcal,
-    energyKcal: rested.energyKcal + kcal, fatigue: Math.min(100, rested.fatigue + result.fatigue),
-    ended: rested.ended ?? (reserveKcal <= 0 ? "hunger" : null) }, info, economy, { survival });
+  let next = finishAction(state, { ...spendExtraEnergy(rested, kcal),
+    fatigue: Math.min(100, rested.fatigue + result.fatigue) }, info, economy, { survival });
   const outcome = didPlace(state, next) ? "placed" : next.ended ? "exhausted" : didFaint(state, next) ? "fainted"
     : result.kind === "sign" ? "sign" : result.kind ? "found" : "nothing";
   const exploration = state.trail.exploration;
@@ -326,3 +324,4 @@ export function validateExploration(state) {
           !Number.isFinite(r.town.longitude) || Math.abs(r.town.longitude) > 180 : r.town !== null)) fail();
   }
 }
+import { spendExtraEnergy } from "./health.mjs";
