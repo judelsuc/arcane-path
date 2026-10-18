@@ -1,4 +1,12 @@
 const ART = Object.freeze({
+  dogEncounter: String.raw`
+          / \__
+     ____/    o\_
+    /          __)
+   /  /____/  /
+  /__/    /__/
+      . . . . .
+`,
   food: String.raw`
        .-""""-.
       /  .  .  \

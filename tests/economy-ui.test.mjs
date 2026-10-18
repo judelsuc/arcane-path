@@ -287,7 +287,7 @@ for (const language of ["fr", "en"]) {
     assert.equal(h.buttons().length, 3);
     assert.match(h.buttons()[0].textContent, /Mosque/);
     const note = h.element("#economy-options").children[0].children[1];
-    assert.match(note.textContent, language === "fr" ? /entièrement fictif/ : /Entirely fictional/);
+    assert.doesNotMatch(note.textContent, /ficti/i);
     assert.match(note.textContent, /30 min/);
     h.buttons()[0].click();
     assert.deepEqual(h.actions, [{ kind: "hospitality", id: "node/202" }]);
@@ -383,7 +383,7 @@ for (const language of ["fr", "en"]) {
     assert.match(h.buttons()[1].textContent, /Le Café du village/);
     const item = h.element("#economy-options").children[1];
     assert.equal(item.children[2].href, "https://www.openstreetmap.org/node/42");
-    assert.match(item.children[1].textContent, language === "fr" ? /non vérifiés/ : /not verified/);
+    assert.doesNotMatch(item.children[1].textContent, /ficti|not verified|non vérifiés/i);
     h.buttons()[1].click();
     assert.deepEqual(h.actions, [{ kind: "meal", id: "basic-meal@node/42" }]);
     h.set({ state: { ...h.current().state, walletCents: 0 } });

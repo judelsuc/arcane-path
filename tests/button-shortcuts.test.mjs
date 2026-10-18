@@ -13,6 +13,13 @@ test("fixed shortcuts and dynamic menu options have distinct keys in each dialog
   assert.deepEqual(buttonBindings(buttons), bindings);
 });
 
+test("spatial and native game controls do not consume automatic shortcut keys", () => {
+  const controls = [...Array.from({ length: 64 }, () => ({ native: true })),
+    { id: "equipment-close" }, { id: "equipment-rotate" }];
+  assert.deepEqual(buttonBindings(controls).map(b => b.key), ["Escape", "R"]);
+  assert.equal(buttonBindings([{ id: "equipment-travel" }])[0].key, "V");
+});
+
 test("directions, reveal, rhythm and photo controls retain meaningful bindings", () => {
   for (const [button, expected] of [
     [{ move: "0,-1" }, "ArrowUp"], [{ id: "birth-tarot-draw" }, "D"],
@@ -21,6 +28,8 @@ test("directions, reveal, rhythm and photo controls retain meaningful bindings",
     [{ id: "open-options" }, "K"], [{ id: "search-place" }, "G"],
     [{ id: "use-location" }, "V"], [{ id: "back-title" }, "Escape"],
     [{ id: "cancel-place" }, "Z"],
+    [{ id: "theft-start" }, "Enter"], [{ id: "theft-grab" }, "Space"],
+    [{ id: "journey-event-continue" }, "Enter"],
     [{ id: "open-controls" }, "?"],
     [{ id: "open-journal" }, "A"],
     [{ id: "journal-previous" }, "ArrowLeft"], [{ id: "journal-next" }, "ArrowRight"],

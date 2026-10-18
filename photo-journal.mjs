@@ -287,6 +287,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         }
         const note = document.createElement("p");
         note.textContent = t("journalStatsNote");
+        note.className = "window-help-text";
         page.append(groups, note);
         pages.append(page);
         return;

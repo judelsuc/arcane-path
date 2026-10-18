@@ -1,6 +1,7 @@
 import { initialJourney, moveJourney } from "./travel.mjs";
 import { weatherWalkingFactor } from "./weather-effects.mjs";
 import { applyMetabolism, healthValue } from "./health.mjs";
+import { journeyEquipmentModifiers } from "./equipment.mjs";
 
 export function validateSurvivalConfig(config) {
   const limits = {
@@ -108,13 +109,14 @@ function consume(state, minutes, extraEnergy, config, sleeping = false) {
 
 export function walkSurvival(state, dc, dr, from, to, config, weatherInfo) {
   ensureActive(state);
+  const gear = journeyEquipmentModifiers(state);
   const hungerPenalty = hungerPercent(state, config) / 100 * config.hunger_speed_penalty;
   const sleepPenalty = Math.max(0, Math.min(1,
     (state.awakeHours - config.sleep_warning_hours) /
     (config.sleep_limit_hours - config.sleep_warning_hours))) * config.sleep_speed_penalty;
   const moving = { ...state, character: { ...state.character,
     baseSpeedKmh: state.character.baseSpeedKmh * (1 - hungerPenalty) * (1 - sleepPenalty) *
-      weatherWalkingFactor(state, weatherInfo) } };
+      weatherWalkingFactor(state, weatherInfo) * gear.speedMultiplier } };
   let moved = moveJourney(moving, dc, dr, from, to);
   const effect = state.speedEffect;
   if (effect && effect.expiresMinutes > state.elapsedMinutes) {
@@ -128,7 +130,11 @@ export function walkSurvival(state, dc, dr, from, to, config, weatherInfo) {
       fatigue: Math.min(100, state.fatigue + fatigueGain),
       lastMove: { ...base, minutes, fatigueGain, speedKmh: base.meters / 1000 / minutes * 60 } };
   }
-  const next = consume(state, moved.lastMove.minutes, moved.lastMove.energyKcal, config);
+  const energyKcal = moved.lastMove.energyKcal * gear.energyMultiplier;
+  const fatigueGain = moved.lastMove.fatigueGain * gear.fatigueMultiplier;
+  moved = { ...moved, fatigue: Math.min(100, state.fatigue + fatigueGain),
+    lastMove: { ...moved.lastMove, energyKcal, fatigueGain } };
+  const next = consume(state, moved.lastMove.minutes, energyKcal, config);
   return { ...next, col: moved.col, row: moved.row, distanceMeters: moved.distanceMeters,
     ascentMeters: moved.ascentMeters, descentMeters: moved.descentMeters,
     fatigue: moved.fatigue, lastMove: moved.lastMove };

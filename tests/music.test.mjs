@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { MUSIC, rhythm, beatTime, rhythmEnd, tapRhythm, beginBusking, settleBusking, musicMistakeLimit } from "../music.mjs";
+import { MUSIC, rhythm, beatTime, rhythmEnd, tapRhythm, beginBusking, settleBusking,
+  musicMistakeLimit, musicDifficulty, holdDuration, releaseRhythm, advanceRhythm } from "../music.mjs";
 import { startEconomy, buyMeal, sleepEconomy, restEconomy } from "../economy.mjs";
 import { startSurvival } from "../survival.mjs";
 
@@ -12,6 +13,129 @@ const start = () => startEconomy(startSurvival(0, 0, Date.UTC(2026, 9, 17, 12),
 const cell = { terrain: "place", countryCodes: ["FR"] };
 const info = { latitude: 44.54, longitude: 2.3 };
 
+test("practice adds notes and potential earnings at every level and snapshots scoring terms", () => {
+  for (let level = 0; level <= 4; level++) {
+    const state = { ...start(), skills: { music: level * 60 } };
+    const difficulty = musicDifficulty(state);
+    assert.equal(difficulty.beats, 24 + level * 3);
+    let game = rhythm(0, () => 0.4, musicMistakeLimit(state), difficulty.beats, difficulty);
+    assert.equal(game.pattern.filter(note => note > 0).length, 8 + level);
+    assert.equal(game.pattern.length, difficulty.slots);
+    assert.ok(game.pattern.filter(note => note === 0).length >= 2);
+    assert.equal(game.intervalMs, 400 - level * 35);
+    assert.deepEqual(game.pattern.filter(note => note > 1).sort(), [...difficulty.holdLengths].sort());
+    for (let i = 0; i < game.hits.length; i++) {
+      game = tapRhythm(game, beatTime(game, i));
+      if (holdDuration(game, i)) game = releaseRhythm(game, beatTime(game, i) + holdDuration(game, i));
+    }
+    assert.equal(game.hits.filter(Boolean).length, difficulty.beats);
+    const pending = beginBusking(state, cell, info, survival, data);
+    assert.equal(pending.performancePending.beats, difficulty.beats);
+    const base = beginBusking(start(), cell, info, survival, data).performancePending.maxRewardCents;
+    assert.equal(pending.performancePending.maxRewardCents, Math.round(base * (1 + level / 4)));
+    const done = settleBusking(pending, difficulty.beats, 0);
+    assert.equal(done.walletCents - pending.walletCents, pending.performancePending.maxRewardCents);
+    assert.equal(done.skills.music, Math.min(300, level * 60 + difficulty.beats));
+    const failed = settleBusking(pending, difficulty.beats, musicMistakeLimit(state));
+    assert.equal(failed.skills.music, level * 60);
+    assert.equal(failed.lastEarningsCents, 0);
+  }
+  for (const beats of [23, 25, 37, NaN]) assert.throws(() => rhythm(0, Math.random, 3, beats), /note count/);
+  const pending = beginBusking({ ...start(), skills: { music: 59 } }, cell, info, survival, data);
+  const done = settleBusking(pending, 24);
+  assert.equal(musicDifficulty(done).level, 1);
+  assert.equal(done.lastEarningsCents, pending.performancePending.maxRewardCents);
+});
+
+test("Judgement snapshots birth/daily matches and multiplies only completed earnings once", () => {
+  const matching = beginBusking({ ...start(), birthCard: "fool", dailyCard: "judgement" },
+    cell, info, survival, data);
+  assert.equal(matching.performancePending.resonance, true);
+  const paid = settleBusking(matching, 24, 0);
+  assert.equal(paid.walletCents - matching.walletCents,
+    Math.round(matching.performancePending.maxRewardCents * 1.1));
+  assert.equal(paid.lastEarningsCents, Math.round(matching.performancePending.maxRewardCents * 1.1));
+  const cancelled = settleBusking(matching, 24, 0, true);
+  assert.equal(cancelled.walletCents, matching.walletCents);
+  const failed = settleBusking(matching, 24, musicMistakeLimit({ birthCard: "fool" }));
+  assert.equal(failed.walletCents, matching.walletCents);
+  const normal = beginBusking({ ...start(), birthCard: "fool", dailyCard: "fool" },
+    cell, info, survival, data);
+  assert.equal(normal.performancePending.resonance, false);
+  assert.equal(settleBusking(normal, 24).walletCents - normal.walletCents,
+    normal.performancePending.maxRewardCents);
+  const journeyMatch = beginBusking({ ...start(), birthCard: "fool", dailyCard: "fool" },
+    cell, info, survival, data, { journeyCard: "judgement" });
+  assert.equal(journeyMatch.performancePending.resonance, true);
+  const doubleMatch = beginBusking({ ...start(), birthCard: "judgement", dailyCard: "judgement" },
+    cell, info, survival, data);
+  assert.equal(settleBusking(doubleMatch, 24).walletCents - doubleMatch.walletCents,
+    Math.round(doubleMatch.performancePending.maxRewardCents * 1.1));
+});
+
+test("resonant rhythm carries its phrase preview duration without changing the playable note count", () => {
+  const profile = musicDifficulty({ skills: { music: 120 } });
+  const normal = rhythm(10, () => 0.5, 4, profile.beats, profile);
+  const resonant = rhythm(10, () => 0.5, 4, profile.beats, { ...profile, resonance: true });
+  assert.equal(normal.resonance, false);
+  assert.equal(normal.previewMs, 0);
+  assert.equal(resonant.previewMs, MUSIC.leadMs + resonant.pattern.length * resonant.intervalMs);
+  assert.equal(resonant.hits.length, normal.hits.length);
+  assert.deepEqual(resonant.pattern, normal.pattern);
+});
+
+test("two-, three- and four-beat holds accept 300 ms early/late releases, count once and never retry", () => {
+  const profile = musicDifficulty({ skills: { music: 240 } });
+  const initial = rhythm(100, () => 0.99, 8, profile.beats, profile);
+  for (const length of [2, 3, 4]) {
+  const index = initial.pattern.filter(note => note > 0).indexOf(length);
+  const at = beatTime(initial, index), duration = holdDuration(initial, index);
+  assert.equal(duration, length * 260);
+  for (const offset of [-MUSIC.releaseWindowMs, -200, 0, 200, MUSIC.releaseWindowMs]) {
+    const holding = tapRhythm(initial, at);
+    assert.equal(holding.activeHold, index);
+    assert.equal(holding.hits[index], false);
+    const played = releaseRhythm(holding, at + duration + offset);
+    assert.equal(played.hits[index], true);
+    assert.equal(played.mistakes, 0);
+    assert.equal(played.activeHold, null);
+    assert.equal(releaseRhythm(played, at + duration), played);
+  }
+  for (const time of [at, at + duration - MUSIC.releaseWindowMs - 1, at + duration + MUSIC.releaseWindowMs + 1]) {
+    const failed = releaseRhythm(tapRhythm(initial, at), time);
+    assert.equal(failed.hits[index], false);
+    assert.equal(failed.mistakes, 1);
+    assert.equal(tapRhythm(failed, at).mistakes, 2);
+    assert.equal(tapRhythm(failed, at).activeHold, null);
+  }
+  const holding = tapRhythm(initial, at);
+  assert.equal(advanceRhythm(holding, at + duration + MUSIC.releaseWindowMs), holding);
+  const expired = advanceRhythm(holding, at + duration + MUSIC.releaseWindowMs + 1);
+  assert.equal(expired.mistakes, 1);
+  assert.equal(expired.activeHold, null);
+  assert.equal(advanceRhythm(expired, at + duration + 1000), expired);
+  assert.equal(releaseRhythm(holding, at + duration, true).mistakes, 1);
+  assert.equal(initial.activeHold, null);
+  assert.deepEqual(initial.attemptedHolds, []);
+  assert.throws(() => releaseRhythm(holding, NaN), /clock/);
+  assert.throws(() => advanceRhythm(holding, NaN), /clock/);
+  }
+});
+
+test("final held note extends the performance clock through its release window", () => {
+  const profile = musicDifficulty({ skills: { music: 240 } });
+  const game = rhythm(0, () => 0, 8, profile.beats, profile);
+  const last = game.hits.length - 1;
+  const duration = holdDuration(game, last);
+  assert.equal(rhythmEnd(game), beatTime(game, last) + duration +
+    (duration ? MUSIC.releaseWindowMs : MUSIC.windowMs));
+  for (const timing of [{ intervalMs: 0 }, { slots: 99 }, { holdNotes: -1 }, { holdNotes: 4 }]) {
+    assert.throws(() => rhythm(0, () => 0, 3, 24, timing), /timing/);
+  }
+  for (const holdLengths of [[1], [5], [2.5], null, [2, 3]]) {
+    assert.throws(() => rhythm(0, () => 0, 3, 24, { holdNotes: 1, holdLengths }), /hold lengths/);
+  }
+});
 test("rhythm counts each note once, including exact tolerance endpoints", () => {
   const initial = rhythm(1000);
   let game = tapRhythm(initial, beatTime(initial, 0) - MUSIC.windowMs);

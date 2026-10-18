@@ -16,6 +16,7 @@ class PreviewPackageTests(unittest.TestCase):
             root = Path(directory)
             subprocess.run(["git", "init", "-q", str(root)], check=True)
             for name in ["index.html", "public/map.json", "scripts/travel_server.py",
+                         "minigames/harvest-ui.mjs", "cafe-art.svg",
                          "infra/nginx/preview.conf", "infra/nginx/bootstrap.conf",
                          "infra/preview.tfstate", "ovh.conf", ".env", "README.md"]:
                 path = root / name
@@ -31,6 +32,7 @@ class PreviewPackageTests(unittest.TestCase):
             with tarfile.open(output) as archive:
                 self.assertEqual(set(archive.getnames()),
                                  {"index.html", "public/map.json", "scripts/travel_server.py",
+                                  "minigames/harvest-ui.mjs", "cafe-art.svg",
                                   "infra/nginx/preview.conf", "infra/nginx/bootstrap.conf",
                                   "public/release.json"})
                 release = json.load(archive.extractfile("public/release.json"))

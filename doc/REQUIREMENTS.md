@@ -1,27 +1,163 @@
 # Requirements tracked outside the design PDF
 
-## R-120 / R-121 - Validated journey events and health
+## R-123 - Spatial inventory and companions
 
-- User validated the expanded journey-event mechanism on 2026-10-18 and
-  authorized production publication at the normal rate: one opportunity per
-  90 completed walking minutes, never while stationary. Both tarot cards
-  determine occurrence and favourable/adverse mix; 25% are story-only.
-- Twenty mechanical and eight enigmatic events, terrain eligibility,
-  bounded effects, timed speed modifiers and deterministic saved outcomes.
-  Health maximum 100; starvation damages 10/hour after food depletion,
-  fed sleep heals 5/hour and meals do not instantly heal. Legacy active
-  saves migrate without rewriting immutable server genesis records.
-- Show the original ASCII scene, actual effects and triggering cards.
-  Helpful numbers green, harmful numbers red and zeros neutral; reduced
-  fatigue/sleep pressure is helpful, extra delay harmful.
-- Automatically pin each event once alongside photos and cards with the
-  same drawing, date and effects; preserve notes, journey ownership, retry
-  on storage failure and notebook PDF export.
-- Acknowledgement never rerolls or reapplies effects. Needs/death and daily
-  cards take priority. Record totals and the last 32 events in statistics.
-- Local-only `?eventPlaytest=1` uses a separate save and a visible banner,
-  with a 5-minute interval. Remote hosts always retain 90 minutes.
-- This release excludes the unfinished mini-game journey integration.
+- **18 October user approval:** Integrate the tested inventory and dog into the
+  main journey and deploy with the approved games and events. Other companion
+  types and artifact powers remain future work, not implicitly activated.
+- User chose a Resident-Evil-inspired, Tetris-style bag with original equipment
+  drawings, move/rotate controls, a spatial grid and a weight limit. Boots,
+  backpack and clothing use separate worn slots. Catalogue-defined footprints
+  must allow future equipment and arcane artifacts without item-specific
+  packing logic. Preserve placement on save/resume; reject overlap/bounds.
+- Find the dog through an optional walking encounter, not an always-available
+  adoption button. Let the player name it; preserve the name, needs and
+  encounter choice across saves. Declining must not force adoption.
+- The isolated equipment test guarantees a dog encounter after 5 km so it is
+  easy to test. This is not an approved main-journey encounter frequency.
+- **Future companions:** Add further companion types after design/playtest,
+  including at least one imaginary companion. Their identities, encounter
+  conditions, costs and benefits remain to be decided; do not silently assign
+  them the dog's needs or bonuses.
+- Main journey: equipment and dog share the journey clock, wallet and local
+  save. Missing legacy slices migrate without historic wear or dog needs;
+  malformed slices fail. Walking applies load, wear and ready-dog bonuses;
+  all simulated actions advance needs, with no real-time decay on reload.
+- Supplies and repairs use settlement cells (fixed game prices, not asserted
+  real shops). The normal dog encounter is part of the positive event pool,
+  under the existing 90-minute walking opportunity and tarot probabilities,
+  never the test's guaranteed 5 km. Adoption costs EUR 5 / 30 game minutes,
+  requires a name; declining persists and prevents repeated offers.
+- Tent protection requires a usable tent and a mapped accessible campsite,
+  not permission for arbitrary wild camping. Campsites give partial sleep
+  recovery with no hotel board. Camera quality remains explicitly future:
+  licensed notebook photos do not yet have a quality-scoring mechanic.
+
+## R-122 - Real European living-world sources and photos
+
+- Replace the fictional-only living-world preview with connected real public
+  sources usable across Europe. Show actual geographic/provider coverage,
+  freshness, source attribution and failures; never imply universal local-event
+  or transport coverage where a provider has gaps.
+- Include photos when reuse rights permit, retaining source, author and licence.
+  Clearly distinguish actual event images from illustrative venue/place images;
+  never imply an illustrative location photo documents the event itself.
+- Do not download or republish copyrighted event publicity without permission.
+  Missing licensed photos must not block otherwise valid sourced records.
+
+## R-121 - Health, expanded events and enigmatic encounters
+
+- **Confirmed user choices:** 20 gameplay events plus additional story-only
+  encounters. Maximum health 100. Empty food reserve causes 10 health damage
+  per simulated hour after depletion, not instant death. Zero health is death.
+- Preserve progressive hunger slowdown, including while walking at zero food.
+  It stacks with sleep pressure, weather and temporary event speed modifiers
+  without changing starting character attributes.
+- Fed sleep restores 5 health/hour; only the fed portion heals if reserves run
+  out during sleep. Clamp recovery before applying later starvation damage.
+  Meals replenish food and stop starvation, but never instantly restore health.
+  All action metabolism and extra weather/search expenditure participate.
+- A visible health meter, low-health warning, notebook/PDF statistics, death
+  presentation and abandoned-notebook publication use the new health outcome.
+  Recoverable fainting/placement and reunion remain distinct.
+- Old active saves migrate to 100 health. Previously dead saves stay dead;
+  immutable server genesis records are not rewritten.
+- Catalogue: shared snack, donated coins, encouragement, water break, short nap,
+  clear head, tailwind, bandage, picnic, friendly advice; delay, lost coins,
+  strain, torn food bag, restless thoughts, headwind, blisters, forest boar,
+  forest dogs and chills. Animal attacks only occur on actual forest terrain.
+- Eight additional enigmatic, mechanically neutral encounters: white deer,
+  silent bell, impossible shadow, repeating spiral stone, stranger, remembered
+  stars, red ribbon and unusual reflection. Narrative-only encounters consume
+  25% of event occurrences, with no needs, money, time, health or speed changes.
+  Terrain-specific story eligibility is respected.
+- **Additional user request:** Each event popup combines its localized text
+  with a distinct original ASCII illustration, including narrative-only events.
+  Preserve monospace spacing on narrow screens and keep decorative character
+  art out of screen-reader speech; the full event description remains accessible.
+- Both tarot cards still influence occurrence and favourable/adverse mix.
+  Gameplay variants are equally likely within the eligible polarity pool.
+  Store actual health/sleep deltas and speed terms alongside existing effects;
+  legacy six-event records remain readable.
+- Speed changes last 60–120 simulated minutes, expire during movement as well
+  as other actions, and replace rather than multiply a previous speed effect.
+- **Status:** Event mechanism visually playtest-approved on 2026-10-18,
+  including expanded events, health effects and notebook pins. User authorizes
+  publication with the normal 90-minute walking opportunity interval restored.
+
+## R-120 - Layer 13 tarot-linked journey events
+
+- **User decision:** Implement the journey-event layer locally, explicitly
+  linking event occurrence to both the starting and daily tarot cards.
+- Initial six-event catalogue (expanded under R-121): a shared snack (+300 kcal capped by reserve),
+  donated coins (+EUR 1.50), encouragement (-5 fatigue, +1 local reputation),
+  a 15-minute non-restorative delay, lost coins (up to EUR 1.50) and a tiring
+  misstep (+5 fatigue). Effects are fictional gameplay encounters.
+- One opportunity per 90 accumulated minutes of completed walking, with at
+  most one event per movement action; unusually long moves consume skipped
+  opportunities rather than queueing a burst. Menus, waiting, sleep, jobs and
+  other stationary actions do not generate events or advance this counter.
+- Reuse the existing combined tarot factor:
+  `F = 0.5 + (birth.nightRisk + daily.nightRisk) / 2`.
+  Occurrence probability is `0.35 * F`; conditional favourable probability is
+  `1 - F / 2`. With current cards this means 24.5–38.5% occurrence per
+  opportunity and 45–65% favourable gameplay outcomes. Variants are equally
+  likely among the eligible events in each polarity (R-121 adds a separate
+  story-only share). Both cards affect frequency and outcome mix.
+- Deterministic journey-seeded draws, saved opportunity counters (including
+  no-event checks), frozen triggering cards, applied deltas and acknowledgement
+  prevent duplicate effects and ordinary save/resume rerolls.
+- Show a localized notice with actual effects, triggering cards, probabilities
+  and save status. Needs/death and daily-card reveals take priority.
+  Colour helpful effect numbers green and harmful numbers red; keep zeros
+  neutral. Reduced fatigue/sleep pressure is helpful, extra delay is harmful;
+  temporary speed changes follow their actual direction.
+  Automatically pin each encountered event once in the player's notebook,
+  alongside photos and tarot cards, with the same ASCII drawing, encounter
+  date and recorded effects. Preserve notebook notes, retries, journey ownership
+  and PDF export through the existing notebook storage.
+  Require acknowledgement before continuing gameplay; acknowledgement is not another
+  roll. Show totals and the latest 32 records in notebook statistics/PDF.
+- Never rescue a walk that already ended, fainted or caused placement with a
+  positive event. Extra time/fatigue still uses the existing metabolism,
+  weather, night, fainting, vigilance, placement and terminal-needs rules.
+- Existing saves start counting from their next walk, with no retroactive
+  events. Real geocache providers (R-025) remain a separate optional extension.
+- **Status:** Validated by the user on 2026-10-18 and authorized for publication
+  at the normal rate, including red/green effect numbers and illustrated
+  notebook entries. Accelerated localhost testing is not the production rate.
+- **Local accelerated playtest:** At the user's request, provide a localhost-only
+  `?eventPlaytest=1` mode with an opportunity every 5 walking minutes instead of
+  90, unchanged tarot probabilities, a visible test banner and a separate save
+  namespace. Normal journeys and remote production rates remain unchanged.
+
+## R-119 - Consequential mini-games and food-theft timing
+
+- **User request:** Mini-game results must affect the journey, not just display
+  a score; bad street music makes the local population dislike the player.
+- Music and cafe outcomes change the existing local reputation: below 40%
+  or a music mistake-limit failure costs 3 points; 40–59% is neutral; at least
+  60% earns 2 points. Reputation remains capped between -25 and +25 locally.
+  This changes sympathy, subsequent social chances and sympathy-scaled pay.
+  Cancellation grants no reward or reputation bonus; upfront costs remain paid.
+- Use the shared outcome policy when integrating the other prepared games.
+  They remain isolated previews until individual approval, not active jobs.
+- Replace instant food theft in the earning menu with a simple timing game:
+  one click/Space grab inside a green window, 9-second deadline.
+  Randomize both position and width each attempt (12–28% of the track, with
+  8% edge margins), then freeze the target throughout that attempt.
+  The local playtest also offers Hard: 1.2-second cursor cycle instead of
+  1.8 seconds, and 7–16% target width. Keep the 9-second deadline, one grab
+  and existing consequences. Normal remains the journey default.
+  Failure or timeout means the existing six-hour detention; success eats up to
+  900 kcal without money. No additional random success roll.
+- Charge the existing 10 minutes, 3 fatigue, vigilance and 15-point local
+  reputation loss on starting; getting caught costs another 5 reputation.
+  Abandoning, hiding the tab or reloading gives no food and refunds nothing.
+  Interruptions from hunger, fainting or placement suppress the attempt.
+- Preserve mapped-food-shop availability, keyboard/touch access, same-cell
+  release without a fine, strict save validation and exactly-once settlement.
+- **Status:** Implemented locally for music, cafe and theft; not published.
 
 ## R-118 - Notebook title page
 
@@ -31,6 +167,25 @@
   position or date. Explicitly label missing legacy data rather than invent it.
 - Include the title page first in PDF exports. Do not use the reader's identity
   or journey details for an abandoned notebook belonging to somebody else.
+
+## R-117 - Rumours help players discover abandoned notebooks
+
+- **User approval:** Make abandoned notebooks discoverable without relying
+  on another player accidentally walking onto the death location.
+- Conversations in nearby towns can occasionally mention an abandoned
+  notebook, giving an approximate location and direction for a possible detour.
+  The rumour discovery range and frequency remain balance decisions.
+- Within 1 km, show a nearby-notebook indication to help narrow the search.
+  Actual pickup still requires being within the existing 200 m radius.
+- Generate rumours only for unclaimed, undelivered notebooks. Recheck
+  availability when following a rumour or attempting pickup; explain when
+  another player has already collected it rather than promising availability.
+- Keep the notebook at its actual abandonment location; no teleporting it
+  to a town or moving it toward the player.
+- Preserve exclusive claims, expiry/release rules and the independent
+  delivery side quest under R-103. Rumours must not reveal private access
+  capabilities or replace the player's main parent investigation.
+- **Status:** Approved requirement for later implementation.
 
 ## R-116 - Adventure-style journey overview in the notebook
 
@@ -54,6 +209,504 @@
   view. Leave cache misses blank, explain incomplete or sampled coverage and
   retain the same background in PDF exports.
 
+## R-115 - One earning-activities popup, including rural work
+
+- **User request:** Replace the separate begging, theft and street-music
+  entry buttons with one localized "Earn money" / "Gagner de l'argent" button.
+- Open a popup listing the available ways to earn a living at the player's
+  current location. Keep all three existing actions inside it; removing their
+  separate buttons must not remove their gameplay.
+- Route earning activities and implemented paid mini-games through this
+  common entry point across the main, town and cell-action interfaces.
+  Preserve keyboard and clickable access.
+- Availability follows each activity's real conditions, not a blanket
+  in-town requirement. Show the actual costs, risks and rewards; existing
+  food theft must not be relabeled as a cash reward without a separate
+  economy change.
+- **Confirmed rural example:** Add a grape-harvest ("vendanges") mini-game
+  for earning money at mapped vineyards outside towns. Include it in the
+  harvest mini-game planned under R-111; a settlement is not required.
+- Do not invent nearby workplaces or offer a remote job from another cell.
+  Further rural jobs, harvest scheduling and payment balance remain to design.
+- **Status:** Required for the mini-game interface. Preserve the R-111 rule:
+  implement and locally test one mini-game at a time, waiting for explicit
+  user approval before starting the next.
+
+## R-114 - Download the complete notebook as PDF
+
+- **User request:** Implement the missing notebook PDF generation now.
+- Provide a localized Export PDF action in the notebook. Download all stored
+  pages, including photos, tarot, notes and source/license credits, not only
+  the currently visible spread. Include live journey statistics when available.
+- Save current note drafts first. Generate locally without an external service;
+  show preparation and failures explicitly. Preserve journey ownership.
+- For an abandoned notebook, include its clues and pages, never the reader's
+  personal journey statistics. Export must not alter cards or game progress.
+- Initial export uses rasterized A4 pages with wrapped text and image fitting;
+  text is not selectable. Long notes and credits continue onto further pages.
+
+## R-111 - Layer 12 mini-games, one at a time and tested locally
+
+- **Release authorization (2026-10-18):** The user validated Postcard Sketch
+  (game 7), including its Star concordance, and requested publication of all
+  twelve games. This supersedes earlier local-only publication restrictions
+  for these games; unrelated layers are not included in this authorization.
+- **Local playtest approvals (2026-10-18):** Cafe rush and street music
+  approved by the user. Street music approval includes easy mode and the
+  revised faster levels with 2-, 3- and 4-beat holds, progressive lighting
+  and the wider release window. These approvals do not authorize publication.
+- Stealing is also playtest-approved, including Normal and Hard. Add short
+  outcome sound effects, respecting mute/volume and cancellation/hidden tabs.
+  Village deliveries is the fourth local playtest; its fictional board remains
+  isolated from journey costs, rewards and saves pending integration approval.
+  Explain the goal and memory/delivery phases clearly: match each parcel to
+  its house, with a route-length score bonus. Illustrate
+  parcels, destination houses and the depot; show the selected parcel and
+  delivered count without revealing hidden destinations during delivery.
+- **Delivery playtest revision:** Center the parcel row, remove visible house
+  coordinates and add sound feedback. Use an original top-down bicycle, freely
+  steered by held arrow keys (user-selected control scheme), with held touch
+  controls as an alternative. Highlight the nearby house zone; Space or Deliver
+  sends the selected parcel only within range. Actual ridden distance, including
+  detours and the final direct return to the depot, determines route efficiency.
+  Keep the memory phase and parcel letters, not remote click-to-teleport delivery.
+  Difficulty changes parcels 4/4/5/6/7, village 3×3–5×5, memory 15–9 seconds and
+  route allowance 60–100 seconds; explain these before starting.
+- **Delivery approval:** The user validates the riding/deliveries game, with a
+  time limit requested. Retain the existing 60–100 second route deadline and make
+  its countdown prominent above the village, warning for the last ten seconds.
+  Expiry must end the run without completion/reward. Approval is local only,
+  not publication or permission to integrate journey settlement.
+- **Parallel local playtest:** At the user's request, offer game 5 (grape
+  harvesting) while game 4 is being revised. Harvest is now playtest-approved
+  with the easy-mode adjustment below; neither is enabled for journey rewards.
+  No publication is authorized.
+- **Harvest redesign requested after playtest:** Replace instant basket-button
+  sorting with an illustrated coloured grape bunch falling automatically.
+  Held Left/Right arrows steer the bunch horizontally into the same-coloured
+  basket; support held pointer/touch arrows too. Show grapes and baskets with
+  colours and redundant identifying symbols/names. Add success/mismatch sounds
+  and mute. Difficulty scales colours/baskets (3–6) and falling speed
+  (2.5–1.4 seconds after the user's faster-fall requests), not extra controls;
+  keep 16 bunches per round. Keep the furthest basket reachable at every level.
+- **Harvest approval:** The user validates the grape game after increasing easy
+  mode to at least three baskets and slightly faster falling: level 0 now has
+  three baskets and a 2.5-second fall instead of two and 2.8 seconds. Preserve
+  levels 1–4, particularly the approved hard level (six baskets, 1.4 seconds).
+  This approval remains local only; do not publish automatically.
+- **Riding follow-up:** Select parcels using number keys 1–6 (retain 7 for the
+  seventh parcel at level 4), including physical top-row and numpad keys.
+  Delivered parcels must remain visible at their destination houses; do not
+  reveal undelivered destinations.
+- **Sixth local playtest:** The user also requests the prepared bicycle workshop
+  logic prototype, independently of pending harvest validation. Expose a
+  standalone sandbox with levels 0–4; do not enable journey costs/rewards or
+  infer approval/publication from this playtest request.
+- **Workshop redesign (replaces rejected ledger/token puzzle):** Show a
+  graphically assembled bicycle model, and let the player reconstitute it with
+  selectable frames, seats, pedals, wheels and handlebars of varying colours and
+  sizes, within limited time. User explicitly chooses to keep the reference
+  visible alongside the construction, not a memorization phase. Render the
+  selected parts on the assembled bike and allow replacement before checking.
+  Each part's shelf must include the exact match plus colour and size
+  distractors. Local levels offer 3–7 choices per part and 60–36 seconds; start
+  timing only on explicit Start, and fail at expiry. This is still a standalone
+  local playtest, not journey integration or publication.
+- **Workshop visual clarity:** A user round had matching parts except blue
+  medium handlebars instead of blue small; their appearance was too similar.
+  Distinguish handlebar sizes clearly, show labelled model/fitted part close-ups,
+  and explain expected versus fitted colour/size on rejection. Keep exact
+  matching and permit correction before the deadline.
+- **Workshop approval:** The user validates game 6, requesting sound effects.
+  Sound should accompany an actual part change, successful completion, incorrect
+  checking and timeout, with local mute. Do not sound on unchanged re-selection
+  or category navigation. Cancel, destroy, new round and hidden page stop audio.
+  This approval does not authorize publication or journey settlement.
+- **Seventh local playtest:** Offer the prepared postcard-sketching prototype
+  in a separate sandbox: observe an original motif, hide it, reproduce it
+  on the grid, then submit for scoring. Keep levels, keyboard/touch controls
+  and no save or journey rewards. This is a playtest request, not validation.
+- **Sketch difficulty revision:** Easy was too hard with a fixed 7×7 grid.
+  Scale grid size with levels 0–4: 3×3, 4×4, 5×5, 6×6, 7×7. Introduce
+  multiple colours progressively (1, 1, 2, 2, 4 after rebalancing), with a selectable palette,
+  eraser, and redundant symbols for colour identification. Observation remains
+  level-dependent; explain grid, colours and observation time before Start.
+  Score exact colour matches, penalize incorrect painted cells, and preserve
+  actual grid dimensions and coloured symbols in the standalone sketch output.
+- **Sketch balance follow-up:** The user finds level 2 too easy and level 3 too
+  hard. Keep their 5×5 and 6×6 grids; reduce level 2 observation from 9 to 7
+  seconds. Keep two colours at level 3 rather than introducing a third alongside
+  a larger grid, and increase its observation from 10 to 12 seconds. Preserve
+  levels 0, 1 and 4, untimed drawing, scoring and hidden-model behavior.
+- **Sketch approval and reveal:** The user approves postcard sketching (game 7).
+  On submission, reveal the original coloured model alongside the player's
+  actual drawing, with distinct labels and matching grid scale. Keep the model
+  removed from the DOM during drawing. Approval remains local only.
+- **Eighth local playtest:** At the user's request, offer the prepared village
+  petanque prototype in a separate sandbox while sketch revision is completed.
+  Three boules, direction/power controls, levels 0–4 and no real save/rewards.
+  This does not validate either game or authorize publication.
+- **Petanque relief and sound:** Add visible bumps and hollows whose local
+  slopes actually change boule direction and speed, not decorative markings.
+  Difficulty increases their count (2–6) and height. The later heightmap request
+  supersedes the initial raised (+) and sunken (−) patch badges. Allow aiming
+  ±30° to compensate terrain drift.
+  Add original throw, gravel-roll and stopping sounds,
+  mute, explicit audio errors and cleanup on cancel, destroy, new round and
+  hidden pages. Keep the sandbox isolated; this request is not publication.
+- **Petanque opponent and scoring:** Add a computer opponent, three boules per
+  side with alternating throws. Both sides use the same terrain simulation;
+  higher levels reduce computer aiming error. Count an end by actual petanque
+  rules: only the winning side scores, one point per boule strictly closer to
+  the jack than the opponent's nearest in-bounds boule. Equal best distances
+  draw; out-of-bounds boules cannot score. Maximum three points per side.
+  After all six throws, highlight scoring boules nearest first and increment
+  the winning score once per highlight. Wait until this animation ends before
+  reporting completion. Cancel/hidden/destroy must stop counting without reward.
+  A three-minute throw deadline ends incomplete rounds without awarding points;
+  a fully played end may finish its counting animation after that deadline.
+- **Petanque height colours:** Replace relief badges and decorative gradient
+  patches with pixel colours computed from the same local height field as the
+  physics: light for bumps, dark for hollows. The arrow separately indicates the
+  overall sloped plane. Show clear player/computer colours and turn status.
+- **Petanque boule collisions:** The user requests physical contact between
+  boules, permitting a JavaScript physics engine if needed. Simulate both sides'
+  boules together using equal-mass inelastic impacts, terrain friction and local
+  slopes. Support direct hits, glancing deflections, chain reactions and pushing
+  a previously played boule out of bounds. Animate every displaced boule while
+  preserving owner/number; recompute all distances and final scoring after motion
+  settles. Match drawn boule sizes to collision radii (enlarged for legibility),
+  and layer metallic impact sounds over rolling without cutting the gravel loop.
+  Keep the jack fixed for this boule-to-boule revision, as stated in the UI.
+  The bounded fixed-step solver is sufficient; no additional library is required.
+- **Ninth local playtest:** At the user's request, expose the prepared
+  lost-and-found detective game in its own sandbox. Read fictional reports and
+  choose matching objects; levels 0–4 offer 4–8 objects and increasingly indirect
+  clues. Three mistakes end the investigation; no timer. Optional thank-you gifts
+  are fictional only. No save access, journey earnings, approval or publication.
+- **Detective drawings and timing:** The user likes the idea but requests
+  illustrated objects and timed play. Replace text-only choices with original
+  drawings of all eight variants; moon/star handles, leaf/flower covers,
+  fish/bird keyrings and square/round pouch patches must be visibly distinct.
+  Use neutral numbered captions rather than giving the answer in visible text;
+  keep full object descriptions for screen readers. Superseding the initial
+  untimed prototype, give every investigation 90 seconds from explicit Start,
+  with a visible countdown and last-ten-second warning. Enforce the exact
+  deadline in the engine, including on late clicks. Timeout is incomplete,
+  preserves the found count for feedback, and awards no fictional gift.
+  Completion, failure, cancellation, hidden pages, destroy and reset stop the
+  timer; countdown ticks must not rebuild choices or move keyboard focus.
+- **Detective balance follow-up:** The user finds the game too easy and requests
+  less time. Reduce the investigation from 90 to 60 seconds at every level;
+  preserve the illustrations, clues, three-mistake limit and exact deadline.
+- **Detective second balance follow-up:** Still too easy at 60 seconds; shorten
+  the investigation to 30 seconds at every level, preserving the other rules.
+- **Detective third balance follow-up:** The user explicitly requests 15 seconds.
+  Set the investigation limit to 15 seconds at every level; update both languages
+  and verify the exact deadline without changing clues or the three-mistake rule.
+- **Mini-game help pop-ups:** While playtesting, the user requests removal of
+  explanatory prose from all mini-game windows, moving it into help instead.
+  Apply across all nine local previews, including cafe/music/theft modal windows.
+  Hide rules, keyboard guides, difficulty explanations and sandbox notes from
+  the play area; preserve scores, timers, clues, reference drawings, colour
+  legends and actionable controls. Provide English/French Help and Close buttons,
+  native modal keyboard/focus containment, Escape-to-close without abandoning the
+  underlying game, and focus restoration. Keep help current after resets, level
+  changes and phase changes. Do not change game timing: timers continue while
+  help is open, explicitly stated in the pop-up. No journey integration or release.
+ - **Help throughout the main game:** The user approves the Help presentation and
+  requests it in every game window. Apply contextual English/French Help to all
+  three main screens and eighteen dialogs, including windows without long rules.
+  Move general instructions into Help, preserve live information, narratives,
+  revealed cards, clues, prices, risks, privacy warnings and attribution links.
+  Each window shows only its own help; keep translations and dynamically
+  rendered instructions current. Escape or Close dismisses Help alone and
+  restores focus without abandoning the underlying window. No publication.
+- **User decision:** Implement the ten proposed mini-games sequentially.
+  The user now requests the game 10 local playtest: lantern sequence memory,
+  five levels, bilingual standalone preview and contextual Help, without journey
+  save or reward integration. The initial full-sequence version is superseded
+  by the Simon revision below.
+- **Petanque high-power contact follow-up:** The user reports a hard throw
+  passing through settled boules. Sweep the approach up to its first boule
+  contact before starting the shared collision solver; do not skip contacts
+  before the nominal landing point. Keep clear throws, computer physics,
+  animation and final-position scoring consistent.
+- **Petanque approval:** The user explicitly validates petanque after local
+  testing, including the contact correction. Approval remains local, not release.
+- **Lantern presentation revision:** Replace word-labelled controls with
+  original lantern graphics, distinct colours and motifs, and small numbered
+  keyboard cues. Preserve accessible names. Add distinct tones during playback
+  and each answer; the chosen lantern lights up for 260 ms, including the final
+  answer before completion. Provide mute and explicit audio errors; clean up
+  sounds and feedback timers on cancellation, hiding, reset and teardown.
+- **Game 11 local playtest:** The user requests Bookshop Sorting now. Expose the
+  prepared sorting/customer-request game in a bilingual, five-level standalone
+  preview with contextual Help, countdown and visible mistake limit, without
+  reading or changing journey saves or applying rewards.
+- **Bookshop thematic/alphabetical revision:** Do not print the destination
+  genre or a position number on each book. Players infer the shelf from the
+  theme, then sort its displayed titles alphabetically from left to right,
+  using the selected French/English language. The user chooses to include
+  initial articles; case, accents and punctuation do not change ordering.
+  Replace invented titles with sixteen real public-domain classics, real
+  authors and original short summaries/customer clues. The user chooses
+  original illustrated covers, not downloaded commercial publisher covers;
+  local artwork must work with both languages. Correct the flex-growth bug
+  that stretched the last book: all cards have equal widths at every level,
+  including incomplete rows. Add selection, placement, service, mistake and
+  outcome sounds, a mute control, explicit audio errors and cleanup.
+- **Lantern Simon revision:** Start by showing one item, accept the player's
+  repeat, then replay the same sequence extended to two, three and so on.
+  Required final lengths are exactly 7, 8, 9, 10 and 11 for levels 0–4.
+  The user chooses immediate failure on the first wrong answer. Lock input
+  during playback and between rounds, retain per-lantern light and sound
+  feedback (including the final answer), and count one point per completed
+  round. A failed/cancelled or unfinished run never awards a reward.
+- **Lantern approval (2026-10-18):** The user explicitly validates the lantern
+  game with original graphics, sound and growing Simon rounds. Approval is
+  local only, not permission to publish or integrate journey rewards.
+- **Arcane Resonance design approval (2026-10-18; implemented for local testing):**
+  The user approves one slight gameplay variation per mini-game, active when
+  its patron matches either the journey/start card or the daily card. Either
+  match activates the same variation; matching both does not stack effects.
+  Keep the normal game when neither matches. Announce resonance before Start
+  and explain the changed rule in contextual Help, preserving existing levels
+  and controls except where the approved variation explicitly changes them.
+  The twelve patrons are a subset of the existing 22-card major arcana deck,
+  not a replacement deck.
+  - Cafe / Temperance: replace the recovery pause with occasional customers
+    changing their mind while the player prepares their tray. At half the original
+    recipe size, add or remove one item once per eligible customer; the tray and
+    deadline stay unchanged. Highlight the revised order and announce the change.
+    Eligibility is random per customer: 20/30/40/50/60% across levels 0–4.
+    Orders never become empty; clear/rebuild an unsuitable tray as usual.
+  - Local playtest approval: the user validated Cafe Rush (game 1) with
+    the revised mid-preparation order changes. No publication or deployment
+    is authorized by this approval.
+  - Local playtest approval: the user validated game 3 (Stealing) during
+    the concordance playtest. This does not authorize publication or deployment.
+  - Local playtest approval: the user validated Street Music (game 2) with
+    the revised resonance demonstration, hidden reproduction hints, green/red
+    press feedback and keyboard-focus fix. This does not authorize publication
+    or deployment.
+  - Local playtest approval: the user validated game 8 (petanque), including
+    the revised targeted carreau and randomized difficulty-scaled relief.
+    This is not approval to publish or deploy.
+  - Music / Judgement: show and play a normal phrase demonstration, then
+    reproduce without visual note, timing, hold-progress or release hints.
+    Successfully played notes still appear (held notes after successful release).
+    Each player press highlights its timeline position green when correct or
+    red when incorrect for 350 ms, including presses on rests; upcoming notes
+    stay hidden. Hold starts and releases also receive correctness feedback.
+    Keep keyboard focus inside the music dialog during the demonstration
+    (the note button is disabled), so Space reaches reproduction reliably.
+    Show an explicit demonstration/reproduction phase label.
+    Remove the ending/opening phrase link; play every note normally.
+  - Theft / The Devil: keep the ordinary green success target and add a
+    narrower gold target offering a modest additional reward; one press only.
+  - Deliveries / The Chariot: let players mark their own destination order
+    during memorisation; retain that faint route while riding, without
+    revealing the hidden parcel-to-house assignments.
+    During concordance deliveries, holding Space for 3 seconds toggles the
+    optional route home once, without delivering. A shorter press delivers on
+    release. Normal mode still delivers on press. Show the control on the
+    route button and in bilingual Help; ignore key repeat and cancel pending
+    holds on focus loss, cancellation or teardown. Tab retains focus navigation.
+    Display live Space-hold progress and explicit shown/hidden route status
+    outside Help; toggling the route must not rebuild the focused controls.
+    Local playtest approval: the user validated game 4 with Easy increased
+    from 3 to 4 parcels; other levels remain unchanged. This does not authorize
+    publication or deployment.
+  - Harvest / The Empress: replace the next-bunch preview and continuous
+    horizontal position with randomly placed rotten bunches at frequencies
+    2/16, 3/16, 4/16, 5/16 and 6/16 across levels 0–4. Mark rot visibly and in
+    accessible labels. Hold Space or the drop button for 0.5 seconds on any
+    bunch to squash it (+1 if rotten, no point if good). A short release
+    triggers a fast fall instead. It keeps falling during the hold.
+    Rotten grapes landing in any basket subtract one earned point,
+    clamped to zero. Require a fresh press for each bunch; no repeat farming.
+  - Harvest timed-shift follow-up (supersedes the earlier fixed 16-bunch round):
+    every level and both modes last exactly 30 seconds (revised from 60), with an ongoing stream
+    of bunches. Tap and release Space or Drop for a visibly accelerated fall
+    lasting at most 160 ms (never slower than natural landing), score normally,
+    and start the next bunch at landing. Squashing
+    rotten grapes also starts the next bunch immediately. More correct sorting
+    earns more paid points; remove the proposed +25% speed multiplier entirely.
+    Keep the non-stacking concordance ×1.1 gain multiplier. Show remaining
+    seconds, paid points, bunch count and hold progress; support keyboard,
+    mouse and touch, and cancel holds on focus loss and teardown. The standalone
+    preview reports potential earnings only and never pays a journey save.
+    Use a distinct generated squish sound for both good and rotten grapes.
+    - Local playtest approval: the user validated Grape Harvest (game 5),
+      including the 30-second shift, visible fast fall, 0.5-second squash,
+      squish sound and concordance rotten grapes. This does not authorize
+      publication or journey settlement.
+  - Workshop / The Magician: one correctly sized part must be repainted to
+    match the visible model. Any fitted part in any category can be repainted,
+    including wrong-sized parts; painting changes colour only, never size.
+    Show the palette for every category in concordance; disable until fitted.
+    Remove the lower per-part model/installed comparison and written target
+    colour/size answers. The assembled drawings at the top are the visual
+    reference. Wrong-check feedback may name mismatched parts, not reveal
+    their required colour or size; retain accessible descriptions of drawings.
+    - Local playtest approval: the user validated Bicycle Workshop (game 6)
+      with concordance, repainting any fitted part and the drawing-only visual
+      reference. This does not authorize publication or journey settlement.
+  - Postcard / The Star: highlight three landmark cells during observation;
+    retain their positions, not colours, as faint stars during drawing.
+    Correctly painted landmarks reveal a connecting constellation.
+  - Petanque / Strength: superseding the rejected low-power preview, use
+    Main sure / Steady hand then select a settled in-bounds boule to attempt
+    a carreau once per match. No power restriction. Success replaces the
+    target exactly and ejects it out of bounds; failure sends the thrown
+    boule out and leaves the target untouched. Consumes a remaining player
+    boule and the single attempt. User-selected probabilities for levels
+    0–4: 75%, 65%, 55%, 45%, 35%. Cancelling target selection costs nothing.
+    Freeze the random draw per match, animate both outcomes, retain ordinary
+    collision physics for normal throws and score final positions.
+  - Lost and Found / The Moon: one similar-looking pair requires inspection
+    of a visible distinguishing detail before confirming a choice. Inspection
+    is not an answer; the existing 15-second timer continues.
+  - Lanterns / The Hermit: hide lantern drawings and numbers during playback;
+    show only a small spark at each played position with its tone, without
+    a connecting line or travelling positional trail. The user supersedes
+    the cosmetic glowing-trail version and rejects sound-only as too hard.
+    Restore lanterns and numbers for answers; dim the background and let the
+    selected lantern illuminate the scene. Preserve Simon lengths and sounds.
+  - Bookshop / The High Priestess: retain thematic/alphabetical shelving;
+    one customer's personal wish accepts a deliberately authored set of
+    appropriate books, with explanatory feedback, rather than one plot clue.
+  - Market / Justice: replace one count-based produce line with a weighing
+    interaction using standard weights; update its price automatically, then
+    return change normally.
+- **Resonance presentation and gains (2026-10-18; implemented for local testing):**
+  Show the matching patron card faintly behind the mini-game as a huge, blurry
+  background watermark, using the existing historical artwork. The user
+  explicitly requests an enlarged, cropped, blurred background rather than
+  a small readable card. Keep all controls,
+  objects, clues and text legible; the decorative card must not intercept
+  input or be announced redundantly by screen readers.
+  Multiply eligible mini-game gains by exactly 1.1 (+10%) when resonance is
+  active, once even if both cards match. Apply this to gains, not raw scores,
+  costs, penalties or failure/cancellation outcomes, preserving existing
+  reward eligibility. Use the existing currency precision/rounding rules.
+  Keep the Devil's gold-target reward distinct from this shared multiplier.
+- **Game 12 local playtest (2026-10-18):** Prepare Market Stall before testing
+  with original product, basket, coin and note graphics, action/outcome sounds
+  and mute. Expose five levels, English/French contextual Help and explicit
+  Start, without reading journey saves, making real purchases or applying
+  journey rewards. Include Normal/Journey/Daily/Both resonance test modes;
+  Justice weighs one product for the first customer with add/remove standard
+  weights, a visibly tilting balance and a live packed price. The other
+  products and subsequent customers retain normal quantity/change rules.
+  Validate perfect flows at all five levels, wrong quantities/change/weight,
+  three mistakes, exact timeout, cancellation, focus, sounds and cleanup.
+  This is preparation for user testing, not user approval or publication.
+- **Market decimal formatting (2026-10-18):** Display all French monetary
+  amounts with a decimal comma and exactly two cent digits (for example,
+  `3,10 €`), including live totals, unit prices, cash and denomination labels.
+  English retains the decimal point; engine amounts remain integer cents.
+  The change-entry field displays euros with two decimal places, not raw
+  cents (505 cents appears as `5,05` in French). Accept comma or point with at
+  most two decimal digits, explicitly reject invalid amounts, and keep coin
+  additions and Clear synchronized with the localized euro field.
+- **Market finite drawer and customer extra coins (2026-10-18):** The user
+  requests a limited cash drawer so denomination choice matters. They choose
+  one drawer across the entire shift, replenished by actual customer payments,
+  not reset between customers. Show available/selected counts for every
+  denomination; selecting reserves cash, removing or clearing returns it,
+  and a successful service deducts the exact chosen denominations once.
+  An entered euro amount may be composed only from the finite available stock.
+  Generate a solvable initial float for every level and order rotation.
+  The user chooses requesting a specific extra amount from the customer,
+  rather than revealing their purse. Customers have finite authored purses
+  and can refuse without consuming a mistake. Accepting transfers real coins
+  into the drawer, consumes that purse inventory and increases both received
+  cash and change owed by the same amount. Repeated requests cannot invent
+  cash or increase earnings. Limit each request to 5 euros; keep the running
+  timer and normal wrong-change/mistake rules, weighing and resonance.
+- **Market Easy balance and extra-amount controls (2026-10-18):** Increase only
+  level 0's initial change reserve by four additional coins each of 5, 10, 20
+  and 50 cents (+3.40 euros versus the previous Easy float). Other levels
+  remain unchanged. Add minus/plus five-cent buttons beside the extra-amount
+  field, localized in French/English, bounded to 0–5 euros. These buttons
+  edit the requested amount only; the player still explicitly asks the customer.
+- **Market approval (2026-10-18):** The user explicitly validates both the
+  normal and Justice-resonance versions of game 12, including the finite
+  drawer, customer extra-coin requests, increased Easy float and five-cent
+  adjustment controls. Approval is local only, not permission to publish.
+- **Bookshop approval (2026-10-18):** After reviewing the Papesse concordance
+  rule, the user explicitly validates game 11. Approval remains local only,
+  not permission to publish.
+- **Lost and Found approval (2026-10-18):** The user explicitly validates
+  game 9. Approval remains local only, not permission to publish.
+- **Lantern concordance approval (2026-10-18):** The user explicitly validates
+  game 10 after the Hermit revision: lanterns and numbers hidden during
+  demonstration, small positional sparks with tones, and lanterns restored
+  for answers. Approval remains local only, not permission to publish.
+- **Petanque randomized relief (2026-10-18):** Randomize both the count and
+  positions of bumps and hollows for each new match, increasing the count
+  ranges strictly with difficulty: 2–3, 4–5, 6–7, 8–9, 10–11. Sample distinct
+  ground areas with positional jitter so opposite features cannot cancel at
+  the same centre. Keep terrain fixed during a match and shared by player
+  and computer. Render the actual height field and show the drawn count in
+  Help; both normal and resonance modes use the same generation.
+- **Sequential playtesting:**
+  Finish one, let the user test it on the local server, and do not start
+  the next until the user explicitly approves. No automatic publication.
+- **Updated workflow:** After publishing the journey map and R-113, develop
+  the remaining mini-games in parallel isolated worktrees, one agent per game.
+  Keep individual local playtest approval before enabling or publishing each;
+  parallel preparation does not waive the approval gate.
+- Proposed order: Cafe rush, village deliveries, market stall, harvest
+  baskets, bicycle workshop, postcard sketching, village petanque,
+  lost-and-found detective, festival lanterns, bookshop sorting.
+- The harvest mini-game includes paid vineyard grape harvesting, including
+  rural cells, as requested in R-115.
+- Start with Cafe rush, available only at mapped cafes/restaurants in the
+  player's current cell. Support both keyboard and clickable controls.
+- Cafe rush orders contain at least three items, even at the easiest level,
+  with different order sizes during each shift. Show repeated ingredients as
+  `Coffee x2` or `Coffee x3`, rather than repeating their names. Use square
+  ingredient buttons with gaps between rows, and an illustrated serving tray
+  that reflects the assembled items, retaining an accessible text equivalent.
+  Give each ingredient a fixed tray position, with a large drawing and an
+  overlaid quantity badge rather than many small repeated drawings.
+  The serving tray has a 4:2 (2:1) width-to-height ratio.
+- Slightly shorten customer patience for more challenge (14 seconds at level 0,
+  falling to 8 seconds at level 4). Play a pickup sound only when an item is
+  actually added, and a noisy cafe background during the shift. Respect shared
+  mute/volume controls; stop sound on completion, cancellation or hidden tab.
+- Practice improves skills: higher skill makes the mini-game harder but
+  increases potential pay. Save progression with the journey.
+- Apply the same progression to existing street music: more notes with
+  higher skill and higher potential earnings. Preserve tarot effects.
+- Music difficulty must also increase tempo and retain rests, rather than
+  making every slot a predictable tap. Add 2-, 3- and 4-beat held notes at higher levels:
+  hold Space (or the pointer/touch button) and release at the indicated time.
+  Light must progressively fill the held-note bars with elapsed time, even
+  before input. Accept releases up to 300 ms before or after the expected end;
+  releases outside that margin fail the note and count as mistakes. Keep the audio,
+  visual cues, scoring, cancellation and starting-card mistake limit consistent.
+
+## R-112 - More uses for money, including paid information
+
+- **User request:** Give money uses beyond food and hotels; sometimes let
+  the player pay or bribe people for clues.
+- **Status:** Gameplay direction to design and implement later, not an
+  already implemented interaction or an approved price/balance scheme.
+- Candidate paid-information encounters: buy someone a coffee, pay for an
+  introduction, or encounter a fictional witness demanding a bribe.
+  Clearly distinguish paying for information from a guaranteed truthful clue.
+- Other proposed uses, still to evaluate: laundry/showers, luggage storage,
+  notebook/photo copies, shoes, rain protection, blankets and instrument repairs.
+- Design principle proposed for these options: money buys time, comfort or
+  better chances; retain a free way to advance the main investigation.
+- **Explicitly later:** Add buses and trains as paid transport, trading money
+  for time and reduced walking fatigue. Do not add transport as part of the
+  current mini-game implementation.
+
 ## R-113 - Obvious death popup with the Death tarot arcane
 
 - **User request:** Death is not obvious enough. Display a dedicated popup
@@ -72,38 +725,6 @@
   without reviving the character. Respect reduced motion; image failures remain
   visible with a retry action. Reopening an ended save shows the death notice.
 
-## R-114 - Download the complete notebook as PDF
-
-- **User request:** Implement the missing notebook PDF generation now.
-- Provide a localized Export PDF action in the notebook. Download all stored
-  pages, including photos, tarot, notes and source/license credits, not only
-  the currently visible spread. Include live journey statistics when available.
-- Save current note drafts first. Generate locally without an external service;
-  show preparation and failures explicitly. Preserve journey ownership.
-- For an abandoned notebook, include its clues and pages, never the reader's
-  personal journey statistics. Export must not alter cards or game progress.
-- Initial export uses rasterized A4 pages with wrapped text and image fitting;
-  text is not selectable. Long notes and credits continue onto further pages.
-
-## R-101 - More photo coverage without increasing the 2 km limit
-
-- **User request:** No photos near 43.992579, 2.397766. Investigate additional
-  sources, keep the existing 2 km limit, and use an explicitly identified
-  aerial photograph when ground-level images are missing.
-- Commons, Wikipedia, iNaturalist and GBIF remain the priority. Do not relax
-  license or positional-accuracy checks to fill an empty cell.
-- If no usable photos remain, request the exact cell bounds from IGN's open
-  orthophotography service, after confirming French coverage. Label it as an
-  aerial image, not a ground view, and disclose that imagery may be older.
-  Preserve IGN attribution and Licence Ouverte 2.0 in cache/notebook.
-- Retry cached photo absences so an old empty result cannot hide the new
-  source. Source failures remain explicit and are not cached as absence.
-- This fallback is mainland-France/Corsica only; it does not promise coverage
-  abroad. Never use aerial imagery as an uncaptioned quest-photo clue.
-- Google login does not grant Maps imagery rights or API billing. A future
-  Google viewer would require its own approved API/billing setup and terms;
-  do not persist Google imagery as notebook blobs.
-
 ## R-103 - Abandoned journals and independent side quests
 
 - **User request:** On a failed game over, leave the quest journal at the
@@ -118,6 +739,25 @@
 - Claim each journal atomically on the server for one finder at a time.
   Release after seven days without playing, and immediately when that finder
   dies. Persist progress and handle reloads, retries and concurrent pickups.
+- Arcane-object searches are also side quests. Their gameplay is explicitly
+  deferred; do not implement it as part of abandoned-journal delivery.
+- A separate capability-protected SQLite store retains immutable deposited
+  notebook snapshots; journey genesis is unchanged. Nearby journals (200 m)
+  can be claimed then read without editing in the SIDEQUEST panel. Visit each
+  remaining town (350 m) to return the journal, without changing the finder's quest.
+- Capabilities are generated and durably saved before creation requests; they
+  never appear in public journey lookups. Legacy saves receive a separate
+  random notebook-keeper identity and secret, not ownership of their public
+  genesis ID. Complete deposits use a durable IndexedDB outbox across reloads.
+  Starting over waits for successful publication; offline death release takes
+  effect on reconnection. Seven-day expiry is enforced by the next request.
+- Delivery uses the abandoned quest's fixed itinerary up to the parent's
+  position at abandonment, including mobile parents; it does not simulate a separate moving NPC
+  or generate another routed parent path. Coordinates and town names provide
+  manual navigation. Gameplay positions/outcomes remain client-reported, like
+  the rest of this unauthenticated prototype; capabilities prevent another
+  player using a public journey ID to mutate its journal or claims.
+
 ## R-106 - Weather beside the agenda and clock
 
 - Display weather and temperature beside the agenda and clock in one panel.
@@ -131,14 +771,14 @@
   weather and condition stacked on the right. Remove digital time and permanent
   fine print; keep estimates, ranges and sources in the weather tooltip.
 
-- Arcane-object searches are also side quests. Their gameplay is explicitly
-  deferred; do not implement it as part of abandoned-journal delivery.
-- A separate capability-protected SQLite store retains immutable deposited
-  notebook snapshots; journey genesis is unchanged. Nearby journals (200 m)
-  can be claimed then read without editing in the SIDEQUEST panel. Visit each
-  remaining town (350 m) to return the journal, without changing the finder's quest.
-- Capabilities are generated and durably saved before creation requests; they
-  never appear in public journey lookups. Legacy saves receive a separate
+## R-105 - Dated clue pages and top investigation button
+
+- Date clues in game UTC and order all clue types newest first.
+- Keep a page per stage; mark a physically reached destination, immediately
+  open a fresh page for the next lead without advancing the quest before
+  investigation, and retain navigable archives. Final reunion needs no further lead page.
+- Keep the investigation button and concise costs at the top. Long rules
+  stay collapsed. Unknown dates in older saves must be labeled, not invented.
 - Updated layout decision: separate Current clues, Investigate and Past
   destinations pages. Open on current clues and keep paid actions separate.
 - File clues by the destination they concern, not the town where obtained;
@@ -197,25 +837,6 @@
   the current position. This is not a guaranteed walkable route.
 - Keep uncertainty explicit: asking a town's location does not confirm it
   as the parent's destination, advance the quest or replace the active target.
-  random notebook-keeper identity and secret, not ownership of their public
-  genesis ID. Complete deposits use a durable IndexedDB outbox across reloads.
-  Starting over waits for successful publication; offline death release takes
-  effect on reconnection. Seven-day expiry is enforced by the next request.
-- Delivery uses the abandoned quest's fixed itinerary up to the parent's
-  position at abandonment, including mobile parents; it does not simulate a separate moving NPC
-  or generate another routed parent path. Coordinates and town names provide
-  manual navigation. Gameplay positions/outcomes remain client-reported, like
-  the rest of this unauthenticated prototype; capabilities prevent another
-  player using a public journey ID to mutate its journal or claims.
-
-## R-105 - Dated clue pages and top investigation button
-
-- Date clues in game UTC and order all clue types newest first.
-- Keep a page per stage; mark a physically reached destination, immediately
-  open a fresh page for the next lead without advancing the quest before
-  investigation, and retain navigable archives. Final reunion needs no further lead page.
-- Keep the investigation button and concise costs at the top. Long rules
-  stay collapsed. Unknown dates in older saves must be labeled, not invented.
 
 ## R-102 - Frequent narrative clues and protection against unlucky streaks
 
@@ -245,6 +866,25 @@
   abstract compass sentence: overheard talk, newspaper, postcard, guestbook,
   witness, note and other small discoveries. Preserve broad directions and
   avoid revealing future town names or exact distances.
+
+## R-101 - More photo coverage without increasing the 2 km limit
+
+- **User request:** No photos near 43.992579, 2.397766. Investigate additional
+  sources, keep the existing 2 km limit, and use an explicitly identified
+  aerial photograph when ground-level images are missing.
+- Commons, Wikipedia, iNaturalist and GBIF remain the priority. Do not relax
+  license or positional-accuracy checks to fill an empty cell.
+- If no usable photos remain, request the exact cell bounds from IGN's open
+  orthophotography service, after confirming French coverage. Label it as an
+  aerial image, not a ground view, and disclose that imagery may be older.
+  Preserve IGN attribution and Licence Ouverte 2.0 in cache/notebook.
+- Retry cached photo absences so an old empty result cannot hide the new
+  source. Source failures remain explicit and are not cached as absence.
+- This fallback is mainland-France/Corsica only; it does not promise coverage
+  abroad. Never use aerial imagery as an uncaptioned quest-photo clue.
+- Google login does not grant Maps imagery rights or API billing. A future
+  Google viewer would require its own approved API/billing setup and terms;
+  do not persist Google imagery as notebook blobs.
 
 ## Clue dialog responsibilities
 
@@ -1559,11 +2199,9 @@ This file records additions to the design without modifying the source PDF,
 - Resolve events through gameplay actions or simulated journey time, not
   real-world idle time, menu browsing or page reloads. Save resolved outcomes
   so resuming neither applies effects twice nor rerolls an existing event.
-- Event frequency, effect ranges and exact tarot influence remain balance
-  decisions for Layer 13; this requirement does not change current terminal
-  survival rules.
-- **Status:** Recorded for later implementation; no random journey-event
-  system is introduced by this documentation update.
+- Initial frequency, effects and combined-card balance are defined in R-120;
+  terminal survival rules remain unchanged.
+- **Status:** Local Layer 13 implementation under R-120; no production release.
 
 ## R-061 — French hosting and controlled infrastructure automation
 

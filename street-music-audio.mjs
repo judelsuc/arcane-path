@@ -1,11 +1,14 @@
-import { MUSIC, beatTime, rhythmEnd } from "./music.mjs";
+import { MUSIC, beatTime, rhythmEnd, holdDuration } from "./music.mjs";
+import { pcmWav } from "./pcm-wav.mjs";
 
 const MELODY = [261.63, 329.63, 392, 329.63, 293.66, 349.23, 392, 523.25];
 const BASS = [130.81, 130.81, 130.81, 130.81, 146.83, 146.83, 196, 130.81];
 const SAMPLE_RATE = 22050;
 
 export function streetMusicWav(hit, game) {
-  const seconds = hit === undefined ? (rhythmEnd(game) - game.startedAt) / 1000 + 0.3 : 0.16;
+  const previewMs = hit === undefined ? game.previewMs ?? 0 : 0;
+  const seconds = hit === undefined
+    ? (rhythmEnd(game) - game.startedAt + previewMs) / 1000 + 0.3 : 0.16;
   const samples = new Float32Array(Math.ceil(seconds * SAMPLE_RATE));
   function note(frequency, at, duration, level, triangle = false) {
     const start = Math.round(at * SAMPLE_RATE);
@@ -19,27 +22,23 @@ export function streetMusicWav(hit, game) {
     }
   }
   if (hit === undefined) {
-    for (let i = 0; i < MUSIC.beats; i++) {
-      const at = (beatTime(game, i) - game.startedAt) / 1000;
-      note(MELODY[i % MELODY.length], at, 0.22, 0.55, true);
-      note(BASS[i % BASS.length], at, 0.3, 0.35);
+    const phraseBeats = game.hits.length / MUSIC.loops;
+    if (previewMs) {
+      for (let i = 0; i < phraseBeats; i++) {
+        const at = (beatTime(game, i) - game.startedAt) / 1000;
+        const duration = holdDuration(game, i) / 1000;
+        note(MELODY[i % MELODY.length], at, duration || 0.22, 0.55, true);
+        note(BASS[i % BASS.length], at, duration || 0.3, 0.35);
+      }
+    }
+    for (let i = 0; i < game.hits.length; i++) {
+      const at = (beatTime(game, i) - game.startedAt) / 1000 + previewMs / 1000;
+      const duration = holdDuration(game, i) / 1000;
+      note(MELODY[i % MELODY.length], at, duration || 0.22, 0.55, true);
+      note(BASS[i % BASS.length], at, duration || 0.3, 0.35);
     }
   } else note(hit ? 783.99 : 110, 0, 0.12, hit ? 0.4 : 0.3);
-  const bytes = new Uint8Array(44 + samples.length * 2);
-  const view = new DataView(bytes.buffer);
-  function text(offset, value) {
-    for (let i = 0; i < value.length; i++) bytes[offset + i] = value.charCodeAt(i);
-  }
-  text(0, "RIFF"); view.setUint32(4, bytes.length - 8, true);
-  text(8, "WAVE"); text(12, "fmt "); view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true); view.setUint16(22, 1, true);
-  view.setUint32(24, SAMPLE_RATE, true); view.setUint32(28, SAMPLE_RATE * 2, true);
-  view.setUint16(32, 2, true); view.setUint16(34, 16, true);
-  text(36, "data"); view.setUint32(40, samples.length * 2, true);
-  for (let i = 0; i < samples.length; i++) {
-    view.setInt16(44 + i * 2, Math.round(Math.max(-1, Math.min(1, samples[i])) * 32767), true);
-  }
-  return bytes;
+  return pcmWav(samples, SAMPLE_RATE);
 }
 
 export function createStreetMusicAudio({ createAudio, now = () => performance.now(),
@@ -64,7 +63,7 @@ export function createStreetMusicAudio({ createAudio, now = () => performance.no
     report("Street music playback failed:", error);
     onError(error.message);
   }
-  async function play(bytes, token, game) {
+  async function play(bytes, token, game, origin) {
     const url = URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
     let voice, timeout;
     try {
@@ -83,9 +82,9 @@ export function createStreetMusicAudio({ createAudio, now = () => performance.no
       })]);
       if (token !== generation || !voices.has(voice)) return;
       if (game) {
-        const elapsed = Math.max(0, (now() - game.startedAt) / 1000);
-        if (elapsed * 1000 >= rhythmEnd(game) - game.startedAt) return stop();
-        voice.audio.currentTime = elapsed;
+        const elapsed = Math.max(0, now() - game.startedAt);
+        if (elapsed >= rhythmEnd(game) - game.startedAt) return stop();
+        voice.audio.currentTime = Math.max(0, (now() - origin) / 1000);
         active = true;
         onError("");
       }
@@ -108,7 +107,8 @@ export function createStreetMusicAudio({ createAudio, now = () => performance.no
     },
     start(game) {
       stop();
-      return play(streetMusicWav(undefined, game), generation, game);
+      const origin = game.startedAt - (game.previewMs ?? 0);
+      return play(streetMusicWav(undefined, game), generation, game, origin);
     },
     hit(success) {
       if (!active) return;

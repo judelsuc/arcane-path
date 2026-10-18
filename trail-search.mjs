@@ -2,6 +2,7 @@ import { restSurvival } from "./survival.mjs";
 import { finishAction, didFaint } from "./economy.mjs";
 import { askDirections } from "./directions.mjs";
 import { didPlace, witnessCooling } from "./pressures.mjs";
+import { journeyEquipmentModifiers } from "./equipment.mjs";
 
 const COMPASS = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
 
@@ -81,7 +82,8 @@ export async function prepareFieldSearch(state, cell, resolvePhoto, signal,
   const minutes = rules.minMinutes + Math.floor(draw() * (rules.maxMinutes - rules.minMinutes + 1));
   const fatigue = rules.minFatigue + Math.floor(draw() * (rules.maxFatigue - rules.minFatigue + 1));
   const roll = draw();
-  const success = state.pressures && rules.precision === "precise" || roll < fieldSearchChance(pathDistance);
+  const success = state.pressures && rules.precision === "precise" ||
+    roll < Math.min(1, fieldSearchChance(pathDistance) + journeyEquipmentModifiers(state).clueChanceBonus);
   let kind = success ? rules.precision === "precise" ? "place"
     : ["direction", "prefix", "photo"][Math.floor(draw() * 3)] : null;
   if (kind && rules.precision !== "precise" && witnessCooling(state) === 2) kind = "direction";

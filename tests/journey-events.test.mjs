@@ -11,6 +11,7 @@ import { createSave, validateSave } from "../journey-save.mjs";
 import { createTrail } from "../trail.mjs";
 import { journeyStats } from "../journey-stats.mjs";
 import { translate } from "../i18n.mjs";
+import { beginEquipment } from "../equipment.mjs";
 
 const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
 const economy = json("../public/economy.json"), survival = json("../public/config.json").survival;
@@ -95,7 +96,7 @@ test("local playtest checks at exactly five minutes and saves outside normal jou
 });
 function example(kind, transform = s => s) {
   for (let seed = 0; seed < 2000; seed++) {
-    const previous = transform(start(seed)), moved = move(previous);
+    const previous = transform(kind === "dogEncounter" ? beginEquipment(start(seed)) : start(seed)), moved = move(previous);
     const next = advanceJourneyEvents(previous, moved,
       { ...info, terrain: EVENT_CATALOGUE[kind].terrains?.[0] ?? info.terrain }, survival, economy);
     if (next.events?.history.at(-1)?.kind === kind) return { previous, moved, next };
@@ -146,7 +147,7 @@ test("only actual completed travel counts; exact interval, legacy resume and opp
   assert.throws(() => advanceJourneyEvents(s, { ...s, col: 15 }, info, survival, economy), /duration/);
 });
 
-test("all twenty gameplay events apply bounded effects and save their original cards and actual changes", () => {
+test("all gameplay events apply bounded effects and save their original cards and actual changes", () => {
   for (const kind of [...JOURNEY_EVENTS.positive, ...JOURNEY_EVENTS.negative]) {
     const { previous, moved, next } = example(kind);
     const r = next.events.history[0];
@@ -269,8 +270,8 @@ test("long journeys retain total counts and only the most recent 32 events; note
   }
 });
 
-test("catalogue has twenty mechanical and eight enigmatic story-only events with exact terrain restrictions", () => {
-  assert.equal(JOURNEY_EVENTS.positive.length + JOURNEY_EVENTS.negative.length, 20);
+test("catalogue has twenty mechanical events, an optional dog and eight story-only encounters", () => {
+  assert.equal(JOURNEY_EVENTS.positive.length + JOURNEY_EVENTS.negative.length, 21);
   assert.equal(JOURNEY_EVENTS.story.length, 8);
   for (const lang of ["fr", "en"]) for (const kind of Object.keys(EVENT_CATALOGUE)) {
     assert.notEqual(translate(lang, `journeyEvent.${kind}`), `journeyEvent.${kind}`);

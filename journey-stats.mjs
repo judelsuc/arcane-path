@@ -1,7 +1,9 @@
 import { hungerPercent } from "./survival.mjs";
 import { sympathy } from "./pressures.mjs";
+import { practiceSkill } from "./practice.mjs";
 import { journeyEventText, eventChances } from "./journey-events.mjs";
 import { healthValue } from "./health.mjs";
+import { equipmentModifiers } from "./equipment.mjs";
 
 export function journeyStats({ state: s, survival, economy }, t, language = "fr") {
   const number = (value, digits = 0) => value.toFixed(digits);
@@ -38,6 +40,9 @@ export function journeyStats({ state: s, survival, economy }, t, language = "fr"
       row("statsMeals", s.meals),
       row("statsSleeps", s.sleeps),
       row("statsMusic", s.performances ?? 0),
+      row("statsCafeShifts", s.cafeShifts ?? 0),
+      row("statsMusicSkill", t("practiceLevel", practiceSkill(s, "music"))),
+      row("statsCafeSkill", t("practiceLevel", practiceSkill(s, "cafe"))),
       row("statsFaints", s.faints ?? 0),
       row("choice.forage", s.choiceCounts?.forage ?? 0),
       row("choice.beg", s.choiceCounts?.beg ?? 0),
@@ -75,6 +80,25 @@ export function journeyStats({ state: s, survival, economy }, t, language = "fr"
         label: t("journeyEventHistoryTime", { minutes: Math.floor(event.elapsedMinutes) }),
         value: journeyEventText(event, t),
       })),
+    ]));
+  }
+  if (s.journeyMiniGamesPlayed !== undefined) {
+    groups.push(group("statsOtherActivities", [
+      row("statsGamesPlayed", s.journeyMiniGamesPlayed),
+      ...Object.entries(s.journeyMiniGameSkills ?? {}).map(([game, xp]) =>
+        row(`journeyGame.${game}`, t("practiceLevel", { xp, level: Math.min(4, Math.floor(xp / 60)) }))),
+    ]));
+  }
+  if (s.equipment) {
+    const gear = equipmentModifiers(s.equipment);
+    groups.push(group("equipmentTitle", [
+      row("statsCarriedWeight", `${number(gear.carriedGrams / 1000, 2)} / 5.50 kg`),
+      row("statsEquipmentCount", s.equipment.items.length),
+      row("statsCompanion", s.equipment.dog?.name ?? (s.equipment.dog ? t("statsUnnamedDog") : t("statsNoCompanion"))),
+      ...(s.equipment.dog ? [
+        row("statsDogHunger", `${number(s.equipment.dog.hunger)}%`),
+        row("statsDogCare", `${number(s.equipment.dog.careNeed)}%`),
+      ] : []),
     ]));
   }
   return groups;

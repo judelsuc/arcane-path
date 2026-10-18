@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Equipment host integration check</title><link rel="stylesheet" href="../styles.css"></head>
+<body>
+<main>
+  <h1>Equipment host integration check (no journey storage)</h1>
+  <button id="equipment-travel">Sac et compagnon</button>
+  <button id="offer">Test dog event</button>
+  <button id="wait">Pass six game hours</button>
+  <button id="restore">Save/restore in memory</button>
+  <button id="english">English</button>
+  <output id="snapshot"></output>
+</main>
+<script type="module">
+  import { startSurvival, restSurvival } from "../survival.mjs";
+  import { startEconomy, finishAction } from "../economy.mjs";
+  import { createTrail } from "../trail.mjs";
+  import { beginEquipment } from "../equipment.mjs";
+  import { journeyEquipmentAction } from "../equipment-journey.mjs";
+  import { setupEquipment } from "../equipment-ui.mjs";
+  import { applyJourneyEvent } from "../journey-events.mjs";
+  import { createSave, validateSave } from "../journey-save.mjs";
+  import { translate } from "../i18n.mjs";
+  import { setupButtonShortcuts } from "../button-shortcuts.mjs";
+  import { setupGameHelp } from "../game-help.mjs";
+  const [config, data, map] = await Promise.all(["config", "economy", "map"].map(async name =>
+    (await fetch(`../public/${name}.json`)).json()));
+  const survival = config.survival, cell = { terrain: "place", countryCodes: ["FR"] };
+  const info = { terrain: "place", latitude: 44.54, longitude: 2.3 };
+  let state = beginEquipment({ ...startEconomy(startSurvival(14, 10,
+    Date.UTC(2026, 9, 18, 12), "balanced", survival), data, () => 0),
+    walletCents: 20000, trail: createTrail(map, 14, 10, () => 0) });
+  const t = (key, args) => translate(document.documentElement.lang, key, args);
+  const ui = setupEquipment(t, {
+    context: () => ({ state, cell, info, survival, data, blocked: false, saveStatus: "Test: in-memory storage only" }),
+    act(action) {
+      state = journeyEquipmentAction(state, action, cell, info, survival, data);
+      update();
+    },
+  });
+  function update() {
+    document.querySelector("#snapshot").textContent = JSON.stringify({
+      elapsedMinutes: state.elapsedMinutes, walletCents: state.walletCents,
+      reserveKcal: state.reserveKcal, equipment: state.equipment });
+    ui.update();
+  }
+  document.querySelector("#offer").onclick = () => { state = applyJourneyEvent(state, "dogEncounter", info, survival, data); update(); };
+  document.querySelector("#wait").onclick = () => {
+    state = finishAction(state, restSurvival(state, { ...survival,
+      rest_minutes: 360, rest_fatigue_recovery: 0 }), info, data, { survival }); update();
+  };
+  document.querySelector("#restore").onclick = () => {
+    state = beginEquipment(validateSave(JSON.parse(JSON.stringify(createSave({
+      region: "firmi", map, state, survival, economy: data }, 1)))).state); update();
+  };
+  document.querySelector("#english").onclick = () => { document.documentElement.lang = "en"; ui.localize(); };
+  setupButtonShortcuts(t);
+  setupGameHelp(t);
+  update();
+</script>
+</body></html>

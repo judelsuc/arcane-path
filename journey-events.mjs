@@ -15,6 +15,7 @@ export const EVENT_CATALOGUE = Object.freeze({
   bandage: { polarity: "positive", health: 12 },
   picnic: { polarity: "positive", food: 600, minutes: 10 },
   friendlyAdvice: { polarity: "positive", reputation: 2, speed: 1.1, duration: 60 },
+  dogEncounter: { polarity: "positive" },
   delay: { polarity: "negative", minutes: 15 },
   lostCoins: { polarity: "negative", money: -150 },
   strain: { polarity: "negative", fatigue: 5 },
@@ -69,8 +70,10 @@ export function selectJourneyEvent(state, economy, occurrence, polarity, variant
   if (occurrence >= chances.occurrence) return null;
   const pool = story < JOURNEY_EVENTS.storyChance ? JOURNEY_EVENTS.story
     : polarity < chances.positive ? JOURNEY_EVENTS.positive : JOURNEY_EVENTS.negative;
-  const eligible = pool.filter(k => !EVENT_CATALOGUE[k].terrains ||
-    EVENT_CATALOGUE[k].terrains.includes(info.terrain));
+  const eligible = pool.filter(k => (k !== "dogEncounter" ||
+    state.equipment && !state.equipment.dog && state.equipment.dogEncounter === null &&
+    info.terrain !== "water") && (!EVENT_CATALOGUE[k].terrains ||
+    EVENT_CATALOGUE[k].terrains.includes(info.terrain)));
   return eligible[Math.floor(variant * eligible.length)];
 }
 
@@ -78,6 +81,12 @@ export function applyJourneyEvent(state, kind, info, survival, economy, random =
   if (!Object.hasOwn(EVENT_CATALOGUE, kind)) throw new Error("Unknown journey event.");
   if (state.ended) throw new Error("Cannot apply an event to an ended journey.");
   const rule = EVENT_CATALOGUE[kind];
+  if (kind === "dogEncounter") {
+    if (!state.equipment || state.equipment.dog || state.equipment.dogEncounter !== null ||
+        info.terrain === "water") throw new Error("Dog encounter unavailable.");
+    return { ...state, equipment: { ...state.equipment,
+      revision: state.equipment.revision + 1, dogEncounter: "pending" } };
+  }
   if (rule.terrains && !rule.terrains.includes(info.terrain)) throw new Error("Event unavailable on this terrain.");
   if (rule.polarity === "story") return state;
   let next = { ...state,
