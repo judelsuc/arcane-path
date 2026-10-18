@@ -9,7 +9,7 @@ Les prompts musicaux 8-bit et sons de jeu sont dans [audio-prompts](./audio-prom
 
 ## Suivi des prochaines etapes
 
-Mise a jour : 17 octobre 2026. Une coche signifie une etape effectivement
+Mise a jour : 18 octobre 2026. Une coche signifie une etape effectivement
 verifiee, pas seulement du code prepare. Voir le
 [rapport infrastructure et couts](./doc/INFRASTRUCTURE.md).
 
@@ -52,6 +52,9 @@ verifiee, pas seulement du code prepare. Voir le
   deux placements recuperables avant une troisieme fin de voyage.
 - [x] Page Statistiques dans le carnet : besoins, chemin, argent, compteurs,
   pressions et effets combines des cartes de naissance et du jour.
+- [x] Douze mini-jeux approuves integres et deployes dans le vrai voyage.
+- [x] Evenements illustres epingles au carnet, frequence normale restauree.
+- [x] Sac spatial illustre, effets d'equipement et rencontre de chien nommable.
 - [ ] Autres couches du document de conception, avec checkpoints testes.
 - [ ] R-062 : caches d'objets persistantes, pour les autres joueurs et ses prochaines parties.
 - [ ] R-063 : indices d'arcanes plus precis avec la proximite ; habillage narratif LLM ulterieur.
@@ -74,7 +77,8 @@ des cellules et lieux OSM disponibles ; ce ne sont pas des emplois annonces
 par les vrais etablissements.
 
 Les conditions affichent le temps simule et la fatigue engages avant le choix
-de l'activite, ainsi que le plafond de gain de base. Le score joue determine
+de l'activite, ainsi que le plafond de gain de base, ou le prix par point payant
+pour les vendanges sans plafond artificiel. Le score joue determine
 le gain reel, avec la concordance d'arcane lorsqu'elle s'applique. L'experience
 progresse par activite, sans passer par les budgets de demonstration.
 Fermer, annuler ou recharger n'accorde aucun gain et ne rembourse pas le temps

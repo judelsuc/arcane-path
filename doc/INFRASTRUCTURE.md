@@ -1,5 +1,42 @@
 # Infrastructure OVHcloud - rapport du 18 octobre 2026
 
+## Livraison - douze jeux, sac spatial et compagnon
+
+- Runtime `e4bbde7bf534a3abe003d501e53aa9fbf01e9840`, branche
+  `deploy/games-equipment`, tag pousse `deploy-2026-10-18-games-equipment`.
+  Base de production `dcc96bd`. **814 tests JavaScript et 24 tests Python**
+  passent dans le worktree isole exact ; 817 tests JavaScript sur la branche
+  de developpement.
+- Les douze jeux approuves sont relies au temps, besoins, argent, progression,
+  sauvegarde et son du voyage. Conditions avant engagement, resultat reel
+  apres jeu ; annulation sans gain, sans remboursement du temps.
+  Vendanges payees au point, sans plafond artificiel base sur un ratio.
+- Sac illustre 6 x 4, objets portes separes, limite 5,5 kg, rotation et
+  sauvegarde. Poids/usure/pluie/sommeil appliques ; tente uniquement dans
+  les campings OSM accessibles. Rencontre de chien optionnelle via les
+  evenements, nom obligatoire a l'adoption, nourriture/soins et bonus reels.
+  Migration des anciennes sauvegardes sans usure ou besoins retroactifs.
+- **80 fichiers installes et verifies**, dont **78 assets publics compares
+  octet par octet en HTTPS authentifie**, y compris modules/SVG imbriques.
+  Nginx teste/recharge ; services actifs, API origines HTTP 200. Acces sans
+  authentification HTTP 401 ; scripts, tests et fichiers Git restent HTTP 404.
+- Frequence des evenements toujours **90 minutes de marche** ; le parametre
+  accelere est ignore sur le domaine de production. Illustrations et
+  epinglage au carnet conserves.
+- Navigateur : neuf nouveaux adaptateurs montes/annules avec controle du
+  jeu courant, couts conserves, aucun gain ; inventaire FR/EN et mobile,
+  achat/rotation/reprise, adoption nommee, besoins et nourriture verifies.
+  La page de test etant parfois masquee, cela ne constitue pas un nouveau
+  playtest manuel complet de chaque jeu chronometre. Un test automatise
+  termine le vrai jeu de vendanges et verifie recu et nettoyage de l'adaptateur.
+- Sauvegardes SQLite avant/apres, integrite verifiee :
+  **16 genesis existantes inchangees**. Copies privees (0600) sous
+  `/var/lib/arcane-path/backups/`, suffixe `e4bbde7bf534`.
+  Retour code : `/home/ubuntu/arcane-path-before-deploy-e4bbde7bf534.tar.gz`
+  (0600). Ne jamais restaurer les bases en arriere lors d'un retour code.
+- Non livres : sources reelles du monde vivant/photos associees, autres
+  compagnons, pouvoirs d'artefacts et bonus qualite de l'appareil photo.
+
 ## Livraison - evenements du chemin et sante
 
 - Runtime `dcc96bd`, tag `deploy-2026-10-18-journey-events`, base `e6e20a1`.
@@ -15,8 +52,8 @@
 - Sauvegardes SQLite avant/apres : **16 genesis existantes inchangees**.
   Retour code : `/home/ubuntu/arcane-path-before-deploy-dcc96bd.tar.gz` (0600).
   Ne pas restaurer les bases en arriere lors d'un retour de code.
-- Mini-jeux supplementaires et equipement exclus de cette livraison ;
-  leur integration est en cours dans une livraison distincte.
+- Mini-jeux supplementaires et equipement exclus de cette livraison initiale ;
+  livres ensuite dans le checkpoint ci-dessus.
 
 ## Dernieres livraisons - couverture du carnet et fond reel en cache
 

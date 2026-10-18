@@ -2,6 +2,8 @@
 
 ## R-123 - Spatial inventory and companions
 
+- **Deployed 18 October:** Runtime `e4bbde7`, tag
+  `deploy-2026-10-18-games-equipment`, with all twelve approved journey games.
 - **18 October user approval:** Integrate the tested inventory and dog into the
   main journey and deploy with the approved games and events. Other companion
   types and artifact powers remain future work, not implicitly activated.
@@ -35,6 +37,8 @@
 
 ## R-122 - Real European living-world sources and photos
 
+- **Still pending:** The living-world preview remains fictional-only; connected
+  real sources and their licensed photos are not included in this release.
 - Replace the fictional-only living-world preview with connected real public
   sources usable across Europe. Show actual geographic/provider coverage,
   freshness, source attribution and failures; never imply universal local-event
