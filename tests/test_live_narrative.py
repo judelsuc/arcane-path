@@ -17,14 +17,20 @@ from abandoned_journals import AbandonedJournals, JournalForbidden
 from content_factory import LIMIT, OvhWriter, WorkshopError
 from journal_art import JournalArt
 from journeys import JourneyStore, JourneyRequest, JourneyCapacity
-from live_narrative import CATALOGUE, MODEL, VERSION, LiveNarrative, provider_request, validate_output
+from live_narrative import CATALOGUE, MODEL, VERSION, LiveNarrative, provider_request, validate_output, version_for
 from opening_story import BRIEF_ID, opening_brief, validate_parent_reference
 from travel_server import ChunkStore, ChunkJobs, atomic_write, make_handler
 
 
-def response(en="A passer-by offers you a few coins.", fr="Un passant vous offre quelques pièces."):
+def response(en="A passer-by offers you a few coins.", fr="Un passant vous offre quelques pièces.", variants=False):
+    output = {"en": en, "fr": fr}
+    if variants:
+        output["alternatives"] = [
+            {"en": "You receive a few coins from a passer-by.", "fr": "Vous recevez quelques pièces d'un passant."},
+            {"en": "For the road, a passer-by gives you some coins.", "fr": "Pour la route, un passant vous donne des pièces."},
+        ]
     return {"choices": [{"finish_reason": "stop", "message": {
-        "content": json.dumps({"en": en, "fr": fr})}}],
+        "content": json.dumps(output)}}],
         "usage": {"prompt_tokens": 100, "completion_tokens": 30, "total_tokens": 130}}
 
 
@@ -117,7 +123,7 @@ class LiveNarrativeTests(unittest.TestCase):
         abandoned.bind(self.owner, self.token)
         self.auth = JournalArt(self.journeys, abandoned)
         self.addCleanup(self.auth.close)
-        self.writer = Mock(return_value=response())
+        self.writer = Mock(return_value=response(variants=True))
         self.service = LiveNarrative(self.journeys, self.auth, self.writer)
         self.addCleanup(self.service.close)
 
@@ -133,6 +139,8 @@ class LiveNarrativeTests(unittest.TestCase):
         result = self.settle()
         self.assertEqual(result["status"], "ready")
         self.assertEqual(set(result["text"]), {"en", "fr"})
+        self.assertEqual(len(result["alternatives"]), 2)
+        self.assertEqual(len({result["text"]["fr"], *(v["fr"] for v in result["alternatives"])}), 3)
         self.assertEqual(result["accounting"], {
             "attempts": 1, "unknownUsage": 0, "promptTokens": 100, "completionTokens": 30,
         })
@@ -229,7 +237,7 @@ class LiveNarrativeTests(unittest.TestCase):
             entered.set()
             if not release.wait(5):
                 raise WorkshopError("Test was not released", 502)
-            return response()
+            return response(variants=True)
         self.writer.side_effect = generate
         self.request()
         try:
@@ -246,6 +254,7 @@ class LiveNarrativeTests(unittest.TestCase):
 
     def test_no_live_total_cap_beyond_separate_workshop_twenty(self):
         self.assertEqual(LIMIT, 20)
+        self.writer.side_effect = lambda brief: response(variants=brief["kind"] == "introduction")
         for brief in CATALOGUE:
             self.request(brief)
             self.settle(brief)
@@ -256,9 +265,9 @@ class LiveNarrativeTests(unittest.TestCase):
         self.service.close()
         with self.service.connect() as db:
             db.execute("INSERT INTO wording(owner,brief,version,status,created,calls) VALUES(?,?,?,'running',0,1)",
-                       (self.owner, "event.coins", VERSION))
+                       (self.owner, "event.coins", version_for("event.coins")))
             db.execute("INSERT INTO wording(owner,brief,version,status,created) VALUES(?,?,?,'queued',0)",
-                       (self.owner, "event.food", VERSION))
+                       (self.owner, "event.food", version_for("event.food")))
         resumed = LiveNarrative(self.journeys, self.auth, self.writer)
         self.addCleanup(resumed.close)
         resumed.future.result(timeout=5)
@@ -279,10 +288,42 @@ class LiveNarrativeTests(unittest.TestCase):
                 self.assertIsInstance(configured.writer, OvhWriter)
                 self.assertEqual(configured.writer.model, MODEL)
         request = provider_request(CATALOGUE["event.coins"], MODEL)
-        self.assertEqual(request["max_tokens"], 500)
+        self.assertEqual(request["max_tokens"], 1400)
         self.assertFalse(request["stream"])
         self.assertEqual(json.loads(request["messages"][1]["content"]), CATALOGUE["event.coins"])
-        self.assertEqual(set(request["response_format"]["json_schema"]["schema"]["properties"]), {"en", "fr"})
+        self.assertEqual(set(request["response_format"]["json_schema"]["schema"]["properties"]), {"en", "fr", "alternatives"})
+        self.assertEqual(provider_request(CATALOGUE["npc.hospitality.greeting"], MODEL)["max_tokens"], 500)
+
+    def test_variants_require_three_distinct_bounded_bilingual_versions(self):
+        self.assertEqual(len(validate_output(response(variants=True), variants=True)["alternatives"]), 2)
+        for alternatives in [[], [{"en": "Only one.", "fr": "Une seule."}],
+                             [{"en": "A passer-by offers you a few coins.", "fr": "Autre phrase."}] * 2,
+                             [{"en": "x" * 401, "fr": "Autre phrase."}] * 2]:
+            value = response(variants=True)
+            content = json.loads(value["choices"][0]["message"]["content"])
+            content["alternatives"] = alternatives
+            value["choices"][0]["message"]["content"] = json.dumps(content)
+            with self.assertRaises(WorkshopError):
+                validate_output(value, variants=True)
+
+    def test_event_revision_preserves_old_text_without_rewriting_story_or_npc_cache(self):
+        self.service.close()
+        with self.service.connect() as db:
+            db.execute("INSERT INTO wording(owner,brief,version,status,created,calls,output) "
+                       "VALUES(?,?,?,'ready',0,1,?)",
+                       (self.owner, "event.coins", VERSION, json.dumps({"en": "Previous text.", "fr": "Ancien texte."})))
+        reopened = LiveNarrative(self.journeys, self.auth, self.writer)
+        self.addCleanup(reopened.close)
+        reopened.request({"journey": self.owner, "brief": "event.coins"}, self.token)
+        reopened.future.result(timeout=5)
+        result = reopened.request({"journey": self.owner, "brief": "event.coins"}, self.token)
+        self.assertEqual(len(result["alternatives"]), 2)
+        self.assertEqual(result["accounting"]["attempts"], 2)
+        self.assertEqual(version_for("npc.hospitality.hosted"), VERSION)
+        self.assertEqual(version_for(BRIEF_ID), VERSION)
+        with reopened.connect() as db:
+            old = json.loads(db.execute("SELECT output FROM wording WHERE version=?", (VERSION,)).fetchone()[0])
+        self.assertEqual(old["fr"], "Ancien texte.")
 
     def test_truncation_structure_and_output_bounds_rejected(self):
         invalid = [{}, {"choices": []}, response(en="x" * 401), response(fr="line\nbreak"), response(en="https://url")]

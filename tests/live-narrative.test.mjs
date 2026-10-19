@@ -64,6 +64,56 @@ test("pending polls durable result, failures are explicit and never retried", as
   assert.match(failing.status(state, "event.food", "fr"), /Échec/);
 });
 
+test("three cached bilingual introductions rotate without new calls or mutable snapshots", async () => {
+  const alternatives = [
+    { en: "Some coins are offered to you.", fr: "On vous offre quelques pièces." },
+    { en: "You receive coins for the journey.", fr: "Vous recevez des pièces pour le voyage." },
+  ];
+  let calls = 0;
+  const client = createLiveNarrative({ fetcher: async (_, options) => {
+    calls++;
+    return { ok: true, json: async () => ({ brief: JSON.parse(options.body).brief,
+      enabled: true, status: "ready", text: generated, alternatives }) };
+  } });
+  client.prefetch(state, ["event.coins"]);
+  await flush();
+  for (let index = 0; index < 6; index++) {
+    const expected = [generated, ...alternatives][index % 3];
+    const result = client.snapshot(state, "event.coins", index);
+    assert.deepEqual(result, expected);
+    result.fr = "mutation";
+    assert.deepEqual(client.snapshot(state, "event.coins", index), expected);
+    assert.match(client.introductionStatus(state, "event.coins", "en", true, index),
+      new RegExp(`version ${index % 3 + 1}/3`));
+    assert.match(client.introductionStatus(state, "event.coins", "fr", true, index), /IA.*inchangés/);
+    client.prefetch(state, ["event.coins"]);
+  }
+  assert.equal(calls, 1);
+  assert.match(client.introductionStatus(state, "event.coins", "en", false), /Authored introduction.*next encounter/);
+  const legacy = createLiveNarrative({ fetcher: async () => reply("event.coins") });
+  legacy.prefetch(state, ["event.coins"]);
+  await flush();
+  assert.deepEqual(legacy.snapshot(state, "event.coins", 2), generated);
+  assert.match(legacy.introductionStatus(state, "event.coins", "en", true, 2), /1\/1/);
+});
+
+test("invalid or oversized variant sets fail explicitly without automatic retries", async () => {
+  for (const alternatives of [null, {}, [generated], [generated, { en: "x".repeat(401), fr: "Texte." }]]) {
+    let calls = 0;
+    const client = createLiveNarrative({ fetcher: async () => {
+      calls++;
+      return { ok: true, json: async () => ({ enabled: true, brief: "event.coins", status: "ready",
+        text: generated, alternatives }) };
+    } });
+    client.prefetch(state, ["event.coins"]);
+    await flush();
+    assert.equal(client.snapshot(state, "event.coins"), null);
+    assert.match(client.status(state, "event.coins", "en"), /failed/);
+    client.prefetch(state, ["event.coins"]);
+    assert.equal(calls, 1);
+  }
+});
+
 test("disabled mode stops prefetch without a key; local saves never request", async () => {
   let calls = 0;
   const client = createLiveNarrative({ fetcher: async (_, options) => {
@@ -129,9 +179,11 @@ for (const language of ["en", "fr"]) {
       querySelector: id => id === "dialog[open]" ? [...nodes.values()].find(e => e.open) : el(id) };
     globalThis.MutationObserver = class { observe() {} };
     let cached = null, subscriber;
+    const snapshots = [];
     const narrative = {
-      prefetch() {}, snapshot: () => cached,
-      status: () => "Wording status", subscribe(fn) { subscriber = fn; },
+      prefetch() {}, snapshot: (_, brief, variant) => { snapshots.push({ brief, variant }); return cached; },
+      introductionStatus: (_, brief, language, generated, variant) => `${generated ? "GENERATED" : "AUTHORED"} ${variant}`,
+      subscribe(fn) { subscriber = fn; },
     };
     const event = { id: 1, kind: "coins", birthCard: "star", dailyCard: "moon",
       occurrence: 0.315, positive: 0.55, minutes: 0, foodKcal: 0, moneyCents: 150, fatigue: 0, reputation: 0 };
@@ -146,16 +198,19 @@ for (const language of ["en", "fr"]) {
     await flush();
     const authored = el("#journey-event-text").textContent;
     assert.ok(authored.startsWith(translate(language, "journeyEvent.coins")));
+    assert.equal(el("#journey-event-continue").beforeNode.textContent, "AUTHORED 0");
     cached = generated;
     subscriber();
     assert.equal(el("#journey-event-text").textContent, authored);
     el("#journey-event-continue").handlers.click();
     assert.equal(acknowledged, 1);
-    current.state.events = { pending: 2, history: [{ ...event, id: 2 }] };
+    current.state.events = { pending: 2, history: [{ ...event, id: 2, wordingVariant: 1 }] };
     ui.update();
     await flush();
     const dynamic = el("#journey-event-text").textContent;
     assert.ok(dynamic.startsWith(generated[language]));
+    assert.equal(el("#journey-event-continue").beforeNode.textContent, "GENERATED 1");
+    assert.deepEqual(snapshots, [{ brief: "event.coins", variant: 0 }, { brief: "event.coins", variant: 1 }]);
     assert.equal(dynamic.slice(generated[language].length + 1),
       authored.slice(translate(language, "journeyEvent.coins").length + 1));
     assert.ok(el("#journey-event-cards").textContent.includes("32"));

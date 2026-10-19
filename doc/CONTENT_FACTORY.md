@@ -119,8 +119,10 @@ not a journey identifier. Player names, private notes, route stages, witnesses,
 future locations and canonical hidden facts are never submitted.
 
 Opening stories use temperature **0.9**, at most 1400 completion tokens and
-exactly two FR/EN strings of 500-1800 characters. Ordinary encounter wording
-retains temperature 0.5 and its existing shorter limits. Variation is encouraged,
+exactly two FR/EN strings of 500-1800 characters. Ordinary event introductions
+use temperature **0.8**, at most 1400 completion tokens and three distinctly
+worded FR/EN pairs (5-400 characters per string). Hospitality speech retains
+temperature 0.5 and its 500-token limit. Variation is encouraged,
 not guaranteed. The prompt permits domestic memories/emotional texture, not
 new plot facts or clues; format checks cannot guarantee semantic fidelity.
 Saved parent identity, motive and investigation never change.
@@ -195,6 +197,12 @@ These source changes have no effect on an already deployed proxy.
   numerical effects, tarot cards, continue action and all game state remain
   authored. Late wording is available only for a subsequent encounter, not a
   mid-dialogue replacement. Language changes use the same bilingual snapshot.
+- Three generated versions rotate per event kind. A presentation-only
+  `wordingVariant` (0-2) is saved on each new event record, so redraw, language
+  changes and resume retain that event's chosen version. Older events without
+  this field use version zero. The status explicitly identifies generated
+  wording/version versus the authored introduction; cache availability alone
+  no longer implies generated text is visible in the open popup.
 - The actual **sleep/shelter menu** displays public NPC greeting speech before
   asking for hospitality, then accepted/refused speech only after the normal
   action has settled. Settlement and mapped-worship hospitality are supported.
@@ -202,9 +210,13 @@ These source changes have no effect on an already deployed proxy.
   rewards are unchanged. Interrupted actions get no invented NPC response.
   Opening/reopening the menu never performs the hospitality action.
 - Authored source wording always remains in the project. One immutable
-  bilingual result is cached per journal owner, canonical brief and content/
-  prompt version. Repeated encounters of the same kind reuse it; this is not
+  bilingual set is cached per journal owner, canonical brief and content/
+  prompt version (three event introductions, one hospitality line). Repeated
+  encounters rotate that cached set; this is not
   a fresh generation on every step or unrestricted conversational chat.
+  The event-only `-variants-1` revision preserves historical cache rows.
+  It requests one new set per event brief/owner on demand, never overwriting
+  saved opening stories or refreshing unchanged hospitality text.
 - The provider receives **only** one entry from
   `public/narrative-briefs.json`, never the request body or client game state.
   The API accepts only a registered identifier plus journey/optional keeper;
@@ -232,9 +244,11 @@ There is no aggregate call budget or donation gate. One worker dispatches at
 most one provider call at a time; at most 32 queued/running records are accepted
 globally. A full queue returns an explicit 503 and retains authored text.
 HTTP requests are limited to 4096 bytes; provider inputs are fixed short public
-entries. Each provider call requests at most 500 completion tokens, has a
+entries. Hospitality calls request at most 500 completion tokens; event sets
+and opening stories request at most 1400. Each call has a
 45-second network timeout, refuses redirects, and reads at most 64 KiB.
-Accepted output is exactly two bounded strings (5–400 characters each).
+Accepted ordinary output is one bounded FR/EN pair (5-400 characters each),
+plus exactly two distinct bilingual alternatives for event introductions.
 These are per-call bounds, not a guaranteed monetary ceiling or exact
 wall-clock cancellation of a slow streaming socket.
 

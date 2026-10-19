@@ -37,11 +37,12 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
     const brief = `event.${event.kind}`;
     if (wordingId !== event.id) {
       wordingId = event.id;
-      wording = narrative?.snapshot(current.state, brief);
+      wording = narrative?.snapshot(current.state, brief, event.wordingVariant ?? 0);
     }
     if (wordingStatus) {
       wordingStatus.hidden = !Object.hasOwn(NARRATIVE_BRIEFS, brief);
-      wordingStatus.textContent = wordingStatus.hidden ? "" : narrative.status(current.state, brief, language);
+      wordingStatus.textContent = wordingStatus.hidden ? "" : narrative.introductionStatus(
+        current.state, brief, language, Boolean(wording), event.wordingVariant ?? 0);
     }
     const card = id => current.economy.tarot.find(c => c.id === id)[language];
     const parts = journeyEventTextParts(event, t);

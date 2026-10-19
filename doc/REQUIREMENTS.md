@@ -1,5 +1,17 @@
 # Requirements tracked outside the design PDF
 
+## R-162 - Varied cached event introductions and truthful status
+
+- Generate three distinct bilingual introductions per ordinary event type
+  and journal owner, in one bounded provider call; rotate the cached versions.
+- Preserve event facts, numerical effects, card rules and all authoritative
+  outcomes. Persist only the chosen presentation index on new event records.
+- Keep the open introduction fixed while reading; identify explicitly whether
+  the displayed introduction is authored or AI-generated, including its version.
+- Preserve historical caches, existing opening stories and hospitality wording.
+  Authored fallback remains available on pending/disabled/failed generation,
+  without automatic retries or a fresh model call at every encounter.
+
 ## R-161 - Celebrate reaching a parent-trail stop
 
 - Show a congratulations popup on the first recorded arrival at a parent-trail

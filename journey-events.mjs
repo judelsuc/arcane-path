@@ -127,7 +127,9 @@ export function advanceJourneyEvents(previous, moved, info, survival, economy) {
   const chances = eventChances(moved, economy);
   next = applyJourneyEvent(next, kind, info, survival, economy, () => draw(moved, checks, "daily-card"));
   const count = ledger.count + 1;
+  const previousWording = ledger.history.findLast(event => event.kind === kind)?.wordingVariant;
   const record = { id: count, opportunity: checks, kind, birthCard, dailyCard,
+    wordingVariant: ((previousWording ?? -1) + 1) % 3,
     ...chances, elapsedMinutes: moved.elapsedMinutes, col: moved.col, row: moved.row, terrain: info.terrain,
     minutes: next.elapsedMinutes - moved.elapsedMinutes,
     foodKcal: next.reserveKcal - moved.reserveKcal,
@@ -191,6 +193,7 @@ export function validateJourneyEvents(state, economy, survival) {
     if (!r || r.id !== e.count - e.history.length + i + 1 ||
         !integer(r.opportunity) || r.opportunity <= lastOpportunity || r.opportunity > e.checks ||
         !Object.hasOwn(EVENT_CATALOGUE, r.kind) ||
+        r.wordingVariant !== undefined && (!integer(r.wordingVariant) || r.wordingVariant >= 3) ||
         !nonnegative(r.elapsedMinutes) || r.elapsedMinutes < lastTime ||
         !nonnegative(r.minutes) || r.elapsedMinutes + r.minutes > state.elapsedMinutes ||
         !Number.isSafeInteger(r.col) || Math.abs(Math.floor(r.col / 8)) > 1000 ||

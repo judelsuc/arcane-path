@@ -6,14 +6,20 @@ export const OPENING_STORY = "story.opening";
 const messages = {
   en: {
     pending: "Optional OVH wording is being prepared. Authored text remains available.",
-    ready: "OVH wording cached. Open dialogue wording stays fixed until the next encounter.",
+    ready: "Generated OVH wording is cached.",
+    usingGenerated: "AI-generated introduction (OVH), version {number}/{total}. Game effects are unchanged.",
+    authoredPending: "Authored introduction shown. Generated wording is still being prepared for later encounters.",
+    authoredReady: "Authored introduction shown for this encounter. Generated wording is ready for the next encounter.",
     failed: "Optional OVH wording failed. Authored text retained; no automatic retry.",
     disabled: "Optional OVH wording is disabled. Authored text is in use.",
     local: "This local journey has no server capability. Authored text is in use.",
   },
   fr: {
     pending: "La formulation OVH facultative est en préparation. Le texte écrit reste disponible.",
-    ready: "Formulation OVH en cache. Le dialogue ouvert reste inchangé jusqu'à la prochaine rencontre.",
+    ready: "La formulation générée OVH est en cache.",
+    usingGenerated: "Introduction générée par IA (OVH), version {number}/{total}. Les effets du jeu sont inchangés.",
+    authoredPending: "Introduction écrite affichée. La formulation générée est en préparation pour de prochaines rencontres.",
+    authoredReady: "Introduction écrite affichée pour cette rencontre. La formulation générée est prête pour la prochaine rencontre.",
     failed: "Échec de la formulation OVH facultative. Texte écrit conservé ; aucun nouvel essai automatique.",
     disabled: "La formulation OVH facultative est désactivée. Le texte écrit est utilisé.",
     local: "Ce voyage local n'a pas d'autorisation serveur. Le texte écrit est utilisé.",
@@ -59,12 +65,16 @@ export function createLiveNarrative({
           if (!response.ok) throw new Error(`Live wording HTTP ${response.status}`);
           const result = await response.json();
           if (current !== epoch) return;
+          const validText = text => text && ["en", "fr"].every(lang =>
+            typeof text[lang] === "string" && text[lang].length >= (id === OPENING_STORY ? 500 : 5) &&
+            text[lang].length <= (id === OPENING_STORY ? 1800 : 400));
           if (typeof result.enabled !== "boolean" || result.brief !== id ||
               !["queued", "running", "ready", "failed", "disabled"].includes(result.status) ||
-              result.status === "ready" && (!result.text || ["en", "fr"].some(lang =>
-                typeof result.text[lang] !== "string" ||
-                result.text[lang].length < (id === OPENING_STORY ? 500 : 5) ||
-                result.text[lang].length > (id === OPENING_STORY ? 1800 : 400)))) {
+              result.status === "ready" && (!validText(result.text) ||
+                result.alternatives !== undefined && (!Array.isArray(result.alternatives) ||
+                  ![0, 2].includes(result.alternatives.length) ||
+                  !id.startsWith("event.") && result.alternatives.length !== 0 ||
+                  !result.alternatives.every(validText)))) {
             throw new Error("Invalid live wording response.");
           }
           records.set(id, result);
@@ -99,9 +109,24 @@ export function createLiveNarrative({
       }
       if (!timer) void pump();
     },
-    snapshot(state, id) {
+    snapshot(state, id, variant = 0) {
       activate(state);
-      return records.get(id)?.status === "ready" ? { ...records.get(id).text } : null;
+      const record = records.get(id);
+      if (record?.status !== "ready") return null;
+      const versions = [record.text, ...(record.alternatives ?? [])];
+      return { ...versions[variant % versions.length] };
+    },
+    introductionStatus(state, id, language, generated, variant = 0) {
+      activate(state);
+      const copy = messages[language === "en" ? "en" : "fr"];
+      const record = records.get(id);
+      if (generated) {
+        const total = 1 + (record?.alternatives?.length ?? 0);
+        return copy.usingGenerated.replace("{number}", String(variant % total + 1)).replace("{total}", String(total));
+      }
+      if (record?.status === "ready") return copy.authoredReady;
+      if (access && !disabled && (!record || ["queued", "running"].includes(record.status))) return copy.authoredPending;
+      return this.status(state, id, language);
     },
     status(state, id, language) {
       activate(state);
