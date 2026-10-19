@@ -136,7 +136,8 @@ the main journey to server authority remain outside this checkpoint.
 
 **Release gate.** This is implemented code, not a deployed release. Runtime
 packaging rejects untracked source omissions and dirty/uncommitted runtime;
-review and checkpoint the intended release files before packaging. Verify
+tracked macOS Finder metadata is excluded from the runtime archive.
+Review and checkpoint the intended release files before packaging. Verify
 Node.js on an existing VM and explicitly authorize deployment separately.
 The static browser configuration export matches the canonical YAML already
 served by the travel server, including its ten-photo per-cell limit.
