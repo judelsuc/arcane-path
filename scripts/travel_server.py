@@ -23,6 +23,7 @@ from pathlib import Path
 
 from build_map import rasterize
 from shoreline import load_shoreline
+from living_world import LivingWorld, query_position
 from fetch_osm import download_region, incomplete_landcover
 from weather import fetch_climate
 from config import load_config
@@ -406,6 +407,7 @@ def make_handler(store, jobs, path_pool=None):
     journal_art = JournalArt.configured(journeys, abandoned)
     live_narrative = LiveNarrative.configured(journeys, journal_art)
     start_art = StartArt(store.cache / "start-art.sqlite3")
+    living_world = ChunkJobs(LivingWorld(store.cache / "living-world", atomic_write), workers=1, capacity=4)
     parent_paths = ParentPaths(store, journeys, atomic_write, pool=path_pool)
     accommodations = ChunkJobs(Accommodations(store, atomic_write), capacity=2, pool=jobs.pool)
     class Handler(SimpleHTTPRequestHandler):
@@ -510,6 +512,17 @@ def make_handler(store, jobs, path_pool=None):
                     return self.send_json(500, {"error": str(error)})
             if url.path.startswith("/api/"):
                 try:
+                    if url.path == "/api/living-world":
+                        query = urllib.parse.parse_qs(url.query, strict_parsing=True)
+                        if set(query) != {"lat", "lon"} or any(len(v) != 1 for v in query.values()):
+                            raise ValueError("Invalid living-world query.")
+                        point = query_position(float(query["lat"][0]), float(query["lon"][0]))
+                        try:
+                            status, data = living_world.request(*point)
+                        except (OSError, ValueError, KeyError):
+                            logging.exception("Public-event cache unavailable")
+                            return self.send_json(500, {"error": "Public-event cache unavailable; check server logs."})
+                        return self.send_json(status, data)
                     if url.path == "/api/start-art":
                         if url.query:
                             raise ValueError("Unexpected title illustration query.")
@@ -653,6 +666,7 @@ def make_handler(store, jobs, path_pool=None):
 
     Handler.journal_art = journal_art
     Handler.live_narrative = live_narrative
+    Handler.living_world = living_world
     return Handler
 
 
@@ -674,6 +688,7 @@ def main():
         server.server_close()
         server.RequestHandlerClass.journal_art.close()
         server.RequestHandlerClass.live_narrative.close()
+        server.RequestHandlerClass.living_world.pool.shutdown(wait=True, cancel_futures=True)
         jobs.pool.shutdown(wait=True, cancel_futures=True)
         path_pool.shutdown(wait=True, cancel_futures=True)
 

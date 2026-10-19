@@ -103,6 +103,17 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
     return pages.map(page => photoMetadata(page, info, association)).filter(Boolean);
   }
 
+  async function commonsNearby(info) {
+    const pages = await json(COMMONS, {
+      generator: "geosearch", ggscoord: `${info.latitude}|${info.longitude}`,
+      ggsradius: "2000", ggsnamespace: "6", ggslimit: "20",
+      prop: "imageinfo|coordinates", iiprop: "url|extmetadata",
+      iiurlwidth: "1000", colimit: "max",
+    });
+    return pages.map(p => photoMetadata(p, info)).filter(Boolean)
+      .sort((a, b) => a.distance - b.distance);
+  }
+
   async function resolve(info, locale, kind, refresh = false, onProgress = () => {}) {
     const key = `${await contentKey(info, locale, kind)}${kind === "photo" ? `:${maxPhotos}` : ""}`;
     const cached = await cache.get(key);
@@ -192,16 +203,7 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
       await download(candidates?.filter(p => !p.nearby));
       const nearby = candidates?.filter(p => p.nearby) ?? [];
       if (photos.length < maxPhotos) {
-        candidates = await attempt("Commons geosearch", async () => {
-          const pages = await json(COMMONS, {
-            generator: "geosearch", ggscoord: `${info.latitude}|${info.longitude}`,
-            ggsradius: "2000", ggsnamespace: "6", ggslimit: "20",
-            prop: "imageinfo|coordinates", iiprop: "url|extmetadata",
-            iiurlwidth: "1000", colimit: "max",
-          });
-          return pages.map(p => photoMetadata(p, info)).filter(Boolean)
-            .sort((a, b) => a.distance - b.distance);
-        });
+        candidates = await attempt("Commons geosearch", () => commonsNearby(info));
         await download(candidates?.filter(p => !p.nearby));
         nearby.push(...(candidates?.filter(p => p.nearby) ?? []));
       }
@@ -252,5 +254,5 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
     if (content || !errors.length) await cache.put(key, result);
     return { ...result, cached: false };
   }
-  return { resolve };
+  return { resolve, commonsNearby };
 }

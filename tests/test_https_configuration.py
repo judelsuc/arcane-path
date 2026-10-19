@@ -7,6 +7,33 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class HttpsConfigurationTests(unittest.TestCase):
+    def test_living_world_preview_and_transport_assets_have_narrow_get_only_routes(self):
+        config = (ROOT / "infra/nginx/preview.conf").read_text()
+        endpoint = config.split("location = /api/living-world {", 1)[1].split("\n    }", 1)[0]
+        self.assertIn("limit_except GET { deny all; }", endpoint)
+        self.assertIn("proxy_pass http://127.0.0.1:8766;", endpoint)
+        route = next(line.strip() for line in config.splitlines()
+                     if line.strip().startswith("location ~ ^/(?:layers/living-world/"))
+        pattern = re.compile(route.removeprefix("location ~ ").removesuffix(" {"))
+        for path in [
+            "/layers/living-world/preview.html", "/layers/living-world/preview.mjs",
+            "/layers/living-world/agenda.mjs", "/layers/living-world/demo.mjs",
+            "/layers/transport/routes.html", "/layers/transport/routes.mjs",
+            "/layers/transport/hybrid.html", "/layers/transport/hybrid-preview.mjs",
+            "/layers/transport/transport.mjs", "/layers/transport/hybrid.mjs",
+            "/data/transport/CATALOG-LICENSE",
+            *["/" + str(p.relative_to(ROOT)) for p in (ROOT / "data/transport").rglob("*")
+              if p.is_file() and p.suffix in {".json", ".md"}],
+        ]:
+            self.assertIsNotNone(pattern.fullmatch(path), path)
+        for path in ["/scripts/living_world.py", "/layers/private.txt",
+                     "/layers/transport/demo-fixture.mjs", "/layers/living-world/preview.html/extra",
+                     "/data/transport/private.zip", "/data/transport/../private.json"]:
+            self.assertIsNone(pattern.fullmatch(path), path)
+        body = config.split(route, 1)[1].split("\n    }", 1)[0]
+        self.assertIn("limit_except GET { deny all; }", body)
+        self.assertIn("proxy_pass http://127.0.0.1:8766;", body)
+
     def test_daily_title_art_is_get_only_and_timer_uses_paris_time(self):
         config = (ROOT / "infra/nginx/preview.conf").read_text()
         route = "location ~ ^/api/start-art(?:/image)?$ {"

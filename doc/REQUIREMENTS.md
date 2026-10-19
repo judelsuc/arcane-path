@@ -1,5 +1,24 @@
 # Requirements tracked outside the design PDF
 
+## R-161 - Celebrate reaching a parent-trail stop
+
+- Show a congratulations popup on the first recorded arrival at a parent-trail
+  stop, naming the reached place and parent, without revealing future stops.
+- Offer to open the parent trail or continue travelling. Neither choice
+  performs an investigation, advances time, charges money or grants rewards.
+- Wait for existing dialogs and busy actions; retain survival/event priority.
+  Do not repeat recorded arrivals on revisits or when resuming a saved journey.
+- Localize the popup in French and English and preserve the final reunion UI.
+
+## R-160 - More forest and field mini-games (future)
+
+- Add a forest wildlife-photography mini-game: animals appear and the player
+  tries to photograph them.
+- Add a field sheep-herding mini-game: the player guides a flock of sheep.
+- These are future requirements, not enabled gameplay. Detailed controls,
+  availability, duration, difficulty, rewards and survival costs remain to be
+  designed before implementation.
+
 ## R-159 - Current-cell hotel first
 
 - When the player occupies a hotel's cell, show that hotel first in the nearby
@@ -130,8 +149,11 @@
 
 ## R-122 - Real European living-world sources and photos
 
-- **Still pending:** The living-world preview remains fictional-only; connected
-  real sources and their licensed photos are not included in this release.
+- The connected preview uses bounded OpenAgenda searches (20 km/seven days),
+  explicit coverage/freshness/provenance, optional attributed openly licensed
+  Commons photographs labelled illustrative, and the existing European
+  transport source explorer/hybrid. It is reachable from Options and does not
+  activate public events or transit in normal journey saves.
 - Replace the fictional-only living-world preview with connected real public
   sources usable across Europe. Show actual geographic/provider coverage,
   freshness, source attribution and failures; never imply universal local-event

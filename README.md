@@ -1,5 +1,15 @@
 # Les Arcanes du Chemin
 
+## Connected living-world preview
+
+Options links to the [public-event preview](layers/living-world/preview.html),
+using bounded OpenAgenda searches with explicit coverage, freshness, provenance
+and optional openly licensed Commons photographs labelled illustrative.
+It also links to the existing European transport source explorer and hybrid
+Grenoble-Lyon preview. These are standalone previews, not normal-journey event
+or transit activation. See [coverage and privacy](layers/living-world/README.md)
+and [transport sources/licences](data/transport/README.md).
+
 ## Content factory and gameplay feedback release
 
 See [the content-factory guide](doc/CONTENT_FACTORY.md) for optional OVH

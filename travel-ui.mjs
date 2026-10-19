@@ -21,6 +21,7 @@ import { recordJourneyPosition, createJourneyTerrainLoader } from "./journey-map
 import { renderJourneyMarker } from "./death.mjs";
 import { setupMusic } from "./music-ui.mjs";
 import { interviewTrail, recordTrailArrival } from "./trail.mjs";
+import { setupTrailArrival } from "./trail-arrival-ui.mjs";
 import { createServerJourney } from "./server-journey.mjs";
 import { prepareParentPaths } from "./parent-path.mjs";
 import { loadAccommodations, cachedAccommodations, mergeAccommodations, withDiscoveredAccommodations } from "./accommodations.mjs";
@@ -196,6 +197,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   });
   const needsNotices = setupNeedsNotices(t, {
     context: () => active && state && survivalConfig ? { state, survival: survivalConfig, busy } : null,
+  });
+  const trailArrivalUI = setupTrailArrival(t, {
+    context: () => active && state ? { state, busy } : null,
+    openTrail: () => trailUI.open(),
   });
   const liveNarrative = createLiveNarrative();
   const openingStory = setupOpeningStory(t, {
@@ -920,6 +925,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     dailyTarotUI.update();
     journeyEventsUI.update();
     equipmentUI.update();
+    trailArrivalUI.update();
   }
 
   function draw() {
@@ -1137,6 +1143,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       state = beginExploration(state, Boolean(restored));
       state = beginPressures(state, economyData);
       needsNotices.reset(restored ? state : undefined);
+      trailArrivalUI.reset(restored ? state : undefined);
       await useNotebook?.(state, Boolean(restored));
       if (restored) {
         pinTarot?.(document.querySelector("#restored-birth-tarot-journal"), state, "birth", economyData);
@@ -1202,6 +1209,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     birthDialog.close();
     dailyTarotUI.reset();
     needsNotices.reset();
+    trailArrivalUI.reset();
     journeyEventsUI.reset();
     liveNarrative.reset();
     openingStory.reset();

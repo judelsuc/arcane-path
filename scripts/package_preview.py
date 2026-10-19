@@ -9,7 +9,7 @@ import subprocess
 import tarfile
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME_ROOTS = {"scripts", "public", "data", "minigames"}
+RUNTIME_ROOTS = {"scripts", "public", "data", "minigames", "layers"}
 RUNTIME_FILES = {"config.yml", "requirements.txt"}
 
 
