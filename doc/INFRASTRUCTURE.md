@@ -12,6 +12,16 @@ et la limite specifique de creation de voyage restent en place.
 Les zones generales sont renommees pour permettre un rechargement Nginx
 sans reutiliser une zone memoire avec une cle differente.
 
+- Correctif `aaef3e0`, tag pousse `deploy-2026-10-19-startup-rate-limit`.
+  Configuration installee et comparee par SHA-256 ; `nginx -t` reussi,
+  rechargement sans redemarrage du jeu, services actifs.
+- Verification HTTPS authentifiee : **115 modules**, trois chargements,
+  **351 requetes HTTP 200**, contenu identique au runtime teste.
+  `/api/origins` et `/api/travel` HTTP 200 ; acces anonyme HTTP 401.
+  Quatre tests de configuration reussis. Code du jeu et sauvegardes inchanges.
+- Retour configuration prive :
+  `/home/ubuntu/arcane-nginx-before-aaef3e09a408.conf` (0600).
+
 ## Livraison - douze jeux, sac spatial et compagnon
 
 - Runtime `e4bbde7bf534a3abe003d501e53aa9fbf01e9840`, branche
