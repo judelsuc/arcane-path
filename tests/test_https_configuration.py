@@ -43,3 +43,21 @@ class HttpsConfigurationTests(unittest.TestCase):
         self.assertIn('nftables.before-https.conf', script)
         hook = (ROOT / "scripts/renew_https_hook.sh").read_text()
         self.assertLess(hook.index("nginx -t"), hook.index("systemctl reload nginx"))
+
+    def test_startup_assets_do_not_share_api_throttling_budgets(self):
+        config = (ROOT / "infra/nginx/preview.conf").read_text()
+        self.assertRegex(config, r'map \$uri \$arcane_api_client \{\s*'
+                         r'default "";\s*~\^/api/ \$binary_remote_addr;\s*\}')
+        self.assertIn("limit_req_zone $arcane_api_client "
+                      "zone=arcane_api_requests:10m rate=20r/s;", config)
+        self.assertIn("limit_conn_zone $arcane_api_client "
+                      "zone=arcane_api_connections:1m;", config)
+        self.assertIn("limit_req zone=arcane_api_requests burst=100 nodelay;", config)
+        self.assertIn("limit_conn arcane_api_connections 20;", config)
+        self.assertNotIn("zone=arcane_requests", config)
+        self.assertNotIn("zone=arcane_connections", config)
+        creation = config.split("location = /api/journeys {", 1)[1].split("\n    }", 1)[0]
+        self.assertIn("limit_req zone=arcane_api_requests burst=100 nodelay;", creation)
+        self.assertIn("limit_req zone=arcane_creation burst=5 nodelay;", creation)
+        self.assertIn("limit_req_zone $binary_remote_addr "
+                      "zone=arcane_creation:1m rate=10r/m;", config)

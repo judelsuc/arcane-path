@@ -1,4 +1,16 @@
-# Infrastructure OVHcloud - rapport du 18 octobre 2026
+# Infrastructure OVHcloud - rapport du 19 octobre 2026
+
+## Correctif du chargement initial - limitation reservee aux API
+
+Le chargement des modules des douze jeux depassait le burst partage de
+100 requetes : Nginx renvoyait HTTP 429 pour des imports statiques et le
+navigateur ne pouvait plus initialiser le jeu. Les budgets de requetes
+(20/s, burst 100) et de connexions simultanees (20) sont maintenant indexes
+uniquement pour `/api/`. Les assets ne consomment plus ces budgets.
+L'authentification, la liste des fichiers autorises, les limites des API
+et la limite specifique de creation de voyage restent en place.
+Les zones generales sont renommees pour permettre un rechargement Nginx
+sans reutiliser une zone memoire avec une cle differente.
 
 ## Livraison - douze jeux, sac spatial et compagnon
 
