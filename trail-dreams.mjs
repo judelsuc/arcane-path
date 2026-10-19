@@ -1,7 +1,7 @@
 import { clueDirection } from "./trail-search.mjs";
 import { atTrailTarget } from "./trail.mjs";
 
-export const TRAIL_DREAMS = Object.freeze({ minimumSleep: 60, interval: 720, stalled: 1440, chance: 0.5 });
+export const TRAIL_DREAMS = Object.freeze({ minimumSleep: 60, interval: 720, stalled: 2880 });
 const directions = new Set(["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"]);
 
 export function validateTrailDreams(state) {
@@ -21,6 +21,8 @@ export function validateTrailDreams(state) {
         !Number.isSafeInteger(check.col) || !Number.isSafeInteger(check.row) ||
         Math.abs(Math.floor(check.col / 8)) > 1000 || Math.abs(Math.floor(check.row / 8)) > 1000 ||
         typeof check.rescue !== "boolean" || !["guidance", "miss"].includes(check.outcome) ||
+        (check.wordingVariant !== undefined && (!Number.isInteger(check.wordingVariant) ||
+          check.wordingVariant < 0 || check.wordingVariant > 2)) ||
         (check.outcome === "guidance" ? !directions.has(check.direction) ||
           check.direction !== clueDirection(check, state.trail.stages[check.stage])
           : check.direction !== null || check.rescue)) fail();
@@ -48,24 +50,27 @@ export function settleTrailDream(previous, next, { startedMinutes = previous.ela
       ...checks.filter(entry => entry.outcome === "guidance")].filter(entry => entry.stage === stage),
   ];
   const lastProgress = Math.max(0, ...progress.map(entry => entry.elapsedMinutes ?? 0));
-  const rescue = exploration?.searchStreak?.stage === stage && exploration.searchStreak.failures === 3 ||
-    checkMinutes - lastProgress >= TRAIL_DREAMS.stalled;
-  const identity = JSON.stringify(["parent-dream-v1", previous.serverJourney?.seed ?? previous.startedAt,
-    stage, startedMinutes, previous.col, previous.row]);
-  let hash = 2166136261;
-  for (const character of identity) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619) >>> 0;
-  const success = rescue || hash / 2 ** 32 < TRAIL_DREAMS.chance;
+  if (checkMinutes - lastProgress < TRAIL_DREAMS.stalled) return next;
   const check = { stage, startedMinutes, checkMinutes, elapsedMinutes: next.elapsedMinutes,
-    col: previous.col, row: previous.row, rescue, outcome: success ? "guidance" : "miss",
-    direction: success ? clueDirection(previous, previous.trail.stages[stage]) : null };
+    col: previous.col, row: previous.row, rescue: true, outcome: "guidance",
+    direction: clueDirection(previous, previous.trail.stages[stage]) };
+  const lastDream = checks.findLast(entry => entry.outcome === "guidance");
+  check.wordingVariant = lastDream ? (trailDreamVariant(previous, lastDream) + 1) % 3 : 0;
   let trail = { ...next.trail, dreams: { version: 1, checks: [...checks, check].slice(-128) } };
-  if (success && exploration?.searchStreak?.stage === stage) trail = { ...trail,
+  if (exploration?.searchStreak?.stage === stage) trail = { ...trail,
     exploration: { ...trail.exploration, searchStreak: { ...exploration.searchStreak, failures: 0 } } };
   const result = { ...next, trail };
   validateTrailDreams(result);
   return result;
 }
 
-export function trailDreamText(dream, t) {
-  return t("trailDreamText", { direction: t(`hintCompass.${dream.direction}`) });
+export function trailDreamVariant(state, dream) {
+  if (dream.wordingVariant !== undefined) return dream.wordingVariant;
+  return Math.max(0, (state.trail?.dreams?.checks ?? [])
+    .filter(check => check.outcome === "guidance").findIndex(check => check.checkMinutes === dream.checkMinutes)) % 3;
+}
+
+export function trailDreamText(dream, t, wording = null, language = "fr") {
+  const guidance = t("trailDreamText", { direction: t(`hintCompass.${dream.direction}`) });
+  return wording ? `${wording[language === "en" ? "en" : "fr"]} ${guidance}` : guidance;
 }

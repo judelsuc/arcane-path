@@ -286,7 +286,7 @@ test("all shipped game windows have bilingual contextual help; consequential con
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const ids = ["title-screen", "journey-setup", "game-content",
     ...[...html.matchAll(/<dialog id="([^"]+)"/g)].map(match => match[1])];
-  assert.equal(ids.length, 24);
+  assert.equal(ids.length, 25);
   for (const language of ["en", "fr"]) {
     for (const id of ids) assert.ok(translate(language, `windowHelp.${id}`).length > 30, `${language}: ${id}`);
   }

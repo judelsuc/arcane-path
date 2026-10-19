@@ -1,15 +1,19 @@
-# Public transport — bounded standalone milestone
+# Public transport — canonical reducer and journey integration
 
 Design: PDF layer 18 (real calendar, disruptions, buses/trains), R112 (paid
 travel trading money/time for less effort), and R125 (real European routes).
-The reducer accepts a validated, supplied, finite schedule. **No transport
-is activated or deployed in the main journey.** Real source acquisition now
+The reducer accepts a validated, supplied, finite schedule. **No
+synthetic demo is accepted in the main journey.** Normal journeys now use
+[the host adapter](../../journey-world.mjs), real survival/pressure settlement,
+bounded local source lookup, streaming arrival chunks and pinned save/resume.
+The agenda/transport window requires explicit confirmation and advances at most
+30 minutes per click, one canonical minute at a time. Real source acquisition
 exists separately: [European catalogue, imports and attribution](../../data/transport/README.md).
 The old gameplay preview below remains conspicuously synthetic and is
 rejected without explicit demo opt-in. The new [source explorer](routes.html)
 shows actual imported schedules and provider gaps, not playable live boarding.
 The [hybrid preview](hybrid.html) demonstrates actual SNCF Grenoble-Lyon trips
-and explicitly fictional coach fallback under R126. It is still standalone.
+and explicitly fictional coach fallback under R126. It remains a separate preview.
 
 ## Preview / aperçu FR + EN
 

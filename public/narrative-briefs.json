@@ -1,4 +1,8 @@
 {
+  "dream.lost-player": {
+    "kind": "dream",
+    "facts": "While asleep, the traveller dreams of a fading thread becoming visible again. Write only a gentle, dreamlike introduction. This is a dream, not a real sighting or evidence. The game appends its own authoritative guidance. No parent, people, places, landmarks, compass directions, routes, distances, promises or instructions."
+  },
   "event.food": {"kind": "introduction", "facts": "A passer-by shares a snack with the traveller, eaten on the spot."},
   "event.coins": {"kind": "introduction", "facts": "A passer-by offers the traveller a few coins for the road."},
   "event.encouragement": {"kind": "introduction", "facts": "A stranger offers the traveller a few encouraging words."},

@@ -663,6 +663,7 @@ dialog p { margin: 12px 0; }
 #pressure-panel p, #pressure-panel button { overflow-wrap: anywhere; }
 #pressure-panel button { max-width: 100%; white-space: normal; }
 #needs-warning, #journey-ended { color: #f4cc80; }
+#closing-story-text { white-space: pre-line; }
 #needs-warning:empty { display: none; }
 #meal-location { color: var(--muted); font-size: 0.65rem; }
 #town-dialog { width: min(740px, 94vw); max-height: 90dvh; overflow: auto; }

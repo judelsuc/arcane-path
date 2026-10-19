@@ -1,4 +1,4 @@
-import { chunkPosition, journeyDate } from "./travel.mjs";
+import { chunkPosition, journeyDate, journeyActionBlocker } from "./travel.mjs";
 import { createChunkStream, createChunkPrefetcher, visibleDownloads } from "./travel-stream.mjs";
 import { cellInfo } from "./cell-info.mjs";
 import { skyState, altitudeTemperatureOffset } from "./sky.mjs";
@@ -23,7 +23,9 @@ import { setupMusic } from "./music-ui.mjs";
 import { interviewTrail, recordTrailArrival } from "./trail.mjs";
 import { setupTrailArrival } from "./trail-arrival-ui.mjs";
 import { setupTrailDream } from "./trail-dream-ui.mjs";
-import { settleTrailDream, trailDreamText } from "./trail-dreams.mjs";
+import { settleTrailDream, trailDreamText, trailDreamVariant } from "./trail-dreams.mjs";
+import { setupJourneyWorld } from "./journey-world-ui.mjs";
+import { transitActive, reserveJourneyTransit, stepJourneyTransit, cancelJourneyTransit } from "./journey-world.mjs";
 import { createServerJourney } from "./server-journey.mjs";
 import { prepareParentPaths } from "./parent-path.mjs";
 import { loadAccommodations, cachedAccommodations, mergeAccommodations, withDiscoveredAccommodations } from "./accommodations.mjs";
@@ -41,7 +43,9 @@ import { setupNeedsNotices } from "./needs-notices.mjs";
 import { setupOpeningStory } from "./opening-story-ui.mjs";
 import { advanceJourneyEvents, acknowledgeJourneyEvent } from "./journey-events.mjs";
 import { setupJourneyEvents } from "./journey-events-ui.mjs";
-import { createLiveNarrative } from "./live-narrative.mjs";
+import { createLiveNarrative, LOST_PLAYER_DREAM } from "./live-narrative.mjs";
+import { CLOSING_STORY, closingStoryText } from "./closing-story.mjs";
+import { setupClosingStory } from "./closing-story-ui.mjs";
 import { migrateHealth, healthValue } from "./health.mjs";
 import { setupSaveFeedback } from "./save-feedback.mjs";
 import { lodgingGuidance } from "./lodging-guidance.mjs";
@@ -102,9 +106,13 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       const photos = await snapshotNotebook(previous);
       const dated = (record, text) =>
         `${trailEntryDate(previous, record.elapsedMinutes, document.documentElement.lang, t)} — ${text}`;
-      const clues = [trailReminder(previous, t),
+      const closing = closingStoryText(previous, t, liveNarrative.snapshot(previous, CLOSING_STORY),
+        document.documentElement.lang, { milestones: false });
+      const clues = [...(closing ? [closing] : []), trailReminder(previous, t),
         ...(previous.trail.dreams?.checks ?? []).filter(check => check.outcome === "guidance")
-          .map(check => dated(check, trailDreamText(check, t))),
+          .map(check => dated(check, trailDreamText(check, t,
+            liveNarrative.snapshot(previous, LOST_PLAYER_DREAM, trailDreamVariant(previous, check)),
+            document.documentElement.lang))),
         ...(previous.trail.exploration?.hints ?? []).map(h => dated(h,
           `${fieldClueText(previous, h, t)} ${t("fieldRecordedAt", {
             col: h.col, row: h.row, minutes: Math.round(h.elapsedMinutes),
@@ -209,11 +217,15 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     context: () => active && state ? { state, busy } : null,
     openTrail: () => trailUI.open(),
   });
+  const liveNarrative = createLiveNarrative();
+  const closingStory = setupClosingStory(t, {
+    narrative: liveNarrative, context: () => active ? state : null,
+  });
   const trailDreamUI = setupTrailDream(t, {
+    narrative: liveNarrative,
     context: () => active && state ? { state, busy } : null,
     openTrail: () => trailUI.open(),
   });
-  const liveNarrative = createLiveNarrative();
   const openingStory = setupOpeningStory(t, {
     narrative: liveNarrative, context: () => state, onContinue: () => trailUI.open(),
   });
@@ -311,14 +323,56 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const cell = withDiscoveredAccommodations(pricedCell, discoveredLodging, state.col, state.row);
     return { state, cell, info: exposureInfo(chunk, p.row, p.col),
       data: economyData, survival: survivalConfig, blocked: busy || Boolean(cursor) || Boolean(state.ended) ||
-        Boolean(state.performancePending || state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending ||
+        Boolean(transitActive(state) || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending ||
           state.equipment?.dogEncounter === "pending") };
   }
+  const journeyWorldUI = setupJourneyWorld(t, {
+    context() {
+      const current = economyContext();
+      return active && current ? { ...current, gridId: region, busy } : null;
+    },
+    saveEncounters(encounters) { state = { ...state, worldEncounters: encounters }; autosave(); },
+    reserve(feed, id) {
+      const current = economyContext();
+      if (!current || current.blocked) throw new Error(t("worldBlocked"));
+      state = reserveJourneyTransit(state, feed, id, region);
+      autosave(); localize();
+    },
+    cancel() {
+      if (busy) throw new Error(t("worldBlocked"));
+      state = cancelJourneyTransit(state); autosave(); localize();
+    },
+    async advance() {
+      if (busy || !transitActive(state)) throw new Error(t("worldBlocked"));
+      busy = true;
+      const currentToken = token;
+      try {
+        for (let minute = 0; minute < 30 && transitActive(state) && !state.ended; minute++) {
+          const booking = state.transport.booking;
+          const stop = booking.calls[booking.nextCall].stop;
+          const now = state.startedAt + state.elapsedMinutes * 60000;
+          if (now >= booking.offer.departureAt &&
+              booking.calls[booking.nextCall].arrivalAt - now <= 60000) {
+            const target = chunkPosition(stop.col, stop.row);
+            await stream.load(target.x, target.y, true);
+            if (currentToken !== token) return;
+          }
+          const current = economyContext();
+          if (!current) throw new Error(t("worldCellMissing"));
+          state = stepJourneyTransit(state, region, current.info, survivalConfig, economyData);
+          autosave();
+        }
+        resetContent(); draw(); prefetch();
+      } finally {
+        if (currentToken === token) { busy = false; localize(); }
+      }
+    },
+  });
   const equipmentUI = setupEquipment(t, {
     context() {
       const current = economyContext();
       return current && active ? { ...current, saveStatus: saveStatus.textContent,
-        blocked: busy || Boolean(cursor) || Boolean(state.ended || state.performancePending ||
+        blocked: busy || transitActive(state) || Boolean(cursor) || Boolean(state.ended || state.performancePending ||
           state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending) } : null;
     },
     act(action) {
@@ -507,6 +561,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     miniGames: miniGamesUI,
   });
   const trailUI = setupTrail(t, {
+    narrative: liveNarrative,
     pinPhoto,
     askDirections() {
       const current = economyContext();
@@ -653,6 +708,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     cafeUI.localize();
     theftUI.localize();
     trailUI.localize();
+    journeyWorldUI.update();
     openingStory.localize();
     document.querySelector("#map-workspace").classList.toggle("travel-active", active);
     document.body.classList.toggle("is-travelling", active);
@@ -703,7 +759,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const cell = chunk?.rows[position.row][position.col];
     const ended = Boolean(state?.ended);
     const activityPending = Boolean(state?.performancePending || state?.cafePending || state?.theftPending ||
-      state?.miniGamePending || state?.events?.pending || state?.equipment?.dogEncounter === "pending");
+      transitActive(state) || state?.miniGamePending || state?.events?.pending || state?.equipment?.dogEncounter === "pending");
     const marker = document.querySelector(".tile--player");
     if (marker && state) renderJourneyMarker(marker, state, t);
     if (state && survivalConfig && economyData) {
@@ -855,6 +911,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         ? t("weatherError", { error: weatherError }) : active ? t("weatherLoading") : "";
     }
     for (const button of directions) button.disabled = busy || !cell || (ended && !cursor) || activityPending;
+    const blocker = active ? journeyActionBlocker(state, { busy, cell }) : null;
+    const blockerStatus = document.querySelector("#travel-blocker");
+    blockerStatus.hidden = !blocker;
+    blockerStatus.textContent = blocker ? t(`travelBlocked.${blocker}`) : "";
     rest.disabled = sleep.disabled = busy || !cell || Boolean(cursor) || ended || activityPending;
     eat.disabled = rest.disabled || !canEat(cell);
     look.disabled = busy || !cell;
@@ -939,6 +999,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     equipmentUI.update();
     trailArrivalUI.update();
     trailDreamUI.update();
+    closingStory.update();
   }
 
   function draw() {
@@ -1033,7 +1094,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
 
   async function move(dc, dr) {
-    if (!state || busy || !active || state.ended || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending ||
+    if (!state || busy || !active || transitActive(state) || state.ended || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending ||
         state.events?.pending || state.equipment?.dogEncounter === "pending") return;
     heading = [dc, dr];
     stream.prioritize(visibleDownloads(state.col, state.row, ...heading));
@@ -1078,6 +1139,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
 
   async function begin(restored, replacementConfirmed = false) {
     if (!base || active || busy || preparingOrigin) return;
+    journeyWorldUI.reset();
     let characterName;
     if (!restored) {
       try {
@@ -1143,7 +1205,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         const created = await createServerJourney(region, base, characterName,
           pendingCreation.requestId, trailController.signal, fetch, pendingCreation.capability);
         if (currentToken !== token) return;
-        state = { ...created.state, journalAccess: pendingCreation.capability };
+        state = { ...created.state, journalAccess: pendingCreation.capability,
+          storyNameFlavour: document.querySelector("#story-name-flavour").checked };
         survivalConfig = created.survival;
         economyData = created.economy;
         transient = "travelLoading";
@@ -1176,7 +1239,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         onError(reason) {
           if (currentToken === token) report(reason);
         }, onLoad(chunk, x, y) {
-          const key = `${x},${y}`;
+          const key = chunk.elevation.error;
           if (currentToken === token && chunk.elevation.error && !reported.has(key)) {
             reported.add(key);
             report(new Error(chunk.elevation.error));
@@ -1185,7 +1248,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       });
       const first = await stream.load(p.x, p.y, true);
       if (currentToken !== token) return;
-      if (first.elevation.error) error = first.elevation.error;
+      if (first.elevation.error) {
+        error = first.elevation.error;
+        reported.add(error);
+      }
       active = true;
       autosave();
       if (!saveError) finishJournalCreation(localStorage, region);
@@ -1225,6 +1291,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     needsNotices.reset();
     trailArrivalUI.reset();
     trailDreamUI.reset();
+    journeyWorldUI.reset();
     journeyEventsUI.reset();
     liveNarrative.reset();
     openingStory.reset();

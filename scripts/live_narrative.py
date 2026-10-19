@@ -15,23 +15,35 @@ from content_factory import OvhWriter, WorkshopError
 from journeys import JourneyRequest, JourneyCapacity
 from terraform_ovh import private_file
 from opening_story import BRIEF_ID, MAX_CHARACTERS, opening_brief, story_request, validate_parent_reference
+from closing_story import (BRIEF_ID as CLOSING_BRIEF, VERSION as CLOSING_VERSION,
+                           MIN_CHARACTERS as CLOSING_MIN, MAX_CHARACTERS as CLOSING_MAX,
+                           closing_brief, closing_request)
 
 MODEL = "Mistral-Small-3.2-24B-Instruct-2506"
 CATALOGUE = json.loads((Path(__file__).resolve().parents[1] / "public/narrative-briefs.json").read_text())
-VERSION = hashlib.sha256(json.dumps(CATALOGUE, sort_keys=True).encode()).hexdigest()[:16] + "-2"
+DREAM_BRIEF = "dream.lost-player"
+# New dream prose must not invalidate already paid event and hospitality wording.
+VERSION = hashlib.sha256(json.dumps({key: value for key, value in CATALOGUE.items()
+                                    if key != DREAM_BRIEF}, sort_keys=True).encode()).hexdigest()[:16] + "-2"
 QUEUE_LIMIT = 32
 MAX_TOKENS = 500
 VARIANT_COUNT = 3
 
 
 def version_for(brief):
+    if brief == CLOSING_BRIEF:
+        return CLOSING_VERSION
+    if brief == DREAM_BRIEF:
+        return hashlib.sha256(json.dumps(CATALOGUE[brief], sort_keys=True).encode()).hexdigest()[:16] + "-dream-1"
     return VERSION + "-variants-1" if brief.startswith("event.") else VERSION
 
 
 def provider_request(brief, model):
     if brief.get("kind") == BRIEF_ID:
         return story_request(brief, model)
-    variants = brief.get("kind") == "introduction"
+    if brief.get("kind") == CLOSING_BRIEF:
+        return closing_request(brief, model)
+    variants = brief.get("kind") in ("introduction", "dream")
     sentence = {"type": "object", "additionalProperties": False,
                 "properties": {lang: {"type": "string", "minLength": 5, "maxLength": 400}
                                for lang in ("en", "fr")}, "required": ["en", "fr"]}
@@ -58,7 +70,7 @@ def provider_request(brief, model):
                 "Do not add facts or explain game mechanics. Do not embellish with new events. "
                 "No HTML, URLs, code, commentary or instruction to the player. "
                 + ("Include two alternatives, each with en and fr strings, in an alternatives array. "
-                   "The main sentence and both alternatives describe the SAME supplied event, "
+                   "The main sentence and both alternatives describe the SAME supplied situation, "
                    "but must be distinctly worded in each language. Each pair has equivalent meaning. "
                    "Three introductions total; do not repeat the main sentence."
                    if variants else "")
@@ -81,7 +93,7 @@ def usage_of(response):
     return {k: usage[k] for k in keys}
 
 
-def validate_output(response, *, story=False, variants=False):
+def validate_output(response, *, story=False, closing=False, variants=False):
     try:
         choices = response["choices"]
         if not isinstance(choices, list) or len(choices) != 1 or choices[0]["finish_reason"] != "stop":
@@ -103,8 +115,8 @@ def validate_output(response, *, story=False, variants=False):
                 if len({str(item[language]).strip().casefold() for item in sentences}) != VARIANT_COUNT:
                     raise ValueError()
         for text in (text for sentence in sentences for text in sentence.values()):
-            if (not isinstance(text, str) or not (500 if story else 5) <= len(text) <= (MAX_CHARACTERS if story else 400) or text.strip() != text
-                    or any(ord(c) < 32 and not (story and c == "\n") for c in text)
+            if (not isinstance(text, str) or not (CLOSING_MIN if closing else 500 if story else 5) <= len(text) <= (CLOSING_MAX if closing else MAX_CHARACTERS if story else 400) or text.strip() != text
+                    or any(ord(c) < 32 and not ((story or closing) and c == "\n") for c in text)
                     or any(marker in text.lower() for marker in ("<", ">", "http:", "https:", "```"))):
                 raise ValueError()
         return value
@@ -167,23 +179,29 @@ class LiveNarrative:
         if not isinstance(data, dict):
             raise JourneyRequest("Invalid live narrative request.")
         expected = {"journey", "brief"} | ({"keeper"} if "keeper" in data else set())
+        if data.get("brief") == BRIEF_ID and data.get("nameFlavour") is True:
+            expected.add("nameFlavour")
+        if data.get("brief") == CLOSING_BRIEF:
+            expected.add("summary")
         if (set(data) != expected or not isinstance(data.get("brief"), str)
-                or data["brief"] not in CATALOGUE and data["brief"] != BRIEF_ID):
+                or data["brief"] not in CATALOGUE and data["brief"] not in (BRIEF_ID, CLOSING_BRIEF)):
             raise JourneyRequest("Only registered public narrative briefs are accepted.")
         owner, record = self.authorization.authorize(data, token)
         brief = data["brief"]
+        closing = closing_brief(data["summary"], record) if brief == CLOSING_BRIEF else None
         version = version_for(brief)
         with self.lock, self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             row = (db.execute("SELECT * FROM wording WHERE owner=? AND brief=? ORDER BY created LIMIT 1",
-                              (owner, brief)).fetchone() if brief == BRIEF_ID else
+                              (owner, brief)).fetchone() if brief in (BRIEF_ID, CLOSING_BRIEF) else
                    db.execute("SELECT * FROM wording WHERE owner=? AND brief=? AND version=?",
                               (owner, brief, version)).fetchone())
             if row is None and self.writer and not self.closed:
                 queued = db.execute("SELECT COUNT(*) FROM wording WHERE status IN ('queued','running')").fetchone()[0]
                 if queued >= QUEUE_LIMIT:
                     raise JourneyCapacity("Live wording queue is full; authored text remains available.")
-                payload = opening_brief(record, self.journeys.chunks) if brief == BRIEF_ID else None
+                payload = opening_brief(record, self.journeys.chunks,
+                                        name_flavour=data.get("nameFlavour") is True) if brief == BRIEF_ID else closing
                 db.execute("INSERT INTO wording(owner,brief,version,status,created,input) VALUES(?,?,?,'queued',?,?)",
                            (owner, brief, version, time.time(), json.dumps(payload) if payload else None))
                 row = db.execute("SELECT * FROM wording WHERE owner=? AND brief=? AND version=?",
@@ -225,7 +243,8 @@ class LiveNarrative:
                         self.running = False
                         return
                     story = row["brief"] == BRIEF_ID
-                    if row["version"] != version_for(row["brief"]) or row["brief"] not in CATALOGUE and not story:
+                    closing = row["brief"] == CLOSING_BRIEF
+                    if row["version"] != version_for(row["brief"]) or row["brief"] not in CATALOGUE and not (story or closing):
                         db.execute("UPDATE wording SET status='failed',error=? WHERE rowid=?",
                                    ("Public brief version changed; no call made.", row["rowid"]))
                         continue
@@ -234,10 +253,11 @@ class LiveNarrative:
                 logging.info("Live narrative provider attempt: brief=%s model=%s", row["brief"], MODEL)
                 output, usage, error = None, None, None
                 try:
-                    brief = json.loads(row["input"]) if story else CATALOGUE[row["brief"]]
+                    brief = json.loads(row["input"]) if story or closing else CATALOGUE[row["brief"]]
                     response = self.writer(brief)
                     usage = usage_of(response)
-                    output = validate_output(response, story=story, variants=row["brief"].startswith("event."))
+                    output = validate_output(response, story=story, closing=closing,
+                                             variants=row["brief"].startswith("event.") or row["brief"] == DREAM_BRIEF)
                     if story and not validate_parent_reference(output, brief):
                         raise WorkshopError("Opening backstory changed the saved parent identity; authored text retained.", 502)
                 except WorkshopError as failure:

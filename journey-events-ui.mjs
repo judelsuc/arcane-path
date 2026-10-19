@@ -1,7 +1,7 @@
 import { dailyTarotPending } from "./economy.mjs";
 import { journeyEventTextParts, eventPlaytestEnabled, JOURNEY_EVENTS } from "./journey-events.mjs";
 import { journeyEventArt } from "./journey-event-art.mjs";
-import { NARRATIVE_BRIEFS } from "./live-narrative.mjs";
+import { NARRATIVE_BRIEFS, LOST_PLAYER_DREAM } from "./live-narrative.mjs";
 
 export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrative }) {
   const dialog = document.querySelector("#journey-event-dialog");
@@ -75,7 +75,8 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
   }
   function update() {
     const state = context()?.state;
-    if (state && !state.ended) narrative?.prefetch(state, Object.keys(NARRATIVE_BRIEFS));
+    if (state && !state.ended) narrative?.prefetch(state,
+      Object.keys(NARRATIVE_BRIEFS).filter(id => id !== LOST_PLAYER_DREAM));
     localize();
     if (queued) return;
     queued = true;

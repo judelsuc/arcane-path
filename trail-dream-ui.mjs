@@ -1,18 +1,29 @@
-import { trailDreamText } from "./trail-dreams.mjs";
+import { trailDreamText, trailDreamVariant } from "./trail-dreams.mjs";
+import { LOST_PLAYER_DREAM } from "./live-narrative.mjs";
 
-export function setupTrailDream(t, { context, openTrail }) {
+export function setupTrailDream(t, { context, openTrail, narrative }) {
   const dialog = document.querySelector("#trail-dream-dialog");
-  let seen = new Set(), pending = [], showing, queued = false;
+  const wordingStatus = narrative ? document.createElement("p") : null;
+  if (wordingStatus) {
+    wordingStatus.id = "trail-dream-wording-status";
+    wordingStatus.setAttribute("role", "status");
+    document.querySelector("#trail-dream-continue").before(wordingStatus);
+  }
+  let seen = new Set(), pending = [], showing, wording, variant = 0, queued = false;
   function localize() {
     if (!dialog.open || !showing) return;
+    const language = document.documentElement.lang === "en" ? "en" : "fr";
     document.querySelector("#trail-dream-title").textContent = t("trailDreamTitle");
-    document.querySelector("#trail-dream-text").textContent = trailDreamText(showing, t);
+    document.querySelector("#trail-dream-text").textContent = trailDreamText(showing, t, wording, language);
+    if (wordingStatus) wordingStatus.textContent = narrative.introductionStatus(
+      context()?.state, LOST_PLAYER_DREAM, language, Boolean(wording), variant);
     document.querySelector("#trail-dream-journal").textContent = t("trailDreamJournal");
     document.querySelector("#trail-dream-continue").textContent = t("trailArrivalContinue");
   }
   function update() {
     const current = context();
     if (current && !current.state.ended) {
+      if (current.state.trail && !current.state.trail.completed) narrative?.prefetch(current.state, [LOST_PLAYER_DREAM]);
       for (const check of current.state.trail?.dreams?.checks ?? []) {
         if (seen.has(check.checkMinutes)) continue;
         seen.add(check.checkMinutes);
@@ -29,6 +40,8 @@ export function setupTrailDream(t, { context, openTrail }) {
       if (!current || current.busy || current.state.ended || !pending.length ||
           document.querySelector("dialog[open]")) return;
       showing = pending.shift();
+      variant = trailDreamVariant(current.state, showing);
+      wording = narrative?.snapshot(current.state, LOST_PLAYER_DREAM, variant);
       dialog.showModal();
       localize();
       document.querySelector("#trail-dream-journal").focus();
@@ -46,10 +59,12 @@ export function setupTrailDream(t, { context, openTrail }) {
   new MutationObserver(update).observe(document.body, {
     subtree: true, attributes: true, attributeFilter: ["open"],
   });
+  narrative?.subscribe(localize);
   return { update, reset(state) {
     seen = new Set((state?.trail?.dreams?.checks ?? []).map(check => check.checkMinutes));
     pending = [];
     showing = undefined;
+    wording = undefined;
     dialog.close();
   } };
 }

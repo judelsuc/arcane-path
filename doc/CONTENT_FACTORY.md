@@ -1,13 +1,81 @@
 # Content workshop and optional live wording
 
-## Queued recognizable-name backstories (R-158, not implemented)
+## Epic closing chronicles (R-166)
 
-After the current pending tasks, the opening-story model should recognize
-well-known names entered by players and use subtle, original generic traits
-as narrative flavour. The user chose submitting the entered name to the model,
-not a local curated matching list. Before activation, revise the prompt-data
-boundary and player-facing disclosure accordingly; the current implementation
-still excludes player names.
+At death or parent reunion, the game requests `story.closing` through the existing
+capability-protected live wording endpoint. It sends the terminal outcome
+and strict numeric counters: walked metres, elapsed game minutes, ascent, stages
+reached, meals, sleeps, music performances, cafe shifts, and retained clue,
+guidance-dream and encounter counts. Retained records are explicitly not lifetime
+totals. It also sends reached-stage indices with saved arrival/progress minutes
+and the retained intermediate-event types with their game minutes (at most 32).
+The server resolves stage indices to canonical reached place names and event
+types to fixed authored facts. Only those places and recorded encounters enter
+the prompt; unvisited destinations, private names/notes/photos, coordinates and
+hidden parent fiction remain excluded, even with opening-story name flavour.
+Legacy stage times can be unknown and must not be invented. No event is assigned
+to a town or given an outcome not supported by the records. Strange impressions
+stay uncertain; a dog encounter does not imply adoption. Older events may have
+fallen out of the bounded saved history.
+
+These are client-recorded counters, not independently verified server history.
+The server validates keys, types, bounds, stage order/count against genesis,
+and nondecreasing recorded times within the journey, then
+persists the bounded brief before dispatch. It cannot attest to locally played
+events. The model is asked for an original, epic but faithful bilingual chronicle
+(600-3000 characters per language), bittersweet and non-graphic on death, warmly
+triumphant on reunion. No invented achievements, chronology, facts, rewards or
+future outcomes. Weave reached places and meaningful intermediate encounters
+into the story, not merely counters. Format validation cannot prove semantic fidelity: the original
+ending remains visible and authoritative, and prose has no gameplay effects.
+
+One attempt per journey/keeper uses the existing durable queue, accounting and
+failure handling. The earliest closing record is immutable across prompt
+revisions and restart; no automatic failure retry. Ongoing journeys and
+placement do not request a chronicle. An immediate authored bilingual summary
+and explicit pending/disabled/local/failed status keep the ending usable.
+Restart and notebook access never wait for generation. The existing notebook
+publication includes cached generated prose or the concise authored fallback; a later
+completion does not silently rewrite an already published notebook.
+No deployment or new provider call is performed by adding/testing this feature.
+
+## Lost-player dream introductions (R-163)
+
+The live factory accepts the fixed `dream.lost-player` brief and prepares three
+short bilingual dream introductions per authorized journey/keeper. The brief
+contains only an imaginary fading thread becoming visible in sleep: no player
+name, parent identity, location, route, clue history or calculated bearing is
+sent to OVH. The model is instructed not to invent sightings, places, directions
+or promises. Format validation is not proof of semantic fidelity.
+
+Generated prose is an optional introduction only. The game always appends its
+authored guidance with its independently calculated compass direction. Eligibility
+still requires deliberate sleep and 48 game hours without new clue progress;
+generation neither delivers a dream nor changes the clock or clue timer.
+Successful dreams rotate the three cached introductions. An open dream keeps
+its initial wording even if generation completes, and relocalizes without a new
+request. The clue journal and published notebook can include the cached
+introduction alongside the canonical guidance; prose is not added to save data.
+
+The modal explicitly labels generated/authored wording and pending, disabled,
+local-only or failed generation. Missing/failed wording leaves the authored dream
+usable immediately. Existing capability checks, durable single-attempt accounting,
+restart cache and no automatic provider retry apply. Dream briefs have their own
+version hash: this addition does not regenerate paid event/hospitality text or
+existing opening stories. This implementation is not a deployment claim.
+
+## Recognizable-name backstories (R-158)
+
+New journey setup includes an unchecked optional disclosure/checkbox allowing
+the saved character name to reach OVH for the opening story only. With this
+opt-in, the model may recognize a well-known character/public-persona name and
+use subtle, original generic traits as narrative flavour. No local matching
+list is used. The browser sends only `nameFlavour: true`; the server takes the
+name from immutable genesis, never an arbitrary client prompt.
+Without opt-in (including older saves), names remain excluded. Ordinary event
+and hospitality briefs never receive a name. Format and parent-name checks do
+not prove recognition, semantic fidelity or originality; authored fallback,
+single-attempt accounting and the immutable earliest saved story still apply.
 
 Keep the child traveller and saved parent/motive/investigation authoritative.
 Do not copy dialogue or lyrics, invent sensitive personal attributes, or change
@@ -129,7 +197,8 @@ The registered `story.opening` brief uses the same authenticated, durable
 single-worker wording queue as ordinary encounters. The server derives only
 the saved parent name, departure motive, starting place, broad landscape,
 birth card and starting season. It adds a random creative variation token,
-not a journey identifier. Player names, private notes, route stages, witnesses,
+not a journey identifier. Except for the explicit R-158 character-name opt-in,
+player names, private notes, route stages, witnesses,
 future locations and canonical hidden facts are never submitted.
 
 Opening stories use temperature **0.9**, at most 1400 completion tokens and

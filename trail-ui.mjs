@@ -8,7 +8,8 @@ import { parentSighting, parentReunion } from "./parent-story.mjs";
 import { DIRECTIONS_RULES, directionsChance, citedTowns } from "./directions.mjs";
 import { setFeedback } from "./feedback.mjs";
 import { witnessCooling } from "./pressures.mjs";
-import { trailDreamText } from "./trail-dreams.mjs";
+import { trailDreamText, trailDreamVariant } from "./trail-dreams.mjs";
+import { LOST_PLAYER_DREAM } from "./live-narrative.mjs";
 import { fieldSearchAvailable, fieldSearchRules, prepareFieldSearch, fieldClueText, vagueLead,
   recognitionHint, prepareRecognition, openingClue, openingClueText } from "./trail-search.mjs";
 
@@ -125,7 +126,7 @@ export function trailEntryDate(state, minutes, language, t) {
   }).format(new Date(state.startedAt + minutes * 60_000))} UTC`;
 }
 
-export function setupTrail(t, { context, interview, discover, askDirections, searchField, recognizeField, pinPhoto }) {
+export function setupTrail(t, { context, interview, discover, askDirections, searchField, recognizeField, pinPhoto, narrative }) {
   const dialog = document.querySelector("#trail-dialog");
   const hintDialog = document.querySelector("#hint-dialog");
   const action = document.querySelector("#trail-interview");
@@ -457,7 +458,9 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         paragraph(item, openingClueText(state, t));
       } else if (record.kind === "dream") {
         paragraph(item, t("trailDreamTitle"));
-        paragraph(item, trailDreamText(facts, t));
+        paragraph(item, trailDreamText(facts, t,
+          narrative?.snapshot(state, LOST_PLAYER_DREAM, trailDreamVariant(state, facts)),
+          document.documentElement.lang));
         paragraph(item, t("fieldRecordedAt", {
           col: facts.col, row: facts.row, minutes: Math.round(facts.elapsedMinutes),
         }));

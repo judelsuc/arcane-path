@@ -1,8 +1,32 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { chunkPosition, initialJourney, journeyDate, moveJourney, restJourney, travelCost } from "../travel.mjs";
+import { chunkPosition, initialJourney, journeyDate, journeyActionBlocker, moveJourney, restJourney, travelCost } from "../travel.mjs";
+import { translate } from "../i18n.mjs";
 
 const road = { terrain: "major_road", elevationMeters: 100 };
+
+test("action-lock reasons distinguish loading and saved activities without blaming fatigue or missing heights", () => {
+  const state = { ...initialJourney(0, 0), fatigue: 100 };
+  const before = structuredClone(state);
+  assert.equal(journeyActionBlocker(state, { cell: { terrain: "road" } }), null);
+  assert.equal(journeyActionBlocker(state, { cell: road, busy: true }), "loading");
+  assert.equal(journeyActionBlocker(state), "terrain");
+  assert.equal(journeyActionBlocker(null), null);
+  for (const [reason, pending] of [
+    ["ended", { ended: "hunger" }], ["transport", { transport: { booking: { status: "active" } } }],
+    ["event", { events: { pending: 1 } }], ["dog", { equipment: { dogEncounter: "pending" } }],
+    ["music", { performancePending: {} }], ["cafe", { cafePending: {} }],
+    ["theft", { theftPending: {} }], ["minigame", { miniGamePending: {} }],
+  ]) {
+    assert.equal(journeyActionBlocker({ ...state, ...pending }, { cell: road }), reason);
+  }
+  for (const language of ["fr", "en"]) {
+    for (const reason of ["loading", "terrain", "ended", "transport", "event", "dog", "music", "cafe", "theft", "minigame"]) {
+      assert.notEqual(translate(language, `travelBlocked.${reason}`), `travelBlocked.${reason}`);
+    }
+  }
+  assert.deepEqual(state, before);
+});
 
 test("250m road walk advances position, exact simulated time, fatigue and energy", () => {
   const state = initialJourney(0, 0, Date.UTC(2026, 9, 17, 8));

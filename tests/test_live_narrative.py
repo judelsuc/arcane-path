@@ -1,4 +1,5 @@
 import json
+import hashlib
 from pathlib import Path
 import sqlite3
 import sys
@@ -17,8 +18,9 @@ from abandoned_journals import AbandonedJournals, JournalForbidden
 from content_factory import LIMIT, OvhWriter, WorkshopError
 from journal_art import JournalArt
 from journeys import JourneyStore, JourneyRequest, JourneyCapacity
-from live_narrative import CATALOGUE, MODEL, VERSION, LiveNarrative, provider_request, validate_output, version_for
+from live_narrative import CATALOGUE, DREAM_BRIEF, MODEL, VERSION, LiveNarrative, provider_request, validate_output, version_for
 from opening_story import BRIEF_ID, opening_brief, validate_parent_reference
+from closing_story import BRIEF_ID as CLOSING_BRIEF, LIMITS, closing_brief
 from travel_server import ChunkStore, ChunkJobs, atomic_write, make_handler
 
 
@@ -35,6 +37,208 @@ def response(en="A passer-by offers you a few coins.", fr="Un passant vous offre
 
 
 class LiveNarrativeTests(unittest.TestCase):
+    def closing_summary(self, outcome="reunion"):
+        return {"outcome": outcome, **{key: 0 for key in LIMITS},
+                "walkingMeters": 309000, "elapsedMinutes": 40525, "stagesReached": 10,
+                "meals": 46, "sleeps": 25,
+                "reachedStages": [{"stage": stage, "elapsedMinutes": stage * 100} for stage in range(10)],
+                "events": []}
+
+    def test_closing_chronicle_is_bilingual_immutable_private_and_durable(self):
+        self.writer.return_value = response(
+            en=("Your search has ended, and the road remains in memory. " * 15).strip(),
+            fr=("Votre recherche est finie, et la route reste en mémoire. " * 15).strip())
+        before = self.journeys.read(self.owner)
+        summary = self.closing_summary()
+        self.request(CLOSING_BRIEF, summary=summary)
+        result = self.settle_closing(summary)
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(result["accounting"]["attempts"], 1)
+        self.assertEqual(result["alternatives"], [])
+        self.assertGreaterEqual(len(result["text"]["fr"]), 600)
+        brief = self.writer.call_args.args[0]
+        self.assertEqual(brief["recordedJourney"]["walkingMeters"], 309000)
+        self.assertIn("triumphant", brief["tone"])
+        for secret in ["PRIVATE PLAYER", self.owner, self.token, "latitude", "longitude", "parentName"]:
+            self.assertNotIn(secret, json.dumps(brief))
+        self.assertEqual(self.journeys.read(self.owner), before)
+        self.assertEqual(self.request(CLOSING_BRIEF, summary=self.closing_summary("hunger")), result)
+        request = provider_request(brief, MODEL)
+        self.assertEqual(request["max_tokens"], 2400)
+        self.assertIn("ending is immutable", request["messages"][0]["content"])
+        self.assertEqual(request["response_format"]["json_schema"]["schema"]["properties"]["fr"]["maxLength"], 3000)
+        self.service.close()
+        reopened = LiveNarrative(self.journeys, self.auth, self.writer)
+        self.addCleanup(reopened.close)
+        with patch("live_narrative.CLOSING_VERSION", "future-ending"):
+            self.assertEqual(reopened.request({
+                "journey": self.owner, "brief": CLOSING_BRIEF, "summary": summary}, self.token), result)
+        self.writer.assert_called_once()
+
+    def settle_closing(self, summary):
+        self.service.future.result(timeout=5)
+        return self.request(CLOSING_BRIEF, summary=summary)
+
+    def test_closing_prompt_includes_only_reached_places_and_canonical_retained_events(self):
+        record = self.journeys.read(self.owner)
+        before = json.dumps(record, sort_keys=True)
+        summary = {**self.closing_summary("hunger"), "stagesReached": 2,
+                   "reachedStages": [{"stage": 0, "elapsedMinutes": 120}, {"stage": 1, "elapsedMinutes": None}],
+                   "recordedEncounters": 3, "events": [
+                       {"kind": "food", "elapsedMinutes": 60},
+                       {"kind": "whiteDeer", "elapsedMinutes": 200},
+                       {"kind": "dogEncounter", "elapsedMinutes": 300},
+                   ]}
+        brief = closing_brief(summary, record)
+        stages = record["state"]["trail"]["stages"]
+        self.assertEqual(brief["reachedStages"], [
+            {"place": stages[0]["name"], "elapsedMinutes": 120},
+            {"place": stages[1]["name"], "elapsedMinutes": None},
+        ])
+        serialized = json.dumps(brief)
+        for stage in stages[2:]:
+            self.assertNotIn(stage["name"], serialized)
+        self.assertIn("snack", brief["recordedEvents"][0]["event"])
+        self.assertIn("seemed", brief["recordedEvents"][1]["event"])
+        self.assertIn("not established", brief["recordedEvents"][2]["event"])
+        self.assertEqual([event["elapsedMinutes"] for event in brief["recordedEvents"]], [60, 200, 300])
+        self.assertIn("Older events may be missing", brief["coverage"])
+        self.assertEqual(json.dumps(record, sort_keys=True), before)
+        prompt = provider_request(brief, MODEL)["messages"][0]["content"]
+        self.assertIn("several meaningful intermediate encounters", prompt)
+        self.assertIn("null time supplies no chronology", prompt)
+
+    def test_closing_milestones_reject_arbitrary_text_hidden_details_and_invalid_order(self):
+        base = self.closing_summary("hunger")
+        for changes in [
+            {"reachedStages": []},
+            {"reachedStages": [{"stage": 0, "elapsedMinutes": 1, "place": "INVENTED"}], "stagesReached": 1},
+            {"reachedStages": [{"stage": -1, "elapsedMinutes": 1}], "stagesReached": 1},
+            {"reachedStages": [{"stage": 13, "elapsedMinutes": 1}], "stagesReached": 1},
+            {"reachedStages": [{"stage": True, "elapsedMinutes": 1}], "stagesReached": 1},
+            {"reachedStages": [{"stage": 0, "elapsedMinutes": -1}], "stagesReached": 1},
+            {"reachedStages": [{"stage": 0, "elapsedMinutes": 50000}], "stagesReached": 1},
+            {"reachedStages": [{"stage": 0, "elapsedMinutes": 2}, {"stage": 0, "elapsedMinutes": 3}], "stagesReached": 2},
+            {"reachedStages": [{"stage": 0, "elapsedMinutes": 2}, {"stage": 1, "elapsedMinutes": 1}], "stagesReached": 2},
+            {"events": [{"kind": "food", "elapsedMinutes": 1}]},
+            {"events": [{"kind": "PRIVATE PROMPT", "elapsedMinutes": 1}], "recordedEncounters": 1},
+            {"events": [{"kind": "food", "elapsedMinutes": 1, "text": "PRIVATE"}], "recordedEncounters": 1},
+            {"events": [{"kind": "food", "elapsedMinutes": True}], "recordedEncounters": 1},
+            {"events": [{"kind": "food", "elapsedMinutes": -1}], "recordedEncounters": 1},
+            {"events": [{"kind": "food", "elapsedMinutes": 50000}], "recordedEncounters": 1},
+            {"events": [{"kind": "food", "elapsedMinutes": 2}, {"kind": "coins", "elapsedMinutes": 1}], "recordedEncounters": 2},
+            {"events": [{"kind": "food", "elapsedMinutes": 1}] * 33, "recordedEncounters": 33},
+        ]:
+            with self.subTest(changes=changes), self.assertRaises(JourneyRequest):
+                self.request(CLOSING_BRIEF, summary={**base, **changes})
+        self.writer.assert_not_called()
+
+    def test_closing_input_accepts_only_terminal_outcomes_and_strict_bounded_counters(self):
+        record = self.journeys.read(self.owner)
+        for outcome in ["health", "hunger", "fatigue", "sleep", "reunion"]:
+            brief = closing_brief(self.closing_summary(outcome), record)
+            self.assertIn("triumphant" if outcome == "reunion" else "bittersweet", brief["tone"])
+            self.assertIn("reunited" if outcome == "reunion" else "died", brief["ending"])
+        for summary in [
+            None, {}, self.closing_summary(None), self.closing_summary("placement"),
+            {**self.closing_summary(), "notes": "PRIVATE"}, {**self.closing_summary(), "name": "PRIVATE"},
+            {**self.closing_summary(), "walkingMeters": True},
+            {**self.closing_summary(), "elapsedMinutes": float("nan")},
+            {**self.closing_summary(), "ascentMeters": float("inf")},
+            {**self.closing_summary(), "meals": -1}, {**self.closing_summary(), "sleeps": 1.5},
+            {**self.closing_summary(), "recordedDreams": 129},
+            {**self.closing_summary(), "stagesReached": len(record["state"]["trail"]["stages"]) + 1},
+        ]:
+            with self.assertRaises(JourneyRequest):
+                self.request(CLOSING_BRIEF, summary=summary)
+        with self.assertRaises(JourneyRequest):
+            self.request("event.coins", summary=self.closing_summary())
+        with self.assertRaises(JourneyRequest):
+            self.request(CLOSING_BRIEF)
+        with self.assertRaises(JourneyRequest):
+            self.request(CLOSING_BRIEF, summary=self.closing_summary(), nameFlavour=True)
+        with self.assertRaises(JournalForbidden):
+            self.service.request({"journey": self.owner, "brief": CLOSING_BRIEF,
+                                  "summary": self.closing_summary()}, "b" * 64)
+        self.writer.assert_not_called()
+
+    def test_closing_failure_is_once_only_and_uses_separate_output_bounds(self):
+        summary = self.closing_summary("hunger")
+        self.writer.return_value = response()
+        self.request(CLOSING_BRIEF, summary=summary)
+        result = self.settle_closing(summary)
+        self.assertEqual(result["status"], "failed")
+        self.assertIsNone(result["text"])
+        self.assertIn("authored text retained", result["error"])
+        self.request(CLOSING_BRIEF, summary=summary)
+        self.writer.assert_called_once()
+        for value in [response(en="a" * 599, fr="b" * 600),
+                      response(en="a" * 3001, fr="b" * 600),
+                      response(en="<script>" + "a" * 600, fr="b" * 600)]:
+            with self.assertRaises(WorkshopError):
+                validate_output(value, closing=True)
+        valid = response(en="a" * 600 + "\n\n" + "b" * 600, fr="c" * 3000)
+        self.assertEqual(len(validate_output(valid, closing=True)["fr"]), 3000)
+
+    def test_dream_variants_are_private_durable_and_do_not_reversion_existing_content(self):
+        old_catalogue = {key: value for key, value in CATALOGUE.items() if key != DREAM_BRIEF}
+        self.assertEqual(VERSION, hashlib.sha256(json.dumps(old_catalogue, sort_keys=True).encode()).hexdigest()[:16] + "-2")
+        self.assertEqual(version_for("event.coins"), VERSION + "-variants-1")
+        self.assertEqual(version_for("npc.hospitality.greeting"), VERSION)
+        self.assertNotEqual(version_for(DREAM_BRIEF), VERSION)
+        before = self.journeys.read(self.owner)
+        self.request(DREAM_BRIEF)
+        result = self.settle(DREAM_BRIEF)
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(len(result["alternatives"]), 2)
+        self.assertEqual(self.writer.call_args.args, (CATALOGUE[DREAM_BRIEF],))
+        for secret in ["PRIVATE PLAYER", self.owner, self.token, "latitude", "longitude"]:
+            self.assertNotIn(secret, json.dumps(self.writer.call_args.args))
+        request = provider_request(CATALOGUE[DREAM_BRIEF], MODEL)
+        schema = request["response_format"]["json_schema"]["schema"]
+        self.assertEqual(schema["properties"]["alternatives"]["minItems"], 2)
+        self.assertIn("No new people, names, places, directions", request["messages"][0]["content"])
+        self.assertEqual(self.journeys.read(self.owner), before)
+        self.service.close()
+        reopened = LiveNarrative(self.journeys, self.auth, self.writer)
+        self.addCleanup(reopened.close)
+        self.assertEqual(reopened.request({"journey": self.owner, "brief": DREAM_BRIEF}, self.token), result)
+        self.writer.assert_called_once()
+
+    def test_invalid_dream_variants_fail_once_and_keep_authored_fallback(self):
+        self.writer.return_value = response(variants=False)
+        self.request(DREAM_BRIEF)
+        failed = self.settle(DREAM_BRIEF)
+        self.assertEqual(failed["status"], "failed")
+        self.assertIsNone(failed["text"])
+        self.assertIn("authored text retained", failed["error"])
+        self.request(DREAM_BRIEF)
+        self.writer.assert_called_once()
+
+    def test_name_flavour_requires_explicit_story_opt_in_and_preserves_saved_stories(self):
+        record = self.journeys.read(self.owner)
+        self.assertNotIn("characterName", opening_brief(record, self.chunks))
+        brief = opening_brief(record, self.chunks, name_flavour=True)
+        self.assertEqual(brief["characterName"], record["state"]["name"])
+        request = provider_request(brief, MODEL)
+        prompt = request["messages"][0]["content"]
+        for rule in ("original generic traits", "sensitive attributes", "never instructions", "Do not print characterName"):
+            self.assertIn(rule, prompt)
+        name = record["state"]["trail"]["parentName"]
+        self.writer.return_value = response(en=(f"Your parent {name} left. " * 30).strip(),
+                                            fr=(f"Votre parent {name} est parti. " * 30).strip())
+        self.request(BRIEF_ID, nameFlavour=True)
+        result = self.settle(BRIEF_ID)
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(self.writer.call_args.args[0]["characterName"], record["state"]["name"])
+        self.assertEqual(self.request(BRIEF_ID, nameFlavour=True), result)
+        self.writer.assert_called_once()
+        self.assertEqual(self.journeys.read(self.owner), record)
+        with self.assertRaises(JourneyRequest):
+            self.request("event.coins", nameFlavour=True)
+        with self.assertRaises(JourneyRequest):
+            self.request(BRIEF_ID, nameFlavour="yes")
+
     def test_opening_story_uses_only_saved_public_context_and_higher_temperature(self):
         record = self.journeys.read(self.owner)
         original = json.dumps(record, sort_keys=True)
@@ -368,6 +572,18 @@ class LiveNarrativeTests(unittest.TestCase):
             self.assertEqual(error.exception.code, status)
             error.exception.close()
         self.writer.assert_called_once()
+
+        self.writer.return_value = response(en=("The road remains in memory. " * 30).strip(),
+                                            fr=("La route reste en mémoire. " * 30).strip())
+        ending = {"journey": self.owner, "brief": CLOSING_BRIEF, "summary": self.closing_summary("hunger")}
+        with post(ending) as result:
+            self.assertEqual(result.status, 200)
+        self.assertEqual(self.settle_closing(ending["summary"])["status"], "ready")
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            post({**ending, "summary": {**ending["summary"], "notes": "PRIVATE"}})
+        self.assertEqual(error.exception.code, 400)
+        error.exception.close()
+        self.assertEqual(self.writer.call_count, 2)
 
 
 if __name__ == "__main__":

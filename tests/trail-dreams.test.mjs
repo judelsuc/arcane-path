@@ -36,35 +36,63 @@ const slept = (state, minutes = 60) => ({ ...atTime(state, state.elapsedMinutes 
 const latest = state => state.trail.dreams?.checks.at(-1);
 const save = state => createSave({ region: "firmi", map, state, survival, economy }, 1);
 
-test("one settled sleep hour and twelve-hour check spacing have exact boundaries", () => {
-  const state = start(1440);
+test("one settled sleep hour is required; successful dreams restart the 48-hour delay", () => {
+  const state = start(2880);
   assert.equal(settleTrailDream(state, slept(state, 59.999)).trail.dreams, undefined);
   const first = settleTrailDream(state, slept(state));
   assert.equal(latest(first).outcome, "guidance");
-  assert.equal(latest(first).checkMinutes, 1500);
-  const early = atTime(first, 1440 + TRAIL_DREAMS.interval - 0.001);
+  assert.equal(latest(first).checkMinutes, 2940);
+  const early = atTime(first, first.elapsedMinutes + TRAIL_DREAMS.stalled - 60 - 0.001);
   assert.equal(settleTrailDream(early, slept(early)).trail.dreams.checks.length, 1);
-  const exact = atTime(first, 1440 + TRAIL_DREAMS.interval);
+  const exact = atTime(first, first.elapsedMinutes + TRAIL_DREAMS.stalled - 60);
   assert.equal(settleTrailDream(exact, slept(exact)).trail.dreams.checks.length, 2);
   assert.equal(settleTrailDream(state, atTime(state, 59 + state.elapsedMinutes)).trail.dreams, undefined);
   assert.throws(() => settleTrailDream(state, slept(state), { startedMinutes: NaN }), /sleep start/);
 });
 
-test("rescue begins at 24 hours without progress, not merely after a long journey", () => {
-  const before = start(1379.999), exact = start(1380);
-  assert.equal(latest(settleTrailDream(before, slept(before))).rescue, false);
+test("guidance begins at exactly 48 hours without progress and every new clue resets it", () => {
+  const before = start(2819.999), exact = start(2820);
+  assert.equal(settleTrailDream(before, slept(before)).trail.dreams, undefined);
   assert.equal(latest(settleTrailDream(exact, slept(exact))).rescue, true);
-  const recent = start(1440);
+  const recent = start(2880);
   recent.trail.exploration.hints = [{ stage: 0, kind: "direction", precision: "vague",
-    col: 14, row: 10, elapsedMinutes: 1400 }];
-  assert.equal(latest(settleTrailDream(recent, slept(recent))).rescue, false);
-  const previousStage = start(1440);
+    col: 14, row: 10, elapsedMinutes: 2800 }];
+  assert.equal(settleTrailDream(recent, slept(recent)).trail.dreams, undefined);
+  const overdue = atTime(recent, 2800 + TRAIL_DREAMS.stalled - 60);
+  assert.equal(latest(settleTrailDream(overdue, slept(overdue))).rescue, true);
+  const previousStage = start(2880);
   previousStage.trail.index = 1;
-  previousStage.trail.history = [{ elapsedMinutes: 1400 }];
-  assert.equal(latest(settleTrailDream(previousStage, slept(previousStage))).rescue, false);
+  previousStage.trail.history = [{ elapsedMinutes: 2800 }];
+  assert.equal(settleTrailDream(previousStage, slept(previousStage)).trail.dreams, undefined);
+  for (const channel of ["signs", "reports"]) {
+    const current = start(10000);
+    current.trail.exploration[channel] = [{ stage: 0, elapsedMinutes: 9990 }];
+    assert.equal(settleTrailDream(current, slept(current)).trail.dreams, undefined, channel);
+  }
+  const arrived = start(10000);
+  arrived.trail.arrivals = [{ stage: 0, elapsedMinutes: 9990 }];
+  assert.equal(settleTrailDream(arrived, slept(arrived)).trail.dreams, undefined);
 });
 
-test("three failed searches far from the route guarantee guidance; successes reset the counter", async () => {
+test("dream wording rotates durably past the bounded history and legacy receipts remain readable", () => {
+  let state = start(2880);
+  for (let index = 0; index < 132; index++) {
+    state = settleTrailDream(state, slept(state));
+    assert.equal(latest(state).wordingVariant, index % 3);
+    assert.equal(state.trail.dreams.checks.length, Math.min(index + 1, 128));
+    validateTrailDreams(state);
+    state = atTime(state, state.elapsedMinutes + TRAIL_DREAMS.stalled);
+  }
+  const invalid = structuredClone(state);
+  invalid.trail.dreams.checks.at(-1).wordingVariant = 3;
+  assert.throws(() => validateTrailDreams(invalid), /dream history/);
+  for (const check of state.trail.dreams.checks) delete check.wordingVariant;
+  validateTrailDreams(state);
+  const resumed = settleTrailDream(state, slept(state));
+  assert.equal(latest(resumed).wordingVariant, 2);
+});
+
+test("three failed searches cannot bypass the quiet period; overdue guidance resets the counter", async () => {
   let state = start();
   for (let count = 1; count <= 3; count++) {
     const signal = new AbortController().signal;
@@ -76,6 +104,8 @@ test("three failed searches far from the route guarantee guidance; successes res
     assert.deepEqual(state.trail.exploration.searchStreak.misses, [], "far-route misses must count too");
     validateExploration(state);
   }
+  assert.equal(settleTrailDream(state, slept(state)).trail.dreams, undefined);
+  state = atTime(state, 2880);
   const before = structuredClone(state);
   const next = slept(state), result = settleTrailDream(state, next);
   assert.equal(latest(result).rescue, true);
@@ -91,25 +121,32 @@ test("three failed searches far from the route guarantee guidance; successes res
     .trail.exploration.searchStreak.failures, 0);
 });
 
-test("ordinary opportunities are deterministic with both outcomes and are not rerolled on resume", () => {
-  const outcomes = new Set();
+test("no random early opportunities or rerolls on resume; historical receipts remain compatible", () => {
   for (let offset = 0; offset < 100; offset++) {
     const state = start(offset), next = slept(state);
     const result = settleTrailDream(state, next);
-    outcomes.add(latest(result).outcome);
-    assert.equal(latest(result).rescue, false);
+    assert.equal(result, next);
     assert.deepEqual(settleTrailDream(state, next), result);
     const restored = validateSave(JSON.parse(JSON.stringify(save(result)))).state;
     assert.deepEqual(restored.trail.dreams, result.trail.dreams);
-    assert.equal(settleTrailDream(restored, slept(restored)).trail.dreams.checks.length, 1);
+    assert.equal(settleTrailDream(restored, slept(restored)).trail.dreams, undefined);
   }
-  assert.deepEqual([...outcomes].sort(), ["guidance", "miss"]);
+  const legacy = start(10000);
+  legacy.trail.dreams = { version: 1, checks: [
+    { stage: 0, startedMinutes: 0, checkMinutes: 60, elapsedMinutes: 480,
+      col: 14, row: 10, rescue: false, outcome: "miss", direction: null },
+    { stage: 0, startedMinutes: 720, checkMinutes: 780, elapsedMinutes: 1200,
+      col: 14, row: 10, rescue: false, outcome: "guidance", direction: "east" },
+  ] };
+  validateSave(save(legacy));
+  const recent = atTime(legacy, 1200 + TRAIL_DREAMS.stalled - 60 - .001);
+  assert.equal(settleTrailDream(recent, slept(recent)).trail.dreams.checks.length, 2);
 });
 
 test("rest, fainting, care, interrupted sleep, completed trails and arrival do not deliver dreams", () => {
-  const state = start(1440);
+  const state = start(2880);
   for (const next of [
-    atTime(state, 2000),
+    atTime(state, 3500),
     { ...slept(state), faints: 1 },
     { ...slept(state), pressures: { placements: [{}] } },
     { ...slept(state), ended: "hunger" },
@@ -122,7 +159,7 @@ test("rest, fainting, care, interrupted sleep, completed trails and arrival do n
 });
 
 test("real outdoor, sheltered and accepted hospitality sleeps can deliver guidance, ordinary rest cannot", () => {
-  const state = start(1440);
+  const state = start(2880);
   const shelterCell = { ...cell, pois: [{ osmId: "node/2", tags: { amenity: "shelter", fee: "no" } }] };
   for (const [place, id] of [[cell, null], [shelterCell, "node/2"]]) {
     const next = sleepEconomy(state, place, info, id, survival, economy);
@@ -144,7 +181,7 @@ test("real outdoor, sheltered and accepted hospitality sleeps can deliver guidan
 
 test("bearing follows the sleeping location, survives saves and reaches the trail journal without secrets", () => {
   for (const [col, row, direction] of [[14, 10, "east"], [300, 10, "west"], [194, 100, "north"], [194, -100, "south"]]) {
-    const state = { ...start(1440), col, row };
+    const state = { ...start(2880), col, row };
     const result = settleTrailDream(state, slept(state));
     const dream = latest(result);
     assert.equal(dream.direction, direction);
@@ -162,7 +199,7 @@ test("bearing follows the sleeping location, survives saves and reaches the trai
 });
 
 test("legacy saves remain valid and malformed dream/failure receipts are rejected", () => {
-  const state = start(1440);
+  const state = start(2880);
   validateSave(save(state));
   const result = settleTrailDream(state, slept(state));
   for (const change of [
