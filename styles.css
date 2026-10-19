@@ -119,6 +119,8 @@ body:not(.is-title) .audio-controls { margin-bottom: 0; }
 #title-daily-art { max-width: 580px; margin: 24px auto; }
 #title-daily-image { display: block; width: 100%; height: auto; border-radius: 8px; }
 #title-daily-art figcaption { margin-top: 8px; font-size: 0.7rem; color: var(--muted); }
+#opening-story-dialog { width: min(680px, 94vw); max-height: 90dvh; overflow: auto; }
+#opening-story-text { white-space: pre-line; line-height: 1.8; }
 .title-tagline {
   color: var(--accent);
   font-family: Georgia, "Times New Roman", serif;

@@ -210,13 +210,6 @@
             </section>
             <section class="player-needs" aria-labelledby="needs-title">
               <h4 id="needs-title" data-i18n="needsTitle"></h4>
-              <p id="player-name"></p>
-              <p id="player-character"></p>
-              <p id="player-wallet"></p>
-              <button id="equipment-travel" type="button" data-i18n="equipmentTitle" disabled></button>
-              <p id="player-food"></p>
-              <p id="player-tarot"></p>
-              <p id="outdoor-status"></p>
               <label><span data-i18n="needsHealth"></span><meter id="needs-health" min="0" max="100" low="25" high="60" optimum="100"></meter><output id="needs-health-value"></output></label>
               <label><span data-i18n="needsHunger"></span><meter id="needs-hunger" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-hunger-value"></output></label>
               <label><span data-i18n="needsFatigue"></span><meter id="needs-fatigue" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-fatigue-value"></output></label>
@@ -231,6 +224,13 @@
               </div>
               <p id="needs-speed-effect" role="status"></p>
               <p id="needs-warning" role="status"></p>
+              <p id="player-name"></p>
+              <p id="player-character"></p>
+              <p id="player-wallet"></p>
+              <button id="equipment-travel" type="button" data-i18n="equipmentTitle" disabled></button>
+              <p id="player-food"></p>
+              <p id="player-tarot"></p>
+              <p id="outdoor-status"></p>
               <details id="pressure-panel" hidden>
                 <summary data-i18n="pressureTitle"></summary>
                 <label><span data-i18n="pressureSympathy"></span><meter id="pressure-sympathy" min="0" max="100" low="30" high="70" optimum="100"></meter><output id="pressure-sympathy-value"></output></label>
@@ -369,6 +369,12 @@
         </div>
       </section>
       <form method="dialog"><button id="close-options" data-i18n="optionsClose"></button></form>
+    </dialog>
+    <dialog id="opening-story-dialog" aria-labelledby="opening-story-title">
+      <h2 id="opening-story-title" data-i18n="openingStoryTitle"></h2>
+      <p id="opening-story-text"></p>
+      <p id="opening-story-status" class="window-help-text" role="status"></p>
+      <button id="opening-story-continue" type="button" data-i18n="openingStoryBegin"></button>
     </dialog>
     <dialog id="birth-tarot-dialog" aria-labelledby="birth-tarot-title">
       <h2 id="birth-tarot-title" data-i18n="birthTarotTitle"></h2>
@@ -643,6 +649,7 @@
         <aside class="trail-guide" aria-labelledby="trail-guide-title">
           <h3 id="trail-guide-title" data-i18n="trailGuideTitle"></h3>
           <p id="trail-intro" class="window-help-text"></p>
+          <button id="read-opening-story" type="button" data-i18n="openingStoryRead"></button>
           <p id="trail-target" role="status"></p>
           <section id="parent-story" hidden aria-labelledby="parent-story-title">
             <h3 id="parent-story-title" data-i18n="parentStory.title"></h3>

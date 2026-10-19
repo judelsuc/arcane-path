@@ -7,6 +7,13 @@ test("calendar and player status share an overview before the map and secondary 
   const overview = html.slice(html.indexOf('id="travel-overview"'), html.indexOf('<section class="travel-panel"'));
   assert.match(overview, /aria-labelledby="travel-title" hidden/);
   assert.ok(overview.indexOf('id="journey-atmosphere"') < overview.indexOf('class="player-needs"'));
+  const needsStart = overview.indexOf('class="player-needs"');
+  const firstMeter = overview.indexOf('id="needs-health"', needsStart);
+  assert.doesNotMatch(overview.slice(needsStart, firstMeter), /<p\b|<button\b/);
+  for (const id of ["player-name", "player-character", "player-wallet", "equipment-travel",
+    "player-food", "player-tarot", "outdoor-status"]) {
+    assert.ok(overview.indexOf(`id="${id}"`) > overview.indexOf('id="needs-warning"'));
+  }
   for (const id of ["travel-title", "journey-play-save", "travel-clock", "needs-health",
     "needs-hunger", "needs-fatigue", "needs-sleep", "needs-warning"]) {
     assert.match(overview, new RegExp(`id="${id}"`));

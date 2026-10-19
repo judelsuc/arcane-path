@@ -1,5 +1,17 @@
 # Content workshop and optional live wording
 
+## Future map tile-set generation (R-156, not implemented)
+
+The factory should generate coherent tile sets for the optional map skins
+(R-155), starting with small square pixel-art tiles matching the game's palette.
+Terrain, roads, railways, built-up blocks and gameplay overlays must remain
+readable. Generated art changes presentation only: both skins use the same map
+data, scale and rules, with ASCII remaining available.
+
+This is a future requirement, not an enabled generator or spending approval.
+Generate a fresh coherent map tile set daily. Provider selection, daily
+scheduling time and review/publishing workflow remain to be decided.
+
 The original content-factory workshop generates English/French rumour and riddle
 drafts on demand through **OVHcloud AI Endpoints**. It is a separate, local
 writing tool, not a game feature. Only its three fixed fictional sample briefs
@@ -77,6 +89,65 @@ the uncertain prior attempt. Back up this database with the other game caches.
 
 Focused checks: `node --test tests/start-art.test.mjs` and
 `.venv/bin/python -m unittest discover -s tests -p 'test_start_art.py'`.
+
+### Deployment verification, 19 October 2026
+
+The production-based runtime `1497e78c79ecf79d7e4af6d6fa366098802eb2a7`
+includes the daily title job and gameplay-feedback fixes, without the
+development lore/artifact systems. The Paris timer is enabled and the first
+1024-square WebP was generated and verified through authenticated HTTPS.
+The server's rejected old key was replaced with the working local key with
+explicit user approval. One approved manual retry followed that HTTP 403;
+the failed attempt database was privately backed up before the reset.
+This does not enable automatic same-day retries.
+
+The release passed 860 JavaScript and 213 Python tests; the development tree
+passed 981 JavaScript and 248 Python tests. All 20 existing journey genesis
+checksums were unchanged, all five persistent databases passed integrity
+checks, and the cached notebook terrain endpoint now returns HTTP 200.
+Live encounter wording and per-journey journal art remain opt-in services;
+this timer does not enable their environment variables. Generated starting
+backstories (R-151) remain pending, not part of this deployment.
+
+## Opening backstory (R-151)
+
+The registered `story.opening` brief uses the same authenticated, durable
+single-worker wording queue as ordinary encounters. The server derives only
+the saved parent name, departure motive, starting place, broad landscape,
+birth card and starting season. It adds a random creative variation token,
+not a journey identifier. Player names, private notes, route stages, witnesses,
+future locations and canonical hidden facts are never submitted.
+
+Opening stories use temperature **0.9**, at most 1400 completion tokens and
+exactly two FR/EN strings of 500-1800 characters. Ordinary encounter wording
+retains temperature 0.5 and its existing shorter limits. Variation is encouraged,
+not guaranteed. The prompt permits domestic memories/emotional texture, not
+new plot facts or clues; format checks cannot guarantee semantic fidelity.
+Saved parent identity, motive and investigation never change.
+
+The story is requested as soon as the genesis is available. After revealing
+the birth card, a dedicated opening dialog appears **before gameplay**, not on
+the title page. It shows authored backstory immediately and localized generation
+status; a ready result can appear while that opening dialog is visible.
+The player explicitly continues, without being forced to wait for a provider.
+The trail guide offers rereading, including results that arrived later.
+New zero-minute resumed journeys show the opening again before play; established
+journeys can reread without a new generation. One immutable bilingual result
+per journey/keeper is retained even across prompt-version changes. Failures,
+reloads and reopening never retry a provider attempt.
+
+The existing wording database receives an additive nullable `input` column;
+old wording rows and accounting remain valid, with no genesis/save migration.
+Enable with `ARCANE_LIVE_TEXT_TOKEN_FILE`, not the image timer's variable.
+Photo-conditioned journal images and voices remain explicitly postponed.
+
+The packaged `infra/systemd/arcane-path-content-factory.conf` is an explicit
+opt-in drop-in for the existing VM. Install it as
+`/etc/systemd/system/arcane-path.service.d/content-factory.conf`, then run
+`systemctl daemon-reload` and restart the game service. It references the
+existing private token file; it contains no credentials and enables text only.
+Remove the drop-in and reload/restart to disable future text calls; retained
+wording and the daily title image are not deleted.
 
 ## Live game wording (R-141)
 

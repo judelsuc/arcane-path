@@ -35,6 +35,7 @@ import { renderTarotCard } from "./tarot-cards.mjs";
 import { trailClue } from "./trail-actions.mjs";
 import { beginExploration, applyFieldSearch, askAboutClue, fieldClueText } from "./trail-search.mjs";
 import { setupNeedsNotices } from "./needs-notices.mjs";
+import { setupOpeningStory } from "./opening-story-ui.mjs";
 import { advanceJourneyEvents, acknowledgeJourneyEvent } from "./journey-events.mjs";
 import { setupJourneyEvents } from "./journey-events-ui.mjs";
 import { createLiveNarrative } from "./live-narrative.mjs";
@@ -147,7 +148,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       birthDraw.focus();
       birthPending = false;
     } else {
-      trailUI.open();
+      if (state.elapsedMinutes === 0) openingStory.open();
+      else trailUI.open();
     }
   }
   function localizeBirthCard() {
@@ -178,7 +180,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   });
   document.querySelector("#birth-tarot-continue").addEventListener("click", () => {
     birthDialog.close();
-    trailUI.open();
+    openingStory.open();
   });
   birthDialog.addEventListener("cancel", event => event.preventDefault());
   const dailyTarotUI = setupDailyTarot(t, {
@@ -196,6 +198,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     context: () => active && state && survivalConfig ? { state, survival: survivalConfig, busy } : null,
   });
   const liveNarrative = createLiveNarrative();
+  const openingStory = setupOpeningStory(t, {
+    narrative: liveNarrative, context: () => state, onContinue: () => trailUI.open(),
+  });
   const journeyEventsUI = setupJourneyEvents(t, {
     narrative: liveNarrative,
     pinEvent: (container, current, economy) => pinTarot(container, current, "event", economy),
@@ -631,6 +636,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     cafeUI.localize();
     theftUI.localize();
     trailUI.localize();
+    openingStory.localize();
     document.querySelector("#map-workspace").classList.toggle("travel-active", active);
     document.body.classList.toggle("is-travelling", active);
     controls.hidden = !active;
@@ -1123,6 +1129,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         birthPending = true;
       }
       if (currentToken !== token) return;
+      openingStory.prepare();
       state = migrateHealth(state);
       state = beginEquipment(state);
       state = beginExploration(state, Boolean(restored));
@@ -1195,6 +1202,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     needsNotices.reset();
     journeyEventsUI.reset();
     liveNarrative.reset();
+    openingStory.reset();
     equipmentUI.reset();
     birthPending = false;
     musicUI.reset();

@@ -1,5 +1,21 @@
 # Requirements tracked outside the design PDF
 
+## R-151 - Opening backstory before gameplay
+
+- Generate one bilingual story around the saved parent identity/motive at
+  temperature 0.9. Only approved starting place/landscape/card/season enter
+  the server-generated prompt; no player identity or hidden itinerary.
+- Show after the birth card and before play, with authored text immediately
+  usable, visible provider status, explicit continue and a reread action.
+- Preserve canonical facts and cache across reloads and prompt revisions.
+- Existing ordinary/NPC wording keeps temperature 0.5 and its shorter bounds.
+
+## R-153 - Directly stacked weather and status meters
+
+- Place the health/hunger/fatigue/sleep/vigilance/cleanliness meters immediately
+  below the agenda/weather panel, with character/wallet/equipment/food/tarot
+  paragraphs below the meters, not between the two panels.
+
 ## R-152 - Daily shared start-page illustration
 
 - Generate one shared image per real-world day at 05:00 Europe/Paris.

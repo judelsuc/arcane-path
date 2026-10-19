@@ -1,6 +1,7 @@
 import briefs from "./public/narrative-briefs.json" with { type: "json" };
 
 export const NARRATIVE_BRIEFS = Object.freeze(briefs);
+export const OPENING_STORY = "story.opening";
 
 const messages = {
   en: {
@@ -61,7 +62,9 @@ export function createLiveNarrative({
           if (typeof result.enabled !== "boolean" || result.brief !== id ||
               !["queued", "running", "ready", "failed", "disabled"].includes(result.status) ||
               result.status === "ready" && (!result.text || ["en", "fr"].some(lang =>
-                typeof result.text[lang] !== "string" || result.text[lang].length > 400))) {
+                typeof result.text[lang] !== "string" ||
+                result.text[lang].length < (id === OPENING_STORY ? 500 : 5) ||
+                result.text[lang].length > (id === OPENING_STORY ? 1800 : 400)))) {
             throw new Error("Invalid live wording response.");
           }
           records.set(id, result);
@@ -88,7 +91,7 @@ export function createLiveNarrative({
       activate(state);
       if (!access || disabled) return;
       for (const id of ids) {
-        if (!Object.hasOwn(briefs, id)) continue;
+        if (!Object.hasOwn(briefs, id) && id !== OPENING_STORY) continue;
         if (!records.has(id) && !waiting.has(id)) {
           records.set(id, { status: "queued" });
           waiting.add(id);

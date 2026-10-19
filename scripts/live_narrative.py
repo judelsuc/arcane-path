@@ -14,6 +14,7 @@ import time
 from content_factory import OvhWriter, WorkshopError
 from journeys import JourneyRequest, JourneyCapacity
 from terraform_ovh import private_file
+from opening_story import BRIEF_ID, MAX_CHARACTERS, opening_brief, story_request, validate_parent_reference
 
 MODEL = "Mistral-Small-3.2-24B-Instruct-2506"
 CATALOGUE = json.loads((Path(__file__).resolve().parents[1] / "public/narrative-briefs.json").read_text())
@@ -23,6 +24,8 @@ MAX_TOKENS = 500
 
 
 def provider_request(brief, model):
+    if brief.get("kind") == BRIEF_ID:
+        return story_request(brief, model)
     return {
         "model": model, "stream": False, "max_tokens": MAX_TOKENS, "temperature": 0.5,
         "messages": [
@@ -58,7 +61,7 @@ def usage_of(response):
     return {k: usage[k] for k in keys}
 
 
-def validate_output(response):
+def validate_output(response, *, story=False):
     try:
         choices = response["choices"]
         if not isinstance(choices, list) or len(choices) != 1 or choices[0]["finish_reason"] != "stop":
@@ -70,8 +73,8 @@ def validate_output(response):
         if not isinstance(value, dict) or set(value) != {"en", "fr"}:
             raise ValueError()
         for text in value.values():
-            if (not isinstance(text, str) or not 5 <= len(text) <= 400 or text.strip() != text
-                    or any(ord(c) < 32 for c in text)
+            if (not isinstance(text, str) or not (500 if story else 5) <= len(text) <= (MAX_CHARACTERS if story else 400) or text.strip() != text
+                    or any(ord(c) < 32 and not (story and c == "\n") for c in text)
                     or any(marker in text.lower() for marker in ("<", ">", "http:", "https:", "```"))):
                 raise ValueError()
         return value
@@ -81,6 +84,7 @@ def validate_output(response):
 
 class LiveNarrative:
     def __init__(self, journeys, authorization, writer=None):
+        self.journeys = journeys
         self.authorization, self.writer = authorization, writer
         self.path = journeys.path.parent / "live-narrative.sqlite3"
         self.lock = threading.Lock()
@@ -101,6 +105,8 @@ class LiveNarrative:
                 );
                 PRAGMA user_version=1;
             """)
+            if "input" not in {row[1] for row in db.execute("PRAGMA table_info(wording)")}:
+                db.execute("ALTER TABLE wording ADD COLUMN input TEXT")
             db.execute("UPDATE wording SET status='failed',error=?,finished=? WHERE status='running'",
                        ("Interrupted provider attempt; billing unknown. No automatic retry.", time.time()))
         self.path.chmod(0o600)
@@ -131,20 +137,24 @@ class LiveNarrative:
         if not isinstance(data, dict):
             raise JourneyRequest("Invalid live narrative request.")
         expected = {"journey", "brief"} | ({"keeper"} if "keeper" in data else set())
-        if set(data) != expected or not isinstance(data.get("brief"), str) or data["brief"] not in CATALOGUE:
+        if (set(data) != expected or not isinstance(data.get("brief"), str)
+                or data["brief"] not in CATALOGUE and data["brief"] != BRIEF_ID):
             raise JourneyRequest("Only registered public narrative briefs are accepted.")
-        owner, _ = self.authorization.authorize(data, token)
+        owner, record = self.authorization.authorize(data, token)
         brief = data["brief"]
         with self.lock, self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
-            row = db.execute("SELECT * FROM wording WHERE owner=? AND brief=? AND version=?",
-                             (owner, brief, VERSION)).fetchone()
+            row = (db.execute("SELECT * FROM wording WHERE owner=? AND brief=? ORDER BY created LIMIT 1",
+                              (owner, brief)).fetchone() if brief == BRIEF_ID else
+                   db.execute("SELECT * FROM wording WHERE owner=? AND brief=? AND version=?",
+                              (owner, brief, VERSION)).fetchone())
             if row is None and self.writer and not self.closed:
                 queued = db.execute("SELECT COUNT(*) FROM wording WHERE status IN ('queued','running')").fetchone()[0]
                 if queued >= QUEUE_LIMIT:
                     raise JourneyCapacity("Live wording queue is full; authored text remains available.")
-                db.execute("INSERT INTO wording(owner,brief,version,status,created) VALUES(?,?,?,'queued',?)",
-                           (owner, brief, VERSION, time.time()))
+                payload = opening_brief(record, self.journeys.chunks) if brief == BRIEF_ID else None
+                db.execute("INSERT INTO wording(owner,brief,version,status,created,input) VALUES(?,?,?,'queued',?,?)",
+                           (owner, brief, VERSION, time.time(), json.dumps(payload) if payload else None))
                 row = db.execute("SELECT * FROM wording WHERE owner=? AND brief=? AND version=?",
                                  (owner, brief, VERSION)).fetchone()
             totals = db.execute("SELECT SUM(calls) calls, COUNT(CASE WHEN calls>0 AND usage IS NULL THEN 1 END) unknown "
@@ -181,7 +191,8 @@ class LiveNarrative:
                     if row is None:
                         self.running = False
                         return
-                    if row["version"] != VERSION or row["brief"] not in CATALOGUE:
+                    story = row["brief"] == BRIEF_ID
+                    if row["version"] != VERSION or row["brief"] not in CATALOGUE and not story:
                         db.execute("UPDATE wording SET status='failed',error=? WHERE rowid=?",
                                    ("Public brief version changed; no call made.", row["rowid"]))
                         continue
@@ -190,10 +201,14 @@ class LiveNarrative:
                 logging.info("Live narrative provider attempt: brief=%s model=%s", row["brief"], MODEL)
                 output, usage, error = None, None, None
                 try:
-                    response = self.writer(CATALOGUE[row["brief"]])
+                    brief = json.loads(row["input"]) if story else CATALOGUE[row["brief"]]
+                    response = self.writer(brief)
                     usage = usage_of(response)
-                    output = validate_output(response)
+                    output = validate_output(response, story=story)
+                    if story and not validate_parent_reference(output, brief):
+                        raise WorkshopError("Opening backstory changed the saved parent identity; authored text retained.", 502)
                 except WorkshopError as failure:
+                    output = None
                     error = str(failure)
                     logging.warning("Live narrative failed: %s", error)
                 except Exception:

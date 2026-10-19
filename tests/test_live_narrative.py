@@ -18,6 +18,7 @@ from content_factory import LIMIT, OvhWriter, WorkshopError
 from journal_art import JournalArt
 from journeys import JourneyStore, JourneyRequest, JourneyCapacity
 from live_narrative import CATALOGUE, MODEL, VERSION, LiveNarrative, provider_request, validate_output
+from opening_story import BRIEF_ID, opening_brief, validate_parent_reference
 from travel_server import ChunkStore, ChunkJobs, atomic_write, make_handler
 
 
@@ -28,6 +29,79 @@ def response(en="A passer-by offers you a few coins.", fr="Un passant vous offre
 
 
 class LiveNarrativeTests(unittest.TestCase):
+    def test_opening_story_uses_only_saved_public_context_and_higher_temperature(self):
+        record = self.journeys.read(self.owner)
+        original = json.dumps(record, sort_keys=True)
+        with patch("opening_story.secrets.token_hex", return_value="fixed-variation"):
+            brief = opening_brief(record, self.chunks)
+        self.assertEqual(set(brief), {"kind", "parent", "departure", "startingPlace",
+                                     "landscape", "birthCard", "season", "variation"})
+        self.assertEqual(brief["parent"], record["state"]["trail"]["parentName"])
+        self.assertEqual(brief["birthCard"], record["state"]["birthCard"])
+        self.assertEqual(brief["startingPlace"], "Firmi")
+        serialized = json.dumps(brief)
+        for secret in ["PRIVATE PLAYER", self.owner, self.token, "visits", "falseLeads", "coordinates"]:
+            self.assertNotIn(secret, serialized)
+        self.assertEqual(json.dumps(record, sort_keys=True), original)
+        request = provider_request(brief, MODEL)
+        self.assertEqual(request["temperature"], 0.9)
+        self.assertEqual(request["max_tokens"], 1400)
+        self.assertGreater(request["temperature"], provider_request(CATALOGUE["event.coins"], MODEL)["temperature"])
+        self.assertEqual(json.loads(request["messages"][1]["content"]), brief)
+        self.assertNotEqual(opening_brief(record, self.chunks)["variation"],
+                            opening_brief(record, self.chunks)["variation"])
+
+    def test_opening_story_is_durable_immutable_and_bilingual_without_mutating_genesis(self):
+        before = self.journeys.read(self.owner)
+        name = before["state"]["trail"]["parentName"]
+        self.writer.return_value = response(en=(f"Your parent {name} left. " * 30).strip(),
+                                            fr=(f"Votre parent {name} est parti. " * 30).strip())
+        self.request(BRIEF_ID)
+        result = self.settle(BRIEF_ID)
+        self.assertEqual(result["status"], "ready")
+        self.assertGreater(len(result["text"]["fr"]), 500)
+        self.assertEqual(result["accounting"]["attempts"], 1)
+        self.assertEqual(self.writer.call_args.args[0]["parent"], name)
+        self.assertEqual(self.journeys.read(self.owner), before)
+        self.service.close()
+        reopened = LiveNarrative(self.journeys, self.auth, self.writer)
+        self.addCleanup(reopened.close)
+        self.assertEqual(reopened.request({"journey": self.owner, "brief": BRIEF_ID}, self.token), result)
+        # Prompt revisions must not replace an already generated opening story.
+        with patch("live_narrative.VERSION", "future-version"):
+            self.assertEqual(reopened.request({"journey": self.owner, "brief": BRIEF_ID}, self.token), result)
+        self.writer.assert_called_once()
+
+    def test_opening_story_truncated_invalid_and_provider_failures_never_retry(self):
+        self.writer.return_value = response()
+        self.request(BRIEF_ID)
+        result = self.settle(BRIEF_ID)
+        self.assertEqual(result["status"], "failed")
+        self.assertIsNone(result["text"])
+        for _ in range(3):
+            self.request(BRIEF_ID)
+        self.writer.assert_called_once()
+        for value in [response(en="a" * 1801, fr="b" * 600),
+                      response(en="<script>" + "a" * 600, fr="b" * 600)]:
+            with self.assertRaises(WorkshopError):
+                validate_output(value, story=True)
+        for text in ["Your mother Camille left.", "Your father Camille left.",
+                     "Votre mère Camille est partie.", "Camille left; she said goodbye.",
+                     "Your parent Alex left."]:
+            self.assertFalse(validate_parent_reference({"en": text, "fr": "Camille"}, {"parent": "Camille"}))
+
+    def test_opening_story_rejects_invented_parent_gender_without_retry(self):
+        name = self.journeys.read(self.owner)["state"]["trail"]["parentName"]
+        self.writer.return_value = response(en=(f"Your mother {name} left. " * 30).strip(),
+                                            fr=(f"Votre parent {name} est parti. " * 30).strip())
+        self.request(BRIEF_ID)
+        result = self.settle(BRIEF_ID)
+        self.assertEqual(result["status"], "failed")
+        self.assertIsNone(result["text"])
+        self.assertIn("parent identity", result["error"])
+        self.request(BRIEF_ID)
+        self.writer.assert_called_once()
+
     def setUp(self):
         (ROOT / ".cache").mkdir(exist_ok=True)
         directory = tempfile.TemporaryDirectory(dir=ROOT / ".cache", prefix="live-narrative-test-")

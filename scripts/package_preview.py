@@ -16,7 +16,7 @@ RUNTIME_FILES = {"config.yml", "requirements.txt"}
 def runtime_path(path):
     return path.name != ".DS_Store" and (path.parts[0] in RUNTIME_ROOTS or path.as_posix() in RUNTIME_FILES
             or path.parent == Path("infra/nginx") and path.suffix == ".conf"
-            or path.parent == Path("infra/systemd") and path.suffix in {".service", ".timer"}
+            or path.parent == Path("infra/systemd") and path.suffix in {".service", ".timer", ".conf"}
             or len(path.parts) == 1 and path.suffix in {".mjs", ".js", ".html", ".css", ".svg"})
 
 

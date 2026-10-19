@@ -20,6 +20,7 @@ class PreviewPackageTests(unittest.TestCase):
                          "minigames/harvest-ui.mjs", "cafe-art.svg",
                          "infra/nginx/preview.conf", "infra/nginx/bootstrap.conf",
                          "infra/systemd/arcane-start-art.service", "infra/systemd/arcane-start-art.timer",
+                         "infra/systemd/arcane-path-content-factory.conf",
                          "infra/preview.tfstate", "ovh.conf", ".env", "README.md"]:
                 path = root / name
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -37,6 +38,7 @@ class PreviewPackageTests(unittest.TestCase):
                                   "minigames/harvest-ui.mjs", "cafe-art.svg",
                                   "infra/nginx/preview.conf", "infra/nginx/bootstrap.conf",
                                   "infra/systemd/arcane-start-art.service", "infra/systemd/arcane-start-art.timer",
+                                  "infra/systemd/arcane-path-content-factory.conf",
                                   "public/release.json"})
                 release = json.load(archive.extractfile("public/release.json"))
                 commit = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"],

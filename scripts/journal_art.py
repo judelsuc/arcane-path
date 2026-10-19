@@ -94,6 +94,7 @@ class JournalArt:
         self.path = journeys.path.parent / "journal-art.sqlite3"
         self.lock = threading.Lock()
         self.running = False
+        self.closed = False
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="journal-art") if writer else None
         self.future = None
         with self.connect() as db:
@@ -214,13 +215,24 @@ class JournalArt:
         if self.pool is None:
             return
         with self.lock:
-            if not self.running:
+            if not self.running and not self.closed:
                 self.running = True
                 self.future = self.pool.submit(self.drain)
 
     def drain(self):
+        try:
+            self.drain_queue()
+        except Exception:
+            logging.exception("Journal illustration queue failed; queued records retained for restart")
+            with self.lock:
+                self.running = False
+
+    def drain_queue(self):
         while True:
             with self.lock:
+                if self.closed:
+                    self.running = False
+                    return
                 with self.connect() as db:
                     db.execute("BEGIN IMMEDIATE")
                     row = db.execute("SELECT * FROM art WHERE status='queued' ORDER BY rowid LIMIT 1").fetchone()
@@ -249,5 +261,7 @@ class JournalArt:
                                 round(time.monotonic() - started, 2), row["owner"], row["key"]))
 
     def close(self):
+        with self.lock:
+            self.closed = True
         if self.pool:
             self.pool.shutdown(wait=True)
