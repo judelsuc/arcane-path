@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Village deliveries - game 4</title>
+    <link rel="stylesheet" href="./styles.css">
+    <style>
+      main { max-width: 900px; margin: 2rem auto; padding: 1rem; }
+      #delivery-board button { margin: 4px; }
+      #delivery-board button[aria-pressed="true"] { background: #375d3b; }
+      .delivery-art { display: block; width: 64px; height: 64px; margin: 6px auto; background: url("./minigames/deliveries-art.svg") no-repeat; background-size: 300% 100%; pointer-events: none; }
+      .delivery-art-parcel { background-position: 0% 0; }
+      .delivery-art-house { background-position: 50% 0; }
+      .delivery-art-depot { background-position: 100% 0; }
+      .delivery-village { position: relative; display: grid; aspect-ratio: 1; max-width: 640px; margin: 20px auto; background: #4b6551; border: 6px solid #7f8b72; border-radius: 16px; overflow: hidden; }
+      .delivery-house { position: relative; display: flex; align-items: center; justify-content: center; flex-direction: column; border: 6px solid #7f8b72; border-radius: 24px; background: #304839; box-sizing: border-box; }
+      .delivery-house[data-near="true"] { background: #6b7543; box-shadow: inset 0 0 0 4px #f3d37e, inset 0 0 28px #f3d37e; }
+      .delivery-house-label { position: absolute; right: 3px; top: 3px; display: flex; align-items: center; gap: 2px; padding: 2px 6px; background: #332a20; border: 2px solid #ebcb8d; border-radius: 8px; font-size: 1.4rem; font-weight: bold; }
+      .delivery-house-label .delivery-art { width: 30px; height: 30px; margin: 0; }
+      .delivery-house-label[data-delivered="true"] { top: auto; bottom: 3px; background: #22472e; border-color: #9ed69a; color: #e9f6de; }
+      .delivery-bike { position: absolute; width: 34px; height: 52px; margin: 0; z-index: 2; background: url("./minigames/deliveries-bike.svg") center / contain no-repeat; filter: drop-shadow(2px 3px 2px #0008); }
+      .delivery-parcels { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-block: 16px; }
+      .delivery-parcels button { min-width: 130px; border-radius: 12px; background: #493d2e; }
+      .delivery-guidance { padding: 16px; border-left: 4px solid var(--accent); background: #253b30; line-height: 1.6; }
+      .delivery-carrying { display: flex; align-items: center; gap: 12px; font-weight: bold; color: var(--accent); }
+      .delivery-carrying .delivery-art { margin: 0; }
+      .delivery-steering { display: flex; justify-content: center; flex-wrap: wrap; }
+      .delivery-countdown { position: sticky; top: 8px; z-index: 3; width: fit-content; margin: 12px auto; padding: 8px 24px; font-size: 1.5rem; font-weight: bold; font-variant-numeric: tabular-nums; background: #1d362b; color: #f4db9d; border: 2px solid #d3b874; border-radius: 12px; }
+      .delivery-countdown[data-urgent="true"] { background: #71362e; color: #ffdad2; border-color: #f19684; }
+      .delivery-steering button[data-action="steer"] { min-width: 90px; min-height: 64px; touch-action: none; user-select: none; }
+      @media (max-width: 520px) {
+        .delivery-house { border-width: 3px; border-radius: 12px; font-size: 0.7rem; }
+        .delivery-house > .delivery-art { width: 40px; height: 40px; }
+        .delivery-house-label { font-size: 1rem; }
+        .delivery-house-label .delivery-art { width: 20px; height: 20px; }
+        .delivery-bike { width: 24px; height: 38px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 id="preview-title"></h1>
+      <p id="preview-note"></p>
+      <label for="preview-level" id="preview-level-label"></label>
+      <select id="preview-level">
+        <option value="0">0</option><option value="1">1</option>
+        <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+      </select>
+      <button id="preview-reset" type="button"></button>
+      <button id="preview-sound" type="button" aria-pressed="true"></button>
+      <p id="preview-result" role="status"></p>
+      <p id="preview-error" role="alert"></p>
+      <div id="delivery-board"></div>
+      <p><a href="?lang=en">English</a> / <a href="?lang=fr">Francais</a></p>
+    </main>
+    <script type="module" src="./deliveries-preview.mjs"></script>
+  </body>
+</html>

@@ -73,7 +73,7 @@ export function createJournalClient(storage, fetcher = fetch, { outbox = createN
   }
   function queueDeath(state) {
     if (!state?.journalAccess || state.journalPublished ||
-        !["hunger", "fatigue", "sleep", "placement"].includes(state.ended)) return;
+        !["health", "hunger", "fatigue", "sleep", "placement"].includes(state.ended)) return;
     const outbox = JSON.parse(storage.getItem(OUTBOX) ?? "{}");
     outbox[state.serverJourney.id] ??= { body: journalRequest(state), capability: state.journalAccess };
     storage.setItem(OUTBOX, JSON.stringify(outbox));

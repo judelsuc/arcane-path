@@ -50,12 +50,12 @@ test("100 fatigue collapses once at the destination; eight hours, exactly 40 fat
 });
 
 test("hunger can kill during unconsciousness; hunger already fatal never grants recovery, and old ended saves stay ended", () => {
-  const starved = collapse({ ...start(), reserveKcal: 300 });
-  assert.equal(starved.ended, "hunger");
+  const starved = collapse({ ...start(), reserveKcal: 100, health: 5 });
+  assert.equal(starved.ended, "health");
   assert.equal(starved.faints, 1);
   assert.equal(starved.reserveKcal, 0);
-  const fatal = collapse({ ...start(), reserveKcal: 1 });
-  assert.equal(fatal.ended, "hunger");
+  const fatal = collapse({ ...start(), reserveKcal: 1, health: 0.01 });
+  assert.equal(fatal.ended, "health");
   assert.equal(fatal.faints, undefined);
   assert.ok(fatal.elapsedMinutes < 480);
   assert.throws(() => collapse({ ...start(), ended: "fatigue" }), /ended/);

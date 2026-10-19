@@ -1,4 +1,105 @@
-# Infrastructure OVHcloud - rapport du 18 octobre 2026
+# Infrastructure OVHcloud - rapport du 19 octobre 2026
+
+## Correctif du chargement initial - limitation reservee aux API
+
+Le chargement des modules des douze jeux depassait le burst partage de
+100 requetes : Nginx renvoyait HTTP 429 pour des imports statiques et le
+navigateur ne pouvait plus initialiser le jeu. Les budgets de requetes
+(20/s, burst 100) et de connexions simultanees (20) sont maintenant indexes
+uniquement pour `/api/`. Les assets ne consomment plus ces budgets.
+L'authentification, la liste des fichiers autorises, les limites des API
+et la limite specifique de creation de voyage restent en place.
+Les zones generales sont renommees pour permettre un rechargement Nginx
+sans reutiliser une zone memoire avec une cle differente.
+
+- Correctif `aaef3e0`, tag pousse `deploy-2026-10-19-startup-rate-limit`.
+  Configuration installee et comparee par SHA-256 ; `nginx -t` reussi,
+  rechargement sans redemarrage du jeu, services actifs.
+- Verification HTTPS authentifiee : **115 modules**, trois chargements,
+  **351 requetes HTTP 200**, contenu identique au runtime teste.
+  `/api/origins` et `/api/travel` HTTP 200 ; acces anonyme HTTP 401.
+  Quatre tests de configuration reussis. Code du jeu et sauvegardes inchanges.
+- Retour configuration prive :
+  `/home/ubuntu/arcane-nginx-before-aaef3e09a408.conf` (0600).
+
+## Correctif deploye - infobulles des jeux et raison du foyer
+
+- Runtime `c6e3a9caab51d4cc289cafcca8efb035bdaeee28`, tag pousse
+  `deploy-2026-10-19-help-placement`, base `e4bbde7`.
+- Les commandes natives des jeux ont leurs libelles dans les infobulles
+  au survol/focus, sans raccourcis automatiques parasites. Aide collecte
+  aussi les commandes detaillees des neuf jeux integres.
+- Le foyer explique le seuil de vigilance a 100 et conserve, pour les nouveaux
+  episodes, la vigilance precedente, la duree et les contributions reelles.
+  Les anciens episodes restent lisibles sans detail invente. Reprendre ne
+  rejoue plus les notifications historiques de placement ou evanouissement.
+  Arithmetique des pressions, regles et frequence des evenements inchangees.
+- **818 tests JavaScript** passes sur la base de production isolee.
+  Navigateur local : aide detaillee, infobulle non vide dans le dialogue natif,
+  vrai declenchement de placement et absence de reaffichage apres reprise verifies.
+- Huit fichiers installes/verifies, dont la configuration Nginx inchangee et
+  **sept assets publics compares octet par octet en HTTPS authentifie**.
+  Services actifs, API origines HTTP 200 ; sauvegardes SQLite avant/apres et
+  **18 genesis existantes inchangees**.
+- Retour code prive (0600) :
+  `/home/ubuntu/arcane-path-before-deploy-c6e3a9caab51.tar.gz`.
+  Ne pas restaurer les bases en arriere. Recharger la page pour recevoir les
+  nouveaux modules ; aucune reinitialisation de partie necessaire.
+
+## Livraison - douze jeux, sac spatial et compagnon
+
+- Runtime `e4bbde7bf534a3abe003d501e53aa9fbf01e9840`, branche
+  `deploy/games-equipment`, tag pousse `deploy-2026-10-18-games-equipment`.
+  Base de production `dcc96bd`. **814 tests JavaScript et 24 tests Python**
+  passent dans le worktree isole exact ; 817 tests JavaScript sur la branche
+  de developpement.
+- Les douze jeux approuves sont relies au temps, besoins, argent, progression,
+  sauvegarde et son du voyage. Conditions avant engagement, resultat reel
+  apres jeu ; annulation sans gain, sans remboursement du temps.
+  Vendanges payees au point, sans plafond artificiel base sur un ratio.
+- Sac illustre 6 x 4, objets portes separes, limite 5,5 kg, rotation et
+  sauvegarde. Poids/usure/pluie/sommeil appliques ; tente uniquement dans
+  les campings OSM accessibles. Rencontre de chien optionnelle via les
+  evenements, nom obligatoire a l'adoption, nourriture/soins et bonus reels.
+  Migration des anciennes sauvegardes sans usure ou besoins retroactifs.
+- **80 fichiers installes et verifies**, dont **78 assets publics compares
+  octet par octet en HTTPS authentifie**, y compris modules/SVG imbriques.
+  Nginx teste/recharge ; services actifs, API origines HTTP 200. Acces sans
+  authentification HTTP 401 ; scripts, tests et fichiers Git restent HTTP 404.
+- Frequence des evenements toujours **90 minutes de marche** ; le parametre
+  accelere est ignore sur le domaine de production. Illustrations et
+  epinglage au carnet conserves.
+- Navigateur : neuf nouveaux adaptateurs montes/annules avec controle du
+  jeu courant, couts conserves, aucun gain ; inventaire FR/EN et mobile,
+  achat/rotation/reprise, adoption nommee, besoins et nourriture verifies.
+  La page de test etant parfois masquee, cela ne constitue pas un nouveau
+  playtest manuel complet de chaque jeu chronometre. Un test automatise
+  termine le vrai jeu de vendanges et verifie recu et nettoyage de l'adaptateur.
+- Sauvegardes SQLite avant/apres, integrite verifiee :
+  **16 genesis existantes inchangees**. Copies privees (0600) sous
+  `/var/lib/arcane-path/backups/`, suffixe `e4bbde7bf534`.
+  Retour code : `/home/ubuntu/arcane-path-before-deploy-e4bbde7bf534.tar.gz`
+  (0600). Ne jamais restaurer les bases en arriere lors d'un retour code.
+- Non livres : sources reelles du monde vivant/photos associees, autres
+  compagnons, pouvoirs d'artefacts et bonus qualite de l'appareil photo.
+
+## Livraison - evenements du chemin et sante
+
+- Runtime `dcc96bd`, tag `deploy-2026-10-18-journey-events`, base `e6e20a1`.
+  **447 tests JS** sur la base de production isolee ; **450 tests JS et
+  23 tests Python** sur la branche de developpement correspondante.
+- 23 fichiers installes et verifies sur le serveur ; **21 assets publics
+  verifies octet par octet en HTTPS**. Service redemarre, API origines HTTP
+  200, services `arcane-path` et `nginx` actifs.
+- Frequence normale : une occasion toutes les **90 minutes de marche**.
+  Le parametre de test accelere ne fonctionne que sur localhost ; les deux
+  tarots conservent leurs probabilites. Effets favorables en vert,
+  defavorables en rouge, illustration et epinglage automatique au carnet.
+- Sauvegardes SQLite avant/apres : **16 genesis existantes inchangees**.
+  Retour code : `/home/ubuntu/arcane-path-before-deploy-dcc96bd.tar.gz` (0600).
+  Ne pas restaurer les bases en arriere lors d'un retour de code.
+- Mini-jeux supplementaires et equipement exclus de cette livraison initiale ;
+  livres ensuite dans le checkpoint ci-dessus.
 
 ## Dernieres livraisons - couverture du carnet et fond reel en cache
 

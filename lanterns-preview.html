@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lantern rehearsal - game 10</title>
+    <link rel="stylesheet" href="./styles.css">
+    <style>
+      main { max-width: 900px; margin: 1rem auto; padding: 1rem; }
+      #lanterns-board { padding: 24px; background: radial-gradient(ellipse at 50% 0, #304354, #101b2b 80%); border: 1px solid #687382; border-radius: 16px; }
+      #lanterns-board fieldset { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 20px 0; padding: 10px 0; border: 0; }
+      #lanterns-board .lantern-button { position: relative; flex: 0 1 130px; width: 130px; padding: 0 8px 20px; border: 0; background: transparent; opacity: 1; box-shadow: none; }
+      .lantern-art { display: block; width: 100%; height: auto; overflow: visible; filter: brightness(.55) saturate(.8); transition: filter 70ms; }
+      .lantern-button[data-lit="true"] .lantern-art { filter: brightness(1.5) saturate(1.2) drop-shadow(0 0 14px #ffe7a6); }
+      .lantern-number { position: absolute; bottom: 0; left: calc(50% - 12px); width: 24px; border: 1px solid #687382; border-radius: 50%; color: #dce4ed; background: #162436; font-size: 12px; }
+      .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+      #lanterns-board button:focus-visible { outline: 3px solid #fff3c6; outline-offset: 5px; }
+      #lanterns-board [role="status"] { min-height: 3rem; font-size: 1.15rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 id="preview-title"></h1>
+      <p id="preview-note"></p>
+      <label for="preview-level" id="preview-level-label"></label>
+      <select id="preview-level">
+        <option value="0">0</option><option value="1">1</option>
+        <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+      </select>
+      <button id="preview-reset" type="button"></button>
+      <button id="preview-sound" type="button" aria-pressed="true"></button>
+      <p id="preview-difficulty"></p>
+      <p id="preview-result" role="status"></p>
+      <p id="preview-error" role="alert"></p>
+      <p id="preview-audio-error" role="alert"></p>
+      <div id="lanterns-board"></div>
+      <p><a href="?lang=en">English</a> / <a href="?lang=fr">Français</a></p>
+    </main>
+    <script type="module" src="./lanterns-preview.mjs"></script>
+  </body>
+</html>

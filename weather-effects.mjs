@@ -1,4 +1,6 @@
 import { estimatedTemperature, altitudeTemperatureOffset } from "./sky.mjs";
+import { spendExtraEnergy } from "./health.mjs";
+import { journeyEquipmentModifiers } from "./equipment.mjs";
 
 export function temperatureModifiers(celsius) {
   if (!Number.isFinite(celsius)) throw new Error("Invalid exposure temperature.");
@@ -25,7 +27,8 @@ export function precipitationModifiers(condition) {
 export function weatherWalkingFactor(state, info) {
   if (!info?.weather) return 1;
   const date = new Date(state.startedAt + state.elapsedMinutes * 60_000);
-  return precipitationModifiers(info.weather.months[date.getUTCMonth()].condition).speedFactor;
+  const speed = precipitationModifiers(info.weather.months[date.getUTCMonth()].condition).speedFactor;
+  return 1 - (1 - speed) * journeyEquipmentModifiers(state).rainExposureMultiplier;
 }
 
 export function applyWeatherExposure(previous, next, info) {
@@ -39,11 +42,10 @@ export function applyWeatherExposure(previous, next, info) {
     const effects = temperatureModifiers(exposureTemperature(date, info));
     const precipitation = precipitationModifiers(info.weather.months[date.getUTCMonth()].condition);
     calorieMinutes += effects.extraCaloriesFactor * duration;
-    fatigue += (effects.fatiguePerHour + precipitation.fatiguePerHour) * duration / 60;
+    fatigue += (effects.fatiguePerHour + precipitation.fatiguePerHour *
+      journeyEquipmentModifiers(previous).rainExposureMultiplier) * duration / 60;
   }
   const extraKcal = Math.max(0, next.energyKcal - previous.energyKcal) * calorieMinutes / minutes;
-  const reserveKcal = Math.max(0, next.reserveKcal - extraKcal);
-  return { ...next, reserveKcal, energyKcal: next.energyKcal + extraKcal,
-    fatigue: Math.min(100, next.fatigue + fatigue),
-    ended: reserveKcal <= 0 ? "hunger" : next.ended };
+  return { ...spendExtraEnergy(next, extraKcal),
+    fatigue: Math.min(100, next.fatigue + fatigue) };
 }

@@ -70,7 +70,7 @@ def initial_state(base, name, started_at, card, survival, economy, trail):
             "effortFactor": 1 + (pace - 3) * 0.08,
             "enduranceFactor": 1 + (endurance - 3) * 0.12,
         },
-        "reserveKcal": survival["reserve_kcal"], "awakeHours": 0, "ended": None,
+        "reserveKcal": survival["reserve_kcal"], "health": 100, "awakeHours": 0, "ended": None,
         "meals": 0, "sleeps": 0, "birthCard": card["id"], "dailyCard": card["id"],
         "tarotDay": day, "dailyTarotSeenDay": day,
         "walletCents": card["mealUnits"] * economy["pricing"]["referenceCents"],

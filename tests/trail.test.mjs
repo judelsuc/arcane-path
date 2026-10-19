@@ -269,9 +269,9 @@ test("revisiting a witness cannot advance twice and survival failure takes prior
   const next = interviewTrail({ ...state, col: first.col, row: first.row }, info, survival, economy);
   assert.throws(() => interviewTrail(next, info, survival, economy), /No new/);
   const last = state.trail.stages[2];
-  const hungry = interviewTrail({ ...state, col: last.col, row: last.row, reserveKcal: 1,
+  const hungry = interviewTrail({ ...state, col: last.col, row: last.row, reserveKcal: 1, health: 0.01,
     trail: { ...state.trail, index: 2 } }, info, survival, economy);
-  assert.equal(hungry.ended, "hunger");
+  assert.equal(hungry.ended, "health");
   assert.equal(hungry.trail.completed, false);
   assert.equal(hungry.trail.index, 2);
 });

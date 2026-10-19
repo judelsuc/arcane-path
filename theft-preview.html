@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Stealing - game 3</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main style="max-width: 880px; margin: 2rem auto; padding: 1rem">
+      <h1 id="preview-title"></h1>
+      <p id="preview-note"></p>
+      <label for="preview-level" id="preview-level-label"></label>
+      <select id="preview-level">
+        <option value="normal" id="preview-normal"></option>
+        <option value="hard" id="preview-hard"></option>
+      </select>
+      <p id="preview-difficulty"></p>
+      <button id="open-theft" type="button" data-i18n="theftTitle" disabled></button>
+      <p id="preview-error" role="alert"></p>
+      <p><a href="?lang=en">English</a> / <a href="?lang=fr">Francais</a></p>
+      <p><a href="./cafe-preview.html">Game 1: Cafe rush</a> / <a href="./music-preview.html">Game 2: Street music</a></p>
+    </main>
+    <script type="module" src="./theft-preview.mjs"></script>
+  </body>
+</html>

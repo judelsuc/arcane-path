@@ -132,6 +132,26 @@ class PathStoreTests(unittest.TestCase):
         self.assertEqual(status, 200)
         return data
 
+    def test_lore_path_starts_at_authoritative_player_position_avoids_water_and_keeps_main_cache_separate(self):
+        self.chunks.bases = {"test": {"width": 8, "height": 8,
+            "rows": [[{"terrain": "water" if col == 4 else "road", "elevationMeters": 100}
+                      for col in range(8)] for _ in range(8)]}}
+        original = copy.deepcopy(self.journeys.record)
+        position = [-3, -2]
+        key = self.store.lore_key(self.identity, 0, position)
+        status, _ = self.store.request_lore(self.identity, 0, position)
+        self.assertEqual(status, 202)
+        self.store.jobs[key].result(timeout=5)
+        status, response = self.store.request_lore(self.identity, 0, position)
+        self.assertEqual(status, 200)
+        self.assertNotIn("points", response)
+        route = self.store.decode(self.store.location(*key))
+        self.assertEqual(route["points"][0], position)
+        self.assertEqual(route["points"][-1], [14, 5])
+        self.assertFalse(any(0 <= row < 8 and col == 4 for col, row in route["points"]))
+        self.assertFalse(self.store.location(self.identity, 0).exists())
+        self.assertEqual(self.journeys.record, original)
+
     def test_persisted_path_survives_restart_pipeline_changes_without_reroll_and_geometry_is_hidden(self):
         response = self.ready()
         self.assertGreater(response["downloads"], 0)

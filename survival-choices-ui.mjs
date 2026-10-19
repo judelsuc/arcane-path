@@ -20,7 +20,6 @@ export function setupSurvivalChoices(t, { context, act }) {
     document.querySelector("#cell-buy").disabled = current.blocked || !canEat(current.cell);
     document.querySelector("#cell-rest").disabled = current.blocked;
     document.querySelector("#cell-sleep").disabled = current.blocked;
-    document.querySelector("#cell-music").disabled = current.blocked || current.cell.terrain !== "place";
     document.querySelector("#cell-clues").disabled = current.blocked || !atTrailTarget(current.state);
     document.querySelector("#survival-choice-save").textContent = current.saveStatus;
     for (const [kind, rule] of Object.entries(CHOICE_RULES)) {
@@ -56,11 +55,16 @@ export function setupSurvivalChoices(t, { context, act }) {
     document.querySelector("#town-dialog").close();
     open();
   });
-  for (const kind of Object.keys(CHOICE_RULES)) {
+  function perform(kind) {
+    document.querySelector("#survival-choice-error").textContent = "";
+    const succeeded = act(kind);
+    localize();
+    return succeeded;
+  }
+  for (const kind of ["forage"]) {
     document.querySelector(`#choice-${kind}`).addEventListener("click", () => {
       document.querySelector("#survival-choice-error").textContent = "";
-      act(kind);
-      localize();
+      perform(kind);
       const error = document.querySelector("#survival-choice-error");
       error.hidden = !error.textContent;
       const feedback = error.hidden ? document.querySelector("#survival-choice-result") : error;
@@ -72,7 +76,7 @@ export function setupSurvivalChoices(t, { context, act }) {
   }
   for (const [id, target] of Object.entries({
     "cell-buy": "eat-travel", "cell-rest": "rest-travel", "cell-sleep": "sleep-travel",
-    "cell-music": "open-music", "cell-clues": "open-trail",
+    "cell-clues": "open-trail",
   })) {
     document.getElementById(id).addEventListener("click", () => {
       dialog.close();
@@ -85,5 +89,5 @@ export function setupSurvivalChoices(t, { context, act }) {
       dialog.close();
     }
   });
-  return { localize, reset() { dialog.close(); } };
+  return { localize, perform, reset() { dialog.close(); } };
 }

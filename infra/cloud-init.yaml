@@ -3,6 +3,7 @@ package_update: true
 packages:
   - python3
   - python3-yaml
+  - nodejs
   - unattended-upgrades
   - nftables
 ssh_pwauth: false

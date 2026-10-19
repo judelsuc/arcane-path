@@ -122,6 +122,64 @@ class AbandonedJournals:
         return (bounds["maxLatitude"] - (row + .5) * step,
                 bounds["minLongitude"] + (col + .5) * step / math.cos(math.radians(latitude)))
 
+    def discovery_rumours(self, record, col, row):
+        """Read-only authorized rumours for the isolated journey, never quest contents."""
+        position = self.position(record, col, row)
+        with self.connect() as db:
+            rows = db.execute("""SELECT id,payload,latitude,longitude FROM journals
+                WHERE delivered=0 AND id!=? AND (finder IS NULL OR touched<=?)
+                AND latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?
+                ORDER BY id LIMIT 100""",
+                (record["state"]["serverJourney"]["id"], self.clock() - LEASE_SECONDS,
+                 position[0] - .003, position[0] + .003, position[1] - .03, position[1] + .03)).fetchall()
+        return [{"id": row["id"], "parent": json.loads(row["payload"])["parent"],
+                 "distanceMeters": meters} for row in rows
+                if (meters := distance(position, (row["latitude"], row["longitude"]))) <= 200]
+
+    def discovery_available(self, journal):
+        with self.connect() as db:
+            row = db.execute("SELECT finder,touched,delivered FROM journals WHERE id=?", (journal,)).fetchone()
+        return bool(row and not row["delivered"] and
+                    (row["finder"] is None or row["touched"] is not None
+                     and row["touched"] <= self.clock() - LEASE_SECONDS))
+
+    def discovery_truths(self, journey, entries, elapsed_minutes):
+        """Only canonical current quest fiction behind earned public journal clues."""
+        ids = sorted({entry["targetId"] for entry in entries
+                      if entry["targetType"] == "abandoned-journal"})
+        truths = []
+        with self.connect() as db:
+            for journal in ids:
+                row = db.execute("SELECT * FROM journals WHERE id=?", (journal,)).fetchone()
+                if (not row or row["delivered"] or row["id"] == journey or
+                        row["finder"] not in (None, journey) and
+                        (row["touched"] is None or row["touched"] > self.clock() - LEASE_SECONDS)):
+                    continue
+                payload = json.loads(row["payload"])
+                step = row["step"]
+                stage = payload["stages"][step]
+                truths.append({
+                    "targetType": "abandoned-journal", "targetId": journal,
+                    "targetRevision": f"step:{step}", "evidenceKey": "solution", "kind": "place",
+                    "precision": "local", "facts": {"parent": payload["parent"], "place": stage["name"],
+                        "latitude": stage["latitude"], "longitude": stage["longitude"],
+                        "marker": f"virtual:journal:{journal}:step:{step}", "solution": stage["name"]},
+                    "observedMinutes": elapsed_minutes, "channels": ["collector"],
+                    "source": "journal-service", "availability": "current", "contentVersion": "template-v1"})
+        return truths
+
+    def discovery_status(self, journal, revision, journey):
+        with self.connect() as db:
+            row = db.execute("SELECT finder,touched,delivered,step FROM journals WHERE id=?", (journal,)).fetchone()
+        if not row:
+            return "unavailable"
+        if row["delivered"] or revision.startswith("step:") and revision != f"step:{row['step']}":
+            return "historical"
+        if (row["finder"] not in (None, journey) and
+                (row["touched"] is None or row["touched"] > self.clock() - LEASE_SECONDS)):
+            return "unavailable"
+        return "current"
+
     def request(self, data, token):
         if not isinstance(data, dict) or set(data) - {
                 "journey", "keeper", "col", "row", "ended", "index", "action", "journal", "step",
@@ -136,7 +194,7 @@ class AbandonedJournals:
             raise JourneyRequest("Invalid notebook keeper.")
         position = self.position(record, data.get("col"), data.get("row"))
         ended = data.get("ended")
-        if ended not in (None, "hunger", "fatigue", "sleep", "reunion", "placement"):
+        if ended not in (None, "health", "hunger", "fatigue", "sleep", "reunion", "placement"):
             raise JourneyRequest("Invalid journey outcome.")
         action = data.get("action", "sync")
         if action not in ("sync", "claim", "advance", "register", "publish", "read"):
@@ -168,7 +226,7 @@ class AbandonedJournals:
                 return {"registered": True}
             db.execute("""UPDATE journals SET finder=NULL,touched=NULL
                           WHERE delivered=0 AND touched<=?""", (now - LEASE_SECONDS,))
-            if action == "publish" or ended in ("hunger", "fatigue", "sleep", "placement"):
+            if action == "publish" or ended in ("health", "hunger", "fatigue", "sleep", "placement"):
                 index = data.get("index")
                 stages = record["state"]["trail"]["stages"]
                 if type(index) is not int or not 0 <= index < len(stages):
@@ -248,4 +306,4 @@ class AbandonedJournals:
             return {"sidequests": [public(row) for row in claimed],
                     "nearby": [public(row) for row in nearby if distance(
                         position, (row["latitude"], row["longitude"])) <= 200],
-                    "published": bool(action == "publish" or ended in ("hunger", "fatigue", "sleep", "placement"))}
+                    "published": bool(action == "publish" or ended in ("health", "hunger", "fatigue", "sleep", "placement"))}

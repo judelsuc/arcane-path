@@ -1,5 +1,9 @@
 import { initialJourney, moveJourney } from "./travel.mjs";
 import { weatherWalkingFactor } from "./weather-effects.mjs";
+import { applyMetabolism, healthValue } from "./health.mjs";
+import { journeyEquipmentModifiers } from "./equipment.mjs";
+import { applyLoreWalking } from "./lore-walking.mjs";
+import { activePower, ordinaryEnergyFactor, powerCoverage, protectedFatigue } from "./lore-effects.mjs";
 
 export function validateSurvivalConfig(config) {
   const limits = {
@@ -55,7 +59,7 @@ export function startSurvival(col, row, startedAt, profileId, config) {
   if (!Object.hasOwn(config.profiles, profileId)) throw new Error("Unknown character profile.");
   return { ...initialJourney(col, row, startedAt), profileId,
     character: characterProfile(config.profiles[profileId]),
-    reserveKcal: config.reserve_kcal, awakeHours: 0, ended: null, meals: 0, sleeps: 0 };
+    reserveKcal: config.reserve_kcal, health: 100, awakeHours: 0, ended: null, meals: 0, sleeps: 0 };
 }
 
 export function hungerPercent(state, config) {
@@ -68,10 +72,6 @@ export function canEat(cell) {
 
 function ensureActive(state) {
   if (state.ended) throw new Error("This journey has ended. Start a new journey.");
-}
-
-function outcome(state) {
-  return state.reserveKcal <= 0 ? "hunger" : null;
 }
 
 export function wakingSleepHours(state, minutes) {
@@ -96,38 +96,136 @@ export function basalEnergy(state, minutes, config, sleeping = false) {
 }
 
 function consume(state, minutes, extraEnergy, config, sleeping = false) {
-  const basal = basalEnergy(state, minutes, config, sleeping);
+  const boundaries = ["empress", "hanged"].map(id => {
+    const effect = state.lore?.protections?.[id];
+    return effect?.expiresMinutes - state.elapsedMinutes;
+  }).filter(value => value > 0 && value < minutes);
+  if (boundaries.length) {
+    const ends = [...new Set([...boundaries, minutes])].sort((a, b) => a - b);
+    let next = state, offset = 0;
+    const segments = [];
+    for (const end of ends) {
+      const duration = end - offset, elapsedStart = next.elapsedMinutes;
+      next = consume(next, duration, extraEnergy * duration / minutes, config, sleeping);
+      segments.push({ ...next.metabolism, elapsedStart });
+      offset = end;
+    }
+    return { ...next, metabolism: { minutes, availableKcal: state.reserveKcal, sleeping,
+      spentKcal: segments.reduce((sum, part) => sum + part.spentKcal, 0),
+      healthBefore: healthValue(state), segments } };
+  }
+  const factor = ordinaryEnergyFactor(state, minutes);
+  const basal = basalEnergy(state, minutes, config, sleeping) * factor;
+  extraEnergy *= factor;
+  const stasisMinutes = powerCoverage(state, "hanged", minutes);
   const next = {
     ...state, elapsedMinutes: state.elapsedMinutes + minutes,
     energyKcal: state.energyKcal + basal + extraEnergy,
     reserveKcal: Math.max(0, state.reserveKcal - basal - extraEnergy),
     awakeHours: sleeping
       ? Math.max(0, state.awakeHours - minutes / 60 * config.sleep_recovery_per_hour)
-      : Math.min(config.sleep_limit_hours, state.awakeHours + wakingSleepHours(state, minutes)),
+      : Math.min(config.sleep_limit_hours, state.awakeHours +
+        wakingSleepHours({ ...state, elapsedMinutes: state.elapsedMinutes + stasisMinutes }, minutes - stasisMinutes)),
   };
-  return { ...next, ended: outcome(next) ??
-    (next.awakeHours >= config.sleep_limit_hours ? "sleep" : null) };
+  return applyMetabolism({ ...next, ended: next.awakeHours >= config.sleep_limit_hours ? "sleep" : null },
+    minutes, basal + extraEnergy, state.reserveKcal, sleeping);
 }
 
 export function walkSurvival(state, dc, dr, from, to, config, weatherInfo) {
   ensureActive(state);
+  if (Object.keys(state.lore?.protections ?? {}).some(id => activePower(state, id))) {
+    return walkWithPowerBoundaries(state, dc, dr, from, to, config, weatherInfo);
+  }
+  const gear = journeyEquipmentModifiers(state);
   const hungerPenalty = hungerPercent(state, config) / 100 * config.hunger_speed_penalty;
   const sleepPenalty = Math.max(0, Math.min(1,
     (state.awakeHours - config.sleep_warning_hours) /
     (config.sleep_limit_hours - config.sleep_warning_hours))) * config.sleep_speed_penalty;
   const moving = { ...state, character: { ...state.character,
     baseSpeedKmh: state.character.baseSpeedKmh * (1 - hungerPenalty) * (1 - sleepPenalty) *
-      weatherWalkingFactor(state, weatherInfo) } };
-  const moved = moveJourney(moving, dc, dr, from, to);
-  const next = consume(state, moved.lastMove.minutes, moved.lastMove.energyKcal, config);
+      weatherWalkingFactor(state, weatherInfo) * gear.speedMultiplier } };
+  let moved = moveJourney(moving, dc, dr, from, to);
+  const effect = state.speedEffect;
+  if (effect && effect.expiresMinutes > state.elapsedMinutes) {
+    const base = moved.lastMove, remaining = effect.expiresMinutes - state.elapsedMinutes;
+    const speedFactor = Math.max(0.5, Math.min(6, base.speedKmh * effect.factor)) / base.speedKmh;
+    const minutes = base.minutes <= remaining * speedFactor ? base.minutes / speedFactor
+      : remaining + base.minutes - remaining * speedFactor;
+    const fatigueGain = base.fatigueGain +
+      (minutes - base.minutes) * 0.08 * base.terrainCost / state.character.enduranceFactor;
+    moved = { ...moved, elapsedMinutes: state.elapsedMinutes + minutes,
+      fatigue: Math.min(100, state.fatigue + fatigueGain),
+      lastMove: { ...base, minutes, fatigueGain, speedKmh: base.meters / 1000 / minutes * 60 } };
+  }
+
+  function walkWithPowerBoundaries(state, dc, dr, from, to, config, weatherInfo) {
+    let next = state, remaining = 250, minutes = 0, energyKcal = 0, fatigueGain = 0;
+    let base, ascent = 0, descent = 0, protectedWearMeters = 0;
+    const segments = [];
+    while (remaining > 1e-8) {
+      const gear = journeyEquipmentModifiers({ ...state, elapsedMinutes: next.elapsedMinutes });
+      const hungerPenalty = hungerPercent(state, config) / 100 * config.hunger_speed_penalty;
+      const sleepPenalty = Math.max(0, Math.min(1, (state.awakeHours - config.sleep_warning_hours) /
+        (config.sleep_limit_hours - config.sleep_warning_hours))) * config.sleep_speed_penalty;
+      const moved = moveJourney({ ...state, character: { ...state.character,
+        baseSpeedKmh: state.character.baseSpeedKmh * (1 - hungerPenalty) * (1 - sleepPenalty) *
+          weatherWalkingFactor(state, weatherInfo) * gear.speedMultiplier } }, dc, dr, from, to);
+      base = moved.lastMove;
+      const speed = state.speedEffect?.expiresMinutes > next.elapsedMinutes
+        ? Math.max(0.5, Math.min(6, base.speedKmh * state.speedEffect.factor)) / base.speedKmh : 1;
+      const stride = next.lore.effects?.expiresMinutes > next.elapsedMinutes && next.lore.effects.remainingMeters > 0
+        ? next.lore.effects : null;
+      const factor = stride ? 0.25 : 1, minutePerMeter = base.minutes / base.meters / speed * factor;
+      const expiry = [...Object.values(next.lore.protections ?? {}).map(effect => effect.expiresMinutes),
+        ...(state.speedEffect ? [state.speedEffect.expiresMinutes] : []),
+        ...(stride ? [stride.expiresMinutes] : [])].filter(time => time > next.elapsedMinutes + 1e-8);
+      const meters = Math.min(remaining, stride?.remainingMeters ?? Infinity,
+        (Math.min(...expiry) - next.elapsedMinutes) / minutePerMeter);
+      const duration = meters * minutePerMeter, fraction = meters / base.meters;
+      if (!(duration > 0)) throw new Error("Artifact walking boundary made no progress.");
+      const effort = base.energyKcal * gear.energyMultiplier * factor * fraction;
+      const fatigue = (base.fatigueGain + (base.minutes / speed - base.minutes) *
+        0.08 * base.terrainCost / state.character.enduranceFactor) * gear.fatigueMultiplier * factor * fraction;
+      fatigueGain += protectedFatigue(next, duration, fatigue);
+      const before = next;
+      if (activePower(before, "devil")) protectedWearMeters += meters;
+      next = consume(next, duration, effort, config);
+      segments.push({ ...next.metabolism, elapsedStart: before.elapsedMinutes });
+      energyKcal += effort;
+      minutes += duration;
+      ascent += (moved.ascentMeters - state.ascentMeters) * fraction;
+      descent += (moved.descentMeters - state.descentMeters) * fraction;
+      remaining -= meters;
+      if (stride) {
+        const left = stride.remainingMeters - meters;
+        next = { ...next, lore: { ...next.lore, effects: left > 1e-8 && stride.expiresMinutes > next.elapsedMinutes
+          ? { ...stride, remainingMeters: left } : null } };
+      }
+    }
+    return { ...next, col: state.col + dc, row: state.row + dr,
+      distanceMeters: state.distanceMeters + 250, ascentMeters: state.ascentMeters + ascent,
+      descentMeters: state.descentMeters + descent, fatigue: Math.min(100, state.fatigue + fatigueGain),
+      lastMove: { ...base, meters: 250, minutes, energyKcal, fatigueGain, speedKmh: 15 / minutes,
+        protectedWearMeters },
+      metabolism: { minutes, spentKcal: segments.reduce((sum, part) => sum + part.spentKcal, 0),
+        availableKcal: state.reserveKcal, healthBefore: healthValue(state), sleeping: false, segments } };
+  }
+  const stride = applyLoreWalking(state, moved);
+  moved = stride.moved;
+  const energyKcal = moved.lastMove.energyKcal * gear.energyMultiplier;
+  const fatigueGain = protectedFatigue(state, moved.lastMove.minutes, moved.lastMove.fatigueGain * gear.fatigueMultiplier);
+  moved = { ...moved, fatigue: Math.min(100, state.fatigue + fatigueGain),
+    lastMove: { ...moved.lastMove, energyKcal, fatigueGain } };
+  const next = consume(state, moved.lastMove.minutes, energyKcal, config);
   return { ...next, col: moved.col, row: moved.row, distanceMeters: moved.distanceMeters,
     ascentMeters: moved.ascentMeters, descentMeters: moved.descentMeters,
-    fatigue: moved.fatigue, lastMove: moved.lastMove };
+    fatigue: moved.fatigue, lastMove: moved.lastMove,
+    ...(state.lore ? { lore: { ...state.lore, effects: stride.effect } } : {}) };
 }
 
 export function faintSurvival(state, config) {
   validateSurvivalConfig(config);
-  if (state.ended === "hunger" || state.fatigue < 100 && state.ended !== "sleep") {
+  if (healthValue(state) <= 0 || state.ended === "hunger" || state.fatigue < 100 && state.ended !== "sleep") {
     throw new Error("No fatigue or sleep collapse to resolve.");
   }
   return consume({ ...state, ended: null, fatigue: 40, lastMove: null },

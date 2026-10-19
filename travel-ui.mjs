@@ -8,10 +8,16 @@ import {
 import { setupTowns } from "./towns-ui.mjs";
 import { refreshPricing, refreshMeals, refreshNightRest, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, restEffect, finishAction, washEconomy, marketPrice } from "./economy.mjs";
 import { setupDailyTarot } from "./daily-tarot-ui.mjs";
-import { survivalChoice } from "./survival-choices.mjs";
+import { survivalChoice, beginTheft, settleTheft, choiceAvailable } from "./survival-choices.mjs";
+import { setupTheft } from "./theft-ui.mjs";
 import { setupSurvivalChoices } from "./survival-choices-ui.mjs";
 import { setupEconomyUI } from "./economy-ui.mjs";
-import { beginBusking, settleBusking, musicMistakeLimit } from "./music.mjs";
+import { beginBusking, settleBusking, musicMistakeLimit, musicDifficulty } from "./music.mjs";
+import { beginCafe, settleCafe } from "./cafe.mjs";
+import { setupCafe } from "./cafe-ui.mjs";
+import { setupEarnMoney } from "./earn-money-ui.mjs";
+import { recordJourneyPosition, createJourneyTerrainLoader } from "./journey-map.mjs";
+import { renderJourneyMarker } from "./death.mjs";
 import { setupMusic } from "./music-ui.mjs";
 import { interviewTrail, recordTrailArrival } from "./trail.mjs";
 import { createServerJourney } from "./server-journey.mjs";
@@ -23,11 +29,14 @@ import { agendaClock } from "./agenda-clock.mjs";
 import { setupTrail, trailReminder, parentClueText, trailEntryDate } from "./trail-ui.mjs";
 import { askDirections } from "./directions.mjs";
 import { exposureTemperature, temperatureModifiers, precipitationModifiers } from "./weather-effects.mjs";
-import { createJourneyStore, mapIdentity } from "./journey-save.mjs";
+import { createJourneyStore, mapIdentity, JOURNEY_SAVE_PREFIX } from "./journey-save.mjs";
 import { renderTarotCard } from "./tarot-cards.mjs";
 import { trailClue } from "./trail-actions.mjs";
 import { beginExploration, applyFieldSearch, askAboutClue, fieldClueText } from "./trail-search.mjs";
 import { setupNeedsNotices } from "./needs-notices.mjs";
+import { advanceJourneyEvents, acknowledgeJourneyEvent } from "./journey-events.mjs";
+import { setupJourneyEvents } from "./journey-events-ui.mjs";
+import { migrateHealth, healthValue } from "./health.mjs";
 import { setupSaveFeedback } from "./save-feedback.mjs";
 import { lodgingGuidance } from "./lodging-guidance.mjs";
 import { pendingJournalCreation, finishJournalCreation, ensureJournalAccess, createJournalClient } from "./abandoned-journals.mjs";
@@ -35,10 +44,14 @@ import { setupAbandonedJournals } from "./abandoned-journals-ui.mjs";
 import { encodeNotebook } from "./notebook-transfer.mjs";
 import { updateWeatherPanel } from "./weather-panel.mjs";
 import { beginPressures, sympathy, policePresence, washingAvailable } from "./pressures.mjs";
-import { recordJourneyPosition, createJourneyTerrainLoader } from "./journey-map.mjs";
-import { renderJourneyMarker } from "./death.mjs";
+import { beginEquipment } from "./equipment.mjs";
+import { journeyEquipmentAction } from "./equipment-journey.mjs";
+import { setupEquipment } from "./equipment-ui.mjs";
+import { setupJourneyMiniGames } from "./journey-mini-games-ui.mjs";
+import { beginJourneyMiniGame, settleJourneyMiniGame } from "./journey-mini-games.mjs";
+import { synchronizeParentDiscovery, applyJournalDiscovery } from "./discovery-targets.mjs";
 
-export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, pinPhoto, pinTarot, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats }) {
+export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, cafeAudio, theftAudio, miniGameAudio, pinPhoto, pinTarot, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats }) {
   const start = document.querySelector("#start-travel");
   const resume = document.querySelector("#resume-travel");
   const saveStatus = document.querySelector("#journey-save-status");
@@ -104,10 +117,12 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const abandonedUI = setupAbandonedJournals(t, {
     publishNotebook, showNotebook,
     context: () => state,
-    persist(sidequests, published) {
+    persist(sidequests, published, nearby, observedMinutes) {
       if (!state) return;
-      state = { ...state, sidequests, ...(published ? { journalPublished: true } : {}) };
+      state = applyJournalDiscovery(state, sidequests, nearby, observedMinutes);
+      if (published) state = { ...state, journalPublished: true };
       autosave();
+      localize();
     },
   });
   const saveFeedback = setupSaveFeedback(t, {
@@ -180,6 +195,17 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const needsNotices = setupNeedsNotices(t, {
     context: () => active && state && survivalConfig ? { state, survival: survivalConfig, busy } : null,
   });
+  const journeyEventsUI = setupJourneyEvents(t, {
+    pinEvent: (container, current, economy) => pinTarot(container, current, "event", economy),
+    context: () => active && state && economyData ? {
+      state, economy: economyData, busy, saveStatus: saveStatus.textContent,
+    } : null,
+    acknowledge() {
+      state = acknowledgeJourneyEvent(state);
+      autosave();
+      localize();
+    },
+  });
   function readJourney() {
     savedJourney = undefined;
     slotOccupied = false;
@@ -187,7 +213,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     saveError = "";
     try {
       saveStore ??= createJourneyStore(localStorage);
-      slotOccupied = localStorage.getItem(`arcane-journey-v1:${region}`) !== null;
+      slotOccupied = localStorage.getItem(`${JOURNEY_SAVE_PREFIX}${region}`) !== null;
       savedJourney = saveStore.read(region);
       if (savedJourney && savedJourney.mapIdentity !== mapIdentity(base)) {
         throw new Error(t("saveMapChanged"));
@@ -204,6 +230,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     if (state) state = recordJourneyPosition(recordTrailArrival(state));
     try {
       if (!saveStore) throw new Error(t("saveStorageUnavailable"));
+      state = synchronizeParentDiscovery(state);
       const saved = saveStore.write({ region, map: base, state,
         survival: survivalConfig, economy: economyData });
       savedJourney = saved;
@@ -251,8 +278,25 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       ? { ...mappedCell, countryCodes: [country] } : mappedCell;
     const cell = withDiscoveredAccommodations(pricedCell, discoveredLodging, state.col, state.row);
     return { state, cell, info: exposureInfo(chunk, p.row, p.col),
-      data: economyData, survival: survivalConfig, blocked: busy || Boolean(cursor) || Boolean(state.ended) };
+      data: economyData, survival: survivalConfig, blocked: busy || Boolean(cursor) || Boolean(state.ended) ||
+        Boolean(state.performancePending || state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending ||
+          state.equipment?.dogEncounter === "pending") };
   }
+  const equipmentUI = setupEquipment(t, {
+    context() {
+      const current = economyContext();
+      return current && active ? { ...current, saveStatus: saveStatus.textContent,
+        blocked: busy || Boolean(cursor) || Boolean(state.ended || state.performancePending ||
+          state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending) } : null;
+    },
+    act(action) {
+      const current = economyContext();
+      if (!current) throw new Error("Current cell is not loaded.");
+      state = journeyEquipmentAction(state, action, current.cell, current.info, survivalConfig, economyData);
+      autosave();
+      draw();
+    },
+  });
   const economyUI = setupEconomyUI(t, {
     context: economyContext, act: economyAction,
     selectAccommodation(place) {
@@ -314,6 +358,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     },
   });
   const musicUI = setupMusic(t, {
+    difficulty: () => state ? musicDifficulty(state) : { level: 0, xp: 0, beats: 24, multiplier: 1 },
     mistakeLimit: () => state ? musicMistakeLimit(state) : null,
     audio: musicAudio,
     available: () => {
@@ -333,10 +378,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         return false;
       }
     },
-    settle(hits, mistakes) {
+    settle(hits, mistakes, cancelled) {
       if (!state?.performancePending) return null;
       try {
-        state = settleBusking(state, hits, mistakes);
+        state = settleBusking(state, hits, mistakes, cancelled);
         autosave();
         localize();
         return state.lastEarningsCents;
@@ -345,6 +390,88 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         return null;
       }
     },
+  });
+  const cafeUI = setupCafe(t, {
+    audio: cafeAudio,
+    context: economyContext,
+    begin(venueId) {
+      const current = economyContext();
+      if (!current || current.blocked) return null;
+      try {
+        state = beginCafe(state, current.cell, current.info, venueId, survivalConfig, economyData);
+        autosave();
+        localize();
+        return state.cafePending;
+      } catch (reason) {
+        report(reason);
+        throw reason;
+      }
+    },
+    settle(served, mistakes, cancelled) {
+      if (!state?.cafePending) return null;
+      try {
+        state = settleCafe(state, served, mistakes, cancelled);
+        autosave();
+        localize();
+        return state.lastCafe;
+      } catch (reason) {
+        report(reason);
+        throw reason;
+      }
+    },
+  });
+  const theftUI = setupTheft(t, {
+    audio: theftAudio,
+    available() {
+      const current = economyContext();
+      return Boolean(current && !current.blocked && choiceAvailable("steal", current.cell));
+    },
+    begin() {
+      const current = economyContext();
+      if (!current || current.blocked) return false;
+      state = beginTheft(state, current.cell, current.info, survivalConfig, economyData);
+      autosave();
+      localize();
+      return state.theftPending;
+    },
+    settle(outcome) {
+      if (!state?.theftPending) return null;
+      const current = economyContext();
+      state = settleTheft(state, outcome, current.info, survivalConfig, economyData);
+      autosave();
+      localize();
+      return state.lastSurvivalChoice;
+    },
+  });
+  const miniGamesUI = setupJourneyMiniGames(t, {
+    audio: miniGameAudio,
+    context: economyContext,
+    act(action) {
+      try {
+        if (action.type === "begin") {
+          const current = economyContext();
+          if (!current || current.blocked) throw new Error("This activity is unavailable.");
+          state = beginJourneyMiniGame(state, action.game, current);
+        } else if (action.type === "settle") {
+          state = settleJourneyMiniGame(state, action.game, action.result);
+        } else throw new Error("Unknown journey mini-game action.");
+        autosave();
+        localize();
+        return state;
+      } catch (reason) {
+        report(reason);
+        throw reason;
+      }
+    },
+  });
+  const earnMoneyUI = setupEarnMoney(t, {
+    context: () => {
+      const current = economyContext();
+      return current ? { ...current, saveStatus: saveStatus.textContent } : null;
+    },
+    perform: choicesUI.perform,
+    steal: theftUI.open,
+    miniGames: miniGamesUI,
   });
   const trailUI = setupTrail(t, {
     pinPhoto,
@@ -485,6 +612,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     towns.localize(document.documentElement.lang);
     economyUI.localize();
     musicUI.localize();
+    cafeUI.localize();
+    theftUI.localize();
     trailUI.localize();
     document.querySelector("#map-workspace").classList.toggle("travel-active", active);
     document.body.classList.toggle("is-travelling", active);
@@ -511,6 +640,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       setFeedback(element, saveError ? "failure" : savedAt ? "success" : "");
     }
     choicesUI.localize();
+    earnMoneyUI.localize();
     document.querySelector("#character-setup").hidden = active;
     retry.disabled = busy;
     stop.disabled = busy;
@@ -532,6 +662,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const chunk = position && stream?.get(position.x, position.y);
     const cell = chunk?.rows[position.row][position.col];
     const ended = Boolean(state?.ended);
+    const activityPending = Boolean(state?.performancePending || state?.cafePending || state?.theftPending ||
+      state?.miniGamePending || state?.events?.pending || state?.equipment?.dogEncounter === "pending");
     const marker = document.querySelector(".tile--player");
     if (marker && state) renderJourneyMarker(marker, state, t);
     if (state && survivalConfig && economyData) {
@@ -560,6 +692,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         endurance: character.endurance, pace: character.pace,
       });
       const values = {
+        health: healthValue(state),
         hunger: hungerPercent(state, survivalConfig),
         fatigue: state.fatigue,
         sleep: Math.min(100, state.awakeHours / survivalConfig.sleep_limit_hours * 100),
@@ -567,15 +700,20 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       for (const [key, value] of Object.entries(values)) {
         const meter = document.querySelector(`#needs-${key}`);
         meter.value = value;
-        meter.low = survivalConfig.warning_percent * 0.6;
-        meter.high = key === "hunger" ? 75 : survivalConfig.warning_percent;
+        meter.low = key === "health" ? 25 : survivalConfig.warning_percent * 0.6;
+        meter.high = key === "health" ? 60 : key === "hunger" ? 75 : survivalConfig.warning_percent;
         document.querySelector(`#needs-${key}-value`).textContent = `${Math.round(value)}%`;
       }
       document.querySelector("#needs-sleep").title = t("needsAwake", { hours: state.awakeHours.toFixed(1) });
       const warnings = [];
+      if (values.health <= 25) warnings.push(t("needsInjured"));
       if (values.hunger >= 75) warnings.push(t("needsHungry"));
       if (values.fatigue >= survivalConfig.warning_percent) warnings.push(t("needsTired"));
       if (state.awakeHours >= survivalConfig.sleep_warning_hours) warnings.push(t("needsSleepy"));
+      const speed = state.speedEffect;
+      document.querySelector("#needs-speed-effect").textContent = speed && speed.expiresMinutes > state.elapsedMinutes
+        ? t("journeyEventSpeed", { percent: Math.round((speed.factor - 1) * 100),
+          minutes: Math.ceil(speed.expiresMinutes - state.elapsedMinutes) }) : "";
       document.querySelector("#needs-warning").textContent = warnings.join(" ");
       const pressures = state.pressures;
       document.querySelector("#pressure-panel").hidden = !pressures;
@@ -600,7 +738,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
           exposureInfo(chunk, position.row, position.col)).cents : null;
         washing.textContent = t("washAction", { money: price === null ? "—" : (price / 100).toFixed(2) });
         washing.disabled = busy || Boolean(cursor) || ended || !washingAvailable(cell) ||
-          price === null || state.walletCents < price;
+          price === null || state.walletCents < price || activityPending;
       }
       document.querySelector("#journey-outcome").textContent = ended ? t(`journeyEnded.${state.ended}`) : "";
       setFeedback(document.querySelector("#journey-outcome"),
@@ -672,8 +810,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       weatherSummary.textContent = weatherError
         ? t("weatherError", { error: weatherError }) : active ? t("weatherLoading") : "";
     }
-    for (const button of directions) button.disabled = busy || !cell || (ended && !cursor);
-    rest.disabled = sleep.disabled = busy || !cell || Boolean(cursor) || ended;
+    for (const button of directions) button.disabled = busy || !cell || (ended && !cursor) || activityPending;
+    rest.disabled = sleep.disabled = busy || !cell || Boolean(cursor) || ended || activityPending;
     eat.disabled = rest.disabled || !canEat(cell);
     look.disabled = busy || !cell;
     look.textContent = t(cursor ? "travelLookExit" : "travelLook");
@@ -751,6 +889,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       night: Boolean(cell) && sky.dataset.phase === "night" });
     needsNotices.update();
     dailyTarotUI.update();
+    journeyEventsUI.update();
+    equipmentUI.update();
   }
 
   function draw() {
@@ -845,7 +985,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
 
   async function move(dc, dr) {
-    if (!state || busy || !active || state.ended) return;
+    if (!state || busy || !active || state.ended || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending ||
+        state.events?.pending || state.equipment?.dogEncounter === "pending") return;
     heading = [dc, dr];
     stream.prioritize(visibleDownloads(state.col, state.row, ...heading));
     busy = true;
@@ -865,6 +1006,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       state = finishAction(previous, state, { ...weatherInfo, terrain: target.rows[to.row][to.col].terrain,
         police: policePresence(target.rows[to.row][to.col]) }, economyData,
         { survival: survivalConfig });
+      const eventInfo = exposureInfo(target, to.row, to.col);
+      state = advanceJourneyEvents(previous, recordTrailArrival(state), eventInfo, survivalConfig, economyData);
       autosave();
       onStep?.(target.rows[to.row][to.col].terrain);
       if (state.lastMove && !state.lastMove.elevationKnown) missingHeightMoves++;
@@ -959,8 +1102,11 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         birthPending = true;
       }
       if (currentToken !== token) return;
+      state = migrateHealth(state);
+      state = beginEquipment(state);
       state = beginExploration(state, Boolean(restored));
       state = beginPressures(state, economyData);
+      needsNotices.reset(restored ? state : undefined);
       await useNotebook?.(state, Boolean(restored));
       if (restored) {
         pinTarot?.(document.querySelector("#restored-birth-tarot-journal"), state, "birth", economyData);
@@ -1026,8 +1172,14 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     birthDialog.close();
     dailyTarotUI.reset();
     needsNotices.reset();
+    journeyEventsUI.reset();
+    equipmentUI.reset();
     birthPending = false;
     musicUI.reset();
+    cafeUI.reset();
+    theftUI.reset();
+    earnMoneyUI.reset();
+    miniGamesUI.destroy();
     trailUI.reset();
     towns.reset();
     economyUI.reset();
@@ -1079,6 +1231,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     try {
       const current = economyContext();
       if (!current) throw new Error("Current cell is not loaded.");
+      if (current.blocked) return;
       if (action !== "rest") return economyUI.open(action);
       state = restEconomy(state, current.info, survivalConfig, economyData);
       autosave();

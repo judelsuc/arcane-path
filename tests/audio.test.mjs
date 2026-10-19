@@ -48,6 +48,7 @@ test("music context follows map features, solar phase, menus and outcomes, never
     [{ ended: "reunion", dialog: "trail-dialog" }, "music-reunion"],
     [{ ended: "hunger" }, "music-journey-ended"],
     [{ dialog: "music-dialog" }, null],
+    [{ dialog: "cafe-dialog" }, null],
   ]) assert.equal(musicTrack({ ...travel, ...context }), expected);
 });
 

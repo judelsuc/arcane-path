@@ -7,9 +7,122 @@ grille ASCII de 250 m, exploration a pied, horloge simulee, effort et streaming.
 Les ajouts au document de conception sont suivis dans [doc/REQUIREMENTS.md](./doc/REQUIREMENTS.md).
 Les prompts musicaux 8-bit et sons de jeu sont dans [audio-prompts](./audio-prompts/README.md).
 
+## Fondation des indices unifies (19 octobre, locale non deployee)
+
+Le [registre commun](./discovery.mjs) enregistre les faits gagnes concernant la
+piste du parent et les carnets abandonnes, sans changer les couts ni les chances
+des actions existantes. Les [adaptateurs](./discovery-targets.mjs) n'y exposent
+que les informations deja acquises, pas les villes futures ou les donnees privees.
+Le carnet propose **Indices et decouvertes**, conserve les suggestions comme
+non confirmees et inclut ces indices dans son export PDF. La sauvegarde valide
+le nouveau registre ; aucune infrastructure de migration historique n'est ajoutee.
+
+Ce premier jalon ne termine pas l'unification : stockage des anciens indices,
+planification et reves dans tout le vrai voyage, contenus LLM restent a integrer.
+Voir la [specification lore](./doc/LORE_SPECIFICATION.md).
+
+### Test jouable des objets uniques (local, non deploye)
+
+Le lien de l'ecran titre ouvre [le test separe](./lore-playtest.html). On peut
+creer un nouveau voyage a Firmi ou choisir un voyage source authentifie :
+seul son depart serveur est clone, jamais sa sauvegarde locale. **Le voyage
+principal n'est pas modifie.**
+
+Ce monde contient une seule instance de chacun des **22 objets**. Les six
+premiers pouvoirs sont conserves :
+
+- **L'Ermite** : repere exact d'un autre objet libre, meme tres loin.
+- **Le Chariot** : 20 km avec 75 % de temps, fatigue et effort alimentaire en moins.
+- **Temperance** : jusqu'a 40 sante restauree et 40 fatigue retiree, pour 500 kcal.
+- **Le Mat / ourlet sans fin** : retour instantane vers une localite
+  personnellement visitee sur cette carte, pour 10 fatigue.
+- **La Roue / bobine vide** : rappel dans le sac d'un objet que vous avez
+  depose et que personne n'a repris, pour 10 fatigue.
+- **Le Soleil / mouchoir jaune** : sante maximale et fatigue a zero, pour 500 kcal,
+  sans remplir la reserve ni annuler la dette de sommeil.
+
+Les **16 autres pouvoirs sont maintenant implementes** dans ce meme test :
+
+- Magicien : meilleure remuneration legale d'une offre locale, plafonnee a 20 EUR.
+- Papesse : vrai prochain repere du parent ou d'un carnet accessible.
+- Imperatrice : reserve remplie puis besoins alimentaires ordinaires divises par quatre pendant 12 h.
+- Empereur : sanctuaire de repos/sommeil pendant 8 h, jusqu'a une autre activite.
+- Pape : un a trois fragments d'inscriptions, apres 10 min de concentration exposee.
+- Amoureux : boussole et chaud/froid pendant 180 minutes de marche reelle.
+- Justice : remboursement auditable des depenses ordinaires des dernieres 24 h, maximum 30 EUR.
+- Force : aucun gain ordinaire de fatigue pendant 3 h.
+- Pendu : besoins et dommages ordinaires suspendus pendant 2 h.
+- Arcane sans nom : une prevention de mort pendant 24 h, avec les vrais biens conserves.
+- Diable : penalties de charge et usure suspendus pendant 24 h, sans agrandir le sac.
+- Maison Dieu : aucun gain ordinaire de vigilance pendant 24 h.
+- Etoile : destination actuelle du parent et vrai chemin traversable.
+- Lune : prochain sommeil eligible assorti d'indices garantis epingles en prive.
+- Jugement : vrais modificateurs de la carte du jour choisie pendant 24 h.
+- Monde : apparition dans une localite connue et validee, sans marche fictive.
+
+Chaque activation prend aussi une minute et paie son prix explicite entier.
+Chaque objet affiche son delai de 24 h ou 72 h du monde partage ; les protections
+suivent le temps du voyage. Les anciens voyages et detenteurs sont conserves :
+les objets manquants sont ajoutes une seule fois. Un nouveau voyage ne
+reinitialise pas les objets deja pris. Voir les prix et limites du
+[lot final](./doc/LORE_SPECIFICATION.md#all-22-powers-checkpoint).
+
+Indices communs, conditions de decouverte, inscriptions partageables, sac spatial,
+activation, caches publiques et reprise sont jouables en FR/EN. Le serveur decide
+des positions, besoins, objets et delais ; les reessais ne doublent rien.
+Les delais suivent les minutes simulees du monde de test. Apres 30 jours reels
+sans action acceptee, les objets portes retournent en cache ; actualiser ne
+prolonge pas leur possession.
+
+Lancer le serveur habituel avec **Python et Node.js disponibles**, puis ouvrir
+`/lore-playtest.html`. Les boutons gratuits de preparation chargent le vrai
+terrain et les chemins lointains du fournisseur serveur, sans reveler le trajet
+avant le pouvoir : 256 tuiles preparees par monde de test, sans traversee d'eau.
+Un echec de preparation ne facture pas l'activation. Le vrai mini-jeu de
+librairie est rejoue et remunere par le serveur ; les neuf activites legales
+peuvent fournir une offre au Magicien sans faux score ni experience.
+Pas de climat en direct ni de livraison de carnets dans cette page.
+L'autorite de ce test ne transforme pas le jeu principal en simulation serveur.
+Les titres associent maintenant nom d'objet et arcane ; les boutons verrouilles
+expliquent la condition manquante et l'horloge affiche l'heure UTC.
+Voir [les conditions et le test du nouveau lot](./doc/HINT_ENGINE.md#testing-the-second-power-batch).
+
+### Indices mysterieux et reves dans ce test
+
+Les indices disposent de six formulations ecrites par domaine, en FR/EN,
+avec **Expliquer** gratuit. **Conseil clair** exige une interpretation gagnee
+pour cet indice precis : personne avertie en localite, ou revelation de l'Ermite
+pour son propre indice, ou une revelation explicitement autorisee du nouveau
+lot. Reputation locale, cartes, proprete et fatigue peuvent
+rendre l'aide gratuite, payante ou indisponible ; temps et prix sont affiches.
+La permission est conservee, mais ne s'etend pas aux indices plus precis.
+La relecture est gratuite et ne revele jamais plus que la precision acquise.
+Les objets conservent les seuils region/localite/
+repere fictif/case exacte a 300 km/30 km/3 km/250 m ; un indice plus precis
+empeche de recevoir ensuite ses versions plus vagues comme nouveautes.
+
+Le bouton de demande commune choisit entre objets, etape actuelle du parent
+et vraies rumeurs de carnets disponibles a proximite. Les couts restent propres
+au domaine : objet 2 min, parent vraie recherche de 8 a 60 min, rumeur de carnet
+gratuite. Il n'invente pas de quete de carnet et ne change pas sa possession.
+
+Dormir dehors donne une occasion de reve apres 60 minutes de sommeil,
+au maximum une fois par 24 heures simulees. Cartes de naissance/du jour et
+proximite influencent la chance ; un reve n'est **pas garanti**. Un echec ou
+une occasion sans nouvel indice consomme aussi ce budget. Actualiser ou
+redormir tout de suite ne relance pas le tirage. La section **Reves** explique
+le resultat ; un reve utile rejoint les indices avec les memes explications.
+Sommeil, recuperation et besoins restent ceux du vrai moteur.
+
+Pour voir ce nouveau jalon : redemarrer le serveur Python local puis recharger
+`/lore-playtest.html`. Les sauvegardes du voyage principal restent inchangees.
+Voir [le perimetre detaille](./doc/LORE_SPECIFICATION.md#authored-hints-and-dreams-checkpoint).
+Le [guide technique des indices](./doc/HINT_ENGINE.md) explique les declarations,
+les faits autorises, les formulations FR/EN, la precision et les reves.
+
 ## Suivi des prochaines etapes
 
-Mise a jour : 17 octobre 2026. Une coche signifie une etape effectivement
+Mise a jour : 18 octobre 2026. Une coche signifie une etape effectivement
 verifiee, pas seulement du code prepare. Voir le
 [rapport infrastructure et couts](./doc/INFRASTRUCTURE.md).
 
@@ -52,6 +165,9 @@ verifiee, pas seulement du code prepare. Voir le
   deux placements recuperables avant une troisieme fin de voyage.
 - [x] Page Statistiques dans le carnet : besoins, chemin, argent, compteurs,
   pressions et effets combines des cartes de naissance et du jour.
+- [x] Douze mini-jeux approuves integres et deployes dans le vrai voyage.
+- [x] Evenements illustres epingles au carnet, frequence normale restauree.
+- [x] Sac spatial illustre, effets d'equipement et rencontre de chien nommable.
 - [ ] Autres couches du document de conception, avec checkpoints testes.
 - [ ] R-062 : caches d'objets persistantes, pour les autres joueurs et ses prochaines parties.
 - [ ] R-063 : indices d'arcanes plus precis avec la proximite ; habillage narratif LLM ulterieur.
@@ -63,6 +179,412 @@ termine ; la simulation avancee du terrain et du budget de survie reste reportee
 Les couts sont des estimations, pas un plafond de facturation automatise.
 
 ## Pressions et statistiques du voyage
+
+### Douze activites dans le voyage
+
+Le menu **Gagner de l'argent** conserve la musique de rue, le cafe et le vol,
+et propose les neuf autres jeux testes quand leur contexte cartographique est
+present : vendanges dans les vignes, atelier velo, croquis, marche, librairie,
+livraisons, petanque, lanternes et objets trouves. Les possibilites dependent
+des cellules et lieux OSM disponibles ; ce ne sont pas des emplois annonces
+par les vrais etablissements.
+
+Les conditions affichent le temps simule et la fatigue engages avant le choix
+de l'activite, ainsi que le plafond de gain de base, ou le prix par point payant
+pour les vendanges sans plafond artificiel. Le score joue determine
+le gain reel, avec la concordance d'arcane lorsqu'elle s'applique. L'experience
+progresse par activite, sans passer par les budgets de demonstration.
+Fermer, annuler ou recharger n'accorde aucun gain et ne rembourse pas le temps
+ni les besoins deja depenses. Un jeu actif ne peut pas etre rejoue depuis un
+instantane de sauvegarde pour toucher deux fois le meme revenu. Les nouveaux
+jeux respectent le son/volume global et ne capturent pas les raccourcis du sac.
+
+### Couche 19 : sac et compagnon
+
+Le bouton **Sac et compagnon** ouvre le sac illustre de **6 x 4 cases**.
+Chaussures, sac a dos et impermeable sont portes hors grille, mais leur poids
+compte dans la limite de **5,5 kg**. Selectionner puis cliquer une case,
+glisser-deposer, ou utiliser les fleches et R pour deplacer/tourner un objet.
+La reorganisation est gratuite ; abandonner prend du temps, sans remboursement.
+Les achats, reparations et provisions du chien se font dans une localite, aux
+prix de jeu affiches (pas une affirmation sur les commerces reels).
+
+Le poids ralentit et augmente l'effort ; la marche use les objets. L'impermeable
+attenue la pluie, le couchage la fatigue du sommeil dehors. La tente donne acces
+aux campings cartographies accessibles, jamais au camping sauvage universel :
+recuperation partielle, aucun repas inclus. Le bonus photo de l'appareil reste
+annonce comme futur, faute de mecanique de qualite des photos du carnet.
+
+Un evenement favorable peut proposer un chien : on peut refuser, ou le nommer
+et l'accueillir (5 EUR, 30 minutes de jeu). Pas de rencontre garantie apres 5 km
+dans le vrai voyage. Les besoins avancent pendant tout le temps simule, sans
+progression hors ligne. A faim ou soins >=65, ses bonus sont suspendus :
+fatigue de marche x0,95, indices +8 points, musique x1,1 et risque de vol
+lors d'un evanouissement nocturne x0,9. Nourrir : 1,50 EUR / 10 min ;
+entretenir : 2 EUR / 20 min. Nom, choix, besoins, et positions du sac sont
+sauvegardes avec le voyage ; une ancienne partie recoit le materiel de base
+sans usure retroactive. Les autres compagnons, dont un imaginaire, restent
+des exigences futures.
+
+### Couche 13 : evenements du voyage
+
+Chaque evenement rencontre est automatiquement epingle une seule fois dans le
+carnet, aux cotes des photos et cartes : meme illustration ASCII, date et effets
+reels. Ces pages restent annotables et font partie de l'export PDF.
+
+Pour un playtest local accelere, ouvrir `/?eventPlaytest=1` sur `localhost`
+ou `127.0.0.1`. Une banniere signale une occasion toutes les **5 minutes**
+de marche au lieu de 90 ; les probabilites du tarot restent identiques.
+Ce mode utilise une sauvegarde separee, sans remplacer le voyage normal.
+Sans ce parametre, et sur tout hote distant, la frequence normale est conservee.
+
+Toutes les 90 minutes cumulees de marche terminee, une occasion de rencontre
+est resolue. Les menus, l'attente reelle, le sommeil et les actions immobiles
+ne creent pas d'evenements. Une longue action ne produit jamais une rafale.
+Les anciennes parties commencent a compter a leur prochaine marche.
+
+Les deux tarots influencent la frequence **et** la proportion d'issues favorables :
+avec `F = 0.5 + (risque naissance + risque du jour) / 2`, la probabilite par
+occasion vaut `0.35 * F` et la probabilite favorable conditionnelle `1 - F / 2`.
+Les cartes actuelles donnent 24.5–38.5 % d'occurrence et 45–65 % d'issues
+favorables parmi les rencontres mecaniques. Un quart des rencontres est
+purement narratif. Les probabilites courantes figurent dans les statistiques du carnet.
+
+Vingt evenements mecaniques : nourriture, pieces, encouragement, pauses,
+sieste, lucidite, vents favorables ou contraires, pansement, pique-nique,
+conseils, retard, pertes, pensees agitees, ampoules, frissons et rencontres
+avec des animaux en foret. Huit petits mysteres sans effet mecanique
+(cerf blanc, cloche silencieuse, ombre, spirale, inconnu, etoiles, ruban,
+reflet) nourrissent aussi le recit. Chaque popup illustre l'evenement avec
+une scene ASCII originale, en plus du texte localise. La notification montre
+les effets reels, les cartes ayant declenche l'evenement et l'etat de sauvegarde.
+Les couts de temps et de fatigue conservent les regles de faim, meteo, nuit,
+evanouissement et placement. Aucun evenement ne ranime une partie terminee.
+
+Les effets sont appliques une seule fois avant la notification ; confirmer ne
+relance pas le hasard. Les tirages deterministes, occasions sans evenement et
+resultats sont sauvegardes. Reprendre une partie restaure la notification en
+attente sans appliquer une seconde fois ses effets. Le carnet/PDF conserve le
+total et les 32 derniers evenements. Les geocaches reelles restent reportees.
+
+### Sante et faim
+
+La sante commence a 100. A reserve alimentaire vide, le personnage ne meurt
+plus immediatement : il perd 10 points de sante par heure de jeu, seulement
+pour la portion de l'action passee sans nourriture. La faim ralentit toujours
+la marche progressivement, meme lorsque la reserve est deja vide.
+Les blessures et certains evenements peuvent aussi affecter la sante.
+
+Un repas ne soigne pas instantanement. Dormir avec des reserves rend
+5 points de sante par heure ; une fois la nourriture epuisee, la perte reprend.
+La sante a zero est mortelle, avec le meme carnet abandonne et la presentation
+de mort existante. Les anciennes parties actives reprennent avec 100 sante ;
+les parties deja terminees ne sont jamais ranimees.
+
+Les bonus/malus de vitesse durent un temps de jeu borne (60 a 120 minutes),
+y compris si le personnage se repose. Leur expiration en cours de pas est
+prise en compte. Ils remplacent le precedent effet, sans modifier les
+attributs permanents. Le panneau des besoins affiche sante et effet actif.
+
+### Mini-jeux en cours de test local (non publies)
+
+Jeu 10 : ouvrir `/lanterns-preview.html?lang=fr` (`?lang=en` en anglais).
+Memoriser les lanternes illustrees allumees puis reproduire la suite avec les boutons
+ou les chiffres. Comme Simon, la partie commence avec un element ; apres chaque
+repetition reussie, la meme suite s'allonge d'un element. Objectifs par niveau :
+7, 8, 9, 10 et 11 elements. Une seule erreur termine la partie sans recompense.
+Le nombre de lanternes (3 a 6) et la vitesse augmentent aussi. Aide, nouvelle repetition
+et annulation sont disponibles, sans lire ni modifier le voyage sauvegarde.
+Chaque lanterne possede un dessin original, une couleur, un motif et un numero
+(noms accessibles aux lecteurs d'ecran, sans mots sur les lanternes).
+Des notes distinctes accompagnent la demonstration et chaque reponse :
+la lanterne choisie s'allume pendant 260 ms, y compris la derniere reponse.
+Le bouton Son coupe les notes ; annulation, fin, masquage et nouvelle partie
+arretent les sons et les temporisations.
+
+Jeu 11 : ouvrir `/bookshop-preview.html?lang=fr` (`?lang=en` en anglais).
+Deviner le rayon de chaque livre a partir de son theme, puis ranger les titres
+par ordre alphabetique de gauche a droite dans chaque rayon. Le tri utilise
+la langue affichee, inclut les articles (Le, La, The, A), ignore les accents,
+majuscules et signes de ponctuation. Ni rayon ni rang ne sont indiques sur les
+livres. Choisir ensuite le titre demande par chaque client et le servir.
+Le catalogue contient seize classiques reels (Verne, Stevenson, Kipling,
+Conan Doyle, Baudelaire, etc.), leurs auteurs et des resumes/indices originaux.
+Les couvertures illustrees sont creees pour le jeu, avec les titres francais
+ou anglais ; aucune couverture commerciale n'est telechargee ou reproduite.
+Les cartes restent de meme largeur, y compris la derniere ligne incomplete.
+Des sons accompagnent choix, rangement, service, erreur et fin ; bouton Son,
+erreurs audio explicites et arret au masquage/annulation/nouveau service.
+Cinq niveaux, chronometre, limites d'erreurs et aide contextuelle ; aucun effet
+sur la sauvegarde.
+
+Jeu 12 : ouvrir `/market-preview.html?lang=fr` (`?lang=en` en anglais).
+Preparer les quantites demandees, laisser les autres produits a zero, puis
+rendre la monnaie exacte en euros avec le champ (par exemple 5,05) ou les pieces et billets.
+Illustrations originales des huit produits, panier vivant, sons, coupure du son,
+cinq niveaux et chronometre demarrant uniquement avec Commencer. Trois erreurs
+ou le delai termine mettent fin au service ; aucun achat reel, sauvegarde ou
+gain de voyage n'est applique dans ce bac a sable.
+Le fond de caisse est limite et conserve d'un client a l'autre. Les paiements
+remplissent la caisse ; les boutons indiquent les pieces/billets disponibles
+et reserves pour la monnaie. Retirer ou Effacer libere la selection, qui n'est
+debitee qu'au service reussi. Le champ en euros compose un montant avec les
+pieces reellement presentes, sans les inventer.
+Demander l'appoint permet de solliciter jusqu'a 5 euros par demande dans la
+bourse limitee du client. Il peut refuser sans compter d'erreur. L'appoint
+accepte augmente la somme recue et la monnaie due du meme montant ; il ne
+cree aucun gain supplementaire. Choisir les denominations permet de preserver
+les petites pieces pour les clients suivants.
+Le niveau facile dispose de 3,40 euros de petite monnaie supplementaire.
+Les boutons −0,05 € et +0,05 € ajustent l'appoint demande entre 0 et 5 euros,
+sans envoyer la demande tant que Demander l'appoint n'est pas choisi.
+Pour tester Justice directement :
+`/market-preview.html?lang=fr&resonance=journey`.
+Le premier client demande un produit au poids : ajouter/retirer les poids
+etalons pour equilibrer la balance, puis preparer les autres produits et rendre
+la monnaie normalement. Le prix du panier suit la pesee.
+
+Les douze fenetres de test regroupent les regles, raccourcis clavier, explications
+de difficulte et notes du bac a sable dans le bouton Aide (Help en anglais).
+Les jeux integres au voyage reprennent aussi leurs commandes detaillees dans
+cette aide. Les boutons a commandes natives conservent leurs infobulles au
+survol et au focus, sans ajouter de raccourcis qui interferent avec le jeu.
+Le pop-up se ferme avec Fermer ou Echap et rend le focus au bouton Aide, sans
+quitter le jeu. Les chronometres continuent ; scores, indices, modeles, legendes
+de couleur et controles restent visibles. Le contenu d'aide suit le niveau
+choisi et les changements de phase.
+
+La meme aide contextuelle est disponible sur les trois ecrans et les dix-huit
+dialogues du jeu principal : depart, carte, options, tarot, carnet, photos,
+services, activites, evenements et piste du parent. Chaque fenetre affiche
+seulement sa propre aide, mise a jour avec son contenu et la langue choisie.
+Les prix, risques, avertissements de confidentialite, recits, cartes revelees
+et indices restent visibles dans leur fenetre. Fermer l'aide ne ferme pas
+le dialogue sous-jacent et rend le focus a son bouton Aide. Ces changements
+restent locaux, sans publication.
+
+#### Resonance des arcanes (test local)
+
+Chaque activite possede une carte tutelaire. Une concordance avec la carte
+du voyage ou du jour active une variation legere, une illustration historique
+agrandie et floutee en arriere-plan et des gains multiplies par 1,1. Les deux cartes concordantes
+ne cumulent pas les effets. Les scores, couts et penalites ne sont pas
+multiplies ; une partie annulee ou sans recompense eligible ne gagne rien.
+Les bacs a sable affichent le taux sans verser d'argent au voyage.
+Le selecteur Mode arcane permet de comparer Normal, carte du voyage, carte
+du jour et les deux. Les URL acceptent `?resonance=journey`, `daily` ou `both`
+(avec `&resonance=...` si `lang` est deja present). Changer le mode recommence
+l'exercice ; l'Aide explique la variation active.
+
+| Jeu | Arcane | Variation |
+| --- | --- | --- |
+| Cafe | Temperance | Certains clients ajoutent ou retirent un article à mi-préparation du plateau ; leur fréquence augmente avec le niveau. |
+| Musique | Le Jugement | Démonstration normale, puis reproduction sans indices visuels ; seules les notes réussies apparaissent. |
+| Vol | Le Diable | Choisir entre la cible ordinaire et une cible doree plus tentante. |
+| Livraisons | Le Chariot | Tracer son propre parcours pendant la memorisation. |
+| Vendanges | L'Imperatrice | Écraser les grappes pourries avec Espace ; une grappe pourrie dans un panier retire un point. |
+| Atelier | Le Bateleur | Repeindre toute pièce montée ; une pièce impose de trouver sa bonne taille puis sa couleur. |
+| Carte postale | L'Etoile | Retenir trois reperes dont seules les positions restent visibles. |
+| Petanque | La Force | Tenter un carreau une fois : Main sure puis une boule cible, a toute puissance ; 75/65/55/45/35 % de reussite selon le niveau. |
+| Objets trouves | La Lune | Inspecter une paire ressemblante avant de confirmer, toujours en 15 secondes. |
+| Lanternes | L'Hermite | Lanternes masquees pendant la demonstration ; petites etincelles aux positions jouees avec les notes, puis lanternes visibles pour repondre. |
+| Librairie | La Papesse | Interpreter le souhait d'un lecteur, avec plusieurs titres acceptables. |
+| Marche | La Justice | Equilibrer une pesee pour le premier client. |
+
+Test direct de Cafe rush : ouvrir `/cafe-preview.html?lang=fr` sur le serveur
+local (`?lang=en` pour l'anglais). Ce bac a sable reutilise le vrai dialogue,
+les regles et les raccourcis, avec un cafe explicitement fictif et cinq niveaux.
+Il ne lit ni ne modifie la sauvegarde du voyage.
+
+Test direct de musique : `/music-preview.html?lang=fr` (`?lang=en` en anglais),
+avec son active et niveaux 0 a 4, sans acces a la sauvegarde. Utiliser un serveur
+statique pour ces deux pages (par exemple `python3 -m http.server 8777 --bind 127.0.0.1`) :
+elles lisent directement les fichiers de configuration publics.
+
+Troisieme test : `/theft-preview.html?lang=fr` (`?lang=en` en anglais).
+Ce bac a sable reutilise le vrai jeu de vol et ses consequences, uniquement
+en memoire : aucune sauvegarde n'est lue ou modifiee. Appuyer sur Espace ou
+cliquer quand le curseur traverse la zone verte ; chaque essai repart de zero,
+avec une nouvelle position et une nouvelle largeur de cible.
+Le selecteur de test propose aussi **Hard** : curseur 50 % plus rapide
+(cycle de 1,2 s) et cible de 7 a 16 %, sans changer le delai de 9 s ni les
+consequences. Ce mode reste reserve au bac a sable ; le voyage conserve Normal.
+Un son bref distingue reussite et capture ; il respecte le volume et la coupure
+partages. Le bac a sable dispose aussi d'un bouton pour couper le son.
+
+Quatrieme test : `/deliveries-preview.html?lang=en` (ou `?lang=fr`).
+Memoriser les lettres des colis devant les maisons fictives, puis choisir
+un colis avec 1–7 et maintenir les fleches pour rouler librement a velo.
+La maison a portee s'illumine ; Espace ou le bouton Livrer depose le colis.
+Des boutons directionnels maintenus permettent aussi de jouer au tactile.
+Niveaux 0 a 4 ; aucune sauvegarde ni consequence sur le
+voyage : l'integration des couts et gains reste a faire apres validation.
+Le plateau illustre colis, maisons et depot. Des consignes par phase expliquent
+les associations a memoriser, puis le colis en main et la progression des
+livraisons. Les colis sont centres, sans coordonnees de maisons. Un son bref
+distingue bonne et mauvaise livraison, avec coupure du son dans le bac a sable.
+La distance reellement parcourue (detours inclus) influe sur le score ; elle
+compte les deplacements horizontaux et verticaux, avec un retour direct
+automatique a la poste ajoute au bilan final. La distance minimale de reference
+utilise les centres des maisons. Les zones permettent de livrer a proximite,
+sans obliger a viser exactement un point.
+Les chiffres de la rangee superieure et du pave numerique selectionnent les colis
+(1–6, et 7 au dernier niveau). Une fois livre, le colis reste dessine devant sa
+maison avec sa lettre et une coche ; les destinations encore inconnues restent
+masquees.
+La difficulte augmente de 3 a 7 colis, de 3×3 a 5×5 maisons et reduit la
+memorisation de 15 a 9 secondes. La tournee passe de 60 a 100 secondes pour
+tenir compte du village plus grand ; trois erreurs terminent toujours la partie.
+Jeu de livraisons valide en test local par l'utilisateur. Le compte a rebours
+reste bien visible juste au-dessus du village, avec une alerte de couleur dans
+les dix dernieres secondes ; l'expiration termine la tournee sans gain.
+
+Cinquieme test : `/harvest-preview.html?lang=en` (ou `?lang=fr`).
+Vendanges : une grappe coloree et illustree tombe automatiquement ; maintenir
+Gauche/Droite la guide horizontalement vers le panier de meme couleur.
+Relacher arrete uniquement le mouvement horizontal. Les boutons fleches
+maintenus fonctionnent aussi au tactile. Le panier sous la grappe est souligne ;
+couleurs, symboles et noms permettent de reperer les associations.
+Un son distingue bonne et mauvaise reception, avec coupure locale.
+Les niveaux 0 a 4 proposent 3, 3, 4, 5 et 6 couleurs/paniers, avec des chutes
+de 2,5, 2,45, 2,1, 1,75 et 1,4 secondes. Le niveau facile a ete renforce
+apres le retour utilisateur ; les autres niveaux, dont le difficile valide,
+restent inchanges. Jeu de vendanges valide en test local avec cet ajustement.
+La vitesse horizontale reste fixe. Chaque manche dure 30 secondes à tous les
+niveaux, sans limite de grappes : plus vous triez correctement, plus le gain
+potentiel augmente, sans multiplicateur de vitesse. Appuyez puis relâchez
+Espace pour une chute rapide visible (160 ms maximum), puis la suivante.
+Maintenez Espace ou le bouton de chute pendant 0,5 seconde pour écraser
+toute grappe avec un son distinct : +1 si pourrie, aucun point si bonne.
+Une grappe pourrie dans un panier
+retire un point gagné, avec un minimum de zéro. Relâchez entre deux actions.
+Échap annule ; masquer la page annule aussi.
+Ce bac a sable est isole de la sauvegarde et ne verse aucun gain au voyage.
+Nouvelle partie permet de recommencer.
+
+Sixieme test : `/workshop-preview.html?lang=en` (ou `?lang=fr`).
+Atelier velo : reproduire un velo assemble qui reste visible a cote de votre
+construction. Choisir cadre, roue arriere, roue avant, selle, pedales et guidon,
+avec la meme couleur et la meme taille que le modele. Les illustrations changent
+reellement de geometrie selon la taille. Comparez les deux vélos en haut :
+aucune réponse écrite ne révèle la couleur ou taille attendue en bas.
+Les tailles de guidon sont nettement distinctes ; un refus nomme les
+pièces incorrectes sans donner la solution. Les pieces peuvent etre
+remplacees ; Verifier le velo valide le modele complet, ou indique les pieces
+a revoir sans remettre le chronometre a zero.
+Les niveaux 0 a 4 donnent 3 a 7 choix par piece et 60, 54, 48, 42 ou 36 secondes
+pour assembler un velo. Le temps ne commence qu'avec Commencer et son expiration
+termine la partie. Cliquer/toucher les choix illustres, ou Tab/Entree/Espace ;
+1–6 selectionne les categories, Echap annule. Aucune sauvegarde ni remuneration
+du voyage n'est appliquee.
+Atelier valide en test local par l'utilisateur. Un son bref accompagne chaque
+piece effectivement changee, la verification incorrecte, la reussite et la fin
+du temps. Le bouton Son permet la coupure ; annulation, nouvelle partie et
+page masquee arretent la lecture.
+
+Septieme test : `/sketch-preview.html?lang=en` (ou `?lang=fr`).
+Croquis de carte postale : observer un motif original, puis le reproduire
+de memoire en cliquant/touchant les cases. Les niveaux 0 a 4 proposent des
+grilles 3×3, 4×4, 5×5, 6×6 et 7×7, avec 1, 1, 2, 2 et 4 couleurs.
+Pour reduire le saut entre les niveaux 2 et 3, le niveau 2 garde deux couleurs
+mais demande une memorisation plus rapide (7 secondes au lieu de 9). Le niveau 3
+garde aussi deux couleurs et laisse 12 secondes au lieu de 10 pour sa grille
+plus grande. L'observation dure ainsi 7, 8, 7, 12 ou 11 secondes ; ces parametres sont affiches
+avant de commencer. Choisir la couleur dans la palette, puis peindre les cases ;
+recliquer avec la meme couleur efface. La gomme et Effacer permettent de corriger.
+Les couleurs ont aussi des symboles distincts (#, O, +, *).
+Les fleches deplacent le focus, Espace/Entree bascule une case. Dessiner maintenant
+masque le modele plus tot ; Terminer le croquis calcule le score, avec penalite
+pour les cases superflues ou mal colorees. Le resultat conserve les symboles
+de couleur et la taille reelle de la grille. La phase de dessin est sans limite de temps.
+Au resultat, le modele original et le dessin du joueur sont affiches cote a cote
+avec les memes dimensions et couleurs. Jeu 7 valide localement ; pas de publication.
+Niveaux 0 a 4, Nouvelle partie et Echap pour annuler ; aucune sauvegarde ou
+remuneration du voyage n'est appliquee.
+
+Huitieme test : `/petanque-preview.html?lang=en` (ou `?lang=fr`).
+Petanque : commencer, regler direction et puissance, puis lancer trois boules
+contre l'ordinateur (trois boules aussi), chacun a son tour.
+Fleches Gauche/Droite pour viser, Haut/Bas pour la
+puissance, Maj pour de grands pas, Espace/Entree pour lancer, Echap pour annuler.
+Les curseurs et boutons permettent aussi de jouer au tactile. Les niveaux
+augmentent la difficulte du terrain et la precision de l'ordinateur.
+Deux a six reliefs alternent bosses et creux, dont les pixels sont colores selon
+la hauteur locale : clair pour une bosse, sombre pour un creux ;
+leurs pentes locales influencent reellement la trajectoire et la vitesse.
+Les niveaux superieurs ont davantage de relief et des hauteurs plus marquees.
+La visee couvre ±30° pour pouvoir compenser les deviations du terrain.
+La fleche indique la pente generale, separee de la hauteur locale affichee.
+Le joueur est bleu (V en francais, Y en anglais), l'ordinateur rouge (O/C).
+Apres les six lancers, seul le gagnant marque : une boule plus proche du cochonnet
+que la meilleure boule adverse vaut un point. Les boules hors terrain sont exclues ;
+une egalite des meilleures distances ne donne aucun point.
+Les boules gagnantes sont surlignees de la plus proche a la plus lointaine,
+avec le score qui augmente a chaque etape (trois points maximum).
+La limite de trois minutes concerne les lancers ; une manche incomplete expire
+sans points, et une manche terminee a temps conserve son animation de comptage.
+Les boules se percutent reellement : transfert de mouvement, deviations laterales
+et reactions en chaine peuvent changer les positions ou sortir une boule du
+terrain. Toutes les boules deplacees sont animees et leurs distances sont
+recalculees avant le comptage. Le cochonnet reste fixe. Le diametre visible,
+agrandi pour la lisibilite, correspond au diametre de collision.
+Des sons originaux synthetises accompagnent le lancer, le roulement sur le
+gravier et l'arret ; des chocs metalliques se superposent au roulement.
+Le bouton Son coupe la lecture ; annulation, nouvelle partie
+et page masquee l'arretent. Les erreurs audio sont affichees.
+Bac a sable fictif sans acces a la sauvegarde ni gain au voyage.
+
+Neuvieme test : `/lostfound-preview.html?lang=en` (ou `?lang=fr`).
+Objets trouves : Commencer, lire chaque signalement fictif, puis choisir
+l'objet dessine correspondant. Les huit illustrations originales montrent les
+details des parapluies, carnets, cles et pochettes : lune/etoile, feuille/fleur,
+poisson/oiseau, piece carree/ronde. Les cartes portent seulement un numero ;
+leur description reste accessible aux lecteurs d'ecran.
+Les niveaux 0 a 4 proposent 4 a 8 objets et des indices de moins en moins directs.
+Un compte a rebours visible de 15 secondes (reduit de 90, puis 60 et 30 apres les retours de test)
+commence uniquement sur Commencer,
+devient urgent dans les dix dernieres secondes et termine l'enquete a zero.
+Trois erreurs terminent aussi l'enquete. Les clics apres le delai ne comptent pas.
+Tab puis Espace/Entree choisit un objet ; Echap annule. Nouvelle enquete relance
+le test. Les eventuels cadeaux de remerciement restent imaginaires :
+aucune sauvegarde, integration au voyage ou remuneration reelle.
+
+Cafe rush propose des commandes de tailles variees : 3 a 5 articles au niveau 0,
+jusqu'a 5 a 7 au niveau 4. Les quantites repetees sont regroupees (`Cafe x2`).
+Les boutons d'ingredients sont carres et espaces ; un plateau illustre reserve
+une place fixe a chaque ingredient, avec de grandes illustrations et un compteur
+superpose (les ingredients absents restent estompes), un format de plateau 4:2,
+plus un resume textuel
+accessible.
+La patience des clients est de 14 secondes au niveau 0, puis diminue jusqu'a
+8 secondes au niveau 4. Chaque ingredient effectivement ajoute joue un petit
+son distinct. Une ambiance originale synthetisee (brouhaha, machine et vaisselle)
+boucle pendant le service, sans enregistrement externe. Volume et coupure
+suivent Options ; fermeture, fin du service ou onglet masque arretent les sons.
+Le bac a sable propose aussi ses propres commandes de volume et de coupure.
+
+Le menu **Gagner de l'argent** regroupe la manche, la musique, le vol de
+nourriture et Cafe rush, selon les services reels de la case. Cafe rush
+demande un cafe ou restaurant cartographie ; aucun travail distant n'est invente.
+La musique et le cafe ont une progression sauvegardee : davantage de notes
+ou de clients, moins de patience et des gains potentiels plus eleves.
+
+La qualite du resultat influence la reputation locale : moins de 40 % ou
+echec musical au plafond d'erreurs = -3, de 40 a moins de 60 % = neutre,
+60 % et plus = +2. Cela influence la sympathie, les chances sociales et les
+prochains gains. Les resultats affichent cet effet. Annuler ne donne aucun
+gain ni bonus de reputation ; le temps et la fatigue restent depenses.
+
+Le vol est un mini-jeu de timing : commencer, puis cliquer **Prendre** ou
+appuyer sur Espace quand le curseur traverse la zone verte. Sa largeur varie
+de 12 a 28 % de la piste et sa position est tiree au sort a chaque tentative,
+avec une marge de 8 % aux extremites. La zone reste fixe pendant l'essai.
+Un seul geste en 9 secondes, sans second tirage aleatoire. Reussite :
+jusqu'a 900 kcal consommees ; echec ou delai depasse : 6 h de detention,
+nourriture et sommeil de base, sans amende. La tentative coute d'avance
+10 minutes, 3 fatigue, de la vigilance et 15 reputation locale ; etre pris
+coute 5 reputation de plus. Fermer, masquer ou recharger abandonne sans gain.
+Les autres mini-jeux prepares restent soumis a une approbation individuelle.
 
 Une nuit dans un hebergement payant (hotel, auberge, chambre d'hotes, motel
 ou refuge payant) inclut diner et petit-dejeuner dans le prix existant.
@@ -89,6 +611,13 @@ premiers episodes laissent reprendre au meme endroit, avec carnet et piste
 intacts ; le troisieme termine le voyage et depose le carnet a la derniere
 position. Les heures au foyer ne sont pas facturees comme exposition dehors.
 Un besoin deja fatal garde priorite.
+Le pop-up explique le seuil de vigilance a 100 et, pour les nouveaux episodes,
+la vigilance avant l'action, sa duree et les contributions reelles (temps,
+fatigue, proprete, police, sejour prolonge, activite, deplacement et abri).
+Les facteurs absents ne sont pas inventes pour les anciens episodes.
+Reprendre une sauvegarde ne rejoue pas les notifications d'anciens placements
+ou evanouissements ; les nouveaux episodes et avertissements courants restent
+signales. Les regles et probabilites ne changent pas.
 
 La sympathie depend de la proprete, de la fatigue et de la reputation du
 secteur. Une prestation reussie ameliore celle-ci ; mendier la reduit
@@ -1186,12 +1715,21 @@ pause ; aucune piste Suno non synchronisee n'influence les notes/recompenses.
 Le mini-jeu a sa propre melodie originale avec basse et accompagnement,
 synthetisee localement en WAV PCM, lue par le meme lecteur audio natif que
 les musiques de fond (sans contexte Web Audio separe ni fichier externe).
-La lecture est recalee sur les memes reperes visuels : une phrase de 12 cases (8 notes,
-4 silences), tiree au hasard au debut de chaque prestation puis repetee trois
-fois pour permettre de l'apprendre. Les cases vides ne donnent aucun point.
-Le pas est de 400 ms, la tolerance de 150 ms ; les silences rendent les attaques
-irregulieres. Le compteur indique la boucle courante sur trois. Les 24 notes
-partagent le meme plafond de gain qu'avant, sans tripler le revenu.
+La lecture est recalee sur les memes reperes visuels : une phrase tiree au
+hasard au debut de chaque prestation est repetee trois fois pour permettre de
+l'apprendre. Le niveau 0 garde 12 cases (8 notes, 4 silences), a 150 BPM.
+Les niveaux suivants accelerent jusqu'a 231 BPM (260 ms par temps), allongent
+la phrase jusqu'a 22 cases et 36 notes au total, et ajoutent jusqu'a trois
+notes tenues par boucle. Il reste quatre silences par boucle.
+Pour `H2`, `H3` ou `H4` suivi de `=`, maintenir Espace ou le bouton pendant
+2, 3 ou 4 temps. Une lumiere remplit progressivement chaque case, meme sans
+appui, pour guider la duree ; puis
+relacher au signal `^` ; relacher trop tot, trop tard ou perdre la prise compte
+comme une erreur, sans point pour cette note. Les notes tenues ne sont comptees
+qu'une fois, a leur relachement. Les silences et les notes manquees ne donnent
+aucun point. La tolerance d'attaque reste de 150 ms ; le relachement accepte
+300 ms avant ou apres la fin prevue. Le compteur indique la boucle
+courante sur trois ; repeter la phrase ne triple pas le plafond de revenu.
 Une frappe juste ou fausse joue un retour distinct. Le bouton de depart
 demande l'activation audio au navigateur ; les refus sont affiches sans bloquer
 le jeu visuel. Volume et coupure partages dans Options. Fermeture, annulation

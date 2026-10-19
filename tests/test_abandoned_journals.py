@@ -72,6 +72,47 @@ class JournalsTests(unittest.TestCase):
         with self.assertRaises(JournalForbidden):
             self.store.bind(self.ids[0], self.tokens[1])
 
+    def test_magical_truth_requires_earned_id_and_available_current_step_without_private_pages(self):
+        self.publish()
+        known = [{"targetType": "abandoned-journal", "targetId": self.ids[0]}]
+        self.assertEqual(self.store.discovery_truths(self.ids[1], [], 60), [])
+        self.assertEqual(self.store.discovery_truths(self.ids[0], known, 60), [])
+        truth, = self.store.discovery_truths(self.ids[1], known, 60)
+        self.assertEqual(truth["targetRevision"], "step:2")
+        self.assertEqual(truth["facts"]["solution"], "Town 2")
+        self.assertEqual(truth["observedMinutes"], 60)
+        encoded = json.dumps(truth)
+        for secret in ("Town 3", "Town 9", "photos", "private", "personal", self.tokens[0]):
+            self.assertNotIn(secret, encoded)
+        self.call(1, action="claim", journal=self.ids[0])
+        self.assertEqual(self.store.discovery_truths(self.ids[2], known, 60), [])
+        self.assertEqual(self.store.discovery_truths(self.ids[1], known, 60), [truth])
+        with self.store.connect() as db:
+            original = dict(db.execute("SELECT * FROM journals WHERE id=?", (self.ids[0],)).fetchone())
+        self.now += LEASE_SECONDS
+        self.assertEqual(self.store.discovery_truths(self.ids[2], known, 60), [truth])
+        with self.store.connect() as db:
+            self.assertEqual(dict(db.execute("SELECT * FROM journals WHERE id=?", (self.ids[0],)).fetchone()), original)
+        self.assertEqual(self.records, self.genesis)
+
+    def test_magical_revision_status_distinguishes_progress_delivery_holder_and_exact_lease_boundary(self):
+        self.publish()
+        identity = self.ids[0]
+        self.assertEqual(self.store.discovery_status(identity, "step:2", self.ids[1]), "current")
+        self.call(2, action="claim", journal=identity)
+        self.assertEqual(self.store.discovery_status(identity, "step:2", self.ids[1]), "unavailable")
+        self.assertEqual(self.store.discovery_status(identity, "step:2", self.ids[2]), "current")
+        with self.store.connect() as db:
+            db.execute("UPDATE journals SET step=3 WHERE id=?", (identity,))
+        self.assertEqual(self.store.discovery_status(identity, "step:2", self.ids[1]), "historical")
+        self.assertEqual(self.store.discovery_status(identity, "step:3", self.ids[1]), "unavailable")
+        self.now += LEASE_SECONDS
+        self.assertEqual(self.store.discovery_status(identity, "step:3", self.ids[1]), "current")
+        with self.store.connect() as db:
+            db.execute("UPDATE journals SET delivered=1 WHERE id=?", (identity,))
+        self.assertEqual(self.store.discovery_status(identity, "step:3", self.ids[1]), "historical")
+        self.assertEqual(self.store.discovery_status(self.ids[3], "step:0", self.ids[1]), "unavailable")
+
     def test_terminal_placement_publishes_at_last_position_and_releases_carried_journal(self):
         self.publish()
         self.call(1, action="claim", journal=self.ids[0])
@@ -80,6 +121,16 @@ class JournalsTests(unittest.TestCase):
         nearby = self.call(2, row=5)["nearby"]
         self.assertIn(self.ids[1], [q["id"] for q in nearby])
         self.assertIn(self.ids[0], [q["id"] for q in nearby])
+        self.assertEqual(self.records, self.genesis)
+
+    def test_zero_health_death_publishes_and_releases_notebook_without_rewriting_genesis(self):
+        self.publish()
+        self.call(1, action="claim", journal=self.ids[0])
+        result = self.call(1, ended="health", row=5, index=1)
+        self.assertTrue(result["published"])
+        nearby = self.call(2, row=5)["nearby"]
+        self.assertIn(self.ids[0], [q["id"] for q in nearby])
+        self.assertIn(self.ids[1], [q["id"] for q in nearby])
         self.assertEqual(self.records, self.genesis)
 
     def test_atomic_claim_and_same_finder_retry(self):

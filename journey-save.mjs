@@ -7,10 +7,18 @@ import { validateHospitality } from "./hospitality.mjs";
 import { validateStoryProgress } from "./parent-story.mjs";
 import { validateExploration } from "./trail-search.mjs";
 import { validatePressures } from "./pressures.mjs";
+import { validatePractice } from "./practice.mjs";
 import { validateJourneyMap } from "./journey-map.mjs";
+import { validateJourneyEvents, eventPlaytestEnabled } from "./journey-events.mjs";
+import { validateHealth } from "./health.mjs";
+import { restoreEquipment } from "./equipment.mjs";
+import { validateJourneyMiniGames, abandonJourneyMiniGame } from "./journey-mini-games.mjs";
+import { validateDiscovery } from "./discovery.mjs";
+import { validateDiscoverySchedule } from "./discovery-policy.mjs";
 
 export const SAVE_VERSION = 1;
-const PREFIX = "arcane-journey-v1:";
+export const JOURNEY_SAVE_PREFIX = eventPlaytestEnabled() ? "arcane-event-playtest-v1:" : "arcane-journey-v1:";
+const PREFIX = JOURNEY_SAVE_PREFIX;
 
 export function mapIdentity(map) {
   return JSON.stringify([map.width, map.height, map.cellSizeMeters, map.bounds, map.projectionLatitude ?? null]);
@@ -28,6 +36,14 @@ export function validateSave(save) {
   validateSurvivalConfig(save.survival);
   validateEconomy(save.economy);
   const s = save.state;
+  if (s?.lore !== undefined) fail();
+  validateJourneyMiniGames(s);
+  if (s) validateDiscovery(s);
+  if (s) validateDiscoverySchedule(s);
+  if (s?.equipment !== undefined) {
+    const gear = restoreEquipment(s.equipment, { elapsedMinutes: s.elapsedMinutes });
+    if (gear.walkedMeters > s.distanceMeters + 1e-6) fail();
+  }
   for (const item of [...(s?.trail?.history ?? []),
     ...(s?.trail?.discovery ? [s.trail.discovery] : [])]) {
     if (item.elapsedMinutes !== undefined && (!nonnegative(item.elapsedMinutes) ||
@@ -74,9 +90,12 @@ export function validateSave(save) {
       s.fatigue > 100 || s.reserveKcal > save.survival.reserve_kcal ||
       !["meals", "sleeps", "walletCents", "lastExpenseCents"].every(k => integer(s[k]) && s[k] >= 0) ||
       (s.performances !== undefined && (!integer(s.performances) || s.performances < 0)) ||
+      (s.cafeShifts !== undefined && (!integer(s.cafeShifts) || s.cafeShifts < 0)) ||
       (s.lastEarningsCents !== undefined && (!integer(s.lastEarningsCents) || s.lastEarningsCents < 0)) ||
-      ![null, "hunger", "fatigue", "sleep", "reunion", "placement"].includes(s.ended) ||
+      ![null, "health", "hunger", "fatigue", "sleep", "reunion", "placement"].includes(s.ended) ||
       (s.performancePending !== undefined && s.performancePending !== null) ||
+      (s.cafePending !== undefined && s.cafePending !== null) ||
+      (s.theftPending !== undefined && s.theftPending !== null) ||
       (s.profileId !== "tarot" && !Object.hasOwn(save.survival.profiles, s.profileId)) ||
       !save.economy.tarot.some(c => c.id === s.birthCard) ||
       !save.economy.tarot.some(c => c.id === s.dailyCard) ||
@@ -125,7 +144,18 @@ export function validateSave(save) {
         p.witnessId !== `fictional-traveler-${index + 1}`)) fail();
   if (trail.version === 2) validateTownTrail(trail);
   validateStoryProgress(s);
+  validatePractice(s);
   validateJourneyMap(s);
+  validateJourneyEvents(s, save.economy, save.survival);
+  validateHealth(s);
+  if (s.lastCafe !== undefined) {
+    const r = s.lastCafe;
+    if (!r || !integer(r.level) || r.level < 0 || r.level > 4 || r.orders !== 5 + r.level ||
+        !integer(r.served) || r.served < 0 || r.served > r.orders ||
+        !integer(r.mistakes) || r.mistakes < 0 || typeof r.cancelled !== "boolean" ||
+        !integer(r.rewardCents) || r.rewardCents < 0 || !nonnegative(r.foodKcal) || r.foodKcal > 600 ||
+        !s.cafeShifts || (r.cancelled || r.served === 0) && (r.served !== 0 || r.rewardCents !== 0 || r.foodKcal !== 0)) fail();
+  }
   validatePressures(s, save.economy);
   validateExploration(s);
   if (trail.version === 2 && trail.discovery !== undefined) {
@@ -147,7 +177,7 @@ export function validateSave(save) {
     if (trail.version === 2 && (!Object.hasOwn(CLUE_ACTIONS, fact.clueKind) ||
         ["directions", "rumor"].includes(fact.clueKind) || typeof fact.usedDirections !== "boolean")) fail();
   }
-  if (s.ended === null && (s.reserveKcal <= 0 || s.fatigue >= 100 ||
+  if (s.ended === null && (s.reserveKcal <= 0 && s.health === undefined || s.fatigue >= 100 ||
       s.awakeHours >= save.survival.sleep_limit_hours)) fail();
   validateHospitality(s, save.survival);
   validateFainting(s);
@@ -156,10 +186,27 @@ export function validateSave(save) {
 
 export function createSave({ region, map, state, survival, economy }, revision, now = new Date()) {
   const savedState = structuredClone(state);
+  if (savedState.miniGamePending) {
+    Object.assign(savedState, abandonJourneyMiniGame(savedState));
+  }
+  if (savedState.theftPending) {
+    const startedMinutes = savedState.theftPending.startedMinutes;
+    savedState.theftPending = null;
+    savedState.choiceCounts = { ...savedState.choiceCounts, steal: (savedState.choiceCounts?.steal ?? 0) + 1 };
+    savedState.lastSurvivalChoice = { kind: "steal", outcome: "nothing", foodKcal: 0,
+      moneyCents: 0, detentionMinutes: 0, minutes: savedState.elapsedMinutes - startedMinutes };
+  }
   if (savedState.performancePending) {
     savedState.performancePending = null;
     savedState.lastEarningsCents = 0;
     savedState.performances = (savedState.performances ?? 0) + 1;
+  }
+  if (savedState.cafePending) {
+    const shift = savedState.cafePending;
+    savedState.cafePending = null;
+    savedState.cafeShifts = (savedState.cafeShifts ?? 0) + 1;
+    savedState.lastCafe = { served: 0, orders: shift.orders, mistakes: 0, cancelled: true,
+      rewardCents: 0, foodKcal: 0, level: shift.level };
   }
   return validateSave({ version: SAVE_VERSION, region, mapIdentity: mapIdentity(map),
     revision, savedAt: now.toISOString(), state: savedState,

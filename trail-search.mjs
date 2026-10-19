@@ -2,6 +2,7 @@ import { restSurvival } from "./survival.mjs";
 import { finishAction, didFaint } from "./economy.mjs";
 import { askDirections } from "./directions.mjs";
 import { didPlace, witnessCooling } from "./pressures.mjs";
+import { journeyEquipmentModifiers } from "./equipment.mjs";
 
 const COMPASS = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
 
@@ -81,7 +82,8 @@ export async function prepareFieldSearch(state, cell, resolvePhoto, signal,
   const minutes = rules.minMinutes + Math.floor(draw() * (rules.maxMinutes - rules.minMinutes + 1));
   const fatigue = rules.minFatigue + Math.floor(draw() * (rules.maxFatigue - rules.minFatigue + 1));
   const roll = draw();
-  const success = state.pressures && rules.precision === "precise" || roll < fieldSearchChance(pathDistance);
+  const success = state.pressures && rules.precision === "precise" ||
+    roll < Math.min(1, fieldSearchChance(pathDistance) + journeyEquipmentModifiers(state).clueChanceBonus);
   let kind = success ? rules.precision === "precise" ? "place"
     : ["direction", "prefix", "photo"][Math.floor(draw() * 3)] : null;
   if (kind && rules.precision !== "precise" && witnessCooling(state) === 2) kind = "direction";
@@ -119,14 +121,13 @@ export function applyFieldSearch(state, result, cell, info, survival, economy) {
   const rested = restSurvival({ ...state, lastExpenseCents: 0 }, { ...survival,
     rest_minutes: result.minutes, rest_fatigue_recovery: 0 });
   const kcal = result.minutes;
-  const reserveKcal = Math.max(0, rested.reserveKcal - kcal);
-  let next = finishAction(state, { ...rested, reserveKcal,
-    energyKcal: rested.energyKcal + kcal, fatigue: Math.min(100, rested.fatigue + result.fatigue),
-    ended: rested.ended ?? (reserveKcal <= 0 ? "hunger" : null) }, info, economy, { survival });
+  let next = finishAction(state, { ...spendExtraEnergy(rested, kcal),
+    fatigue: Math.min(100, rested.fatigue + result.fatigue) }, info, economy, { survival });
   const outcome = didPlace(state, next) ? "placed" : next.ended ? "exhausted" : didFaint(state, next) ? "fainted"
     : result.kind === "sign" ? "sign" : result.kind ? "found" : "nothing";
   const exploration = state.trail.exploration;
   const hint = outcome === "found" ? { stage: result.stage, kind: result.kind,
+    channel: "search",
     precision: result.precision, col: result.col, row: result.row, elapsedMinutes: next.elapsedMinutes,
     ...(state.pressures ? { witnessMinutes: state.elapsedMinutes,
       witnessFactor: state.pressures.tarotFactor } : {}) } : null;
@@ -153,20 +154,28 @@ export function applyFieldSearch(state, result, cell, info, survival, economy) {
   return next;
 }
 
-export function fieldClueText(state, hint, t) {
+export function fieldClueFacts(state, hint) {
   const target = state.trail.stages[hint.stage];
-  if (hint.kind === "place") return t("fieldClue.place", { place: target.name });
-  if (hint.kind === "photo") return t("fieldClue.photo");
+  if (hint.kind === "place") return { place: target.name };
+  if (hint.kind === "photo") return { photoStage: hint.stage };
   if (hint.kind === "prefix") {
     const chars = Array.from(target.name);
     const length = Math.min(Math.max(1, Math.floor(chars.length / 2)),
       hint.precision === "partial" ? 5 : 2);
-    return t("fieldClue.prefix", { prefix: chars.slice(0, length).join("") });
+    return { prefix: chars.slice(0, length).join("") };
   }
+  return { direction: clueDirection(hint, target) };
+}
+
+export function fieldClueText(state, hint, t) {
+  const facts = fieldClueFacts(state, hint);
+  if (hint.kind === "place") return t("fieldClue.place", facts);
+  if (hint.kind === "photo") return t("fieldClue.photo");
+  if (hint.kind === "prefix") return t("fieldClue.prefix", facts);
   const variant = Math.abs(hint.col * 31 + hint.row * 17 + hint.stage * 13) % 20;
   return t(`fieldDirection.${variant}`, {
     parent: state.trail.parentName,
-    direction: t(`hintCompass.${clueDirection(hint, target)}`),
+    direction: t(`hintCompass.${facts.direction}`),
   });
 }
 
@@ -257,6 +266,7 @@ export function validateExploration(state) {
   const seen = new Set();
   for (const hint of e.hints) {
     if (!hint || !Number.isInteger(hint.stage) || hint.stage < e.firstStage ||
+        (hint.channel !== undefined && !["search", "npc"].includes(hint.channel)) ||
         hint.stage > state.trail.index || hint.stage >= state.trail.stages.length ||
         !["vague", "partial", "precise"].includes(hint.precision) ||
         (hint.precision === "precise" ? hint.kind !== "place"
@@ -326,3 +336,4 @@ export function validateExploration(state) {
           !Number.isFinite(r.town.longitude) || Math.abs(r.town.longitude) > 180 : r.town !== null)) fail();
   }
 }
+import { spendExtraEnergy } from "./health.mjs";

@@ -12,10 +12,12 @@ const KEYS = {
   "open-trail": "J", "save-travel": "S", "look-travel": "L",
   "open-hint": "I",
   "open-journal": "A",
+  "open-earn-money": "B", "town-earn-money": "B", "cell-earn-money": "B",
   "journal-previous": "ArrowLeft", "journal-next": "ArrowRight",
   "journal-export-pdf": "P",
   "journal-map-page": "M",
   "copy-coordinates": "D",
+  "equipment-travel": "V", "equipment-close": "Escape", "equipment-rotate": "R",
   "needs-notice-cell": "F",
   "retry-travel": "Y", "stop-travel": "Q", "show-photo": "P",
   "refresh-content": "U", "clear-content": "X",
@@ -24,9 +26,17 @@ const KEYS = {
   "previous-photo": "ArrowLeft", "next-photo": "ArrowRight",
   "town-refresh": "U", "town-services": "E", "town-music": "B",
   "town-trail": "J", "music-start": "Enter", "music-tap": "Space",
+  "open-cafe": "W", "town-cafe": "W", "cell-cafe": "W",
+  "cafe-start": "G", "cafe-serve": "Enter", "cafe-clear": "X",
+  "cafe-sound-toggle": "M",
+  "cafe-coffee": "Q", "cafe-tea": "W", "cafe-water": "E",
+  "cafe-bread": "R", "cafe-cake": "T",
+  "cafe-customer-1": "1", "cafe-customer-2": "2", "cafe-customer-3": "3",
   "trail-interview": "I", "trail-restart": "N",
   "open-survival-choices": "F", "town-survival-choices": "F",
   "choice-forage": "F", "choice-beg": "A", "choice-steal": "T",
+  "theft-start": "Enter", "theft-grab": "Space",
+  "journey-event-continue": "Enter",
   "cell-buy": "E", "cell-rest": "R", "cell-sleep": "H",
   "cell-music": "B", "cell-clues": "J",
   "clue-discuss": "D", "clue-photo": "P", "clue-letter": "L",
@@ -38,7 +48,7 @@ const KEYS = {
 const DIRECTIONS = { "0,-1": "ArrowUp", "1,0": "ArrowRight", "0,1": "ArrowDown", "-1,0": "ArrowLeft" };
 
 export function buttonBindings(buttons) {
-  const bindings = buttons.map(button => ({
+  const bindings = buttons.filter(button => !button.native).map(button => ({
     button,
     key: KEYS[button.id] ?? DIRECTIONS[button.move] ?? (button.close ? "Escape" : null),
   }));
@@ -70,9 +80,12 @@ export function setupButtonShortcuts(t) {
   tooltip.hidden = true;
   document.body.append(tooltip);
   let current;
+  const nativeTitles = new WeakMap();
   function bindings(scope) {
+    if (scope.hasAttribute("data-native-controls")) return [];
     return buttonBindings([...scope.querySelectorAll("button")].map(button => ({
       id: button.id, move: button.dataset.move,
+      native: button.hasAttribute("data-shortcut-skip"),
       close: button.closest("form")?.getAttribute("method") === "dialog", element: button,
     })));
   }
@@ -81,6 +94,16 @@ export function setupButtonShortcuts(t) {
   }
   function refresh() {
     for (const scope of [document.querySelector("main"), ...document.querySelectorAll("dialog")]) {
+      for (const element of scope.querySelectorAll("button")) {
+        if (!scope.hasAttribute("data-native-controls") && !element.hasAttribute("data-shortcut-skip")) continue;
+        if (!element.title || element.title === nativeTitles.get(element)) {
+          const action = element.getAttribute("aria-label") || element.textContent.trim();
+          if (action) {
+            element.title = action;
+            nativeTitles.set(element, action);
+          }
+        }
+      }
       for (const { button, key } of bindings(scope)) {
         const element = button.element;
         let caption = element.querySelector(".button-shortcut");
@@ -107,6 +130,7 @@ export function setupButtonShortcuts(t) {
   function show(event) {
     const button = event.target.closest?.("button");
     if (!button) return;
+    if (!button.title) { hide(); return; }
     current = button;
     tooltip.textContent = button.title;
     const host = button.closest("dialog") ?? document.body;
@@ -137,10 +161,12 @@ export function setupButtonShortcuts(t) {
   document.addEventListener("keydown", event => {
     const key = shortcutCode(event);
     if (!key || event.defaultPrevented || event.repeat ||
-        event.target.closest?.("input,select,textarea,[contenteditable]")) return;
+        event.target.closest?.("input,select,textarea,[contenteditable],[data-shortcut-skip]")) return;
     const dialogs = [...document.querySelectorAll("dialog[open]")];
     const scope = dialogs.find(dialog => dialog.contains(document.activeElement)) ??
       dialogs.at(-1) ?? document.querySelector("main");
+    if (scope.hasAttribute("data-native-controls")) return;
+    if (key === "Space" && scope.id === "music-dialog") return;
     const match = bindings(scope).find(binding => binding.key === key &&
       binding.button.element.getClientRects().length && !binding.button.element.closest("[hidden],[inert]"));
     const button = match?.button.element;

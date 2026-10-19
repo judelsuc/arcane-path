@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createStreetMusicAudio, streetMusicWav } from "../street-music-audio.mjs";
-import { MUSIC, rhythm, beatTime, rhythmEnd } from "../music.mjs";
+import { MUSIC, rhythm, beatTime, rhythmEnd, musicDifficulty, holdDuration } from "../music.mjs";
 
 function fixture(options = {}) {
   const voices = [], errors = [], reports = [];
@@ -51,6 +51,30 @@ test("native PCM melody contains audible cues on the exact visual beat clock, in
   assert.notDeepEqual(streetMusicWav(true), streetMusicWav(false));
 });
 
+test("Judgement audio previews the normal phrase and reproduces every note without phrase ties", () => {
+  const generated = rhythm(1000, () => 0.42, MUSIC.minMistakes, MUSIC.beats, { resonance: true });
+  const game = { ...generated, startedAt: generated.startedAt + generated.previewMs };
+  const bytes = streetMusicWav(undefined, game), view = new DataView(bytes.buffer);
+  const peak = (at, duration = 0.08) => {
+    let max = 0;
+    for (let i = Math.round(at * 22050); i < (at + duration) * 22050; i++) {
+      if (44 + i * 2 >= bytes.length) break;
+      max = Math.max(max, Math.abs(view.getInt16(44 + i * 2, true)));
+    }
+    return max;
+  };
+  const firstSlot = game.pattern.findIndex(value => value > 0);
+  const firstOffset = (MUSIC.leadMs + firstSlot * game.intervalMs) / 1000;
+  assert.ok(peak(firstOffset + 0.04) > 8000);
+  assert.ok(peak(game.previewMs / 1000 + firstOffset + 0.04) > 8000);
+  const normal = streetMusicWav(undefined, { ...game, resonance: false, previewMs: 0 });
+  const offset = Math.round(game.previewMs / 1000 * 22050) * 2;
+  assert.deepEqual(bytes.subarray(44 + offset), normal.subarray(44));
+  assert.equal((bytes.length - 44) / 2,
+    Math.ceil(((rhythmEnd(game) - game.startedAt + game.previewMs) / 1000 + 0.3) * 22050));
+  assert.ok(game.resonance);
+});
+
 test("native audio plays the melody and distinct hit/miss WAVs; mute, volume and stop affect all voices", async () => {
   const { player, voices, errors } = fixture();
   player.enable(true);
@@ -79,6 +103,23 @@ test("native audio plays the melody and distinct hit/miss WAVs; mute, volume and
   for (const value of [-1, 2, NaN]) assert.throws(() => player.volume(value));
 });
 
+test("higher-level audio follows the faster clock and sustains 2-, 3- and 4-beat held notes", () => {
+  const profile = musicDifficulty({ skills: { music: 240 } });
+  const game = rhythm(0, () => 0.99, 8, profile.beats, profile);
+  const bytes = streetMusicWav(undefined, game), view = new DataView(bytes.buffer);
+  assert.equal((bytes.length - 44) / 2,
+    Math.ceil(((rhythmEnd(game) - game.startedAt) / 1000 + 0.3) * 22050));
+  for (let index = 0; index < game.hits.length; index++) {
+    const at = (beatTime(game, index) - game.startedAt) / 1000;
+    const duration = holdDuration(game, index);
+    const sampleAt = at + (duration ? duration / 1000 * 0.8 : 0.04);
+    let peak = 0;
+    for (let sample = Math.round(sampleAt * 22050); sample < (sampleAt + 0.02) * 22050; sample++) {
+      peak = Math.max(peak, Math.abs(view.getInt16(44 + sample * 2, true)));
+    }
+    assert.ok(peak > 0, `Note ${index} must remain audible on its visual clock.`);
+  }
+});
 test("loading latency seeks to the visual clock and never plays an expired performance", async () => {
   const { player, voices } = fixture({ now: () => 3000 });
   await player.start(rhythm(1000));

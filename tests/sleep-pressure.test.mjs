@@ -64,9 +64,9 @@ test("sleep growth also applies indoors, voluntary sleep still recovers normally
   const slept = sleepEconomy(state, { terrain: "place" }, info, null, survival, economy);
   assert.equal(slept.faints, undefined);
   assert.equal(slept.sleeps, 1);
-  const hungry = finish({ ...state, reserveKcal: 1 },
-    restSurvival({ ...state, reserveKcal: 1 }, survival));
-  assert.equal(hungry.ended, "hunger");
+  const hungry = finish({ ...state, reserveKcal: 1, health: 0.01 },
+    restSurvival({ ...state, reserveKcal: 1, health: 0.01 }, survival));
+  assert.equal(hungry.ended, "health");
   assert.equal(hungry.faints, undefined);
   assert.throws(() => finish({ ...state, ended: "sleep" }, state), /ended/);
 });

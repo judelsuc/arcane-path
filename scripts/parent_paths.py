@@ -168,6 +168,31 @@ class ParentPaths:
         if recognize is not None:
             return 200, self.recognition(record, stage, position, recognize)
         key = (journey_id, stage)
+        return self.request_record(key, record, retry, position)
+
+    @staticmethod
+    def lore_key(journey_id, stage, position):
+        return f"lore-{journey_id}-{position[0]}-{position[1]}", stage
+
+    def request_lore(self, journey_id, stage, position, retry=False):
+        record = self.journeys.read(journey_id)
+        if record is None:
+            return 404, {"error": "Server journey not found."}
+        trail = record["state"]["trail"]
+        if (type(stage) is not int or not 0 <= stage < len(trail["stages"]) or len(position) != 2 or
+                any(type(value) is not int or abs(value // 8) > 1000 for value in position)):
+            raise ValueError("Invalid authoritative lore route.")
+        source = dict(trail["origin"] if stage == 0 else trail["stages"][stage - 1])
+        source.update(col=position[0], row=position[1])
+        if stage == 0:
+            trail["origin"] = source
+        else:
+            trail["stages"][stage - 1] = source
+        record["loreLandOnly"] = True
+        return self.request_record(self.lore_key(journey_id, stage, position), record, retry)
+
+    def request_record(self, key, record, retry=False, position=None):
+        stage = key[1]
         with self.lock:
             for finished_key, job in list(self.jobs.items()):
                 if not job.done():
@@ -204,8 +229,10 @@ class ParentPaths:
         source = trail["origin"] if stage == 0 else trail["stages"][stage - 1]
         target = trail["stages"][stage]
         start, goal = (source["col"], source["row"]), (target["col"], target["row"])
+        land_only = record.get("loreLandOnly", False)
         identity = hashlib.sha256(json.dumps([VERSION, self.chunks.pipeline,
-            self.chunks.fingerprints[region], region, start, goal], sort_keys=True).encode()).hexdigest()
+            self.chunks.fingerprints[region], region, start, goal] +
+            (["land-only-v1"] if land_only else []), sort_keys=True).encode()).hexdigest()
         shared = self.cache / "routes" / f"{identity}.json"
         if shared.exists():
             data = self.decode(shared)
@@ -225,6 +252,10 @@ class ParentPaths:
         def cell(col, row):
             nonlocal downloads
             check()
+            base = self.chunks.bases[region] if land_only else None
+            if land_only and 0 <= col < base["width"] and 0 <= row < base["height"]:
+                result = base["rows"][row][col]
+                return {**result, "unavailable": True} if result["terrain"] == "water" else result
             chunk = (col // 8, row // 8)
             if chunk not in loaded:
                 if len(loaded) >= MAX_CHUNKS:
@@ -238,7 +269,8 @@ class ParentPaths:
                     data = self.chunks.build(region, *chunk)
                 loaded[chunk] = data
                 progress(chunks=len(loaded))
-            return loaded[chunk]["rows"][row % 8][col % 8]
+            result = loaded[chunk]["rows"][row % 8][col % 8]
+            return {**result, "unavailable": True} if land_only and result["terrain"] == "water" else result
 
         data = find_path(start, goal, cell, progress=progress, check=check)
         data.update(chunks=len(loaded), downloads=downloads,

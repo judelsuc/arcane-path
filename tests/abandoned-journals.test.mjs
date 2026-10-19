@@ -15,6 +15,21 @@ const response = value => new Response(JSON.stringify(value), {
   headers: { "Content-Type": "application/json" },
 });
 
+test("zero-health death is durably queued and flushed without publishing extra private state", async () => {
+  const local = storage(), calls = [];
+  const client = createJournalClient(local, async (url, options) => {
+    calls.push(JSON.parse(options.body));
+    return response({});
+  });
+  client.queueDeath({ ...state, health: 0, ended: "health" });
+  await client.flush();
+  await client.flush();
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].ended, "health");
+  assert.equal(calls[0].health, undefined);
+  assert.equal(calls[0].notes, undefined);
+});
+
 test("capability and request ID are persisted before network and reused across reloads", () => {
   const local = storage(), pending = pendingJournalCreation(local, "firmi", "Alex");
   assert.match(pending.capability, /^[a-f0-9]{64}$/);

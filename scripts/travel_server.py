@@ -32,6 +32,7 @@ from abandoned_journals import AbandonedJournals, JournalForbidden, capability_h
 from parent_paths import ParentPaths
 from accommodations import Accommodations
 from journey_terrain import cached_terrain
+from lore_playtest import LorePlaytest
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_SIZE = 8
@@ -367,6 +368,7 @@ def make_handler(store, jobs, path_pool=None):
     journeys = JourneyStore(store, atomic_write)
     abandoned = AbandonedJournals(journeys)
     parent_paths = ParentPaths(store, journeys, atomic_write, pool=path_pool)
+    lore = LorePlaytest(journeys, abandoned, paths=parent_paths, chunk_jobs=jobs)
     accommodations = ChunkJobs(Accommodations(store, atomic_write), capacity=2, pool=jobs.pool)
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
@@ -388,7 +390,7 @@ def make_handler(store, jobs, path_pool=None):
 
         def do_POST(self):
             endpoint = urllib.parse.urlsplit(self.path).path
-            if endpoint not in ("/api/journeys", "/api/abandoned-journals"):
+            if endpoint not in ("/api/journeys", "/api/abandoned-journals", "/api/lore-playtest"):
                 return self.send_json(404, {"error": "Unknown API endpoint."})
             origin = self.headers.get("Origin")
             try:
@@ -420,6 +422,8 @@ def make_handler(store, jobs, path_pool=None):
                 except (ValueError, UnicodeError) as error:
                     raise JourneyRequest("Invalid journey JSON.") from error
                 capability = self.headers.get("X-Journal-Capability")
+                if endpoint == "/api/lore-playtest":
+                    return self.send_json(200, lore.request(request, capability))
                 if endpoint == "/api/abandoned-journals":
                     return self.send_json(200, abandoned.request(request, capability))
                 if capability is not None:

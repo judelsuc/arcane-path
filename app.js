@@ -9,6 +9,7 @@ import { setupStartingPoint, validateStartingMap } from "./starting-point-ui.mjs
 import { setupCopyCoordinates } from "./copy-coordinates.mjs";
 import { setupShortcutHelp } from "./shortcut-help.mjs";
 import { setupPhotoJournal } from "./photo-journal.mjs";
+import { setupGameHelp } from "./game-help.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
 const viewport = document.querySelector("#map-viewport");
@@ -34,6 +35,7 @@ const audio = setupAudio(t);
 const coordinates = setupCopyCoordinates(t, () => mapData && inspectedTile
   ? cellInfo(mapData, Number(inspectedTile.dataset.row), Number(inspectedTile.dataset.col)) : null);
 const controls = setupShortcutHelp(t);
+const windowHelp = setupGameHelp(t);
 const travel = setupTravel({
   t, renderMap,
   pinPhoto: photoJournal.pinButton,
@@ -43,6 +45,9 @@ const travel = setupTravel({
   showNotebook: photoJournal.showAbandoned,
   updateNotebookStats: photoJournal.updateStats,
   musicAudio: audio.busking,
+  cafeAudio: audio.cafe,
+  theftAudio: audio.theft,
+  miniGameAudio: audio.journeyGames,
   onAudioContext: context => audio.update(context),
   onStep: terrain => audio.step(terrain),
   onActiveChange(active) {
@@ -201,6 +206,7 @@ function localize() {
   startingPoint.localize();
   coordinates.update();
   controls.localize();
+  windowHelp.localize();
   document.querySelector("#starting-map-status").textContent = mapData
     ? t("setupSelected", { name: mapData.origin ? mapData.name.split(",")[0] : mapData.name })
     : t(loadFailed ? "loadError" : "loading");

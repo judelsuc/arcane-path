@@ -9,17 +9,25 @@ import subprocess
 import tarfile
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME_ROOTS = {"scripts", "public", "data"}
+RUNTIME_ROOTS = {"scripts", "public", "data", "minigames"}
 RUNTIME_FILES = {"config.yml", "requirements.txt"}
 
 
 def runtime_path(path):
     return (path.parts[0] in RUNTIME_ROOTS or path.as_posix() in RUNTIME_FILES
             or path.parent == Path("infra/nginx") and path.suffix == ".conf"
-            or len(path.parts) == 1 and path.suffix in {".mjs", ".js", ".html", ".css"})
+            or len(path.parts) == 1 and path.suffix in {".mjs", ".js", ".html", ".css", ".svg"})
 
 
 def package(output, root=ROOT):
+    untracked = subprocess.run(["git", "-C", str(root), "ls-files", "--others", "--exclude-standard", "-z"],
+                               capture_output=True, check=True).stdout.decode().split("\0")
+    source_suffixes = {".mjs", ".js", ".py", ".html", ".css", ".svg", ".conf"}
+    missing = [name for name in untracked if name and runtime_path(Path(name))
+               and (Path(name).suffix in source_suffixes or name in RUNTIME_FILES)]
+    if missing:
+        raise ValueError("Untracked runtime source files would be omitted; review and commit required files "
+                         "before packaging: " + ", ".join(sorted(missing)[:12]))
     files = subprocess.run(["git", "-C", str(root), "ls-files", "-z"],
                            capture_output=True, check=True).stdout.decode().split("\0")
     runtime = [name for name in files if name and runtime_path(Path(name))]

@@ -95,9 +95,9 @@ test("night exposure, fainting and fatal needs apply before directions are grant
   const night = ask(start(23));
   assert.equal(night.state.outdoorNightMinutes, 10);
   assert.ok(night.state.fatigue > 2);
-  const hungry = ask({ ...start(), reserveKcal: 0.1 });
+  const hungry = ask({ ...start(), reserveKcal: 0.1, health: 0.01 });
   assert.equal(hungry.outcome, "exhausted");
-  assert.equal(hungry.state.ended, "hunger");
+  assert.equal(hungry.state.ended, "health");
   const sleepy = ask({ ...start(), awakeHours: survival.sleep_limit_hours - 0.01 });
   assert.equal(sleepy.outcome, "fainted");
   assert.equal(sleepy.state.lastFaint.reason, "sleep");

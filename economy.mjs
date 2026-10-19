@@ -4,6 +4,9 @@ import { eatSurvival, sleepSurvival, restSurvival, faintSurvival, characterProfi
 import { applyWeatherExposure } from "./weather-effects.mjs";
 import { advancePressures, didPlace, washingAvailable, refreshPressureTarot } from "./pressures.mjs";
 import { tarotEventChance } from "./tarot-effects.mjs";
+import { healthValue } from "./health.mjs";
+import { journeyEquipmentModifiers, syncJourneyEquipment } from "./equipment.mjs";
+import { activePower, powerCoverage, protectedFatigue, cancelPower } from "./lore-effects.mjs";
 export { tarotEventChance } from "./tarot-effects.mjs";
 
 export function validateEconomy(data) {
@@ -170,12 +173,13 @@ export function refreshNightRest(savedEconomy, currentEconomy) {
   return validateEconomy(updated);
 }
 
-export function shelters(cell) {
+export function shelters(cell, state) {
   return (cell.pois ?? []).filter(p => usablePoi(p)).filter(p => {
     const tags = p.tags ?? {};
-    return ["hotel", "hostel", "guest_house", "motel", "alpine_hut"].includes(tags.tourism) ||
+    return (state && journeyEquipmentModifiers(state).hasTent && tags.tourism === "camp_site") ||
+      ["hotel", "hostel", "guest_house", "motel", "alpine_hut"].includes(tags.tourism) ||
       (["shelter", "wilderness_hut"].includes(tags.amenity ?? tags.tourism) && tags.fee === "no");
-  }).map(p => ({ ...p, free: p.tags.fee === "no" }));
+  }).map(p => ({ ...p, free: p.tags.fee === "no", ...(p.tags.tourism === "camp_site" ? { camping: true } : {}) }));
 }
 
 export function nightMinutes(state, minutes, info) {
@@ -189,7 +193,9 @@ export function nightMinutes(state, minutes, info) {
 }
 
 export function faintingRisk(state, info, data, sheltered = false) {
-  return tarotEventChance(sheltered ? 0.05 : info.terrain === "place" ? 0.3 : 0.15, state, data);
+  const night = skyState(journeyDate(state), info.latitude, info.longitude).phase === "night";
+  return tarotEventChance(sheltered ? 0.05 : info.terrain === "place" ? 0.3 : 0.15, state, data) *
+    (night && !sheltered ? journeyEquipmentModifiers(state).nightVigilanceMultiplier : 1);
 }
 
 function collapseDraw(state, label) {
@@ -217,19 +223,39 @@ export function washEconomy(state, cell, info, survival, data) {
 }
 
 export function finishAction(previous, next, info, data,
-  { sheltered = false, random = Math.random, survival, activity } = {}) {
+  { sheltered = false, random = Math.random, survival, activity, outdoorSleep = false } = {}) {
   if (previous.ended) throw new Error("This journey has ended.");
+  const beforeWeatherFatigue = next.fatigue;
   if (!sheltered) next = applyWeatherExposure(previous, next, info);
-  if (next.reserveKcal <= 0) next = { ...next, ended: "hunger" };
+  if (healthValue(next) <= 0) next = { ...next, ended: "health" };
   const minutes = next.elapsedMinutes - previous.elapsedMinutes;
   let exposed = sheltered ? 0 : nightMinutes(previous, minutes, info);
-  const fatigue = Math.min(100, next.fatigue + exposed / 60 * data.rules.outdoorFatiguePerNightHour);
+  const actionGain = next.lastMove ? 0 : Math.max(0, beforeWeatherFatigue - previous.fatigue);
+  const exposureGain = next.fatigue - beforeWeatherFatigue + exposed / 60 * data.rules.outdoorFatiguePerNightHour *
+    (outdoorSleep ? journeyEquipmentModifiers(previous).outdoorSleepFatigueMultiplier : 1);
+  const fatigue = Math.min(100, beforeWeatherFatigue - actionGain +
+    protectedFatigue(previous, minutes, actionGain + exposureGain));
   next = { ...next, fatigue };
+  const rescue = result => {
+    const charge = activePower(previous, "nameless");
+    if (!charge || result.elapsedMinutes > charge.expiresMinutes ||
+        !["health", "hunger", "fatigue"].includes(result.ended)) return result;
+    if (!charge.marker || !Number.isSafeInteger(charge.marker.col) ||
+        !Number.isSafeInteger(charge.marker.row)) throw new Error("Invalid life-saving recovery marker.");
+    const saved = cancelPower({ ...result, ...charge.marker, ended: null,
+      health: Math.max(50, result.health), reserveKcal: Math.max(survival.reserve_kcal / 2, result.reserveKcal),
+      fatigue: Math.min(30, result.fatigue),
+      pressures: { ...result.pressures, vigilance: 0 },
+      lore: { ...result.lore, rescueReceipts: [...(result.lore.rescueReceipts ?? []),
+        { observedMinutes: result.elapsedMinutes, cause: result.ended, ...charge.marker }] } }, "nameless");
+    return saved;
+  };
+  next = rescue(next);
   const sleepy = next.ended === "sleep";
-  if ((fatigue >= 100 || sleepy) && next.ended !== "hunger") {
+  if ((next.fatigue >= 100 || sleepy) && !["health", "hunger"].includes(next.ended)) {
     const startedMinutes = next.elapsedMinutes;
     const chance = faintingRisk(previous, info, data, sheltered);
-    const robbed = collapseDraw(next, "robbery") < chance;
+    const robbed = !activePower(previous, "emperor") && collapseDraw(next, "robbery") < chance;
     const stolenCents = robbed
       ? Math.min(Math.floor(next.walletCents / 2),
         Math.ceil(next.walletCents * (0.25 + collapseDraw(next, "loss") * 0.25))) : 0;
@@ -242,14 +268,29 @@ export function finishAction(previous, next, info, data,
         ...(sleepy ? { reason: "sleep" } : {}),
         col: next.col, row: next.row, sheltered, chance, robbed, stolenCents,
         walletBeforeCents: next.walletCents } };
+    next = rescue(next);
   }
   next = advancePressures(previous, next, info, { sheltered, survival, activity });
+  if (!next.ended && (next.lore?.rescueReceipts?.length ?? 0) >
+      (previous.lore?.rescueReceipts?.length ?? 0)) {
+    next = { ...next, pressures: { ...next.pressures, vigilance: 0 } };
+  }
   const day = journeyDate(next).toISOString().slice(0, 10);
-  return refreshPressureTarot({ ...next,
+  const { metabolism, ...settled } = next;
+  const override = previous.lore?.protections?.judgement;
+  const naturalCard = day === previous.tarotDay
+    ? override?.naturalCard ?? previous.dailyCard : drawTarot(data, random);
+  let result = { ...settled,
     outdoorNightMinutes: previous.outdoorNightMinutes + exposed,
-    dailyCard: day === previous.tarotDay ? previous.dailyCard : drawTarot(data, random),
+    dailyCard: override && next.elapsedMinutes < override.expiresMinutes ? override.card : naturalCard,
     dailyTarotSeenDay: previous.dailyTarotSeenDay ?? previous.tarotDay,
-    tarotDay: day }, data);
+    tarotDay: day };
+  if (override) {
+    result = { ...result, lore: { ...result.lore, protections: { ...result.lore.protections,
+      judgement: { ...override, naturalCard } } } };
+    if (next.elapsedMinutes >= override.expiresMinutes) result = cancelPower(result, "judgement");
+  }
+  return syncJourneyEquipment(previous, refreshPressureTarot(result, data));
 }
 
 export function validateFainting(state) {
@@ -290,20 +331,28 @@ export function buyMeal(state, cell, info, mealId, survival, data) {
   return finishAction(state, next, info, data, { sheltered: true, survival });
 }
 
-export function sleepEconomy(state, cell, info, shelterId, survival, data) {
-  const shelter = shelterId === null ? null : shelters(cell).find(s => s.osmId === shelterId);
+export function sleepEconomy(state, cell, info, shelterId, survival, data,
+  { minutes = survival.sleep_hours * 60 } = {}) {
+  const sanctuary = activePower(state, "emperor");
+  const sanctuaryShelter = sanctuary && sanctuary.col === state.col && sanctuary.row === state.row &&
+    powerCoverage(state, "emperor", minutes) === minutes;
+  const shelter = shelterId === null ? null : shelters(cell, state).find(s => s.osmId === shelterId);
   if (shelterId !== null && !shelter) throw new Error("Shelter is not available in the player's cell.");
   const cents = shelter && !shelter.free ? marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents : 0;
   const paid = charge(state, cents);
-  const fullBoard = Boolean(shelter && !shelter.free);
-  const config = shelter ? survival : { ...survival,
+  const fullBoard = Boolean(shelter && !shelter.free && !shelter.camping);
+  const config = sanctuaryShelter ? survival : shelter?.camping ? { ...survival,
+    sleep_fatigue_recovery_per_hour: survival.sleep_fatigue_recovery_per_hour * data.rules.outdoorSleepRecoveryFactor,
+    sleep_recovery_per_hour: survival.sleep_recovery_per_hour * data.rules.outdoorSleepRecoveryFactor,
+  } : shelter ? survival : { ...survival,
     sleep_fatigue_recovery_per_hour: 0,
     sleep_recovery_per_hour: survival.sleep_recovery_per_hour * data.rules.outdoorSleepRecoveryFactor };
   const sleeping = fullBoard ? { ...paid, reserveKcal: survival.reserve_kcal } : paid;
-  let next = sleepSurvival(sleeping, config);
+  let next = sleepSurvival(sleeping, { ...config, sleep_hours: minutes / 60 });
   if (fullBoard) next = { ...next, reserveKcal: survival.reserve_kcal,
     fatigue: 0, awakeHours: 0, meals: next.meals + 2, ended: null };
-  return finishAction(state, next, info, data, { sheltered: Boolean(shelter), survival });
+  return finishAction(state, next, info, data, { sheltered: Boolean(shelter || sanctuaryShelter), survival,
+    outdoorSleep: !shelter && !sanctuaryShelter });
 }
 
 export function restEffect(state, info, survival, data) {
@@ -316,8 +365,10 @@ export function restEffect(state, info, survival, data) {
     night * survival.rest_minutes / 60 * data.rules.outdoorFatiguePerNightHour) };
 }
 
-export function restEconomy(state, info, survival, data) {
-  const next = restSurvival(state, { ...survival,
-    rest_fatigue_recovery: restEffect(state, info, survival, data).recovery });
+export function restEconomy(state, info, survival, data, { minutes = survival.rest_minutes } = {}) {
+  const config = { ...survival, rest_minutes: minutes,
+    rest_fatigue_recovery: survival.rest_fatigue_recovery * minutes / survival.rest_minutes };
+  const next = restSurvival(state, { ...config,
+    rest_fatigue_recovery: restEffect(state, info, config, data).recovery });
   return finishAction(state, next, info, data, { survival });
 }
