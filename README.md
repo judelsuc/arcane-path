@@ -748,6 +748,12 @@ Chaque deploiement doit avoir un checkpoint Git et un tag `deploy-*`, etre
 verifie sur le serveur puis annonce a l'utilisateur. Le manifeste reste protege
 par le mot de passe HTTPS ; il ne contient aucun credential.
 
+Retablir le service et verifier sa disponibilite avant de rechauffer les caches
+terrain apres un changement de rasteriseur. Ne pas garder le serveur arrete
+pendant cette reconstruction : nginx renverrait des erreurs 502 aux joueurs.
+Conserver les sources, altitudes et anciennes grilles pour permettre la reprise
+et un retour au code precedent sans restaurer les bases des parties.
+
 ## Lancer le prototype
 
 Depuis la racine du projet :
@@ -928,6 +934,12 @@ redemarrer le serveur. Les caches de grilles sont invalides automatiquement
 par la configuration ; les sources OSM et altitudes restent reutilisees.
 
 ## Couche 2 : voyage a pied
+
+Le fond de la fenetre et de la carte suit uniquement l'heure simulee du voyage :
+bleu nuit, prune a l'aube, bleu ardoise de jour, brun ambre au crepuscule.
+L'aube et le crepuscule suivent les heures solaires locales, a 45 minutes pres.
+Le titre et la preparation gardent leur fond original ; les couleurs meteo
+restent liees a la temperature.
 
 - **Commencer le voyage** place le joueur `@` au centre de la region.
 - Les **fleches** du clavier ou les boutons cardinaux avancent d'une case.

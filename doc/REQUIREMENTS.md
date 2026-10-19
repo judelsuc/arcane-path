@@ -1,5 +1,14 @@
 # Requirements tracked outside the design PDF
 
+## R-157 - Window background follows journey time
+
+- During travel only, use night/dawn/day/dusk colours based on the existing
+  simulated-time, location-aware solar calculation, with a 45-minute window
+  around sunrise/sunset and correct polar day/night.
+- Tint window/map surfaces while preserving readable text, terrain symbols,
+  weather-temperature colours and gameplay. Clear on exit; title/setup stay
+  unchanged.
+
 ## R-156 - Content-factory map tile sets (future)
 
 - Generate a fresh coherent map tile set daily for optional skins, initially

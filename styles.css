@@ -55,6 +55,42 @@ body {
     #101711;
 }
 
+body.is-travelling[data-journey-phase="night"] {
+  --journey-background: #080f20;
+  --journey-glow: #1a2d54;
+  --journey-surface: #0e1828;
+  --journey-dots: #293c52;
+}
+body.is-travelling[data-journey-phase="dawn"] {
+  --journey-background: #211723;
+  --journey-glow: #3f2934;
+  --journey-surface: #251c28;
+  --journey-dots: #4b394b;
+}
+body.is-travelling[data-journey-phase="day"] {
+  --journey-background: #132633;
+  --journey-glow: #243646;
+  --journey-surface: #162a35;
+  --journey-dots: #344959;
+}
+body.is-travelling[data-journey-phase="dusk"] {
+  --journey-background: #251a17;
+  --journey-glow: #3e2c20;
+  --journey-surface: #2a201d;
+  --journey-dots: #514037;
+}
+body.is-travelling[data-journey-phase] {
+  background: radial-gradient(ellipse at 50% -15%, var(--journey-glow) 0, transparent 55%),
+    var(--journey-background);
+}
+body.is-travelling[data-journey-phase] :is(.map-card, .legend-card) {
+  background: var(--journey-surface);
+}
+body.is-travelling[data-journey-phase] .map-viewport {
+  background-color: var(--journey-surface);
+  background-image: radial-gradient(var(--journey-dots) 0.7px, transparent 0.7px);
+}
+
 .game-shell {
   width: min(100% - 32px, 1040px);
   margin: 0 auto;

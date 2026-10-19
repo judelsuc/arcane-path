@@ -893,9 +893,11 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     }
     const sky = document.querySelector("#travel-sky");
     sky.hidden = !cell;
+    if (!active) delete document.body.dataset.journeyPhase;
     if (cell) {
       const player = cellInfo(chunk, position.row, position.col);
       const cycle = skyState(journeyDate(state), player.latitude, player.longitude);
+      if (active) document.body.dataset.journeyPhase = cycle.background;
       sky.dataset.phase = cycle.phase;
       document.querySelector("#sky-marker").style.left = `${cycle.x / 200 * 100}%`;
       document.querySelector("#sky-marker").style.top = `${cycle.y / 110 * 100}%`;
