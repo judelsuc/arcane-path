@@ -1,5 +1,37 @@
 # Requirements tracked outside the design PDF
 
+## R-164 - Pinned photos on the journey path (future)
+
+- Show pinned journey photos on or alongside the player's journey path,
+  associated with their recorded locations.
+- Keep the existing photo journal and let the player identify/open the
+  corresponding pinned photo from the path presentation.
+- Decide the visual treatment later (markers, thumbnails or previews),
+  including overlapping photos, mobile readability and accessibility.
+- Do not reveal unvisited locations or hidden parent stages. Define how to
+  handle older photos without usable location metadata before implementation.
+- Requirement recorded only; not part of the rescue-dream deployment.
+
+## R-163 - Rescue dreams for a traveller who has lost the parent's trail
+
+- A completed deliberate sleep lasting at least 60 minutes permits one check
+  at sleep start plus 60 minutes, at most once per 720 journey minutes.
+- Guarantee guidance after three unsuccessful field searches, including those
+  far from the parent's route, or 1,440 minutes without new parent progress.
+  Otherwise the chance is 50%; persist misses and use a stable draw so reload
+  cannot reroll the same sleep.
+- Give only an eight-way bearing from the sleeping location toward the current
+  stage. Do not reveal its name, coordinates or future stages, promise a
+  traversable route, or teleport the player.
+- Display a bilingual popup after other active dialogs and retain successful
+  dreams on their stage's trail page and in published abandoned notebooks.
+  Explain the rules in sleep choices. No additional resource cost.
+- Include outdoor, shelter, hotel and accepted hospitality sleeps; exclude
+  ordinary rest, fainting, detention, care and interrupted/terminal sleeps.
+  Existing journeys remain compatible; no historical popup replay on resume.
+- This bounded authored guidance does not activate the unpublished lore
+  playtest, artifact dreams or new model generation.
+
 ## R-162 - Varied cached event introductions and truthful status
 
 - Generate three distinct bilingual introductions per ordinary event type

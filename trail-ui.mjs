@@ -8,6 +8,7 @@ import { parentSighting, parentReunion } from "./parent-story.mjs";
 import { DIRECTIONS_RULES, directionsChance, citedTowns } from "./directions.mjs";
 import { setFeedback } from "./feedback.mjs";
 import { witnessCooling } from "./pressures.mjs";
+import { trailDreamText } from "./trail-dreams.mjs";
 import { fieldSearchAvailable, fieldSearchRules, prepareFieldSearch, fieldClueText, vagueLead,
   recognitionHint, prepareRecognition, openingClue, openingClueText } from "./trail-search.mjs";
 
@@ -37,6 +38,9 @@ export function trailReminder(state, t) {
   if (trail.discovery?.pending) return t("clueAskDirections", { venue: trail.discovery.venue });
   if (trail.exploration && trail.exploration.knownStage !== trail.index) {
     const hints = trail.exploration.hints.filter(h => h.stage === trail.index);
+    const dream = trail.dreams?.checks.findLast(check => check.stage === trail.index && check.outcome === "guidance");
+    if (dream && !hints.some(hint => hint.kind === "place" ||
+        hint.precision === "partial" && hint.elapsedMinutes >= dream.elapsedMinutes)) return trailDreamText(dream, t);
     const best = hints.find(h => h.kind === "place") ??
       hints.find(h => h.precision === "partial" && h.kind === "prefix") ??
       hints.find(h => h.kind === "prefix") ?? hints.find(h => h.kind === "direction");
@@ -107,6 +111,8 @@ export function trailPageRecords(state, stage) {
     ...(trail.exploration?.reports ?? []).map(value => ({ kind: "report", stage: value.stage, value })),
     ...(trail.rumors ?? []).map(value => ({ kind: "rumor", stage: value.stage + 1, value })),
     ...(trail.arrivals ?? []).map(value => ({ kind: "arrival", stage: value.stage, value })),
+    ...(trail.dreams?.checks ?? []).filter(value => value.outcome === "guidance")
+      .map(value => ({ kind: "dream", stage: value.stage, value })),
   ].filter(record => record.stage === stage).map((record, order) => ({ ...record, order }))
     .sort((a, b) => (b.value.elapsedMinutes ?? -1) - (a.value.elapsedMinutes ?? -1) || b.order - a.order);
 }
@@ -449,6 +455,12 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       } else if (record.kind === "opening") {
         paragraph(item, t("trailOpeningClueTitle"));
         paragraph(item, openingClueText(state, t));
+      } else if (record.kind === "dream") {
+        paragraph(item, t("trailDreamTitle"));
+        paragraph(item, trailDreamText(facts, t));
+        paragraph(item, t("fieldRecordedAt", {
+          col: facts.col, row: facts.row, minutes: Math.round(facts.elapsedMinutes),
+        }));
       } else if (record.kind === "hint") {
         const hint = facts;
         paragraph(item, t("fieldEvidence"));

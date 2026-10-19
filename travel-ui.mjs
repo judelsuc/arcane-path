@@ -22,11 +22,13 @@ import { renderJourneyMarker } from "./death.mjs";
 import { setupMusic } from "./music-ui.mjs";
 import { interviewTrail, recordTrailArrival } from "./trail.mjs";
 import { setupTrailArrival } from "./trail-arrival-ui.mjs";
+import { setupTrailDream } from "./trail-dream-ui.mjs";
+import { settleTrailDream, trailDreamText } from "./trail-dreams.mjs";
 import { createServerJourney } from "./server-journey.mjs";
 import { prepareParentPaths } from "./parent-path.mjs";
 import { loadAccommodations, cachedAccommodations, mergeAccommodations, withDiscoveredAccommodations } from "./accommodations.mjs";
 import { setFeedback } from "./feedback.mjs";
-import { askHospitality } from "./hospitality.mjs";
+import { askHospitality, HOSPITALITY_RULES } from "./hospitality.mjs";
 import { agendaClock } from "./agenda-clock.mjs";
 import { setupTrail, trailReminder, parentClueText, trailEntryDate } from "./trail-ui.mjs";
 import { askDirections } from "./directions.mjs";
@@ -100,6 +102,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       const dated = (record, text) =>
         `${trailEntryDate(previous, record.elapsedMinutes, document.documentElement.lang, t)} — ${text}`;
       const clues = [trailReminder(previous, t),
+        ...(previous.trail.dreams?.checks ?? []).filter(check => check.outcome === "guidance")
+          .map(check => dated(check, trailDreamText(check, t))),
         ...(previous.trail.exploration?.hints ?? []).map(h => dated(h,
           `${fieldClueText(previous, h, t)} ${t("fieldRecordedAt", {
             col: h.col, row: h.row, minutes: Math.round(h.elapsedMinutes),
@@ -199,6 +203,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     context: () => active && state && survivalConfig ? { state, survival: survivalConfig, busy } : null,
   });
   const trailArrivalUI = setupTrailArrival(t, {
+    context: () => active && state ? { state, busy } : null,
+    openTrail: () => trailUI.open(),
+  });
+  const trailDreamUI = setupTrailDream(t, {
     context: () => active && state ? { state, busy } : null,
     openTrail: () => trailUI.open(),
   });
@@ -926,6 +934,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     journeyEventsUI.update();
     equipmentUI.update();
     trailArrivalUI.update();
+    trailDreamUI.update();
   }
 
   function draw() {
@@ -1144,6 +1153,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       state = beginPressures(state, economyData);
       needsNotices.reset(restored ? state : undefined);
       trailArrivalUI.reset(restored ? state : undefined);
+      trailDreamUI.reset(restored ? state : undefined);
       await useNotebook?.(state, Boolean(restored));
       if (restored) {
         pinTarot?.(document.querySelector("#restored-birth-tarot-journal"), state, "birth", economyData);
@@ -1210,6 +1220,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     dailyTarotUI.reset();
     needsNotices.reset();
     trailArrivalUI.reset();
+    trailDreamUI.reset();
     journeyEventsUI.reset();
     liveNarrative.reset();
     openingStory.reset();
@@ -1286,11 +1297,19 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const current = economyContext();
     if (!current || current.blocked) return false;
     try {
-      state = action.kind === "meal"
+      const previous = state;
+      let next = action.kind === "meal"
         ? buyMeal(state, current.cell, current.info, action.id, survivalConfig, economyData)
         : action.kind === "hospitality"
         ? askHospitality(state, current.cell, current.info, survivalConfig, economyData, Math.random, action.id)
         : sleepEconomy(state, current.cell, current.info, action.id, survivalConfig, economyData);
+      if (action.kind !== "meal") {
+        const hosted = action.kind === "hospitality" && next.hospitalityAttempts?.at(-1)?.outcome === "hosted";
+        next = settleTrailDream(previous, next, {
+          startedMinutes: previous.elapsedMinutes + (hosted ? HOSPITALITY_RULES.minutes : 0),
+        });
+      }
+      state = next;
       autosave();
       error = "";
       localize();

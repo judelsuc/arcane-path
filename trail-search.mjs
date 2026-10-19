@@ -144,7 +144,10 @@ export function applyFieldSearch(state, result, cell, info, survival, economy) {
   const retainedSigns = sign ? [...signs.filter(s => s.stage !== sign.stage),
     ...signs.filter(s => s.stage === sign.stage).slice(-3), sign] : signs;
   next = { ...next, trail: { ...state.trail, exploration: { ...exploration, hints,
-    signs: retainedSigns, searchStreak: { stage: result.stage, misses },
+    signs: retainedSigns, searchStreak: { stage: result.stage, misses,
+      failures: ["found", "sign"].includes(outcome) ? 0 : Math.min(3,
+        (exploration.searchStreak?.stage === result.stage ? exploration.searchStreak.failures ?? 0 : 0) +
+        (outcome === "nothing" ? 1 : 0)) },
     lastSearch: { stage: result.stage, outcome, minutes: result.minutes, fatigue: result.fatigue,
       ...(repeated ? { repeated: true } : {}),
       ...(result.destinationBased ? { destinationBased: true } : {}),
@@ -311,6 +314,7 @@ export function validateExploration(state) {
   if (e.searchStreak !== undefined) {
     const streak = e.searchStreak;
     if (!validStage(streak) || !Array.isArray(streak.misses) || streak.misses.length > 3 ||
+        (streak.failures !== undefined && (!Number.isInteger(streak.failures) || streak.failures < 0 || streak.failures > 3)) ||
         streak.misses.some(p => !validPosition(p)) ||
         new Set(streak.misses.map(p => `${p.col},${p.row}`)).size !== streak.misses.length) fail();
   }

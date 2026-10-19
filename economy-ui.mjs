@@ -51,6 +51,9 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       hours: (state.outdoorNightMinutes / 60).toFixed(1),
     });
     if (!dialog.open) return;
+    const dreamHelp = document.querySelector("#economy-dream-help");
+    dreamHelp.hidden = mode !== "sleep";
+    dreamHelp.textContent = t("trailDreamRules");
     document.querySelector("#nearby-accommodation").hidden = mode !== "sleep" || !findAccommodations;
     const searchButton = document.querySelector("#accommodation-search");
     searchButton.disabled = current.blocked;

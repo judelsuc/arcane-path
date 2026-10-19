@@ -1,5 +1,21 @@
 # Les Arcanes du Chemin
 
+## Parent-trail rescue dreams
+
+After at least one hour of deliberate sleep, a guiding dream can give a broad
+bearing toward the current parent stage from the sleeping location. Checks
+are at least 12 game-hours apart: 50% normally, guaranteed after three failed
+field searches or 24 game-hours without new parent progress. Successful
+dreams remain on the corresponding trail page and in published abandoned
+notebooks. The sleep choices explain the rules.
+
+Outdoor, shelter, hotel and accepted hospitality sleep qualify; ordinary
+rest, fainting, detention, care and interrupted/terminal sleep do not.
+No extra time, energy or money is charged, and no model call is made.
+The dream does not name hidden towns or guarantee a traversable route.
+This standalone mechanism does not activate the unpublished lore/artifact
+dream system.
+
 ## Connected living-world preview
 
 Options links to the [public-event preview](layers/living-world/preview.html),

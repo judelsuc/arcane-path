@@ -30,6 +30,8 @@ for (const language of ["en", "fr"]) {
     const h = harness(t, language, undefined, undefined, narrative);
     const before = structuredClone(h.current().state);
     await h.ui.open("sleep");
+    assert.equal(h.element("#economy-dream-help").hidden, false);
+    assert.equal(h.element("#economy-dream-help").textContent, translate(language, "trailDreamRules"));
     const [speech, status] = h.element("#economy-shelter-context").siblings;
     assert.equal(speech.textContent, NARRATIVE_BRIEFS["npc.hospitality.greeting"][language]);
     const choices = h.buttons().map(button => button.textContent);
