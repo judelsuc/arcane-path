@@ -162,6 +162,61 @@ test("travel to accommodation selects the actual lodging and closes without movi
   assert.deepEqual(h.actions, []);
 });
 
+for (const language of ["fr", "en"]) {
+  test(`${language} hotels on the player's cell lead nearby and sleep choices without reordering other offers`, async t => {
+    const col = -14, row = 0;
+    const lodging = (id, name, c, r, distance, tourism = "hotel") => ({
+      id: `node/${id}`, osmId: `node/${id}`, name, col: c, row: r, distance, tags: { tourism },
+      credit: "OpenStreetMap contributors", license: "ODbL", source: "OpenStreetMap",
+      sourceUrl: `https://www.openstreetmap.org/node/${id}`,
+      licenseUrl: "https://www.openstreetmap.org/copyright",
+    });
+    const remote = lodging(1, "Closer but in another cell", col + 1, row, 10);
+    const sameCol = lodging(2, "Same column, different row", col, row + 1, 15);
+    const hostel = lodging(3, "Local hostel", col, row, 20, "hostel");
+    const hotel = lodging(4, "Your hotel", col, row, 150);
+    const second = lodging(5, "Second local hotel", col, row, 180);
+    const places = [remote, sameCol, hostel, hotel, second];
+    const before = structuredClone(places);
+    let complete, selected;
+    const h = harness(t, language, (signal, onProgress) => {
+      onProgress({ phase: "maps", cached: { places, warnings: [] }, elapsedSeconds: 0 });
+      return new Promise(resolve => { complete = resolve; });
+    }, place => { selected = place; });
+    h.set({ state: { ...h.current().state, col, row, walletCents: 100000 },
+      cell: { ...town, pois: [hostel, hotel, second] } });
+    const initialState = structuredClone(h.current().state);
+    const opening = h.ui.open("sleep");
+    const names = () => h.element("#accommodation-results").children.map(item => item.children[0].textContent);
+    assert.match(names()[0], /Your hotel/);
+    assert.ok(names()[0].includes(translate(language, "accommodationHere")));
+    assert.match(names()[1], /Second local hotel/);
+    assert.match(names()[2], /Local hostel/);
+    assert.match(names()[3], /Closer but in another cell/);
+    assert.match(names()[4], /Same column, different row/);
+    assert.match(h.buttons()[0].textContent, /Your hotel/);
+    assert.match(h.buttons()[1].textContent, /Second local hotel/);
+    assert.ok(h.buttons()[2].textContent.includes(translate(language, "hospitalityAsk")));
+    assert.ok(h.buttons()[3].textContent.includes(translate(language, "outdoorSleep")));
+    assert.match(h.buttons()[4].textContent, /Local hostel/);
+    complete({ places, warnings: [] });
+    await opening;
+    const labels = h.buttons().map(button => button.textContent);
+    h.ui.localize();
+    assert.deepEqual(h.buttons().map(button => button.textContent), labels);
+    assert.deepEqual(places, before, "display ordering must not mutate cached/provider results");
+    assert.deepEqual(h.current().state, initialState);
+    h.element("#accommodation-results").children[0].children.at(-1).click();
+    assert.equal(selected, hotel);
+    assert.deepEqual(h.actions, [], "selecting a destination must not sleep or charge");
+    const reopening = h.ui.open("sleep");
+    complete({ places, warnings: [] });
+    await reopening;
+    h.buttons()[0].click();
+    assert.deepEqual(h.actions, [{ kind: "sleep", id: hotel.osmId }]);
+  });
+}
+
 test("lodging lookup errors stay visible and the search can be retried", async t => {
   let calls = 0;
   const h = harness(t, "en", async () => {

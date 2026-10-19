@@ -1,5 +1,14 @@
 # Requirements tracked outside the design PDF
 
+## R-159 - Current-cell hotel first
+
+- When the player occupies a hotel's cell, show that hotel first in the nearby
+  accommodation suggestions and before hospitality/outdoor sleep actions.
+- Use exact grid column and row, not distance from the cell centre. Keep
+  multiple current-cell hotels together and preserve the order of other offers.
+- Apply this to cached/provisional and completed searches without changing
+  prices, eligibility, source attribution, travel selection or sleep effects.
+
 ## R-157 - Window background follows journey time
 
 - During travel only, use night/dawn/day/dusk colours based on the existing

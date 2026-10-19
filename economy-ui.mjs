@@ -69,7 +69,11 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     if (accommodationLoading && accommodationProgress) showAccommodationProgress();
     const nearby = document.querySelector("#accommodation-results");
     nearby.replaceChildren();
-    for (const place of accommodationResult?.places ?? []) {
+    const accommodationPriority = place => place.col === state.col && place.row === state.row
+      ? place.tags?.tourism === "hotel" ? 2 : 1 : 0;
+    const nearbyPlaces = [...(accommodationResult?.places ?? [])].sort((a, b) =>
+      accommodationPriority(b) - accommodationPriority(a));
+    for (const place of nearbyPlaces) {
       const item = document.createElement("li"), text = document.createElement("p");
       const east = place.col - state.col, north = state.row - place.row;
       const sectors = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
@@ -175,6 +179,14 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       const mapped = shelters(cell, state);
       document.querySelector("#economy-shelter-context").textContent =
         t(mapped.length ? "shelterCellOnly" : "shelterNoneInCell");
+      const addShelter = shelter => {
+        const cents = shelter.free ? 0 : marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents;
+        const credit = shelter.credit ? ` ${shelter.credit} · ${shelter.license}${shelter.updated ? ` · ${shelter.updated}` : ""}` : "";
+        add(shelter.name || t("mappedShelter"), cents, { kind: "sleep", id: shelter.osmId },
+          t(shelter.camping ? "campingRecoveryNote" : shelter.free ? "shelterNote" : "hotelRecoveryNote", { hours: survival.sleep_hours }) + credit,
+          shelter.sourceUrl ?? `https://www.openstreetmap.org/${shelter.osmId}`, shelter.source ?? t("townOsm"));
+      };
+      for (const hotel of mapped.filter(shelter => shelter.tags.tourism === "hotel")) addShelter(hotel);
       const hospitality = hospitalityStatus(state, cell);
       if (hospitality.town) {
         const note = t(hospitality.attempt ? "hospitalityAlreadyAsked" : "hospitalityNote", {
@@ -240,13 +252,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
         document.querySelector("#economy-hospitality-result").textContent = hospitalityResult(result);
       }
       add(t("outdoorSleep"), 0, { kind: "sleep", id: null }, t("outdoorSleepNote"));
-      for (const shelter of mapped) {
-        const cents = shelter.free ? 0 : marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents;
-        const credit = shelter.credit ? ` ${shelter.credit} · ${shelter.license}${shelter.updated ? ` · ${shelter.updated}` : ""}` : "";
-        add(shelter.name || t("mappedShelter"), cents, { kind: "sleep", id: shelter.osmId },
-          t(shelter.camping ? "campingRecoveryNote" : shelter.free ? "shelterNote" : "hotelRecoveryNote", { hours: survival.sleep_hours }) + credit,
-          shelter.sourceUrl ?? `https://www.openstreetmap.org/${shelter.osmId}`, shelter.source ?? t("townOsm"));
-      }
+      for (const shelter of mapped.filter(shelter => shelter.tags.tourism !== "hotel")) addShelter(shelter);
     }
   }
 
