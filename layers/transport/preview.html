@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Transport · synthetic standalone preview</title>
+<style>
+  body { font: 17px/1.5 system-ui; background: #f5eddc; color: #342d28; max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+  button, select { font: inherit; padding: .5rem .8rem; margin: .3rem; }
+  aside { border: 2px solid #a45c22; padding: 1rem; }
+  #offers li { margin: 1rem 0; }
+  svg { background: #fffaf0; width: 100%; border: 1px solid #b5a58a; }
+  #error { color: #9d1919; min-height: 1.5em; }
+  pre { white-space: pre-wrap; }
+</style>
+<header><select id="language" aria-label="Language / Langue"><option value="fr">Français</option><option value="en">English</option></select><h1 id="title"></h1></header>
+<aside id="warning"></aside>
+<p id="state" aria-live="polite"></p>
+<label><input id="cancel" type="checkbox"><span id="cancelLabel"></span></label>
+<label><input id="delay" type="checkbox"><span id="delayLabel"></span></label>
+<p>
+  <button id="reset"></button><button id="hungry"></button>
+  <button id="step"></button><button id="finish"></button>
+  <button id="save"></button><button id="resume"></button>
+</p>
+<p id="error" role="alert"></p>
+<h2 id="offersLabel"></h2><ul id="offers"></ul>
+<h2 id="routeLabel"></h2><svg id="route" viewBox="0 0 800 180" role="img"></svg>
+<p id="legend"></p>
+<pre id="details"></pre>
+<script type="module" src="./preview.mjs"></script>
+</html>

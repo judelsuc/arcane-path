@@ -1,5 +1,29 @@
 # Requirements tracked outside the design PDF
 
+## R-125 - Acquire real transport routes across Europe
+
+- **19 October user request and choices:** Obtain real bus/train routes across
+  Europe from the outset, not a single-country-only source. Provider gaps must
+  remain explicit. Clearly labelled estimated game fares are acceptable when
+  official fares are unavailable.
+- Initial source milestone: normalized 1,732 Mobility Database GTFS catalogue
+  entries across 41 country codes; all 47 scoped countries have an explicit
+  catalogue/gap status. This is discovery, not verified continent-wide service.
+- Six actual feeds in five countries imported for 2026-10-19: 99 active routes
+  and 3,993 dated trips, including Polregio rail. Compact attributed samples
+  retain source/hash/licence, geographic stops, timezones and date calendars.
+  Source-supplied approximate times remain labelled; never invent missing times.
+- Offline importer/CLI and standalone FR/EN source explorer are available.
+  GTFS pickup/drop-off restrictions reach the prototype reducer. Route samples
+  are finite schedules, not real-time guarantees or exact track geometry.
+- This milestone does not import official fares: every imported fare is an
+  explicitly fictional EUR game estimate, not an operator ticket price.
+  Official fare rules, additional providers, larger/regional feed partitioning,
+  realtime disruptions and main-game boarding/deployment remain future work.
+- Source/licence/freshness failures must be explicit, without fictional routes,
+  inferred daily recurrence, credential bypass or a claim of universal coverage.
+  See [transport data documentation](../data/transport/README.md).
+
 ## R-124 - Integrated game help and explicit placement reasons
 
 - **19 October playtest feedback:** Game tooltips must work in the online

@@ -9,7 +9,7 @@ Les prompts musicaux 8-bit et sons de jeu sont dans [audio-prompts](./audio-prom
 
 ## Suivi des prochaines etapes
 
-Mise a jour : 18 octobre 2026. Une coche signifie une etape effectivement
+Mise a jour : 19 octobre 2026. Une coche signifie une etape effectivement
 verifiee, pas seulement du code prepare. Voir le
 [rapport infrastructure et couts](./doc/INFRASTRUCTURE.md).
 
@@ -55,6 +55,9 @@ verifiee, pas seulement du code prepare. Voir le
 - [x] Douze mini-jeux approuves integres et deployes dans le vrai voyage.
 - [x] Evenements illustres epingles au carnet, frequence normale restauree.
 - [x] Sac spatial illustre, effets d'equipement et rencontre de chien nommable.
+- [x] Sources transports Europe : catalogue de 1 732 flux, six imports reels
+  verifies (99 lignes / 3 993 trajets dates), explorateur FR/EN et import GTFS.
+- [ ] Embarquement bus/train dans le voyage en ligne : pas encore active.
 - [ ] Autres couches du document de conception, avec checkpoints testes.
 - [ ] R-062 : caches d'objets persistantes, pour les autres joueurs et ses prochaines parties.
 - [ ] R-063 : indices d'arcanes plus precis avec la proximite ; habillage narratif LLM ulterieur.
@@ -64,6 +67,22 @@ Le DNS resout maintenant l'IP de la VM ; le site est accessible en HTTPS
 avec un mot de passe de previsualisation. Le jalon leger de la couche 9 est
 termine ; la simulation avancee du terrain et du budget de survie reste reportee.
 Les couts sont des estimations, pas un plafond de facturation automatise.
+
+## Sources reelles de transports europeens
+
+L'[explorateur de sources](./layers/transport/routes.html) permet de chercher
+par pays et operateur, voir les lacunes et consulter les premiers horaires
+reels importes. Le catalogue couvre des fournisseurs de 41 pays, **pas tous
+les reseaux ni toutes les localites**. Six flux ont ete effectivement importes
+pour le 19 octobre 2026 : France, Italie, Pologne, Finlande et Royaume-Uni,
+dont les trains Polregio. Les echantillons conservent les noms et arrets reels,
+la date, les fuseaux, les licences et les empreintes des archives.
+
+Les tarifs sont tous des **estimations fictives de jeu**, pas des billets
+operateur ; les heures approximatives fournies par une source sont signalees.
+Ces donnees ne sont pas encore activees dans le voyage en ligne.
+Voir les [sources, limites et commandes d'import](./data/transport/README.md)
+et le [contrat du moteur de transport](./layers/transport/README.md).
 
 ## Pressions et statistiques du voyage
 

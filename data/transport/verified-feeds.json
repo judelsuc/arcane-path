@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "notice": "First six independently imported feeds only; not complete European coverage. Counts describe full imports for the specified date. Stored files contain explicitly bounded samples. All fares are fictional game estimates, not operator tariffs.",
+  "feeds": [
+    {
+      "source": {
+        "id": "tdg-11492",
+        "country": "FR",
+        "provider": "DECAZEVILLE COMMUNAUTE",
+        "mirrorUrl": "https://files.mobilitydatabase.org/tdg-11492/latest.zip",
+        "licenseUrl": "https://www.data.gouv.fr/pages/legal/licences/etalab-2.0",
+        "licenseReviewed": true,
+        "official": true
+      },
+      "sha256": "0801dc51d7c974a41933942c6972a12dc1eba94c566de27e6ae61a1621871467",
+      "retrievedAt": "2026-10-19T08:29:12.846452+00:00",
+      "serviceDate": "2026-10-19",
+      "routes": 1,
+      "stops": 90,
+      "trips": 11,
+      "approximateTimeTrips": 0,
+      "omitted": {},
+      "sampleTrips": 3,
+      "sampleFile": "samples/tdg-11492.json"
+    },
+    {
+      "source": {
+        "id": "mdb-991",
+        "country": "IT",
+        "provider": "ATP Nuoro",
+        "mirrorUrl": "https://files.mobilitydatabase.org/mdb-991/latest.zip",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/deed.it",
+        "licenseReviewed": true,
+        "official": true
+      },
+      "sha256": "e331634d5aa58cdde1c05fd1cfe2466253d52cd4c3048ecb6ca2fc2fd04b6b0e",
+      "retrievedAt": "2026-10-19T08:29:13.221728+00:00",
+      "serviceDate": "2026-10-19",
+      "routes": 14,
+      "stops": 312,
+      "trips": 241,
+      "approximateTimeTrips": 241,
+      "omitted": {},
+      "sampleTrips": 3,
+      "sampleFile": "samples/mdb-991.json"
+    },
+    {
+      "source": {
+        "id": "mdb-2084",
+        "country": "PL",
+        "provider": "Miejski Zakład Komunikacji w Wejherowie (MZK Wejherowo)",
+        "mirrorUrl": "https://files.mobilitydatabase.org/mdb-2084/latest.zip",
+        "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/",
+        "licenseReviewed": true,
+        "official": false
+      },
+      "sha256": "0f9ab05e6dcd6c060e5b2ad40b1e8f352aeec04cede1aaaf2dcb2967903645b0",
+      "retrievedAt": "2026-10-19T08:29:13.245358+00:00",
+      "serviceDate": "2026-10-19",
+      "routes": 18,
+      "stops": 385,
+      "trips": 677,
+      "approximateTimeTrips": 0,
+      "omitted": {},
+      "sampleTrips": 3,
+      "sampleFile": "samples/mdb-2084.json"
+    },
+    {
+      "source": {
+        "id": "mdb-1127",
+        "country": "FI",
+        "provider": "Waltti - Kotka",
+        "mirrorUrl": "https://files.mobilitydatabase.org/mdb-1127/latest.zip",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "licenseReviewed": true,
+        "official": true
+      },
+      "sha256": "6502e3e9c012b3a437007a4184fc8ecfbb15899d51649e9c6e5ef56838ebc08c",
+      "retrievedAt": "2026-10-19T08:29:13.177005+00:00",
+      "serviceDate": "2026-10-19",
+      "routes": 44,
+      "stops": 717,
+      "trips": 375,
+      "approximateTimeTrips": 375,
+      "omitted": {},
+      "sampleTrips": 3,
+      "sampleFile": "samples/mdb-1127.json"
+    },
+    {
+      "source": {
+        "id": "mdb-1929",
+        "country": "GB",
+        "provider": "Borders Buses",
+        "mirrorUrl": "https://files.mobilitydatabase.org/mdb-1929/latest.zip",
+        "licenseUrl": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+        "licenseReviewed": true,
+        "official": true
+      },
+      "sha256": "2fa70d1380cfeacaca5aadf47ec5ea2f3f09ce124a72433bfab6d1fd35fe19e4",
+      "retrievedAt": "2026-10-19T08:29:13.601954+00:00",
+      "serviceDate": "2026-10-19",
+      "routes": 19,
+      "stops": 1273,
+      "trips": 430,
+      "approximateTimeTrips": 430,
+      "omitted": {},
+      "sampleTrips": 3,
+      "sampleFile": "samples/mdb-1929.json"
+    },
+    {
+      "source": {
+        "id": "mdb-2087",
+        "country": "PL",
+        "provider": "Polregio",
+        "mirrorUrl": "https://files.mobilitydatabase.org/mdb-2087/latest.zip",
+        "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/",
+        "licenseReviewed": true,
+        "official": false
+      },
+      "sha256": "1b117b4f5ad7f607b344698ed0b7d80e79c1888937097e4c33b7e363d7512bd4",
+      "retrievedAt": "2026-10-19T08:29:13.599820+00:00",
+      "serviceDate": "2026-10-19",
+      "routes": 3,
+      "stops": 1921,
+      "trips": 2259,
+      "approximateTimeTrips": 0,
+      "omitted": {},
+      "sampleTrips": 3,
+      "sampleFile": "samples/mdb-2087.json"
+    }
+  ]
+}

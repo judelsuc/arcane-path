@@ -1,0 +1,1368 @@
+{
+  "version": 1,
+  "kind": "real-gtfs-routes",
+  "source": {
+    "id": "mdb-2084",
+    "country": "PL",
+    "provider": "Miejski Zakład Komunikacji w Wejherowie (MZK Wejherowo)",
+    "mirrorUrl": "https://files.mobilitydatabase.org/mdb-2084/latest.zip",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "licenseReviewed": true,
+    "official": false
+  },
+  "retrievedAt": "2026-10-19T08:29:13.245358+00:00",
+  "sha256": "0f9ab05e6dcd6c060e5b2ad40b1e8f352aeec04cede1aaaf2dcb2967903645b0",
+  "serviceDate": "2026-10-19",
+  "timeZones": [
+    "Europe/Warsaw"
+  ],
+  "feedInfo": [
+    {
+      "feed_publisher_name": "Mikołaj Kuranowski",
+      "feed_lang": "pl",
+      "feed_start_date": "20260901",
+      "feed_end_date": "20261231",
+      "feed_version": "20260901",
+      "feed_publisher_url": "https://mkuran.pl/gtfs/"
+    }
+  ],
+  "routes": [
+    {
+      "id": "5",
+      "shortName": "5",
+      "longName": "Wejherowo Szpital — Orle Łąkowa",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "4",
+      "shortName": "4",
+      "longName": "Wejherowo Os. Fenikowskiego — Orle Łąkowa",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "6",
+      "shortName": "6",
+      "longName": "Wejherowo Szpital — Wejherowo Os. Fenikowskiego",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "3",
+      "shortName": "3",
+      "longName": "Wejherowo Os. Sikorskiego — Gościcino Cmentarz",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "16",
+      "shortName": "16",
+      "longName": "Wejherowo Os. Sikorskiego — Wejherowo Krofeya",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "9",
+      "shortName": "9",
+      "longName": "Reda Rekowo Lipowa — Rumia Dworzec PKP",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "1",
+      "shortName": "1",
+      "longName": "Wejherowo Os. Fenikowskiego — Bolszewo Leśna - Szkoła",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "8",
+      "shortName": "8",
+      "longName": "Wejherowo Szpital — Rumia C.H. „Port Rumia”",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "2",
+      "shortName": "2",
+      "longName": "Wejherowo Szpital — Wejherowo Szpital",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "7",
+      "shortName": "7",
+      "longName": "Wejherowo Cegielnia — Gościcino PKP",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "13",
+      "shortName": "13",
+      "longName": "Wejherowo Szpital — Wejherowo Szpital",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "10",
+      "shortName": "10",
+      "longName": "Wejherowo Pomorska — Kębłowo Wiejska",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "12",
+      "shortName": "12",
+      "longName": "Kąpino Parkowa — Gowino Brzozowa",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "18",
+      "shortName": "18",
+      "longName": "Rumia C.H. „Port Rumia” — Rumia C.H. „Port Rumia”",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "11",
+      "shortName": "11",
+      "longName": "Wejherowo Krofeya — Gniewowo Spacerowa",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "19",
+      "shortName": "19",
+      "longName": "Reda Os. Konopnickiej — Rumia Derdowskiego - Przychodnia",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "17",
+      "shortName": "17",
+      "longName": "Reda Pieleszewo Karłowicza — Reda Gniewowska - Cmentarz",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    },
+    {
+      "id": "701",
+      "shortName": "701",
+      "longName": "Wejherowo Budowlanych (zjazd do zajezdni) — Wejherowo Budowlanych (zjazd do zajezdni)",
+      "mode": "bus",
+      "agency": "MZK Wejherowo",
+      "timeZone": "Europe/Warsaw"
+    }
+  ],
+  "stops": [
+    {
+      "id": "818",
+      "name": "Wejherowo Nadrzeczna 02",
+      "latitude": 54.609015,
+      "longitude": 18.244354
+    },
+    {
+      "id": "92",
+      "name": "Wejherowo Kusocińskiego 02",
+      "latitude": 54.606866,
+      "longitude": 18.243159
+    },
+    {
+      "id": "88",
+      "name": "Wejherowo Chopina 01",
+      "latitude": 54.60521,
+      "longitude": 18.24072
+    },
+    {
+      "id": "86",
+      "name": "Wejherowo Broniewskiego - Dworzec PKP 01",
+      "latitude": 54.60684,
+      "longitude": 18.23066
+    },
+    {
+      "id": "851",
+      "name": "Wejherowo Przemysłowa 01 n/ż",
+      "latitude": 54.608108,
+      "longitude": 18.22041
+    },
+    {
+      "id": "252",
+      "name": "Wejherowo Urząd Pracy 01 n/ż",
+      "latitude": 54.608381,
+      "longitude": 18.21101
+    },
+    {
+      "id": "39",
+      "name": "Wejherowo Budowlanych 01",
+      "latitude": 54.61241,
+      "longitude": 18.20192
+    },
+    {
+      "id": "660",
+      "name": "Wejherowo Tartaczna 01 n/ż",
+      "latitude": 54.616026,
+      "longitude": 18.201625
+    },
+    {
+      "id": "231",
+      "name": "Bolszewo Łąkowa 01",
+      "latitude": 54.615324,
+      "longitude": 18.197336
+    },
+    {
+      "id": "34",
+      "name": "Bolszewo Świerkowa 01",
+      "latitude": 54.614536,
+      "longitude": 18.191403
+    },
+    {
+      "id": "32",
+      "name": "Bolszewo Glińskiego 01",
+      "latitude": 54.614151,
+      "longitude": 18.186782
+    },
+    {
+      "id": "31",
+      "name": "Bolszewo Główna - Kościół 01",
+      "latitude": 54.612704,
+      "longitude": 18.180964
+    },
+    {
+      "id": "1000",
+      "name": "Bolszewo Zamostna - OSP 01",
+      "latitude": 54.614817,
+      "longitude": 18.177257
+    },
+    {
+      "id": "20",
+      "name": "Bolszewo Reja 01",
+      "latitude": 54.619321,
+      "longitude": 18.176215
+    },
+    {
+      "id": "22",
+      "name": "Bolszewo Ogrodowa 01",
+      "latitude": 54.622581,
+      "longitude": 18.175498
+    },
+    {
+      "id": "24",
+      "name": "Bolszewo Mickiewicza 01",
+      "latitude": 54.626179,
+      "longitude": 18.174679
+    },
+    {
+      "id": "25",
+      "name": "Orle Wesoła 01 n/ż",
+      "latitude": 54.632152,
+      "longitude": 18.173352
+    },
+    {
+      "id": "27",
+      "name": "Orle Kościół 01",
+      "latitude": 54.637799,
+      "longitude": 18.172061
+    },
+    {
+      "id": "296",
+      "name": "Orle Łąkowa 02",
+      "latitude": 54.640408,
+      "longitude": 18.169948
+    },
+    {
+      "id": "28",
+      "name": "Orle Kościół 02",
+      "latitude": 54.63732,
+      "longitude": 18.171969
+    },
+    {
+      "id": "26",
+      "name": "Orle Wesoła 02 n/ż",
+      "latitude": 54.632494,
+      "longitude": 18.173081
+    },
+    {
+      "id": "23",
+      "name": "Bolszewo Mickiewicza 02",
+      "latitude": 54.626457,
+      "longitude": 18.174453
+    },
+    {
+      "id": "21",
+      "name": "Bolszewo Ogrodowa 02",
+      "latitude": 54.622092,
+      "longitude": 18.175453
+    },
+    {
+      "id": "19",
+      "name": "Bolszewo Reja 02",
+      "latitude": 54.618921,
+      "longitude": 18.17614
+    },
+    {
+      "id": "232",
+      "name": "Bolszewo Łąkowa 02",
+      "latitude": 54.615164,
+      "longitude": 18.197173
+    },
+    {
+      "id": "749",
+      "name": "Wejherowo Tartaczna 04 n/ż",
+      "latitude": 54.61536,
+      "longitude": 18.20231
+    },
+    {
+      "id": "38",
+      "name": "Wejherowo Budowlanych 02",
+      "latitude": 54.61117,
+      "longitude": 18.20102
+    },
+    {
+      "id": "318",
+      "name": "Wejherowo Szpital 02",
+      "latitude": 54.614852,
+      "longitude": 18.245405
+    },
+    {
+      "id": "94",
+      "name": "Wejherowo Szpitalna 04 n/ż",
+      "latitude": 54.613628,
+      "longitude": 18.249475
+    },
+    {
+      "id": "434",
+      "name": "Bolszewo Orzechowa 02",
+      "latitude": 54.61811,
+      "longitude": 18.182776
+    },
+    {
+      "id": "987",
+      "name": "Bolszewo Wspólna 01",
+      "latitude": 54.619368,
+      "longitude": 18.188186
+    },
+    {
+      "id": "457",
+      "name": "Bolszewo Słoneczna 02",
+      "latitude": 54.620721,
+      "longitude": 18.186171
+    },
+    {
+      "id": "986",
+      "name": "Bolszewo Wspólna 02",
+      "latitude": 54.618308,
+      "longitude": 18.188743
+    },
+    {
+      "id": "997",
+      "name": "Wejherowo Batalionu Morskiego 02 n/ż",
+      "latitude": 54.605979,
+      "longitude": 18.21161
+    },
+    {
+      "id": "64",
+      "name": "Wejherowo Dom Działkowca 02",
+      "latitude": 54.603647,
+      "longitude": 18.213053
+    },
+    {
+      "id": "827",
+      "name": "Wejherowo Urząd Skarbowy 02",
+      "latitude": 54.6034025,
+      "longitude": 18.2195853
+    },
+    {
+      "id": "79",
+      "name": "Wejherowo Filharmonia Kaszubska 02",
+      "latitude": 54.603057,
+      "longitude": 18.225856
+    },
+    {
+      "id": "83",
+      "name": "Wejherowo Sobieskiego - GS 02",
+      "latitude": 54.602659,
+      "longitude": 18.231704
+    },
+    {
+      "id": "679",
+      "name": "Wejherowo Mickiewicza - Ratusz 02",
+      "latitude": 54.600912,
+      "longitude": 18.238774
+    },
+    {
+      "id": "127",
+      "name": "Wejherowo Reformatów 02",
+      "latitude": 54.600498,
+      "longitude": 18.243654
+    },
+    {
+      "id": "125",
+      "name": "Wejherowo 12 Marca - Judyckiego 02",
+      "latitude": 54.601849,
+      "longitude": 18.246699
+    },
+    {
+      "id": "211",
+      "name": "Wejherowo 12 Marca - Myśliwska 02",
+      "latitude": 54.602084,
+      "longitude": 18.255947
+    },
+    {
+      "id": "844",
+      "name": "Wejherowo Rybacka 03",
+      "latitude": 54.604435,
+      "longitude": 18.261762
+    },
+    {
+      "id": "245",
+      "name": "Wejherowo Necla 04",
+      "latitude": 54.606932,
+      "longitude": 18.263189
+    },
+    {
+      "id": "246",
+      "name": "Wejherowo Konopnickiej 02",
+      "latitude": 54.607269,
+      "longitude": 18.268843
+    },
+    {
+      "id": "249",
+      "name": "Wejherowo Chmielewskiego 02",
+      "latitude": 54.607202,
+      "longitude": 18.273624
+    },
+    {
+      "id": "690",
+      "name": "Wejherowo Patoka 02",
+      "latitude": 54.606616,
+      "longitude": 18.283699
+    },
+    {
+      "id": "314",
+      "name": "Wejherowo Dzięcielskiego 02",
+      "latitude": 54.60643,
+      "longitude": 18.29043
+    },
+    {
+      "id": "748",
+      "name": "Wejherowo Gryfa Pomorskiego 02 n/ż",
+      "latitude": 54.60669,
+      "longitude": 18.296327
+    },
+    {
+      "id": "859",
+      "name": "Wejherowo Os. Fenikowskiego 01",
+      "latitude": 54.610942,
+      "longitude": 18.293171
+    },
+    {
+      "id": "982",
+      "name": "Wejherowo Staromłyńska 02",
+      "latitude": 54.609435,
+      "longitude": 18.247274
+    },
+    {
+      "id": "1001",
+      "name": "Wejherowo Obrońców Wybrzeża 02 n/ż",
+      "latitude": 54.608603,
+      "longitude": 18.251232
+    },
+    {
+      "id": "106",
+      "name": "Wejherowo Pomorska 02",
+      "latitude": 54.605846,
+      "longitude": 18.251726
+    },
+    {
+      "id": "111",
+      "name": "Wejherowo Prusa - Szkoła 02",
+      "latitude": 54.606209,
+      "longitude": 18.258056
+    }
+  ],
+  "trips": [
+    {
+      "id": "20260901:24_481685",
+      "routeId": "5",
+      "mode": "bus",
+      "headsign": "Orle Łąkowa",
+      "serviceDate": "2026-10-19",
+      "timeZone": "Europe/Warsaw",
+      "calls": [
+        {
+          "stopId": "818",
+          "sequence": 0,
+          "arrivalSeconds": 14820,
+          "departureSeconds": 14820,
+          "pickupType": 0,
+          "dropOffType": 1,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:07:00+02:00",
+          "arrivalServiceSeconds": 14820,
+          "departure": "2026-10-19T04:07:00+02:00",
+          "departureServiceSeconds": 14820
+        },
+        {
+          "stopId": "92",
+          "sequence": 1,
+          "arrivalSeconds": 14880,
+          "departureSeconds": 14880,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:08:00+02:00",
+          "arrivalServiceSeconds": 14880,
+          "departure": "2026-10-19T04:08:00+02:00",
+          "departureServiceSeconds": 14880
+        },
+        {
+          "stopId": "88",
+          "sequence": 2,
+          "arrivalSeconds": 14940,
+          "departureSeconds": 14940,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:09:00+02:00",
+          "arrivalServiceSeconds": 14940,
+          "departure": "2026-10-19T04:09:00+02:00",
+          "departureServiceSeconds": 14940
+        },
+        {
+          "stopId": "86",
+          "sequence": 3,
+          "arrivalSeconds": 15000,
+          "departureSeconds": 15000,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:10:00+02:00",
+          "arrivalServiceSeconds": 15000,
+          "departure": "2026-10-19T04:10:00+02:00",
+          "departureServiceSeconds": 15000
+        },
+        {
+          "stopId": "851",
+          "sequence": 4,
+          "arrivalSeconds": 15060,
+          "departureSeconds": 15060,
+          "pickupType": 3,
+          "dropOffType": 3,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:11:00+02:00",
+          "arrivalServiceSeconds": 15060,
+          "departure": "2026-10-19T04:11:00+02:00",
+          "departureServiceSeconds": 15060
+        },
+        {
+          "stopId": "252",
+          "sequence": 5,
+          "arrivalSeconds": 15120,
+          "departureSeconds": 15120,
+          "pickupType": 3,
+          "dropOffType": 3,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:12:00+02:00",
+          "arrivalServiceSeconds": 15120,
+          "departure": "2026-10-19T04:12:00+02:00",
+          "departureServiceSeconds": 15120
+        },
+        {
+          "stopId": "39",
+          "sequence": 6,
+          "arrivalSeconds": 15240,
+          "departureSeconds": 15240,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:14:00+02:00",
+          "arrivalServiceSeconds": 15240,
+          "departure": "2026-10-19T04:14:00+02:00",
+          "departureServiceSeconds": 15240
+        },
+        {
+          "stopId": "660",
+          "sequence": 7,
+          "arrivalSeconds": 15300,
+          "departureSeconds": 15300,
+          "pickupType": 3,
+          "dropOffType": 3,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:15:00+02:00",
+          "arrivalServiceSeconds": 15300,
+          "departure": "2026-10-19T04:15:00+02:00",
+          "departureServiceSeconds": 15300
+        },
+        {
+          "stopId": "231",
+          "sequence": 8,
+          "arrivalSeconds": 15360,
+          "departureSeconds": 15360,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:16:00+02:00",
+          "arrivalServiceSeconds": 15360,
+          "departure": "2026-10-19T04:16:00+02:00",
+          "departureServiceSeconds": 15360
+        },
+        {
+          "stopId": "34",
+          "sequence": 9,
+          "arrivalSeconds": 15420,
+          "departureSeconds": 15420,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:17:00+02:00",
+          "arrivalServiceSeconds": 15420,
+          "departure": "2026-10-19T04:17:00+02:00",
+          "departureServiceSeconds": 15420
+        },
+        {
+          "stopId": "32",
+          "sequence": 10,
+          "arrivalSeconds": 15480,
+          "departureSeconds": 15480,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:18:00+02:00",
+          "arrivalServiceSeconds": 15480,
+          "departure": "2026-10-19T04:18:00+02:00",
+          "departureServiceSeconds": 15480
+        },
+        {
+          "stopId": "31",
+          "sequence": 11,
+          "arrivalSeconds": 15540,
+          "departureSeconds": 15540,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:19:00+02:00",
+          "arrivalServiceSeconds": 15540,
+          "departure": "2026-10-19T04:19:00+02:00",
+          "departureServiceSeconds": 15540
+        },
+        {
+          "stopId": "1000",
+          "sequence": 12,
+          "arrivalSeconds": 15600,
+          "departureSeconds": 15600,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:20:00+02:00",
+          "arrivalServiceSeconds": 15600,
+          "departure": "2026-10-19T04:20:00+02:00",
+          "departureServiceSeconds": 15600
+        },
+        {
+          "stopId": "20",
+          "sequence": 13,
+          "arrivalSeconds": 15660,
+          "departureSeconds": 15660,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:21:00+02:00",
+          "arrivalServiceSeconds": 15660,
+          "departure": "2026-10-19T04:21:00+02:00",
+          "departureServiceSeconds": 15660
+        },
+        {
+          "stopId": "22",
+          "sequence": 14,
+          "arrivalSeconds": 15720,
+          "departureSeconds": 15720,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:22:00+02:00",
+          "arrivalServiceSeconds": 15720,
+          "departure": "2026-10-19T04:22:00+02:00",
+          "departureServiceSeconds": 15720
+        },
+        {
+          "stopId": "24",
+          "sequence": 15,
+          "arrivalSeconds": 15780,
+          "departureSeconds": 15780,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:23:00+02:00",
+          "arrivalServiceSeconds": 15780,
+          "departure": "2026-10-19T04:23:00+02:00",
+          "departureServiceSeconds": 15780
+        },
+        {
+          "stopId": "25",
+          "sequence": 16,
+          "arrivalSeconds": 15900,
+          "departureSeconds": 15900,
+          "pickupType": 3,
+          "dropOffType": 3,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:25:00+02:00",
+          "arrivalServiceSeconds": 15900,
+          "departure": "2026-10-19T04:25:00+02:00",
+          "departureServiceSeconds": 15900
+        },
+        {
+          "stopId": "27",
+          "sequence": 17,
+          "arrivalSeconds": 15960,
+          "departureSeconds": 15960,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:26:00+02:00",
+          "arrivalServiceSeconds": 15960,
+          "departure": "2026-10-19T04:26:00+02:00",
+          "departureServiceSeconds": 15960
+        },
+        {
+          "stopId": "296",
+          "sequence": 18,
+          "arrivalSeconds": 16020,
+          "departureSeconds": 16020,
+          "pickupType": 1,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T04:27:00+02:00",
+          "arrivalServiceSeconds": 16020,
+          "departure": "2026-10-19T04:27:00+02:00",
+          "departureServiceSeconds": 16020
+        }
+      ],
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 250
+      }
+    },
+    {
+      "id": "20260901:24_481688",
+      "routeId": "4",
+      "mode": "bus",
+      "headsign": "Wejherowo Os. Fenikowskiego",
+      "serviceDate": "2026-10-19",
+      "timeZone": "Europe/Warsaw",
+      "calls": [
+        {
+          "stopId": "296",
+          "sequence": 0,
+          "arrivalSeconds": 20040,
+          "departureSeconds": 20040,
+          "pickupType": 0,
+          "dropOffType": 1,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:34:00+02:00",
+          "arrivalServiceSeconds": 20040,
+          "departure": "2026-10-19T05:34:00+02:00",
+          "departureServiceSeconds": 20040
+        },
+        {
+          "stopId": "28",
+          "sequence": 1,
+          "arrivalSeconds": 20100,
+          "departureSeconds": 20100,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:35:00+02:00",
+          "arrivalServiceSeconds": 20100,
+          "departure": "2026-10-19T05:35:00+02:00",
+          "departureServiceSeconds": 20100
+        },
+        {
+          "stopId": "26",
+          "sequence": 2,
+          "arrivalSeconds": 20160,
+          "departureSeconds": 20160,
+          "pickupType": 3,
+          "dropOffType": 3,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:36:00+02:00",
+          "arrivalServiceSeconds": 20160,
+          "departure": "2026-10-19T05:36:00+02:00",
+          "departureServiceSeconds": 20160
+        },
+        {
+          "stopId": "23",
+          "sequence": 3,
+          "arrivalSeconds": 20280,
+          "departureSeconds": 20280,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:38:00+02:00",
+          "arrivalServiceSeconds": 20280,
+          "departure": "2026-10-19T05:38:00+02:00",
+          "departureServiceSeconds": 20280
+        },
+        {
+          "stopId": "21",
+          "sequence": 4,
+          "arrivalSeconds": 20340,
+          "departureSeconds": 20340,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:39:00+02:00",
+          "arrivalServiceSeconds": 20340,
+          "departure": "2026-10-19T05:39:00+02:00",
+          "departureServiceSeconds": 20340
+        },
+        {
+          "stopId": "19",
+          "sequence": 5,
+          "arrivalSeconds": 20400,
+          "departureSeconds": 20400,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:40:00+02:00",
+          "arrivalServiceSeconds": 20400,
+          "departure": "2026-10-19T05:40:00+02:00",
+          "departureServiceSeconds": 20400
+        },
+        {
+          "stopId": "434",
+          "sequence": 6,
+          "arrivalSeconds": 20520,
+          "departureSeconds": 20520,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:42:00+02:00",
+          "arrivalServiceSeconds": 20520,
+          "departure": "2026-10-19T05:42:00+02:00",
+          "departureServiceSeconds": 20520
+        },
+        {
+          "stopId": "987",
+          "sequence": 7,
+          "arrivalSeconds": 20580,
+          "departureSeconds": 20580,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:43:00+02:00",
+          "arrivalServiceSeconds": 20580,
+          "departure": "2026-10-19T05:43:00+02:00",
+          "departureServiceSeconds": 20580
+        },
+        {
+          "stopId": "457",
+          "sequence": 8,
+          "arrivalSeconds": 20640,
+          "departureSeconds": 20640,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:44:00+02:00",
+          "arrivalServiceSeconds": 20640,
+          "departure": "2026-10-19T05:44:00+02:00",
+          "departureServiceSeconds": 20640
+        },
+        {
+          "stopId": "986",
+          "sequence": 9,
+          "arrivalSeconds": 20700,
+          "departureSeconds": 20700,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:45:00+02:00",
+          "arrivalServiceSeconds": 20700,
+          "departure": "2026-10-19T05:45:00+02:00",
+          "departureServiceSeconds": 20700
+        },
+        {
+          "stopId": "232",
+          "sequence": 10,
+          "arrivalSeconds": 20820,
+          "departureSeconds": 20820,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:47:00+02:00",
+          "arrivalServiceSeconds": 20820,
+          "departure": "2026-10-19T05:47:00+02:00",
+          "departureServiceSeconds": 20820
+        },
+        {
+          "stopId": "749",
+          "sequence": 11,
+          "arrivalSeconds": 20880,
+          "departureSeconds": 20880,
+          "pickupType": 3,
+          "dropOffType": 3,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:48:00+02:00",
+          "arrivalServiceSeconds": 20880,
+          "departure": "2026-10-19T05:48:00+02:00",
+          "departureServiceSeconds": 20880
+        },
+        {
+          "stopId": "38",
+          "sequence": 12,
+          "arrivalSeconds": 20940,
+          "departureSeconds": 20940,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:49:00+02:00",
+          "arrivalServiceSeconds": 20940,
+          "departure": "2026-10-19T05:49:00+02:00",
+          "departureServiceSeconds": 20940
+        },
+        {
+          "stopId": "997",
+          "sequence": 13,
+          "arrivalSeconds": 21120,
+          "departureSeconds": 21120,
+          "pickupType": 3,
+          "dropOffType": 3,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:52:00+02:00",
+          "arrivalServiceSeconds": 21120,
+          "departure": "2026-10-19T05:52:00+02:00",
+          "departureServiceSeconds": 21120
+        },
+        {
+          "stopId": "64",
+          "sequence": 14,
+          "arrivalSeconds": 21180,
+          "departureSeconds": 21180,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:53:00+02:00",
+          "arrivalServiceSeconds": 21180,
+          "departure": "2026-10-19T05:53:00+02:00",
+          "departureServiceSeconds": 21180
+        },
+        {
+          "stopId": "827",
+          "sequence": 15,
+          "arrivalSeconds": 21240,
+          "departureSeconds": 21240,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:54:00+02:00",
+          "arrivalServiceSeconds": 21240,
+          "departure": "2026-10-19T05:54:00+02:00",
+          "departureServiceSeconds": 21240
+        },
+        {
+          "stopId": "79",
+          "sequence": 16,
+          "arrivalSeconds": 21300,
+          "departureSeconds": 21300,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:55:00+02:00",
+          "arrivalServiceSeconds": 21300,
+          "departure": "2026-10-19T05:55:00+02:00",
+          "departureServiceSeconds": 21300
+        },
+        {
+          "stopId": "83",
+          "sequence": 17,
+          "arrivalSeconds": 21360,
+          "departureSeconds": 21360,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:56:00+02:00",
+          "arrivalServiceSeconds": 21360,
+          "departure": "2026-10-19T05:56:00+02:00",
+          "departureServiceSeconds": 21360
+        },
+        {
+          "stopId": "679",
+          "sequence": 18,
+          "arrivalSeconds": 21480,
+          "departureSeconds": 21480,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:58:00+02:00",
+          "arrivalServiceSeconds": 21480,
+          "departure": "2026-10-19T05:58:00+02:00",
+          "departureServiceSeconds": 21480
+        },
+        {
+          "stopId": "127",
+          "sequence": 19,
+          "arrivalSeconds": 21540,
+          "departureSeconds": 21540,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T05:59:00+02:00",
+          "arrivalServiceSeconds": 21540,
+          "departure": "2026-10-19T05:59:00+02:00",
+          "departureServiceSeconds": 21540
+        },
+        {
+          "stopId": "125",
+          "sequence": 20,
+          "arrivalSeconds": 21600,
+          "departureSeconds": 21600,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T06:00:00+02:00",
+          "arrivalServiceSeconds": 21600,
+          "departure": "2026-10-19T06:00:00+02:00",
+          "departureServiceSeconds": 21600
+        },
+        {
+          "stopId": "211",
+          "sequence": 21,
+          "arrivalSeconds": 21660,
+          "departureSeconds": 21660,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T06:01:00+02:00",
+          "arrivalServiceSeconds": 21660,
+          "departure": "2026-10-19T06:01:00+02:00",
+          "departureServiceSeconds": 21660
+        },
+        {
+          "stopId": "844",
+          "sequence": 22,
+          "arrivalSeconds": 21780,
+          "departureSeconds": 21780,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T06:03:00+02:00",
+          "arrivalServiceSeconds": 21780,
+          "departure": "2026-10-19T06:03:00+02:00",
+          "departureServiceSeconds": 21780
+        },
+        {
+          "stopId": "245",
+          "sequence": 23,
+          "arrivalSeconds": 21840,
+          "departureSeconds": 21840,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T06:04:00+02:00",
+          "arrivalServiceSeconds": 21840,
+          "departure": "2026-10-19T06:04:00+02:00",
+          "departureServiceSeconds": 21840
+        },
+        {
+          "stopId": "246",
+          "sequence": 24,
+          "arrivalSeconds": 21900,
+          "departureSeconds": 21900,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T06:05:00+02:00",
+          "arrivalServiceSeconds": 21900,
+          "departure": "2026-10-19T06:05:00+02:00",
+          "departureServiceSeconds": 21900
+        },
+        {
+          "stopId": "249",
+          "sequence": 25,
+          "arrivalSeconds": 21960,
+          "departureSeconds": 21960,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T06:06:00+02:00",
+          "arrivalServiceSeconds": 21960,
+          "departure": "2026-10-19T06:06:00+02:00",
+          "departureServiceSeconds": 21960
+        },
+        {
+          "stopId": "690",
+          "sequence": 26,
+          "arrivalSeconds": 22080,
+          "departureSeconds": 22080,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T06:08:00+02:00",
+          "arrivalServiceSeconds": 22080,
+          "departure": "2026-10-19T06:08:00+02:00",
+          "departureServiceSeconds": 22080
+        },
+        {
+          "stopId": "314",
+          "sequence": 27,
+          "arrivalSeconds": 22140,
+          "departureSeconds": 22140,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T06:09:00+02:00",
+          "arrivalServiceSeconds": 22140,
+          "departure": "2026-10-19T06:09:00+02:00",
+          "departureServiceSeconds": 22140
+        },
+        {
+          "stopId": "748",
+          "sequence": 28,
+          "arrivalSeconds": 22200,
+          "departureSeconds": 22200,
+          "pickupType": 3,
+          "dropOffType": 3,
+          "timepoint": 1,
+          "arrival": "2026-10-19T06:10:00+02:00",
+          "arrivalServiceSeconds": 22200,
+          "departure": "2026-10-19T06:10:00+02:00",
+          "departureServiceSeconds": 22200
+        },
+        {
+          "stopId": "859",
+          "sequence": 29,
+          "arrivalSeconds": 22320,
+          "departureSeconds": 22320,
+          "pickupType": 1,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T06:12:00+02:00",
+          "arrivalServiceSeconds": 22320,
+          "departure": "2026-10-19T06:12:00+02:00",
+          "departureServiceSeconds": 22320
+        }
+      ],
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 250
+      }
+    },
+    {
+      "id": "20260901:24_481693",
+      "routeId": "6",
+      "mode": "bus",
+      "headsign": "Wejherowo Os. Fenikowskiego",
+      "serviceDate": "2026-10-19",
+      "timeZone": "Europe/Warsaw",
+      "calls": [
+        {
+          "stopId": "318",
+          "sequence": 0,
+          "arrivalSeconds": 35820,
+          "departureSeconds": 35820,
+          "pickupType": 0,
+          "dropOffType": 1,
+          "timepoint": 1,
+          "arrival": "2026-10-19T09:57:00+02:00",
+          "arrivalServiceSeconds": 35820,
+          "departure": "2026-10-19T09:57:00+02:00",
+          "departureServiceSeconds": 35820
+        },
+        {
+          "stopId": "94",
+          "sequence": 1,
+          "arrivalSeconds": 35940,
+          "departureSeconds": 35940,
+          "pickupType": 3,
+          "dropOffType": 3,
+          "timepoint": 1,
+          "arrival": "2026-10-19T09:59:00+02:00",
+          "arrivalServiceSeconds": 35940,
+          "departure": "2026-10-19T09:59:00+02:00",
+          "departureServiceSeconds": 35940
+        },
+        {
+          "stopId": "982",
+          "sequence": 2,
+          "arrivalSeconds": 36000,
+          "departureSeconds": 36000,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:00:00+02:00",
+          "arrivalServiceSeconds": 36000,
+          "departure": "2026-10-19T10:00:00+02:00",
+          "departureServiceSeconds": 36000
+        },
+        {
+          "stopId": "1001",
+          "sequence": 3,
+          "arrivalSeconds": 36060,
+          "departureSeconds": 36060,
+          "pickupType": 3,
+          "dropOffType": 3,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:01:00+02:00",
+          "arrivalServiceSeconds": 36060,
+          "departure": "2026-10-19T10:01:00+02:00",
+          "departureServiceSeconds": 36060
+        },
+        {
+          "stopId": "106",
+          "sequence": 4,
+          "arrivalSeconds": 36180,
+          "departureSeconds": 36180,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:03:00+02:00",
+          "arrivalServiceSeconds": 36180,
+          "departure": "2026-10-19T10:03:00+02:00",
+          "departureServiceSeconds": 36180
+        },
+        {
+          "stopId": "111",
+          "sequence": 5,
+          "arrivalSeconds": 36240,
+          "departureSeconds": 36240,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:04:00+02:00",
+          "arrivalServiceSeconds": 36240,
+          "departure": "2026-10-19T10:04:00+02:00",
+          "departureServiceSeconds": 36240
+        },
+        {
+          "stopId": "245",
+          "sequence": 6,
+          "arrivalSeconds": 36300,
+          "departureSeconds": 36300,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:05:00+02:00",
+          "arrivalServiceSeconds": 36300,
+          "departure": "2026-10-19T10:05:00+02:00",
+          "departureServiceSeconds": 36300
+        },
+        {
+          "stopId": "246",
+          "sequence": 7,
+          "arrivalSeconds": 36360,
+          "departureSeconds": 36360,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:06:00+02:00",
+          "arrivalServiceSeconds": 36360,
+          "departure": "2026-10-19T10:06:00+02:00",
+          "departureServiceSeconds": 36360
+        },
+        {
+          "stopId": "249",
+          "sequence": 8,
+          "arrivalSeconds": 36420,
+          "departureSeconds": 36420,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:07:00+02:00",
+          "arrivalServiceSeconds": 36420,
+          "departure": "2026-10-19T10:07:00+02:00",
+          "departureServiceSeconds": 36420
+        },
+        {
+          "stopId": "690",
+          "sequence": 9,
+          "arrivalSeconds": 36540,
+          "departureSeconds": 36540,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:09:00+02:00",
+          "arrivalServiceSeconds": 36540,
+          "departure": "2026-10-19T10:09:00+02:00",
+          "departureServiceSeconds": 36540
+        },
+        {
+          "stopId": "314",
+          "sequence": 10,
+          "arrivalSeconds": 36600,
+          "departureSeconds": 36600,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:10:00+02:00",
+          "arrivalServiceSeconds": 36600,
+          "departure": "2026-10-19T10:10:00+02:00",
+          "departureServiceSeconds": 36600
+        },
+        {
+          "stopId": "748",
+          "sequence": 11,
+          "arrivalSeconds": 36660,
+          "departureSeconds": 36660,
+          "pickupType": 3,
+          "dropOffType": 3,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:11:00+02:00",
+          "arrivalServiceSeconds": 36660,
+          "departure": "2026-10-19T10:11:00+02:00",
+          "departureServiceSeconds": 36660
+        },
+        {
+          "stopId": "859",
+          "sequence": 12,
+          "arrivalSeconds": 36780,
+          "departureSeconds": 36780,
+          "pickupType": 1,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:13:00+02:00",
+          "arrivalServiceSeconds": 36780,
+          "departure": "2026-10-19T10:13:00+02:00",
+          "departureServiceSeconds": 36780
+        }
+      ],
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 250
+      }
+    }
+  ],
+  "omitted": {},
+  "notice": "Real scheduled services, not live operating guarantees. Fares are fictional EUR game prices, not operator tickets. Stop sequences are not track/road geometry. Source-supplied approximate times are marked; no missing times are interpolated. Unsupported services are reported, not invented.",
+  "sampling": {
+    "notice": "Complete sample trips only, not the full imported timetable. Route metadata lists all imported active routes.",
+    "totalTrips": 677,
+    "totalStops": 385,
+    "sampleTrips": 3
+  }
+}
