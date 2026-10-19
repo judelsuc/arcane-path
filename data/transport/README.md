@@ -6,6 +6,57 @@ The real-route explorer is at
 the repository with an HTTP server. It supports French/English, country
 selection, operator search, explicit gaps and attributed real-trip samples.
 The older gameplay preview remains a separately labelled synthetic demo.
+The new [hybrid gameplay preview](../../layers/transport/hybrid.html) actually
+rides a supplied Grenoble-Lyon TER and explicitly fictional coach links through
+the same transport reducer. It is standalone, not online activation.
+
+## Grenoble-Lyon and the approved hybrid policy
+
+In addition to the first six sample feeds below, the actual **SNCF national
+archive** was acquired and **K6 alone** imported for 2026-10-19:
+59 dated route trips, 18 stops, **27 direct Grenoble to Lyon Part Dieu trains**.
+The tested 17618 leaves 11:21 and arrives 12:44 (83 minutes).
+Full selected-route input, compiled output, direct connections, source/hash and
+ODbL attribution are in the [Grenoble-Lyon example](examples/grenoble-lyon/README.md).
+It is not a claim that the national feed or all French routes were imported.
+
+**User-approved fallback:** real schedules first; clearly fictional coaches
+where loaded real service coverage is absent/out of date. Fictional routes
+connect real mapped towns using an abstract link, not verified roads or
+invented railways. No operator is impersonated. Source-feed errors do not
+silently become fictional routes; expired sources are explicitly reported.
+
+The [fictional generator](../../scripts/transport_fictional.py) accepts 2-20
+attributed real towns with IDs, names, European country codes and coordinates,
+an actual host map projection/grid identity, explicit service day and timezone.
+It supports all 47 country codes independently of national feed availability.
+No API/LLM/network request is used for generation:
+
+- Up to three nearest eligible destinations per origin, 5-350 km direct
+  separation, different host cells. Unconnected origins are explicitly listed.
+- Fictional distance = great-circle separation x 1.35, rounded up to meters.
+  This is a **game estimate**, not measured driving distance.
+- Duration = estimated distance / 50 km/h, rounded up, plus 15 minutes;
+  minimum 20 minutes. Fare = EUR 2 + EUR 0.15/km, rounded up to EUR 0.50,
+  minimum EUR 2.50. These are balancing values, not market fare estimates.
+- Departures at 06/10/14/18 hours plus a stable 0-29 minute pair-ID offset,
+  in the explicitly supplied game timezone. Changes to places/policy/day
+  produce a different pinned revision. No invented real-service recurrence.
+
+`hybridTransportOffers` returns labelled offers plus explicit `staleFeedIds`.
+It suppresses fictional offers for origin/destination **cells** covered by
+normal real pickup/drop-off on that service day, even if the train has already
+left or is cancelled. It does not turn a missed last train into an instant bus.
+Multiple providers and nonmatching stop IDs can share the same mapped cells.
+Fictional boarding requires `importTimetable(data, {allowFictional:true})`;
+ordinary real imports and `allowDemo` alone do not enable it. Booking/ride
+records retain fictional/abstract labels.
+
+This is a country-independent **regional mechanism**, not a pre-generated
+all-Europe network. Actual mapped towns must be supplied by the host; no
+fictional place coordinates are filled in. Full town ingestion, country-wide
+batching, long-distance transfers, main-game UI/save/streaming and deployment
+remain future integration. Disconnected bounds do not silently teleport.
 
 ## What was actually obtained
 
@@ -51,7 +102,8 @@ archive hashes, source terms, retrieval timestamps and sample filenames.
 The versioned [`samples/`](samples/) retain at most three **complete** actual
 trips per feed, all imported active-route metadata, and the publisher's feed
 information where provided. Samples explicitly say they are not the full
-timetable. Raw ZIPs and full imported day timetables are not committed.
+timetable. Raw ZIPs are not committed; the additional SNCF corridor example
+retains its complete selected-route/day timetable, not the full national feed.
 Use the import command below to retrieve a full supported feed.
 
 ## Reproduce / refresh
@@ -174,6 +226,7 @@ Source authorship and catalogue official/non-official flags are retained.
 
 ```sh
 python -m unittest discover -s tests -p test_transport_sources.py
+python -m unittest discover -s tests -p test_transport_fictional.py
 node --test tests/transport*.test.mjs
 ```
 

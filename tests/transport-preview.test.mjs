@@ -81,6 +81,7 @@ test("real-source explorer filters European providers, labels samples, and repor
     json: async () => JSON.parse(readFileSync(new URL(url,
       new URL("../layers/transport/routes.mjs", import.meta.url)), "utf8")),
   });
+
   try {
     await import("../layers/transport/routes.mjs");
     assert.equal(get("error").textContent, "");
@@ -101,7 +102,6 @@ test("real-source explorer filters European providers, labels samples, and repor
     const paragraphs = get("verified").children.flatMap(article => article.children.map(child => child.textContent));
     assert.ok(paragraphs.some(value => value.includes("Source-supplied approximate times")));
     assert.ok(paragraphs.some(value => value.includes("Estimated fictional game fare")));
-
     failed = true;
     get("verified").replaceChildren();
     get("country").disabled = get("filter").disabled = true;
@@ -112,5 +112,76 @@ test("real-source explorer filters European providers, labels samples, and repor
   } finally {
     if (oldDocument === undefined) delete globalThis.document; else globalThis.document = oldDocument;
     globalThis.fetch = oldFetch;
+  }
+});
+
+test("hybrid preview rides real Grenoble Lyon and labelled fictional coaches, saves/resumes in FR/EN", async () => {
+  const html = readFileSync(new URL("../layers/transport/hybrid.html", import.meta.url), "utf8");
+  const elements = new Map([...html.matchAll(/id="([^"]+)"/g)].map(([, id]) => {
+    const element = new Element();
+    element.value = id === "language" ? "fr" : "";
+    element.disabled = true;
+    return [id, element];
+  }));
+  const get = id => elements.get(id);
+  const oldDocument = globalThis.document, oldFetch = globalThis.fetch;
+  const storageDescriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  const stored = new Map();
+  globalThis.document = { documentElement: {}, getElementById: get, createElement: () => new Element() };
+  let failed = false;
+  globalThis.fetch = async url => ({
+    ok: !failed, status: failed ? 503 : 200,
+    json: async () => JSON.parse(readFileSync(new URL(url,
+      new URL("../layers/transport/hybrid-preview.mjs", import.meta.url)), "utf8")),
+  });
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, writable: true,
+    value: { setItem: (key, value) => stored.set(key, value), getItem: key => stored.get(key) ?? null } });
+  try {
+    await import("../layers/transport/hybrid-preview.mjs");
+    assert.equal(get("error").textContent, "");
+    assert.equal(get("connections").children.length, 27);
+    assert.equal(get("destination").children.length, 2);
+    assert.equal(get("offers").children[0].className, "real");
+    assert.match(get("offers").children[0].children[1].textContent, /11:21.*12:44/);
+    get("language").value = "en"; get("language").emit("change");
+    assert.match(get("scope").textContent, /not an actual absence of trains/);
+    get("offers").children[0].children.at(-1).emit();
+    assert.equal(get("finish").disabled, false);
+    get("save").emit();
+    get("finish").emit();
+    assert.match(get("state").textContent, /12:44.*€92\.00.*Arrived/);
+    assert.match(get("route").textContent, /Walked distance unchanged: 0 m/);
+    get("resume").emit();
+    assert.match(get("state").textContent, /Booked journey/);
+    get("finish").emit();
+    assert.match(get("state").textContent, /12:44.*€92\.00.*Arrived/);
+    get("reset").emit();
+    get("destination").value = get("destination").children[1].value;
+    get("destination").emit("change");
+    assert.equal(get("offers").children[0].className, "fictional");
+    assert.match(get("offers").children[0].children[0].textContent, /FICTIONAL GAME COACH/);
+    assert.ok(get("offers").children[0].children.some(child => child.textContent.includes("not a real road route")));
+    get("offers").children[0].children.at(-1).emit();
+    get("save").emit(); get("finish").emit();
+    const finished = get("state").textContent;
+    assert.match(finished, /Arrived/);
+    assert.match(get("route").textContent, /FICTIONAL GAME COACH.*Abstract link/);
+    get("resume").emit(); get("finish").emit();
+    assert.equal(get("state").textContent, finished);
+    assert.equal(get("error").textContent, "");
+    get("language").value = "fr"; get("language").emit("change");
+    assert.match(get("warning").textContent, /Horaires SNCF reels/);
+    assert.match(get("warning").textContent, /cars fictifs/);
+    failed = true;
+    get("offers").replaceChildren(); get("reset").disabled = true;
+    await import("../layers/transport/hybrid-preview.mjs?failed-load-test");
+    assert.match(get("error").textContent, /503/);
+    assert.equal(get("offers").children.length, 0);
+    assert.equal(get("reset").disabled, true);
+  } finally {
+    if (oldDocument === undefined) delete globalThis.document; else globalThis.document = oldDocument;
+    globalThis.fetch = oldFetch;
+    if (storageDescriptor) Object.defineProperty(globalThis, "localStorage", storageDescriptor);
+    else delete globalThis.localStorage;
   }
 });

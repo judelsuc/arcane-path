@@ -16,6 +16,7 @@ const messages = {
     approximate: "Heures approximatives fournies par la source", exact: "Heures de passage fournies par la source",
     gameFare: "Prix fictif estime pour le jeu", operatorFare: "aucun tarif operateur importe",
     proof: "Donnees echantillonnees et provenance", failed: "Chargement impossible",
+    hybridLink: "Essayer Grenoble vers Lyon reel et le fallback de cars fictifs",
   },
   en: {
     languageLabel: "Language", title: "Real transport: European sources",
@@ -33,6 +34,7 @@ const messages = {
     approximate: "Source-supplied approximate times", exact: "Source-supplied timepoints",
     gameFare: "Estimated fictional game fare", operatorFare: "no operator fare imported",
     proof: "Sampled data and provenance", failed: "Unable to load",
+    hybridLink: "Try real Grenoble to Lyon and fictional coach fallback",
   },
 };
 let catalog, samples, lang = "fr";
@@ -74,7 +76,7 @@ function render() {
   document.title = m.title;
   for (const id of ["languageLabel", "title", "warning", "catalogTitle", "countryLabel", "filterLabel",
     "operatorHeading", "sourceHeading", "statusHeading", "licenseHeading", "verifiedTitle",
-    "sampleWarning", "catalogLink", "documentationLink"]) $(id).textContent = m[id];
+    "sampleWarning", "catalogLink", "documentationLink", "hybridLink"]) $(id).textContent = m[id];
   const countries = Object.entries(catalog.coverage);
   $("summary").textContent = `${catalog.feeds.length} ${m.entries} · ${countries.filter(([, c]) =>
     c.catalogEntries).length} ${m.countries} · ${m.retrieved}: ${catalog.retrievedAt}`;

@@ -1,5 +1,37 @@
 # Requirements tracked outside the design PDF
 
+## R-126 - Hybrid European transport with explicit fictional coaches
+
+- **19 October user decision:** Transport must not remain limited to a few
+  imported countries. Use real services where supplied and clearly labelled
+  fictional services where coverage is missing. The user chose abstract coach
+  links between real towns, not a road-graph requirement.
+- Generate deterministic, finite game-day schedules, durations and fares from
+  attributed real mapped town coordinates. Support every country in the
+  European scope without a per-country timetable-provider dependency.
+  These are game services, never actual operators, exact road itineraries,
+  live guarantees or invented railway links.
+- Keep real and fictional inputs/types separate. Require explicit fictional
+  opt-in; retain service classification in offers, booking/save and ride view.
+  Estimated fares are labelled even on real schedules. Demo synthetic data
+  must not enter either real feeds or the fictional service path.
+- Real coverage takes precedence for an origin/destination cell on the
+  supplied service day, including after a missed train or a cancellation.
+  An empty departure list is not permission to invent a replacement service.
+  Out-of-date real feeds are surfaced explicitly; invalid data/grid errors
+  remain errors rather than being hidden by fictional fallback.
+- Initial bounded regional generator: 2-20 mapped towns, up to three nearest
+  eligible destinations per origin, 5-350 km direct separation. Four daily
+  fictional departures, finite dated output, explicit unconnected-town report.
+  The algorithm is country-independent, not proof that all European towns
+  are loaded or every pair is connected. Country-wide town ingestion,
+  transfers and main-journey activation/deployment remain future work.
+- Grenoble-Lyon real acceptance test: SNCF K6 imported for 2026-10-19,
+  59 selected-route trips and 27 direct Grenoble to Lyon Part Dieu trains.
+  Prototype verifies TER 17618, 11:21-12:44, one game charge, save/resume and
+  no walked-distance increase. FR/EN hybrid preview contrasts real Lyon
+  service with a clearly fictional loaded-data gap, not an asserted real gap.
+
 ## R-125 - Acquire real transport routes across Europe
 
 - **19 October user request and choices:** Obtain real bus/train routes across
@@ -20,8 +52,10 @@
   explicitly fictional EUR game estimate, not an operator ticket price.
   Official fare rules, additional providers, larger/regional feed partitioning,
   realtime disruptions and main-game boarding/deployment remain future work.
-- Source/licence/freshness failures must be explicit, without fictional routes,
-  inferred daily recurrence, credential bypass or a claim of universal coverage.
+- Source/licence/freshness failures must be explicit, without fictional routes
+  disguised as real, inferred real-service recurrence, credential bypass or a
+  claim of universal coverage. Explicit game-fiction fallback was subsequently
+  approved in R-126; it is separate from real-feed ingestion.
   See [transport data documentation](../data/transport/README.md).
 
 ## R-124 - Integrated game help and explicit placement reasons

@@ -58,6 +58,8 @@ verifiee, pas seulement du code prepare. Voir le
 - [x] Sources transports Europe : catalogue de 1 732 flux, six imports reels
   verifies (99 lignes / 3 993 trajets dates), explorateur FR/EN et import GTFS.
 - [ ] Embarquement bus/train dans le voyage en ligne : pas encore active.
+- [x] Grenoble-Lyon SNCF verifie : 27 trains directs dates, trajet 11:21-12:44
+  simule ; fallback hybride de cars fictifs entre vrais lieux, apercu FR/EN.
 - [ ] Autres couches du document de conception, avec checkpoints testes.
 - [ ] R-062 : caches d'objets persistantes, pour les autres joueurs et ses prochaines parties.
 - [ ] R-063 : indices d'arcanes plus precis avec la proximite ; habillage narratif LLM ulterieur.
@@ -83,6 +85,14 @@ operateur ; les heures approximatives fournies par une source sont signalees.
 Ces donnees ne sont pas encore activees dans le voyage en ligne.
 Voir les [sources, limites et commandes d'import](./data/transport/README.md)
 et le [contrat du moteur de transport](./layers/transport/README.md).
+
+L'[apercu hybride](./layers/transport/hybrid.html) permet maintenant de reserver
+et simuler un vrai TER Grenoble-Lyon, ou un **car fictif de jeu** dans une lacune
+des donnees chargees. Le moteur privilegie les vrais horaires ; le fallback
+utilise des liens abstraits entre vrais lieux, sans inventer de ligne de train
+ni pretendre suivre une route reelle. La politique est valable dans tous les
+pays europeens pris en charge, mais les villes doivent etre fournies et le
+reseau complet n'est pas encore genere ni deploye dans le voyage.
 
 ## Pressions et statistiques du voyage
 

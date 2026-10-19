@@ -449,6 +449,8 @@ def import_routes(payload, source, service_date, route_ids=None, max_trips=20000
                                                      "licenseUrl", "licenseReviewed", "official")},
                 "retrievedAt": source["retrievedAt"], "sha256": hashlib.sha256(payload).hexdigest(),
                 "serviceDate": day.isoformat(), "timeZones": sorted(zones), "feedInfo": feed_info,
+                "selection": {"scope": "selected-routes" if route_ids else "supported-feed",
+                              "routeIds": sorted(set(route_ids)) if route_ids else None},
                 "routes": list(used_routes.values()), "stops": list(used_stops.values()),
                 "trips": result, "omitted": dict(omitted),
                 "notice": "Real scheduled services, not live operating guarantees. Fares are "
@@ -515,6 +517,47 @@ def sample_routes(snapshot, trip_limit=3):
                          "sampleTrips": len(chosen)}}
 
 
+def direct_connections(snapshot, from_stop, to_stop, after=None):
+    if snapshot.get("kind") != "real-gtfs-routes":
+        raise ValueError("Only real route snapshots can be queried.")
+    stops = {stop["id"]: stop for stop in snapshot["stops"]}
+    if from_stop not in stops or to_stop not in stops or from_stop == to_stop:
+        raise ValueError("Two distinct stop IDs present in the snapshot are required.")
+    threshold = None
+    if after is not None:
+        threshold = datetime.fromisoformat(after)
+        if threshold.utcoffset() is None:
+            raise ValueError("Departure threshold requires an explicit timezone offset.")
+    result = []
+    for trip in snapshot["trips"]:
+        for from_index, call in enumerate(trip["calls"][:-1]):
+            if call["stopId"] != from_stop or call["pickupType"] != 0:
+                continue
+            departure = datetime.fromisoformat(call["departure"])
+            if threshold is not None and departure < threshold:
+                continue
+            for to_index in range(from_index + 1, len(trip["calls"])):
+                arrival_call = trip["calls"][to_index]
+                if arrival_call["stopId"] != to_stop or arrival_call["dropOffType"] != 0:
+                    continue
+                arrival = datetime.fromisoformat(arrival_call["arrival"])
+                result.append({
+                    "tripId": trip["id"], "routeId": trip["routeId"], "mode": trip["mode"],
+                    "headsign": trip["headsign"], "fromIndex": from_index, "toIndex": to_index,
+                    "departure": call["departure"], "arrival": arrival_call["arrival"],
+                    "durationMinutes": (arrival - departure).total_seconds() / 60,
+                    "timingQuality": trip["timingQuality"], "fare": trip["fare"],
+                })
+    result.sort(key=lambda item: (datetime.fromisoformat(item["departure"]),
+                                 datetime.fromisoformat(item["arrival"]), item["tripId"]))
+    return {"version": 1, "kind": "real-gtfs-direct-connections", "source": snapshot["source"],
+            "sha256": snapshot["sha256"], "retrievedAt": snapshot["retrievedAt"],
+            "serviceDate": snapshot["serviceDate"], "from": stops[from_stop], "to": stops[to_stop],
+            "after": after, "connections": result, "notice": snapshot["notice"],
+            "scopeNotice": "Direct services in this imported snapshot only; no transfers or "
+                           "claim of complete city-to-city coverage."}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -542,6 +585,12 @@ def main():
     sample.add_argument("--snapshot", type=Path, required=True)
     sample.add_argument("--trips", type=int, default=3)
     sample.add_argument("--output", type=Path, required=True)
+    connections = commands.add_parser("connections")
+    connections.add_argument("--snapshot", type=Path, required=True)
+    connections.add_argument("--from-stop", required=True, help="Exact source stop ID, not a city-name guess")
+    connections.add_argument("--to-stop", required=True)
+    connections.add_argument("--after", help="Optional departure threshold with explicit timezone offset")
+    connections.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
         if args.command == "refresh-catalog":
@@ -569,6 +618,9 @@ def main():
             result = import_routes(payload, source, args.date, args.route)
         elif args.command == "sample":
             result = sample_routes(json.loads(args.snapshot.read_text()), args.trips)
+        elif args.command == "connections":
+            result = direct_connections(json.loads(args.snapshot.read_text()),
+                                        args.from_stop, args.to_stop, args.after)
         else:
             result = compile_timetable(json.loads(args.snapshot.read_text()),
                                        json.loads(args.map.read_text()), args.grid_id)
@@ -580,6 +632,7 @@ def main():
                               "feeds": len(result.get("feeds", [])),
                               "routes": len(result.get("routes", [])),
                               "trips": len(result.get("trips", [])),
+                              "connections": len(result.get("connections", [])),
                               "omitted": result.get("omitted", {})}))
     except (ValueError, OSError, zipfile.BadZipFile, UnicodeError, csv.Error) as error:
         parser.exit(1, f"Transport source error: {error}\n")

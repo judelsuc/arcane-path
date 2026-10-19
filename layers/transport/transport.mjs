@@ -41,12 +41,16 @@ function serviceTime(call, field, serviceDate, zone) {
   }
   return ms;
 }
-export function importTimetable(input, { allowDemo = false } = {}) {
+export function importTimetable(input, { allowDemo = false, allowFictional = false } = {}) {
   const feed = copy(input);
   if (!feed || feed.version !== 1 || !text(feed.id) || !text(feed.revision) ||
-      !text(feed.gridId) || !text(feed.timeZone) || !["supplied", "synthetic-demo"].includes(feed.kind) ||
+      !text(feed.gridId) || !text(feed.timeZone) || !["supplied", "synthetic-demo", "fictional-service"].includes(feed.kind) ||
       !text(feed.source?.name) || !text(feed.source?.reference)) fail("INVALID_TIMETABLE");
   if (feed.kind === "synthetic-demo" && !allowDemo) fail("DEMO_NOT_LIVE_SERVICE");
+  if (feed.kind === "fictional-service") {
+    if (!allowFictional) fail("FICTIONAL_SERVICE_NOT_ENABLED");
+    if (!text(feed.fictionalNotice) || feed.geographyKind !== "abstract-town-link") fail("INVALID_FICTIONAL_SERVICE");
+  }
   try { localParts(0, feed.timeZone); } catch { fail("INVALID_TIMEZONE"); }
   date(feed.validFrom); date(feed.validThrough);
   if (feed.validFrom > feed.validThrough || !Array.isArray(feed.stops) ||
@@ -65,7 +69,10 @@ export function importTimetable(input, { allowDemo = false } = {}) {
         !text(trip.fare.policy) || trip.fare.currency !== trip.currency ||
         trip.fare.cents !== trip.fareCents || !text(feed.fareNotice))) fail("INVALID_FARE_METADATA");
     if (trip.timingQuality !== undefined &&
-        !["source-timepoints", "source-approximate"].includes(trip.timingQuality)) fail("INVALID_TIME_QUALITY");
+        !["source-timepoints", "source-approximate", "fictional-estimate"].includes(trip.timingQuality)) fail("INVALID_TIME_QUALITY");
+    if ((feed.kind === "fictional-service" && (trip.mode !== "bus" ||
+        trip.fare?.kind !== "estimated-game" || trip.timingQuality !== "fictional-estimate")) ||
+        (feed.kind !== "fictional-service" && trip.timingQuality === "fictional-estimate")) fail("INVALID_FICTIONAL_SERVICE");
     ids.add(trip.id); date(trip.serviceDate);
     if (trip.serviceDate < feed.validFrom || trip.serviceDate > feed.validThrough) fail("SERVICE_OUTSIDE_COVERAGE");
     let last = -Infinity;
@@ -144,12 +151,15 @@ export function transportOffers(feed, state, { gridId, disruptions = [] } = {}) 
         if ((trip.calls[toIndex].dropOffType ?? 0) !== 0) continue;
         const arrivalAt = stamp(trip.calls[toIndex].arrival) + change.delayMinutes * 60000;
         if (arrivalAt <= departureAt) continue;
-        offers.push({ id: key(feed, trip, fromIndex, toIndex, departureAt, arrivalAt),
+        offers.push({ id: key(feed, trip, fromIndex, toIndex, departureAt, arrivalAt), feedId: feed.id,
           tripId: trip.id, routeId: trip.routeId, mode: trip.mode, fromIndex, toIndex,
           from: copy(stop), to: copy(feed.stops.find(s => s.id === trip.calls[toIndex].stopId)),
           departureAt, arrivalAt, waitMinutes: (departureAt - now(state)) / 60000,
           rideMinutes: (arrivalAt - departureAt) / 60000, fareCents: trip.fareCents, currency: "EUR",
           delayMinutes: change.delayMinutes,
+          serviceKind: feed.kind === "supplied" ? "real-schedule" : feed.kind,
+          ...(feed.kind === "fictional-service" ? { serviceNotice: feed.fictionalNotice,
+            geographyKind: feed.geographyKind } : {}),
           ...(trip.fare ? { fareKind: trip.fare.kind, fareNotice: feed.fareNotice } : {}),
           ...(trip.timingQuality ? { timingQuality: trip.timingQuality } : {}) });
       }
@@ -204,6 +214,12 @@ export function advanceTransit(feed, state, bookingId, {
       !same(state, b.nextCall ? b.calls[b.nextCall - 1].stop : feed.stops.find(s => s.id === origin.stopId))) {
     fail("INVALID_TRANSPORT_SAVE");
   }
+  if (feed.kind === "fictional-service" &&
+      (b.offer.serviceKind !== feed.kind || b.offer.serviceNotice !== feed.fictionalNotice ||
+       b.offer.geographyKind !== feed.geographyKind || b.offer.fareKind !== trip.fare.kind ||
+       b.offer.fareNotice !== feed.fareNotice || b.offer.timingQuality !== trip.timingQuality)) {
+    fail("INVALID_TRANSPORT_SAVE");
+  }
   const current = disruption(trip, trip.calls[b.offer.fromIndex], disruptions);
   if (!b.paid && (current.cancelled || current.delayMinutes !== b.offer.delayMinutes)) {
     booking.status = "cancelled"; return next;
@@ -217,6 +233,9 @@ export function advanceTransit(feed, state, bookingId, {
     if (state.journeyMap) next.transport.walkedLegs.push(copy(state.journeyMap));
     next.journeyMap = { version: 1, partial: true, simplified: false, points: [{ col: state.col, row: state.row }] };
     next.transport.rides.push({ bookingId, mode: b.offer.mode, tripId: trip.id,
+      ...(b.offer.serviceKind ? { serviceKind: b.offer.serviceKind } : {}),
+      ...(b.offer.geographyKind ? { geographyKind: b.offer.geographyKind,
+        serviceNotice: b.offer.serviceNotice } : {}),
       points: [{ col: state.col, row: state.row }], completed: false });
   }
   const targetAt = riding ? b.calls[b.nextCall].arrivalAt : b.offer.departureAt;
@@ -258,6 +277,10 @@ export function validateTransportSave(state) {
     if (!text(ride.bookingId) || !["bus", "train"].includes(ride.mode) || !text(ride.tripId) ||
         typeof ride.completed !== "boolean" || !Array.isArray(ride.points) ||
         !ride.points.length || !ride.points.every(point)) fail("INVALID_TRANSPORT_SAVE");
+    if (ride.serviceKind !== undefined &&
+        !["real-schedule", "fictional-service", "synthetic-demo"].includes(ride.serviceKind)) fail("INVALID_TRANSPORT_SAVE");
+    if (ride.serviceKind === "fictional-service" && (ride.mode !== "bus" ||
+        ride.geographyKind !== "abstract-town-link" || !text(ride.serviceNotice))) fail("INVALID_TRANSPORT_SAVE");
   }
   for (const leg of t.walkedLegs) {
     if (!Array.isArray(leg.points) || !leg.points.length || !leg.points.every(point)) fail("INVALID_TRANSPORT_SAVE");

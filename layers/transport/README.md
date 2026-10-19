@@ -8,6 +8,8 @@ exists separately: [European catalogue, imports and attribution](../../data/tran
 The old gameplay preview below remains conspicuously synthetic and is
 rejected without explicit demo opt-in. The new [source explorer](routes.html)
 shows actual imported schedules and provider gaps, not playable live boarding.
+The [hybrid preview](hybrid.html) demonstrates actual SNCF Grenoble-Lyon trips
+and explicitly fictional coach fallback under R126. It is still standalone.
 
 ## Preview / aperçu FR + EN
 
@@ -95,6 +97,35 @@ const next = advanceTransit(feed, booked, booked.transport.booking.id, {
   },
 });
 ```
+
+### Hybrid real-first selection
+
+`hybridTransportOffers({realFeeds, fictionalFeed}, journey, options)` returns
+`{offers, staleFeedIds, notice}`. Real inputs must be normal supplied schedules;
+synthetic demos are rejected. The optional fictional input must use the
+separate `kind:"fictional-service"` and explicit
+`importTimetable(data, {allowFictional:true})` opt-in.
+
+The [offline generator](../../scripts/transport_fictional.py) produces finite,
+deterministic fictional bus schedules from attributed real towns and a specific
+map/day/timezone. It does not invent rail infrastructure or assert road routing.
+Full policy, bounds and balancing formulas are in the
+[data documentation](../../data/transport/README.md).
+
+Real coverage suppresses fictional offers for the same origin/destination cells
+on the supplied service day, including missed/cancelled real trips. Expired
+sources are listed explicitly, while invalid data and grid errors are thrown.
+This is loaded-data coverage, not a claim that no other real service exists.
+The hybrid result is not an automatic all-Europe data downloader.
+
+Every offer carries `feedId` and `serviceKind`. Book and advance with that exact
+canonical timetable. Do not recompute/switch feeds during a booking. Fictional
+offers/itineraries retain `serviceNotice`, `geographyKind:"abstract-town-link"`,
+`timingQuality:"fictional-estimate"` and an estimated fare. These labels must be
+displayed by the host. Ride records and `transportRouteView` retain the fictional
+classification so an abstract connection is not rendered as verified road/rail
+geometry. The existing one-charge, minute settlement, interruption and
+save/revision rules apply equally to both service kinds.
 
 `settle` is a **required pure synchronous callback**, called in chunks of at
 most one simulated minute (fractional minutes supported). `proposed` already

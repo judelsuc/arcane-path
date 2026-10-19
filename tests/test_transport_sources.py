@@ -16,7 +16,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from transport_sources import (
     build_catalog, find_feeds, feed_url, import_routes, compile_timetable, download,
-    gtfs_instant, write_json, route_mode, service_seconds, sample_routes, main,
+    gtfs_instant, write_json, route_mode, service_seconds, sample_routes, direct_connections, main,
 )
 
 
@@ -258,6 +258,35 @@ wallet:state.walletCents,walked:state.distanceMeters,col:state.col,row:state.row
         with self.assertRaises(ValueError):
             sample_routes(snapshot, 0)
 
+    def test_direct_query_respects_direction_access_and_explicit_departure_threshold(self):
+        snapshot = run_import()
+        report = direct_connections(snapshot, "s1", "s2")
+        self.assertEqual(len(report["connections"]), 1)
+        self.assertEqual(report["connections"][0]["durationMinutes"], 10)
+        self.assertEqual(direct_connections(snapshot, "s2", "s1")["connections"], [])
+        self.assertEqual(direct_connections(snapshot, "s1", "s2", "2026-10-19T08:01:00+02:00")["connections"], [])
+        self.assertEqual(len(direct_connections(snapshot, "s1", "s2", "2026-10-19T06:00:00Z")["connections"]), 1)
+        for origin, destination, after in [("unknown", "s2", None), ("s1", "s1", None),
+                                            ("s1", "s2", "2026-10-19T08:00:00")]:
+            with self.assertRaises(ValueError):
+                direct_connections(snapshot, origin, destination, after)
+        snapshot["trips"][0]["calls"][1]["dropOffType"] = 2
+        self.assertEqual(direct_connections(snapshot, "s1", "s2")["connections"], [])
+        snapshot["trips"][0]["calls"][1]["dropOffType"] = 0
+        snapshot["trips"][0]["calls"][0]["pickupType"] = 1
+        self.assertEqual(direct_connections(snapshot, "s1", "s2")["connections"], [])
+
+    def test_persisted_grenoble_lyon_report_and_compilation_match_actual_source_calls(self):
+        folder = Path(__file__).resolve().parents[1] / "data/transport/examples/grenoble-lyon"
+        source = json.loads((folder / "source.json").read_text())
+        report = json.loads((folder / "connections.json").read_text())
+        self.assertEqual(direct_connections(source, report["from"]["id"], report["to"]["id"]), report)
+        self.assertEqual(len(report["connections"]), 27)
+        base = json.loads((folder / "map.json").read_text())
+        actual = compile_timetable(source, base, "grenoble-lyon-example-v1")
+        self.assertEqual(actual, json.loads((folder / "real-timetable.json").read_text()))
+        self.assertEqual(source["source"]["licenseUrl"], "https://opendatacommons.org/licenses/odbl/1.0/")
+
     def test_atomic_output_does_not_replace_valid_snapshot_on_failure(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "output.json"
@@ -298,6 +327,9 @@ wallet:state.walletCents,walked:state.distanceMeters,col:state.col,row:state.row
             command("compile", "--snapshot", snapshot, "--map", base,
                     "--grid-id", "cli-grid", "--output", compiled)
             self.assertEqual(json.loads(compiled.read_text())["kind"], "supplied")
+            command("connections", "--snapshot", snapshot, "--from-stop", "s1",
+                    "--to-stop", "s2", "--output", folder / "connections.json")
+            self.assertEqual(len(json.loads((folder / "connections.json").read_text())["connections"]), 1)
             result = command("import", "--catalog", catalog, "--feed", SOURCE["id"],
                              "--date", "2027-01-01", "--zip", zipped, "--output", folder / "invalid.json",
                              "--license-reviewed", expected=1)
