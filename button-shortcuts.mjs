@@ -80,6 +80,7 @@ export function setupButtonShortcuts(t) {
   tooltip.hidden = true;
   document.body.append(tooltip);
   let current;
+  const nativeTitles = new WeakMap();
   function bindings(scope) {
     if (scope.hasAttribute("data-native-controls")) return [];
     return buttonBindings([...scope.querySelectorAll("button")].map(button => ({
@@ -93,6 +94,16 @@ export function setupButtonShortcuts(t) {
   }
   function refresh() {
     for (const scope of [document.querySelector("main"), ...document.querySelectorAll("dialog")]) {
+      for (const element of scope.querySelectorAll("button")) {
+        if (!scope.hasAttribute("data-native-controls") && !element.hasAttribute("data-shortcut-skip")) continue;
+        if (!element.title || element.title === nativeTitles.get(element)) {
+          const action = element.getAttribute("aria-label") || element.textContent.trim();
+          if (action) {
+            element.title = action;
+            nativeTitles.set(element, action);
+          }
+        }
+      }
       for (const { button, key } of bindings(scope)) {
         const element = button.element;
         let caption = element.querySelector(".button-shortcut");
@@ -119,6 +130,7 @@ export function setupButtonShortcuts(t) {
   function show(event) {
     const button = event.target.closest?.("button");
     if (!button) return;
+    if (!button.title) { hide(); return; }
     current = button;
     tooltip.textContent = button.title;
     const host = button.closest("dialog") ?? document.body;

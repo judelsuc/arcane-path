@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buttonBindings, shortcutCode } from "../button-shortcuts.mjs";
+import { buttonBindings, shortcutCode, setupButtonShortcuts } from "../button-shortcuts.mjs";
 
 test("fixed shortcuts and dynamic menu options have distinct keys in each dialog", () => {
   const buttons = [{ close: true }, ...["town-refresh", "town-services", "town-music", "town-trail"]
@@ -18,6 +18,70 @@ test("spatial and native game controls do not consume automatic shortcut keys", 
     { id: "equipment-close" }, { id: "equipment-rotate" }];
   assert.deepEqual(buttonBindings(controls).map(b => b.key), ["Escape", "R"]);
   assert.equal(buttonBindings([{ id: "equipment-travel" }])[0].key, "V");
+});
+
+test("native game buttons have live hover/focus tooltips without allocating or stealing keys", t => {
+  const original = { document: globalThis.document, window: globalThis.window,
+    MutationObserver: globalThis.MutationObserver, innerWidth: globalThis.innerWidth };
+  t.after(() => Object.assign(globalThis, original));
+  class Element {
+    attributes = new Map(); children = []; style = {}; hidden = false;
+    title = ""; textContent = ""; isConnected = true; offsetWidth = 100; offsetHeight = 20;
+    hasAttribute(name) { return this.attributes.has(name); }
+    getAttribute(name) { return this.attributes.get(name) ?? null; }
+    setAttribute(name, value) { this.attributes.set(name, value); }
+    removeAttribute(name) { this.attributes.delete(name); }
+    append(child) { child.parentElement = this; this.children.push(child); }
+    contains(child) { return this === child || this.children.some(node => node.contains(child)); }
+    closest(selector) {
+      if (selector === "button") return this === button ? this : null;
+      if (selector === "dialog") return this === host || this === button ? host : null;
+      return null;
+    }
+    querySelectorAll() { return this.children.filter(child => child === button); }
+    getBoundingClientRect() { return { top: 100, left: 50 }; }
+  }
+  const body = new Element(), main = new Element(), host = new Element(), button = new Element();
+  button.textContent = "Start";
+  host.setAttribute("data-native-controls", "");
+  host.append(button);
+  body.append(main); body.append(host);
+  const events = {}, doc = { body, activeElement: button,
+    createElement: () => new Element(),
+    querySelector: selector => selector === "main" ? main : null,
+    querySelectorAll: selector => selector.startsWith("dialog") ? [host] : [],
+    addEventListener: (type, callback) => { events[type] = callback; } };
+  let refresh;
+  Object.assign(globalThis, { document: doc, window: { addEventListener() {} }, innerWidth: 500,
+    MutationObserver: class {
+      constructor(callback) { refresh = () => callback([{ target: host }]); }
+      observe() {}
+    } });
+  setupButtonShortcuts(() => { throw new Error("Native controls must not allocate shortcut captions."); });
+  assert.equal(button.title, "Start");
+  assert.equal(button.children.length, 0);
+  assert.equal(button.hasAttribute("aria-keyshortcuts"), false);
+  const tooltip = body.children.find(child => child.id === "button-tooltip");
+  events.pointerover({ target: button });
+  assert.equal(tooltip.textContent, "Start");
+  assert.equal(tooltip.hidden, false);
+  assert.equal(tooltip.parentElement, host, "tooltip belongs to the active modal top layer");
+  assert.equal(button.getAttribute("aria-describedby"), "button-tooltip");
+  events.pointerout();
+  assert.equal(tooltip.hidden, true);
+  assert.equal(button.getAttribute("aria-describedby"), null);
+  button.textContent = "Commencer";
+  refresh();
+  events.focusin({ target: button });
+  assert.equal(tooltip.textContent, "Commencer");
+  button.setAttribute("aria-label", "Steer left");
+  refresh();
+  assert.equal(button.title, "Steer left");
+  button.title = "An authored detailed hint";
+  refresh();
+  assert.equal(button.title, "An authored detailed hint");
+  events.keydown({ key: "ArrowLeft", code: "ArrowLeft", target: button,
+    preventDefault() { assert.fail("Native game keys must pass through"); } });
 });
 
 test("directions, reveal, rhythm and photo controls retain meaningful bindings", () => {

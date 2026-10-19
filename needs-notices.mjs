@@ -2,9 +2,12 @@ import { hungerPercent } from "./survival.mjs";
 import { isDeath } from "./death.mjs";
 import { renderTarotCard } from "./tarot-cards.mjs";
 import { healthValue } from "./health.mjs";
+import { PLACEMENT_FACTORS } from "./pressures.mjs";
 
-export function createNeedsNotices() {
-  let hungerSeen = false, healthSeen = false, endedSeen, faintSeen = 0, placementSeen = 0;
+export function createNeedsNotices(restoredState) {
+  let hungerSeen = false, healthSeen = false, endedSeen;
+  let faintSeen = restoredState?.faints ?? 0;
+  let placementSeen = restoredState?.pressures?.placements.length ?? 0;
   return {
     pending(state, config) {
       if (hungerPercent(state, config) < 75) hungerSeen = false;
@@ -28,6 +31,17 @@ export function createNeedsNotices() {
   };
 }
 
+export function placementReason(placement, t) {
+  const trigger = placement.trigger;
+  if (!trigger) return t("placementReasonLegacy");
+  const factors = PLACEMENT_FACTORS.filter(key => trigger.factors[key] !== 0)
+    .map(key => t("placementFactor", { cause: t(`placementCause.${key}`),
+      points: `${trigger.factors[key] > 0 ? "+" : ""}${trigger.factors[key].toFixed(2)}` }));
+  return t("placementReason", { before: trigger.vigilanceBefore.toFixed(2),
+    minutes: trigger.minutes.toFixed(1), factor: Math.round(trigger.tarotFactor * 100),
+    factors: factors.join(" ; ") });
+}
+
 export function setupNeedsNotices(t, { context }) {
   const dialog = document.querySelector("#needs-notice-dialog");
   const deathCard = document.querySelector("#needs-death-card");
@@ -43,9 +57,9 @@ export function setupNeedsNotices(t, { context }) {
     if (dead) renderTarotCard(deathCard, "nameless", t("deathCardTitle"), t);
     const faint = state?.lastFaint;
     const placement = state?.pressures?.placements.at(-1);
-    const placementText = placement ? t("placementText", {
+    const placementText = placement ? `${placementReason(placement, t)} ${t("placementText", {
       count: state.pressures.placements.length, money: (placement.lostCents / 100).toFixed(2),
-    }) : "";
+    })}` : "";
     const faintText = faint ? `${t(faint.reason === "sleep" ? "sleepFaintingText" : "faintingText")} ${t(faint.robbed ? "faintingRobbed" : "faintingSafe", {
       money: (faint.stolenCents / 100).toFixed(2), risk: Math.round(faint.chance * 100),
     })}` : "";
@@ -101,8 +115,8 @@ export function setupNeedsNotices(t, { context }) {
   new MutationObserver(update).observe(document.body, {
     subtree: true, attributes: true, attributeFilter: ["open"],
   });
-  return { update, reset() {
-    notices = createNeedsNotices();
+  return { update, reset(restoredState) {
+    notices = createNeedsNotices(restoredState);
     kind = undefined;
     deathAcknowledged = false;
     fade.classList.remove("active");

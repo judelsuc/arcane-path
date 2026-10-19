@@ -13,7 +13,7 @@ import { trailClue } from "../trail-actions.mjs";
 import { beginExploration, fieldSearchRules, prepareFieldSearch, applyFieldSearch,
   fieldClueText, validateExploration } from "../trail-search.mjs";
 import { createSave, validateSave } from "../journey-save.mjs";
-import { createNeedsNotices } from "../needs-notices.mjs";
+import { createNeedsNotices, placementReason } from "../needs-notices.mjs";
 import { translate } from "../i18n.mjs";
 
 const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
@@ -114,6 +114,48 @@ test("100 vigilance gives two recoverable days in care, then ends the third jour
     assert.deepEqual(validateSave(save(state)).state, state);
   }
   assert.throws(() => action(state, 10), /ended/);
+});
+
+test("placement records exact triggering factors and explains them without inventing legacy history", () => {
+  const previous = nearThreshold(start());
+  const next = action(previous, 10, { ...info, police: true }, { activity: "beg" });
+  const placement = next.pressures.placements[0];
+  assert.equal(placement.trigger.vigilanceBefore, 99.9);
+  assert.equal(placement.trigger.minutes, 10);
+  assert.equal(placement.trigger.tarotFactor, 1);
+  assert.equal(placement.trigger.factors.urban, 0.5);
+  assert.ok(Math.abs(placement.trigger.factors.police - 5 / 6) < 1e-12);
+  assert.equal(placement.trigger.factors.beg, 4);
+  assert.equal(placement.trigger.factors.fatigue, 0);
+  assert.deepEqual(validateSave(save(next)).state, next);
+  for (const locale of ["fr", "en"]) {
+    const t = (key, args) => translate(locale, key, args);
+    const text = placementReason(placement, t);
+    for (const value of ["100", "99.90", "10.0", "+0.50", "+0.83", "+4.00"])
+      assert.ok(text.includes(value), `${locale}: ${value}`);
+    assert.ok(text.includes(t("placementCause.police")));
+    assert.ok(text.includes(t("placementCause.beg")));
+    assert.ok(!text.includes(t("placementCause.fatigue")));
+    const legacy = structuredClone(next);
+    delete legacy.pressures.placements[0].trigger;
+    assert.deepEqual(validateSave(save(legacy)).state, legacy);
+    assert.equal(placementReason(legacy.pressures.placements[0], t), t("placementReasonLegacy"));
+  }
+  for (const mutate of [
+    trigger => { trigger.vigilanceBefore = -1; },
+    trigger => { trigger.minutes = Infinity; },
+    trigger => { trigger.minutes = placement.startedMinutes + 1; },
+    trigger => { trigger.factors.police = -1; },
+    trigger => { trigger.factors.movement = 1; },
+    trigger => { trigger.factors.unknown = 1; },
+    trigger => { trigger.factors = null; },
+    trigger => { trigger.tarotFactor = 99; },
+    trigger => { trigger.vigilanceBefore = 0; },
+  ]) {
+    const malformed = structuredClone(next);
+    mutate(malformed.pressures.placements[0].trigger);
+    assert.throws(() => validateSave(save(malformed)), /pressure history/);
+  }
 });
 
 test("placements interrupt directions, survival rewards, hospitality, music and field clues", async () => {

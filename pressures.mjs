@@ -4,6 +4,10 @@ import { tarotEventFactor } from "./tarot-effects.mjs";
 const clamp = value => Math.max(0, Math.min(100, value));
 const sector = state => `${Math.floor(state.col / 8)},${Math.floor(state.row / 8)}`;
 export const PLACEMENT_MINUTES = 24 * 60;
+export const PLACEMENT_FACTORS = Object.freeze([
+  "urban", "rural", "fatigue", "cleanliness", "police", "lingering",
+  "steal", "beg", "music", "shelter", "movement", "wash",
+]);
 
 export function beginPressures(state, economy) {
   if (state.pressures || state.ended) return state;
@@ -72,6 +76,21 @@ export function advancePressures(previous, next, info, { sheltered, activity, su
   const urban = ["place", "station", "building", "church"].includes(info.terrain);
   const lingeringHours = Math.max(0, localMinutes - 240) / 60 -
     Math.max(0, localMinutes - minutes - 240) / 60;
+  const exposedHours = sheltered ? 0 : hours * p.tarotFactor;
+  const factors = {
+    urban: urban ? exposedHours * 3 : 0,
+    rural: urban ? 0 : exposedHours * 0.5,
+    fatigue: next.fatigue >= 70 ? exposedHours * 2 : 0,
+    cleanliness: cleanliness < 30 ? exposedHours * 2 : 0,
+    police: info.police ? exposedHours * 5 : 0,
+    lingering: sheltered ? 0 : lingeringHours * 2 * p.tarotFactor,
+    steal: activity === "steal" ? 20 * p.tarotFactor : 0,
+    beg: activity === "beg" ? 4 * p.tarotFactor : 0,
+    music: activity === "music" ? 2 * p.tarotFactor : 0,
+    shelter: sheltered ? -hours * 2 : 0,
+    movement: -moving * 2,
+    wash: activity === "wash" ? -5 : 0,
+  };
   const rate = (urban ? 3 : 0.5) + (next.fatigue >= 70 ? 2 : 0) +
     (cleanliness < 30 ? 2 : 0) + (info.police ? 5 : 0);
   const vigilance = clamp(p.vigilance + (sheltered ? -hours * 2 : (hours * rate + lingeringHours * 2) * p.tarotFactor) -
@@ -85,7 +104,8 @@ export function advancePressures(previous, next, info, { sheltered, activity, su
   const lostCents = Math.floor(next.walletCents / 4);
   const placement = { startedMinutes: next.elapsedMinutes,
     finishedMinutes: next.elapsedMinutes + PLACEMENT_MINUTES,
-    walletBeforeCents: next.walletCents, lostCents, col: next.col, row: next.row };
+    walletBeforeCents: next.walletCents, lostCents, col: next.col, row: next.row,
+    trigger: { vigilanceBefore: p.vigilance, minutes, tarotFactor: p.tarotFactor, factors } };
   const placements = [...p.placements, placement];
   return { ...next, elapsedMinutes: placement.finishedMinutes,
     walletCents: next.walletCents - lostCents, reserveKcal: survival.reserve_kcal,
@@ -133,6 +153,16 @@ export function validatePressures(state, economy) {
         placement.lostCents !== Math.floor(placement.walletBeforeCents / 4) ||
         !Number.isSafeInteger(placement.col) || Math.abs(Math.floor(placement.col / 8)) > 1000 ||
         !Number.isSafeInteger(placement.row) || Math.abs(Math.floor(placement.row / 8)) > 1000) fail();
+    if (placement.trigger !== undefined) {
+      const { vigilanceBefore, minutes, tarotFactor, factors } = placement.trigger ?? {};
+      if (!finite(vigilanceBefore) || vigilanceBefore > 100 || !finite(minutes) ||
+          minutes > placement.startedMinutes - end + 1e-6 ||
+          !finite(tarotFactor) || tarotFactor < 0.5 || tarotFactor > 1.5 ||
+          !factors || Object.keys(factors).length !== PLACEMENT_FACTORS.length ||
+          PLACEMENT_FACTORS.some(key => !Number.isFinite(factors[key]) ||
+            (["shelter", "movement", "wash"].includes(key) ? factors[key] > 0 : factors[key] < 0)) ||
+          vigilanceBefore + Object.values(factors).reduce((sum, value) => sum + value, 0) < 100 - 1e-6) fail();
+    }
     end = placement.finishedMinutes;
   }
 }

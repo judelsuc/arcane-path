@@ -1,5 +1,21 @@
 # Requirements tracked outside the design PDF
 
+## R-124 - Integrated game help and explicit placement reasons
+
+- **19 October playtest feedback:** Game tooltips must work in the online
+  integrated activities. Native game controls must retain hover/focus labels
+  without receiving automatically allocated shortcuts that interfere with play.
+  Contextual Help must include each game's own commands and difficulty text.
+- A foyer/stay-in-care popup must explain that vigilance reached 100, rather
+  than appearing to be a random event. New episodes retain the actual preceding
+  vigilance, action duration, tarot factor and individual pressure contributions.
+  Display this explanation in FR/EN alongside the existing consequences.
+- Preserve existing pressure rules, recoverable first/second placements,
+  terminal third placement and save compatibility. Older episodes without
+  a trigger snapshot get an honest threshold explanation, not invented details.
+- Resuming must not replay historical placement/fainting notifications; new
+  episodes, current hunger/health warnings and terminal outcomes remain visible.
+
 ## R-123 - Spatial inventory and companions
 
 - **Deployed 18 October:** Runtime `e4bbde7`, tag

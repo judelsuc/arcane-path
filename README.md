@@ -233,6 +233,9 @@ la monnaie normalement. Le prix du panier suit la pesee.
 
 Les douze fenetres de test regroupent les regles, raccourcis clavier, explications
 de difficulte et notes du bac a sable dans le bouton Aide (Help en anglais).
+Les jeux integres au voyage reprennent aussi leurs commandes detaillees dans
+cette aide. Les boutons a commandes natives conservent leurs infobulles au
+survol et au focus, sans ajouter de raccourcis qui interferent avec le jeu.
 Le pop-up se ferme avec Fermer ou Echap et rend le focus au bouton Aide, sans
 quitter le jeu. Les chronometres continuent ; scores, indices, modeles, legendes
 de couleur et controles restent visibles. Le contenu d'aide suit le niveau
@@ -495,6 +498,13 @@ premiers episodes laissent reprendre au meme endroit, avec carnet et piste
 intacts ; le troisieme termine le voyage et depose le carnet a la derniere
 position. Les heures au foyer ne sont pas facturees comme exposition dehors.
 Un besoin deja fatal garde priorite.
+Le pop-up explique le seuil de vigilance a 100 et, pour les nouveaux episodes,
+la vigilance avant l'action, sa duree et les contributions reelles (temps,
+fatigue, proprete, police, sejour prolonge, activite, deplacement et abri).
+Les facteurs absents ne sont pas inventes pour les anciens episodes.
+Reprendre une sauvegarde ne rejoue pas les notifications d'anciens placements
+ou evanouissements ; les nouveaux episodes et avertissements courants restent
+signales. Les regles et probabilites ne changent pas.
 
 La sympathie depend de la proprete, de la fatigue et de la reputation du
 secteur. Une prestation reussie ameliore celle-ci ; mendier la reduit

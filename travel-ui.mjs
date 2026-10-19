@@ -1102,6 +1102,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       state = beginEquipment(state);
       state = beginExploration(state, Boolean(restored));
       state = beginPressures(state, economyData);
+      needsNotices.reset(restored ? state : undefined);
       await useNotebook?.(state, Boolean(restored));
       if (restored) {
         pinTarot?.(document.querySelector("#restored-birth-tarot-journal"), state, "birth", economyData);

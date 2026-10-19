@@ -6,7 +6,7 @@ export const GAME_HELP_HOSTS = [
 
 export function setupGameHelp(t, doc = globalThis.document) {
   return setupWindowHelp(doc, {
-    sources: ".window-help-text", hosts: GAME_HELP_HOSTS,
+    sources: ".window-help-text, .game-help-text", hosts: GAME_HELP_HOSTS,
     words: () => ({ help: t("windowHelpTitle"), close: t("windowHelpClose"), timing: t("windowHelpTiming") }),
     description: host => t(`windowHelp.${host.id}`),
   });

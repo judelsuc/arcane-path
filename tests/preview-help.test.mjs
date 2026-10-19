@@ -245,6 +245,43 @@ test("a newly created window gets contextual Help without adding a Help button t
   f.api.destroy();
 });
 
+test("integrated game Help collects native game instructions and refreshes rerendered controls in FR/EN", () => {
+  for (const language of ["fr", "en"]) {
+    const f = fixture(language, false, true);
+    const host = f.doc.createElement("dialog");
+    host.id = "journey-mini-game-dialog";
+    host.setAttribute("data-native-controls", "");
+    host.append(f.doc.createElement("h2"));
+    const instructions = f.doc.createElement("p");
+    instructions.className = "game-help-text";
+    instructions.textContent = language === "fr" ? "Flèches pour guider, Espace pour lâcher." : "Arrows steer, Space drops.";
+    const status = f.doc.createElement("p");
+    status.textContent = "Score: 0";
+    host.append(instructions, status);
+    f.doc.body.append(host);
+    f.update(f.doc.body, [host]);
+    const trigger = host.querySelector(".window-help-button");
+    host.showModal();
+    trigger.emit("click");
+    const text = f.popup.querySelector("div").children.map(node => node.textContent).join("\n");
+    assert.ok(text.includes(instructions.textContent));
+    assert.equal(instructions.hidden, true);
+    assert.equal(status.hidden, false);
+    assert.equal(host.open, true);
+    assert.equal(f.popup.open, true);
+    f.popup.close();
+    assert.equal(f.doc.activeElement, trigger);
+    const changed = f.doc.createElement("p");
+    changed.className = "game-help-text";
+    changed.textContent = "New round instructions";
+    host.append(changed);
+    f.update(host, [changed]);
+    trigger.emit("click");
+    assert.ok(f.popup.querySelector("div").children.some(node => node.textContent === changed.textContent));
+    f.api.destroy();
+  }
+});
+
 test("all shipped game windows have bilingual contextual help; consequential content stays inline", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const ids = ["title-screen", "journey-setup", "game-content",
