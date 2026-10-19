@@ -1,5 +1,17 @@
 # Les Arcanes du Chemin
 
+## Content factory and gameplay feedback release
+
+See [the content-factory guide](doc/CONTENT_FACTORY.md) for optional OVH
+encounter wording, journal artwork, and the shared start-page illustration
+scheduled at 05:00 Europe/Paris. Image generation stops if free pricing cannot
+be verified; failed refreshes retain the previous published illustration.
+
+This production-based release also fixes mini-game styling, mobile player
+status, vigilance visibility, fatigue/sleep warnings, shelter washing,
+nearby-town recovery after care, the opening clue, and the nginx journey-map
+route. It does not publish the separate development lore/artifact systems.
+
 Prototype jouable des **couches 1 a 8** : carte OSM, voyage, temps, besoins,
 localites, economie, musique de rue et piste minimale du parent.
 grille ASCII de 250 m, exploration a pied, horloge simulee, effort et streaming.

@@ -32,6 +32,9 @@ from abandoned_journals import AbandonedJournals, JournalForbidden, capability_h
 from parent_paths import ParentPaths
 from accommodations import Accommodations
 from journey_terrain import cached_terrain
+from journal_art import JournalArt
+from live_narrative import LiveNarrative
+from start_art import StartArt
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_SIZE = 8
@@ -191,16 +194,21 @@ class ChunkStore:
             raise ValueError(f"Corrupt travel cache: {path}. Remove this chunk cache to rebuild.")
         return payload
 
+    def refresh_due(self, region, x, y, data):
+        return bool(data.get("elevation", {}).get("error") and
+                    time.time() - self.path(region, x, y).with_suffix(".json").stat().st_mtime >= 300)
+
     def build(self, region, x, y):
         with self.chunk_locks[hash((region, x, y)) % len(self.chunk_locks)]:
             return self.build_locked(region, x, y)
 
     def build_locked(self, region, x, y):
         cached = self.read(region, x, y)
-        if cached is not None:
+        if cached is not None and not self.refresh_due(region, x, y, cached):
             return cached
+        if cached is not None:
+            return self.enrich_elevation(region, x, y, cached)
         bounds, latitude, centers = chunk_geometry(self.bases[region], x, y)
-        path = self.path(region, x, y)
         source_base = self.source_path(region, x, y)
         source = source_base.with_suffix(".osm.gz")
         base = self.bases[region]["bounds"]
@@ -233,6 +241,12 @@ class ChunkStore:
             raise ValueError("Unexpected travel chunk dimensions.")
         data["width"] = data["height"] = CHUNK_SIZE
         data["chunk"] = {"region": region, "x": x, "y": y, "size": CHUNK_SIZE}
+        return self.enrich_elevation(region, x, y, data)
+
+    def enrich_elevation(self, region, x, y, data):
+        _, _, centers = chunk_geometry(self.bases[region], x, y)
+        path = self.path(region, x, y)
+        source_base = self.source_path(region, x, y)
         elevation_path = source_base.with_suffix(".elevation.json")
         try:
             if elevation_path.exists():
@@ -251,8 +265,6 @@ class ChunkStore:
         except (OSError, ValueError, KeyError, urllib.error.URLError) as error:
             logging.warning("Elevation unavailable for %s/%s/%s: %s", region, x, y, error)
             data["elevation"] = {"error": str(error)}
-            # The OSM snapshot remains cached, but retry unavailable elevation on the next request.
-            return data
         atomic_write(path.with_suffix(".json"), json.dumps({
             "sha256": hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest(),
             "data": data,
@@ -273,6 +285,9 @@ class ChunkJobs:
             job = self.jobs.get(key)
             if job:
                 if not job.done():
+                    cached = self.store.read(*key)
+                    if cached is not None:
+                        return 200, cached
                     progress = getattr(self.store, "get_progress", None)
                     return 202, {"status": "loading", **({"progress": progress(*key)} if progress else {})}
                 del self.jobs[key]
@@ -283,6 +298,9 @@ class ChunkJobs:
                     return 502, {"error": str(error)}
             cached = self.store.read(*key)
             if cached is not None:
+                refresh_due = getattr(self.store, "refresh_due", None)
+                if refresh_due and refresh_due(*key, cached) and len(self.jobs) < self.capacity:
+                    self.jobs[key] = self.pool.submit(self.store.build, *key)
                 return 200, cached
             if len(self.jobs) >= self.capacity:
                 # Completed jobs need not occupy download slots indefinitely.
@@ -366,6 +384,9 @@ def make_handler(store, jobs, path_pool=None):
     trails = ChunkJobs(TownTrailStore(store, atomic_write), capacity=2, pool=jobs.pool)
     journeys = JourneyStore(store, atomic_write)
     abandoned = AbandonedJournals(journeys)
+    journal_art = JournalArt.configured(journeys, abandoned)
+    live_narrative = LiveNarrative.configured(journeys, journal_art)
+    start_art = StartArt(store.cache / "start-art.sqlite3")
     parent_paths = ParentPaths(store, journeys, atomic_write, pool=path_pool)
     accommodations = ChunkJobs(Accommodations(store, atomic_write), capacity=2, pool=jobs.pool)
     class Handler(SimpleHTTPRequestHandler):
@@ -388,7 +409,7 @@ def make_handler(store, jobs, path_pool=None):
 
         def do_POST(self):
             endpoint = urllib.parse.urlsplit(self.path).path
-            if endpoint not in ("/api/journeys", "/api/abandoned-journals"):
+            if endpoint not in ("/api/journeys", "/api/abandoned-journals", "/api/journal-art", "/api/live-narrative"):
                 return self.send_json(404, {"error": "Unknown API endpoint."})
             origin = self.headers.get("Origin")
             try:
@@ -420,6 +441,19 @@ def make_handler(store, jobs, path_pool=None):
                 except (ValueError, UnicodeError) as error:
                     raise JourneyRequest("Invalid journey JSON.") from error
                 capability = self.headers.get("X-Journal-Capability")
+                if endpoint == "/api/live-narrative":
+                    return self.send_json(200, live_narrative.request(request, capability))
+                if endpoint == "/api/journal-art":
+                    result = journal_art.request(request, capability)
+                    if isinstance(result, bytes):
+                        self.send_response(200)
+                        self.send_header("Content-Type", "image/webp")
+                        self.send_header("Content-Length", str(len(result)))
+                        self.send_header("Cache-Control", "private, no-store")
+                        self.end_headers()
+                        self.wfile.write(result)
+                        return
+                    return self.send_json(200, result)
                 if endpoint == "/api/abandoned-journals":
                     return self.send_json(200, abandoned.request(request, capability))
                 if capability is not None:
@@ -457,6 +491,23 @@ def make_handler(store, jobs, path_pool=None):
                     return self.send_json(500, {"error": str(error)})
             if url.path.startswith("/api/"):
                 try:
+                    if url.path == "/api/start-art":
+                        if url.query:
+                            raise ValueError("Unexpected title illustration query.")
+                        return self.send_json(200, start_art.snapshot())
+                    if url.path == "/api/start-art/image":
+                        query = urllib.parse.parse_qs(url.query, strict_parsing=True)
+                        if set(query) != {"day"} or len(query["day"]) != 1:
+                            raise ValueError("Invalid title illustration lookup.")
+                        image = start_art.image(query["day"][0])
+                        if image is None:
+                            return self.send_json(404, {"error": "Daily title illustration not found."})
+                        self.send_response(200)
+                        self.send_header("Content-Type", "image/webp")
+                        self.send_header("Content-Length", str(len(image)))
+                        self.send_header("Cache-Control", "no-store")
+                        self.end_headers()
+                        return self.wfile.write(image)
                     if url.path == "/api/travel":
                         return self.send_json(200, {"chunkSize": CHUNK_SIZE, "cellSizeMeters": CELL_METERS})
                     if url.path == "/api/origins":
@@ -581,6 +632,8 @@ def make_handler(store, jobs, path_pool=None):
                 return self.send_error(403)
             super().do_GET()
 
+    Handler.journal_art = journal_art
+    Handler.live_narrative = live_narrative
     return Handler
 
 
@@ -600,6 +653,8 @@ def main():
         pass
     finally:
         server.server_close()
+        server.RequestHandlerClass.journal_art.close()
+        server.RequestHandlerClass.live_narrative.close()
         jobs.pool.shutdown(wait=True, cancel_futures=True)
         path_pool.shutdown(wait=True, cancel_futures=True)
 

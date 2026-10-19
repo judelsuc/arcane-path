@@ -7,6 +7,7 @@ import { journeyStats } from "./journey-stats.mjs";
 import { notebookPdf, downloadNotebookPdf } from "./notebook-pdf.mjs";
 import { journeyMapView, journeyMapDescription, drawJourneyMap } from "./journey-map.mjs";
 import { notebookCover } from "./notebook-cover.mjs";
+import { createJournalIllustrator, illustrationScenes, COVER_ART_ID } from "./journal-art.mjs";
 
 export function validateJournalPhoto(photo) {
   if (!photo || typeof photo.sourceUrl !== "string" || typeof photo.licenseUrl !== "string" ||
@@ -79,7 +80,7 @@ export function createPhotoJournalStore(index = indexedDB) {
         request.onsuccess = () => {
           const cursor = request.result;
           if (!cursor) { done(entries.sort((a, b) => a.pinnedAt.localeCompare(b.pinnedAt))); return; }
-          if (cursor.value.owner === owner) entries.push({
+          if (cursor.value.owner === owner && cursor.value.entryId !== COVER_ART_ID) entries.push({
             id: cursor.value.entryId, pinnedAt: cursor.value.pinnedAt });
           cursor.continue();
         };
@@ -151,6 +152,32 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   const drafts = new Map();
   const tarotPins = new WeakMap();
   let scope = "unassigned";
+  let artStatus = "", artError = "";
+  const art = createJournalIllustrator({
+    onStatus(status, message = "") {
+      artStatus = status; artError = message;
+      if (dialog.open && covering && !readOnly) void render();
+    },
+    async onAsset(entry, blob, owner) {
+      const target = rootStore.scope ? await rootStore.scope(notebookScope(owner)) : rootStore;
+      const id = entry.key === "cover" ? COVER_ART_ID : `journal-art:day:${entry.key}`;
+      if (await target.get(id)) return;
+      const title = entry.key === "cover" ? "Personal dream cover / Couverture onirique personnelle"
+        : `${entry.key} (UTC) · Illustrated day / Journée illustrée`;
+      const brief = entry.brief;
+      const note = `Symbolic AI illustration, not evidence / Illustration IA symbolique, pas un indice. ` +
+        `Tarot: ${brief.birth} / ${brief.daily}. ` +
+        `Scenery / Décor: ${brief.scenes.join(", ") || "—"}. ` +
+        `Recorded activities / Activités relevées: ${brief.activities.join(", ") || "—"}. ` +
+        (brief.partial ? "Partial observation / Observation partielle." : "");
+      await target.pin({
+        blob, title, sourceUrl: "https://www.ovhcloud.com/en/public-cloud/ai-endpoints/catalog/stable-diffusion-xl/",
+        attribution: `AI-generated / Généré par IA · OVH ${entry.model}`, license: "CreativeML Open RAIL++-M",
+        licenseUrl: entry.license,
+      }, { id, caption: title, note });
+      if (scope === notebookScope(owner) && dialog.open && !readOnly) await load();
+    },
+  });
   const pendingPins = new Set();
   const failedPins = new Map();
   function revoke() {
@@ -208,6 +235,28 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         subtitle.className = "journal-cover-subtitle";
         subtitle.textContent = cover.subtitle;
         page.append(title, subtitle);
+        const artwork = await store.get(COVER_ART_ID);
+        if (current !== generation || !dialog.open) return;
+        if (artwork) {
+          const image = document.createElement("img");
+          const url = URL.createObjectURL(artwork.blob);
+          urls.add(url);
+          image.src = url;
+          image.alt = t("journalArtCoverAlt");
+          image.className = "journal-cover-art";
+          image.addEventListener("error", () => failure(new Error(t("journalImageError"))));
+          page.append(image);
+          const credit = document.createElement("a");
+          credit.href = artwork.licenseUrl;
+          credit.textContent = `${artwork.attribution} · ${artwork.license}`;
+          credit.rel = "noopener noreferrer"; credit.target = "_blank";
+          page.append(credit);
+        }
+        if (artStatus) {
+          const progress = document.createElement("p");
+          progress.textContent = t(`journalArt.${artStatus}`, { error: artError });
+          page.append(progress);
+        }
         for (const row of cover.rows) {
           const paragraph = document.createElement("p");
           paragraph.textContent = `${row.label} : ${row.value}`;
@@ -443,7 +492,9 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   next.addEventListener("click", () => {
     if (!statistics && !loading && (spread + 1) * 2 < entries.length) { spread++; void render(); }
   });
-  document.querySelector("#journal-retry").addEventListener("click", () => { if (!loading) void load(); });
+  document.querySelector("#journal-retry").addEventListener("click", () => {
+    if (!loading) { art.refresh(); void load(); }
+  });
   exportButton.addEventListener("click", async () => {
     if (exporting || loading) return;
     exporting = true;
@@ -459,6 +510,10 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       const groups = !foreign && statsContext
         ? journeyStats(statsContext, t, document.documentElement.lang) : [];
       const cover = !foreign && statsContext ? notebookCover(statsContext, t, document.documentElement.lang) : null;
+      if (cover) {
+        const artwork = await target.get(COVER_ART_ID);
+        if (artwork) cover.artwork = artwork;
+      }
       const route = !foreign && statsContext
         ? journeyMapView(statsContext.state, statsContext.cellSizeMeters) : null;
       if (route && statsContext.mapTerrain) route.terrain = await statsContext.mapTerrain(route);
@@ -511,6 +566,14 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       const unchangedMap = mapping && context?.state === statsContext?.state &&
         context?.mapTerrain === statsContext?.mapTerrain;
       statsContext = context;
+      if (context) {
+        try {
+          art.observe(context.state, illustrationScenes(context.artTerrain, context.artWeather));
+        } catch (reason) {
+          console.error("Journal illustration observation failed:", reason);
+          artStatus = "failed"; artError = reason.message;
+        }
+      }
       if (!context) statistics = mapping = covering = false;
       if (dialog.open && !readOnly) {
         if (unchangedMap) return;
@@ -522,6 +585,8 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       const nextScope = notebookScope(state);
       if (nextScope === scope) return;
       exportEpoch++;
+      art.stop();
+      artStatus = artError = "";
       stopAnimation();
       for (const [id, note] of drafts) await liveStore.note(id, note);
       const scoped = rootStore.scope ? await rootStore.scope(nextScope, { adoptLegacy }) : rootStore;
@@ -550,7 +615,10 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       const target = rootStore.scope ? await rootStore.scope(notebookScope(state), { adoptLegacy: true }) : rootStore;
       for (const [id, note] of drafts) if (scope === notebookScope(state)) await target.note(id, note);
       const entries = await target.list();
-      return Promise.all(entries.map(async entry => ({ ...await target.get(entry.id), id: entry.id })));
+      const photos = await Promise.all(entries.map(async entry => ({ ...await target.get(entry.id), id: entry.id })));
+      const cover = await target.get(COVER_ART_ID);
+      if (cover) photos.unshift({ ...cover, id: COVER_ART_ID });
+      return photos;
     },
     async showAbandoned(notebook, clues) {
       exportEpoch++;

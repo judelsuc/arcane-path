@@ -222,7 +222,7 @@ export function washEconomy(state, cell, info, survival, data) {
 }
 
 export function finishAction(previous, next, info, data,
-  { sheltered = false, random = Math.random, survival, activity, outdoorSleep = false } = {}) {
+  { sheltered = false, random = Math.random, survival, activity, outdoorSleep = false, washed = false } = {}) {
   if (previous.ended) throw new Error("This journey has ended.");
   if (!sheltered) next = applyWeatherExposure(previous, next, info);
   if (healthValue(next) <= 0) next = { ...next, ended: "health" };
@@ -249,7 +249,7 @@ export function finishAction(previous, next, info, data,
         col: next.col, row: next.row, sheltered, chance, robbed, stolenCents,
         walletBeforeCents: next.walletCents } };
   }
-  next = advancePressures(previous, next, info, { sheltered, survival, activity });
+  next = advancePressures(previous, next, info, { sheltered, survival, activity, washed });
   const day = journeyDate(next).toISOString().slice(0, 10);
   const { metabolism, ...settled } = next;
   return syncJourneyEquipment(previous, refreshPressureTarot({ ...settled,
@@ -313,7 +313,8 @@ export function sleepEconomy(state, cell, info, shelterId, survival, data) {
   let next = sleepSurvival(sleeping, config);
   if (fullBoard) next = { ...next, reserveKcal: survival.reserve_kcal,
     fatigue: 0, awakeHours: 0, meals: next.meals + 2, ended: null };
-  return finishAction(state, next, info, data, { sheltered: Boolean(shelter), survival, outdoorSleep: !shelter });
+  return finishAction(state, next, info, data, { sheltered: Boolean(shelter), survival,
+    outdoorSleep: !shelter, washed: fullBoard });
 }
 
 export function restEffect(state, info, survival, data) {

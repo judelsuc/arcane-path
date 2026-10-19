@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { mount } from "../minigames/sketch-ui.mjs";
 import { INK } from "../minigames/sketch.mjs";
+import { readFileSync } from "node:fs";
 
 // Minimal DOM/event/clock harness: no app, storage, network or external dependencies.
 class Events {
@@ -166,7 +167,7 @@ test("reveal compares the original coloured model and the actual imperfect drawi
     h.control(language === "en" ? "Finish sketch" : "Terminer le croquis").click();
     assert.equal(comparison.hidden, false);
     assert.equal(comparison.style.display, "grid");
-    assert.equal(comparison.style.gridTemplateColumns, "repeat(2, minmax(0, 1fr))");
+    assert.equal(comparison.style.gridTemplateColumns, undefined, "responsive columns must not be overridden inline");
     assert.equal(player.parentElement.hidden, false);
     assert.equal(h.model.textContent, target);
     assert.deepEqual(h.model.children.map(node => node.style.color), targetColours);
@@ -178,6 +179,13 @@ test("reveal compares the original coloured model and the actual imperfect drawi
   }
 });
 
+test("observation and revealed sketches keep large matching symbols and stack on narrow screens", () => {
+  const css = readFileSync(new URL("../mini-games.css", import.meta.url), "utf8");
+  assert.match(css, /pre \{[^}]*font: bold clamp\(36px, 5vw, 52px\)\/1\.35 monospace;/);
+  assert.match(css, /\.sketch-comparison \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(css, /@media \(max-width: 640px\) \{\s*\.sketch-comparison \{ grid-template-columns: minmax\(0, 1fr\)/);
+  assert.doesNotMatch(css, /\.sketch-revealed pre[^}]*font-size/);
+});
 test("explicit English start, perfect clickable puzzle, safe output and once-only completion", () => {
   const h = harness({ language: "en" });
   assert.equal(h.results.length, 0);

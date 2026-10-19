@@ -2,8 +2,9 @@ import { mealOffers, marketPrice, shelters, tarotEventChance } from "./economy.m
 import { HOSPITALITY_RULES, hospitalityStatus, worshipPlaces } from "./hospitality.mjs";
 import { socialFailureChance } from "./pressures.mjs";
 import { setFeedback } from "./feedback.mjs";
+import { NARRATIVE_BRIEFS } from "./live-narrative.mjs";
 
-export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodations, selectAccommodation }) {
+export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodations, selectAccommodation, narrative }) {
   const dialog = document.querySelector("#economy-dialog");
   let mode = "eat";
   let resolving = false, countryError = "", generation = 0;
@@ -12,6 +13,22 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
   let accommodationProgress;
   let accommodationPartial = false;
   let accommodationCachedKey;
+  let speechKey, speech, speechBrief;
+  const npcSpeech = narrative ? document.createElement("p") : null;
+  const npcStatus = narrative ? document.createElement("p") : null;
+  if (npcSpeech) {
+    npcSpeech.id = "economy-npc-dialogue";
+    npcStatus.id = "economy-npc-wording-status";
+    npcStatus.setAttribute("role", "status");
+    document.querySelector("#economy-shelter-context").after(npcSpeech, npcStatus);
+  }
+  function speechStatus() {
+    if (!npcStatus || !speechBrief || !dialog.open) return;
+    const current = context();
+    if (current) npcStatus.textContent = narrative.status(current.state, speechBrief,
+      document.documentElement.lang);
+  }
+  narrative?.subscribe(speechStatus);
   const money = cents => `${(cents / 100).toFixed(2)} ${t("gameMoney")}`;
   const hospitalityResult = result => t(`${result.placeKind === "worship" ? "worshipResult" : "hospitalityResult"}.${result.outcome}`, {
     town: result.townName, day: result.day,
@@ -177,6 +194,26 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
         document.querySelector("#economy-shelter-context").textContent += ` ${t("hospitalityTownRequired")}`;
       }
       const places = worshipPlaces(cell);
+      if (npcSpeech) {
+        const latest = state.hospitalityAttempts?.at(-1);
+        const visible = latest && (latest === hospitality.attempt || places.some(place =>
+          hospitalityStatus(state, cell, place.osmId).attempt === latest));
+        const outcome = visible ? latest.outcome : "greeting";
+        const brief = `npc.hospitality.${outcome}`;
+        const supported = Object.hasOwn(NARRATIVE_BRIEFS, brief) && Boolean(hospitality.town || places.length);
+        npcSpeech.hidden = npcStatus.hidden = !supported;
+        if (supported) {
+          narrative.prefetch(state, ["npc.hospitality.greeting", "npc.hospitality.hosted", "npc.hospitality.refused"]);
+          const key = `${brief}:${visible ? latest.startedMinutes : "before"}`;
+          if (speechKey !== key) {
+            speechKey = key;
+            speechBrief = brief;
+            speech = narrative.snapshot(state, brief);
+          }
+          npcSpeech.textContent = (speech ?? NARRATIVE_BRIEFS[brief])[language];
+          speechStatus();
+        }
+      }
       for (const place of places) {
         const status = hospitalityStatus(state, cell, place.osmId);
         const name = place.name?.trim() || t("worshipUnnamed");
@@ -216,6 +253,9 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
   async function open(nextMode) {
     if (!context() || context().blocked || document.querySelector("dialog[open]")) return;
     mode = nextMode;
+    speechKey = undefined;
+    speechBrief = undefined;
+    if (npcSpeech) npcSpeech.hidden = npcStatus.hidden = mode !== "sleep";
     accommodationController?.abort();
     accommodationLoading = false;
     accommodationCancelled = false;

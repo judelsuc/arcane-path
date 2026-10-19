@@ -1,6 +1,24 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { mount } from "../minigames/deliveries-ui.mjs";
+
+test("main game and preview load shared village, sprite and mobile delivery styles", () => {
+  const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  for (const file of ["index.html", "deliveries-preview.html"]) {
+    const html = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+    assert.match(html, /rel="stylesheet" href="\.\/styles\.css"/);
+    assert.doesNotMatch(html, /\.delivery-village\s*\{/);
+  }
+  assert.match(css, /\.delivery-village \{[^}]*position: relative; display: grid; aspect-ratio: 1;/);
+  assert.match(css, /\.delivery-house\[data-near="true"\]/);
+  assert.match(css, /\.delivery-bike \{[^}]*position: absolute;/);
+  assert.match(css, /@media \(max-width: 520px\) \{\s*\.delivery-house/);
+  for (const asset of ["deliveries-art.svg", "deliveries-bike.svg"]) {
+    assert.ok(css.includes(`url("./minigames/${asset}")`));
+    assert.match(readFileSync(new URL(`../minigames/${asset}`, import.meta.url), "utf8"), /<svg/);
+  }
+});
 
 class Element {
   constructor(doc, tag = "div") {

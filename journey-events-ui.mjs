@@ -1,8 +1,9 @@
 import { dailyTarotPending } from "./economy.mjs";
 import { journeyEventTextParts, eventPlaytestEnabled, JOURNEY_EVENTS } from "./journey-events.mjs";
 import { journeyEventArt } from "./journey-event-art.mjs";
+import { NARRATIVE_BRIEFS } from "./live-narrative.mjs";
 
-export function setupJourneyEvents(t, { context, acknowledge, pinEvent }) {
+export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrative }) {
   const dialog = document.querySelector("#journey-event-dialog");
   const proceed = document.querySelector("#journey-event-continue");
   const testMode = eventPlaytestEnabled();
@@ -14,6 +15,13 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent }) {
     document.body.prepend(banner);
   }
   let queued = false;
+  let wordingId, wording;
+  const wordingStatus = narrative ? document.createElement("p") : null;
+  if (wordingStatus) {
+    wordingStatus.id = "journey-event-wording-status";
+    wordingStatus.setAttribute("role", "status");
+    proceed.before(wordingStatus);
+  }
   function localize() {
     if (banner) {
       banner.textContent = document.documentElement.lang === "en"
@@ -26,8 +34,19 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent }) {
     const event = current?.state.events?.history.at(-1);
     if (!dialog.open || !event) return;
     const language = document.documentElement.lang === "en" ? "en" : "fr";
+    const brief = `event.${event.kind}`;
+    if (wordingId !== event.id) {
+      wordingId = event.id;
+      wording = narrative?.snapshot(current.state, brief);
+    }
+    if (wordingStatus) {
+      wordingStatus.hidden = !Object.hasOwn(NARRATIVE_BRIEFS, brief);
+      wordingStatus.textContent = wordingStatus.hidden ? "" : narrative.status(current.state, brief, language);
+    }
     const card = id => current.economy.tarot.find(c => c.id === id)[language];
-    document.querySelector("#journey-event-text").replaceChildren(...journeyEventTextParts(event, t).map(part => {
+    const parts = journeyEventTextParts(event, t);
+    if (wording && Object.hasOwn(NARRATIVE_BRIEFS, brief)) parts[0] = `${wording[language]} `;
+    document.querySelector("#journey-event-text").replaceChildren(...parts.map(part => {
       if (typeof part === "string") return part;
       const number = document.createElement("span");
       number.textContent = part.text;
@@ -54,6 +73,8 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent }) {
     }
   }
   function update() {
+    const state = context()?.state;
+    if (state && !state.ended) narrative?.prefetch(state, Object.keys(NARRATIVE_BRIEFS));
     localize();
     if (queued) return;
     queued = true;
@@ -72,6 +93,7 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent }) {
     try {
       acknowledge();
       dialog.close();
+      wordingId = undefined;
       document.querySelector("#ascii-map").focus({ preventScroll: true });
     } catch (reason) {
       console.error("Unable to acknowledge journey event:", reason);
@@ -82,5 +104,6 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent }) {
   new MutationObserver(update).observe(document.body, {
     subtree: true, attributes: true, attributeFilter: ["open"],
   });
-  return { update, reset() { dialog.close(); } };
+  narrative?.subscribe(localize);
+  return { update, reset() { wordingId = undefined; wording = null; dialog.close(); } };
 }

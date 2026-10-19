@@ -146,6 +146,7 @@ export function setupJourneyMiniGames(t, { context, act, audio = {} } = {}) {
     close.setAttribute("aria-label", words.close);
     const content = doc.createElement("div");
     content.className = "journey-mini-game__content";
+    content.dataset.miniGame = game;
     const receipt = doc.createElement("section");
     receipt.className = "journey-mini-game__receipt";
     receipt.setAttribute("aria-live", "polite");

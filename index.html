@@ -7,6 +7,7 @@
     <meta name="description" content="Prototype de cartographie ASCII pour Les Arcanes du Chemin.">
     <title>Les Arcanes du Chemin — Carte</title>
     <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./mini-games.css">
     <script type="module" src="./app.js"></script>
   </head>
   <body class="is-title">
@@ -25,6 +26,11 @@
       <section id="title-screen" aria-labelledby="title-heading">
         <p class="eyebrow" data-i18n="titleKicker"></p>
         <h1 id="title-heading" tabindex="-1">Les Arcanes<br><span>du Chemin</span></h1>
+        <figure id="title-daily-art" hidden>
+          <img id="title-daily-image" width="1024" height="1024" alt="" decoding="async">
+          <figcaption><span id="title-art-credit"></span> · <a href="https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/LICENSE.md" target="_blank" rel="noopener noreferrer">Open RAIL++-M</a></figcaption>
+        </figure>
+        <p id="title-art-status" class="title-note" role="status" hidden></p>
         <pre class="title-art" aria-hidden="true">
                     .             *
        *                    .
@@ -125,10 +131,9 @@
           </div>
         </div>
         <div id="map-workspace">
-        <section class="travel-panel" aria-labelledby="travel-title">
+        <section id="travel-overview" class="travel-overview" aria-labelledby="travel-title" hidden>
           <h3 id="travel-title" data-i18n="travelTitle"></h3>
           <p id="journey-play-save" role="status"></p>
-          <div id="travel-controls" hidden>
             <section id="journey-atmosphere" class="journey-atmosphere" aria-labelledby="weather-title" data-temperature="unknown" data-raining="false">
             <figure id="travel-sky" class="travel-sky" hidden>
               <svg viewBox="0 0 200 110" preserveAspectRatio="none" aria-hidden="true">
@@ -216,24 +221,31 @@
               <label><span data-i18n="needsHunger"></span><meter id="needs-hunger" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-hunger-value"></output></label>
               <label><span data-i18n="needsFatigue"></span><meter id="needs-fatigue" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-fatigue-value"></output></label>
               <label><span data-i18n="needsSleep"></span><meter id="needs-sleep" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-sleep-value"></output></label>
+              <div id="player-vigilance" hidden>
+                <label><span data-i18n="pressureVigilance"></span><meter id="pressure-vigilance" min="0" max="100" low="40" high="75" optimum="0"></meter><output id="pressure-vigilance-value"></output></label>
+              </div>
+              <div id="player-hygiene" hidden>
+                <label><span data-i18n="pressureCleanliness"></span><meter id="pressure-cleanliness" min="0" max="100" low="30" high="70" optimum="100"></meter><output id="pressure-cleanliness-value"></output></label>
+                <button id="wash-travel" type="button" disabled></button>
+                <p data-i18n="washHelp"></p>
+              </div>
               <p id="needs-speed-effect" role="status"></p>
               <p id="needs-warning" role="status"></p>
               <details id="pressure-panel" hidden>
                 <summary data-i18n="pressureTitle"></summary>
-                <label><span data-i18n="pressureVigilance"></span><meter id="pressure-vigilance" min="0" max="100" low="40" high="75" optimum="0"></meter><output id="pressure-vigilance-value"></output></label>
-                <label><span data-i18n="pressureCleanliness"></span><meter id="pressure-cleanliness" min="0" max="100" low="30" high="70" optimum="100"></meter><output id="pressure-cleanliness-value"></output></label>
                 <label><span data-i18n="pressureSympathy"></span><meter id="pressure-sympathy" min="0" max="100" low="30" high="70" optimum="100"></meter><output id="pressure-sympathy-value"></output></label>
                 <p id="pressure-status"></p>
                 <p id="pressure-tarot"></p>
                 <p data-i18n="pressureHelp"></p>
-                <button id="wash-travel" type="button" disabled></button>
-                <p data-i18n="washHelp"></p>
               </details>
               <div id="journey-ended" role="alert" hidden>
                 <p id="journey-outcome"></p>
                 <button id="restart-travel" type="button" data-i18n="journeyRestart"></button>
               </div>
             </section>
+        </section>
+        <section class="travel-panel" aria-labelledby="travel-title">
+          <div id="travel-controls" hidden>
             <p id="travel-stats" role="status"></p>
             <div class="travel-actions">
               <div class="travel-directions">
@@ -593,6 +605,8 @@
       <p id="needs-notice-text"></p>
       <div id="needs-notice-actions">
         <button id="needs-notice-cell" type="button" data-i18n="survivalChoices"></button>
+        <button id="needs-notice-rest" type="button" data-i18n="travelRest" hidden></button>
+        <button id="needs-notice-sleep" type="button" data-i18n="sleepTitle" hidden></button>
       </div>
       <form method="dialog"><button data-i18n="needsNoticeClose" autofocus></button></form>
     </dialog>

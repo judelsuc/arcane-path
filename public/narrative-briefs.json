@@ -1,0 +1,40 @@
+{
+  "event.food": {"kind": "introduction", "facts": "A passer-by shares a snack with the traveller, eaten on the spot."},
+  "event.coins": {"kind": "introduction", "facts": "A passer-by offers the traveller a few coins for the road."},
+  "event.encouragement": {"kind": "introduction", "facts": "A stranger offers the traveller a few encouraging words."},
+  "event.waterBreak": {"kind": "introduction", "facts": "A walker invites the traveller to pause near a fountain. The traveller's shoulders relax."},
+  "event.catNap": {"kind": "introduction", "facts": "A quiet bench invites the traveller to take a twenty-minute nap."},
+  "event.clearHead": {"kind": "introduction", "facts": "A lively conversation briefly clears the traveller's sleepy thoughts."},
+  "event.tailwind": {"kind": "introduction", "facts": "The wind blows behind the traveller, making their steps lighter."},
+  "event.bandage": {"kind": "introduction", "facts": "A traveller notices the traveller's scratches and offers a clean bandage."},
+  "event.picnic": {"kind": "introduction", "facts": "A family invites the traveller to share a small picnic beside the path."},
+  "event.friendlyAdvice": {"kind": "introduction", "facts": "A local offers advice on walking more comfortably. This is walking advice, not directions or a clue."},
+  "event.delay": {"kind": "introduction", "facts": "A stubborn bag strap forces the traveller to stop for a quarter of an hour. This is not restorative rest."},
+  "event.lostCoins": {"kind": "introduction", "facts": "Some coins slip from the traveller's pocket."},
+  "event.strain": {"kind": "introduction", "facts": "An awkward step tires the traveller."},
+  "event.tornBag": {"kind": "introduction", "facts": "A seam in the traveller's bag splits. Some food falls into the mud."},
+  "event.restlessThoughts": {"kind": "introduction", "facts": "Restless thoughts make the traveller feel the previous night was too short. Do not specify what the thoughts concern."},
+  "event.headwind": {"kind": "introduction", "facts": "The wind blows against the traveller."},
+  "event.blisters": {"kind": "introduction", "facts": "A blister makes the traveller's steps more cautious."},
+  "event.forestBoar": {"kind": "introduction", "facts": "A boar suddenly emerges in the undergrowth. The traveller moves aside, but is left hurt and tired."},
+  "event.forestDogs": {"kind": "introduction", "facts": "Stray dogs pursue the traveller between the trees. The traveller escapes with some injuries and fatigue."},
+  "event.chills": {"kind": "introduction", "facts": "A shiver passes through the traveller."},
+  "npc.hospitality.greeting": {
+    "kind": "dialogue",
+    "facts": "A local person asks what brings the traveller here. No hospitality request has been answered. No offer, refusal or promise yet.",
+    "en": "“What brings you here, traveller?”",
+    "fr": "« Qu'est-ce qui vous amène ici, voyageur ? »"
+  },
+  "npc.hospitality.hosted": {
+    "kind": "dialogue",
+    "facts": "A local person has agreed to host the traveller for the night. Do not add meals, possessions, locations, people, clues or future offers.",
+    "en": "“You can stay here tonight.”",
+    "fr": "« Vous pouvez rester ici cette nuit. »"
+  },
+  "npc.hospitality.refused": {
+    "kind": "dialogue",
+    "facts": "A local person cannot host the traveller tonight. No reason or alternative is known. Do not invent one.",
+    "en": "“I'm sorry, I cannot host you tonight.”",
+    "fr": "« Je suis désolé, je ne peux pas vous accueillir cette nuit. »"
+  }
+}

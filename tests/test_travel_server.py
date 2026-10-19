@@ -1,5 +1,6 @@
 import gzip
 import json
+import os
 import sys
 import tempfile
 import threading
@@ -131,19 +132,54 @@ class TravelServerTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Corrupt travel cache"):
                 store.read("firmi", 1, 1)
 
-    def test_elevation_failure_is_explicit_and_retry_preserves_osm(self):
+    def test_elevation_failure_preserves_visible_grid_across_restart_and_retries_after_cooldown(self):
         with tempfile.TemporaryDirectory() as directory:
             store = ChunkStore(cache=Path(directory))
             with patch("travel_server.fetch_elevations", side_effect=OSError("Provider offline")):
                 data = store.build("firmi", 1, 1)
             self.assertIn("Provider offline", data["elevation"]["error"])
             self.assertNotIn("elevationMeters", data["rows"][0][0])
-            self.assertIsNone(store.read("firmi", 1, 1))
+            restarted = ChunkStore(cache=Path(directory))
+            self.assertEqual(restarted.read("firmi", 1, 1), data)
+            with patch("travel_server.fetch_elevations", side_effect=AssertionError("Cooldown forbids network")):
+                self.assertEqual(restarted.build("firmi", 1, 1), data)
             self.assertTrue(store.source_path("firmi", 1, 1).with_suffix(".osm.gz").exists())
+            path = store.path("firmi", 1, 1).with_suffix(".json")
+            os.utime(path, (0, 0))
             with patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}), \
+                    patch("travel_server.rasterize", side_effect=AssertionError("Reuse cached terrain")), \
                     patch("travel_server.download_region", side_effect=AssertionError("No new download")):
                 retried = store.build("firmi", 1, 1)
             self.assertEqual(retried["rows"][0][0]["elevationMeters"], 100)
+            self.assertNotIn("error", retried["elevation"])
+            self.assertEqual(restarted.read("firmi", 1, 1), retried)
+
+    def test_elevation_refresh_serves_cached_terrain_while_background_provider_is_pending(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ChunkStore(cache=Path(directory))
+            with patch("travel_server.fetch_elevations", side_effect=OSError("Provider offline")):
+                data = store.build("firmi", 1, 1)
+            path = store.path("firmi", 1, 1).with_suffix(".json")
+            os.utime(path, (0, 0))
+            started, release = threading.Event(), threading.Event()
+            def heights(centers):
+                started.set()
+                release.wait(timeout=3)
+                return {"values": [100] * len(centers)}
+            jobs = ChunkJobs(store, workers=1)
+            try:
+                with patch("travel_server.fetch_elevations", side_effect=heights):
+                    self.assertEqual(jobs.request("firmi", 1, 1), (200, data))
+                    self.assertTrue(started.wait(timeout=3))
+                    self.assertEqual(jobs.request("firmi", 1, 1), (200, data))
+                    release.set()
+                    jobs.jobs[("firmi", 1, 1)].result(timeout=3)
+                    status, refreshed = jobs.request("firmi", 1, 1)
+                    self.assertEqual(status, 200)
+                    self.assertEqual(refreshed["rows"][0][0]["elevationMeters"], 100)
+            finally:
+                release.set()
+                jobs.pool.shutdown()
 
     def test_external_chunk_download_has_same_projection_and_persistent_source(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -231,7 +267,7 @@ class TravelServerTests(unittest.TestCase):
                 with urllib.request.urlopen(url + "/public/config.json") as response:
                     settings = json.load(response)
                     self.assertEqual(settings["survival"]["reserve_kcal"], 1800)
-                    self.assertEqual(settings["photos"]["max_per_cell"], 5)
+                    self.assertEqual(settings["photos"]["max_per_cell"], 10)
                 with patch("travel_server.WeatherStore.get", return_value={"months": []}) as weather:
                     with urllib.request.urlopen(url + "/api/weather?region=firmi&x=1&y=1") as response:
                         self.assertEqual(json.load(response), {"months": []})

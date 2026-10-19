@@ -10,6 +10,7 @@ import { setupCopyCoordinates } from "./copy-coordinates.mjs";
 import { setupShortcutHelp } from "./shortcut-help.mjs";
 import { setupPhotoJournal } from "./photo-journal.mjs";
 import { setupGameHelp } from "./game-help.mjs";
+import { setupStartArt } from "./start-art.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
 const viewport = document.querySelector("#map-viewport");
@@ -36,6 +37,8 @@ const coordinates = setupCopyCoordinates(t, () => mapData && inspectedTile
   ? cellInfo(mapData, Number(inspectedTile.dataset.row), Number(inspectedTile.dataset.col)) : null);
 const controls = setupShortcutHelp(t);
 const windowHelp = setupGameHelp(t);
+const startArt = setupStartArt(t);
+void startArt.load();
 const travel = setupTravel({
   t, renderMap,
   pinPhoto: photoJournal.pinButton,
@@ -99,6 +102,7 @@ document.querySelector("#back-title").addEventListener("click", () => {
   document.querySelector("#journey-setup").hidden = true;
   document.querySelector("#title-screen").hidden = false;
   document.body.classList.add("is-title");
+  void startArt.load();
   document.querySelector("#enter-world").focus({ preventScroll: true });
   window.scrollTo({ top: 0, behavior: "instant" });
 });
@@ -207,6 +211,7 @@ function localize() {
   coordinates.update();
   controls.localize();
   windowHelp.localize();
+  startArt.localize();
   document.querySelector("#starting-map-status").textContent = mapData
     ? t("setupSelected", { name: mapData.origin ? mapData.name.split(",")[0] : mapData.name })
     : t(loadFailed ? "loadError" : "loading");

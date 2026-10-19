@@ -181,7 +181,6 @@ export function mount(container, { level = 0, language = "fr", onFinish, ...opti
     comparison.hidden = model.hidden;
     comparison.className = phase === "completed" ? "sketch-comparison sketch-revealed" : "sketch-comparison";
     comparison.style.display = comparison.hidden ? "none" : phase === "completed" ? "grid" : "block";
-    comparison.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
     modelCaption.hidden = phase !== "completed";
     playerPanel.hidden = phase !== "completed";
     for (const [drawing, marks] of [[model, model.hidden ? [] : game.target],

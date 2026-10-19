@@ -6,6 +6,7 @@ import { askHospitality } from "../hospitality.mjs";
 import { startSurvival } from "../survival.mjs";
 import { applyBirthTarot, startEconomy, mealOffers } from "../economy.mjs";
 import { translate } from "../i18n.mjs";
+import { NARRATIVE_BRIEFS } from "../live-narrative.mjs";
 
 const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
 const economy = json("../public/economy.json");
@@ -16,6 +17,55 @@ const town = { terrain: "place", countryCodes: ["FR"],
 const start = offset => applyBirthTarot(startEconomy(startSurvival(14, 10,
   Date.UTC(2026, 9, 17, 12) + offset, "balanced", survival), economy, () => 0), economy);
 
+for (const language of ["en", "fr"]) {
+  test(`${language} hospitality NPC speech uses cached public dialogue without rewording active choices`, async t => {
+    let cached = null, notify;
+    const requested = [];
+    const narrative = {
+      prefetch(_, ids) { requested.push(...ids); },
+      snapshot: () => cached,
+      status: () => "Optional OVH wording status",
+      subscribe(fn) { notify = fn; },
+    };
+    const h = harness(t, language, undefined, undefined, narrative);
+    const before = structuredClone(h.current().state);
+    await h.ui.open("sleep");
+    const [speech, status] = h.element("#economy-shelter-context").siblings;
+    assert.equal(speech.textContent, NARRATIVE_BRIEFS["npc.hospitality.greeting"][language]);
+    const choices = h.buttons().map(button => button.textContent);
+    cached = { en: "“What brings you along this road?”", fr: "« Qu'est-ce qui vous amène sur ce chemin ? »" };
+    notify();
+    h.ui.localize();
+    assert.equal(speech.textContent, NARRATIVE_BRIEFS["npc.hospitality.greeting"][language]);
+    assert.deepEqual(h.buttons().map(button => button.textContent), choices);
+    assert.deepEqual(h.current().state, before);
+    assert.match(status.textContent, /OVH/);
+    h.ui.reset();
+    await h.ui.open("sleep");
+    assert.equal(speech.textContent, cached[language]);
+    assert.ok(requested.every(id => id.startsWith("npc.hospitality.")));
+    assert.equal(h.actions.length, 0);
+    cached = null;
+    h.buttons()[0].click();
+    const outcome = h.current().state.hospitalityAttempts.at(-1).outcome;
+    assert.ok(["hosted", "refused"].includes(outcome));
+    assert.equal(speech.textContent, NARRATIVE_BRIEFS[`npc.hospitality.${outcome}`][language]);
+    assert.ok(h.element("#economy-options").children[0].children[1].textContent.includes(
+      translate(language, `hospitalityResult.${outcome}`, {
+        town: "Firmi", day: "2026-10-17",
+        minutes: Math.round(h.current().state.hospitalityAttempts.at(-1).finishedMinutes),
+      }).split("Firmi")[0]));
+    assert.equal(h.actions.length, 1);
+    cached = { en: `“Cached ${outcome} speech.”`, fr: `« Parole ${outcome} en cache. »` };
+    h.ui.reset();
+    const afterAction = structuredClone(h.current().state);
+    await h.ui.open("sleep");
+    assert.equal(speech.textContent, cached[language]);
+    assert.deepEqual(h.current().state, afterAction);
+    assert.equal(h.actions.length, 1);
+  });
+}
+
 class Element {
   children = [];
   events = {};
@@ -24,6 +74,7 @@ class Element {
   open = false;
   dataset = {};
   append(...children) { this.children.push(...children); }
+  after(...siblings) { this.siblings = siblings; }
   replaceChildren() { this.children = []; }
   addEventListener(type, listener) { this.events[type] = listener; }
   click() { if (!this.disabled) this.events.click?.(); }
@@ -33,7 +84,7 @@ class Element {
   scrollIntoView(options) { this.scrolled = options; }
   setAttribute(name, value) { this[name] = value; }
 }
-function harness(t, language = "en", findAccommodations, selectAccommodation) {
+function harness(t, language = "en", findAccommodations, selectAccommodation, narrative) {
   const original = globalThis.document;
   const elements = new Map();
   const element = selector => {
@@ -54,6 +105,7 @@ function harness(t, language = "en", findAccommodations, selectAccommodation) {
   let current = { state: start(0), cell: town, info, survival, data: economy, blocked: false };
   const actions = [];
   const ui = setupEconomyUI((key, args) => translate(language, key, args), {
+    narrative,
     findAccommodations,
     selectAccommodation,
     context: () => current,

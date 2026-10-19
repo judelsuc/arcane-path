@@ -175,6 +175,21 @@ export function vagueLead(state, stage, t) {
   return fieldClueText(state, { ...origin, stage, kind: "direction" }, t);
 }
 
+export function openingClue(state) {
+  const trail = state.trail, exploration = trail?.exploration;
+  if (trail?.version !== 2 || !trail.origin || exploration?.firstStage !== 0 ||
+      exploration.knownStage !== null) return undefined;
+  return { stage: 0, kind: "direction", precision: "vague",
+    col: trail.origin.col, row: trail.origin.row, elapsedMinutes: 0 };
+}
+
+export function openingClueText(state, t) {
+  const hint = openingClue(state);
+  if (!hint) throw new Error("No opening clue is available for this journey.");
+  return t("trailOpeningClue", { parent: state.trail.parentName,
+    direction: t(`hintCompass.${clueDirection(hint, state.trail.stages[hint.stage])}`) });
+}
+
 export function recognitionHint(state) {
   const hints = state.trail?.exploration?.hints ?? [];
   if (hints.some(h => h.stage === state.trail.index && h.kind === "place")) return undefined;

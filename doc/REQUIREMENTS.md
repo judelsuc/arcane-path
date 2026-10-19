@@ -1,5 +1,27 @@
 # Requirements tracked outside the design PDF
 
+## R-152 - Daily shared start-page illustration
+
+- Generate one shared image per real-world day at 05:00 Europe/Paris.
+- Rotate imaginary European landscapes and tarot motifs in the journal's
+  ink-and-watercolour style, without player data or hidden clues.
+- Keep the previous published image on failure and the authored ASCII title
+  before the first successful generation. Attribute the model, date and license.
+- Use only verified-free OVH SDXL pricing, with no paid fallback or automatic
+  same-day retry. Persist attempts and archive successful images.
+- See [the content-factory guide](CONTENT_FACTORY.md) for timer installation.
+
+## R-145 to R-150 - Latest gameplay feedback
+
+- Warn about fatigue and lack of sleep at their configured thresholds, once per
+  episode, with localized recovery actions and existing notice priorities.
+- After the first two stays in care, recover in the nearest named town in
+  prepared terrain; preserve the third-placement ending and save history.
+- Enlarge sketch comparisons and Lost and Found illustrations responsively.
+- Keep vigilance and player status visible below the calendar.
+- Allow the cached notebook journey map and shared mini-game stylesheet through
+  the authenticated nginx proxy; retain explicit errors and cache-only lookup.
+
 ## R-124 - Integrated game help and explicit placement reasons
 
 - **19 October playtest feedback:** Game tooltips must work in the online

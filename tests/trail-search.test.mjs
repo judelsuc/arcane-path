@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { beginExploration, fieldSearchRules, fieldSearchChance, fieldSearchAvailable,
   prepareFieldSearch, applyFieldSearch, loadSearchProximity, fieldClueText,
-  prepareRecognition, askAboutClue, recognitionHint } from "../trail-search.mjs";
+  prepareRecognition, askAboutClue, recognitionHint, openingClue, openingClueText } from "../trail-search.mjs";
 import { startSurvival } from "../survival.mjs";
 import { startEconomy } from "../economy.mjs";
 import { trailClue } from "../trail-actions.mjs";
-import { setupTrail, trailReminder, parentClueText, playerHint } from "../trail-ui.mjs";
+import { setupTrail, trailReminder, parentClueText, playerHint, trailPageRecords } from "../trail-ui.mjs";
 import { recordTrailArrival } from "../trail.mjs";
 import { createSave, validateSave } from "../journey-save.mjs";
 import { translate } from "../i18n.mjs";
@@ -49,6 +49,28 @@ function collected(kind = "prefix", precision = "vague") {
 }
 const town = (name, latitude = 45, longitude = 3) => ({ name, latitude, longitude });
 const prepared = (state, towns) => ({ hint: recognitionHint(state), col: state.col, row: state.row, towns });
+
+test("a new journey starts with a stable vague directional clue, without a town, distance or search cost", () => {
+  const state = start(), before = structuredClone(state);
+  const hint = openingClue(state);
+  assert.deepEqual(hint, { stage: 0, kind: "direction", precision: "vague",
+    col: state.trail.origin.col, row: state.trail.origin.row, elapsedMinutes: 0 });
+  assert.equal(trailPageRecords(state, 0)[0].kind, "opening");
+  for (const language of ["fr", "en"]) {
+    const t = (key, args) => translate(language, key, args);
+    const text = openingClueText(state, t);
+    assert.ok(text.includes(t("hintCompass.east")));
+    assert.equal(trailReminder(state, t), text);
+    assert.equal(playerHint(state, info, t), text);
+    assert.equal(openingClueText({ ...state, col: 300, row: 100 }, t), text);
+    assert.doesNotMatch(text, /Secret Town|194|45000|45 km/);
+    const resumed = validateSave(JSON.parse(JSON.stringify(save(state)))).state;
+    assert.equal(openingClueText(resumed, t), text);
+  }
+  assert.deepEqual(state, before);
+  const legacy = { ...state, trail: { ...state.trail, exploration: undefined } };
+  assert.equal(openingClue(beginExploration(legacy, true)), undefined);
+});
 
 test("loaded land cells allow field searches; unavailable cells, water and ended journeys do not", () => {
   const state = start();
@@ -461,6 +483,9 @@ for (const locale of ["fr", "en"]) {
     const texts = node => [node.textContent, ...node.children.flatMap(texts)];
     ui.open();
     assert.equal(element("#trail-investigation-page").hidden, true);
+    assert.ok(texts(element("#trail-history")).includes(translate(locale, "trailOpeningClueTitle")));
+    assert.ok(texts(element("#trail-history")).includes(openingClueText(state,
+      (key, args) => translate(locale, key, args))));
     element("#trail-section-actions").events.click();
     assert.equal(element("#trail-evidence-page").hidden, true);
     const searchItem = element("#trail-actions").children.find(c =>
@@ -475,7 +500,21 @@ for (const locale of ["fr", "en"]) {
     await element("#trail-actions").children.find(c => c.children.some(b => b.id === "clue-field-search"))
       .children.find(b => b.id === "clue-field-search").events.click();
     assert.equal(state.elapsedMinutes, 30);
-    assert.equal(element("#trail-investigation-page").hidden, true);
+    assert.equal(element("#trail-investigation-page").hidden, false);
+    assert.equal(element("#trail-evidence-page").hidden, true);
+    assert.equal(element("#trail-section-actions")["aria-pressed"], "true");
+    const successfulState = state;
+    rolls = [0, 0, 0.999];
+    await element("#trail-actions").children.flatMap(c => c.children)
+      .find(b => b.id === "clue-field-search").events.click();
+    assert.equal(state.trail.exploration.lastSearch.outcome, "nothing");
+    assert.equal(element("#trail-investigation-page").hidden, false);
+    assert.equal(element("#trail-section-actions")["aria-pressed"], "true");
+    assert.ok(texts(element("#trail-actions")).includes(translate(locale,
+      "fieldOutcome.nothing", state.trail.exploration.lastSearch)));
+    assert.ok(texts(element("#trail-actions")).includes(translate(locale, "fieldNothingAdvice")));
+    state = successfulState;
+    ui.localize();
     assert.match(element("#trail-target").textContent, /Se/);
     assert.ok(element("#trail-history").children[0].children.every(b => !b.events.click));
     element("#trail-dialog").close();
@@ -523,12 +562,15 @@ for (const locale of ["fr", "en"]) {
     const dates = element("#trail-history").children.map(item => item.children.at(-1).dateTime);
     assert.deepEqual(dates, [...dates].sort().reverse());
     state = recordTrailArrival({ ...state, col: state.trail.stages[0].col });
+    element("#trail-section-actions").events.click();
     ui.localize();
+    assert.equal(element("#trail-investigation-page").hidden, false);
     assert.equal(element("#trail-page-status").textContent,
       translate(locale, "trailPageAwaiting", { page: 2, place: state.trail.stages[0].name }));
     assert.equal(state.trail.index, 0);
     state = trailClue(state, "letter", cell, info, survival, economy);
     ui.localize();
+    assert.equal(element("#trail-investigation-page").hidden, false);
     assert.match(element("#trail-page-status").textContent, /2/);
     assert.equal(element("#trail-page-current").disabled, true);
     element("#trail-page-previous").events.click();
