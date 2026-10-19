@@ -62,7 +62,7 @@ def incomplete_landcover(root):
     for relation in root.findall("relation"):
         tags = {tag.attrib["k"]: tag.attrib["v"] for tag in relation.findall("tag")}
         if tags.get("type") != "multipolygon" or classify(tags) not in {
-            "forest", "grass", "field", "vineyard", "park", "water", "mountain",
+            "forest", "grass", "field", "vineyard", "park", "water", "mountain", "building",
         }:
             continue
         for member in relation.findall("member"):
@@ -152,8 +152,8 @@ def _request_map(bounds, depth=0, on_progress=None):
         if depth == 0:
             first_urls += _complete_landcover(root, on_progress)
         return root, first_urls + second_urls
-    if root.tag != "osm" or root.find("bounds") is None or root.find("node") is None:
-        raise SourceUnavailable("The OSM API did not return a bounded map with nodes.")
+    if root.tag != "osm" or root.find("bounds") is None:
+        raise SourceUnavailable("The OSM API did not return a bounded map.")
     return root, [url, *(_complete_landcover(root, on_progress) if depth == 0 else [])]
 
 
@@ -178,7 +178,7 @@ def _request_overpass(bounds, url, on_progress=None):
     except urllib.error.HTTPError as error:
         reason = error.read(4096).decode("utf-8", errors="replace")
         raise _http_failure(error, reason) from error
-    if root.tag != "osm" or root.find("remark") is not None or root.find("node") is None:
+    if root.tag != "osm" or root.find("remark") is not None:
         raise SourceUnavailable("Overpass returned incomplete data or a runtime error.")
     if incomplete_landcover(root):
         raise SourceUnavailable("Overpass returned incomplete land-cover geometry.")
@@ -295,7 +295,7 @@ def download_region(bounds, name, output, refresh=False, reference_bounds=None, 
         reference_bbox = ",".join(map(str, reference_bounds)) if reference_bounds else None
         if (cached.attrib.get("source_url") == url and cached.attrib.get("region_name") == name
                 and cached.attrib.get("reference_bbox") == reference_bbox):
-            if cached.find("bounds") is None or cached.find("node") is None:
+            if cached.find("bounds") is None:
                 raise ValueError("Incomplete cached OSM snapshot; use --refresh to download again.")
             if on_progress:
                 on_progress({"phase": "cache"})

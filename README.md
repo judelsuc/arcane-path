@@ -906,6 +906,23 @@ Un cours d'eau sans largeur connue ne contribue pas a une surface inventee :
 il reste signale dans les informations de la case. Les surfaces sont des
 estimations des donnees OSM, pas des mesures hydrologiques exactes.
 
+Les oceans sont le complement des polygones de terre fermes de
+[GSHHG 2.3.7](https://www.soest.hawaii.edu/pwessel/gshhg/), pleine resolution,
+sous LGPL 3 ou ulterieure. Installer `gshhs_f.b` avec `README.TXT`,
+`LICENSE.TXT` et `COPYING.LESSERv3` depuis l'archive officielle
+`gshhg-bin-2.3.7.zip` dans `.cache/shorelines/`, puis redemarrer.
+SHA-256 du binaire :
+`af9215d58ebc525b2d09654a89959829f09e6edc457f3666759cded37be4ecf6`.
+La provenance/licence est exposee avec la carte. Sans le fichier, le serveur
+avertit explicitement que la couverture des oceans est indisponible.
+Cette source historique ne garantit pas la precision actuelle du rivage.
+
+A 250 m et au-dela, les empreintes de batiments OSM sont agregees sur une
+grille de 20 x 20 points : `#` apparait a partir de **15 %** d'emprise cumulee,
+sans doublons ni cours interieures. Routes principales, rails, eau et reperes
+gardent leurs priorites. Le pourcentage est consultable meme quand un autre
+symbole domine. Aucun cout de marche ni blocage supplementaire n'est ajoute.
+
 Apres modification, executer `python3 scripts/prepare_regions.py` puis
 redemarrer le serveur. Les caches de grilles sont invalides automatiquement
 par la configuration ; les sources OSM et altitudes restent reutilisees.

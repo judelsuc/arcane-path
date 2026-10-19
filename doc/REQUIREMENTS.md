@@ -1,5 +1,26 @@
 # Requirements tracked outside the design PDF
 
+## R-156 - Content-factory map tile sets (future)
+
+- Generate a fresh coherent map tile set daily for optional skins, initially
+  square pixel-art in the game palette. Keep ASCII and gameplay unchanged.
+- Provider, scheduling time and review/publication workflow remain undecided.
+  This records future work, not enabled generation or spending approval.
+
+## R-155 - Optional pixel-art map skin
+
+- Add square pixel-art tiles alongside ASCII, with locally saved preference,
+  after the pending factory/living-world releases and map fixes.
+- Keep the same grid, terrain, player, clues, accessibility and movement.
+
+## R-154 - Sea coverage and aggregated urban blocks
+
+- Recognize open sea even without a locally closed coastline, preserving the
+  existing water movement rules and saved journeys.
+- Display aggregated building footprints at 250 m using a 15% sampled union
+  threshold, excluding overlap/courtyards; retain roads, rails, water and
+  landmarks. Show coverage in cell inspection.
+
 ## R-151 - Opening backstory before gameplay
 
 - Generate one bilingual story around the saved parent identity/motive at

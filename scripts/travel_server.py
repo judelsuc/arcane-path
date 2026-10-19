@@ -22,6 +22,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from build_map import rasterize
+from shoreline import load_shoreline
 from fetch_osm import download_region, incomplete_landcover
 from weather import fetch_climate
 from config import load_config
@@ -101,6 +102,7 @@ class ChunkStore:
         self.root = root
         self.cache = cache or root / ".cache" / "travel"
         self.regions = json.loads((root / "data/regions.json").read_text())["regions"]
+        self.shoreline = load_shoreline(root / ".cache/shorelines/gshhs_f.b")
         self.pipeline = hashlib.sha256(
             b"chunk-pipeline-v2" +
             inspect.getsource(chunk_geometry).encode() +
@@ -108,6 +110,8 @@ class ChunkStore:
             inspect.getsource(ChunkStore.source_path).encode() +
             inspect.getsource(ChunkStore.build_locked).encode() +
             (ROOT / "scripts/build_map.py").read_bytes() +
+            (ROOT / "scripts/shoreline.py").read_bytes() +
+            (self.shoreline.sha256.encode() if self.shoreline else b"no-ocean-mask") +
             json.dumps([CHUNK_SIZE, CELL_METERS, load_config()["map"]], sort_keys=True).encode()
         ).hexdigest()
         self.bases = {
@@ -141,6 +145,21 @@ class ChunkStore:
         with self.origin_lock:
             if key in self.bases:
                 progress("cache")
+                data = self.bases[key]
+                expected = self.shoreline.sha256 if self.shoreline else None
+                if ("buildingCoverageThresholdPercent" not in data
+                        or (data.get("oceanCoverage") or {}).get("sha256") != expected):
+                    progress("rasterize")
+                    directory = self.cache / "origins" / key
+                    updated = rasterize(directory / "source.osm.gz", data["name"], CELL_METERS,
+                                        shoreline=self.shoreline)
+                    updated["rows"] = [row[:24] for row in updated["rows"][:24]]
+                    updated["width"] = updated["height"] = 24
+                    updated["origin"] = data["origin"]
+                    if len(updated["rows"]) != 24 or any(len(row) != 24 for row in updated["rows"]):
+                        raise ValueError("Unexpected cached starting map dimensions.")
+                    atomic_write(directory / "map.json", json.dumps(updated).encode())
+                    self.bases[key] = updated
                 return {"region": key, "map": self.bases[key]}
             progress("location")
             place = self.places.reverse(latitude, longitude)
@@ -158,7 +177,7 @@ class ChunkStore:
             root.set("projection_latitude", str(latitude))
             atomic_write(source, gzip.compress(ET.tostring(root), mtime=0))
             progress("rasterize")
-            data = rasterize(source, place["name"], CELL_METERS)
+            data = rasterize(source, place["name"], CELL_METERS, shoreline=self.shoreline)
             data["rows"] = [row[:24] for row in data["rows"][:24]]
             if len(data["rows"]) != 24 or any(len(row) != 24 for row in data["rows"]):
                 raise ValueError("Unexpected starting map dimensions.")
@@ -235,7 +254,7 @@ class ChunkStore:
             root.set("projection_latitude", str(latitude))
             root.attrib.pop("reference_bbox", None)
             atomic_write(source, gzip.compress(ET.tostring(root), mtime=0))
-        data = rasterize(source, self.regions[region]["name"], CELL_METERS)
+        data = rasterize(source, self.regions[region]["name"], CELL_METERS, shoreline=self.shoreline)
         data["rows"] = [row[:CHUNK_SIZE] for row in data["rows"][:CHUNK_SIZE]]
         if len(data["rows"]) != CHUNK_SIZE or any(len(row) != CHUNK_SIZE for row in data["rows"]):
             raise ValueError("Unexpected travel chunk dimensions.")

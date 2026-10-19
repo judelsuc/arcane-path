@@ -22,6 +22,20 @@ OSM_RESPONSE = b"""<osm version="0.6" copyright="OpenStreetMap and contributors"
 
 
 class FetchOsmTests(unittest.TestCase):
+    def test_empty_offshore_osm_is_valid_and_cached_without_invented_nodes(self):
+        empty = b'<osm><bounds minlat="0" minlon="0" maxlat="0.009" maxlon="0.009"/></osm>'
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "sea.osm"
+            with patch("fetch_osm.urllib.request.urlopen", return_value=io.BytesIO(empty)):
+                _, _, reused = download_region([0, 0, 0.009, 0.009], "Sea", output)
+            self.assertFalse(reused)
+            self.assertIsNone(ET.parse(output).getroot().find("node"))
+            with patch("fetch_osm.urllib.request.urlopen", side_effect=AssertionError("No redownload")):
+                self.assertTrue(download_region([0, 0, 0.009, 0.009], "Sea", output)[2])
+        with patch("fetch_osm.urllib.request.urlopen", return_value=io.BytesIO(b"<osm/>")):
+            root, _ = _request_overpass([0, 0, 0.009, 0.009], OVERPASS_URLS[0])
+            self.assertIsNotNone(root.find("bounds"))
+
     def test_overpass_recurses_only_multipolygons_not_long_transport_or_admin_relations(self):
         with patch("fetch_osm.urllib.request.urlopen", return_value=io.BytesIO(OSM_RESPONSE)) as fetch:
             root, _ = _request_overpass([2.34, 48.88, 2.36, 48.90], OVERPASS_URLS[0])

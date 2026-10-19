@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from build_map import build_cached
+from shoreline import load_shoreline
 from fetch_osm import download_region
 from config import load_config
 
@@ -63,7 +64,8 @@ def prepare_region(region, viewport, refresh=False, force=False, root=ROOT):
         bounds, region["name"], source, refresh=refresh,
         reference_bounds=region["referenceBounds"],
     )
-    data, cached_grid = build_cached(source, root / region["map"], region["name"], force=force)
+    data, cached_grid = build_cached(source, root / region["map"], region["name"], force=force,
+                                    shoreline=load_shoreline(root / ".cache/shorelines/gshhs_f.b"))
     print(
         f"{region['name']}: {data['width']} x {data['height']} cells; "
         f"OSM {'cached' if cached_source else 'downloaded'}, "
