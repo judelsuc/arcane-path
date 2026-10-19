@@ -223,7 +223,7 @@ export function washEconomy(state, cell, info, survival, data) {
 }
 
 export function finishAction(previous, next, info, data,
-  { sheltered = false, random = Math.random, survival, activity, outdoorSleep = false } = {}) {
+  { sheltered = false, random = Math.random, survival, activity, outdoorSleep = false, washed = false } = {}) {
   if (previous.ended) throw new Error("This journey has ended.");
   const beforeWeatherFatigue = next.fatigue;
   if (!sheltered) next = applyWeatherExposure(previous, next, info);
@@ -270,7 +270,7 @@ export function finishAction(previous, next, info, data,
         walletBeforeCents: next.walletCents } };
     next = rescue(next);
   }
-  next = advancePressures(previous, next, info, { sheltered, survival, activity });
+  next = advancePressures(previous, next, info, { sheltered, survival, activity, washed });
   if (!next.ended && (next.lore?.rescueReceipts?.length ?? 0) >
       (previous.lore?.rescueReceipts?.length ?? 0)) {
     next = { ...next, pressures: { ...next.pressures, vigilance: 0 } };
@@ -352,7 +352,7 @@ export function sleepEconomy(state, cell, info, shelterId, survival, data,
   if (fullBoard) next = { ...next, reserveKcal: survival.reserve_kcal,
     fatigue: 0, awakeHours: 0, meals: next.meals + 2, ended: null };
   return finishAction(state, next, info, data, { sheltered: Boolean(shelter || sanctuaryShelter), survival,
-    outdoorSleep: !shelter && !sanctuaryShelter });
+    outdoorSleep: !shelter && !sanctuaryShelter, washed: fullBoard });
 }
 
 export function restEffect(state, info, survival, data) {

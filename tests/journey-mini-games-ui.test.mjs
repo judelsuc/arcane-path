@@ -66,6 +66,7 @@ test("actual journey adapter mounts, completes, displays receipt and cleans up a
   assert.equal(ui.open("harvest"), true);
   const dialog = doc.body.children[0];
   assert.equal(dialog.open, true);
+  assert.equal(all(dialog).find(node => node.className === "journey-mini-game__content").dataset.miniGame, "harvest");
   assert.ok(Object.hasOwn(dialog.attributes, "data-native-controls"));
   const start = all(dialog).find(node => node.tagName === "button" && node.textContent === "Start");
   assert.ok(start);
@@ -85,4 +86,26 @@ test("actual journey adapter mounts, completes, displays receipt and cleans up a
   assert.equal(settlements, 1);
   ui.destroy();
   assert.equal(settlements, 1);
+});
+
+test("journey and previews load the same component stylesheet, not preview-only board rules", () => {
+  const games = {
+    harvest: "harvest", workshop: "workshop", sketch: "sketch", market: "market",
+    bookshop: "bookshop", petanque: "petanque", lanterns: "lanterns", lostfound: "lost-found",
+  };
+  const css = readFileSync(new URL("../mini-games.css", import.meta.url), "utf8");
+  assert.doesNotMatch(css, /(?:^|\n)\s*main\s*\{/);
+  for (const [preview, game] of Object.entries(games)) {
+    const html = readFileSync(new URL(`../${preview}-preview.html`, import.meta.url), "utf8");
+    assert.match(html, /rel="stylesheet" href="\.\/mini-games\.css"/);
+    assert.ok(css.includes(`:is(#${preview}-board, [data-mini-game="${game}"])`));
+    assert.ok(!html.includes(`#${preview}-board` + " {"), preview);
+  }
+  for (const file of ["index.html", "tests/journey-games-browser.html"]) {
+    assert.match(readFileSync(new URL(`../${file}`, import.meta.url), "utf8"),
+      /rel="stylesheet" href="\.\.?\/mini-games\.css"/);
+  }
+  assert.match(css, /\.market-art \{[^}]*width: 76px; height: 76px;/);
+  assert.match(css, /\.market-shopping-list \{[^}]*display: flex;/);
+  assert.match(css, /\.market-money-art \{[^}]*width: 90px;[^}]*height: 60px;/);
 });

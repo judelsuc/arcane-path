@@ -6,6 +6,7 @@ import { askHospitality } from "../hospitality.mjs";
 import { startSurvival } from "../survival.mjs";
 import { applyBirthTarot, startEconomy, mealOffers } from "../economy.mjs";
 import { translate } from "../i18n.mjs";
+import { NARRATIVE_BRIEFS } from "../live-narrative.mjs";
 
 const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
 const economy = json("../public/economy.json");
@@ -16,6 +17,57 @@ const town = { terrain: "place", countryCodes: ["FR"],
 const start = offset => applyBirthTarot(startEconomy(startSurvival(14, 10,
   Date.UTC(2026, 9, 17, 12) + offset, "balanced", survival), economy, () => 0), economy);
 
+for (const language of ["en", "fr"]) {
+  test(`${language} hospitality NPC speech uses cached public dialogue without rewording active choices`, async t => {
+    let cached = null, notify;
+    const requested = [];
+    const narrative = {
+      prefetch(_, ids) { requested.push(...ids); },
+      snapshot: () => cached,
+      status: () => "Optional OVH wording status",
+      subscribe(fn) { notify = fn; },
+    };
+    const h = harness(t, language, undefined, undefined, narrative);
+    const before = structuredClone(h.current().state);
+    await h.ui.open("sleep");
+    assert.equal(h.element("#economy-dream-help").hidden, false);
+    assert.equal(h.element("#economy-dream-help").textContent, translate(language, "trailDreamRules"));
+    const [speech, status] = h.element("#economy-shelter-context").siblings;
+    assert.equal(speech.textContent, NARRATIVE_BRIEFS["npc.hospitality.greeting"][language]);
+    const choices = h.buttons().map(button => button.textContent);
+    cached = { en: "“What brings you along this road?”", fr: "« Qu'est-ce qui vous amène sur ce chemin ? »" };
+    notify();
+    h.ui.localize();
+    assert.equal(speech.textContent, NARRATIVE_BRIEFS["npc.hospitality.greeting"][language]);
+    assert.deepEqual(h.buttons().map(button => button.textContent), choices);
+    assert.deepEqual(h.current().state, before);
+    assert.match(status.textContent, /OVH/);
+    h.ui.reset();
+    await h.ui.open("sleep");
+    assert.equal(speech.textContent, cached[language]);
+    assert.ok(requested.every(id => id.startsWith("npc.hospitality.")));
+    assert.equal(h.actions.length, 0);
+    cached = null;
+    h.buttons()[0].click();
+    const outcome = h.current().state.hospitalityAttempts.at(-1).outcome;
+    assert.ok(["hosted", "refused"].includes(outcome));
+    assert.equal(speech.textContent, NARRATIVE_BRIEFS[`npc.hospitality.${outcome}`][language]);
+    assert.ok(h.element("#economy-options").children[0].children[1].textContent.includes(
+      translate(language, `hospitalityResult.${outcome}`, {
+        town: "Firmi", day: "2026-10-17",
+        minutes: Math.round(h.current().state.hospitalityAttempts.at(-1).finishedMinutes),
+      }).split("Firmi")[0]));
+    assert.equal(h.actions.length, 1);
+    cached = { en: `“Cached ${outcome} speech.”`, fr: `« Parole ${outcome} en cache. »` };
+    h.ui.reset();
+    const afterAction = structuredClone(h.current().state);
+    await h.ui.open("sleep");
+    assert.equal(speech.textContent, cached[language]);
+    assert.deepEqual(h.current().state, afterAction);
+    assert.equal(h.actions.length, 1);
+  });
+}
+
 class Element {
   children = [];
   events = {};
@@ -24,6 +76,7 @@ class Element {
   open = false;
   dataset = {};
   append(...children) { this.children.push(...children); }
+  after(...siblings) { this.siblings = siblings; }
   replaceChildren() { this.children = []; }
   addEventListener(type, listener) { this.events[type] = listener; }
   click() { if (!this.disabled) this.events.click?.(); }
@@ -33,7 +86,7 @@ class Element {
   scrollIntoView(options) { this.scrolled = options; }
   setAttribute(name, value) { this[name] = value; }
 }
-function harness(t, language = "en", findAccommodations, selectAccommodation) {
+function harness(t, language = "en", findAccommodations, selectAccommodation, narrative) {
   const original = globalThis.document;
   const elements = new Map();
   const element = selector => {
@@ -54,6 +107,7 @@ function harness(t, language = "en", findAccommodations, selectAccommodation) {
   let current = { state: start(0), cell: town, info, survival, data: economy, blocked: false };
   const actions = [];
   const ui = setupEconomyUI((key, args) => translate(language, key, args), {
+    narrative,
     findAccommodations,
     selectAccommodation,
     context: () => current,
@@ -109,6 +163,61 @@ test("travel to accommodation selects the actual lodging and closes without movi
   assert.deepEqual(h.current().state, before);
   assert.deepEqual(h.actions, []);
 });
+
+for (const language of ["fr", "en"]) {
+  test(`${language} hotels on the player's cell lead nearby and sleep choices without reordering other offers`, async t => {
+    const col = -14, row = 0;
+    const lodging = (id, name, c, r, distance, tourism = "hotel") => ({
+      id: `node/${id}`, osmId: `node/${id}`, name, col: c, row: r, distance, tags: { tourism },
+      credit: "OpenStreetMap contributors", license: "ODbL", source: "OpenStreetMap",
+      sourceUrl: `https://www.openstreetmap.org/node/${id}`,
+      licenseUrl: "https://www.openstreetmap.org/copyright",
+    });
+    const remote = lodging(1, "Closer but in another cell", col + 1, row, 10);
+    const sameCol = lodging(2, "Same column, different row", col, row + 1, 15);
+    const hostel = lodging(3, "Local hostel", col, row, 20, "hostel");
+    const hotel = lodging(4, "Your hotel", col, row, 150);
+    const second = lodging(5, "Second local hotel", col, row, 180);
+    const places = [remote, sameCol, hostel, hotel, second];
+    const before = structuredClone(places);
+    let complete, selected;
+    const h = harness(t, language, (signal, onProgress) => {
+      onProgress({ phase: "maps", cached: { places, warnings: [] }, elapsedSeconds: 0 });
+      return new Promise(resolve => { complete = resolve; });
+    }, place => { selected = place; });
+    h.set({ state: { ...h.current().state, col, row, walletCents: 100000 },
+      cell: { ...town, pois: [hostel, hotel, second] } });
+    const initialState = structuredClone(h.current().state);
+    const opening = h.ui.open("sleep");
+    const names = () => h.element("#accommodation-results").children.map(item => item.children[0].textContent);
+    assert.match(names()[0], /Your hotel/);
+    assert.ok(names()[0].includes(translate(language, "accommodationHere")));
+    assert.match(names()[1], /Second local hotel/);
+    assert.match(names()[2], /Local hostel/);
+    assert.match(names()[3], /Closer but in another cell/);
+    assert.match(names()[4], /Same column, different row/);
+    assert.match(h.buttons()[0].textContent, /Your hotel/);
+    assert.match(h.buttons()[1].textContent, /Second local hotel/);
+    assert.ok(h.buttons()[2].textContent.includes(translate(language, "hospitalityAsk")));
+    assert.ok(h.buttons()[3].textContent.includes(translate(language, "outdoorSleep")));
+    assert.match(h.buttons()[4].textContent, /Local hostel/);
+    complete({ places, warnings: [] });
+    await opening;
+    const labels = h.buttons().map(button => button.textContent);
+    h.ui.localize();
+    assert.deepEqual(h.buttons().map(button => button.textContent), labels);
+    assert.deepEqual(places, before, "display ordering must not mutate cached/provider results");
+    assert.deepEqual(h.current().state, initialState);
+    h.element("#accommodation-results").children[0].children.at(-1).click();
+    assert.equal(selected, hotel);
+    assert.deepEqual(h.actions, [], "selecting a destination must not sleep or charge");
+    const reopening = h.ui.open("sleep");
+    complete({ places, warnings: [] });
+    await reopening;
+    h.buttons()[0].click();
+    assert.deepEqual(h.actions, [{ kind: "sleep", id: hotel.osmId }]);
+  });
+}
 
 test("lodging lookup errors stay visible and the search can be retried", async t => {
   let calls = 0;

@@ -1,5 +1,387 @@
 # Requirements tracked outside the design PDF
 
+## R-163 - Rescue dreams for a traveller who has lost the parent's trail
+
+- A completed deliberate sleep lasting at least 60 minutes permits one check
+  at sleep start plus 60 minutes, at most once per 720 journey minutes.
+- Guarantee guidance after three unsuccessful field searches, including those
+  far from the parent's route, or 1,440 minutes without new parent progress.
+  Otherwise the chance is 50%; persist misses and use a stable draw so reload
+  cannot reroll the same sleep.
+- Give only an eight-way bearing from the sleeping location toward the current
+  stage. Do not reveal its name, coordinates or future stages, promise a
+  traversable route, or teleport the player.
+- Display a bilingual popup after other active dialogs and retain successful
+  dreams on their stage's trail page and in the notebook. Explain the rules in
+  sleep choices. No additional time, money, fatigue or energy cost.
+- Include outdoor, shelter, hotel and accepted hospitality sleeps; exclude
+  ordinary rest, fainting, detention, care and interrupted/terminal sleeps.
+  Existing journeys remain compatible; no historical popup replay on resume.
+- This bounded authored guidance does not activate the unpublished lore
+  playtest, artifact dreams or new model generation.
+
+## R-162 - Varied cached event introductions and truthful status
+
+- Generate three distinct bilingual introductions per ordinary event type
+  and journal owner, in one bounded provider call; rotate the cached versions.
+- Preserve event facts, numerical effects, card rules and all authoritative
+  outcomes. Persist only the chosen presentation index on new event records.
+- Keep the open introduction fixed while reading; identify explicitly whether
+  the displayed introduction is authored or AI-generated, including its version.
+- Preserve historical caches, existing opening stories and hospitality wording.
+  Authored fallback remains available on pending/disabled/failed generation,
+  without automatic retries or a fresh model call at every encounter.
+
+## R-161 - Celebrate reaching a parent-trail stop
+
+- Show a congratulations popup on the first recorded arrival at a parent-trail
+  stop, naming the reached place and parent, without revealing future stops.
+- Offer to open the parent trail or continue travelling. Neither choice
+  performs an investigation, advances time, charges money or grants rewards.
+- Wait for existing dialogs and busy actions; retain survival/event priority.
+  Do not repeat recorded arrivals on revisits or when resuming a saved journey.
+- Localize the popup in French and English and preserve the final reunion UI.
+
+## R-160 - More forest and field mini-games (future)
+
+- Add a forest wildlife-photography mini-game: animals appear and the player
+  tries to photograph them.
+- Add a field sheep-herding mini-game: the player guides a flock of sheep.
+- These are future requirements, not enabled gameplay. Detailed controls,
+  availability, duration, difficulty, rewards and survival costs remain to be
+  designed before implementation.
+
+## R-159 - Current-cell hotel first
+
+- When the player occupies a hotel's cell, show that hotel first in the nearby
+  accommodation suggestions and before hospitality/outdoor sleep actions.
+- Use exact grid column and row, not distance from the cell centre. Keep
+  multiple current-cell hotels together and preserve the order of other offers.
+- Apply this to cached/provisional and completed searches without changing
+  prices, eligibility, source attribution, travel selection or sleep effects.
+
+## R-158 - Recognizable-name flavour in opening backstories
+
+- After the current pending tasks, let the text model recognize a well-known
+  character or public-persona name entered by the player and add subtle,
+  original personality flavour to a new opening backstory.
+- The user explicitly chose model recognition of the entered name, rather
+  than a local curated matching list. This is a deliberate future exception
+  to R-151's current no-player-name prompt boundary. Update the player-facing
+  disclosure before enabling it; do not enable name submission merely by
+  recording this requirement.
+- Use generic traits in original prose, not copied dialogue, lyrics, signature
+  passages or a claim that the traveller is the named character/person.
+  If recognition is uncertain, keep the ordinary backstory; do not infer
+  sensitive personal attributes from names.
+- This changes narrative flavour only. Preserve the saved parent's identity,
+  departure motive, child-traveller premise, clues, route, powers and statistics.
+- Apply only when generating a new story. Retain already saved stories and
+  the existing single-attempt, higher-temperature and authored-fallback rules.
+
+## R-157 - Window background follows journey time
+
+- Use distinct night, dawn, daytime and dusk background colours during travel,
+  driven by simulated journey time, not wall-clock time or an idle timer.
+- Reuse the existing location/season-aware solar calculation; dawn and dusk
+  colours apply within 45 minutes of sunrise/sunset. Preserve polar day/night.
+- Tint the window and map surfaces without changing terrain symbols, gameplay,
+  weather-temperature colours or readable text contrast.
+- Keep the title/setup background unchanged and clear the travel theme on exit.
+
+## R-156 - Content-factory map tile sets (future)
+
+- Extend the content factory to generate map tile sets for the optional map
+  skins, including the square pixel-art skin in R-155.
+- Generate coherent sets in the chosen palette, not unrelated images for
+  individual cells. Keep terrain, roads, railways, buildings and overlays
+  distinguishable without changing map data or gameplay.
+- Generate a fresh coherent map tile set daily. The scheduling time and
+  publication/review policy remain to be decided.
+- This is a future requirement: recording it does not enable generation,
+  select a provider, authorize spending or replace the existing ASCII map.
+
+## R-155 - Optional pixel-art map skin
+
+- After the pending factory/living-world releases and map fixes, add an
+  optional square-icon skin alongside ASCII, not a replacement.
+- Use simple pixel-art tiles in the game's palette; existing web tilesets
+  are an approved alternative to drawing or generating every tile. Prefer
+  clearly reusable assets (such as CC0), verify each pack's licence and retain
+  required notices/attribution. Check terrain coverage and readability before
+  selecting a pack; fill gaps without implying unsupported map detail.
+- Candidate sources: Kenney's Tiny Town and 1-Bit Pack, whose official pages
+  list Creative Commons CC0. No pack has been selected or installed yet.
+- Persist the choice locally. Both skins share exactly the same grid, terrain, movement,
+  player, clues, selection, accessibility and geographic scale.
+
+## R-154 - Sea coverage and aggregated urban blocks
+
+- Recognize open sea rather than blank unmapped land, including chunks without
+  a locally closed coastline. Preserve the existing water movement rules;
+  the user explicitly chose a display fix, not new swimming restrictions.
+- Show substantial mapped-building coverage as urban blocks at 250 m scale.
+  Preserve major roads, railways, water and landmarks rather than allowing
+  a single small house to paint a whole cell.
+- Initial implementation uses a 15% union-of-footprints threshold, excluding
+  courtyards and overlaps; expose the sampled coverage in cell inspection.
+
+## R-152 - Daily shared start-page illustration
+
+- Generate one image per real-world day at 05:00 Europe/Paris, independent of
+  player journeys, using a server-side scheduled job.
+- Rotate imaginary European landscapes and a daily tarot motif in the
+  notebook's ink-and-watercolour style. Do not use player data or hidden clues.
+- Show the same published illustration to all visitors, with AI/model/date
+  attribution. Keep the previous image on generation failure and the authored
+  title illustration before the first successful generation.
+- Use only the existing verified-free OVH SDXL image endpoint; stop if free
+  pricing cannot be confirmed. No paid fallback or automatic same-day retry.
+- Persist attempts and completed images; survive reloads/restarts without
+  duplicate calls. Retain archived images and log explicit failures.
+
+## R-151 - Varied starting backstory around saved canonical facts
+
+- Generate fresh FR/EN prose explaining the parent
+  being sought and their departure, preserving the saved parent name, motive,
+  investigation and hidden route.
+- User approved starting place name, broad landscape, birth tarot card and
+  season as prompt context, not player identity, private notes or future stops.
+- Use a higher story-specific model temperature for variety, without promising
+  unique output. Persist one story per journey/keeper; no reload regeneration.
+- Keep authored text usable while pending or on explicit failure.
+- Show the backstory after the starting place/character and birth-card reveal,
+  before the first gameplay action, not on the title page. Provide a reread
+  action; preserve the cached bilingual story on reload.
+
+## R-153 - Stack player meters directly beneath agenda and weather
+
+- Health, hunger, fatigue, sleep, vigilance and cleanliness meters follow the
+  agenda/weather panel immediately, without character, wallet, equipment,
+  food, tarot or outdoor-status paragraphs in between.
+- Keep those secondary details below the meters, preserving all values and
+  actions on desktop and small screens.
+
+## R-150 - Serve the notebook journey map through the preview proxy
+
+- Preserve cache-only terrain lookup and explicit errors; do not hide HTTP 404
+  behind a blank or invented map.
+- Allow `GET /api/journey-terrain` through nginx to the existing terrain handler.
+  Explicitly allow the shared mini-game stylesheet as well; keep private files,
+  unknown routes and disallowed methods blocked.
+- Installing game files alone is insufficient: the deployed nginx allowlist
+  must also be updated, checked and reloaded.
+
+## R-149 - Larger Lost and Found item illustrations
+
+- Enlarge item choice cards and original vector illustrations, including
+  close-up inspection. Use two columns on small screens rather than tiny
+  compact inline buttons; preserve image proportions and visible details.
+- Keep the existing 15-second clock, scoring, keyboard controls and gameplay.
+
+## R-148 - Always-visible vigilance level
+
+- Move the existing live vigilance meter and numeric percentage into the
+  player-status overview below the calendar, outside collapsed pressure details.
+- Keep a single meter/value pair and preserve the existing thresholds, updates,
+  translations and secondary pressure information.
+
+## R-147 - Readable sketch model and final comparison
+
+- Keep the observation model and both final drawings large and equally sized.
+  Symbols use 36-52 px rather than shrinking the result into miniature text.
+- Stack the two final drawings below 640 px; preserve every coloured cell,
+  keyboard controls, observation time, scoring and hidden-model rules.
+- Share the styling between the journey host and standalone preview.
+
+## R-146 - Resume in a nearby town after a stay in care
+
+- User selected the nearest named settlement cell in already loaded/prepared
+  terrain, not a new online lookup or an assurance of the nearest real town.
+- Relocate after the first two placements only; retain the third-placement
+  game-over rule, 24-hour care duration, money loss and interrupted-action rules.
+- Persist the recovery town separately from the triggering cell. Update the
+  pressure sector, map and save; do not add walking distance for the transfer.
+- If no named town is prepared, fail the triggering action explicitly without
+  applying it, so terrain can be loaded and the action retried.
+- Preserve historical placement records without inventing recovery locations.
+
+## R-145 - Fatigue and sleep warning dialogs
+
+- Add warnings analogous to hunger at the existing configured fatigue and
+  awake-hours warning thresholds, with localized recovery advice and actions.
+- Show once per episode; rearm below each independent threshold. Defer while
+  another dialog is open and preserve death, placement, collapse and health
+  priority. These are warnings, not terminal fatigue/sleep outcomes.
+
+## R-144 - Expand large mapped sites and their gameplay relevance
+
+- Add cemeteries, airports, stadiums and malls, plus the user-selected hospitals,
+  universities, industrial sites, ports/marinas, large parks/botanical gardens,
+  zoos/theme parks, castles/major historic sites and exhibition/convention centres.
+- The user wants these sites to affect movement or available actions, not just
+  decoration. Reuse mapped OSM geometry and provenance.
+- **Status:** pending design confirmation and implementation. Walking/access
+  rules and which existing/new actions to expose remain undecided; do not
+  silently block entire 250 m cells or imply unrestricted real-world access.
+
+## R-143 - Visible cleanliness and washing during sheltered stays
+
+- Reuse the saved 0-100 cleanliness value; show its meter and the existing
+  washing button outside the collapsed vigilance panel, below the calendar
+  with the other main player-status meters.
+- A completed stay in paid non-camping lodging or successful hospitality,
+  including worship-place hospitality, restores cleanliness to 100 without
+  extra time or payment. Basic shelters and tents keep partial recovery.
+- Refused requests and interrupted stays do not provide a full wash.
+  Standalone washing retains its existing availability, price and duration.
+
+## R-142 - Start with a vague parent-trail direction
+
+- A fresh progressive journey begins with one uncertain, eight-way directional
+  lead towards the first stage, anchored at the saved starting point.
+- Show it immediately in the trail guide and first evidence page; retain it
+  through movement and save/resume and synchronize it to the discovery ledger.
+- Do not reveal a town name, distance, exact destination, route or later stage.
+  No search, time, money or resource is charged for this opening lead.
+- Preserve known destinations on legacy journeys. Existing search evidence and
+  progression rules are unchanged; further precision must still be earned.
+
+## R-141 - Optional live travel introductions and NPC dialogue
+
+- **19 October 2026:** generate brief FR/EN wording through the previously
+  tested OVH `Mistral-Small-3.2-24B-Instruct-2506`, using an explicitly enabled
+  private server key. No other provider, freeform chat, payment or donation
+  feature. Paid calls are authorized without a lifetime/aggregate call cap;
+  the separate workshop's 20-attempt trial remains unchanged.
+- Cover ordinary non-story travel introductions and hospitality NPC
+  greeting/accepted/refused speech in the actual travel and shelter UI.
+  Exclude lore, riddles, puzzles, witnesses, hints, hidden discoveries, story
+  encounters and the dog's adoption choice. No change to eligibility,
+  rewards, choices, checks, costs, outcomes or earned evidence permissions.
+- Send only bounded public briefs from `public/narrative-briefs.json`,
+  selected by server registry identifier. Never send a save, player name,
+  notes, coordinates, source code, private facts or client-supplied prompt.
+- Authored introductions, dialogue, numerical effects and action labels stay
+  immediately usable. Prefetch asynchronously; snapshot available wording
+  when opening an encounter. Late results do not replace active text or
+  choices. Hospitality outcome speech changes only after the authored action
+  has settled. Cache one bilingual wording per owner/brief/version.
+- Authenticate using the existing journey/journal capability and keeper
+  ownership checks. Durable owner-isolated SQLite deduplication, call/token
+  accounting and queued work survive restart. Failed or interrupted attempts
+  never automatically retry; unknown billing remains explicitly unknown.
+  Bound concurrency (one), pending queue (32), input/output and timeouts,
+  rather than imposing an aggregate call allowance.
+- Show localized disabled/pending/cached/failure status and log provider
+  failures. Missing key makes no provider call. Structured JSON and size
+  checks enforce format, **not semantic correctness**; generated wording
+  must never be treated as game authority. Setup, prices and limits:
+  [CONTENT_FACTORY.md](CONTENT_FACTORY.md#live-game-wording-r-141).
+
+## R-140 - Wikipedia-informed text-to-image fallback
+
+- **19 October backup idea:** use the local Wikipedia description as context
+  for the cover or daily illustration prompt when genuine photo-conditioned
+  generation is unavailable. This is text-to-image, not photo transformation,
+  and does not replace the postponed R-139 requirement.
+- Extract a short, bounded set of visible setting facts from the local article,
+  such as landscape, architecture and landmarks; write an original visual
+  brief rather than copying article prose or sending the full article.
+  Treat retrieved content as untrusted data, never prompt instructions.
+- Combine the setting with the birth card for a permanent cover, or that day's
+  card plus recorded events and earned discoveries for a daily page. Wikipedia
+  context is decorative atmosphere, not earned game evidence or new clues.
+- Preserve the source article link and attribution, and review applicable
+  licence obligations. If no usable local description exists, retain the
+  tarot/events-only option with an explicit unavailable-context status.
+- Before enabling, review the external-data boundary: place descriptions can
+  identify the in-game location even without coordinates. Do not silently
+  relax R-137's coarse-location-only policy or send private player data.
+- **Status:** one user-requested live feasibility sample tested successfully
+  with public Annecy setting facts plus Temperance; location cues and tarot
+  details were only partially followed. Automatic extraction and game
+  integration are not implemented or enabled. Retain the existing per-request
+  zero-price check and no paid fallback. See the trial observations in
+  [the content factory notes](./CONTENT_FACTORY.md#backup-idea-local-wikipedia-context-r-140-not-implemented).
+
+## R-139 - Choose a local photograph as the illustration reference
+
+- **19 October confirmed refinement:** before generating a permanent journal
+  cover or daily memory image, ask the player to choose their favourite photo
+  of the current location from the game's local-photo results. This means
+  game-offered location photographs, not device uploads or arbitrary files.
+- For the permanent cover, use the selected photograph as a visual reference
+  plus the **birth card**. Keep the finished cover for that journey.
+- For each completed in-game UTC day, offer photographs of the player's
+  location when that day ends and use **that day's card**. Preserve the
+  selection opportunity while generation runs asynchronously; do not block play.
+- If the player skips selection, generate from tarot, recorded daily events
+  and already-earned discoveries instead. Do not invent events or expose
+  locked interpretations, future targets, private notes or journal contents.
+- Photo-based generation requires an image-conditioned provider; a description
+  of a photograph is not equivalent to using the photograph as the image base.
+  The currently verified free OVH SDXL API documents text-to-image only.
+  Provider capability and price must be established before implementation;
+  never silently substitute a paid model or pretend text-only generation is
+  image-to-image.
+- Preserve source/author/licence and comply with derivative-use conditions.
+  Explain external processing and obtain confirmation before sending any
+  chosen photo to a provider. Never send capability secrets or photo-location
+  metadata with the image. No uploaded private photographs are authorized.
+- **Status:** explicitly postponed by the user after feasibility/cost review;
+  photo selection and image-conditioned generation are not implemented.
+  No new provider or paid trial is authorized. Supersedes automatic generation
+  before the selection/skip decision in R-137; existing image prototype is not
+  this flow.
+
+## R-138 - Explore synthesized NPC dialogue voices
+
+- **19 October idea:** use AI-generated voices for people the player talks to.
+- Whisper is transcription, not synthesis. A future text-to-speech slice
+  should cache audio from already-approved, permitted dialogue and use
+  fictional voices. Check French support, provider prices and licences first.
+- **Status:** recorded for a later increment; no voice generation enabled.
+
+## R-137 - Personalized cover and illustrated daily journal memories
+
+- **19 October confirmed choices:** personalize illustrations with birth/day
+  tarot motifs and broad surroundings, never player identity or exact location.
+- Generate one permanent cover per journey. Add a separate dated illustrated
+  memory for each completed in-game UTC calendar day; do not replace the cover.
+- Generate asynchronously without delaying gameplay. Store results durably;
+  insert finished art into the scoped journal when it is available. Include
+  generated cover and daily pages in PDF exports and published snapshots.
+- Derive daily activity tags from recorded observations, not invented events.
+  Mark partial observation on existing journeys; do not fabricate old days.
+  Main-game browser observations remain decorative, not authoritative evidence.
+- Use the currently free OVH SDXL offer only, recheck pricing before generation,
+  stop explicitly on unavailable/paid offers, and never use a paid fallback.
+  Preserve provenance, licence and AI attribution. Bound queue, output and
+  storage; prevent duplicate cover/day generation across sync and restart.
+- No real-player data, private notes or hidden clues go to OVH.
+- See [implementation and operational limits](./CONTENT_FACTORY.md#personalized-journal-illustrations).
+
+## R-136 - Start small with live OVH content generation
+
+- **19 October request:** start the content factory before pushing the release;
+  use OVH AI services to generate riddles, rumours and related expression live.
+- **Confirmed first slice:** a separate local writing workshop, not an in-game
+  integration; manually trigger up to 20 provider attempts for the trial.
+- Generate FR/EN rumour and riddle drafts from fixed fictional, permitted
+  fact bundles. Preserve uncertainty, precision ceilings and locked plain
+  guidance. No player saves, private journal content or source code is sent.
+- Keep the OVH access key server-side, outside Git and Terraform state. Use
+  AI Endpoints, not a newly provisioned GPU VM. Confirm model pricing before
+  enabling paid calls.
+- Persist request reservations, successes/failures, actual reported token
+  usage and explicit editorial acceptance. Never automatically retry paid
+  generation. Export accepted sample drafts without publishing into the game.
+- This supersedes the earlier offline-only restriction for this local workshop.
+  Main-game generation, factual validation, puzzle answer contracts and
+  production deployment remain separate. See the
+  [workshop setup and boundaries](./CONTENT_FACTORY.md).
+
 ## R-135 - Complete the remaining sixteen artifact powers before release
 
 - **19 October confirmed request:** do not stop after another small batch;
@@ -296,8 +678,11 @@
 
 ## R-122 - Real European living-world sources and photos
 
-- **Still pending:** The living-world preview remains fictional-only; connected
-  real sources and their licensed photos are not included in this release.
+- The connected preview uses bounded OpenAgenda searches (20 km/seven days),
+  explicit coverage/freshness/provenance, optional attributed openly licensed
+  Commons photographs labelled illustrative, and the existing European
+  transport source explorer/hybrid. It is reachable from Options and does not
+  activate public events or transit in normal journey saves.
 - Replace the fictional-only living-world preview with connected real public
   sources usable across Europe. Show actual geographic/provider coverage,
   freshness, source attribution and failures; never imply universal local-event

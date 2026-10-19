@@ -14,6 +14,9 @@ const TEXT_KEYS = Object.freeze({
 });
 
 export function discoveryClueText(entry, state, t) {
+  if (entry.targetType === "parent-trail" && entry.source === "parent-sleep-dream") {
+    return t("trailDreamText", { direction: t(`hintCompass.${entry.facts.direction}`) });
+  }
   const templates = Object.hasOwn(TEXT_KEYS, entry.targetType) ? TEXT_KEYS[entry.targetType] : null;
   const key = templates && Object.hasOwn(templates, entry.kind) ? templates[entry.kind] : null;
   if (!key) throw new Error("Unsupported discovery presentation.");

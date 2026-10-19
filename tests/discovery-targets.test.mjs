@@ -10,6 +10,7 @@ import { startSurvival } from "../survival.mjs";
 import { startEconomy } from "../economy.mjs";
 import { createTrail } from "../trail.mjs";
 import { translate } from "../i18n.mjs";
+import { discoveryNotebookEntries } from "../discovery-ui.mjs";
 
 const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
 const map = json("../public/map.json"), survival = json("../public/config.json").survival;
@@ -24,6 +25,24 @@ function parent() {
         { stage: 0, kind: "prefix", precision: "vague", col: 0, row: 0, elapsedMinutes: 20 },
       ] } } };
 }
+
+test("parent rescue dreams project only their earned bearing into the notebook and PDF entries", () => {
+  const state = parent();
+  state.trail.dreams = { version: 1, checks: [
+    { stage: 0, direction: "west", outcome: "guidance", elapsedMinutes: 60, checkMinutes: 60 },
+    { stage: 0, direction: null, outcome: "miss", elapsedMinutes: 60, checkMinutes: 0 },
+  ] };
+  const result = synchronizeParentDiscovery(state);
+  const entry = result.discovery.entries.find(entry => entry.source === "parent-sleep-dream");
+  assert.deepEqual(entry.facts, { direction: "west" });
+  assert.deepEqual(entry.channels, ["dream"]);
+  assert.equal(JSON.stringify(entry).includes("Secret Paris"), false);
+  for (const language of ["fr", "en"]) {
+    assert.ok(discoveryNotebookEntries(result, t(language)).some(record =>
+      record.text === translate(language, "trailDreamText", { direction: translate(language, "hintCompass.west") })));
+  }
+  assert.equal(synchronizeParentDiscovery(result), result);
+});
 const journal = (overrides = {}) => ({ id: "a".repeat(32), parent: "Other parent",
   history: ["Earlier town"], stages: [{ name: "Journal town", latitude: 44, longitude: 2 },
     { name: "Next journal town", latitude: 45, longitude: 3 }], step: 0, delivered: false,
@@ -173,13 +192,21 @@ test("a real parent field search settles identically and shared knowledge persis
       sourceUrl: "https://overpass-api.de/api/interpreter", retrievedAt: "2026-10-17T12:00:00Z",
       witnessId: `fictional-traveler-${index + 1}`,
     })), index: 0, completed: false, history: [] } });
+  const initial = synchronizeParentDiscovery(state);
+  assert.equal(initial.discovery.entries.length, 1);
+  assert.equal(initial.discovery.entries[0].source, "parent-opening-lead");
+  assert.equal(initial.discovery.entries[0].precision, "vague");
+  assert.deepEqual(initial.discovery.entries[0].facts, { direction: "east" });
+  assert.equal(initial.discovery.entries[0].observedMinutes, 0);
+  assert.equal(JSON.stringify(initial.discovery).includes("Town"), false);
+  assert.equal(synchronizeParentDiscovery(initial), initial);
   const result = await prepareFieldSearch(state, cell, async () => null, new AbortController().signal,
     { random: () => 0, proximity: async () => 0 });
   const settled = applyFieldSearch(state, result, cell, info, survival, economy);
   const synchronized = synchronizeParentDiscovery(settled);
   const { discovery, ...unchanged } = synchronized;
   assert.deepEqual(unchanged, settled);
-  assert.equal(discovery.entries.length, 1);
+  assert.equal(discovery.entries.length, 2);
   const save = createSave({ region: "firmi", map, state: synchronized, survival, economy }, 1);
   assert.deepEqual(validateSave(JSON.parse(JSON.stringify(save))).state, synchronized);
   const bad = structuredClone(save);

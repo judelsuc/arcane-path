@@ -2,6 +2,18 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { mount } from "../minigames/lost-found-ui.mjs";
 import { objectIllustration } from "../minigames/lost-found-art.mjs";
+import { readFileSync } from "node:fs";
+
+test("large item artwork uses roomy choice cards, a two-column mobile grid and a larger close-up", () => {
+  const css = readFileSync(new URL("../mini-games.css", import.meta.url), "utf8");
+  assert.match(css, /\.lost-found-choices \{[^}]*minmax\(min\(100%, 210px\), 1fr\)/);
+  assert.match(css, /\.lost-found-art \{ display: block; width: 100%; max-width: 260px; height: auto;/);
+  assert.match(css, /\.lost-found-inspection \.lost-found-art \{ max-width: 320px;/);
+  assert.match(css, /@media \(max-width: 640px\) \{\s*[^{]+\.lost-found-choices \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  const f = fixture();
+  assert.ok(f.all().find(node => node.className === "lost-found-choices"));
+  f.api.destroy();
+});
 
 // Small DOM contract fixture with a controlled clock: no dependencies or network.
 class Element {

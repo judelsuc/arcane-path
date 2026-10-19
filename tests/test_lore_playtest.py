@@ -1,4 +1,5 @@
 import collections
+from datetime import datetime, timezone
 import json
 import subprocess
 import sys
@@ -33,8 +34,10 @@ class LorePlaytestTests(unittest.TestCase):
         self.journey, self.token = self.source()
 
     def source(self):
-        record, _ = self.journeys.create({
-            "requestId": str(uuid.uuid4()), "region": "firmi", "name": "Alex"})
+        with patch("journeys.datetime", wraps=datetime) as clock:
+            clock.now.return_value = datetime(2026, 10, 19, 12, tzinfo=timezone.utc)
+            record, _ = self.journeys.create({
+                "requestId": str(uuid.uuid4()), "region": "firmi", "name": "Alex"})
         journey = record["state"]["serverJourney"]["id"]
         token = uuid.uuid4().hex + uuid.uuid4().hex
         self.abandoned.bind(journey, token)
@@ -511,7 +514,8 @@ class LorePlaytestTests(unittest.TestCase):
         started = self.request()
         view = self.act(started, {"type": "inquire-clue"})
         self.assertEqual(view["state"]["elapsedMinutes"], started["state"]["elapsedMinutes"])
-        entry = view["state"]["discovery"]["entries"][0]
+        entry = next(entry for entry in view["state"]["discovery"]["entries"]
+                     if entry["targetType"] == "abandoned-journal")
         self.assertEqual(entry["targetType"], "abandoned-journal")
         self.assertEqual(entry["targetId"], author)
         self.assertEqual(set(entry["facts"]), {"parent", "observedCol", "observedRow"})
@@ -525,7 +529,9 @@ class LorePlaytestTests(unittest.TestCase):
         self.abandoned.request({"journey": finder, "col": 14, "row": 10,
                                 "action": "claim", "journal": author}, finder_token)
         updated = self.request()
-        self.assertEqual(updated["state"]["discovery"]["entries"][0]["availability"], "unavailable")
+        updated_entry = next(entry for entry in updated["state"]["discovery"]["entries"]
+                             if entry["targetId"] == author)
+        self.assertEqual(updated_entry["availability"], "unavailable")
         self.assertNotIn(finder, json.dumps(updated))
         self.assertEqual(self.abandoned.discovery_rumours(self.journeys.read(self.journey), 14, 10), [])
         self.assertEqual(self.abandoned.discovery_rumours(self.journeys.read(author), 14, 10), [])
@@ -545,7 +551,8 @@ class LorePlaytestTests(unittest.TestCase):
             return result
         with patch.object(self.lore, "worker", side_effect=worker):
             result = self.act(view, {"type": "inquire-clue"})
-        entry = result["state"]["discovery"]["entries"][0]
+        entry = next(entry for entry in result["state"]["discovery"]["entries"]
+                     if entry["targetType"] == "abandoned-journal")
         self.assertEqual(entry["targetType"], "abandoned-journal")
         self.assertEqual(entry["availability"], "unavailable")
         self.assertNotIn("f" * 32, json.dumps(result))

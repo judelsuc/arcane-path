@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { settlementView } from "../towns.mjs";
+import { settlementView, nearestSettlement } from "../towns.mjs";
 import { createContentService, contentKey } from "../cell-content.mjs";
 
 const settlement = { osmId: "node/10", name: "Firmi", wikipedia: null };
@@ -28,6 +28,33 @@ const page = (title = "Firmi", overrides = {}) => ({
 const response = pages => new Response(JSON.stringify({ query: {
   pages: Object.fromEntries(pages.map((entry, index) => [index, entry])),
 } }));
+
+test("placement finds the nearest usable named town cell, not a POI, water or unavailable cell", () => {
+  const data = { width: 4, height: 4,
+    rows: Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => ({ terrain: "plain" }))) };
+  data.rows[0][0] = { terrain: "place", settlements: [{ ...settlement, name: "Farther" }] };
+  data.rows[1][1] = { terrain: "place", settlements: [settlement], unavailable: true };
+  data.rows[1][2] = { terrain: "water", settlements: [settlement] };
+  data.rows[2][1] = { terrain: "place", settlements: [{ ...settlement, name: " " }] };
+  data.rows[2][2] = { terrain: "plain", pois: [poi(10)] };
+  data.rows[3][3] = { terrain: "place", settlements: [settlement] };
+  const before = structuredClone(data);
+  assert.deepEqual(nearestSettlement({ col: 2, row: 2 }, [data]), { col: 3, row: 3, town: "Firmi" });
+  assert.deepEqual(nearestSettlement({ col: 3, row: 3 }, [data]), { col: 3, row: 3, town: "Firmi" });
+  assert.equal(nearestSettlement({ col: 0, row: 0 }, []), null);
+  assert.deepEqual(data, before);
+});
+
+test("nearest town accounts for negative streamed coordinates and resolves ties independently of chunk order", () => {
+  const chunk = x => ({ chunk: { x, y: -1 }, width: 8, height: 8,
+    rows: Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => ({ terrain: "plain" }))) });
+  const left = chunk(-1), right = chunk(0);
+  left.rows[4][7] = { terrain: "place", settlements: [settlement] };
+  right.rows[4][1] = { terrain: "place", settlements: [{ ...settlement, name: "Other" }] };
+  const expected = { col: -1, row: -4, town: "Firmi" };
+  assert.deepEqual(nearestSettlement({ col: 0, row: -4 }, [left, right]), expected);
+  assert.deepEqual(nearestSettlement({ col: 0, row: -4 }, [right, left]), expected);
+});
 
 test("only real named public-facing POIs within 2km enter the settlement menu", () => {
   const data = map([

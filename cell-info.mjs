@@ -17,6 +17,7 @@ export function cellInfo(map, row, col) {
     terrain: map.rows[row][col].terrain,
     countryCodes: map.rows[row][col].countryCodes ?? [],
     waterCoveragePercent: map.rows[row][col].waterCoveragePercent ?? 0,
+    buildingCoveragePercent: map.rows[row][col].buildingCoveragePercent ?? 0,
     waterways: map.rows[row][col].waterways ?? [],
     names: map.rows[row][col].names ?? [],
     pois: map.rows[row][col].pois ?? [],

@@ -34,6 +34,42 @@ test("terminal notice replaces hunger warning, supports ended saves, and does no
   assert.equal(createNeedsNotices().pending({ ...state(100), ended: "reunion" }, config), null);
 });
 
+for (const [kind, field, threshold] of [
+  ["fatigueWarning", "fatigue", config.warning_percent],
+  ["sleepWarning", "awakeHours", config.sleep_warning_hours],
+]) {
+  test(`${kind} uses the exact configured threshold, waits until shown, and rearms after recovery`, () => {
+    const notices = createNeedsNotices();
+    const below = { ...state(20), fatigue: 0, awakeHours: 0, [field]: threshold - 0.01 };
+    const above = { ...below, [field]: threshold };
+    const before = structuredClone(above);
+    assert.equal(notices.pending(below, config), null);
+    assert.equal(notices.pending(above, config), kind);
+    assert.equal(notices.pending(above, config), kind);
+    notices.shown(kind);
+    assert.equal(notices.pending({ ...above, [field]: threshold + 1 }, config), null);
+    assert.equal(notices.pending(below, config), null);
+    assert.equal(notices.pending(above, config), kind);
+    assert.equal(createNeedsNotices(above).pending(above, config), kind);
+    assert.deepEqual(above, before);
+  });
+}
+
+test("need warnings queue without hiding hunger, collapse, placement or terminal notices", () => {
+  const notices = createNeedsNotices();
+  const all = { ...state(80), fatigue: config.warning_percent, awakeHours: config.sleep_warning_hours };
+  assert.equal(notices.pending(all, config), "warning");
+  notices.shown("warning");
+  assert.equal(notices.pending(all, config), "fatigueWarning");
+  notices.shown("fatigueWarning");
+  assert.equal(notices.pending(all, config), "sleepWarning");
+  notices.shown("sleepWarning");
+  assert.equal(notices.pending(all, config), null);
+  assert.equal(notices.pending({ ...all, faints: 1 }, config), "fainted");
+  assert.equal(notices.pending({ ...all, faints: 1, pressures: { placements: [{}] } }, config), "placed");
+  assert.equal(notices.pending({ ...all, ended: "health" }, config), "health");
+});
+
 test("resume does not replay historical placements or faints, but new episodes and current warnings remain visible", () => {
   const restored = { ...state(20), faints: 2, pressures: { placements: [{}] } };
   const notices = createNeedsNotices(restored);
@@ -85,6 +121,7 @@ for (const locale of ["fr", "en"]) {
       querySelector(selector) { return selector === "img" ? this.children.find(c => c.tag === "img") : null; }
       showModal() { this.open = true; }
       close() { this.open = false; this.events.close?.(); }
+      click() { this.clicks = (this.clicks ?? 0) + 1; this.events.click?.(); }
     }
     const elements = new Map(), element = key => {
       if (!elements.has(key)) elements.set(key, new Element());
@@ -138,8 +175,32 @@ for (const locale of ["fr", "en"]) {
     await tick();
     assert.equal(element("#needs-notice-title").textContent, tr("deathTitle"));
     assert.equal(element("#needs-notice-actions").hidden, true);
+    for (const [kind, field, threshold, action] of [
+      ["fatigue", "fatigue", config.warning_percent, "rest"],
+      ["sleep", "awakeHours", config.sleep_warning_hours, "sleep"],
+    ]) {
+      ui.reset();
+      current.state = { ...state(20), fatigue: 0, awakeHours: 0, [field]: threshold };
+      otherDialog = true;
+      await tick();
+      assert.equal(element("#needs-notice-dialog").open, false);
+      otherDialog = false;
+      await tick();
+      assert.equal(element("#needs-notice-title").textContent, tr(`${kind}WarningTitle`));
+      assert.equal(element("#needs-notice-text").textContent, tr(`${kind}WarningText`, {
+        threshold: config.warning_percent, hours: config.sleep_warning_hours,
+      }));
+      assert.equal(element("#needs-notice-cell").hidden, true);
+      assert.equal(element("#needs-notice-actions").hidden, false);
+      assert.equal(element("#needs-notice-sleep").hidden, false);
+      element(`#needs-notice-${action}`).events.click();
+      assert.equal(element("#needs-notice-dialog").open, false);
+      assert.equal(element(`#${action}-travel`).clicks, 1);
+      await tick();
+      assert.equal(element("#needs-notice-dialog").open, false);
+    }
     ui.reset();
-    const placement = { lostCents: 250, trigger: {
+    const placement = { lostCents: 250, recovery: { col: 17, row: 10, town: "Recovery Town" }, trigger: {
       vigilanceBefore: 99.5, minutes: 10, tarotFactor: 1,
       factors: { ...Object.fromEntries(PLACEMENT_FACTORS.map(key => [key, 0])), urban: 0.5 },
     } };
@@ -151,6 +212,7 @@ for (const locale of ["fr", "en"]) {
     assert.ok(explanation.includes("100"));
     assert.ok(explanation.includes(tr("placementCause.urban")));
     assert.ok(explanation.includes("2.50"), "the actual money loss stays visible beside its reason");
+    assert.ok(explanation.includes(tr("placementRecovery", { town: "Recovery Town" })));
     ui.reset(current.state);
     await tick();
     assert.equal(element("#needs-notice-dialog").open, false, "resuming cannot reannounce this historical placement");

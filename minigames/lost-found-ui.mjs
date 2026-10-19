@@ -81,6 +81,7 @@ export function mount(container, { level = 0, language = "fr", onFinish = () => 
   const report = make("p", "");
   report.tabIndex = -1;
   const choices = make("div", "");
+  choices.className = "lost-found-choices";
   const inspection = make("div", "");
   inspection.className = "lost-found-inspection";
   inspection.hidden = true;

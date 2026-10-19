@@ -2,8 +2,9 @@ import { mealOffers, marketPrice, shelters, tarotEventChance } from "./economy.m
 import { HOSPITALITY_RULES, hospitalityStatus, worshipPlaces } from "./hospitality.mjs";
 import { socialFailureChance } from "./pressures.mjs";
 import { setFeedback } from "./feedback.mjs";
+import { NARRATIVE_BRIEFS } from "./live-narrative.mjs";
 
-export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodations, selectAccommodation }) {
+export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodations, selectAccommodation, narrative }) {
   const dialog = document.querySelector("#economy-dialog");
   let mode = "eat";
   let resolving = false, countryError = "", generation = 0;
@@ -12,6 +13,22 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
   let accommodationProgress;
   let accommodationPartial = false;
   let accommodationCachedKey;
+  let speechKey, speech, speechBrief;
+  const npcSpeech = narrative ? document.createElement("p") : null;
+  const npcStatus = narrative ? document.createElement("p") : null;
+  if (npcSpeech) {
+    npcSpeech.id = "economy-npc-dialogue";
+    npcStatus.id = "economy-npc-wording-status";
+    npcStatus.setAttribute("role", "status");
+    document.querySelector("#economy-shelter-context").after(npcSpeech, npcStatus);
+  }
+  function speechStatus() {
+    if (!npcStatus || !speechBrief || !dialog.open) return;
+    const current = context();
+    if (current) npcStatus.textContent = narrative.status(current.state, speechBrief,
+      document.documentElement.lang);
+  }
+  narrative?.subscribe(speechStatus);
   const money = cents => `${(cents / 100).toFixed(2)} ${t("gameMoney")}`;
   const hospitalityResult = result => t(`${result.placeKind === "worship" ? "worshipResult" : "hospitalityResult"}.${result.outcome}`, {
     town: result.townName, day: result.day,
@@ -34,6 +51,9 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       hours: (state.outdoorNightMinutes / 60).toFixed(1),
     });
     if (!dialog.open) return;
+    const dreamHelp = document.querySelector("#economy-dream-help");
+    dreamHelp.hidden = mode !== "sleep";
+    dreamHelp.textContent = t("trailDreamRules");
     document.querySelector("#nearby-accommodation").hidden = mode !== "sleep" || !findAccommodations;
     const searchButton = document.querySelector("#accommodation-search");
     searchButton.disabled = current.blocked;
@@ -52,7 +72,11 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     if (accommodationLoading && accommodationProgress) showAccommodationProgress();
     const nearby = document.querySelector("#accommodation-results");
     nearby.replaceChildren();
-    for (const place of accommodationResult?.places ?? []) {
+    const accommodationPriority = place => place.col === state.col && place.row === state.row
+      ? place.tags?.tourism === "hotel" ? 2 : 1 : 0;
+    const nearbyPlaces = [...(accommodationResult?.places ?? [])].sort((a, b) =>
+      accommodationPriority(b) - accommodationPriority(a));
+    for (const place of nearbyPlaces) {
       const item = document.createElement("li"), text = document.createElement("p");
       const east = place.col - state.col, north = state.row - place.row;
       const sectors = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
@@ -158,6 +182,14 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       const mapped = shelters(cell, state);
       document.querySelector("#economy-shelter-context").textContent =
         t(mapped.length ? "shelterCellOnly" : "shelterNoneInCell");
+      const addShelter = shelter => {
+        const cents = shelter.free ? 0 : marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents;
+        const credit = shelter.credit ? ` ${shelter.credit} · ${shelter.license}${shelter.updated ? ` · ${shelter.updated}` : ""}` : "";
+        add(shelter.name || t("mappedShelter"), cents, { kind: "sleep", id: shelter.osmId },
+          t(shelter.camping ? "campingRecoveryNote" : shelter.free ? "shelterNote" : "hotelRecoveryNote", { hours: survival.sleep_hours }) + credit,
+          shelter.sourceUrl ?? `https://www.openstreetmap.org/${shelter.osmId}`, shelter.source ?? t("townOsm"));
+      };
+      for (const hotel of mapped.filter(shelter => shelter.tags.tourism === "hotel")) addShelter(hotel);
       const hospitality = hospitalityStatus(state, cell);
       if (hospitality.town) {
         const note = t(hospitality.attempt ? "hospitalityAlreadyAsked" : "hospitalityNote", {
@@ -177,6 +209,26 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
         document.querySelector("#economy-shelter-context").textContent += ` ${t("hospitalityTownRequired")}`;
       }
       const places = worshipPlaces(cell);
+      if (npcSpeech) {
+        const latest = state.hospitalityAttempts?.at(-1);
+        const visible = latest && (latest === hospitality.attempt || places.some(place =>
+          hospitalityStatus(state, cell, place.osmId).attempt === latest));
+        const outcome = visible ? latest.outcome : "greeting";
+        const brief = `npc.hospitality.${outcome}`;
+        const supported = Object.hasOwn(NARRATIVE_BRIEFS, brief) && Boolean(hospitality.town || places.length);
+        npcSpeech.hidden = npcStatus.hidden = !supported;
+        if (supported) {
+          narrative.prefetch(state, ["npc.hospitality.greeting", "npc.hospitality.hosted", "npc.hospitality.refused"]);
+          const key = `${brief}:${visible ? latest.startedMinutes : "before"}`;
+          if (speechKey !== key) {
+            speechKey = key;
+            speechBrief = brief;
+            speech = narrative.snapshot(state, brief);
+          }
+          npcSpeech.textContent = (speech ?? NARRATIVE_BRIEFS[brief])[language];
+          speechStatus();
+        }
+      }
       for (const place of places) {
         const status = hospitalityStatus(state, cell, place.osmId);
         const name = place.name?.trim() || t("worshipUnnamed");
@@ -203,19 +255,16 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
         document.querySelector("#economy-hospitality-result").textContent = hospitalityResult(result);
       }
       add(t("outdoorSleep"), 0, { kind: "sleep", id: null }, t("outdoorSleepNote"));
-      for (const shelter of mapped) {
-        const cents = shelter.free ? 0 : marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents;
-        const credit = shelter.credit ? ` ${shelter.credit} · ${shelter.license}${shelter.updated ? ` · ${shelter.updated}` : ""}` : "";
-        add(shelter.name || t("mappedShelter"), cents, { kind: "sleep", id: shelter.osmId },
-          t(shelter.camping ? "campingRecoveryNote" : shelter.free ? "shelterNote" : "hotelRecoveryNote", { hours: survival.sleep_hours }) + credit,
-          shelter.sourceUrl ?? `https://www.openstreetmap.org/${shelter.osmId}`, shelter.source ?? t("townOsm"));
-      }
+      for (const shelter of mapped.filter(shelter => shelter.tags.tourism !== "hotel")) addShelter(shelter);
     }
   }
 
   async function open(nextMode) {
     if (!context() || context().blocked || document.querySelector("dialog[open]")) return;
     mode = nextMode;
+    speechKey = undefined;
+    speechBrief = undefined;
+    if (npcSpeech) npcSpeech.hidden = npcStatus.hidden = mode !== "sleep";
     accommodationController?.abort();
     accommodationLoading = false;
     accommodationCancelled = false;

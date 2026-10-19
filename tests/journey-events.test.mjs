@@ -104,6 +104,34 @@ function example(kind, transform = s => s) {
   throw new Error(`Missing deterministic fixture for ${kind}`);
 }
 
+test("wording versions rotate per event kind without extra random draws or changed effects", () => {
+  const { previous, moved, next } = example("coins");
+  assert.equal(next.events.history.at(-1).wordingVariant, 0);
+  for (const last of [undefined, 0, 1, 2]) {
+    const history = [{ kind: "coins", wordingVariant: last }, { kind: "food", wordingVariant: 2 }];
+    const before = { ...previous, events: { version: 1, walkedMinutes: 0, checks: 0,
+      count: 2, pending: null, history } };
+    const result = advanceJourneyEvents(before, moved, info, survival, economy);
+    const event = result.events.history.at(-1);
+    assert.equal(event.kind, "coins");
+    assert.equal(event.wordingVariant, last === undefined ? 0 : (last + 1) % 3);
+    const { events: _, ...actual } = result, { events: __, ...expected } = next;
+    assert.deepEqual(actual, expected, "presentation variants must not alter authoritative effects");
+    assert.deepEqual(history, before.events.history);
+  }
+  validateJourneyEvents(next, economy, survival);
+  const legacy = structuredClone(next);
+  delete legacy.events.history.at(-1).wordingVariant;
+  validateJourneyEvents(legacy, economy, survival);
+  for (const value of [-1, 3, 1.5, "1", null]) {
+    const invalid = structuredClone(next);
+    invalid.events.history.at(-1).wordingVariant = value;
+    assert.throws(() => validateJourneyEvents(invalid, economy, survival));
+  }
+  const saved = createSave({ region: "firmi", map, state: next, survival, economy }, 1);
+  assert.equal(validateSave(JSON.parse(JSON.stringify(saved))).state.events.history.at(-1).wordingVariant, 0);
+});
+
 test("both starting and daily cards affect occurrence and polarity with exact thresholds", () => {
   const calm = { ...start(), birthCard: "star", dailyCard: "sun" };
   const birthTrouble = { ...calm, birthCard: "tower" };

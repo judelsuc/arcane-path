@@ -92,11 +92,26 @@ export async function notebookPdf({ title, photos, groups = [], clues = [], rout
   }
   clear();
   if (cover) {
-    y = 300;
+    y = cover.artwork ? MARGIN : 300;
     await text(cover.title, 48, true);
     y += 60;
     await text(cover.subtitle, 32);
-    y += 120;
+    if (cover.artwork) {
+      const url = URL.createObjectURL(cover.artwork.blob);
+      try {
+        const image = new Image();
+        image.src = url;
+        await image.decode();
+        const scale = Math.min(620 / image.naturalWidth, 620 / image.naturalHeight);
+        context.drawImage(image, (WIDTH - image.naturalWidth * scale) / 2, y,
+          image.naturalWidth * scale, image.naturalHeight * scale);
+        y += image.naturalHeight * scale + 24;
+        await text(`${cover.artwork.attribution} · ${cover.artwork.license}`, 20);
+        await text(cover.artwork.licenseUrl, 18);
+      } catch (reason) {
+        throw new Error(t("journalImageError"), { cause: reason });
+      } finally { URL.revokeObjectURL(url); }
+    } else y += 120;
     for (const row of cover.rows) await text(`${row.label}: ${row.value}`, 30);
     await flush();
   }

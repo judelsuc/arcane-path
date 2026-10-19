@@ -5,26 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Lost and found - game 9</title>
     <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./mini-games.css">
     <style>
       main { max-width: 900px; margin: 1rem auto; padding: 1rem; }
-      #lostfound-board { padding: 18px; background: #34453b; border: 2px solid #ad9871; border-radius: 12px; }
-      #lostfound-board section > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 12px; margin: 20px 0; }
-      #lostfound-board button { min-height: 48px; padding: 12px 16px; border-radius: 8px; white-space: normal; }
-      #lostfound-board [data-action="match"], #lostfound-board [data-action="inspect"] { color: #423624; background: #f0e3c4; border: 2px solid #c7ac78; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-      #lostfound-board .lost-found-inspection { display: flex; flex-direction: column; align-items: center; padding: 16px; border: 2px solid #c7ac78; border-radius: 12px; background: #29392f; text-align: center; }
-      #lostfound-board .lost-found-inspection[hidden] { display: none; }
-      #lostfound-board .lost-found-inspection .lost-found-art { max-width: 260px; background: #f0e3c4; border-radius: 12px; }
-      .lost-found-art { width: 100%; max-width: 210px; height: auto; }
-      .lost-found-timer { position: sticky; top: 8px; z-index: 2; padding: 12px; color: #f7e5b8; background: #26372f; border: 2px solid #ad9871; border-radius: 8px; font-size: 1.25rem; font-weight: bold; font-variant-numeric: tabular-nums; text-align: center; }
-      .lost-found-timer[data-urgent="true"] { color: #ffd4c8; border-color: #ee8b71; background: #5b342e; }
-      #lostfound-board [tabindex="-1"] { padding: 16px; border-left: 4px solid #c7ac78; background: #29392f; font-size: 1.2rem; }
-      #lostfound-board [tabindex="-1"]:empty { display: none; }
-      #lostfound-board label { display: block; margin: 16px 0; }
-      #lostfound-board input { margin-right: 8px; }
-      #lostfound-board button:focus-visible, #lostfound-board [tabindex="-1"]:focus-visible { outline: 3px solid #f5d477; outline-offset: 3px; }
       @media (max-width: 420px) {
         main { padding: 8px; }
-        #lostfound-board { padding: 12px; }
       }
     </style>
   </head>

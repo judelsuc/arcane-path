@@ -57,7 +57,7 @@ export function askHospitality(state, cell, info, survival, economy, random = Ma
     : next.ended ? "exhausted" : accepted ? "hosted" : "refused";
   if (outcome === "hosted") {
     const sleeping = sleepSurvival({ ...next, lastExpenseCents: 0 }, survival);
-    next = finishAction(next, sleeping, info, economy, { sheltered: true, random, survival });
+    next = finishAction(next, sleeping, info, economy, { sheltered: true, random, survival, washed: true });
     if (next.ended) outcome = "exhausted";
   }
   return { ...next, hospitalityAttempts: [...(state.hospitalityAttempts ?? []), {

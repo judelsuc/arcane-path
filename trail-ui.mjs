@@ -8,8 +8,9 @@ import { parentSighting, parentReunion } from "./parent-story.mjs";
 import { DIRECTIONS_RULES, directionsChance, citedTowns } from "./directions.mjs";
 import { setFeedback } from "./feedback.mjs";
 import { witnessCooling } from "./pressures.mjs";
+import { trailDreamText } from "./trail-dreams.mjs";
 import { fieldSearchAvailable, fieldSearchRules, prepareFieldSearch, fieldClueText, vagueLead,
-  recognitionHint, prepareRecognition } from "./trail-search.mjs";
+  recognitionHint, prepareRecognition, openingClue, openingClueText } from "./trail-search.mjs";
 
 export function parentClueText(state, discovery, t) {
   if (!discovery.nextName) return t("trailReunion", { parent: state.trail.parentName });
@@ -37,10 +38,15 @@ export function trailReminder(state, t) {
   if (trail.discovery?.pending) return t("clueAskDirections", { venue: trail.discovery.venue });
   if (trail.exploration && trail.exploration.knownStage !== trail.index) {
     const hints = trail.exploration.hints.filter(h => h.stage === trail.index);
+    const dream = trail.dreams?.checks.findLast(check => check.stage === trail.index && check.outcome === "guidance");
+    if (dream && !hints.some(hint => hint.kind === "place" ||
+        hint.precision === "partial" && hint.elapsedMinutes >= dream.elapsedMinutes)) return trailDreamText(dream, t);
     const best = hints.find(h => h.kind === "place") ??
       hints.find(h => h.precision === "partial" && h.kind === "prefix") ??
       hints.find(h => h.kind === "prefix") ?? hints.find(h => h.kind === "direction");
-    return best ? fieldClueText(state, best, t) : vagueLead(state, trail.index, t);
+    return best ? fieldClueText(state, best, t)
+      : trail.index === 0 && openingClue(state) ? openingClueText(state, t)
+        : vagueLead(state, trail.index, t);
   }
   return t("trailKnownDestination", { place: trailTarget(state).name });
 }
@@ -93,6 +99,7 @@ export function citedTownDirections(town, info, t) {
 export function trailPageRecords(state, stage) {
   const trail = state.trail;
   return [
+    ...(openingClue(state) ? [{ kind: "opening", stage: 0, value: openingClue(state) }] : []),
     ...trail.history.map((value, index) => ({
       kind: "history", stage: value.next ? index + 1 : index, value, index,
     })),
@@ -104,6 +111,8 @@ export function trailPageRecords(state, stage) {
     ...(trail.exploration?.reports ?? []).map(value => ({ kind: "report", stage: value.stage, value })),
     ...(trail.rumors ?? []).map(value => ({ kind: "rumor", stage: value.stage + 1, value })),
     ...(trail.arrivals ?? []).map(value => ({ kind: "arrival", stage: value.stage, value })),
+    ...(trail.dreams?.checks ?? []).filter(value => value.outcome === "guidance")
+      .map(value => ({ kind: "dream", stage: value.stage, value })),
   ].filter(record => record.stage === stage).map((record, order) => ({ ...record, order }))
     .sort((a, b) => (b.value.elapsedMinutes ?? -1) - (a.value.elapsedMinutes ?? -1) || b.order - a.order);
 }
@@ -358,11 +367,11 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       : Math.min(trail.index + (awaitingLead ? 1 : 0), trail.stages.length - 1);
     const journeyKey = state.serverJourney?.id ?? state.startedAt;
     if (pageJourney !== journeyKey || lastActiveStage !== activeStage || viewedStage === undefined) {
+      if (pageJourney !== journeyKey || section !== "actions") section = "current";
       viewedStage = activeStage;
       lastActiveStage = activeStage;
       pageJourney = journeyKey;
       viewedFieldPhoto = undefined;
-      section = "current";
     }
     if (section !== "past") viewedStage = activeStage;
     const currentPage = viewedStage === activeStage;
@@ -443,6 +452,15 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         paragraph(item, t(`clueFound.${facts.kind}`));
         paragraph(item, parentClueText(state, facts, t));
         if (facts.kind === "photo") photoButton(item, state, viewedStage);
+      } else if (record.kind === "opening") {
+        paragraph(item, t("trailOpeningClueTitle"));
+        paragraph(item, openingClueText(state, t));
+      } else if (record.kind === "dream") {
+        paragraph(item, t("trailDreamTitle"));
+        paragraph(item, trailDreamText(facts, t));
+        paragraph(item, t("fieldRecordedAt", {
+          col: facts.col, row: facts.row, minutes: Math.round(facts.elapsedMinutes),
+        }));
       } else if (record.kind === "hint") {
         const hint = facts;
         paragraph(item, t("fieldEvidence"));
@@ -524,7 +542,6 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
           viewedFieldPhoto = found.content ? found.stage : undefined;
           fieldPhotoUnavailable = found.photoUnavailable;
           searchField(found);
-          section = "current";
         } catch (error) {
           if (controller.signal.aborted) return;
           console.error("Field clue search failed:", error);
@@ -561,8 +578,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
           if (!latest || latest.blocked || latest.state !== state) return;
           preparedPhoto = found.content ? { step: state.trail.index, content: found.content } : undefined;
           photoUnavailable = found.photoUnavailable;
-          discover(found.kind);
-          section = "current";
+          if (discover(found.kind)) section = "current";
         } catch (error) {
           console.error("Clue search failed:", error);
           document.querySelector("#trail-action-error").textContent = error.message;
@@ -593,8 +609,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       button.disabled = blocked || searching;
       button.addEventListener("click", () => {
         document.querySelector("#trail-action-error").textContent = "";
-        discover(kind);
-        section = "current";
+        if (discover(kind)) section = "current";
         localize();
       });
       const item = document.createElement("div");

@@ -17,8 +17,35 @@ must not reveal a town or cell that the player has not earned.
 
 The ledger and existing parent/journal projections are used by the main game.
 The combined three-domain selector, authored presentation and sleep dreams
-described here are currently wired into the **isolated lore playtest**, not the
-main journey. This work is local and not deployed.
+described in section 7 remain wired into the **isolated lore playtest**, not the
+main journey. That broader lore work is local and not deployed.
+
+The main journey has a separate, bounded **parent rescue dream** (R-163):
+deliberate sleep of at least 60 minutes permits a check every 720 journey
+minutes. Three unsuccessful field searches (even far from the route), or 1,440
+minutes without new parent progress, guarantee a broad direction toward the
+current stage; otherwise the chance is 50%. Checks and misses persist in
+`trail.dreams`; a stable draw prevents rerolling the same sleep on reload.
+Guidance is anchored to the sleeping cell, never names hidden destinations,
+and is not a promise of a walkable route. It appears after existing dialogs
+and is retained in the stage's trail page, discovery notebook and PDF
+projection. Rest, fainting, detention, care and interrupted/terminal sleeps do
+not count; hotel, shelter, outdoor and accepted hospitality sleep do count.
+There is no extra resource cost or model call. This does not enable the
+three-domain lore dream selector or change its separate probability rules.
+
+In the main journey, field searches keep the **Investigate / Enquêter** tab
+selected so their success, empty-result advice and errors stay visible.
+Rejected town investigations also retain the selected tab; a successfully
+committed town clue can still open the current evidence page.
+
+Fresh progressive journeys also receive an opening lead: only an eight-way
+direction from the saved starting point towards the first stage. It appears
+in the trail guide and first evidence page and is mirrored into the discovery
+ledger as `parent-opening-lead`. No town name, distance or future stage is
+revealed, and no search action, time or resource is charged. The direction
+remains anchored at the starting point after movement and resume. Legacy
+journeys with a previously known destination are not downgraded.
 
 The [lore specification](./LORE_SPECIFICATION.md) documents the broader target
 design and its implementation checkpoints. This guide explains the actual
@@ -586,6 +613,10 @@ Private route preparation and Moon bundles must never enter public evidence
 before their power actually reveals them.
 
 ### Future LLM integration
+
+The separate [local content workshop](./CONTENT_FACTORY.md) now supports
+manually triggered live OVH drafts for fixed fictional sample briefs only.
+It does not read or replace this engine's evidence, renderings or permissions.
 
 An LLM could later replace the narrative expression using an authorized fact
 bundle. It must not choose the target, invent coordinates, increase precision,

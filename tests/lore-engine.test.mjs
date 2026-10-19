@@ -36,6 +36,33 @@ async function own(id) {
   return step(runtime, instances, { type: "claim", id });
 }
 
+test("canonical placement recovers at a prepared town and updates the settlement without granting the interrupted action", async () => {
+  const prepared = structuredClone(map), runtime = start(), instances = world();
+  for (const row of prepared.rows) for (const cell of row) {
+    cell.terrain = "plain";
+    cell.settlements = [];
+    cell.pois = [];
+  }
+  prepared.rows[10][17] = { terrain: "place", settlements: [{ osmId: "node/2", name: "Recovery Town" }] };
+  runtime.state.lore.visitedSettlements = [];
+  runtime.state.pressures.vigilance = 99.9;
+  const before = structuredClone(runtime);
+  const result = await applyLoreAction(runtime, instances, journey, prepared, { type: "rest" });
+  const state = result.runtime.state;
+  assert.deepEqual(runtime, before);
+  assert.deepEqual(state.pressures.placements[0].recovery, { col: 17, row: 10, town: "Recovery Town" });
+  assert.deepEqual(state.lore.lastSettlement, { col: 17, row: 10, town: "Recovery Town" });
+  assert.equal(state.lore.localMinutes, 0);
+  assert.equal(state.lore.outcome, "interrupted");
+  assert.equal(state.pressures.locality, "2,1");
+  assert.equal(state.distanceMeters, before.state.distanceMeters);
+  assert.equal(result.runtime.worldMinutes, state.elapsedMinutes - before.state.elapsedMinutes);
+  assert.equal(loreView(result.runtime, result.instances, journey, prepared).state.col, 17);
+  prepared.rows[10][17] = { terrain: "plain" };
+  await assert.rejects(applyLoreAction(runtime, instances, journey, prepared, { type: "rest" }), /No named town/);
+  assert.deepEqual(runtime, before);
+});
+
 test("server-owned inquiry and claim preserve original inputs and atomically fill the actual bag", async () => {
   const original = start(), instances = world(), before = structuredClone(original);
   const heard = await step(original, instances, { type: "inquire", id: "hermit" });

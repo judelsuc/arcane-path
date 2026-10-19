@@ -61,7 +61,7 @@ export function washingAvailable(cell) {
       (!p.tags.abandoned || p.tags.abandoned === "no"))));
 }
 
-export function advancePressures(previous, next, info, { sheltered, activity, survival }) {
+export function advancePressures(previous, next, info, { sheltered, activity, survival, washed = false }) {
   if (!previous.pressures) return next;
   const p = previous.pressures;
   const minutes = next.elapsedMinutes - previous.elapsedMinutes;
@@ -73,7 +73,9 @@ export function advancePressures(previous, next, info, { sheltered, activity, su
   const unprotectedFraction = minutes ? 1 - protectedMinutes / minutes : 1;
   const hours = minutes / 60, unprotectedHours = (minutes - protectedMinutes) / 60;
   const moving = Math.hypot(next.col - previous.col, next.row - previous.row) * 0.25;
-  const cleanliness = activity === "wash" ? 100
+  const completedWash = washed && sheltered && next.sleeps > previous.sleeps &&
+    !next.ended && (next.faints ?? 0) === (previous.faints ?? 0);
+  const cleanliness = activity === "wash" || completedWash ? 100
     : clamp(p.cleanliness - (hours * (sheltered ? 0.2 : 0.8) + moving * 0.4) *
       (0.75 + p.tarotFactor * 0.25) +
       (sheltered && next.sleeps > previous.sleeps ? 30 : 0));
@@ -112,13 +114,22 @@ export function advancePressures(previous, next, info, { sheltered, activity, su
     walletBeforeCents: next.walletCents, lostCents, col: next.col, row: next.row,
     trigger: { vigilanceBefore: p.vigilance, minutes, tarotFactor: p.tarotFactor, factors } };
   const placements = [...p.placements, placement];
-  return { ...next, elapsedMinutes: placement.finishedMinutes,
+  const recovery = placements.length < 3 && info.placementTown ? info.placementTown(next) : null;
+  if (placements.length < 3 && info.placementTown && (!recovery ||
+      !Number.isSafeInteger(recovery.col) || !Number.isSafeInteger(recovery.row) ||
+      typeof recovery.town !== "string" || !recovery.town.trim())) {
+    throw new Error("Placement requires a named prepared recovery town.");
+  }
+  if (recovery) placement.recovery = recovery;
+  const position = recovery ? { col: recovery.col, row: recovery.row } : {};
+  return { ...next, ...position, elapsedMinutes: placement.finishedMinutes,
     walletCents: next.walletCents - lostCents, reserveKcal: survival.reserve_kcal,
     energyKcal: next.energyKcal + basalEnergy(next, 16 * 60, survival) +
       basalEnergy(next, 8 * 60, survival, true),
     meals: next.meals + 3, sleeps: next.sleeps + 1,
     fatigue: 20, awakeHours: 0, ended: placements.length === 3 ? "placement" : null,
-    pressures: { ...next.pressures, vigilance: 20, cleanliness: 80, localMinutes: 0, placements } };
+    pressures: { ...next.pressures, locality: sector({ ...next, ...position }),
+      vigilance: 20, cleanliness: 80, localMinutes: 0, placements } };
 }
 
 export function witnessCooling(state) {
@@ -167,6 +178,14 @@ export function validatePressures(state, economy) {
           PLACEMENT_FACTORS.some(key => !Number.isFinite(factors[key]) ||
             (["shelter", "movement", "wash"].includes(key) ? factors[key] > 0 : factors[key] < 0)) ||
           vigilanceBefore + Object.values(factors).reduce((sum, value) => sum + value, 0) < 100 - 1e-6) fail();
+    }
+    if (placement.recovery !== undefined) {
+      const recovery = placement.recovery;
+      if (!recovery || placement === p.placements[2] ||
+          Object.keys(recovery).sort().join() !== "col,row,town" ||
+          !Number.isSafeInteger(recovery.col) || Math.abs(Math.floor(recovery.col / 8)) > 1000 ||
+          !Number.isSafeInteger(recovery.row) || Math.abs(Math.floor(recovery.row / 8)) > 1000 ||
+          typeof recovery.town !== "string" || !recovery.town.trim()) fail();
     }
     end = placement.finishedMinutes;
   }

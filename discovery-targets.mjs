@@ -1,5 +1,5 @@
 import { discoveryEntries, learnDiscovery, reconcileDiscoveryAvailability } from "./discovery.mjs";
-import { fieldClueFacts, fieldSearchRules } from "./trail-search.mjs";
+import { fieldClueFacts, fieldSearchRules, openingClue } from "./trail-search.mjs";
 
 function clue(targetType, targetId, targetRevision, evidenceKey, kind, precision,
   facts, observedMinutes, channel, source) {
@@ -57,6 +57,11 @@ export function synchronizeParentDiscovery(state) {
     parentClue(trail.index, "venue", "venue", "local",
       { venue: trail.discovery.venue }, trail.discovery.elapsedMinutes, "npc", "parent-witness");
   }
+  const opening = openingClue(state);
+  if (opening) {
+    parentClue(0, "opening-direction", "direction", "vague",
+      fieldClueFacts(state, opening), 0, "notebook", "parent-opening-lead");
+  }
   for (const hint of exploration?.hints ?? []) {
     if (!["place", "prefix", "direction", "photo"].includes(hint.kind)) {
       throw new Error("Invalid parent discovery clue.");
@@ -69,6 +74,11 @@ export function synchronizeParentDiscovery(state) {
   for (const sign of exploration?.signs ?? []) {
     parentClue(sign.stage, `sign:${sign.col}:${sign.row}:${sign.elapsedMinutes}`, "sign", "vague",
       { sign: true }, sign.elapsedMinutes, "search", "parent-field-sign");
+  }
+  for (const dream of trail.dreams?.checks ?? []) {
+    if (dream.outcome !== "guidance") continue;
+    parentClue(dream.stage, `dream:${dream.checkMinutes}`, "direction", "vague",
+      { direction: dream.direction }, dream.elapsedMinutes, "dream", "parent-sleep-dream");
   }
   for (const report of exploration?.reports ?? []) {
     if (report.outcome !== "suggestion") continue;

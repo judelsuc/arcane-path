@@ -46,7 +46,10 @@ for (const locale of ["fr", "en"]) {
     const before = structuredClone(state);
     const ui = setupTrail(tr, { context: () => ({
       state, cell: { terrain: "place" }, info: { latitude: 44, longitude: 3 }, data, blocked: false,
-    }) });
+    }), discover() {
+      element("#trail-action-error").textContent = "Investigation rejected";
+      return false;
+    } });
     ui.open();
     assert.equal(element("#trail-target").textContent,
       tr("trailKnownDestination", { place: "Known destination" }));
@@ -110,6 +113,19 @@ for (const locale of ["fr", "en"]) {
     state = { ...state, elapsedMinutes: 2 * 1440 };
     ui.localize();
     assert.match(records(), /2026-10-18/);
+    state = { ...state, col: state.trail.stages[state.trail.index].col,
+      row: state.trail.stages[state.trail.index].row, trail: { ...state.trail,
+        discovery: { kind: "search", step: state.trail.index, pending: true,
+          venue: "Known café", nextName: "SECRET NEXT" },
+      } };
+    element("#trail-section-actions").events.click();
+    const directions = element("#trail-actions").children.flatMap(item => item.children)
+      .find(button => button.id === "clue-directions");
+    assert.ok(directions);
+    directions.events.click();
+    assert.equal(element("#trail-investigation-page").hidden, false);
+    assert.equal(element("#trail-evidence-page").hidden, true);
+    assert.equal(element("#trail-action-error").textContent, "Investigation rejected");
     ui.reset();
   });
 }

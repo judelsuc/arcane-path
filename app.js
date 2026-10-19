@@ -10,6 +10,7 @@ import { setupCopyCoordinates } from "./copy-coordinates.mjs";
 import { setupShortcutHelp } from "./shortcut-help.mjs";
 import { setupPhotoJournal } from "./photo-journal.mjs";
 import { setupGameHelp } from "./game-help.mjs";
+import { setupStartArt } from "./start-art.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
 const viewport = document.querySelector("#map-viewport");
@@ -36,6 +37,8 @@ const coordinates = setupCopyCoordinates(t, () => mapData && inspectedTile
   ? cellInfo(mapData, Number(inspectedTile.dataset.row), Number(inspectedTile.dataset.col)) : null);
 const controls = setupShortcutHelp(t);
 const windowHelp = setupGameHelp(t);
+const startArt = setupStartArt(t);
+void startArt.load();
 const travel = setupTravel({
   t, renderMap,
   pinPhoto: photoJournal.pinButton,
@@ -99,6 +102,7 @@ document.querySelector("#back-title").addEventListener("click", () => {
   document.querySelector("#journey-setup").hidden = true;
   document.querySelector("#title-screen").hidden = false;
   document.body.classList.add("is-title");
+  void startArt.load();
   document.querySelector("#enter-world").focus({ preventScroll: true });
   window.scrollTo({ top: 0, behavior: "instant" });
 });
@@ -134,6 +138,9 @@ function tileDetails(tile, includePois = true) {
   });
   if (info.waterCoveragePercent > 0) {
     details += `\n${t("cellWaterCoverage", { percent: info.waterCoveragePercent.toFixed(1) })}`;
+  }
+  if (info.buildingCoveragePercent > 0) {
+    details += `\n${t("cellBuildingCoverage", { percent: info.buildingCoveragePercent.toFixed(1) })}`;
   }
   if (info.waterways.length) {
     details += `\n${t("cellWaterways")}`;
@@ -207,6 +214,7 @@ function localize() {
   coordinates.update();
   controls.localize();
   windowHelp.localize();
+  startArt.localize();
   document.querySelector("#starting-map-status").textContent = mapData
     ? t("setupSelected", { name: mapData.origin ? mapData.name.split(",")[0] : mapData.name })
     : t(loadFailed ? "loadError" : "loading");
@@ -234,7 +242,7 @@ function localize() {
   document.querySelector("#map-source").textContent =
     t(mapData.illustrative ? "demoSource" : "source", { source: mapData.source });
   const attribution = document.querySelector("#map-attribution");
-  attribution.hidden = !mapData.copyright;
+  attribution.hidden = !mapData.copyright && !mapData.oceanCoverage;
   attribution.replaceChildren();
   if (mapData.copyright) {
     const credit = document.createElement("a");
@@ -244,6 +252,15 @@ function localize() {
     license.href = "https://opendatacommons.org/licenses/odbl/1-0/";
     license.textContent = "ODbL 1.0";
     attribution.append(credit, " · ", license);
+  }
+  if (mapData.oceanCoverage) {
+    const credit = document.createElement("a");
+    credit.href = "https://www.soest.hawaii.edu/pwessel/gshhg/";
+    credit.textContent = "GSHHG 2.3.7";
+    const license = document.createElement("a");
+    license.href = "https://www.gnu.org/licenses/lgpl-3.0.html";
+    license.textContent = "LGPL 3+";
+    attribution.append(mapData.copyright ? " · " : "", credit, " · ", license);
   }
 
   const legend = document.createDocumentFragment();

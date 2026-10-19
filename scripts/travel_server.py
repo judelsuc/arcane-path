@@ -22,6 +22,8 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from build_map import rasterize
+from shoreline import load_shoreline
+from living_world import LivingWorld, query_position
 from fetch_osm import download_region, incomplete_landcover
 from weather import fetch_climate
 from config import load_config
@@ -33,6 +35,9 @@ from parent_paths import ParentPaths
 from accommodations import Accommodations
 from journey_terrain import cached_terrain
 from lore_playtest import LorePlaytest
+from journal_art import JournalArt
+from live_narrative import LiveNarrative
+from start_art import StartArt
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_SIZE = 8
@@ -99,6 +104,7 @@ class ChunkStore:
         self.root = root
         self.cache = cache or root / ".cache" / "travel"
         self.regions = json.loads((root / "data/regions.json").read_text())["regions"]
+        self.shoreline = load_shoreline(root / ".cache/shorelines/gshhs_f.b")
         self.pipeline = hashlib.sha256(
             b"chunk-pipeline-v2" +
             inspect.getsource(chunk_geometry).encode() +
@@ -106,6 +112,8 @@ class ChunkStore:
             inspect.getsource(ChunkStore.source_path).encode() +
             inspect.getsource(ChunkStore.build_locked).encode() +
             (ROOT / "scripts/build_map.py").read_bytes() +
+            (ROOT / "scripts/shoreline.py").read_bytes() +
+            (self.shoreline.sha256.encode() if self.shoreline else b"no-ocean-mask") +
             json.dumps([CHUNK_SIZE, CELL_METERS, load_config()["map"]], sort_keys=True).encode()
         ).hexdigest()
         self.bases = {
@@ -139,6 +147,21 @@ class ChunkStore:
         with self.origin_lock:
             if key in self.bases:
                 progress("cache")
+                data = self.bases[key]
+                expected = self.shoreline.sha256 if self.shoreline else None
+                if ("buildingCoverageThresholdPercent" not in data
+                        or (data.get("oceanCoverage") or {}).get("sha256") != expected):
+                    progress("rasterize")
+                    directory = self.cache / "origins" / key
+                    updated = rasterize(directory / "source.osm.gz", data["name"], CELL_METERS,
+                                        shoreline=self.shoreline)
+                    updated["rows"] = [row[:24] for row in updated["rows"][:24]]
+                    updated["width"] = updated["height"] = 24
+                    updated["origin"] = data["origin"]
+                    if len(updated["rows"]) != 24 or any(len(row) != 24 for row in updated["rows"]):
+                        raise ValueError("Unexpected cached starting map dimensions.")
+                    atomic_write(directory / "map.json", json.dumps(updated).encode())
+                    self.bases[key] = updated
                 return {"region": key, "map": self.bases[key]}
             progress("location")
             place = self.places.reverse(latitude, longitude)
@@ -156,7 +179,7 @@ class ChunkStore:
             root.set("projection_latitude", str(latitude))
             atomic_write(source, gzip.compress(ET.tostring(root), mtime=0))
             progress("rasterize")
-            data = rasterize(source, place["name"], CELL_METERS)
+            data = rasterize(source, place["name"], CELL_METERS, shoreline=self.shoreline)
             data["rows"] = [row[:24] for row in data["rows"][:24]]
             if len(data["rows"]) != 24 or any(len(row) != 24 for row in data["rows"]):
                 raise ValueError("Unexpected starting map dimensions.")
@@ -192,16 +215,21 @@ class ChunkStore:
             raise ValueError(f"Corrupt travel cache: {path}. Remove this chunk cache to rebuild.")
         return payload
 
+    def refresh_due(self, region, x, y, data):
+        return bool(data.get("elevation", {}).get("error") and
+                    time.time() - self.path(region, x, y).with_suffix(".json").stat().st_mtime >= 300)
+
     def build(self, region, x, y):
         with self.chunk_locks[hash((region, x, y)) % len(self.chunk_locks)]:
             return self.build_locked(region, x, y)
 
     def build_locked(self, region, x, y):
         cached = self.read(region, x, y)
-        if cached is not None:
+        if cached is not None and not self.refresh_due(region, x, y, cached):
             return cached
+        if cached is not None:
+            return self.enrich_elevation(region, x, y, cached)
         bounds, latitude, centers = chunk_geometry(self.bases[region], x, y)
-        path = self.path(region, x, y)
         source_base = self.source_path(region, x, y)
         source = source_base.with_suffix(".osm.gz")
         base = self.bases[region]["bounds"]
@@ -228,12 +256,18 @@ class ChunkStore:
             root.set("projection_latitude", str(latitude))
             root.attrib.pop("reference_bbox", None)
             atomic_write(source, gzip.compress(ET.tostring(root), mtime=0))
-        data = rasterize(source, self.regions[region]["name"], CELL_METERS)
+        data = rasterize(source, self.regions[region]["name"], CELL_METERS, shoreline=self.shoreline)
         data["rows"] = [row[:CHUNK_SIZE] for row in data["rows"][:CHUNK_SIZE]]
         if len(data["rows"]) != CHUNK_SIZE or any(len(row) != CHUNK_SIZE for row in data["rows"]):
             raise ValueError("Unexpected travel chunk dimensions.")
         data["width"] = data["height"] = CHUNK_SIZE
         data["chunk"] = {"region": region, "x": x, "y": y, "size": CHUNK_SIZE}
+        return self.enrich_elevation(region, x, y, data)
+
+    def enrich_elevation(self, region, x, y, data):
+        _, _, centers = chunk_geometry(self.bases[region], x, y)
+        path = self.path(region, x, y)
+        source_base = self.source_path(region, x, y)
         elevation_path = source_base.with_suffix(".elevation.json")
         try:
             if elevation_path.exists():
@@ -252,8 +286,6 @@ class ChunkStore:
         except (OSError, ValueError, KeyError, urllib.error.URLError) as error:
             logging.warning("Elevation unavailable for %s/%s/%s: %s", region, x, y, error)
             data["elevation"] = {"error": str(error)}
-            # The OSM snapshot remains cached, but retry unavailable elevation on the next request.
-            return data
         atomic_write(path.with_suffix(".json"), json.dumps({
             "sha256": hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest(),
             "data": data,
@@ -274,6 +306,9 @@ class ChunkJobs:
             job = self.jobs.get(key)
             if job:
                 if not job.done():
+                    cached = self.store.read(*key)
+                    if cached is not None:
+                        return 200, cached
                     progress = getattr(self.store, "get_progress", None)
                     return 202, {"status": "loading", **({"progress": progress(*key)} if progress else {})}
                 del self.jobs[key]
@@ -284,6 +319,9 @@ class ChunkJobs:
                     return 502, {"error": str(error)}
             cached = self.store.read(*key)
             if cached is not None:
+                refresh_due = getattr(self.store, "refresh_due", None)
+                if refresh_due and refresh_due(*key, cached) and len(self.jobs) < self.capacity:
+                    self.jobs[key] = self.pool.submit(self.store.build, *key)
                 return 200, cached
             if len(self.jobs) >= self.capacity:
                 # Completed jobs need not occupy download slots indefinitely.
@@ -367,6 +405,10 @@ def make_handler(store, jobs, path_pool=None):
     trails = ChunkJobs(TownTrailStore(store, atomic_write), capacity=2, pool=jobs.pool)
     journeys = JourneyStore(store, atomic_write)
     abandoned = AbandonedJournals(journeys)
+    journal_art = JournalArt.configured(journeys, abandoned)
+    live_narrative = LiveNarrative.configured(journeys, journal_art)
+    start_art = StartArt(store.cache / "start-art.sqlite3")
+    living_world = ChunkJobs(LivingWorld(store.cache / "living-world", atomic_write), workers=1, capacity=4)
     parent_paths = ParentPaths(store, journeys, atomic_write, pool=path_pool)
     lore = LorePlaytest(journeys, abandoned, paths=parent_paths, chunk_jobs=jobs)
     accommodations = ChunkJobs(Accommodations(store, atomic_write), capacity=2, pool=jobs.pool)
@@ -390,7 +432,7 @@ def make_handler(store, jobs, path_pool=None):
 
         def do_POST(self):
             endpoint = urllib.parse.urlsplit(self.path).path
-            if endpoint not in ("/api/journeys", "/api/abandoned-journals", "/api/lore-playtest"):
+            if endpoint not in ("/api/journeys", "/api/abandoned-journals", "/api/lore-playtest", "/api/journal-art", "/api/live-narrative"):
                 return self.send_json(404, {"error": "Unknown API endpoint."})
             origin = self.headers.get("Origin")
             try:
@@ -422,6 +464,19 @@ def make_handler(store, jobs, path_pool=None):
                 except (ValueError, UnicodeError) as error:
                     raise JourneyRequest("Invalid journey JSON.") from error
                 capability = self.headers.get("X-Journal-Capability")
+                if endpoint == "/api/live-narrative":
+                    return self.send_json(200, live_narrative.request(request, capability))
+                if endpoint == "/api/journal-art":
+                    result = journal_art.request(request, capability)
+                    if isinstance(result, bytes):
+                        self.send_response(200)
+                        self.send_header("Content-Type", "image/webp")
+                        self.send_header("Content-Length", str(len(result)))
+                        self.send_header("Cache-Control", "private, no-store")
+                        self.end_headers()
+                        self.wfile.write(result)
+                        return
+                    return self.send_json(200, result)
                 if endpoint == "/api/lore-playtest":
                     return self.send_json(200, lore.request(request, capability))
                 if endpoint == "/api/abandoned-journals":
@@ -461,6 +516,34 @@ def make_handler(store, jobs, path_pool=None):
                     return self.send_json(500, {"error": str(error)})
             if url.path.startswith("/api/"):
                 try:
+                    if url.path == "/api/living-world":
+                        query = urllib.parse.parse_qs(url.query, strict_parsing=True)
+                        if set(query) != {"lat", "lon"} or any(len(v) != 1 for v in query.values()):
+                            raise ValueError("Invalid living-world query.")
+                        point = query_position(float(query["lat"][0]), float(query["lon"][0]))
+                        try:
+                            status, data = living_world.request(*point)
+                        except (OSError, ValueError, KeyError):
+                            logging.exception("Public-event cache unavailable")
+                            return self.send_json(500, {"error": "Public-event cache unavailable; check server logs."})
+                        return self.send_json(status, data)
+                    if url.path == "/api/start-art":
+                        if url.query:
+                            raise ValueError("Unexpected title illustration query.")
+                        return self.send_json(200, start_art.snapshot())
+                    if url.path == "/api/start-art/image":
+                        query = urllib.parse.parse_qs(url.query, strict_parsing=True)
+                        if set(query) != {"day"} or len(query["day"]) != 1:
+                            raise ValueError("Invalid title illustration lookup.")
+                        image = start_art.image(query["day"][0])
+                        if image is None:
+                            return self.send_json(404, {"error": "Daily title illustration not found."})
+                        self.send_response(200)
+                        self.send_header("Content-Type", "image/webp")
+                        self.send_header("Content-Length", str(len(image)))
+                        self.send_header("Cache-Control", "no-store")
+                        self.end_headers()
+                        return self.wfile.write(image)
                     if url.path == "/api/travel":
                         return self.send_json(200, {"chunkSize": CHUNK_SIZE, "cellSizeMeters": CELL_METERS})
                     if url.path == "/api/origins":
@@ -585,6 +668,9 @@ def make_handler(store, jobs, path_pool=None):
                 return self.send_error(403)
             super().do_GET()
 
+    Handler.journal_art = journal_art
+    Handler.live_narrative = live_narrative
+    Handler.living_world = living_world
     return Handler
 
 
@@ -604,6 +690,9 @@ def main():
         pass
     finally:
         server.server_close()
+        server.RequestHandlerClass.journal_art.close()
+        server.RequestHandlerClass.live_narrative.close()
+        server.RequestHandlerClass.living_world.pool.shutdown(wait=True, cancel_futures=True)
         jobs.pool.shutdown(wait=True, cancel_futures=True)
         path_pool.shutdown(wait=True, cancel_futures=True)
 

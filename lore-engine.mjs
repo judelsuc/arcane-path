@@ -22,6 +22,7 @@ import { askDirections } from "./directions.mjs";
 import { fieldClueFacts } from "./trail-search.mjs";
 import { TAROT_CARDS } from "./tarot-cards.mjs";
 import { loreCell, loreViewport } from "./lore-map.mjs";
+import { nearestSettlement } from "./towns.mjs";
 
 const PACKING = [...ITEMS, ...LORE_ITEMS];
 function artifactWeight(instances, journey) {
@@ -43,7 +44,12 @@ function infoAt(map, state) {
   const cell = cellAt(map, state.col, state.row);
   return { latitude: map.bounds.maxLatitude - (state.row + 0.5) * step,
     longitude: map.bounds.minLongitude + (state.col + 0.5) * step / Math.cos(projection * Math.PI / 180),
-    terrain: cell.terrain, police: policePresence(cell) };
+    terrain: cell.terrain, police: policePresence(cell),
+    placementTown: position => {
+      const town = nearestSettlement(position, [map, ...Object.values(map.loreChunks ?? {})]);
+      if (!town) throw new Error("No named town is available in prepared terrain. Load nearby terrain and retry.");
+      return town;
+    } };
 }
 
 function settlementAt(map, col, row, state) {

@@ -15,6 +15,7 @@ import { beginExploration, fieldSearchRules, prepareFieldSearch, applyFieldSearc
 import { createSave, validateSave } from "../journey-save.mjs";
 import { createNeedsNotices, placementReason } from "../needs-notices.mjs";
 import { translate } from "../i18n.mjs";
+import { nearestSettlement } from "../towns.mjs";
 
 const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
 const survival = json("../public/config.json").survival, economy = json("../public/economy.json");
@@ -114,6 +115,50 @@ test("100 vigilance gives two recoverable days in care, then ends the third jour
     assert.deepEqual(validateSave(save(state)).state, state);
   }
   assert.throws(() => action(state, 10), /ended/);
+});
+
+test("first two placements resume in the nearest prepared town, persist recovery and do not count as walking", () => {
+  const terrain = { width: 24, height: 24, rows: Array.from({ length: 24 }, () =>
+    Array.from({ length: 24 }, () => ({ terrain: "plain" }))) };
+  terrain.rows[10][17] = { ...cell, settlements: [{ osmId: "node/2", name: "Recovery Town" }] };
+  terrain.rows[18][14] = cell;
+  let queries = 0, state = start();
+  const context = { ...info, placementTown: position => {
+    queries++;
+    return nearestSettlement(position, [terrain]);
+  } };
+  for (let count = 1; count <= 3; count++) {
+    const before = nearThreshold(state), copy = structuredClone(before);
+    state = action(before, 10, context);
+    const placement = state.pressures.placements.at(-1);
+    assert.equal(placement.col, before.col);
+    assert.equal(placement.row, before.row);
+    assert.deepEqual(placement.recovery, count < 3 ? { col: 17, row: 10, town: "Recovery Town" } : undefined);
+    assert.deepEqual({ col: state.col, row: state.row }, { col: 17, row: 10 });
+    assert.equal(state.pressures.locality, "2,1");
+    assert.equal(state.pressures.localMinutes, 0);
+    assert.equal(state.distanceMeters, before.distanceMeters);
+    assert.equal(state.elapsedMinutes - before.elapsedMinutes, 1450);
+    assert.equal(state.walletCents, before.walletCents - Math.floor(before.walletCents / 4));
+    assert.equal(state.ended, count === 3 ? "placement" : null);
+    assert.strictEqual(state.trail, before.trail);
+    assert.deepEqual(validateSave(JSON.parse(JSON.stringify(save(state)))).state,
+      JSON.parse(JSON.stringify(state)));
+    assert.deepEqual(before, copy);
+    const invalid = structuredClone(state);
+    invalid.pressures.placements[0].recovery.row = 0.5;
+    assert.throws(() => validatePressures(invalid, economy), /Invalid pressure/);
+  }
+  assert.equal(queries, 2, "the third placement must not query or transfer to a recovery town");
+  const invalid = structuredClone(state);
+  invalid.pressures.placements[2].recovery = { col: 17, row: 10, town: "Recovery Town" };
+  assert.throws(() => validatePressures(invalid, economy), /Invalid pressure/);
+});
+
+test("unavailable recovery town fails explicitly without consuming the action or mutating the journey", () => {
+  const previous = nearThreshold(start()), before = structuredClone(previous);
+  assert.throws(() => action(previous, 10, { ...info, placementTown: () => null }), /recovery town/);
+  assert.deepEqual(previous, before);
 });
 
 test("placement records exact triggering factors and explains them without inventing legacy history", () => {
@@ -330,6 +375,42 @@ test("optional pressure state rejects corrupted and impossible saves", () => {
     mutate(invalid);
     assert.throws(() => validateSave(save(invalid)));
   }
+});
+
+test("paid lodging includes washing without extra cost or time; basic shelter stays partial", () => {
+  const state = { ...start(), walletCents: 50000 };
+  state.pressures.cleanliness = 10;
+  state.pressures.vigilance = 40;
+  const hostel = { ...cell, pois: [{ osmId: "node/2", tags: { tourism: "hostel" } }] };
+  const basic = { ...cell, pois: [{ osmId: "node/3", tags: { amenity: "shelter", fee: "no" } }] };
+  const clean = sleepEconomy(state, hostel, info, "node/2", survival, economy);
+  assert.equal(clean.pressures.cleanliness, 100);
+  assert.equal(clean.elapsedMinutes - state.elapsedMinutes, survival.sleep_hours * 60);
+  const ordinary = sleepEconomy({ ...state, pressures: undefined }, hostel, info, "node/2", survival, economy);
+  assert.equal(clean.walletCents, ordinary.walletCents);
+  const sheltered = sleepEconomy(state, basic, info, "node/3", survival, economy);
+  assert.ok(sheltered.pressures.cleanliness > 10 && sheltered.pressures.cleanliness < 100);
+  assert.deepEqual(validateSave(save(clean)).state, clean);
+});
+
+test("successful hosting includes washing, but refused or interrupted stays do not", () => {
+  const state = start();
+  state.pressures.cleanliness = 10;
+  let hosted, refused;
+  for (let offset = 0; offset < 100 && (!hosted || !refused); offset++) {
+    const next = askHospitality({ ...state, startedAt: state.startedAt + offset },
+      cell, info, survival, economy);
+    if (next.hospitalityAttempts.at(-1).outcome === "hosted") hosted = next;
+    if (next.hospitalityAttempts.at(-1).outcome === "refused") refused = next;
+  }
+  assert.ok(hosted && refused);
+  assert.equal(hosted.pressures.cleanliness, 100);
+  assert.equal(hosted.walletCents, state.walletCents);
+  assert.equal(hosted.elapsedMinutes - state.elapsedMinutes, 30 + survival.sleep_hours * 60);
+  assert.ok(refused.pressures.cleanliness < 10);
+  const interrupted = finishAction(state, { ...state, elapsedMinutes: 480, sleeps: state.sleeps + 1,
+    health: 0, ended: "health" }, info, economy, { survival, sheltered: true, washed: true });
+  assert.ok(interrupted.pressures.cleanliness < 100);
 });
 
 test("cooling boundaries degrade only new clues and near-town verification guarantees progress", async () => {

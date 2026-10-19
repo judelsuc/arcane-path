@@ -1,11 +1,41 @@
 # Les Arcanes du Chemin
 
+## Connected living-world preview
+
+Options links to the [public-event preview](layers/living-world/preview.html),
+using bounded OpenAgenda searches with explicit coverage, freshness, provenance
+and optional openly licensed Commons photographs labelled illustrative.
+It also links to the existing European transport source explorer and hybrid
+Grenoble-Lyon preview. These are standalone previews, not normal-journey event
+or transit activation. See [coverage and privacy](layers/living-world/README.md)
+and [transport sources/licences](data/transport/README.md).
+
 Prototype jouable des **couches 1 a 8** : carte OSM, voyage, temps, besoins,
 localites, economie, musique de rue et piste minimale du parent.
 grille ASCII de 250 m, exploration a pied, horloge simulee, effort et streaming.
 
 Les ajouts au document de conception sont suivis dans [doc/REQUIREMENTS.md](./doc/REQUIREMENTS.md).
 Les prompts musicaux 8-bit et sons de jeu sont dans [audio-prompts](./audio-prompts/README.md).
+
+## Fabrique de contenus locale (OVH AI Endpoints)
+
+La fabrique inclut aussi une illustration d'accueil partagee, generee chaque
+jour a 05:00 Europe/Paris, avec conservation de la precedente en cas d'echec.
+Installation du minuteur et limites : [guide de la fabrique](doc/CONTENT_FACTORY.md).
+
+Un [atelier separe](./doc/CONTENT_FACTORY.md) genere a la demande des brouillons
+de rumeurs et d'enigmes FR/EN, uniquement depuis trois exemples fictifs.
+L'essai conserve un maximum de 20 tentatives fournisseur, erreurs comprises.
+Les appels sont desactives par defaut : cle privee cote serveur, modele explicite
+et verification du tarif sont requis. Aucun voyage n'est lu ; accepter un texte
+ne le publie pas dans le jeu.
+
+Les illustrations personnelles du carnet disposent d'une file separee,
+activee explicitement cote serveur : une couverture definitive par voyage et
+une page souvenir par jour de jeu termine a minuit UTC. Les images sont
+generees en arriere-plan depuis des motifs symboliques et observations
+generales, jamais des lieux precis ou notes privees. Voir les
+[conditions, activation et limites](./doc/CONTENT_FACTORY.md#personalized-journal-illustrations).
 
 ## Fondation des indices unifies (19 octobre, locale non deployee)
 
@@ -354,6 +384,17 @@ quitter le jeu. Les chronometres continuent ; scores, indices, modeles, legendes
 de couleur et controles restent visibles. Le contenu d'aide suit le niveau
 choisi et les changements de phase.
 
+Les styles des plateaux sont partages entre les pages de test et les jeux du
+voyage via `mini-games.css` (et `styles.css` pour les livraisons). Le conteneur
+du jeu integre porte `data-mini-game` pour appliquer les memes tailles
+d'illustrations, grilles et controles sans dependre des identifiants propres
+aux pages de test.
+
+Sur petit ecran, le calendrier et l'etat du joueur sont regroupes au-dessus
+de la carte : sante, faim, fatigue et sommeil restent directement sous le
+calendrier. Les commandes secondaires restent apres la carte ; sur grand
+ecran, l'ensemble conserve sa colonne laterale.
+
 La meme aide contextuelle est disponible sur les trois ecrans et les dix-huit
 dialogues du jeu principal : depart, carte, options, tarot, carnet, photos,
 services, activites, evenements et piste du parent. Chaque fenetre affiche
@@ -483,6 +524,9 @@ du temps. Le bouton Son permet la coupure ; annulation, nouvelle partie et
 page masquee arretent la lecture.
 
 Septieme test : `/sketch-preview.html?lang=en` (ou `?lang=fr`).
+Le modele et la comparaison finale gardent la meme grande taille de symboles
+(36 a 52 px). Sous 640 px, les deux dessins sont empiles plutot que reduits
+pour tenir cote a cote ; les grilles de 3 a 7 cases restent lisibles.
 Croquis de carte postale : observer un motif original, puis le reproduire
 de memoire en cliquant/touchant les cases. Les niveaux 0 a 4 proposent des
 grilles 3×3, 4×4, 5×5, 6×6 et 7×7, avec 1, 1, 2, 2 et 4 couleurs.
@@ -540,6 +584,9 @@ l'objet dessine correspondant. Les huit illustrations originales montrent les
 details des parapluies, carnets, cles et pochettes : lune/etoile, feuille/fleur,
 poisson/oiseau, piece carree/ronde. Les cartes portent seulement un numero ;
 leur description reste accessible aux lecteurs d'ecran.
+Les cartes disposent de grandes illustrations vectorielles (jusqu'a 260 px,
+320 px en inspection). Sous 640 px, les choix gardent deux colonnes et des
+marges reduites pour rester lisibles sans debordement horizontal.
 Les niveaux 0 a 4 proposent 4 a 8 objets et des indices de moins en moins directs.
 Un compte a rebours visible de 15 secondes (reduit de 90, puis 60 et 30 apres les retours de test)
 commence uniquement sur Commencer,
@@ -603,13 +650,22 @@ a l'abri la reduisent. Se laver en ville ou aux sanitaires publics cartographies
 coute 20 minutes et un quart de repas, rend la proprete a 100 et retire 5 de
 vigilance avant la pression du temps passe. Dormir a l'abri restaure aussi
 une partie de la proprete.
+La jauge de vigilance et son pourcentage restent visibles dans l'etat du joueur,
+sous le calendrier, meme lorsque le panneau de details des pressions est ferme.
 
 A 100, un placement fictif ajoute 24 heures a l'abri, repas et repos,
 et fait perdre 25 % de l'argent restant, arrondi vers le bas. Aucun gain,
 indice ou avancement n'est accorde pour l'action interrompue. Les deux
-premiers episodes laissent reprendre au meme endroit, avec carnet et piste
+premiers episodes font reprendre dans la localite nommee la plus proche parmi
+les cases de localite deja chargees, avec carnet et piste
 intacts ; le troisieme termine le voyage et depose le carnet a la derniere
 position. Les heures au foyer ne sont pas facturees comme exposition dehors.
+Le transfert ne coute pas de marche et n'ajoute aucune distance parcourue.
+La case d'interpellation reste dans l'historique, avec la localite de reprise.
+Le secteur de vigilance est actualise ; la carte et la sauvegarde suivent la
+nouvelle position. Aucun nouveau terrain n'est telecharge pour choisir une
+localite. Sans localite nommee preparee, l'action echoue explicitement avant
+d'etre appliquee, afin de pouvoir charger du terrain puis reessayer.
 Un besoin deja fatal garde priorite.
 Le pop-up explique le seuil de vigilance a 100 et, pour les nouveaux episodes,
 la vigilance avant l'action, sa duree et les contributions reelles (temps,
@@ -698,6 +754,11 @@ avant de recharger Nginx apres renouvellement.
 Les fichiers Nginx dans `infra/nginx/` limitent les routes exposees aux assets
 du jeu et aux API connues, filtrent les methodes et limitent les requetes.
 Les depots, scripts, donnees source et caches ne sont pas servis par ce proxy.
+La liste autorise explicitement `GET /api/journey-terrain` pour la carte du
+carnet et `GET /mini-games.css` pour les visuels des mini-jeux integres.
+Lors d'une mise a jour de ces routes, installer aussi la nouvelle configuration
+Nginx, executer `nginx -t`, puis recharger Nginx ; remplacer les seuls fichiers
+du jeu ne change pas la liste du proxy.
 Cette previsualisation partagee ne remplace pas des comptes joueurs, une
 moderation ou une sauvegarde externe. Les ressources CPU existantes suffisent ;
 aucun service payant additionnel n'est commande pour HTTPS.
@@ -848,6 +909,12 @@ Le runtime doit etre committe avant empaquetage. Chaque paquet contient
 Chaque deploiement doit avoir un checkpoint Git et un tag `deploy-*`, etre
 verifie sur le serveur puis annonce a l'utilisateur. Le manifeste reste protege
 par le mot de passe HTTPS ; il ne contient aucun credential.
+
+Retablir le service et verifier sa disponibilite avant de rechauffer les caches
+terrain apres un changement de rasteriseur. Ne pas garder le serveur arrete
+pendant cette reconstruction : nginx renverrait des erreurs 502 aux joueurs.
+Conserver les sources, altitudes et anciennes grilles pour permettre la reprise
+et un retour au code precedent sans restaurer les bases des parties.
 
 ## Lancer le prototype
 
@@ -1007,11 +1074,40 @@ Un cours d'eau sans largeur connue ne contribue pas a une surface inventee :
 il reste signale dans les informations de la case. Les surfaces sont des
 estimations des donnees OSM, pas des mesures hydrologiques exactes.
 
+Les oceans sont le complement des polygones de terre fermes de
+[GSHHG 2.3.7](https://www.soest.hawaii.edu/pwessel/gshhg/), pleine resolution,
+sous LGPL 3 ou ulterieure. Les seuls traits OSM `natural=coastline` ne suffisent
+pas a remplir une case entierement au large. Installer `gshhs_f.b` avec ses
+notices `README.TXT`, `LICENSE.TXT` et `COPYING.LESSERv3` depuis l'archive
+officielle `gshhg-bin-2.3.7.zip` dans `.cache/shorelines/`, puis redemarrer.
+SHA-256 du fichier binaire attendu :
+`af9215d58ebc525b2d09654a89959829f09e6edc457f3666759cded37be4ecf6`.
+Le fichier est hors Git et conserve dans le cache persistant de la VM.
+Sa provenance/licence est exposee avec la carte. Sans ce fichier, le serveur
+avertit explicitement que la couverture des oceans est indisponible ; aucune
+absence de donnees OSM n'est interpretee comme de la mer. Cette source
+historique n'est pas une garantie de precision du rivage a 250 m.
+
+A 250 m et au-dela, les empreintes de batiments OSM sont agregees sur la meme
+grille de 20 x 20 points : `#` apparait a partir de **15 %** d'emprise cumulee.
+Les chevauchements ne sont comptes qu'une fois et les cours interieures sont
+exclues. Une maison isolee ne peint donc pas une case entiere. Routes
+principales, rails, eau et reperes gardent leurs priorites. Le pourcentage reste
+consultable meme quand un autre symbole domine. Aucun cout de marche ni
+blocage supplementaire n'est ajoute.
+
 Apres modification, executer `python3 scripts/prepare_regions.py` puis
 redemarrer le serveur. Les caches de grilles sont invalides automatiquement
 par la configuration ; les sources OSM et altitudes restent reutilisees.
 
 ## Couche 2 : voyage a pied
+
+Le fond de la fenetre et de la carte suit l'heure simulee du voyage : bleu nuit,
+prune a l'aube, bleu ardoise de jour, brun ambre au crepuscule. Les couleurs
+d'aube/crepuscule suivent les heures solaires locales dans une fenetre de
+45 minutes de part et d'autre ; le jour et la nuit polaires restent coherents.
+Attendre dans un menu n'avance pas cette ambiance. Le titre et la preparation
+gardent leur fond original ; les couleurs meteo restent liees a la temperature.
 
 - **Commencer le voyage** place le joueur `@` au centre de la region.
 - Les **fleches** du clavier ou les boutons cardinaux avancent d'une case.
@@ -1073,9 +1169,34 @@ Une requete groupe les 64 centres d'un morceau de carte. Le denivele est la
 difference entre centres, pas la somme des variations du chemin reel.
 Une altitude indisponible est explicitement signalee : le pas utilise une
 estimation de pente nulle, et le compteur de pas estimes reste visible.
-**Reessayer les telechargements** relance les altitudes manquantes.
+La grille terrain est enregistree meme si le fournisseur d'altitude echoue :
+elle reste disponible apres rechargement et redemarrage, avec l'avertissement
+d'altitude manquante. Une requete de morceau deja conserve peut relancer
+l'altitude en arriere-plan apres un delai de cinq minutes depuis le dernier
+enregistrement ; le terrain reste servi pendant cette tentative. La reprise
+reutilise la grille sans redemander OSM ni refaire le raster.
+**Reessayer les telechargements** recharge la case et peut declencher cette
+reprise apres le delai ; une tentative en cours ne bloque pas la carte.
 
 ## Couche 4 : personnage et besoins
+
+La proprete existante (0 a 100) est sauvegardee avec les pressions et affichee
+avec les jauges principales, hors du panneau de vigilance repliable. Le bouton
+de toilette reste visible : une toilette separee garde son cout de 20 minutes
+et d'un quart de repas, seulement en ville ou aux sanitaires publics.
+Une nuit terminee en hebergement payant hors camping, ou chez un hote qui a
+accepte le joueur (y compris via un lieu de culte), inclut une toilette et
+restaure la proprete a 100 sans temps ni paiement supplementaire. Les abris
+simples et tentes conservent la recuperation partielle existante. Une demande
+refusee ou une nuit interrompue ne donne pas de toilette complete.
+
+Comme pour la faim (75 %), une alerte de fatigue apparait au seuil configure
+(`warning_percent`, actuellement 70 %) et une alerte de sommeil au seuil
+`sleep_warning_hours` (actuellement 16 h eveille). Elles proposent le repos
+ou l'ouverture du choix de sommeil, selon le besoin. Chaque alerte apparait
+une fois par episode et se rearme apres recuperation sous son seuil. Elles
+attendent la fermeture des autres dialogues ; effondrement, placement et
+fin du voyage restent prioritaires.
 
 Les regles suivantes decrivent le checkpoint `layer-4-needs`. Dans la version
 actuelle, les repas sont payants et le sommeil dehors est penalise (couche 6).

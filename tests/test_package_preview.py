@@ -18,7 +18,10 @@ class PreviewPackageTests(unittest.TestCase):
             for name in ["index.html", "public/map.json", "scripts/travel_server.py",
                          "public/.DS_Store", "public/audio/.DS_Store",
                          "minigames/harvest-ui.mjs", "cafe-art.svg",
+                         "layers/living-world/preview.html", "layers/transport/transport.mjs",
                          "infra/nginx/preview.conf", "infra/nginx/bootstrap.conf",
+                         "infra/systemd/arcane-start-art.service", "infra/systemd/arcane-start-art.timer",
+                         "infra/systemd/arcane-path-content-factory.conf",
                          "infra/preview.tfstate", "ovh.conf", ".env", "README.md"]:
                 path = root / name
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -34,7 +37,10 @@ class PreviewPackageTests(unittest.TestCase):
                 self.assertEqual(set(archive.getnames()),
                                  {"index.html", "public/map.json", "scripts/travel_server.py",
                                   "minigames/harvest-ui.mjs", "cafe-art.svg",
+                                  "layers/living-world/preview.html", "layers/transport/transport.mjs",
                                   "infra/nginx/preview.conf", "infra/nginx/bootstrap.conf",
+                                  "infra/systemd/arcane-start-art.service", "infra/systemd/arcane-start-art.timer",
+                                  "infra/systemd/arcane-path-content-factory.conf",
                                   "public/release.json"})
                 release = json.load(archive.extractfile("public/release.json"))
                 commit = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"],

@@ -566,8 +566,12 @@ answer IDs, approved aliases/choice IDs, prerequisites, allowed deductions and
 which solved outcome may unlock which clue/action. No live model judges a
 player's answer or decides whether to award discovery.
 
-Generation is offline/batched and versioned in content packs, consistent with
-the content-factory approach. No paid per-action LLM calls, private player
+The original plan was offline/batched generation in versioned content packs.
+The later R-136 request permits manually triggered live OVH generation in a
+separate [local workshop](./CONTENT_FACTORY.md), initially with fictional
+sample briefs and a persistent 20-attempt trial. It does not enable live game
+generation or consume player state. Reviewed gameplay packs remain future work.
+No paid gameplay-action LLM calls, private player
 notebooks, identities, credentials or unpublished journal content are required.
 Prompts receive only the allowed evidence and sanitized geographic descriptors,
 not hidden coordinates or access to the full world/quest database.

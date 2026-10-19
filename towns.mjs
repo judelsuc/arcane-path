@@ -11,6 +11,28 @@ const PUBLIC_TOURISM = new Set([
   "guest_house", "motel", "alpine_hut", "camp_site", "viewpoint", "information", "picnic_site",
 ]);
 
+export function nearestSettlement(position, maps) {
+  let nearest, distance = Infinity;
+  for (const map of maps) {
+    const offsetCol = (map.chunk?.x ?? 0) * 8, offsetRow = (map.chunk?.y ?? 0) * 8;
+    for (let row = 0; row < map.height; row++) for (let col = 0; col < map.width; col++) {
+      const cell = map.rows[row][col];
+      if (cell.unavailable || cell.terrain !== "place") continue;
+      const settlement = [...(cell.settlements ?? [])].filter(place => place.name?.trim())
+        .sort((a, b) => a.osmId.localeCompare(b.osmId))[0];
+      if (!settlement) continue;
+      const candidate = { col: col + offsetCol, row: row + offsetRow, town: settlement.name };
+      const squared = (candidate.col - position.col) ** 2 + (candidate.row - position.row) ** 2;
+      if (squared < distance || squared === distance &&
+          (candidate.row < nearest.row || candidate.row === nearest.row && candidate.col < nearest.col)) {
+        nearest = candidate;
+        distance = squared;
+      }
+    }
+  }
+  return nearest ?? null;
+}
+
 export function publicPlace(poi) {
   const tags = poi.tags;
   if (!poi.name?.trim() || !/^(node|way|relation)\/\d+$/.test(poi.osmId) || !tags ||
