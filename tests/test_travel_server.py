@@ -154,6 +154,35 @@ class TravelServerTests(unittest.TestCase):
             self.assertNotIn("error", retried["elevation"])
             self.assertEqual(restarted.read("firmi", 1, 1), retried)
 
+    def test_provider_429_cooldown_is_shared_persistent_and_does_not_invalidate_terrain(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ChunkStore(cache=Path(directory))
+            pipeline = store.pipeline
+            limit = urllib.error.HTTPError("https://api.open-meteo.com", 429, "Too Many Requests",
+                                          {"Retry-After": "7200"}, None)
+            with patch("travel_server.fetch_elevations", side_effect=limit) as fetch:
+                first = store.build("firmi", 1, 1)
+                second = store.build("firmi", 0, 0)
+            self.assertEqual(fetch.call_count, 1, "another tile must not re-contact a throttled provider")
+            self.assertIn("429", first["elevation"]["error"])
+            self.assertIn("cooldown", second["elevation"]["error"])
+            self.assertNotIn("elevationMeters", second["rows"][0][0])
+            restarted = ChunkStore(cache=Path(directory))
+            self.assertEqual(restarted.pipeline, pipeline)
+            self.assertEqual(restarted.elevation_retry_at, store.elevation_retry_at)
+            self.assertGreaterEqual(store.elevation_retry_at, __import__("time").time() + 7190)
+            path = restarted.path("firmi", 1, 1).with_suffix(".json")
+            os.utime(path, (0, 0))
+            self.assertFalse(restarted.refresh_due("firmi", 1, 1, first))
+            with patch("travel_server.fetch_elevations", side_effect=AssertionError("Provider cooling down")):
+                self.assertEqual(restarted.build("firmi", 1, 1), first)
+            with patch("travel_server.time.time", return_value=store.elevation_retry_at + 1), \
+                    patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}) as fetch, \
+                    patch("travel_server.download_region", side_effect=AssertionError("Keep cached terrain")):
+                refreshed = restarted.build("firmi", 1, 1)
+            self.assertEqual(fetch.call_count, 1)
+            self.assertEqual(refreshed["rows"][0][0]["elevationMeters"], 100)
+
     def test_elevation_refresh_serves_cached_terrain_while_background_provider_is_pending(self):
         with tempfile.TemporaryDirectory() as directory:
             store = ChunkStore(cache=Path(directory))

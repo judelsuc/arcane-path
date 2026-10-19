@@ -18,12 +18,14 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from build_map import rasterize
 from shoreline import load_shoreline
 from living_world import LivingWorld, query_position
+from journey_transport import JourneyTransport
 from fetch_osm import download_region, incomplete_landcover
 from weather import fetch_climate
 from config import load_config
@@ -125,6 +127,13 @@ class ChunkStore:
         }
         self.origin_lock = threading.Lock()
         self.chunk_locks = [threading.Lock() for _ in range(32)]
+        self.elevation_lock = threading.Lock()
+        self.elevation_cooldown = self.cache / "elevation-cooldown.json"
+        self.elevation_retry_at = (json.loads(self.elevation_cooldown.read_text())["retryAt"]
+                                   if self.elevation_cooldown.exists() else 0)
+        if (type(self.elevation_retry_at) not in (float, int) or
+                not math.isfinite(self.elevation_retry_at) or self.elevation_retry_at < 0):
+            raise ValueError("Invalid persisted elevation cooldown.")
         self.places = PlaceLookup()
         for path in (self.cache / "origins").glob("origin-*/map.json"):
             self.register_origin(path.parent.name, json.loads(path.read_text()), path.parent / "source.osm.gz")
@@ -216,6 +225,7 @@ class ChunkStore:
 
     def refresh_due(self, region, x, y, data):
         return bool(data.get("elevation", {}).get("error") and
+                    time.time() >= self.elevation_retry_at and
                     time.time() - self.path(region, x, y).with_suffix(".json").stat().st_mtime >= 300)
 
     def build(self, region, x, y):
@@ -277,7 +287,25 @@ class ChunkStore:
                         or not math.isfinite(v) or not -500 <= v <= 9000 for v in values)):
                     raise ValueError("Invalid cached elevation.")
             else:
-                elevation = fetch_elevations(centers)
+                with self.elevation_lock:
+                    if time.time() < self.elevation_retry_at:
+                        raise ValueError("Elevation unavailable: provider cooldown after HTTP 429.")
+                    try:
+                        elevation = fetch_elevations(centers)
+                    except urllib.error.HTTPError as error:
+                        if error.code == 429:
+                            delay = (error.headers.get("Retry-After", "") if error.headers else "")
+                            seconds = 3600
+                            if delay:
+                                try:
+                                    seconds = (int(delay) if delay.isdigit() and len(delay) <= 7
+                                               else parsedate_to_datetime(delay).timestamp() - time.time())
+                                except (ValueError, TypeError, OverflowError):
+                                    logging.warning("Invalid elevation Retry-After header; using one-hour cooldown.")
+                            self.elevation_retry_at = time.time() + max(3600, seconds)
+                            atomic_write(self.elevation_cooldown, json.dumps(
+                                {"retryAt": self.elevation_retry_at}).encode())
+                        raise
                 atomic_write(elevation_path, json.dumps(elevation).encode())
             data["elevation"] = {k: v for k, v in elevation.items() if k != "values"}
             for cell, value in zip((cell for row in data["rows"] for cell in row), elevation["values"]):
@@ -408,6 +436,7 @@ def make_handler(store, jobs, path_pool=None):
     live_narrative = LiveNarrative.configured(journeys, journal_art)
     start_art = StartArt(store.cache / "start-art.sqlite3")
     living_world = ChunkJobs(LivingWorld(store.cache / "living-world", atomic_write), workers=1, capacity=4)
+    journey_transport = JourneyTransport(store)
     parent_paths = ParentPaths(store, journeys, atomic_write, pool=path_pool)
     accommodations = ChunkJobs(Accommodations(store, atomic_write), capacity=2, pool=jobs.pool)
     class Handler(SimpleHTTPRequestHandler):
@@ -512,6 +541,12 @@ def make_handler(store, jobs, path_pool=None):
                     return self.send_json(500, {"error": str(error)})
             if url.path.startswith("/api/"):
                 try:
+                    if url.path == "/api/journey-transport":
+                        query = urllib.parse.parse_qs(url.query, strict_parsing=True)
+                        if set(query) != {"region", "col", "row", "day"} or any(len(v) != 1 for v in query.values()):
+                            raise ValueError("Invalid journey transport query.")
+                        return self.send_json(200, journey_transport.lookup(
+                            query["region"][0], int(query["col"][0]), int(query["row"][0]), query["day"][0]))
                     if url.path == "/api/living-world":
                         query = urllib.parse.parse_qs(url.query, strict_parsing=True)
                         if set(query) != {"lat", "lon"} or any(len(v) != 1 for v in query.values()):

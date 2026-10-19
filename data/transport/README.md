@@ -1,6 +1,17 @@
 # Real European transport sources
 
-This is a **source acquisition milestone, not online journey activation**.
+Normal journeys now have an explicit agenda/transport host (R-165), using
+the canonical importer/hybrid reducers and existing survival/economy rules.
+`/api/journey-transport?region=firmi&col=0&row=0&day=2026-10-19`
+looks up bounded local offers: at most 50 current-cell trips from each of
+the six retained samples plus the selected SNCF corridor, only for their
+actual service day. This is **not automatic live GTFS acquisition**.
+The fictional generator uses nearby attributed offline GeoNames towns
+(or a named settlement in an already loaded current OSM chunk), current
+host projection and UTC day. Nearby access-cell coordinates are returned;
+no parent route or private journey is consulted.
+
+The separate source explorer is still an acquisition milestone:
 The real-route explorer is at
 [`layers/transport/routes.html`](../../layers/transport/routes.html) when serving
 the repository with an HTTP server. It supports French/English, country
@@ -55,8 +66,9 @@ records retain fictional/abstract labels.
 This is a country-independent **regional mechanism**, not a pre-generated
 all-Europe network. Actual mapped towns must be supplied by the host; no
 fictional place coordinates are filled in. Full town ingestion, country-wide
-batching, long-distance transfers, main-game UI/save/streaming and deployment
-remain future integration. Disconnected bounds do not silently teleport.
+batching, long-distance transfers and automatic source refresh remain future
+work. Main-game UI/save/streaming is now integrated within the limited local
+coverage described above. Disconnected bounds do not silently teleport.
 
 ## What was actually obtained
 

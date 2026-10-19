@@ -10,7 +10,8 @@ const TERRAIN = {
 
 export function createJourneyTerrainLoader(region, chunks, fetcher = fetch) {
   return async view => {
-    const all = [...view.points, ...view.stops];
+    const all = [...view.points, ...view.stops, ...(view.walkedLegs ?? []).flatMap(leg => leg.points),
+      ...(view.rides ?? []).flatMap(ride => ride.points)];
     const bounds = [
       Math.max(-8000, Math.min(...all.map(p => p.col)) - 8),
       Math.max(-8000, Math.min(...all.map(p => p.row)) - 8),
@@ -86,12 +87,14 @@ export function journeyMapView(state, cellSizeMeters = 250) {
   }
   stops.push({ col: state.col, row: state.row, kind: "current" });
   return { points: points.map(p => ({ col: p.col, row: p.row })), stops,
+    walkedLegs: state.transport?.walkedLegs ?? [], rides: state.transport?.rides ?? [],
     partial: recorded?.partial ?? state.distanceMeters > 0, simplified: recorded?.simplified ?? false,
     cellSizeMeters };
 }
 
 export function journeyMapDescription(view, t) {
-  return [t("journalMapNote"), ...(view.partial ? [t("journalMapPartial"), t("journalMapConnections")] : []),
+  return [t("journalMapNote"), ...(view.rides?.length ? [t("worldMapNote")] : []),
+    ...(view.partial ? [t("journalMapPartial"), t("journalMapConnections")] : []),
     ...(view.simplified ? [t("journalMapSimplified")] : []),
     ...(view.terrain ? [t("journalMapCached"), ...(view.terrain.sampled || view.terrain.missing
       ? [t("journalMapTerrainGaps")] : [])] : [])].join(" ");
@@ -102,7 +105,8 @@ export function drawJourneyMap(canvas, view, t, progress = 1) {
   canvas.height = 800;
   const c = canvas.getContext("2d");
   if (!c) throw new Error(t("journalPdfCanvasError"));
-  const all = [...view.points, ...view.stops];
+  const all = [...view.points, ...view.stops, ...(view.walkedLegs ?? []).flatMap(leg => leg.points),
+    ...(view.rides ?? []).flatMap(ride => ride.points)];
   const minX = Math.min(...all.map(p => p.col)), maxX = Math.max(...all.map(p => p.col));
   const minY = Math.min(...all.map(p => p.row)), maxY = Math.max(...all.map(p => p.row));
   const scale = Math.min(1000 / Math.max(8, maxX - minX), 580 / Math.max(8, maxY - minY));
@@ -153,6 +157,20 @@ export function drawJourneyMap(canvas, view, t, progress = 1) {
   }
   c.strokeStyle = "#ac3029";
   c.lineWidth = 5;
+  c.setLineDash([14, 10]);
+  for (const leg of view.walkedLegs ?? []) {
+    c.beginPath(); c.moveTo(...project(leg.points[0]));
+    for (const point of leg.points.slice(1)) c.lineTo(...project(point));
+    c.stroke();
+  }
+  c.strokeStyle = "#28637b";
+  c.setLineDash([3, 8]);
+  for (const ride of view.rides ?? []) {
+    c.beginPath(); c.moveTo(...project(ride.points[0]));
+    for (const point of ride.points.slice(1)) c.lineTo(...project(point));
+    c.stroke();
+  }
+  c.strokeStyle = "#ac3029";
   c.setLineDash([14, 10]);
   c.beginPath();
   let remaining = Math.max(0, Math.min(1, progress)) * view.points.slice(1).reduce((sum, p, index) =>

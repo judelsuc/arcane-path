@@ -14,6 +14,7 @@ import { validateHealth } from "./health.mjs";
 import { restoreEquipment } from "./equipment.mjs";
 import { validateJourneyMiniGames, abandonJourneyMiniGame } from "./journey-mini-games.mjs";
 import { validateTrailDreams } from "./trail-dreams.mjs";
+import { validateJourneyWorld } from "./journey-world.mjs";
 
 export const SAVE_VERSION = 1;
 export const JOURNEY_SAVE_PREFIX = eventPlaytestEnabled() ? "arcane-event-playtest-v1:" : "arcane-journey-v1:";
@@ -37,6 +38,8 @@ export function validateSave(save) {
   const s = save.state;
   validateJourneyMiniGames(s);
   validateTrailDreams(s);
+  validateJourneyWorld(s);
+  if (s?.storyNameFlavour !== undefined && typeof s.storyNameFlavour !== "boolean") fail();
   if (s?.equipment !== undefined) {
     const gear = restoreEquipment(s.equipment, { elapsedMinutes: s.elapsedMinutes });
     if (gear.walkedMeters > s.distanceMeters + 1e-6) fail();

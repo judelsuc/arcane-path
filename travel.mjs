@@ -26,6 +26,21 @@ export function journeyDate(state) {
   return new Date(state.startedAt + state.elapsedMinutes * 60_000);
 }
 
+export function journeyActionBlocker(state, { busy = false, cell } = {}) {
+  if (!state) return null;
+  if (busy) return "loading";
+  if (!cell) return "terrain";
+  if (state.ended) return "ended";
+  if (state.transport?.booking?.status === "active") return "transport";
+  if (state.events?.pending) return "event";
+  if (state.equipment?.dogEncounter === "pending") return "dog";
+  if (state.performancePending) return "music";
+  if (state.cafePending) return "cafe";
+  if (state.theftPending) return "theft";
+  if (state.miniGamePending) return "minigame";
+  return null;
+}
+
 export function travelCost(from, to, meters, fatigue, character = TRAVEL_MODEL) {
   if (!(meters > 0) || !Number.isFinite(meters) || !Number.isFinite(fatigue) ||
       fatigue < 0 || fatigue > 100 || !(from.terrain in GROUND_COST) || !(to.terrain in GROUND_COST)) {

@@ -1,8 +1,12 @@
 # Layer 18: living calendar and local agenda
 
-Connected standalone preview using the original canonical agenda and existing
-transport explorer/hybrid. No changes to normal journey saves, health, rewards
-or travel rules. `agenda.mjs` remains the single active-selection mechanism.
+The normal journey now uses [the host UI](../../journey-world-ui.mjs) for
+explicit nearby public searches, dated active notices and saved acknowledgements
+(R-165). There are no attendance actions or invented rewards. `agenda.mjs`
+remains the single active-selection mechanism; future source observations cannot
+be shifted into old journeys. Imported agenda data is ephemeral: search again
+after resume, while saved acknowledgements prevent repeated unread notices.
+The standalone preview remains available separately.
 
 ## Connected public sources (R-122)
 
@@ -33,7 +37,8 @@ The transport link reuses the verified European catalogue (1,732 feeds in
 41 countries, gaps shown across the 47-country scope), six dated samples and
 the already implemented real-first Grenoble-Lyon/fictional-coach preview.
 These are sourced dated schedules, not live service/disruption guarantees;
-normal online journey boarding is not enabled by this preview.
+the normal host now supports boarding from the current mapped town/stop cell,
+but this preview itself never changes the real journey.
 
 ## Preview / Aperçu
 

@@ -1,5 +1,89 @@
 # Requirements tracked outside the design PDF
 
+## R-167 - Idle-server expansion of the OSM cache (future)
+
+- When the server is mostly idle, progressively cache additional OSM coverage
+  in the background, starting at the edges of already cached map areas and
+  expanding outward into neighbouring uncached areas.
+- Run server-side without requiring an open browser or player movement.
+  Reuse existing cached sources and chunk identities; deduplicate work against
+  foreground downloads and other background jobs. Preserve existing journeys,
+  cached terrain and immutable journey genesis.
+- Player requests take priority. Pause or yield speculative work when the server
+  is busy or foreground map preparation needs resources.
+- Respect provider usage policies, rate/concurrency limits and shared cooldowns,
+  including Retry-After and backoff. Idle CPU is not permission to bypass an
+  upstream limit. Do not purchase a service or incur new paid usage implicitly.
+- Bound disk growth, download volume and background resource use. Persist
+  progress so restarts resume from cached coverage rather than repeat downloads;
+  expose progress, failures and pause reasons to operators.
+- Define measurable idle thresholds, expansion order/coverage boundaries,
+  storage/request budgets and enable/disable controls before implementation.
+  OSM expansion must not implicitly increase elevation-provider traffic.
+- Requirement recorded only; not implemented, enabled or part of the upcoming
+  gameplay release.
+
+## R-166 - Epic end-of-journey chronicle
+
+- Approved for the upcoming release: automatically prepare one FR/EN closing
+  chronicle when the character dies or reunites with their parent.
+- Epic but faithful: bittersweet, gentle and non-graphic on death, warmly
+  triumphant on reunion. Do not invent achievements, people, places or events,
+  reveal hidden stages, change the ending or grant gameplay effects.
+- Submit an allowlisted terminal outcome, bounded numeric journey counters,
+  reached-stage indices/times and retained intermediate-event types/times.
+  Resolve reached place names and fixed event facts on the server; weave those
+  étapes and encounters into the narrative in known game-time order.
+  Exclude private names, notes, photos, coordinates, unvisited destinations and hidden parent fiction.
+  Client counters describe locally recorded play, not server-certified history.
+  State that retained events may be partial; do not invent unknown legacy times,
+  associate events with towns without evidence, or turn impressions into facts.
+- Show the chronicle alongside the authoritative ending, with AI/fallback status.
+  Provide immediate authored summary while pending, disabled, local-only or
+  failed. Never block restart, save, notebook access or gameplay behind generation.
+- One durable provider attempt per journey/keeper, no automatic failure retry;
+  rereads/resume reuse the earliest saved chronicle across prompt revisions.
+  Ongoing journeys, abandonment and placement do not trigger it.
+- Include available generated text, otherwise authored text, in the existing
+  notebook publication flow. Never wait for generation or silently republish.
+
+## R-165 - Public agenda and paid transport in normal journeys
+
+- Approved: main-journey agenda with public-source links and active local
+  notices, no invented entry fees, rewards or attendance mechanics.
+- Search explicitly around the current player cell; disclose rounded event
+  coordinates sent to the provider. Preserve simulated journey dates; never
+  shift current publications into a past journey. Retain provenance, freshness,
+  limited coverage and explicit errors. Save encounter acknowledgements.
+- Approved: coaches at real town centres and real services at their mapped
+  stop cells. Reuse the canonical timetable/hybrid reducers, real dated loaded
+  snapshots first and clearly labelled fictional town links where uncovered.
+  This does not implement a live nationwide GTFS downloader.
+- Show nearby access points, actual departure/arrival UTC dates, waiting,
+  duration and estimated game fare before explicit confirmation. Charge once
+  at boarding; free cancellation only before boarding. A missed real service
+  must not generate a replacement fictional service.
+- Advance only by player action, at most 30 simulated minutes per command
+  settled minute-by-minute through existing awake survival/pressure rules.
+  Hunger, fainting and care interrupt before the next-stop displacement.
+  No walking-distance credit, sleep or fatigue recovery for riding.
+- Persist the pinned timetable/booking and validate on resume. Load the
+  destination map before landing. Keep vehicle links distinct from walking
+  traces and never claim supplied stop sequences are verified road geometry.
+- Include R-158 in this release with explicit new-story name opt-in, generic
+  original flavour only and no regeneration of existing stories.
+
+## R-158 - Recognizable-name flavour in opening backstories
+
+- Explicit unchecked new-journey opt-in discloses sending the immutable saved
+  character name to OVH, only for the opening story. No arbitrary client prompt.
+- Recognizable names may inspire subtle generic traits in original prose.
+  Uncertain recognition leaves an ordinary story; never copy dialogue, lyrics
+  or signature expressions, claim reference identity, infer sensitive attributes
+  or change the parent, route, clues, powers or statistics.
+- Existing saves without permission keep names private; already saved stories
+  remain immutable with existing single-attempt and authored fallback rules.
+
 ## R-164 - Pinned photos on the journey path (future)
 
 - Show pinned journey photos on or alongside the player's journey path,
@@ -16,10 +100,14 @@
 
 - A completed deliberate sleep lasting at least 60 minutes permits one check
   at sleep start plus 60 minutes, at most once per 720 journey minutes.
-- Guarantee guidance after three unsuccessful field searches, including those
-  far from the parent's route, or 1,440 minutes without new parent progress.
-  Otherwise the chance is 50%; persist misses and use a stable draw so reload
-  cannot reroll the same sleep.
+- **Revised delay:** no lost-traveller dream until 2,880 journey minutes
+  (48 game hours) since the latest new parent clue/progress. Every new clue,
+  arrival, stage discovery or successful guidance dream restarts the delay.
+  Existing recorded progress supplies the timer on resume; duplicate collected
+  clues and failed searches do not reset or bypass it.
+- Once the delay is reached, the next qualifying sleep gives guidance.
+  Remove early random opportunities and the three-failure shortcut; preserve
+  historical saved dream/miss records without replaying their popups.
 - Give only an eight-way bearing from the sleeping location toward the current
   stage. Do not reveal its name, coordinates or future stages, promise a
   traversable route, or teleport the player.
@@ -29,8 +117,15 @@
 - Include outdoor, shelter, hotel and accepted hospitality sleeps; exclude
   ordinary rest, fainting, detention, care and interrupted/terminal sleeps.
   Existing journeys remain compatible; no historical popup replay on resume.
-- This bounded authored guidance does not activate the unpublished lore
-  playtest, artifact dreams or new model generation.
+- Optional content-factory wording adds three cached FR/EN dream introductions
+  per journey/keeper, rotating on successful dreams. Send only a fixed public
+  dream brief, never names, route, location or clue history. Always retain the
+  game's authored directional guidance; generation cannot change eligibility.
+  Show generation/fallback status, keep an open dream's wording stable, and
+  reuse durable results without automatic provider retries or regenerating
+  existing event/NPC/opening text. Retain authored text when unavailable.
+- This bounded guidance does not activate the unpublished lore playtest or
+  artifact dreams.
 
 ## R-162 - Varied cached event introductions and truthful status
 

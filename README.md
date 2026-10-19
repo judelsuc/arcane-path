@@ -16,15 +16,43 @@ The dream does not name hidden towns or guarantee a traversable route.
 This standalone mechanism does not activate the unpublished lore/artifact
 dream system.
 
-## Connected living-world preview
+## Public agenda and transport
+
+Normal journeys include **Public agenda and transport** (R-165). Explicit
+search shows nearby dated public events and source links, with acknowledgements
+saved but no attendance rewards. A publication observed after the simulated
+journey clock cannot become a retroactive encounter.
+
+Board from a mapped town/stop cell, select a departure, then confirm its UTC
+dates and estimated game fare. Continue in player-triggered steps of at most
+30 minutes: awake survival/pressure rules apply every minute, payment occurs
+once at boarding, cancellation is free only before boarding. Timetable/booking
+saves resume without a second charge; map vehicle links are not walking paths.
+Real coverage is only the loaded licensed dated snapshots, not a live European
+network. Explicitly fictional coaches connect nearby real towns where current
+real coverage is absent. Provider errors do not silently become invented trips.
 
 Options links to the [public-event preview](layers/living-world/preview.html),
 using bounded OpenAgenda searches with explicit coverage, freshness, provenance
 and optional openly licensed Commons photographs labelled illustrative.
 It also links to the existing European transport source explorer and hybrid
-Grenoble-Lyon preview. These are standalone previews, not normal-journey event
-or transit activation. See [coverage and privacy](layers/living-world/README.md)
+Grenoble-Lyon preview. These remain separate demonstrations alongside the
+ordinary-journey integration. See [coverage and privacy](layers/living-world/README.md)
 and [transport sources/licences](data/transport/README.md).
+
+Elevation-provider HTTP 429 triggers a shared, persisted cooldown of at least
+one hour (longer `Retry-After` values are respected). Cached terrain and heights
+stay usable; missing heights remain explicitly unavailable, not invented.
+Identical elevation warnings are shown once per journey instead of per tile.
+This does not fix upstream OSM delays or guarantee a complete parent route:
+route preparation remains bounded and must not be mistaken for a validated
+route while unavailable.
+
+Movement controls show a French/English explanation while blocked by a foreground
+action/map load, missing current terrain, a pending encounter/game, an active
+transport booking, or journey end. The explanation does not dismiss an encounter,
+change the save, or bypass the action lock. Recovery after waiting alone does not
+establish which blocker caused a particular incident.
 
 ## Content factory and gameplay feedback release
 

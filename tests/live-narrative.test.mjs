@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createLiveNarrative, NARRATIVE_BRIEFS } from "../live-narrative.mjs";
+import { createLiveNarrative, NARRATIVE_BRIEFS, LOST_PLAYER_DREAM } from "../live-narrative.mjs";
 import { setupJourneyEvents } from "../journey-events-ui.mjs";
 import { translate } from "../i18n.mjs";
 import { EVENT_CATALOGUE } from "../journey-events.mjs";
@@ -149,12 +149,47 @@ test("registry excludes all story events, dog choices and lore; NPC authored spe
     if (id.startsWith("event.")) {
       assert.notEqual(EVENT_CATALOGUE[id.slice(6)].polarity, "story");
       assert.notEqual(id, "event.dogEncounter");
+    } else if (id === LOST_PLAYER_DREAM) {
+      assert.equal(brief.kind, "dream");
+      assert.match(brief.facts, /not a real sighting/);
     } else {
       assert.ok(id.startsWith("npc.hospitality."));
       assert.equal(typeof brief.en, "string");
       assert.equal(typeof brief.fr, "string");
     }
   }
+});
+
+test("dream factory caches three bilingual introductions using only the registered id", async () => {
+  const requests = [], alternatives = [
+    { en: "In your dream, a thread glimmers.", fr: "Dans votre rêve, un fil luit." },
+    { en: "A faded thread returns in your sleep.", fr: "Un fil effacé revient dans votre sommeil." },
+  ];
+  const client = createLiveNarrative({ fetcher: async (_, options) => {
+    requests.push(JSON.parse(options.body));
+    return { ok: true, json: async () => ({ brief: LOST_PLAYER_DREAM, status: "ready",
+      enabled: true, text: generated, alternatives }) };
+  } });
+  client.prefetch(state, [LOST_PLAYER_DREAM]);
+  await flush();
+  for (let variant = 0; variant < 6; variant++) {
+    assert.deepEqual(client.snapshot(state, LOST_PLAYER_DREAM, variant), [generated, ...alternatives][variant % 3]);
+  }
+  client.prefetch(state, [LOST_PLAYER_DREAM]);
+  await flush();
+  assert.deepEqual(requests, [{ journey: state.serverJourney.id, brief: LOST_PLAYER_DREAM }]);
+});
+
+test("dream factory rejects incomplete version sets without automatic retries", async () => {
+  let calls = 0;
+  const client = createLiveNarrative({ fetcher: async () => { calls++; return reply(LOST_PLAYER_DREAM); } });
+  client.prefetch(state, [LOST_PLAYER_DREAM]);
+  await flush();
+  assert.equal(client.snapshot(state, LOST_PLAYER_DREAM), null);
+  assert.match(client.status(state, LOST_PLAYER_DREAM, "en"), /failed/);
+  client.prefetch(state, [LOST_PLAYER_DREAM]);
+  await flush();
+  assert.equal(calls, 1);
 });
 
 for (const language of ["en", "fr"]) {
