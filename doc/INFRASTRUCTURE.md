@@ -1,4 +1,28 @@
-# Infrastructure OVHcloud - rapport du 18 octobre 2026
+# Infrastructure OVHcloud - rapport du 19 octobre 2026
+
+## Correctif deploye - infobulles des jeux et raison du foyer
+
+- Runtime `c6e3a9caab51d4cc289cafcca8efb035bdaeee28`, tag pousse
+  `deploy-2026-10-19-help-placement`, base `e4bbde7`.
+- Les commandes natives des jeux ont leurs libelles dans les infobulles
+  au survol/focus, sans raccourcis automatiques parasites. Aide collecte
+  aussi les commandes detaillees des neuf jeux integres.
+- Le foyer explique le seuil de vigilance a 100 et conserve, pour les nouveaux
+  episodes, la vigilance precedente, la duree et les contributions reelles.
+  Les anciens episodes restent lisibles sans detail invente. Reprendre ne
+  rejoue plus les notifications historiques de placement ou evanouissement.
+  Arithmetique des pressions, regles et frequence des evenements inchangees.
+- **818 tests JavaScript** passes sur la base de production isolee.
+  Navigateur local : aide detaillee, infobulle non vide dans le dialogue natif,
+  vrai declenchement de placement et absence de reaffichage apres reprise verifies.
+- Huit fichiers installes/verifies, dont la configuration Nginx inchangee et
+  **sept assets publics compares octet par octet en HTTPS authentifie**.
+  Services actifs, API origines HTTP 200 ; sauvegardes SQLite avant/apres et
+  **18 genesis existantes inchangees**.
+- Retour code prive (0600) :
+  `/home/ubuntu/arcane-path-before-deploy-c6e3a9caab51.tar.gz`.
+  Ne pas restaurer les bases en arriere. Recharger la page pour recevoir les
+  nouveaux modules ; aucune reinitialisation de partie necessaire.
 
 ## Livraison - douze jeux, sac spatial et compagnon
 
