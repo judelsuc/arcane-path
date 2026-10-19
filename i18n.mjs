@@ -1015,7 +1015,7 @@ export const translations = {
     livingWorldPreview: "Aperçu connecté : événements publics et transports européens",
     trailArrivalTitle: "Félicitations !",
     trailDreamTitle: "Un rêve vous remet sur la piste",
-    trailDreamText: "Dans votre sommeil, une silhouette familière vous fait signe. Au réveil, une direction reste claire : depuis le lieu où vous avez dormi, partez plutôt vers le {direction} pour retrouver l'étape actuelle de la piste. C'est une orientation générale, pas un itinéraire praticable garanti. Ce rêve est conservé dans votre carnet.",
+    trailDreamText: "Dans votre sommeil, une silhouette familière vous fait signe. Au réveil, une direction reste claire : depuis le lieu où vous avez dormi, partez plutôt vers {direction} pour retrouver l'étape actuelle de la piste. C'est une orientation générale, pas un itinéraire praticable garanti. Ce rêve est conservé dans votre carnet.",
     trailDreamJournal: "Relire la piste et le rêve",
     trailDreamRules: "Après au moins une heure de sommeil volontaire, un rêve peut vous orienter (50 % de chances, un essai toutes les 12 heures de jeu). Il est garanti après trois recherches infructueuses ou 24 heures de jeu sans nouvel indice sur le parent. Repos, évanouissement et détention ne comptent pas. Aucun coût supplémentaire.",
     "windowHelp.trail-dream-dialog": "Le rêve donne une direction générale vers l'étape actuelle depuis le lieu où vous avez dormi, sans révéler son nom ni les étapes futures. Retrouvez-le sur la page correspondante de la piste ; sa direction reste liée au lieu du sommeil.",

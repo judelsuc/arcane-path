@@ -1,5 +1,17 @@
 # Requirements tracked outside the design PDF
 
+## R-164 - Pinned photos on the journey path (future)
+
+- Show pinned journey photos on or alongside the player's journey path,
+  associated with their recorded locations.
+- Keep the existing photo journal and let the player identify/open the
+  corresponding pinned photo from the path presentation.
+- Decide the visual treatment later (markers, thumbnails or previews),
+  including overlapping photos, mobile readability and accessibility.
+- Do not reveal unvisited locations or hidden parent stages. Define how to
+  handle older photos without usable location metadata before implementation.
+- Requirement recorded only; not part of the rescue-dream deployment.
+
 ## R-163 - Rescue dreams for a traveller who has lost the parent's trail
 
 - A completed deliberate sleep lasting at least 60 minutes permits one check
