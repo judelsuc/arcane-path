@@ -34,7 +34,8 @@ Worship hospitality keeps the existing chance of acceptance and one request
 per place per game day. Private, inactive and abandoned places are excluded.
 Later search responses retain previously mapped destinations.
 
-An adopted dog's status is displayed directly below the player-status panel;
+An adopted dog's status is displayed directly below the cleanliness meter,
+before the washing button and explanation;
 clicking it still opens companion care. It remains hidden without an adopted dog.
 
 ## Public agenda and transport
