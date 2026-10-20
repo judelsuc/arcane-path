@@ -9,6 +9,7 @@ import { journeyMapView, journeyMapDescription, drawJourneyMap } from "./journey
 import { notebookCover } from "./notebook-cover.mjs";
 import { renderDiscoveryNotebook, discoveryNotebookEntries } from "./discovery-ui.mjs";
 import { createJournalIllustrator, illustrationScenes, COVER_ART_ID } from "./journal-art.mjs";
+import { createLiveNarrative, JOURNAL_SUBTITLE } from "./live-narrative.mjs";
 
 export function validateJournalPhoto(photo) {
   if (!photo || typeof photo.sourceUrl !== "string" || typeof photo.licenseUrl !== "string" ||
@@ -126,7 +127,7 @@ export function createPhotoJournalStore(index = indexedDB) {
 }
 
 export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
-  makePdf = notebookPdf, downloadPdf = downloadNotebookPdf } = {}) {
+  makePdf = notebookPdf, downloadPdf = downloadNotebookPdf, narrative = createLiveNarrative() } = {}) {
   const rootStore = store;
   let liveStore = store, readOnly = false;
   const dialog = document.querySelector("#photo-journal-dialog");
@@ -154,6 +155,12 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   const tarotPins = new WeakMap();
   let scope = "unassigned";
   let artStatus = "", artError = "";
+  function coverContext() {
+    return { ...statsContext, coverSubtitle: narrative.snapshot(statsContext.state, JOURNAL_SUBTITLE) };
+  }
+  narrative.subscribe(() => {
+    if (dialog.open && covering && !readOnly && statsContext) void render();
+  });
   const art = createJournalIllustrator({
     onStatus(status, message = "") {
       artStatus = status; artError = message;
@@ -233,7 +240,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       pages.dataset.covering = String(covering);
       if (covering && statsContext && !readOnly) {
         revoke();
-        const cover = notebookCover(statsContext, t, document.documentElement.lang);
+        const cover = notebookCover(coverContext(), t, document.documentElement.lang);
         const page = document.createElement("section");
         page.className = "notebook-page journal-cover";
         const title = document.createElement("h3"), subtitle = document.createElement("p");
@@ -241,6 +248,11 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         subtitle.className = "journal-cover-subtitle";
         subtitle.textContent = cover.subtitle;
         page.append(title, subtitle);
+        const wordingStatus = document.createElement("p");
+        wordingStatus.className = "journal-cover-wording-status";
+        wordingStatus.textContent = narrative.status(statsContext.state, JOURNAL_SUBTITLE,
+          document.documentElement.lang);
+        page.append(wordingStatus);
         const artwork = await store.get(COVER_ART_ID);
         if (current !== generation || !dialog.open) return;
         if (artwork) {
@@ -519,7 +531,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       }
       const groups = !foreign && statsContext
         ? journeyStats(statsContext, t, document.documentElement.lang) : [];
-      const cover = !foreign && statsContext ? notebookCover(statsContext, t, document.documentElement.lang) : null;
+      const cover = !foreign && statsContext ? notebookCover(coverContext(), t, document.documentElement.lang) : null;
       if (cover) {
         const artwork = await target.get(COVER_ART_ID);
         if (artwork) cover.artwork = artwork;
@@ -577,6 +589,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         context?.mapTerrain === statsContext?.mapTerrain;
       statsContext = context;
       if (context) {
+        narrative.prefetch(context.state, [JOURNAL_SUBTITLE]);
         try {
           art.observe(context.state, illustrationScenes(context.artTerrain, context.artWeather));
         } catch (reason) {
@@ -596,6 +609,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       if (nextScope === scope) return;
       exportEpoch++;
       art.stop();
+      narrative.reset();
       artStatus = artError = "";
       stopAnimation();
       for (const [id, note] of drafts) await liveStore.note(id, note);

@@ -18,7 +18,7 @@ from abandoned_journals import AbandonedJournals, JournalForbidden
 from content_factory import LIMIT, OvhWriter, WorkshopError
 from journal_art import JournalArt
 from journeys import JourneyStore, JourneyRequest, JourneyCapacity
-from live_narrative import CATALOGUE, DREAM_BRIEF, MODEL, VERSION, LiveNarrative, provider_request, validate_output, version_for
+from live_narrative import CATALOGUE, COVER_BRIEF, DREAM_BRIEF, MODEL, VERSION, LiveNarrative, provider_request, validate_output, version_for
 from opening_story import BRIEF_ID, opening_brief, validate_parent_reference
 from closing_story import BRIEF_ID as CLOSING_BRIEF, LIMITS, closing_brief
 from travel_server import ChunkStore, ChunkJobs, atomic_write, make_handler
@@ -37,6 +37,47 @@ def response(en="A passer-by offers you a few coins.", fr="Un passant vous offre
 
 
 class LiveNarrativeTests(unittest.TestCase):
+    def test_cover_subtitle_is_canonical_private_bilingual_durable_and_immutable(self):
+        self.writer.return_value = response(en="A lantern on the autumn road.",
+                                            fr="Une lanterne sur le chemin d'automne.")
+        before = self.journeys.read(self.owner)
+        self.request(COVER_BRIEF)
+        result = self.settle(COVER_BRIEF)
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(result["alternatives"], [])
+        self.assertEqual(result["accounting"]["attempts"], 1)
+        brief = self.writer.call_args.args[0]
+        self.assertEqual(set(brief), {"kind", "departure", "startingPlace", "landscape", "birthCard", "season"})
+        self.assertEqual(brief["kind"], COVER_BRIEF)
+        self.assertEqual(brief["birthCard"], before["state"]["birthCard"])
+        encoded = json.dumps(brief)
+        for secret in ["PRIVATE PLAYER", self.owner, self.token, "parentName", "latitude", "longitude",
+                       *[stage["name"] for stage in before["state"]["trail"]["stages"]]]:
+            self.assertNotIn(secret, encoded)
+        request = provider_request(brief, MODEL)
+        self.assertIn("subtitle", request["messages"][0]["content"])
+        self.assertEqual(request["response_format"]["json_schema"]["schema"]["properties"]["fr"]["maxLength"], 160)
+        self.assertEqual(self.journeys.read(self.owner), before)
+        self.service.close()
+        reopened = LiveNarrative(self.journeys, self.auth, self.writer)
+        self.addCleanup(reopened.close)
+        with patch("live_narrative.version_for", return_value="future-subtitle"):
+            self.assertEqual(reopened.request({"journey": self.owner, "brief": COVER_BRIEF}, self.token), result)
+        self.writer.assert_called_once()
+
+    def test_cover_subtitle_rejects_client_prompts_and_invalid_generated_text_without_retry(self):
+        for extra in [{"summary": {"name": "PRIVATE"}}, {"nameFlavour": True}, {"prompt": "invent"}]:
+            with self.assertRaises(JourneyRequest):
+                self.request(COVER_BRIEF, **extra)
+        self.writer.assert_not_called()
+        self.writer.return_value = response(en="x" * 161, fr="Un sous-titre.")
+        self.request(COVER_BRIEF)
+        result = self.settle(COVER_BRIEF)
+        self.assertEqual(result["status"], "failed")
+        self.assertIsNone(result["text"])
+        self.request(COVER_BRIEF)
+        self.writer.assert_called_once()
+
     def closing_summary(self, outcome="reunion"):
         return {"outcome": outcome, **{key: 0 for key in LIMITS},
                 "walkingMeters": 309000, "elapsedMinutes": 40525, "stagesReached": 10,

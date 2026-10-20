@@ -10,7 +10,11 @@ for (const language of ["fr", "en"]) {
       trail: { origin: { col: 0, row: 0 }, stages: [{ name: "Secret future town" }] } } };
     const cover = notebookCover(context, t, language);
     assert.equal(cover.title, t("journalCoverTitle", { name: "Alex" }));
-    assert.equal(cover.subtitle, t("journalCoverSubtitle"));
+    assert.equal(cover.subtitle, t("journalCoverSubtitle", { point: "Firmi" }));
+    assert.doesNotMatch(cover.subtitle, /blisters|ampoules/);
+    const generated = { en: "A lantern on the autumn road.", fr: "Une lanterne sur le chemin d'automne." };
+    assert.equal(notebookCover({ ...context, coverSubtitle: generated }, t, language).subtitle,
+      generated[language]);
     assert.equal(cover.rows[0].value, "Firmi");
     assert.match(cover.rows[1].value, /17.*2026.*UTC/);
     assert.doesNotMatch(JSON.stringify(cover), /Secret future/);

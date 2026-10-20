@@ -4,6 +4,7 @@ import { CLOSING_STORY, closingSummary } from "./closing-story.mjs";
 export const NARRATIVE_BRIEFS = Object.freeze(briefs);
 export const OPENING_STORY = "story.opening";
 export const LOST_PLAYER_DREAM = "dream.lost-player";
+export const JOURNAL_SUBTITLE = "journal.subtitle";
 
 const messages = {
   en: {
@@ -75,7 +76,7 @@ export function createLiveNarrative({
           if (current !== epoch) return;
           const validText = text => text && ["en", "fr"].every(lang =>
             typeof text[lang] === "string" && text[lang].length >= (id === CLOSING_STORY ? 600 : id === OPENING_STORY ? 500 : 5) &&
-            text[lang].length <= (id === CLOSING_STORY ? 3000 : id === OPENING_STORY ? 1800 : 400));
+            text[lang].length <= (id === CLOSING_STORY ? 3000 : id === OPENING_STORY ? 1800 : id === JOURNAL_SUBTITLE ? 160 : 400));
           if (typeof result.enabled !== "boolean" || result.brief !== id ||
               !["queued", "running", "ready", "failed", "disabled"].includes(result.status) ||
               result.status === "ready" && (!validText(result.text) ||
@@ -110,7 +111,7 @@ export function createLiveNarrative({
       activate(state);
       if (!access || disabled) return;
       for (const id of ids) {
-        if (!Object.hasOwn(briefs, id) && id !== OPENING_STORY && id !== CLOSING_STORY) continue;
+        if (!Object.hasOwn(briefs, id) && id !== OPENING_STORY && id !== CLOSING_STORY && id !== JOURNAL_SUBTITLE) continue;
         if (id === CLOSING_STORY && !endingSummary) {
           endingSummary = closingSummary(state);
           if (!endingSummary) continue;

@@ -80,6 +80,10 @@ une page souvenir par jour de jeu termine a minuit UTC. Les images sont
 generees en arriere-plan depuis des motifs symboliques et observations
 generales, jamais des lieux precis ou notes privees. Voir les
 [conditions, activation et limites](./doc/CONTENT_FACTORY.md#personalized-journal-illustrations).
+La couverture dispose de sa propre image, distincte de l'accueil. Son
+sous-titre FR/EN est genere une seule fois depuis le cadre du depart, le
+tarot et le motif canonique du depart du parent ; aucun futur repere ou texte
+prive du carnet n'est envoye. L'image et le sous-titre sont repris dans le PDF.
 
 ## Fondation des indices unifies (voyage principal)
 

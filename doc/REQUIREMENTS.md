@@ -488,6 +488,12 @@
 
 ## R-137 - Personalized cover and illustrated daily journal memories
 
+- **20 October clarification:** enable the existing free symbolic tarot/scenery
+  cover now, independently of the postponed photo-based R-139 flow. Keep its
+  dedicated image separate from the shared start-page illustration. Generate
+  one durable bilingual subtitle from the saved departure setting, birth tarot
+  and canonical parent motive; no future stages, private notes or invented
+  blisters. Display generation status and reuse the subtitle in PDF exports.
 - **19 October confirmed choices:** personalize illustrations with birth/day
   tarot motifs and broad surroundings, never player identity or exact location.
 - Generate one permanent cover per journey. Add a separate dated illustrated

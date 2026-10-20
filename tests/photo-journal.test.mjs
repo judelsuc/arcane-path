@@ -5,11 +5,69 @@ import { translate } from "../i18n.mjs";
 import { readFileSync } from "node:fs";
 import { startSurvival } from "../survival.mjs";
 import { startEconomy } from "../economy.mjs";
+import { COVER_ART_ID } from "../journal-art.mjs";
+import { JOURNAL_SUBTITLE } from "../live-narrative.mjs";
 
 const photo = (id = 1) => ({ blob: new Blob(["image fixture"], { type: "image/png" }),
   title: `Secret photo ${id}`, attribution: "Photographer", license: "CC BY 4.0",
   licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
   sourceUrl: `https://example.org/photo/${id}`, note: "", pinnedAt: `2026-10-17T12:00:0${id}Z` });
+
+test("own cover image and generated bilingual subtitle appear on the cover and in its PDF", async test => {
+  const original = globalThis.document;
+  test.after(() => { globalThis.document = original; });
+  class Element {
+    dataset = {}; children = []; events = {}; open = false; textContent = "";
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    addEventListener(type, callback) { this.events[type] = callback; }
+    showModal() { this.open = true; }
+  }
+  const elements = new Map(), element = selector => {
+    if (!elements.has(selector)) elements.set(selector, new Element());
+    return elements.get(selector);
+  };
+  globalThis.document = { documentElement: { lang: "en" }, createElement: () => new Element(),
+    querySelector: selector => selector === "dialog[open]"
+      ? [...elements.values()].find(e => e.open) ?? null : element(selector) };
+  let generated = null, notify, exported;
+  const subtitle = { en: "A lantern on the autumn road.", fr: "Une lanterne sur le chemin d'automne." };
+  const artwork = photo(99), reads = [];
+  const narrative = {
+    prefetch(state, ids) { assert.deepEqual(ids, [JOURNAL_SUBTITLE]); },
+    snapshot() { return generated; },
+    status() { return generated ? "Generated subtitle ready" : "Subtitle pending"; },
+    subscribe(listener) { notify = listener; },
+  };
+  const ui = setupPhotoJournal((key, args) => translate(document.documentElement.lang, key, args), {
+    narrative,
+    store: { list: async () => [], get: async id => { reads.push(id); return id === COVER_ART_ID ? artwork : null; } },
+    makePdf: async input => { exported = input; return new Blob(["pdf"]); }, downloadPdf() {},
+  });
+  const survival = JSON.parse(readFileSync(new URL("../public/config.json", import.meta.url))).survival;
+  const economy = JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url)));
+  const state = { ...startEconomy(startSurvival(1, 2, Date.UTC(2026, 9, 20),
+    "balanced", survival), economy, () => 0), name: "Alex",
+    birthCard: "hermit", dailyCard: "moon", trail: { origin: { name: "Firmi" } } };
+  ui.updateStats({ state, survival, economy });
+  element("#open-journal").events.click();
+  await new Promise(resolve => setImmediate(resolve));
+  const page = () => element("#journal-pages").children[0];
+  assert.ok(page().children.some(child => child.textContent === "From Firmi, following a parent's trail."));
+  assert.ok(page().children.some(child => child.className === "journal-cover-art"));
+  generated = subtitle;
+  notify();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(page().children.some(child => child.textContent === subtitle.en));
+  document.documentElement.lang = "fr";
+  ui.localize();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(page().children.some(child => child.textContent === subtitle.fr));
+  await element("#journal-export-pdf").events.click();
+  assert.equal(exported.cover.subtitle, subtitle.fr);
+  assert.equal(exported.cover.artwork, artwork);
+  assert.ok(reads.every(id => id === COVER_ART_ID));
+});
 
 for (const locale of ["fr", "en"]) {
   test(`${locale} PDF exports every page, saves unblurred drafts, includes statistics and isolates found notebooks`, async test => {

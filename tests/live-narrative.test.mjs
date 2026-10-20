@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createLiveNarrative, NARRATIVE_BRIEFS, LOST_PLAYER_DREAM } from "../live-narrative.mjs";
+import { createLiveNarrative, NARRATIVE_BRIEFS, LOST_PLAYER_DREAM, JOURNAL_SUBTITLE } from "../live-narrative.mjs";
 import { setupJourneyEvents } from "../journey-events-ui.mjs";
 import { translate } from "../i18n.mjs";
 import { EVENT_CATALOGUE } from "../journey-events.mjs";
@@ -12,6 +12,28 @@ const state = { serverJourney: { id: "a".repeat(32) }, journalAccess: "c".repeat
 const generated = { en: "A passer-by offers you coins for the road.", fr: "Un passant vous offre des pièces pour la route." };
 const reply = (brief, status = "ready", enabled = true) => ({
   ok: true, json: async () => ({ brief, enabled, status, text: status === "ready" ? generated : null }),
+});
+
+test("journal subtitle uses only canonical server facts, stays bilingual and rejects oversized output", async () => {
+  let calls = 0;
+  const client = createLiveNarrative({ fetcher: async (_, options) => {
+    calls++;
+    assert.deepEqual(JSON.parse(options.body), { journey: state.serverJourney.id, brief: JOURNAL_SUBTITLE });
+    return reply(JOURNAL_SUBTITLE);
+  } });
+  client.prefetch(state, [JOURNAL_SUBTITLE]);
+  await flush();
+  assert.deepEqual(client.snapshot(state, JOURNAL_SUBTITLE), generated);
+  client.prefetch(state, [JOURNAL_SUBTITLE]);
+  assert.equal(calls, 1);
+  const invalid = createLiveNarrative({ fetcher: async () => ({
+    ok: true, json: async () => ({ brief: JOURNAL_SUBTITLE, enabled: true, status: "ready",
+      text: { en: "x".repeat(161), fr: "Texte." } }),
+  }) });
+  invalid.prefetch(state, [JOURNAL_SUBTITLE]);
+  await flush();
+  assert.equal(invalid.snapshot(state, JOURNAL_SUBTITLE), null);
+  assert.match(invalid.status(state, JOURNAL_SUBTITLE, "en"), /failed/);
 });
 
 test("only registered public ids and owner capability are sent; stable bilingual snapshot", async () => {
