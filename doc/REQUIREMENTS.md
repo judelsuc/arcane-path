@@ -1,5 +1,20 @@
 # Requirements tracked outside the design PDF
 
+## R-170 - Game version and changelog in Options
+
+- Display the semantic game version and a readable French/English changelog
+  from tracked release notes in Options, with each entry's version visible.
+- Separate the game version from the deployment metadata schema version.
+  Show the packaged commit and UTC date when deployment metadata is valid;
+  never imply that a local build is the production deployment.
+- Report unavailable files and network, HTTP, parsing or validation errors
+  explicitly; bound metadata requests to 15 seconds. Missing optional deployment
+  metadata may indicate a local build, not a confirmed deployment.
+- Keep release notes limited to delivered features, with no invented dates.
+  Preserve keyboard navigation and a readable mobile layout.
+- **Status:** Implemented in Options with versioned bilingual notes and
+  generated deployment metadata; shipped with the notebook-rumour release.
+
 ## R-169 - Lore in ordinary journeys and progress-preserving migration
 
 - Integrate and deploy the lore, shared discovery, broader dream selection,
@@ -463,7 +478,9 @@
   on another player accidentally walking onto the death location.
 - Conversations in nearby towns can occasionally mention an abandoned
   notebook, giving an approximate location and direction for a possible detour.
-  The rumour discovery range and frequency remain balance decisions.
+  Current balance: up to 20 km, a deterministic 50% chance per notebook,
+  mapped settlement cell and game day, with at most 100 candidates per scan.
+  Repeated clicks do not reroll the same conversation.
 - Within 1 km, show a nearby-notebook indication to help narrow the search.
   Actual pickup still requires being within the existing 200 m radius.
 - Generate rumours only for unclaimed, undelivered notebooks. Recheck
@@ -474,7 +491,9 @@
 - Preserve exclusive claims, expiry/release rules and the independent
   delivery side quest under R-103. Rumours must not reveal private access
   capabilities or replace the player's main parent investigation.
-- **Status:** Approved requirement for later implementation.
+- **Status:** Implemented for ordinary journeys: explicit conversation in the
+  town dialog, an exterior nearby indication, saved shared-discovery evidence,
+  and availability revalidation. Pickup remains exclusive and within 200 m.
 
 ## R-116 - Adventure-style journey overview in the notebook
 

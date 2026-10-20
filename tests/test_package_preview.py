@@ -15,7 +15,7 @@ class PreviewPackageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             subprocess.run(["git", "init", "-q", str(root)], check=True)
-            for name in ["index.html", "public/map.json", "scripts/travel_server.py",
+            for name in ["index.html", "public/map.json", "public/changelog.json", "scripts/travel_server.py",
                          "public/.DS_Store", "public/audio/.DS_Store",
                          "minigames/harvest-ui.mjs", "cafe-art.svg",
                          "layers/living-world/preview.html", "layers/transport/transport.mjs",
@@ -35,7 +35,7 @@ class PreviewPackageTests(unittest.TestCase):
             package(output, root)
             with tarfile.open(output) as archive:
                 self.assertEqual(set(archive.getnames()),
-                                 {"index.html", "public/map.json", "scripts/travel_server.py",
+                                 {"index.html", "public/map.json", "public/changelog.json", "scripts/travel_server.py",
                                   "minigames/harvest-ui.mjs", "cafe-art.svg",
                                   "layers/living-world/preview.html", "layers/transport/transport.mjs",
                                   "infra/nginx/preview.conf", "infra/nginx/bootstrap.conf",

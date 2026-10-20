@@ -1,0 +1,15 @@
+{
+  "version": "0.20.0",
+  "entries": [
+    {
+      "version": "0.20.0",
+      "fr": "Les Options affichent la version du jeu et l'historique des nouveautés. Dans les lieux habités cartographiés, les conversations peuvent révéler des rumeurs de carnets abandonnés ; un signalement apparaît à moins d'un kilomètre et le ramassage reste limité à 200 mètres. Le carnet réunit les indices des pistes du parent et des carnets abandonnés. L'icône du chien adopté, son nom et son état sont visibles dans l'interface.",
+      "en": "Options now show the game version and changelog. Conversations in mapped settlements can reveal rumours about abandoned journals; nearby indications appear within one kilometre and pickup remains limited to 200 metres. The notebook brings together clues from parent trails and abandoned journals. The adopted dog's icon, name and condition are visible in the interface."
+    },
+    {
+      "version": "0.19.0",
+      "fr": "Les histoires de clôture retracent la fin du voyage. Des rêves de secours aident à retrouver la piste du parent. Les événements et transports du monde vivant sont accessibles pendant le voyage.",
+      "en": "Closing stories recount the end of the journey. Rescue dreams help recover the parent's trail. Living-world events and transport are accessible during the journey."
+    }
+  ]
+}
