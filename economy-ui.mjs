@@ -3,6 +3,7 @@ import { HOSPITALITY_RULES, hospitalityStatus, worshipPlaces } from "./hospitali
 import { socialFailureChance } from "./pressures.mjs";
 import { setFeedback, setGenerating } from "./feedback.mjs";
 import { NARRATIVE_BRIEFS } from "./live-narrative.mjs";
+import { mergeAccommodations } from "./accommodations.mjs";
 
 export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodations, selectAccommodation, narrative }) {
   const dialog = document.querySelector("#economy-dialog");
@@ -81,11 +82,16 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     for (const place of nearbyPlaces) {
       const item = document.createElement("li"), text = document.createElement("p");
       const east = place.col - state.col, north = state.row - place.row;
+      const worship = place.tags?.amenity === "place_of_worship";
       const sectors = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
       const direction = t(`hintCompass.${sectors[(Math.round(Math.atan2(east, north) / (Math.PI / 4)) + 8) % 8]}`);
       text.textContent = `${place.name || t("mappedShelter")} — ${east || north
         ? t("accommodationLocation", { meters: place.distance, direction })
         : t("accommodationHere")}`;
+      const availability = document.createElement("p");
+      availability.textContent = t(east || north
+        ? worship ? "accommodationWalkWorship" : "accommodationWalkLodging"
+        : worship ? "accommodationHereWorship" : "accommodationHereLodging");
       const credit = document.createElement("p"), source = document.createElement("a");
       credit.textContent = `${place.credit} · ${place.license}${place.updated ? ` · ${place.updated}` : ""}`;
       source.href = place.sourceUrl;
@@ -97,11 +103,11 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       license.textContent = t("contentLicense");
       license.target = "_blank";
       license.rel = "noopener noreferrer";
-      item.append(text, credit, source, " ", license);
+      item.append(text, availability, credit, source, " ", license);
       if (selectAccommodation) {
         const go = document.createElement("button");
         go.type = "button";
-        go.textContent = t("accommodationGo");
+        go.textContent = t(worship ? "accommodationGoWorship" : "accommodationGo");
         go.disabled = current.blocked;
         go.addEventListener("click", () => {
           if (context()?.blocked) return;
@@ -182,8 +188,9 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     } else {
       document.querySelector("#economy-empty").hidden = true;
       const mapped = shelters(cell, state);
+      const places = worshipPlaces(cell);
       document.querySelector("#economy-shelter-context").textContent =
-        t(mapped.length ? "shelterCellOnly" : "shelterNoneInCell");
+        t(mapped.length || places.length ? "shelterCellOnly" : "shelterNoneInCell");
       const addShelter = shelter => {
         const cents = shelter.free ? 0 : marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents;
         const credit = shelter.credit ? ` ${shelter.credit} · ${shelter.license}${shelter.updated ? ` · ${shelter.updated}` : ""}` : "";
@@ -210,7 +217,6 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       } else {
         document.querySelector("#economy-shelter-context").textContent += ` ${t("hospitalityTownRequired")}`;
       }
-      const places = worshipPlaces(cell);
       if (npcSpeech) {
         const latest = state.hospitalityAttempts?.at(-1);
         const visible = latest && (latest === hospitality.attempt || places.some(place =>
@@ -327,7 +333,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
         showAccommodationProgress();
       });
       if (controller.signal.aborted) return;
-      accommodationResult = result;
+      accommodationResult = mergeAccommodations(accommodationResult ?? { places: [], warnings: [] }, result);
       accommodationPartial = false;
     } catch (error) {
       if (controller.signal.aborted) return;

@@ -23,6 +23,20 @@ Legacy passive observations remain stored but are hidden from the notebook/PDF
 until the corresponding witness story has been heard. Raw fractional journey
 minutes and coordinate pairs are not shown in this window.
 
+## Nearby hosting and companion status
+
+The sleep menu lists real hotels and public places of worship within 5 km,
+including immediately available map data while the online search continues.
+Each result explains the next step: **walk to its cell**, then open sleep
+(**H**) to pay for a stay or ask the church/place of worship for shelter.
+Choosing a destination only marks it; it does not move or sleep the player.
+Worship hospitality keeps the existing chance of acceptance and one request
+per place per game day. Private, inactive and abandoned places are excluded.
+Later search responses retain previously mapped destinations.
+
+An adopted dog's status is displayed directly below the player-status panel;
+clicking it still opens companion care. It remains hidden without an adopted dog.
+
 ## Public agenda and transport
 
 Normal journeys include **Public agenda and transport** (R-165). Explicit

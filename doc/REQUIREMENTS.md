@@ -35,6 +35,8 @@
 
 ## R-168 - A visible companion in the main interface
 
+- **20 October placement correction:** the dog's status control sits directly
+  below the complete player-status panel, outside it, not between player stats.
 - Show an adopted dog's icon and name alongside the player's persistent status.
   Change the dog's expression as its actual saved needs change; clicking the
   status opens the existing companion-care controls.
@@ -1754,6 +1756,13 @@
 - Look up OSM nodes, ways and relations worldwide. Include hotels, hostels,
   guest houses, motels and alpine huts; exclude private, closed and abandoned
   places. Keep real names, source links and licensing. Do not invent hotels.
+- **20 October approved correction:** include active public places of worship
+  in both loaded-map and online nearby-hosting searches. They are destinations
+  for a shelter request, not guaranteed free lodging. Explain per result why
+  a listed church or hotel is not yet an available current-cell action.
+  The player chose to walk there first: selecting a destination must not move,
+  charge, sleep or request hospitality. On arrival H offers the existing hotel
+  stay or per-place/day worship request, with the existing acceptance rules.
 - Supplement the lookup with lodging in the server's base/cached maps. If
   a provider is unavailable, explicitly label results incomplete, not proof
   that no accommodation exists. Retry, cancellation and a total timeout
@@ -1772,8 +1781,10 @@
   soon as polling returns it. Label these lists provisional while the online
   search continues; preserve them on cancellation or source errors. Apply
   the same 5 km limit, real-place filters, credits and exact-cell sleep rule.
-  Final server results replace the provisional list; no cache deletion or
-  fresh chunk download is required for this first pass.
+  Merge final server results with already discovered places rather than losing
+  a mapped church/hotel when a later response omits it. Version the hosting
+  search cache so old hotel-only responses cannot suppress churches; do not
+  delete old caches, saves or map chunks.
 - **Agreed follow-up, not active:** Only after the user confirms that nearby
   accommodation discovery works, reduce fictional hospitality acceptance.
   Use base refusal probabilities of 0.8 for locals and 0.7 for places of

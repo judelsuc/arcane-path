@@ -20,6 +20,8 @@ test("calendar and player status share an overview before the map and secondary 
     assert.equal(html.split(`id="${id}"`).length - 1, 1);
   }
   assert.doesNotMatch(overview, /id="travel-controls"|class="map-comparison"/);
+  assert.match(overview, /<\/section>\s*<button id="dog-travel" type="button" hidden><\/button>\s*<\/section>/);
+  assert.equal(html.split('id="dog-travel"').length - 1, 1);
   const collapsed = overview.slice(overview.indexOf('<details id="pressure-panel"'));
   for (const id of ["player-vigilance", "pressure-vigilance", "pressure-vigilance-value",
     "player-hygiene", "pressure-cleanliness", "wash-travel"]) {
