@@ -6,6 +6,7 @@ const CARDS = new Set(["fool", "magician", "priestess", "empress", "emperor", "h
 const SCENES = new Set(["mountains", "town", "forest", "countryside", "water", "rain", "snow"]);
 const ACTIVITIES = new Set(["walking", "rest", "sleep", "meal", "music", "work", "forage", "encounter", "arrival"]);
 export const COVER_ART_ID = "journal-art:cover";
+export const IMAGE_LICENSE = "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/LICENSE.md";
 const date = time => new Date(time).toISOString().slice(0, 10);
 
 export function illustrationScenes(terrain, condition) {

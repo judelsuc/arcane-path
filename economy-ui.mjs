@@ -5,7 +5,7 @@ import { setFeedback, setGenerating } from "./feedback.mjs";
 import { NARRATIVE_BRIEFS } from "./live-narrative.mjs";
 import { mergeAccommodations } from "./accommodations.mjs";
 
-export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodations, selectAccommodation, narrative }) {
+export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodations, selectAccommodation, narrative, illustrations }) {
   const dialog = document.querySelector("#economy-dialog");
   let mode = "eat";
   let resolving = false, countryError = "", generation = 0;
@@ -17,6 +17,8 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
   let speechKey, speech, speechBrief;
   const npcSpeech = narrative ? document.createElement("p") : null;
   const npcStatus = narrative ? document.createElement("p") : null;
+  const illustration = illustrations ? document.createElement("figure") : null;
+  if (illustration) document.querySelector("#economy-shelter-context").after(illustration);
   if (npcSpeech) {
     npcSpeech.id = "economy-npc-dialogue";
     npcStatus.id = "economy-npc-wording-status";
@@ -32,6 +34,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     }
   }
   narrative?.subscribe(speechStatus);
+  illustrations?.subscribe(localize);
   const money = cents => `${(cents / 100).toFixed(2)} ${t("gameMoney")}`;
   const hospitalityResult = result => t(`${result.placeKind === "worship" ? "worshipResult" : "hospitalityResult"}.${result.outcome}`, {
     town: result.townName, day: result.day,
@@ -54,6 +57,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       hours: (state.outdoorNightMinutes / 60).toFixed(1),
     });
     if (!dialog.open) return;
+    if (illustration) illustration.hidden = true;
     const dreamHelp = document.querySelector("#economy-dream-help");
     dreamHelp.hidden = mode !== "sleep";
     dreamHelp.textContent = t("trailDreamRules");
@@ -240,6 +244,8 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
         const supported = Object.hasOwn(NARRATIVE_BRIEFS, brief) && Boolean(hospitality.town || places.length);
         npcSpeech.hidden = npcStatus.hidden = !supported;
         if (supported) {
+          if (illustration) illustrations.render(illustration, state, brief,
+            visible ? `hospitality:${latest.startedMinutes}` : `hospitality:greeting:${Math.floor(state.elapsedMinutes)}`, t);
           narrative.prefetch(state, ["npc.hospitality.greeting", "npc.hospitality.hosted", "npc.hospitality.refused"]);
           const key = `${brief}:${visible ? latest.startedMinutes : "before"}`;
           if (speechKey !== key) {

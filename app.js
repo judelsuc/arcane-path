@@ -49,6 +49,7 @@ const travel = setupTravel({
   snapshotNotebook: photoJournal.snapshot,
   showNotebook: photoJournal.showAbandoned,
   updateNotebookStats: photoJournal.updateStats,
+  encounterIllustrations: photoJournal.illustrations,
   musicAudio: audio.busking,
   cafeAudio: audio.cafe,
   theftAudio: audio.theft,

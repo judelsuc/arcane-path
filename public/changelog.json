@@ -1,6 +1,11 @@
 {
-  "version": "0.20.11",
+  "version": "0.20.12",
   "entries": [
+    {
+      "version": "0.20.12",
+      "fr": "La chronique est aussi écrite après une troisième mise en foyer, sans la confondre avec une mort. Elle peut évoquer les lieux conservés dans vos souvenirs et votre chien, si vous en avez un ; ces détails ne bloquent pas le récit. Le carnet n’accumule plus les textes d’événements en guise d’épopée. Des illustrations distinctes accompagnent rencontres, rêves et accueil, préparées la nuit et renouvelées chaque semaine sans remplacer les images déjà gardées dans le carnet.",
+      "en": "A chronicle is also written after a third placement in care, without treating it as death. It can recall recorded places and your dog, if you have one; these details never block the story. The notebook no longer substitutes a concatenated event list for an epic. Individual illustrations accompany encounters, dreams and hospitality, prepared overnight and renewed weekly without replacing pictures already kept in the notebook."
+    },
     {
       "version": "0.20.11",
       "fr": "L’épopée de votre voyage occupe la quatrième de couverture du carnet et termine le PDF. La chronique peut être réécrite après confirmation, sans changer les faits du voyage ni perdre le texte précédent en cas d’échec. La carte XIII apparaît désormais à la mort même si une fenêtre d’action est restée ouverte.",

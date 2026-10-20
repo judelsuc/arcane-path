@@ -61,8 +61,9 @@ import { setupEquipment } from "./equipment-ui.mjs";
 import { setupJourneyMiniGames } from "./journey-mini-games-ui.mjs";
 import { beginJourneyMiniGame, settleJourneyMiniGame } from "./journey-mini-games.mjs";
 import { synchronizeParentDiscovery, applyJournalDiscovery } from "./discovery-targets.mjs";
+import { recordJourneyVisit } from "./journey-visits.mjs";
 
-export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, cafeAudio, theftAudio, miniGameAudio, pinPhoto, pinTarot, pinBiography, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats }) {
+export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, cafeAudio, theftAudio, miniGameAudio, pinPhoto, pinTarot, pinBiography, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats, encounterIllustrations }) {
   const start = document.querySelector("#start-travel");
   const resume = document.querySelector("#resume-travel");
   const saveStatus = document.querySelector("#journey-save-status");
@@ -223,6 +224,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     narrative: liveNarrative, context: () => active ? state : null,
   });
   const trailDreamUI = setupTrailDream(t, {
+    illustrations: encounterIllustrations,
     narrative: liveNarrative,
     context: () => active && state ? { state, busy } : null,
     openTrail: () => trailUI.open(),
@@ -232,6 +234,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     onJournal: pinBiography,
   });
   const journeyEventsUI = setupJourneyEvents(t, {
+    illustrations: encounterIllustrations,
     narrative: liveNarrative,
     pinEvent: (container, current, economy, wording) => pinTarot(container, current, "event", economy, wording),
     rememberWording(id, wording) {
@@ -268,6 +271,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     }
   }
   function autosave() {
+    if (state && stream) {
+      const p = chunkPosition(state.col, state.row);
+      state = recordJourneyVisit(state, stream.get(p.x, p.y)?.rows[p.row]?.[p.col]);
+    }
     saveFeedback.reset();
     if (state) state = recordJourneyPosition(recordTrailArrival(state));
     try {
@@ -391,6 +398,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     },
   });
   const economyUI = setupEconomyUI(t, {
+    illustrations: encounterIllustrations,
     narrative: liveNarrative,
     context: economyContext, act: economyAction,
     selectAccommodation(place) {

@@ -1,8 +1,9 @@
 import { isDeath } from "./death.mjs";
+import { closingJourneyVisits } from "./journey-visits.mjs";
 
 export const CLOSING_STORY = "story.closing";
 
-export function closingSummary(state, { includePlacement = false } = {}) {
+export function closingSummary(state, { includePlacement = true } = {}) {
   if (!isDeath(state) && state?.ended !== "reunion" &&
       !(includePlacement && state?.ended === "placement")) return null;
   const exploration = state.trail?.exploration;
@@ -16,6 +17,8 @@ export function closingSummary(state, { includePlacement = false } = {}) {
   const events = (state.events?.history ?? []).map(event => ({
     kind: event.kind, elapsedMinutes: Math.round(event.elapsedMinutes),
   }));
+  const visits = closingJourneyVisits(state);
+  const dog = state.equipment?.dog;
   return {
     outcome: state.ended,
     walkingMeters: Math.round(state.distanceMeters),
@@ -32,11 +35,13 @@ export function closingSummary(state, { includePlacement = false } = {}) {
     recordedEncounters: state.events?.history?.length ?? 0,
     reachedStages,
     events,
+    ...(visits.length ? { visitedPlaces: visits } : {}),
+    ...(dog ? { companion: { name: dog.name ?? null } } : {}),
   };
 }
 
 export function closingStoryText(state, t, generated, language = "fr",
-  { milestones = true, includePlacement = false } = {}) {
+  { milestones = true, includePlacement = true } = {}) {
   const summary = closingSummary(state, { includePlacement });
   if (!summary) return "";
   return generated?.[language === "en" ? "en" : "fr"] ?? [
@@ -51,9 +56,11 @@ export function closingStoryText(state, t, generated, language = "fr",
     ...(milestones && summary.reachedStages.length ? [t("closingStoryStages", {
       places: summary.reachedStages.map(entry => state.trail.stages[entry.stage].name).join(" → "),
     })] : []),
-    ...(milestones && summary.events.length ? [t("closingStoryEvents", {
-      events: summary.events.map(event => t(`journeyEvent.${event.kind}`)).join(" "),
+    ...(milestones && summary.visitedPlaces?.length ? [t("closingStoryVisits", {
+      places: summary.visitedPlaces.map(visit => visit.name).join(" → "),
     })] : []),
+    ...(summary.companion ? [t(summary.companion.name
+      ? "closingStoryCompanion" : "closingStoryCompanionUnnamed", { name: summary.companion.name })] : []),
     t("closingStoryEnd"),
   ].join("\n\n");
 }

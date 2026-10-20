@@ -1,5 +1,34 @@
 # Content workshop and optional live wording
 
+## Individual encounter illustrations (R-177)
+
+`/api/encounter-art` uses the notebook capability and keeper scope. It observes
+only allowlisted event, guidance-dream and hospitality scene keys with bounded
+per-occurrence IDs; private identities, notes, coordinates and event prose never
+enter the image prompt. Each ready image is assigned once, to one occurrence
+and owner. Repeated observations reuse that assignment, not a type-wide image.
+The client polls pending observations, explicitly surfaces failures and offers
+the notebook's Retry action. Local journeys continue without online artwork.
+Generated pictures are labelled as illustrations, not photographs or clues;
+credits and preparation diagnostics are folded with the other technical text.
+Historical tarot/death-card images remain untouched.
+
+Images expire after exactly 604800 real seconds. An expired assignment remains
+visible until a new, individually generated image is available. Renewed artwork
+may update the encounter view, but the first image pinned into the notebook
+is preserved, including its licence and provenance. Existing archives gain newly
+pinned pictures when reopened; prose, outcomes and gameplay are unaffected.
+
+The separate `arcane-encounter-art.timer` schedules Tuesday 23:00 Europe/Paris,
+weekly, with no missed-run catch-up. Its sequential batch runs for at most seven
+hours with at least 15 seconds between completed calls, without an item-count
+maximum. It serves waiting occurrences first, then balances unused stock across
+the finite scene catalogue. An exclusive lock prevents overlap. Expired unclaimed
+stock is pruned before checking the 2 GiB live-image limit; at least 2 GiB free
+disk is required. A provider/free-offer failure stops the batch, without retry or
+paid fallback. The existing image writer verifies zero USD pricing before every
+generation call. No browser request dispatches image generation.
+
 ## Travellers' notebook window and witness gate (R-117)
 
 The ordinary abandoned-notebook UI now uses its own dialog, opened from the
@@ -21,7 +50,7 @@ explicit magical/search discovery channel is unchanged.
 
 ## Epic closing chronicles (R-166)
 
-At death or parent reunion, the game requests `story.closing` through the existing
+At death, parent reunion or the third placement, the game requests `story.closing` through the existing
 capability-protected live wording endpoint. It sends the terminal outcome
 and strict numeric counters: walked metres, elapsed game minutes, ascent, stages
 reached, meals, sleeps, music performances, cafe shifts, and retained clue,
@@ -29,9 +58,14 @@ guidance-dream and encounter counts. Retained records are explicitly not lifetim
 totals. It also sends reached-stage indices with saved arrival/progress minutes
 and the retained intermediate-event types with their game minutes (at most 32).
 The server resolves stage indices to canonical reached place names and event
-types to fixed authored facts. Only those places and recorded encounters enter
-the prompt; unvisited destinations, private names/notes/photos, coordinates and
-hidden parent fiction remain excluded, even with opening-story name flavour.
+types to fixed authored facts. The saved adopted dog's fictional name and up to
+32 recorded settlement names/times may also enter this brief; each name is bounded
+and treated as data, not instructions. Mapped settlement visits are retained at
+autosave, deduplicated and capped at 128 in the save. Older journeys can recover
+their named origin and actual settlement hospitality attempts, not unvisited
+towns merely suggested by witnesses. This history is partial, not a reconstructed
+complete itinerary. Private player/parent names, notes/photos, coordinates and
+hidden destinations remain excluded, even with opening-story name flavour.
 Legacy stage times can be unknown and must not be invented. No event is assigned
 to a town or given an outcome not supported by the records. Strange impressions
 stay uncertain; a dog encounter does not imply adoption. Older events may have
@@ -43,7 +77,12 @@ and nondecreasing recorded times within the journey, then
 persists the bounded brief before dispatch. It cannot attest to locally played
 events. The model is asked for an original, epic but faithful bilingual chronicle
 (600-3000 characters per language), bittersweet and non-graphic on death, warmly
-triumphant on reunion. No invented achievements, chronology, facts, rewards or
+triumphant on reunion, or a poignant interruption alive in care on placement.
+Placement is never described as death. The prompt asks for the supplied adopted
+dog's name and recorded place names, but these are non-blocking story details:
+a valid chronicle is not rejected for omitting them. With no adopted dog, the
+prompt must not invent one; an adopted but unnamed dog must not receive an invented
+name. No invented achievements, chronology, facts, rewards or
 future outcomes. Weave reached places and meaningful intermediate encounters
 into the story, not merely counters. Format validation cannot prove semantic fidelity: the original
 ending remains visible and authoritative, and prose has no gameplay effects.
@@ -53,12 +92,13 @@ failure handling. Closing prose is reused across prompt revisions and restart;
 there is no automatic failure retry. An explicitly confirmed back-cover rewrite
 uses a stable request ID, preserves the previous ready prose while pending or
 failed, and reuses the original persisted ending brief rather than revised client
-counters. Rereading that request ID cannot dispatch another provider call.
+counters. A rewrite may fill previously absent dog/visited-place facts, but never
+replace those already frozen in a brief. Rereading that request ID cannot dispatch another provider call.
 The notebook has a dedicated back-cover page; PDF export prints the full chronicle
 after photos, the route and statistics. Archived own journeys can retrieve their
 cached epic, without putting the current player's account into another notebook.
-Ongoing journeys and
-placement do not request a chronicle. An immediate authored bilingual summary
+Ongoing journeys do not request a chronicle. An immediate authored bilingual summary,
+titled as retained traces rather than an epic and without concatenated event/rule text,
 and explicit pending/disabled/local/failed status keep the ending usable.
 Restart and notebook access never wait for generation. The existing notebook
 publication includes cached generated prose or the concise authored fallback; a later

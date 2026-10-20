@@ -2,8 +2,10 @@ import { trailDreamText, trailDreamVariant } from "./trail-dreams.mjs";
 import { LOST_PLAYER_DREAM } from "./live-narrative.mjs";
 import { setGenerating } from "./feedback.mjs";
 
-export function setupTrailDream(t, { context, openTrail, narrative }) {
+export function setupTrailDream(t, { context, openTrail, narrative, illustrations }) {
   const dialog = document.querySelector("#trail-dream-dialog");
+  const illustration = illustrations ? document.createElement("figure") : null;
+  if (illustration) document.querySelector("#trail-dream-continue").before(illustration);
   const wordingStatus = narrative ? document.createElement("p") : null;
   if (wordingStatus) {
     wordingStatus.id = "trail-dream-wording-status";
@@ -16,6 +18,8 @@ export function setupTrailDream(t, { context, openTrail, narrative }) {
     const language = document.documentElement.lang === "en" ? "en" : "fr";
     document.querySelector("#trail-dream-title").textContent = t("trailDreamTitle");
     document.querySelector("#trail-dream-text").textContent = trailDreamText(showing, t, wording, language);
+    if (illustration) illustrations.render(illustration, context().state,
+      LOST_PLAYER_DREAM, `dream:${showing.checkMinutes}`, t);
     if (wordingStatus) {
       wordingStatus.textContent = narrative.introductionStatus(
         context()?.state, LOST_PLAYER_DREAM, language, Boolean(wording), variant);
@@ -64,6 +68,7 @@ export function setupTrailDream(t, { context, openTrail, narrative }) {
     subtree: true, attributes: true, attributeFilter: ["open"],
   });
   narrative?.subscribe(localize);
+  illustrations?.subscribe(localize);
   return { update, reset(state) {
     seen = new Set((state?.trail?.dreams?.checks ?? []).map(check => check.checkMinutes));
     pending = [];

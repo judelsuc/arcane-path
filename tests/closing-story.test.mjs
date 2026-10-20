@@ -28,7 +28,7 @@ const fixture = (ended = "reunion") => ({
 });
 
 test("closing brief includes only recorded aggregate counters and eligible terminal outcomes", () => {
-  for (const outcome of ["health", "hunger", "fatigue", "sleep", "reunion"]) {
+  for (const outcome of ["health", "hunger", "fatigue", "sleep", "reunion", "placement"]) {
     const state = fixture(outcome), before = structuredClone(state);
     assert.deepEqual(closingSummary(state), {
       outcome, walkingMeters: 309000, elapsedMinutes: 40525, ascentMeters: 1250,
@@ -43,7 +43,7 @@ test("closing brief includes only recorded aggregate counters and eligible termi
     assert.deepEqual(state, before);
   }
   assert.equal(closingSummary(null), null);
-  for (const outcome of [null, "placement", "unknown"]) assert.equal(closingSummary(fixture(outcome)), null);
+  for (const outcome of [null, "unknown"]) assert.equal(closingSummary(fixture(outcome)), null);
   assert.equal(closingSummary(fixture("placement"), { includePlacement: true }).outcome, "placement");
   assert.equal(closingSummary(fixture("unknown"), { includePlacement: true }), null);
   const legacy = fixture("hunger");
@@ -64,8 +64,8 @@ test("stages use actual arrivals before clue collection times; unknown legacy ti
   const authored = closingStoryText(state, t);
   assert.ok(authored.includes("PRIVATE STAGE 0 → PRIVATE STAGE 1 → PRIVATE STAGE 2"));
   assert.ok(!authored.includes("PRIVATE STAGE 3"));
-  assert.ok(authored.includes(t("journeyEvent.food")));
-  assert.ok(authored.includes(t("journeyEvent.lostCoins")));
+  assert.ok(!authored.includes(t("journeyEvent.food")));
+  assert.ok(!authored.includes(t("journeyEvent.lostCoins")));
   assert.ok(!closingStoryText(state, t, null, "en", { milestones: false }).includes("PRIVATE STAGE"));
 });
 
@@ -81,6 +81,15 @@ test("maximum stage and event history fits the existing 4 KiB HTTP contract with
   });
   assert.ok(Buffer.byteLength(body) < 4096, `Request body has ${Buffer.byteLength(body)} bytes`);
   assert.ok(!body.includes("PRIVATE"));
+  state.journeyVisits = Array.from({ length: 32 }, (_, index) =>
+    ({ name: `${"界".repeat(117)}${String(index).padStart(3, "0")}`, elapsedMinutes: index }));
+  state.equipment = { dog: { name: "🐕".repeat(40) } };
+  const enriched = JSON.stringify({
+    journey: state.serverJourney.id, keeper: "c".repeat(32), brief: CLOSING_STORY,
+    summary: closingSummary(state), regenerate: "d".repeat(32),
+  });
+  assert.ok(Buffer.byteLength(enriched) < 16384,
+    `Enriched request has ${Buffer.byteLength(enriched)} bytes; exceeds the 16 KiB endpoint`);
 });
 
 test("closing stories send fixed bounded counters, never journal content, names, coordinates or name opt-in", async () => {
@@ -113,10 +122,10 @@ test("closing stories send fixed bounded counters, never journal content, names,
   assert.equal(calls, 2);
 });
 
-test("ongoing journeys and placement cannot queue endings; local endings retain authored copy without calls", async () => {
+test("ongoing journeys cannot queue endings; local endings retain authored copy without calls", async () => {
   let calls = 0;
   const narrative = createLiveNarrative({ fetcher: async () => { calls++; throw new Error("unexpected"); } });
-  for (const ended of [null, "placement"]) narrative.prefetch(fixture(ended), [CLOSING_STORY]);
+  narrative.prefetch(fixture(null), [CLOSING_STORY]);
   const local = { ...fixture(), journalAccess: undefined };
   narrative.prefetch(local, [CLOSING_STORY]);
   await flush();
@@ -181,7 +190,7 @@ test("failed or truncated closing prose falls back explicitly without automatic 
 });
 
 for (const language of ["fr", "en"]) {
-  for (const outcome of ["hunger", "reunion"]) {
+  for (const outcome of ["hunger", "reunion", "placement"]) {
     test(`${language}/${outcome}: inline ending stays usable while generating, relocalizes and never changes gameplay`, async () => {
       const nodes = new Map();
       const doc = { documentElement: { lang: language }, querySelector(id) {

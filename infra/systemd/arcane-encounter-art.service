@@ -1,0 +1,23 @@
+[Unit]
+Description=Arcane Path free-only encounter illustration batch
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/opt/arcane-path/scripts/encounter_art.py
+
+[Service]
+Type=oneshot
+User=arcane
+Group=arcane
+WorkingDirectory=/opt/arcane-path
+Environment=ARCANE_JOURNAL_IMAGES_TOKEN_FILE=/etc/arcane-path/ovh-ai-endpoints-token
+ExecStart=/usr/bin/python3 scripts/encounter_art.py --cache /var/lib/arcane-path/cache/travel --hours 7 --interval 15
+TimeoutStartSec=7h5min
+RuntimeMaxSec=7h5min
+Nice=15
+IOSchedulingClass=idle
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/arcane-path

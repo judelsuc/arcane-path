@@ -13,6 +13,7 @@ import { createLiveNarrative, JOURNAL_SUBTITLE } from "./live-narrative.mjs";
 import { archivedJourneys } from "./journey-save.mjs";
 import { translate } from "./i18n.mjs";
 import { CLOSING_STORY, closingSummary, closingStoryText } from "./closing-story.mjs";
+import { createEncounterIllustrator } from "./encounter-art.mjs";
 
 export async function biographyJournalEntries(state, wording, generated = true) {
   if (!wording || !["fr", "en"].every(language =>
@@ -200,7 +201,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   const closingState = () => readOnly ? archiveState : statsContext?.state;
   function closingText(state = closingState()) {
     if (!state?.ended) return "";
-    const generated = state.ended === "placement" ? null : narrative.snapshot(state, CLOSING_STORY);
+    const generated = narrative.snapshot(state, CLOSING_STORY);
     return closingStoryText(state, t, generated, document.documentElement.lang, { includePlacement: true });
   }
   function renderClosing() {
@@ -212,15 +213,16 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     backButton.hidden = !text;
     backButton.disabled = backing;
     backButton.textContent = t("journalBackCoverPage");
-    document.querySelector("#journal-closing-title").textContent = t("closingStoryTitle");
+    document.querySelector("#journal-closing-title").textContent =
+      t(text && !narrative.snapshot(state, CLOSING_STORY) ? "closingStoryDraftTitle" : "closingStoryTitle");
     document.querySelector("#journal-closing-text").textContent = text;
     const status = document.querySelector("#journal-closing-status");
-    status.textContent = text && state.ended !== "placement"
+    status.textContent = text
       ? narrative.status(state, CLOSING_STORY, document.documentElement.lang) : "";
-    const pending = Boolean(text && state.ended !== "placement" && narrative.pending?.(state, CLOSING_STORY));
+    const pending = Boolean(text && narrative.pending?.(state, CLOSING_STORY));
     setGenerating(status, pending);
     rewriteButton.textContent = t("closingStoryRewrite");
-    rewriteButton.hidden = !text || !state?.journalAccess || !state?.serverJourney || state.ended === "placement";
+    rewriteButton.hidden = !text || !state?.journalAccess || !state?.serverJourney;
     rewriteButton.disabled = pending;
   }
   narrative.subscribe(() => {
@@ -265,6 +267,26 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     status.textContent = t("journalError", { error });
     setFeedback(status, "failure");
   }
+  const illustrations = createEncounterIllustrator({
+    onError: failure,
+    onAsset(entry, blob, owner) {
+      const pin = (async () => {
+        const target = rootStore.scope ? await rootStore.scope(notebookScope(owner)) : rootStore;
+        const id = `encounter-art:${entry.occurrence}`;
+        if (await target.get(id)) return;
+        await target.pin({
+          blob, title: t("encounterIllustration"),
+          sourceUrl: "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0",
+          attribution: t("encounterIllustrationCredit"), license: "CreativeML Open RAIL++-M",
+          licenseUrl: entry.license,
+        }, { id, caption: t("encounterIllustration"),
+          note: t("encounterIllustrationNote") });
+        if (scope === notebookScope(owner) && dialog.open) await load();
+      })();
+      pendingPins.add(pin);
+      return pin.finally(() => pendingPins.delete(pin));
+    },
+  });
   function localize() {
     renderClosing();
     archives.replaceChildren();
@@ -648,7 +670,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     else if (!loading && !covering && !mapping && !statistics && closingText()) backButton.click();
   });
   document.querySelector("#journal-retry").addEventListener("click", () => {
-    if (!loading) { art.refresh(); void load(); }
+    if (!loading) { art.refresh(); illustrations.refresh(); void load(); }
   });
   exportButton.addEventListener("click", async () => {
     if (exporting || loading) return;
@@ -730,6 +752,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         context?.mapTerrain === statsContext?.mapTerrain;
       statsContext = context;
       if (context && !archiveState) {
+        illustrations.observe(context.state);
         narrative.prefetch(context.state, [JOURNAL_SUBTITLE]);
         if (closingSummary(context.state)) narrative.prefetch(context.state, [CLOSING_STORY]);
         try {
@@ -752,6 +775,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       if (nextScope === scope) return;
       exportEpoch++;
       art.stop();
+      illustrations.stop();
       narrative.reset();
       artStatus = artError = "";
       stopAnimation();
@@ -799,6 +823,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       archiveState = savedState;
       backing = Boolean(closingText());
       if (closingSummary(savedState)) narrative.prefetch(savedState, [CLOSING_STORY]);
+      if (savedState) illustrations.observe(savedState);
       abandonedClues = [...clues];
       foreignTitle = title;
       exported = false;
@@ -821,6 +846,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       spread = 0;
       await load();
     },
+    illustrations,
     pinBiography(state, wording, generated = true) {
       const pinScope = notebookScope(state);
       const key = JSON.stringify([pinScope, wording, generated]);

@@ -11,6 +11,19 @@
   no item-count maximum; keep generation sequential, respect provider limits
   and stop on errors rather than retrying indefinitely or using paid fallback.
 
+## R-178 - Faithful, non-blocking closing chronicle details
+
+- Generate the back-cover epic for the third placement too, while keeping the
+  traveller alive in care and never showing a death card for this ending.
+- Supply recorded visited places and an adopted dog's saved name, if present,
+  rather than substituting a concatenated event/rules list for the epic.
+- A dog is optional: do not invent adoption from a stray encounter or invent
+  a name for an unnamed adopted dog. Omitting these details from otherwise
+  valid generated prose must never block the story.
+- Retain mapped named-settlement visits for future journeys. Recover only
+  genuine origin/hospitality facts from older saves; do not treat suggested
+  destinations as places already visited or invent a complete itinerary.
+
 ## R-176 - Epic back cover and reliable death-card popup
 
 - Put the LLM-written epic account on the notebook's back cover, reachable

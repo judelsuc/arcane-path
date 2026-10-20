@@ -207,6 +207,21 @@ class JournalArtTests(unittest.TestCase):
                 post({"journey": self.owner, "operation": "image", "key": "cover"}, "b" * 64)
             self.assertEqual(raised.exception.code, 403)
             raised.exception.close()
+            url = f"http://127.0.0.1:{server.server_port}/api/encounter-art"
+            item = {"scene": "event.food", "occurrence": "event:fixture"}
+            with post({"journey": self.owner, "operation": "sync", "items": [item]}) as response:
+                self.assertEqual(json.load(response)["entries"][0]["status"], "pending")
+            identity = handler.encounter_art.generate(item["scene"], self.writer)
+            with post({"journey": self.owner, "operation": "image",
+                       "occurrence": item["occurrence"], "image": identity}) as response:
+                self.assertEqual(response.headers["Content-Type"], "image/webp")
+                self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+                self.assertTrue(response.read())
+            with self.assertRaises(urllib.error.HTTPError) as raised:
+                post({"journey": self.owner, "operation": "image",
+                      "occurrence": item["occurrence"], "image": identity}, "b" * 64)
+            self.assertEqual(raised.exception.code, 403)
+            raised.exception.close()
         finally:
             server.shutdown()
             server.server_close()

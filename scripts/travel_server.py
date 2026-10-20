@@ -37,6 +37,7 @@ from parent_paths import ParentPaths
 from accommodations import Accommodations
 from journey_terrain import cached_terrain
 from journal_art import JournalArt
+from encounter_art import EncounterArt
 from live_narrative import LiveNarrative
 from start_art import StartArt
 
@@ -433,6 +434,8 @@ def make_handler(store, jobs, path_pool=None):
     journeys = JourneyStore(store, atomic_write)
     abandoned = AbandonedJournals(journeys)
     journal_art = JournalArt.configured(journeys, abandoned)
+    encounter_art = EncounterArt(store.cache / "encounter-art.sqlite3", journal_art,
+                                 enabled=journal_art.writer is not None)
     live_narrative = LiveNarrative.configured(journeys, journal_art)
     start_art = StartArt(store.cache / "start-art.sqlite3")
     living_world = ChunkJobs(LivingWorld(store.cache / "living-world", atomic_write), workers=1, capacity=4)
@@ -459,7 +462,7 @@ def make_handler(store, jobs, path_pool=None):
 
         def do_POST(self):
             endpoint = urllib.parse.urlsplit(self.path).path
-            if endpoint not in ("/api/journeys", "/api/abandoned-journals", "/api/journal-art", "/api/live-narrative"):
+            if endpoint not in ("/api/journeys", "/api/abandoned-journals", "/api/journal-art", "/api/live-narrative", "/api/encounter-art"):
                 return self.send_json(404, {"error": "Unknown API endpoint."})
             origin = self.headers.get("Origin")
             try:
@@ -477,7 +480,8 @@ def make_handler(store, jobs, path_pool=None):
                 length = int(self.headers.get("Content-Length", "0"))
             except ValueError:
                 return self.send_json(400, {"error": "Invalid request body length."})
-            maximum = 68 * 1024 * 1024 if endpoint == "/api/abandoned-journals" else 4096
+            maximum = (68 * 1024 * 1024 if endpoint == "/api/abandoned-journals"
+                       else 16384 if endpoint == "/api/live-narrative" else 4096)
             if length < 1 or length > maximum or self.headers.get("Transfer-Encoding"):
                 return self.send_json(413, {"error": f"Request must contain 1 to {maximum} bytes."})
             previous_timeout = self.connection.gettimeout()
@@ -493,8 +497,8 @@ def make_handler(store, jobs, path_pool=None):
                 capability = self.headers.get("X-Journal-Capability")
                 if endpoint == "/api/live-narrative":
                     return self.send_json(200, live_narrative.request(request, capability))
-                if endpoint == "/api/journal-art":
-                    result = journal_art.request(request, capability)
+                if endpoint in ("/api/journal-art", "/api/encounter-art"):
+                    result = (encounter_art if endpoint == "/api/encounter-art" else journal_art).request(request, capability)
                     if isinstance(result, bytes):
                         self.send_response(200)
                         self.send_header("Content-Type", "image/webp")
@@ -700,6 +704,7 @@ def make_handler(store, jobs, path_pool=None):
             super().do_GET()
 
     Handler.journal_art = journal_art
+    Handler.encounter_art = encounter_art
     Handler.live_narrative = live_narrative
     Handler.living_world = living_world
     return Handler
