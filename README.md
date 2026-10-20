@@ -38,6 +38,9 @@ localized action name. Press **F** for full-word cell actions, including
 sleep/hosting, town visits, transport (**6**), equipment, washing, companion
 care and journals. Disabled options retain the same availability and action
 locks as their original controls. The toolbar wraps on narrow screens.
+Conversation topics are not duplicated on the main toolbar, including the
+parent trail (**J**), travellers' notebooks (**9**) and hints (**I**).
+Their existing direct shortcuts and full-word menu actions remain available.
 
 In a named settlement, press **G** for **Talk to inhabitants**, also available
 from the town window or **F**. Topics cover the parent, clues, notebooks,
