@@ -22,7 +22,7 @@ write_files:
           ct state invalid drop
           ip protocol icmp accept
           meta l4proto ipv6-icmp accept
-          ip saddr ${admin_ipv4_cidr} tcp dport 22 ct state new accept
+          tcp dport 22 ct state new accept
         }
         chain forward {
           type filter hook forward priority 0; policy drop;
@@ -36,6 +36,8 @@ write_files:
     content: |
       PasswordAuthentication no
       KbdInteractiveAuthentication no
+      PubkeyAuthentication yes
+      AuthenticationMethods publickey
       PermitRootLogin no
       AllowUsers ubuntu
       AllowTcpForwarding local

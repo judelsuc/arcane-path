@@ -7,6 +7,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class HttpsConfigurationTests(unittest.TestCase):
+    def test_apex_and_www_share_certificate_and_protected_hosts(self):
+        hosts = "server_name arcane-path.eu www.arcane-path.eu;"
+        bootstrap = (ROOT / "infra/nginx/bootstrap.conf").read_text()
+        preview = (ROOT / "infra/nginx/preview.conf").read_text()
+        script = (ROOT / "scripts/configure_https.sh").read_text()
+        self.assertEqual(bootstrap.count(hosts), 1)
+        self.assertEqual(preview.count(hosts), 2)
+        self.assertIn("--domain arcane-path.eu --domain www.arcane-path.eu", script)
+        self.assertIn("--cert-name arcane-path.eu", script)
+        self.assertIn("return 301 https://arcane-path.eu$request_uri;", preview)
+
     def test_living_world_preview_and_transport_assets_have_narrow_get_only_routes(self):
         config = (ROOT / "infra/nginx/preview.conf").read_text()
         endpoint = config.split("location = /api/living-world {", 1)[1].split("\n    }", 1)[0]

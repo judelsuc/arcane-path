@@ -1,5 +1,47 @@
 # Infrastructure OVHcloud - rapport du 18 octobre 2026
 
+## SSH recovery and approved access policy (20 October 2026)
+
+The administrator approved SSH from any source IP with public-key
+authentication required, password/keyboard-interactive login disabled, and
+root login disabled. The previous source-IP restriction prevented access
+after changing Wi-Fi networks. Ask before future administrative access-policy
+changes that could cause a lockout.
+
+Cloud-init and its tests now describe this approved policy; updating the
+template alone does not change an existing VM. Rescue authentication failed;
+the original disk was not modified and the original runtime was restored
+before the administrator explicitly authorized rebuilding the VM and losing
+server data. An authenticated OpenStack in-place rebuild with corrected
+cloud-init retained the instance identity and public IP, 57.130.85.251.
+Cloud-init completed successfully; effective SSH configuration requires
+public keys, disables passwords and root login, and the guest firewall
+accepts SSH from any source. The fresh SSH host key was pinned using
+trust-on-first-use after the rebuild; it was not independently attested.
+Keep Terraform's `prevent_destroy` guard; do not replace the instance merely
+to refresh cloud-init. Historical delivery records below describe the
+policies at those dates.
+
+## HTTPS apex and www
+
+The certificate setup requests both `arcane-path.eu` and `www.arcane-path.eu`
+in the existing `arcane-path.eu` certificate lineage. Both names must resolve
+to the VM before issuance or renewal. Both HTTPS names use the same protected
+preview configuration; HTTP requests redirect to the apex HTTPS name, while
+ACME validation remains available on both names.
+
+After the authorized rebuild, production release `b81f094` (game 0.20.0)
+and the GSHHG shoreline dataset were restored. Both HTTPS names were checked
+with normal certificate verification: eleven public assets match the exact
+production package on each name, both travel/origin APIs return HTTP 200,
+anonymous access returns HTTP 401, and private repository paths return
+HTTP 404. All five fresh SQLite databases pass integrity checks. The game
+backend listens only on loopback port 8766; SSH, Nginx, the firewall and both
+certificate/art timers are active. The issued certificate covers both names
+and expires on 18 January 2027. Server journeys and terrain caches from before
+the rebuild were discarded with the administrator's approval; browser-local
+saves were not deleted or migrated.
+
 ## Livraison - douze jeux, sac spatial et compagnon
 
 - Runtime `e4bbde7bf534a3abe003d501e53aa9fbf01e9840`, branche

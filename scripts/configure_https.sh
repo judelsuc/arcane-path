@@ -4,7 +4,7 @@ umask 077
 
 usage() {
     printf '%s\n' 'Usage: sudo bash scripts/configure_https.sh --agree-tos --email ADDRESS [--password-stdin]' \
-        'Installs Nginx/Certbot, enables protected arcane-path.eu HTTPS and automatic certificate renewal.' \
+        'Installs Nginx/Certbot, enables protected arcane-path.eu and www.arcane-path.eu HTTPS and automatic certificate renewal.' \
         'First run requires a preview password on stdin; never pass a password as a command argument.'
 }
 
@@ -100,7 +100,7 @@ if "tcp dport { 80, 443 } ct state new accept" not in original:
 PY
 certbot certonly --non-interactive --agree-tos --email "$email" \
     --webroot --webroot-path /var/www/arcane-acme \
-    --cert-name arcane-path.eu --domain arcane-path.eu --keep-until-expiring
+    --cert-name arcane-path.eu --domain arcane-path.eu --domain www.arcane-path.eu --keep-until-expiring
 install -m 0644 "$root/infra/nginx/preview.conf" /etc/nginx/sites-available/arcane-path
 nginx -t
 systemctl reload nginx
