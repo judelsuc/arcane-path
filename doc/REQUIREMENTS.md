@@ -35,8 +35,8 @@
 
 ## R-168 - A visible companion in the main interface
 
-- **20 October placement correction:** the dog's status control sits directly
-  below the complete player-status panel, outside it, not between player stats.
+- **20 October clarified placement:** the dog's status control sits directly
+  under the cleanliness meter ("Propreté"), before the washing button/help.
 - Show an adopted dog's icon and name alongside the player's persistent status.
   Change the dog's expression as its actual saved needs change; clicking the
   status opens the existing companion-care controls.

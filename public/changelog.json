@@ -1,6 +1,11 @@
 {
-  "version": "0.20.6",
+  "version": "0.20.7",
   "entries": [
+    {
+      "version": "0.20.7",
+      "fr": "Le statut du chien apparaît juste sous la jauge Propreté, avant le bouton de toilette et son explication.",
+      "en": "The dog's status now appears immediately below the Cleanliness meter, before the washing button and its explanation."
+    },
     {
       "version": "0.20.6",
       "fr": "La recherche d’hébergements inclut désormais les lieux de culte publics, comme les églises, avec une explication pour chaque hôtel ou lieu de culte : rejoignez sa case à pied, puis ouvrez le sommeil (H) pour dormir ou demander un abri. Choisir une destination ne déplace pas le personnage et ne garantit pas l’accueil. Les lieux déjà cartographiés ne disparaissent plus lorsqu’une réponse en ligne en contient moins. Le statut du chien se trouve directement sous le panneau d’état du joueur.",
