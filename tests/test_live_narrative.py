@@ -262,6 +262,9 @@ class LiveNarrativeTests(unittest.TestCase):
         prompt = provider_request(brief, MODEL)["messages"][0]["content"]
         self.assertIn("several meaningful intermediate encounters", prompt)
         self.assertIn("null time supplies no chronology", prompt)
+        self.assertIn("do not list metres, minutes, meals, sleeps or zero counts", prompt)
+        self.assertIn("'vous', never 'tu'", prompt)
+        self.assertIn("a visited place does not locate an event", prompt)
 
     def test_placement_epic_receives_dog_and_places_without_blocking_on_narrative_omissions(self):
         summary = {**self.closing_summary("placement"), "companion": {"name": "Milou"},
