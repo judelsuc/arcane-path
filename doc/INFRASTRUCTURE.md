@@ -1,5 +1,48 @@
 # Infrastructure OVHcloud - rapport du 18 octobre 2026
 
+## Game-first UI, contextual rules and inhabitant topics (20 October 2026)
+
+- Game 0.20.8, final production runtime
+  `234d9ee6b22ad18e127aacc384301e0601a3f59a`.
+  The verified starting runtime was 0.20.7,
+  `7108d78759aedbbf8e04a23df6856de2989fd51e`; its dog status placement
+  immediately under Cleanliness is preserved.
+- Compact 36 px square-key controls now sit directly below the map. F opens
+  full-word cell actions; G opens inhabitants' conversation topics; 6 opens
+  transport and starts its bounded lookup. Opening menus does not itself
+  charge or advance the clock.
+  Notebook accounts retain actual availability, range and stable-draw rules.
+  Distant legends are authored hearsay, not ordinary-game artifact powers.
+- Rules for washing, recovery, pressure, tarot, activity terms, equipment and
+  companion bonuses move into contextual Help. Short story, choices, prices
+  and durations remain visible. Technical diagnostics, source/licence links,
+  release metadata and shipped preview links are folded without losing their
+  original links. Empty disclosures are hidden. Busy writing indicators stay
+  visible outside folds, and failures retain a visible warning/focus target.
+  Whole-window rerenders restore their Help trigger.
+- Mobile layout puts the map and toolbar before the status sidebar; desktop
+  retains the sidebar. The persistent footer no longer claims transport is
+  planned for a later release. No unpublished development-only playtest link
+  was introduced into production.
+- Development full JavaScript suite: 1,120 passed; final optional-surface
+  checks: 21 passed. Exact final production full suite: 1,044 passed.
+  Browser fixtures used production HTML/styles and real UI controllers with
+  in-memory state, not real saves. FR/EN checks verified washing text absent
+  from ordinary play but retained in Help, hidden activity/conversation rules,
+  narrative legend display, visible/focused failure disclosure, writing
+  indicator with reduced-motion treatment, unchanged journey state, 36 px
+  buttons, and no horizontal overflow at 375 px and 1280 px.
+- Runtime `303f0edc921d4698587489b7b176cf4328c553ff` installed 25 files
+  including generated metadata; a final three-file metadata/options polish
+  produced the runtime above. Both guarded deployments checked baseline
+  metadata/hashes, backed up runtime/configuration/SQLite, restarted safely,
+  preserved all nine journey genesis checksums, and passed SQLite integrity
+  checks. Backend, Nginx and artwork timer are active; changed public assets
+  and travel API health match on both apex and www.
+  Backups:
+  `/var/lib/arcane-path/backups/conversation-toolbar-303f0edc921d`,
+  `/var/lib/arcane-path/backups/conversation-toolbar-234d9ee6b22a`.
+
 ## Nearby hosting consistency and companion placement (20 October 2026)
 
 - Game 0.20.6, production runtime
