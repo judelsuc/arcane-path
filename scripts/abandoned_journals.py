@@ -178,6 +178,10 @@ class AbandonedJournals:
                 (journey, target["id"])).fetchone()
             if meters <= 1000 and mentioned:
                 observation = self.indication(target, position, "near:" + digest[:32], elapsed)
+                # A notebook can be dropped again; changed facts need a new clue identity.
+                revision = hashlib.sha256((seed + observation["bearing"] +
+                                           observation["distanceBand"]).encode()).hexdigest()
+                observation["evidenceKey"] = "near:" + revision[:32]
                 indications.append(observation)
         earned = db.execute("""SELECT r.observation,j.finder,j.touched,j.delivered,j.id
             FROM rumours r LEFT JOIN journals j ON j.id=r.journal

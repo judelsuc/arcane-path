@@ -254,6 +254,11 @@ class JournalsTests(unittest.TestCase):
         self.assertEqual(len(result["rumours"]), 1)
         self.assertEqual(len(result["nearby"]), 1)
         self.assertEqual(len(result["indications"]), 1)
+        with self.store.connect() as db:
+            db.execute("UPDATE journals SET longitude=longitude+0.001 WHERE id=?", (self.ids[0],))
+        moved = self.call(1, elapsedMinutes=day * 1440)["indications"][0]
+        self.assertNotEqual(moved["bearing"], result["indications"][0]["bearing"])
+        self.assertNotEqual(moved["evidenceKey"], result["indications"][0]["evidenceKey"])
         for row in (1, 2, 3, 0):
             self.call(1, row=row, elapsedMinutes=day * 1440 + row + 1)
         with self.store.connect() as db:
