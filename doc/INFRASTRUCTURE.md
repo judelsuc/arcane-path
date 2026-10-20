@@ -1,5 +1,36 @@
 # Infrastructure OVHcloud - rapport du 19 octobre 2026
 
+## Story-led travellers' notebook window (20 October 2026)
+
+- Game 0.20.5, production runtime
+  `30d135526e7f71d51658616b080119074ffce1b1`.
+  Abandoned notebooks now have a dedicated dialog alongside the parent trail,
+  with authored FR/EN storytelling, icons, and one foldable latest witness
+  account per notebook. A town conversation closes the town dialog and opens
+  these accounts. Shortcut 9 reopens the window; Escape closes it.
+- A persisted town witness is required before either the server or client
+  offers proximity/pickup information. Old passive sightings stay stored but
+  cannot reveal positions in notebook/PDF presentation. Movement no longer
+  writes server-side nearby evidence; a changed bearing still receives a
+  distinct clue identity if a notebook is dropped in a new place.
+  Claims, delivery, leases and journey genesis rules are unchanged.
+- Development: 1,107 JavaScript tests and 22 notebook backend tests passed.
+  Exact production: 1,031 JavaScript tests and 20 notebook backend tests passed.
+  Browser fixtures used actual production HTML, styles, Help and shortcut
+  controllers, with mocked notebook API responses: no passive proximity,
+  town-to-notebook handoff, six witness observations grouped into three closed
+  folds, retained expansion across localization/reopening, and readable FR/EN
+  quotations without raw minutes/coordinates. Desktop 1280 px and mobile
+  375 px had no dialog horizontal overflow. Browser actions used DOM/shortcut
+  dispatch because the hidden browser's native click/animation waits timed out.
+  No real player save or provider call was used for this UI fixture.
+- Eleven runtime files including release metadata installed after baseline
+  checks and private runtime/SQLite backups. All nine existing journey genesis
+  checksums remained unchanged and every SQLite integrity check passed.
+  Backend, Nginx and art timer are healthy. Changed public assets and travel
+  API health verified on both apex and www.
+  Backup: `/var/lib/arcane-path/backups/notebook-window-30d135526e7f`.
+
 ## Automatic named opening correction (20 October 2026)
 
 - Game 0.20.4, production runtime
