@@ -44,14 +44,18 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
     $("journey-world-refresh").textContent = t("worldRefresh");
     $("journey-world-refresh").disabled = loading || current.busy || transitActive(current.state);
     $("journey-world-error").textContent = error;
-    $("journey-world-status").textContent = loading ? t("worldLoading") : coverage || t("worldUnloaded");
+    $("journey-world-status").textContent = loading ? t("worldLoading") : !payload && !agenda ? t("worldUnloaded") : "";
+    $("journey-world-coverage").textContent = coverage;
     const events = $("journey-world-events");
     events.replaceChildren();
     const clock = current.state.startedAt + current.state.elapsedMinutes * 60000;
     if (agenda) {
       const heading = document.createElement("li");
-      heading.textContent = t("worldDates", { date: date(clock), imported: date(agenda.importedAt) });
-      heading.append(link(t("worldLicense"), "https://www.etalab.gouv.fr/wp-content/uploads/2014/05/Licence_Ouverte.pdf"));
+      const provenance = document.createElement("p");
+      provenance.className = "technical-text";
+      provenance.textContent = t("worldDates", { date: date(clock), imported: date(agenda.importedAt) });
+      provenance.append(link(t("worldLicense"), "https://www.etalab.gouv.fr/wp-content/uploads/2014/05/Licence_Ouverte.pdf"));
+      heading.append(provenance);
       events.append(heading);
       const published = agenda.records.filter(record => record.kind === "event" && record.endsAt > clock);
       if (!published.length) {
@@ -61,9 +65,13 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
         const item = document.createElement("li"), text = document.createElement("p");
         const active = encounters.find(entry => entry.key === record.key);
         text.textContent = `${record.title[language()]} — ${date(record.startsAt)} – ${date(record.endsAt)} · ` +
-          `${record.area.lat}, ${record.area.lon} · ${active ? t("worldHere") : t("worldPublished")} · ` +
+          `${active ? t("worldHere") : t("worldPublished")}`;
+        const source = document.createElement("p");
+        source.className = "technical-text";
+        source.textContent = `${record.area.lat}, ${record.area.lon} · ` +
           t("worldValidity", { observed: date(record.source.observedAt), expires: date(record.source.validUntil) });
-        item.append(text, link(record.source.name, record.source.url));
+        source.append(link(record.source.name, record.source.url));
+        item.append(text, source);
         if (active) item.append(button(t(active.acknowledged ? "worldRead" : "worldAcknowledge"), () => {
           const now = context();
           saveEncounters(acknowledgeEncounter(agenda, agendaContext(now), now.state.worldEncounters, record.key));
@@ -90,6 +98,7 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
       try { offers = journeyTransportOptions(payload, current.state, current.gridId).offers; }
       catch (reason) { console.error("Journey transport offers failed:", reason); error = reason.message; $("journey-world-error").textContent = error; offers = []; }
       const note = document.createElement("p");
+      note.className = "window-help-text";
       note.textContent = t("worldTransportLimits");
       list.append(note);
       for (const stop of payload.nearbyStops ?? []) {
@@ -98,14 +107,21 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
         list.append(position);
       }
       for (const source of payload.coverage) {
-        list.append(link(`${source.provider} · ${source.serviceDate}`, source.source),
+        const credit = document.createElement("p");
+        credit.className = "technical-text";
+        credit.append(link(`${source.provider} · ${source.serviceDate}`, source.source),
           link(t("worldLicense"), source.license));
+        list.append(credit);
       }
       if (!offers.length) { const empty = document.createElement("p"); empty.textContent = t("worldNoTransport"); list.append(empty); }
       for (const offer of offers.slice(0, 24)) {
         list.append(button(`${offer.from.name} → ${offer.to.name} · ${date(offer.departureAt)} – ${date(offer.arrivalAt)} · ` +
-          `${(offer.fareCents / 100).toFixed(2)} EUR · ${t(offer.serviceKind === "fictional-service" ? "worldFictional" : "worldReal")}`,
+          `${(offer.fareCents / 100).toFixed(2)} EUR`,
         () => { selected = offer; update(); }, current.busy || current.blocked));
+        const origin = document.createElement("p");
+        origin.className = "technical-text";
+        origin.textContent = t(offer.serviceKind === "fictional-service" ? "worldFictional" : "worldReal");
+        list.append(origin);
       }
       if (selected && offers.some(offer => offer.id === selected.id)) {
         const notice = document.createElement("p");

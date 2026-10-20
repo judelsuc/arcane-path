@@ -25,6 +25,13 @@ minutes and coordinate pairs are not shown in this window.
 
 ## Nearby hosting and companion status
 
+The game screen keeps story, choices and compact status visible. Detailed
+rules (washing, recovery, probabilities, tarot, equipment and companion
+bonuses) live in each window's **Help**. Technical progress, cache information
+and source/licence links stay in closed details, preserving their links.
+Empty details are hidden; failures and active writing indicators remain
+noticeable. On mobile, the map and toolbar precede the status sidebar.
+
 Travel controls now sit in a compact square-key toolbar immediately below the
 map, rather than a long sidebar list. Hover or keyboard-focus a square for its
 localized action name. Press **F** for full-word cell actions, including
@@ -52,8 +59,8 @@ per place per game day. Private, inactive and abandoned places are excluded.
 Later search responses retain previously mapped destinations.
 
 An adopted dog's status is displayed directly below the cleanliness meter,
-before the washing button and explanation;
-clicking it still opens companion care. It remains hidden without an adopted dog.
+before the washing button; washing rules are available in Help.
+Clicking it still opens companion care. It remains hidden without an adopted dog.
 
 ## Public agenda and transport
 

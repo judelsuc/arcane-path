@@ -323,6 +323,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
           page.append(image);
           const credit = document.createElement("a");
           credit.href = artwork.licenseUrl;
+          credit.className = "technical-text";
           credit.textContent = `${artwork.attribution} · ${artwork.license}`;
           credit.rel = "noopener noreferrer"; credit.target = "_blank";
           page.append(credit);
@@ -330,6 +331,8 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         if (artStatus) {
           const progress = document.createElement("p");
           progress.textContent = t(`journalArt.${artStatus}`, { error: artError });
+          progress.className = artStatus === "pending" ? "" : "technical-text";
+          setFeedback(progress, artStatus === "failed" ? "failure" : "");
           page.append(progress);
         }
         for (const row of cover.rows) {
@@ -357,6 +360,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         drawJourneyMap(canvas, view, t);
         const note = document.createElement("p");
         note.textContent = journeyMapDescription(view, t);
+        note.className = "window-help-text";
         const legend = document.createElement("ol");
         for (const stop of view.stops) {
           const item = document.createElement("li");
@@ -501,7 +505,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
           frame.append(image, caption);
           page.append(frame);
           const credit = document.createElement("p");
-          credit.className = "journal-credit";
+          credit.className = "journal-credit technical-text";
           credit.textContent = `${photo.attribution} · ${photo.license} `;
           for (const [href, text] of [[photo.sourceUrl, t("journalSource")], [photo.licenseUrl, t("contentLicense")]]) {
             const link = document.createElement("a");
@@ -780,6 +784,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       container.replaceChildren(feedback, retry);
       async function save() {
         retry.hidden = true;
+        feedback.className = "";
         feedback.textContent = t("journalLoading");
         setFeedback(feedback);
         try {
@@ -792,6 +797,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
           console.error("Could not pin notebook entry:", reason);
           failedPins.set(entry.id, { scope: pinScope, message: reason.message });
           feedback.textContent = t("journalError", { error: reason.message });
+          feedback.className = "technical-text";
           setFeedback(feedback, "failure");
           retry.hidden = false;
         }
@@ -812,6 +818,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       feedback.role = "status";
       button.addEventListener("click", async () => {
         button.disabled = true;
+        feedback.className = "";
         try {
           const added = await target.pin(photo, options);
           feedback.textContent = t(added ? "journalPinned" : "journalAlreadyPinned");
@@ -819,6 +826,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         } catch (reason) {
           console.error("Could not pin photo:", reason);
           feedback.textContent = t("journalError", { error: reason.message });
+          feedback.className = "technical-text";
           setFeedback(feedback, "failure");
           button.disabled = false;
         }

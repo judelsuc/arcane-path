@@ -123,6 +123,14 @@ function harness(t, language = "en", findAccommodations, selectAccommodation, na
     current: () => current, buttons: () => element("#economy-options").children.map(li => li.children[0]) };
 }
 
+function rulesFor(h, index = 0) {
+  const description = h.element("#economy-options").children[index].children[1];
+  const rules = description.siblings?.find(node => node.className === "window-help-text")
+    ?? (description.className === "window-help-text" ? description : null);
+  assert.ok(rules, "rule explanations remain available to contextual Help");
+  return rules.textContent;
+}
+
 for (const language of ["fr", "en"]) {
   test(`${language} sleep automatically finds nearby real lodging without offering remote sleep`, async t => {
     let calls = 0;
@@ -183,9 +191,10 @@ for (const language of ["fr", "en"]) {
     const items = h.element("#accommodation-results").children;
     assert.equal(items.length, 2, "the live response must not discard already mapped destinations");
     assert.match(items[0].children[0].textContent, /Notre-Dame.*1854/);
-    assert.match(items[0].children[1].textContent, language === "fr" ? /à pied.*H.*pas garanti/ : /walk.*H.*not guaranteed/);
+    assert.equal(items[0].children[1].textContent, translate(language, "accommodationWalkWorship"));
+    assert.equal(items[0].children[2].className, "technical-text");
     assert.match(items[1].children[0].textContent, /Voyageurs.*4045/);
-    assert.match(items[1].children[1].textContent, language === "fr" ? /à pied.*H/ : /walk.*H/);
+    assert.equal(items[1].children[1].textContent, translate(language, "accommodationWalkLodging"));
     assert.ok(h.buttons().every(button => !/Notre-Dame|Voyageurs/.test(button.textContent)));
     items[0].children.at(-1).click();
     assert.equal(selected, church);
@@ -270,11 +279,13 @@ test("lodging lookup errors stay visible and the search can be retried", async t
   });
 
   await h.ui.open("sleep");
-  assert.match(h.element("#accommodation-status").textContent, /Provider offline/);
+  assert.match(h.element("#accommodation-status").textContent, /Try again/);
+  assert.doesNotMatch(h.element("#accommodation-status").textContent, /Provider/);
+  assert.match(h.element("#accommodation-details").textContent, /Provider offline/);
   assert.equal(h.element("#accommodation-search").disabled, false);
   await h.element("#accommodation-search").events.click();
-  assert.match(h.element("#accommodation-status").textContent, /may be incomplete/);
-  assert.match(h.element("#accommodation-status").textContent, /Catalogue not imported/);
+  assert.match(h.element("#accommodation-status").textContent, /few addresses/);
+  assert.match(h.element("#accommodation-details").textContent, /Catalogue not imported/);
 });
 
 test("cached lodging is shown before online search finishes and stays available after cancellation", async t => {
@@ -289,12 +300,13 @@ test("cached lodging is shown before online search finishes and stays available 
   });
   const opening = h.ui.open("sleep");
   assert.match(h.element("#accommodation-results").children[0].children[0].textContent, /Cached hostel/);
-  assert.match(h.element("#accommodation-status").textContent, /Provisional/);
+  assert.match(h.element("#accommodation-details").textContent, /Provisional/);
   const item = h.element("#accommodation-results").children[0];
   report({ phase: "provider", cached, provider: "overpass.example.org", elapsedSeconds: 10 });
   assert.equal(h.element("#accommodation-results").children[0], item);
   await h.element("#accommodation-search").events.click();
-  assert.match(h.element("#accommodation-status").textContent, /cancelled.*Provisional/);
+  assert.match(h.element("#accommodation-status").textContent, /cancelled/);
+  assert.match(h.element("#accommodation-details").textContent, /Provisional/);
   assert.equal(h.element("#accommodation-results").children.length, 1);
   complete({ places: [], warnings: [] });
   await opening;
@@ -312,12 +324,13 @@ for (const language of ["fr", "en"]) {
     const options = h.buttons();
     report({ phase: "provider", provider: "overpass.example.org", elapsedSeconds: 12 });
     assert.deepEqual(h.buttons(), options);
-    assert.match(h.element("#accommodation-status").textContent, /OpenStreetMap/);
-    assert.match(h.element("#accommodation-status").textContent, /overpass.example.org/);
-    assert.match(h.element("#accommodation-status").textContent, /12 s/);
+    assert.equal(h.element("#accommodation-status").textContent, translate(language, "accommodationLoading"));
+    assert.match(h.element("#accommodation-details").textContent, /OpenStreetMap/);
+    assert.match(h.element("#accommodation-details").textContent, /overpass.example.org/);
+    assert.match(h.element("#accommodation-details").textContent, /12 s/);
     await h.element("#accommodation-search").events.click();
     report({ phase: "saving", elapsedSeconds: 15 });
-    assert.doesNotMatch(h.element("#accommodation-status").textContent, /15 s|overpass.example.org/);
+    assert.doesNotMatch(h.element("#accommodation-details").textContent, /15 s|overpass.example.org/);
   });
 
   test(`${language} a pending lodging search remains cancellable and can be restarted safely`, async t => {
@@ -328,7 +341,7 @@ for (const language of ["fr", "en"]) {
     assert.equal(button.disabled, false);
     assert.equal(button.dataset.i18n, "accommodationCancel");
     assert.match(button.textContent, language === "fr" ? /Annuler/ : /Cancel/);
-    assert.match(h.element("#accommodation-status").textContent, /4 minutes/);
+    assert.equal(h.element("#accommodation-status").textContent, translate(language, "accommodationLoading"));
     await button.events.click();
     assert.equal(pending[0].signal.aborted, true);
     assert.equal(button.disabled, false);
@@ -373,8 +386,8 @@ for (const language of ["fr", "en"]) {
     assert.equal(labels.length, offers.length);
     offers.forEach((offer, i) => {
       assert.ok(labels[i].includes((offer.cents / 100).toFixed(2)));
-      assert.ok(h.element("#economy-options").children[i].children[1].textContent.includes(
-        `+${offer.reserveKcal}`));
+      assert.ok(rulesFor(h, i).includes(`+${offer.reserveKcal}`));
+      assert.doesNotMatch(h.element("#economy-options").children[i].children[1].textContent, /kcal/);
     });
     assert.match(h.element("#economy-pricing").textContent, /70–150/);
     h.ui.localize();
@@ -387,7 +400,8 @@ for (const language of ["fr", "en"]) {
 test("sleep menu explains missing OSM lodging, offers hospitality, and saves/displays the outcome in place", async t => {
   const h = harness(t);
   await h.ui.open("sleep");
-  assert.match(h.element("#economy-shelter-context").textContent, /250 m cell/);
+  assert.ok(h.element("#economy-shelter-context").textContent);
+  assert.doesNotMatch(h.element("#economy-shelter-context").textContent, /250 m/);
   assert.match(h.buttons()[0].textContent, /Ask locals and sleep if welcomed/);
   assert.equal(h.buttons()[0].disabled, false);
   h.buttons()[0].click();
@@ -401,7 +415,8 @@ test("sleep menu explains missing OSM lodging, offers hospitality, and saves/dis
   assert.match(feedback.textContent, /Firmi, (?:on )?2026-10-17:/);
   assert.equal(feedback.focused, true);
   assert.deepEqual(feedback.scrolled, { block: "nearest" });
-  assert.match(h.element("#economy-options").children[0].children[1].textContent, /Only one request/);
+  assert.match(rulesFor(h), /Only one request/);
+  assert.doesNotMatch(feedback.textContent, /Only one request/);
   h.buttons()[0].click();
   assert.equal(h.actions.length, 1);
   h.buttons()[1].click();
@@ -417,7 +432,8 @@ test("hospitality is absent outside named settlements and mapped accommodation s
   ] } });
   await h.ui.open("sleep");
   assert.equal(h.buttons().length, 2);
-  assert.match(h.element("#economy-shelter-context").textContent, /localité nommée/);
+  assert.match(h.element("#economy-shelter-context").textContent, /qui demander/);
+  assert.doesNotMatch(h.element("#economy-shelter-context").textContent, /cartographi|250 m/);
   h.buttons()[1].click();
   assert.deepEqual(h.actions, [{ kind: "sleep", id: "node/5" }]);
   await h.ui.open("eat");
@@ -440,15 +456,16 @@ for (const language of ["fr", "en"]) {
     assert.match(h.buttons()[0].textContent, /Mosque/);
     const note = h.element("#economy-options").children[0].children[1];
     assert.doesNotMatch(note.textContent, /ficti/i);
-    assert.match(note.textContent, /30 min/);
+    assert.match(rulesFor(h), /30 min/);
+    assert.match(h.buttons()[0].textContent, /30 min/);
     h.buttons()[0].click();
     assert.deepEqual(h.actions, [{ kind: "hospitality", id: "node/202" }]);
     assert.equal(h.buttons()[0].disabled, true);
     assert.equal(h.buttons()[1].disabled, false);
     assert.equal(h.element("#economy-dialog").open, true);
     const feedback = h.element("#economy-options").children[0].children[1];
-    assert.match(feedback.textContent, language === "fr" ? /dans le jeu/ : /game/);
-    assert.match(feedback.textContent, language === "fr" ? /même en cas de refus/ : /even if refused/);
+    assert.doesNotMatch(feedback.textContent, /dans le jeu|game attempt|tarot|%/);
+    assert.match(rulesFor(h), language === "fr" ? /même en cas de refus/ : /even if refused/);
     assert.equal(feedback.focused, true);
     assert.deepEqual(feedback.scrolled, { block: "nearest" });
     assert.equal(h.element("#economy-hospitality-result").textContent, "");
@@ -460,7 +477,7 @@ for (const language of ["fr", "en"]) {
     await h.ui.open("eat");
     assert.match(h.buttons()[1].textContent, /Tortilla/);
     let item = h.element("#economy-options").children[1];
-    assert.match(item.children[1].textContent, language === "fr" ? /pas une spécialité propre/ : /not specific/);
+    assert.match(item.children[1].textContent, language === "fr" ? /Plat traditionnel/ : /Traditional dish/);
     assert.equal(item.children[2].href, "https://en.wikipedia.org/wiki/Spanish_omelette");
     h.ui.reset();
     h.set({ info: { latitude: 49.387, longitude: 3.005 }, cell: { terrain: "place", countryCodes: ["FR"] } });
@@ -493,8 +510,9 @@ for (const language of ["fr", "en"]) {
     assert.equal(feedback.dataset.feedback, "failure");
     assert.match(feedback.textContent, language === "fr" ? /Vous n'avez pas dormi/ : /You did not sleep/);
     assert.match(feedback.textContent, /30 min/);
-    assert.match(feedback.textContent, language === "fr" ? /même en cas de refus/ : /even if refused/);
-    assert.match(feedback.textContent, language === "fr" ? /prochain jour de jeu/ : /next game day/);
+    assert.match(rulesFor(h), language === "fr" ? /même en cas de refus/ : /even if refused/);
+    assert.match(rulesFor(h), language === "fr" ? /prochain jour de jeu/ : /next game day/);
+    assert.doesNotMatch(feedback.textContent, /tarot|%|UTC/);
     assert.equal(feedback.role, "status");
     assert.equal(feedback.focused, true);
     assert.deepEqual(feedback.scrolled, { block: "nearest" });
@@ -543,10 +561,12 @@ for (const language of ["fr", "en"]) {
     assert.ok(h.buttons().every(button => button.disabled));
   });
 
-  test(`${language} menu discloses immediate sleep, time cost and tarot probability before requesting`, async t => {
+  test(`${language} time cost stays on the action while probability and sleep rules move to Help`, async t => {
     const h = harness(t, language);
     await h.ui.open("sleep");
-    const note = h.element("#economy-options").children[0].children[1].textContent;
+    const note = rulesFor(h);
+    assert.match(h.buttons()[0].textContent, /30 min/);
+    assert.equal(h.element("#economy-options").children[0].children[1].textContent, "");
     assert.match(note, /30 min/);
     assert.match(note, /8 h/);
     assert.match(note, /UTC/);

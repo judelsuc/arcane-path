@@ -36,13 +36,14 @@ test("calendar and player status share an overview before the map and secondary 
   assert.match(script, /document\.querySelector\("#player-vigilance"\)\.hidden = !pressures;/);
 });
 
-test("mobile layout places the overview above the map, retaining a desktop sidebar", () => {
+test("mobile layout puts the map and toolbar first, retaining a desktop status sidebar", () => {
   const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
   assert.match(css, /\.travel-active \.travel-overview \{ grid-column: 2; grid-row: 1;/);
   assert.match(css, /\.travel-active \.map-comparison \{ grid-column: 1; grid-row: 1 \/ 3;/);
   const mobile = css.slice(css.indexOf("@media (max-width: 760px)", css.indexOf(".travel-active {")));
-  assert.match(mobile, /\.travel-active \.travel-overview \{[^}]*grid-column: 1;[^}]*grid-row: 1;/);
-  assert.match(mobile, /\.travel-active \.map-comparison \{ grid-column: 1; grid-row: 2;/);
+  assert.match(mobile, /\.travel-active \.travel-overview \{[^}]*grid-column: 1;[^}]*grid-row: 2;/);
+  assert.match(mobile, /\.travel-active \.map-comparison \{ grid-column: 1; grid-row: 1;/);
+  assert.match(mobile, /\.travel-active \.map-viewport \{ max-height: 45dvh;/);
   assert.match(mobile, /\.travel-active \.travel-panel \{[^}]*grid-row: 3;/);
 });
 

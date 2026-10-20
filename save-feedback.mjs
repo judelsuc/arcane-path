@@ -14,7 +14,12 @@ export function setupSaveFeedback(t, { save, available }) {
     text.textContent = failed ? t("saveError", { error: result.error })
       : t("saveConfirmed", { time: new Date(result.savedAt).toLocaleTimeString(
         document.documentElement.lang, { hour: "2-digit", minute: "2-digit", second: "2-digit" }) });
-    status.replaceChildren(text);
+    if (failed) {
+      const details = document.createElement("span");
+      details.className = "technical-text";
+      details.textContent = result.error;
+      status.replaceChildren(text, details);
+    } else status.replaceChildren(text);
   }
   document.querySelector("#save-travel").addEventListener("click", () => {
     if (!available()) return;

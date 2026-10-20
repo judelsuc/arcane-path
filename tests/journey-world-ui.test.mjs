@@ -58,7 +58,9 @@ for (const language of ["fr", "en"]) {
     assert.equal(state.worldEncounters.entries.length, 1);
     assert.equal(state.worldEncounters.entries[0].acknowledged, false);
     const event = get("#journey-world-events").children[1];
-    assert.equal(event.children[1].href, source.url);
+    assert.equal(event.children[1].className, "technical-text");
+    assert.equal(event.children[1].children[0].href, source.url);
+    assert.doesNotMatch(event.children[0].textContent, /observed|observée|validity|valable/);
     await event.children[2].events.click();
     assert.equal(state.worldEncounters.entries[0].acknowledged, true);
     const list = get("#journey-world-transports");

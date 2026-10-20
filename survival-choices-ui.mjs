@@ -3,7 +3,7 @@ import { tarotEventChance } from "./economy.mjs";
 import { socialFailureChance } from "./pressures.mjs";
 import { canEat } from "./survival.mjs";
 import { atTrailTarget } from "./trail.mjs";
-import { setFeedback } from "./feedback.mjs";
+import { setFeedback, focusFeedback } from "./feedback.mjs";
 
 export function setupSurvivalChoices(t, { context, act }) {
   const dialog = document.querySelector("#survival-choices-dialog");
@@ -82,8 +82,7 @@ export function setupSurvivalChoices(t, { context, act }) {
       error.hidden = !error.textContent;
       const feedback = error.hidden ? document.querySelector("#survival-choice-result") : error;
       if (!feedback.hidden && dialog.open) {
-        feedback.focus({ preventScroll: true });
-        feedback.scrollIntoView({ block: "nearest" });
+        focusFeedback(feedback);
       }
     });
   }

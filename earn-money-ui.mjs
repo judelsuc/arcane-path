@@ -1,6 +1,6 @@
 import { choiceAvailable } from "./survival-choices.mjs";
 import { cafeVenues } from "./cafe.mjs";
-import { setFeedback } from "./feedback.mjs";
+import { setFeedback, focusFeedback } from "./feedback.mjs";
 import { JOURNEY_MINI_GAMES, journeyMiniGameOffer } from "./journey-mini-games.mjs";
 
 export function earningOptions(cell) {
@@ -22,6 +22,7 @@ export function setupEarnMoney(t, { context, perform, steal, miniGames }) {
       const button = document.createElement("button");
       button.type = "button";
       const terms = document.createElement("p");
+      terms.className = "window-help-text";
       item.append(button, terms);
       list.append(item);
       gameChoices.set(game, { item, button, terms });
@@ -116,8 +117,7 @@ export function setupEarnMoney(t, { context, perform, steal, miniGames }) {
       localize();
       const target = document.querySelector(document.querySelector("#earn-money-error").textContent
         ? "#earn-money-error" : "#earn-money-result");
-      target.focus({ preventScroll: true });
-      target.scrollIntoView({ block: "nearest" });
+      focusFeedback(target);
       if (context()?.state.ended) dialog.close();
     });
   }
