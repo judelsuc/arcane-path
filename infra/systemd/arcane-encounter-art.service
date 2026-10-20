@@ -12,7 +12,6 @@ WorkingDirectory=/opt/arcane-path
 Environment=ARCANE_JOURNAL_IMAGES_TOKEN_FILE=/etc/arcane-path/ovh-ai-endpoints-token
 ExecStart=/usr/bin/python3 scripts/encounter_art.py --cache /var/lib/arcane-path/cache/travel --hours 7 --interval 15
 TimeoutStartSec=7h5min
-RuntimeMaxSec=7h5min
 Nice=15
 IOSchedulingClass=idle
 UMask=0077
