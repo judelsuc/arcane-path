@@ -15,3 +15,25 @@ export function itemArt(doc, id) {
   svg.innerHTML = paths[id] ?? '<path d="M50 9l28 36-28 36-28-36z" fill="#c6a75e"/><circle cx="50" cy="45" r="12" fill="#436563"/>';
   return svg;
 }
+
+export function companionArt(doc, condition) {
+  if (!["well", "attention", "urgent"].includes(condition)) throw new Error("Invalid companion condition.");
+  const svg = doc.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 100 90");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  const ears = condition === "urgent"
+    ? "M25 23Q1 26 13 71L32 53M75 23Q99 26 87 71L68 53"
+    : "M25 23L9 12L13 60L32 44M75 23L91 12L87 60L68 44";
+  const mouth = condition === "well" ? "M36 62Q50 80 64 62"
+    : condition === "attention" ? "M37 68H63" : "M36 74Q50 58 64 74";
+  svg.innerHTML = `<path d="${ears}" fill="#805b40" stroke="currentColor" stroke-width="3"/>
+    <path d="M25 25Q50 10 75 25L78 57Q75 83 50 83Q25 83 22 57Z" fill="#cfac78" stroke="currentColor" stroke-width="3"/>
+    <ellipse cx="50" cy="62" rx="21" ry="17" fill="#f1dfba"/>
+    <path d="M43 54H57L50 62Z" fill="#352d29"/>
+    <path d="${mouth}" fill="none" stroke="#352d29" stroke-width="3" stroke-linecap="round"/>
+    ${condition === "urgent"
+      ? '<path d="M31 42L41 46M59 46L69 42" stroke="#352d29" stroke-width="4" stroke-linecap="round"/>'
+      : '<circle cx="36" cy="43" r="4" fill="#352d29"/><circle cx="64" cy="43" r="4" fill="#352d29"/>'}`;
+  return svg;
+}

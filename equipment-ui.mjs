@@ -1,7 +1,7 @@
-import { ITEMS, CAPACITY_GRAMS, equipmentModifiers, equipmentAction } from "./equipment.mjs";
+import { ITEMS, CAPACITY_GRAMS, equipmentModifiers, equipmentAction, companionCondition } from "./equipment.mjs";
 import { equipmentShopAvailable } from "./equipment-journey.mjs";
 import { renderInventory } from "./equipment-inventory-ui.mjs";
-import { itemArt } from "./equipment-art.mjs";
+import { itemArt, companionArt } from "./equipment-art.mjs";
 import { dailyTarotPending } from "./economy.mjs";
 import { journeyEventArt } from "./journey-event-art.mjs";
 import { setFeedback } from "./feedback.mjs";
@@ -22,6 +22,8 @@ const copy = {
     cameraEffect: "Bonus de qualité photo prévu : +10 %. Pas encore actif sur les photos du carnet.",
     rules: "Chaque kg ralentit de 2,5 %, augmente l'énergie de marche de 4 % et la fatigue de 6 %. Les objets s'usent en marchant ; cassés, ils restent lourds mais ne donnent plus de bonus. Réorganiser est gratuit ; abandonner est définitif.",
     dog: "Compagnon", noDog: "Pas de compagnon. Une rencontre sur le chemin peut vous proposer d'accueillir un chien.",
+    dogWell: "En forme", dogAttention: "Besoin d'attention", dogUrgent: "Besoin de soins maintenant",
+    dogHelp: "Ouvrir les soins du compagnon",
     encounter: "Rencontre sur le chemin", story: "Un chien sans collier vous suit et s'approche lorsque vous vous arrêtez. Voulez-vous voyager ensemble ?",
     name: "Nom du chien (1 à 40 caractères)", rename: "Nommer le chien",
     adopt: "Accueillir le chien", decline: "Continuer sans l'adopter", feed: "Nourrir", care: "Soigner et entretenir",
@@ -45,6 +47,8 @@ const copy = {
     cameraEffect: "Planned photo quality bonus: +10%. Not yet active on notebook photos.",
     rules: "Each kg slows walking by 2.5%, increases walking energy by 4% and fatigue by 6%. Walking wears items; broken items stay heavy but lose their benefits. Rearranging is free; discarding is permanent.",
     dog: "Companion", noDog: "No companion. An encounter along the path may offer the chance to welcome a dog.",
+    dogWell: "Feeling well", dogAttention: "Needs attention", dogUrgent: "Needs care now",
+    dogHelp: "Open companion care",
     encounter: "An encounter on the path", story: "A dog without a collar follows you and approaches when you stop. Would you like to travel together?",
     name: "Dog name (1–40 characters)", rename: "Name the dog",
     adopt: "Welcome the dog", decline: "Continue without adopting", feed: "Feed", care: "Care and groom",
@@ -57,6 +61,7 @@ const copy = {
 
 export function setupEquipment(t, { context, act }) {
   const trigger = document.querySelector("#equipment-travel");
+  const dogTrigger = document.querySelector("#dog-travel");
   const dialog = document.createElement("dialog");
   dialog.id = "equipment-dialog";
   dialog.setAttribute("aria-labelledby", "equipment-heading");
@@ -155,7 +160,9 @@ export function setupEquipment(t, { context, act }) {
         } else add("buy", w.buy, item.priceCents, 10);
       }
     }
-    node("h3", w.dog, controls);
+    const dogHeading = node("h3", w.dog, controls);
+    dogHeading.id = "equipment-dog-heading";
+    dogHeading.tabIndex = -1;
     if (pending) {
       const art = node("pre", journeyEventArt("dogEncounter"), controls);
       art.setAttribute("aria-hidden", "true");
@@ -188,6 +195,28 @@ export function setupEquipment(t, { context, act }) {
   function update() {
     const current = context();
     trigger.disabled = !current?.state.equipment || current.blocked;
+    if (dogTrigger) {
+      const gear = current?.state.equipment;
+      dogTrigger.hidden = !gear?.dog;
+      dogTrigger.disabled = !gear?.dog || current.blocked;
+      if (gear?.dog) {
+        const condition = companionCondition(gear), w = words();
+        const label = condition === "well" ? w.dogWell : condition === "attention" ? w.dogAttention : w.dogUrgent;
+        const format = value => new Intl.NumberFormat(document.documentElement.lang, { maximumFractionDigits: 1 }).format(value);
+        const detail = `${gear.dog.name ?? w.dog} — ${label}. ${w.hunger}: ${format(gear.dog.hunger)} / 100; ${w.careNeed}: ${format(gear.dog.careNeed)} / 100. ${w.dogHelp}.`;
+        dogTrigger.dataset.condition = condition;
+        dogTrigger.title = detail;
+        dogTrigger.setAttribute("aria-label", detail);
+        dogTrigger.replaceChildren(companionArt(document, condition));
+        const text = node("span", `${gear.dog.name ?? w.dog} · ${label}`, dogTrigger);
+        text.className = "dog-status-label";
+      } else {
+        dogTrigger.replaceChildren();
+        dogTrigger.removeAttribute("aria-label");
+        dogTrigger.removeAttribute("title");
+        delete dogTrigger.dataset.condition;
+      }
+    }
     if (dialog.open && (current?.state !== renderedState ||
         renderedLanguage !== document.documentElement.lang)) render();
     if (queued) return;
@@ -202,11 +231,14 @@ export function setupEquipment(t, { context, act }) {
       dialog.querySelector("input")?.focus();
     });
   }
-  trigger.addEventListener("click", () => {
+  function openEquipment(focusDog = false) {
     if (!context() || context().blocked || document.querySelector("dialog[open]")) return;
     render();
     dialog.showModal();
-  });
+    if (focusDog) dialog.querySelector("#equipment-dog-heading")?.focus();
+  }
+  trigger.addEventListener("click", () => openEquipment());
+  dogTrigger?.addEventListener("click", () => openEquipment(true));
   dialog.addEventListener("cancel", event => {
     if (context()?.state.equipment?.dogEncounter === "pending") event.preventDefault();
   });

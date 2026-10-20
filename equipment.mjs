@@ -98,6 +98,13 @@ export function equipmentModifiers(state) {
   };
 }
 
+export function companionCondition(gear) {
+  validateEquipment(gear);
+  if (!gear.dog) return null;
+  const need = Math.max(gear.dog.hunger, gear.dog.careNeed);
+  return need >= 65 ? "urgent" : need >= 20 ? "attention" : "well";
+}
+
 export function journeyEquipmentModifiers(state) {
   if (state.equipment !== undefined) return equipmentModifiers(state.equipment);
   return { carriedGrams: 0, remainingGrams: CAPACITY_GRAMS, speedMultiplier: 1,

@@ -1,5 +1,36 @@
 # Requirements tracked outside the design PDF
 
+## R-169 - Lore in ordinary journeys and progress-preserving migration
+
+- Integrate and deploy the lore, shared discovery, broader dream selection,
+  power-aware gameplay and lore routing in normal journeys. A separate
+  artifact playtest does not satisfy this requirement.
+- Approved migration policy: preserve existing progress through an explicit,
+  one-time migration into server authority, rather than restarting at genesis.
+  Keep immutable genesis, capabilities, inventory, companion, reached stages,
+  events, notebook and current survival/economy state.
+- After migration, ordinary actions and artifact custody must use the same
+  authoritative timeline with revision checks and replay-safe command receipts.
+  Do not merge a second simulated journey back into the player's local save.
+- Preserve ordinary weather, transport, activities, journal delivery and ending
+  behavior. Cover streamed terrain and arbitrary supported starting regions;
+  do not silently apply the playtest's single-region/six-settlement restriction.
+- Migration and the full normal-game integration are not implemented or deployed
+  yet. Existing isolated playtest powers are not evidence of completion.
+
+## R-168 - A visible companion in the main interface
+
+- Show an adopted dog's icon and name alongside the player's persistent status.
+  Change the dog's expression as its actual saved needs change; clicking the
+  status opens the existing companion-care controls.
+- Use the existing hunger/care model, not an invented independent health stat.
+  Below 20 in both needs: well; either need at least 20: attention; either need
+  at least 65: urgent care and existing companion bonuses suspended.
+- Include localized condition text and accessible descriptions, not colour
+  alone. Hide the control when there is no adopted dog; respect action blockers.
+- Reflect adoption, time spent, feeding, care and resumed saves without changing
+  needs on reload or introducing real-time decay.
+
 ## R-167 - Idle-server expansion of the OSM cache (future)
 
 - When the server is mostly idle, progressively cache additional OSM coverage
