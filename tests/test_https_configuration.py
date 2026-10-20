@@ -7,6 +7,22 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class HttpsConfigurationTests(unittest.TestCase):
+    def test_individual_art_and_enriched_epic_have_narrow_post_routes_and_nightly_timer(self):
+        config = (ROOT / "infra/nginx/preview.conf").read_text()
+        for name in ["encounter-art", "live-narrative"]:
+            endpoint = config.split(f"location = /api/{name} {{", 1)[1].split("\n    }", 1)[0]
+            self.assertIn("limit_except POST { deny all; }", endpoint)
+            self.assertIn("proxy_pass http://127.0.0.1:8766;", endpoint)
+            if name == "live-narrative":
+                self.assertIn("client_max_body_size 16k;", endpoint)
+        timer = (ROOT / "infra/systemd/arcane-encounter-art.timer").read_text()
+        self.assertIn("OnCalendar=Tue *-*-* 23:00:00 Europe/Paris", timer)
+        self.assertIn("Persistent=false", timer)
+        service = (ROOT / "infra/systemd/arcane-encounter-art.service").read_text()
+        self.assertIn("TimeoutStartSec=7h5min", service)
+        self.assertIn("User=arcane", service)
+        self.assertNotIn("Restart=", service)
+
     def test_apex_and_www_share_certificate_and_protected_hosts(self):
         hosts = "server_name arcane-path.eu www.arcane-path.eu;"
         bootstrap = (ROOT / "infra/nginx/bootstrap.conf").read_text()
