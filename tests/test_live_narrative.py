@@ -37,6 +37,76 @@ def response(en="A passer-by offers you a few coins.", fr="Un passant vous offre
 
 
 class LiveNarrativeTests(unittest.TestCase):
+    def test_explicit_regeneration_retains_previous_story_and_deduplicates_stable_request(self):
+        name = self.journeys.read(self.owner)["state"]["trail"]["parentName"]
+        self.writer.return_value = response(en=(f"Your parent {name} left. " * 30).strip(),
+                                            fr=(f"Votre parent {name} est parti. " * 30).strip())
+        self.request(BRIEF_ID)
+        original = self.settle(BRIEF_ID)
+        self.assertEqual(original["status"], "ready")
+        request_id = "e" * 32
+        entered, release = threading.Event(), threading.Event()
+        def write(brief):
+            entered.set()
+            if not release.wait(5):
+                raise WorkshopError("Test wait expired", 502)
+            return response(en=(f"You follow your parent {name} with playful curiosity. " * 20).strip(),
+                            fr=(f"Votre parent {name} inspire votre curiosité malicieuse. " * 20).strip())
+        self.writer.side_effect = write
+        try:
+            pending = self.request(BRIEF_ID, nameFlavour=True, regenerate=request_id)
+            self.assertTrue(entered.wait(5))
+            self.assertEqual(pending["previousText"], original["text"])
+            self.assertEqual(self.request(BRIEF_ID)["previousText"], original["text"])
+            self.request(BRIEF_ID, nameFlavour=True, regenerate=request_id)
+        finally:
+            release.set()
+        self.service.future.result(timeout=5)
+        result = self.request(BRIEF_ID)
+        self.assertEqual(result["status"], "ready")
+        self.assertNotEqual(result["text"], original["text"])
+        self.assertEqual(self.request(BRIEF_ID, nameFlavour=True, regenerate=request_id), result)
+        self.assertEqual(self.writer.call_count, 2)
+        with self.service.connect() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM wording WHERE brief=?", (BRIEF_ID,)).fetchone()[0], 2)
+        self.assertEqual(self.writer.call_args.args[0]["characterName"], self.journeys.read(self.owner)["state"]["name"])
+        self.writer.side_effect = WorkshopError("Provider unavailable", 502)
+        self.request(BRIEF_ID, nameFlavour=True, regenerate="f" * 32)
+        self.service.future.result(timeout=5)
+        failed = self.request(BRIEF_ID)
+        self.assertEqual(failed["status"], "failed")
+        self.assertEqual(failed["previousText"], result["text"])
+        for invalid in [{"regenerate": "a" * 32}, {"regenerate": "bad", "nameFlavour": True}]:
+            with self.assertRaises(JourneyRequest):
+                self.request(BRIEF_ID, **invalid)
+
+    def test_contextual_events_cache_three_versions_per_kind_day_and_consent_without_leaking_private_state(self):
+        context = {"day": 1, "walkingKm": 12, "sleeps": 1, "encounters": 2, "daily": "star"}
+        self.request("event.clearHead", context=context, nameFlavour=True)
+        self.service.future.result(timeout=5)
+        result = self.request("event.clearHead", context=context, nameFlavour=True)
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(len(result["alternatives"]), 2)
+        brief = self.writer.call_args.args[0]
+        self.assertEqual(brief["facts"], CATALOGUE["event.clearHead"]["facts"])
+        self.assertEqual(brief["characterName"], self.journeys.read(self.owner)["state"]["name"])
+        self.assertEqual(brief["recordedJourney"]["walkingKm"], 12)
+        self.assertNotIn(self.owner, json.dumps(brief))
+        self.assertNotIn(self.token, json.dumps(brief))
+        self.assertNotIn("trail", json.dumps(brief))
+        self.request("event.clearHead", context={**context, "walkingKm": 15}, nameFlavour=True)
+        self.assertEqual(self.writer.call_count, 1)
+        self.request("event.clearHead", context={**context, "day": 2}, nameFlavour=True)
+        self.service.future.result(timeout=5)
+        self.assertEqual(self.writer.call_count, 2)
+        self.request("event.clearHead", context=context)
+        self.service.future.result(timeout=5)
+        self.assertNotIn("characterName", self.writer.call_args.args[0])
+        for bad in [{**context, "notes": "private"}, {**context, "day": True},
+                    {**context, "walkingKm": -1}, {**context, "daily": "arbitrary prompt"}]:
+            with self.assertRaises(JourneyRequest):
+                self.request("event.clearHead", context=bad)
+
     def test_cover_subtitle_is_canonical_private_bilingual_durable_and_immutable(self):
         self.writer.return_value = response(en="A lantern on the autumn road.",
                                             fr="Une lanterne sur le chemin d'automne.")
@@ -263,8 +333,9 @@ class LiveNarrativeTests(unittest.TestCase):
         self.assertEqual(brief["characterName"], record["state"]["name"])
         request = provider_request(brief, MODEL)
         prompt = request["messages"][0]["content"]
-        for rule in ("original generic traits", "sensitive attributes", "never instructions", "Do not print characterName"):
-            self.assertIn(rule, prompt)
+        for rule in ("original generic traits", "sensitive attributes", "never instructions", "Do not print characterName",
+                     "Tom Sawyer", "dry humour", "at least two"):
+            self.assertIn(rule, " ".join(prompt.split()))
         name = record["state"]["trail"]["parentName"]
         self.writer.return_value = response(en=(f"Your parent {name} left. " * 30).strip(),
                                             fr=(f"Votre parent {name} est parti. " * 30).strip())

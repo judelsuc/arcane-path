@@ -101,7 +101,7 @@
           <div id="character-setup">
             <label for="character-name" data-i18n="characterName"></label>
             <input id="character-name" type="text" required maxlength="40" autocomplete="off" spellcheck="false">
-            <label><input id="story-name-flavour" type="checkbox"><span data-i18n="storyNameFlavour"></span></label>
+            <label><input id="story-name-flavour" type="checkbox" checked><span data-i18n="storyNameFlavour"></span></label>
             <select id="character-profile" hidden aria-label="Legacy profile">
               <option value="balanced" data-i18n="profile.balanced"></option>
               <option value="sturdy" data-i18n="profile.sturdy"></option>
@@ -420,6 +420,7 @@
       <h2 id="opening-story-title" data-i18n="openingStoryTitle"></h2>
       <p id="opening-story-text"></p>
       <p id="opening-story-status" class="window-help-text" role="status"></p>
+      <button id="opening-story-regenerate" type="button" data-i18n="openingStoryRegenerate"></button>
       <button id="opening-story-continue" type="button" data-i18n="openingStoryBegin"></button>
     </dialog>
     <dialog id="birth-tarot-dialog" aria-labelledby="birth-tarot-title">

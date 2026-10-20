@@ -107,6 +107,12 @@ Les prompts musicaux 8-bit et sons de jeu sont dans [audio-prompts](./audio-prom
 
 ## Couverture personnelle du carnet
 
+Le nom fictif est propose par defaut comme inspiration des nouvelles biographies
+et des evenements, avec une case permettant de ne pas l'envoyer a OVH.
+Une biographie deja conservee ne change que via **Regenerer avec le nom fictif**
+et confirmation. Les nouveaux textes d'evenements evoluent par jour de jeu,
+sans modifier leurs effets ni remplacer une introduction deja affichee.
+
 Si le voyage serveur a disparu apres une reconstruction, creer un nouveau
 voyage propose d'archiver l'ancienne sauvegarde dans ce navigateur avant
 remplacement. Le menu **Carnets archives** du carnet permet de consulter les

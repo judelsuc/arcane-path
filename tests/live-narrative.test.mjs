@@ -60,6 +60,35 @@ test("only registered public ids and owner capability are sent; stable bilingual
   assert.equal(requests.length, 1);
 });
 
+test("contextual event sets evolve each game day and name consent changes only future contextual requests", async () => {
+  const calls = [];
+  const client = createLiveNarrative({ fetcher: async (_, options) => {
+    calls.push(JSON.parse(options.body));
+    return reply("event.clearHead");
+  } });
+  let current = { ...state, elapsedMinutes: 1500, distanceMeters: 12345, sleeps: 1,
+    dailyCard: "star", events: { count: 2 }, storyNameFlavour: false };
+  client.prefetch(current, ["event.clearHead"]);
+  await flush();
+  assert.deepEqual(calls[0], { journey: state.serverJourney.id, brief: "event.clearHead",
+    context: { day: 1, walkingKm: 12, sleeps: 1, encounters: 2, daily: "star" } });
+  current = { ...current, distanceMeters: 14000 };
+  client.prefetch(current, ["event.clearHead"]);
+  await flush();
+  assert.equal(calls.length, 1);
+  current = { ...current, storyNameFlavour: true };
+  client.prefetch(current, ["event.clearHead"]);
+  await flush();
+  assert.equal(calls[1].nameFlavour, true);
+  assert.ok(!JSON.stringify(calls).includes("PRIVATE NAME"));
+  current = { ...current, elapsedMinutes: 3000 };
+  assert.equal(client.snapshot(current, "event.clearHead"), null);
+  client.prefetch(current, ["event.clearHead"]);
+  await flush();
+  assert.equal(calls.length, 3);
+  assert.equal(calls[2].context.day, 2);
+});
+
 test("pending polls durable result, failures are explicit and never retried", async () => {
   const jobs = [];
   let calls = 0;

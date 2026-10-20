@@ -271,6 +271,36 @@ These source changes have no effect on an already deployed proxy.
 
 ### Player experience and public boundary
 
+- **20 October named-voice update:** the fictional-name checkbox is checked by
+  default for new characters, visibly describes OVH processing and can be
+  unchecked. Existing saved preferences are not silently changed. The biography
+  dialog offers explicit confirmed regeneration, also enabling name-inspired
+  future events for that local save. A stable random request ID makes polling
+  idempotent; each requested revision remains a separate database row. The latest
+  successful story remains readable while a replacement is pending or failed.
+  Rereading/resuming never requests another revision. Regeneration uses the
+  canonical saved name, parent and departure facts, not client free text.
+- For a recognized fictional reference, prompts now ask for at least two
+  noticeable original personality traits. Public-domain literary references may
+  inspire broad qualities of the original author's voice (for Tom Sawyer:
+  playful irony, dry humour, mischievous curiosity and lively observation).
+  No copied passages, signature lines, source plots or imported locations.
+  Other/uncertain references use broad literary qualities instead of close
+  author-style imitation. These instructions do not guarantee model recognition
+  or semantic correctness.
+- Ordinary event sets are now cached per owner, kind, elapsed in-game day and
+  name-consent mode. Each first request for a set captures only whole walked
+  kilometres, sleep/encounter counts, day number and daily/birth tarot. The
+  server validates these bounded client observations as decorative, not trusted
+  evidence. Only the canonical fictional name is additionally supplied when
+  enabled. No private notes, exact position or future trail enters the prompt.
+  Three distinct versions rotate within the day; changes to counters within
+  that day do not trigger more calls. A new day may request one new set for each
+  of the 20 ordinary event kinds (up to 20 text calls/day/consent mode).
+  Existing event effects, probabilities, text on an already-open encounter,
+  hospitality wording and historical generated rows remain unchanged.
+  Pending sets use authored text for that encounter, not a mid-dialogue swap.
+
 - The browser asynchronously prefetches the **20 ordinary travel briefs**
   and **three hospitality lines** after a capability-backed journey becomes
   active. Disabled mode stops after the first status request, without a
@@ -302,9 +332,10 @@ These source changes have no effect on an already deployed proxy.
   saved opening stories or refreshing unchanged hospitality text.
 - The provider receives **only** one entry from
   `public/narrative-briefs.json`, never the request body or client game state.
-  The API accepts only a registered identifier plus journey/optional keeper;
+  Outside the bounded contextual-event and explicit story-regeneration
+  extensions described above, the API accepts only a registered identifier plus journey/optional keeper;
   it uses the journal capability header for authentication and owner binding.
-  Names, notes, coordinates, saves, journal pages, source/private data, lore
+  Except for the explicitly enabled fictional-name input, names, notes, coordinates, saves, journal pages, source/private data, lore
   hints, clues and evidence permissions never enter provider prompts.
   Story-only encounters and dog adoption are outside this registry.
 - Prompts ask for conservative facts-only wording without additional offers,
