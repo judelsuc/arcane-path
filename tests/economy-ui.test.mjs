@@ -7,6 +7,7 @@ import { startSurvival } from "../survival.mjs";
 import { applyBirthTarot, startEconomy, mealOffers } from "../economy.mjs";
 import { translate } from "../i18n.mjs";
 import { NARRATIVE_BRIEFS } from "../live-narrative.mjs";
+import { withDiscoveredAccommodations } from "../accommodations.mjs";
 
 const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
 const economy = json("../public/economy.json");
@@ -163,6 +164,48 @@ test("travel to accommodation selects the actual lodging and closes without movi
   assert.deepEqual(h.current().state, before);
   assert.deepEqual(h.actions, []);
 });
+
+for (const language of ["fr", "en"]) {
+  test(`${language} listed churches and hotels explain walking first and remain visible after a sparse live result`, async t => {
+    const church = { id: "way/53", osmId: "way/53", name: "Notre-Dame", col: 21, row: 10,
+      latitude: 44.54, longitude: 2.32, distance: 1854, tags: { amenity: "place_of_worship" },
+      source: "OpenStreetMap", sourceUrl: "https://www.openstreetmap.org/way/53",
+      credit: "OpenStreetMap contributors", license: "ODbL", licenseUrl: "https://www.openstreetmap.org/copyright" };
+    const hotel = { ...church, id: "node/54", osmId: "node/54", name: "Hôtel des Voyageurs",
+      col: 30, distance: 4045, tags: { tourism: "hotel" } };
+    let selected;
+    const h = harness(t, language, async (_signal, progress) => {
+      progress({ phase: "maps", cached: { places: [church, hotel], warnings: [] }, elapsedSeconds: 0 });
+      return { places: [], warnings: [] };
+    }, place => { selected = place; });
+    const before = structuredClone(h.current().state);
+    await h.ui.open("sleep");
+    const items = h.element("#accommodation-results").children;
+    assert.equal(items.length, 2, "the live response must not discard already mapped destinations");
+    assert.match(items[0].children[0].textContent, /Notre-Dame.*1854/);
+    assert.match(items[0].children[1].textContent, language === "fr" ? /à pied.*H.*pas garanti/ : /walk.*H.*not guaranteed/);
+    assert.match(items[1].children[0].textContent, /Voyageurs.*4045/);
+    assert.match(items[1].children[1].textContent, language === "fr" ? /à pied.*H/ : /walk.*H/);
+    assert.ok(h.buttons().every(button => !/Notre-Dame|Voyageurs/.test(button.textContent)));
+    items[0].children.at(-1).click();
+    assert.equal(selected, church);
+    assert.deepEqual(h.current().state, before);
+    assert.equal(h.actions.length, 0);
+    h.set({ state: { ...before, col: church.col, row: church.row },
+      cell: withDiscoveredAccommodations(town, [church, hotel], church.col, church.row) });
+    await h.ui.open("sleep");
+    assert.ok(h.buttons().some(button => /Notre-Dame/.test(button.textContent) && !button.disabled));
+    assert.equal(h.element("#economy-shelter-context").textContent, translate(language, "shelterCellOnly"));
+    assert.ok(h.buttons().every(button => !/Voyageurs/.test(button.textContent)));
+    const here = h.element("#accommodation-results").children[0];
+    assert.ok(here.children[1].textContent.includes(translate(language, "accommodationHereWorship")));
+    h.buttons().find(button => /Notre-Dame/.test(button.textContent)).click();
+    assert.deepEqual(h.actions, [{ kind: "hospitality", id: church.id }]);
+    const after = h.current().state;
+    assert.equal(after.hospitalityAttempts.at(-1).placeKind, "worship");
+    assert.equal(after.walletCents, before.walletCents);
+  });
+}
 
 for (const language of ["fr", "en"]) {
   test(`${language} hotels on the player's cell lead nearby and sleep choices without reordering other offers`, async t => {

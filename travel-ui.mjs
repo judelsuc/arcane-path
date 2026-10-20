@@ -399,7 +399,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     async findAccommodations(signal, onProgress) {
       const current = economyContext(), currentToken = token;
       if (!current || current.blocked) throw new Error("Accommodation lookup requires a loaded player cell.");
-      const cached = cachedAccommodations(base, stream.chunks.values(), current.info);
+      const cached = cachedAccommodations(base, stream.chunks.values(), current.info, discoveredLodging);
       discoveredLodging = cached.places;
       onProgress({ phase: "maps", cached, elapsedSeconds: 0 });
       const result = await loadAccommodations(region, current.info, signal, fetch, progress => {
@@ -412,8 +412,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       });
       signal.throwIfAborted();
       if (currentToken !== token) throw new Error("Journey changed during accommodation lookup.");
-      discoveredLodging = result.places;
-      return result;
+      const combined = mergeAccommodations(cached, { places: discoveredLodging, warnings: [] }, result);
+      discoveredLodging = combined.places;
+      return combined;
     },
     async resolveCountry() {
       const current = economyContext();

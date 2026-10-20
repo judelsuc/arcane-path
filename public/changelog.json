@@ -1,6 +1,11 @@
 {
-  "version": "0.20.5",
+  "version": "0.20.6",
   "entries": [
+    {
+      "version": "0.20.6",
+      "fr": "La recherche d’hébergements inclut désormais les lieux de culte publics, comme les églises, avec une explication pour chaque hôtel ou lieu de culte : rejoignez sa case à pied, puis ouvrez le sommeil (H) pour dormir ou demander un abri. Choisir une destination ne déplace pas le personnage et ne garantit pas l’accueil. Les lieux déjà cartographiés ne disparaissent plus lorsqu’une réponse en ligne en contient moins. Le statut du chien se trouve directement sous le panneau d’état du joueur.",
+      "en": "Nearby hosting searches now include public places of worship such as churches. Each hotel or place of worship explains the next step: walk to its cell, then open sleep (H) to stay or ask for shelter. Selecting a destination does not move the character or guarantee a welcome. Already mapped places no longer disappear when an online response contains fewer results. The dog's status now sits directly below the player-status panel."
+    },
     {
       "version": "0.20.5",
       "fr": "Les carnets des autres voyageurs ont désormais leur propre fenêtre, comme la piste du parent : une introduction raconte leur histoire, des icônes accompagnent les actions et chaque témoignage se déplie séparément. Une seule entrée récente est affichée par carnet, sans minutes techniques ni coordonnées. Aucun emplacement, indice de proximité ou carnet à recueillir n'est révélé avant qu'un habitant en parle. Les anciennes observations automatiques restent conservées mais ne dévoilent plus de piste.",

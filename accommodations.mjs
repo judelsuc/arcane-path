@@ -1,5 +1,12 @@
 import { distanceMeters } from "./cell-content.mjs";
 
+function hostingPlace(tags = {}) {
+  if (!tags || typeof tags !== "object") return false;
+  return (["hotel", "hostel", "guest_house", "motel", "alpine_hut"].includes(tags.tourism) ||
+    tags.amenity === "place_of_worship") && !["private", "no"].includes(tags.access) &&
+    (!tags.disused || tags.disused === "no") && (!tags.abandoned || tags.abandoned === "no");
+}
+
 export async function loadAccommodations(region, info, signal, fetcher = fetch, onProgress = () => {}) {
   signal = AbortSignal.any([signal, AbortSignal.timeout(240000)]);
   const started = Date.now();
@@ -56,7 +63,9 @@ function validateAccommodations(result) {
           typeof place.source !== "string" || typeof place.credit !== "string" || typeof place.license !== "string" ||
           !(place.osmId === place.id && /^(node|way|relation)\/[1-9]\d*$/.test(place.id) ||
             place.id.startsWith("https://data.datatourisme.fr/")) ||
-          !["hotel", "hostel", "guest_house", "motel", "alpine_hut"].includes(place.tags?.tourism) ||
+          !hostingPlace(place.tags) ||
+          (place.tags?.amenity === "place_of_worship" &&
+            !/^(node|way|relation)\/[1-9]\d*$/.test(place.osmId ?? "")) ||
           ![place.sourceUrl, place.licenseUrl].every(url => {
             try { return typeof url === "string" && new URL(url).protocol === "https:"; }
             catch { return false; }
@@ -65,16 +74,18 @@ function validateAccommodations(result) {
   }
 }
 
-export function cachedAccommodations(base, chunks, info) {
+export function cachedAccommodations(base, chunks, info, discovered = []) {
   const places = new Map();
+  for (const place of discovered) {
+    const distance = distanceMeters(info, place.latitude, place.longitude);
+    if (distance <= 5000) places.set(place.id, { ...place, distance });
+  }
   for (const map of [base, ...chunks]) {
     for (const [row, cells] of map.rows.entries()) {
       for (const [col, cell] of cells.entries()) {
+        if (cell.unavailable) continue;
         for (const poi of cell.pois ?? []) {
-          const tags = poi.tags ?? {};
-          if (!["hotel", "hostel", "guest_house", "motel", "alpine_hut"].includes(tags.tourism) ||
-              ["private", "no"].includes(tags.access) ||
-              tags.disused && tags.disused !== "no" || tags.abandoned && tags.abandoned !== "no") continue;
+          if (!hostingPlace(poi.tags)) continue;
           const distance = distanceMeters(info, poi.latitude, poi.longitude);
           if (distance > 5000) continue;
           places.set(poi.osmId, { ...poi, name: poi.name ?? "", id: poi.osmId, distance,

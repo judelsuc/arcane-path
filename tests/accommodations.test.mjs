@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { loadAccommodations, cachedAccommodations, mergeAccommodations, withDiscoveredAccommodations } from "../accommodations.mjs";
 import { sleepEconomy, startEconomy, applyBirthTarot, shelters } from "../economy.mjs";
 import { startSurvival } from "../survival.mjs";
+import { worshipPlaces, askHospitality } from "../hospitality.mjs";
 
 const place = { id: "relation/42", osmId: "relation/42", name: "Hostel", latitude: 50,
   longitude: 4, col: 16, row: 10, distance: 500, tags: { tourism: "hostel" },
@@ -49,6 +50,49 @@ test("cached server results are delivered during polling and unsafe provisional 
   /Invalid nearby accommodation/);
 });
 
+test("nearby churches are hosting destinations from loaded maps and live results, not remote shelter offers", async () => {
+  const church = { ...place, id: "way/53", osmId: "way/53", name: "Notre-Dame",
+    tags: { amenity: "place_of_worship" } };
+  const base = { rows: [[{ pois: [church,
+    { ...church, id: "way/54", osmId: "way/54", tags: { ...church.tags, access: "private" } },
+    { ...church, id: "way/55", osmId: "way/55", tags: { ...church.tags, disused: "yes" } }] }]] };
+  const cached = cachedAccommodations(base, [], info);
+  assert.deepEqual(cached.places.map(p => p.id), [church.id]);
+  assert.equal(cachedAccommodations({ rows: [[{ ...base.rows[0][0], unavailable: true }]] }, [], info).places.length, 0);
+  const live = await loadAccommodations("firmi", info, new AbortController().signal,
+    async () => response(payload([church])));
+  assert.equal(live.places[0].tags.amenity, "place_of_worship");
+  const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
+  const survival = json("../public/config.json").survival, economy = json("../public/economy.json");
+  const state = applyBirthTarot(startEconomy(startSurvival(14, 10,
+    Date.UTC(2026, 9, 17, 12), "balanced", survival), economy, () => 0), economy);
+  const empty = { terrain: "road" };
+  const remote = withDiscoveredAccommodations(empty, [church], state.col, state.row);
+  assert.equal(worshipPlaces(remote).length, 0);
+  assert.throws(() => askHospitality(state, remote, info, survival, economy, () => 0, church.id), /unavailable/);
+  const arrived = withDiscoveredAccommodations(empty, [church], church.col, church.row);
+  assert.equal(worshipPlaces(arrived)[0].osmId, church.id);
+  assert.equal(shelters(arrived).length, 0, "a church is not a guaranteed free hotel");
+  const after = askHospitality({ ...state, col: church.col, row: church.row }, arrived,
+    info, survival, economy, () => 0, church.id);
+  assert.equal(after.hospitalityAttempts.at(-1).townId, church.id);
+  assert.equal(after.hospitalityAttempts.at(-1).placeKind, "worship");
+});
+
+test("a discovered destination remains usable on arrival while maps omit it and search is slow or offline", () => {
+  const church = { ...place, id: "way/53", osmId: "way/53", name: "Notre-Dame",
+    tags: { amenity: "place_of_worship" }, distance: 1854 };
+  const empty = { rows: [[{ terrain: "road" }]] };
+  const approaching = cachedAccommodations(empty, [], { latitude: 50, longitude: 4.01 }, [church]);
+  assert.equal(approaching.places.length, 1);
+  assert.ok(approaching.places[0].distance > 500 && approaching.places[0].distance < 1000);
+  const arrived = cachedAccommodations(empty, [], info, approaching.places);
+  assert.equal(arrived.places[0].distance, 0);
+  const cell = withDiscoveredAccommodations(empty.rows[0][0], arrived.places, church.col, church.row);
+  assert.equal(worshipPlaces(cell)[0].osmId, church.id);
+  assert.equal(cachedAccommodations(empty, [], { latitude: 50, longitude: 5 }, [church]).places.length, 0);
+});
+
 test("nearby lodging request uses exact player coordinates and accepts relation and supplementary sources", async () => {
   const supplementary = { ...place, id: "https://data.datatourisme.fr/42", osmId: undefined,
     source: "DATAtourisme", sourceUrl: "https://data.datatourisme.fr/42" };
@@ -66,7 +110,9 @@ test("nearby lodging request uses exact player coordinates and accepts relation 
 test("malformed lodging, unsafe URLs, out-of-radius and server errors are explicit", async () => {
   for (const changed of [{ distance: 5001 }, { col: .5 }, { latitude: 91 },
     { id: "invented", osmId: "invented" }, { sourceUrl: "https://[" },
-    { licenseUrl: "javascript:alert(1)" }, { tags: { tourism: "museum" } }]) {
+    { licenseUrl: "javascript:alert(1)" }, { tags: { tourism: "museum" } },
+    { tags: { tourism: "hotel", access: "private" } }, { tags: null },
+    { id: "https://data.datatourisme.fr/53", osmId: undefined, tags: { amenity: "place_of_worship" } }]) {
     await assert.rejects(loadAccommodations("firmi", info, new AbortController().signal,
       async () => response(payload([{ ...place, ...changed }]))), /Invalid nearby/);
   }

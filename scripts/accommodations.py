@@ -27,6 +27,10 @@ DATATOURISME_KINDS = {"Hotel": "hotel", "YouthHostelAndInternationalCenter": "ho
 HEADERS = {"User-Agent": "ArcanePath/0.4 (https://github.com/judelsuc/arcane-path)"}
 
 
+def hosting_place(tags):
+    return tags.get("tourism") in KINDS or tags.get("amenity") == "place_of_worship"
+
+
 def import_datatourisme(database, stream):
     """Admin operation only; atomically replace the catalogue after a valid import."""
     csv.field_size_limit(2_000_000)
@@ -77,7 +81,7 @@ class Accommodations:
             return dict(self.progress.get((region, latitude, longitude), {"phase": "queued"}))
 
     def path(self, region, latitude, longitude):
-        identity = hashlib.sha256(json.dumps([region, latitude, longitude]).encode()).hexdigest()
+        identity = hashlib.sha256(json.dumps(["hosting-v2", region, latitude, longitude]).encode()).hexdigest()
         return self.cache / f"{identity}.json"
 
     def read(self, region, latitude, longitude):
@@ -103,8 +107,10 @@ class Accommodations:
         for data in maps:
             for row in data["rows"]:
                 for cell in row:
+                    if cell.get("unavailable"):
+                        continue
                     for poi in cell.get("pois", []):
-                        if poi.get("tags", {}).get("tourism") not in KINDS:
+                        if not hosting_place(poi.get("tags", {})):
                             continue
                         kind, identity = poi["osmId"].split("/")
                         point = {"lat": poi["latitude"], "lon": poi["longitude"]}
@@ -158,7 +164,8 @@ class Accommodations:
             warnings.append("OpenStreetMap live lookup unavailable; only cached maps and imported catalogues could be checked.")
         places = self.osm_places(elements)
         # Supplement sparse OSM coverage, not just a completely empty result.
-        if len(places) < 5 and 41 <= latitude <= 52 and -6 <= longitude <= 10:
+        if (sum(place["tags"].get("tourism") in KINDS for place in places) < 5
+                and 41 <= latitude <= 52 and -6 <= longitude <= 10):
             update({"phase": "catalogue"})
             extra, warning = self.datatourisme(latitude, longitude)
             if warning:
@@ -191,7 +198,7 @@ class Accommodations:
                 raise ValueError("Invalid accommodation coordinates.")
             if (item.get("type") not in {"node", "way", "relation"}
                     or type(item.get("id")) is not int or item["id"] <= 0
-                    or tags.get("tourism") not in KINDS or tags.get("access") in {"private", "no"}
+                    or not hosting_place(tags) or tags.get("access") in {"private", "no"}
                     or tags.get("disused", "no") != "no" or tags.get("abandoned", "no") != "no"):
                 continue
             lat, lon = point.get("lat"), point.get("lon")

@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import io
 import json
 import os
@@ -50,6 +51,9 @@ class AccommodationTests(unittest.TestCase):
         query = fetch.call_args.args[0]
         self.assertIn("nwr(around:5000,50.000000,4.000000)", query)
         self.assertIn("hostel", query)
+        self.assertIn('["amenity"="place_of_worship"]', query)
+        self.assertTrue(query.startswith("[out:json][timeout:20];("))
+        self.assertIn(";);out center tags;", query)
         self.assertIn("out center tags", query)
         self.assertIs(fetch.call_args.args[1], progress)
 
@@ -154,6 +158,30 @@ class AccommodationTests(unittest.TestCase):
         for coordinate in [float("nan"), True, 200]:
             with self.assertRaisesRegex(ValueError, "coordinates"):
                 self.build([self.element(latitude=coordinate)])
+
+    def test_churches_are_real_bounded_hosting_destinations_without_replacing_lodging_catalogue(self):
+        churches = [self.element(i, tourism="", amenity="place_of_worship") for i in range(1, 7)]
+        with patch.object(self.store, "mapped", return_value=churches), \
+                patch.object(self.store, "osm", return_value=[
+                    self.element(8, tourism="", amenity="place_of_worship", access="private"),
+                    self.element(9, tourism="", amenity="place_of_worship", disused="yes"),
+                    self.element(10, tourism="", amenity="place_of_worship", longitude=3)]), \
+                patch.object(self.store, "datatourisme", return_value=([], None)) as catalogue:
+            result = self.store.build("firmi", 44.54, 2.3)
+        self.assertEqual(len(result["places"]), 6)
+        self.assertTrue(all(p["tags"]["amenity"] == "place_of_worship" for p in result["places"]))
+        catalogue.assert_called_once()
+        legacy = hashlib.sha256(json.dumps(["firmi", 44.54, 2.3]).encode()).hexdigest()
+        self.assertNotEqual(self.store.path("firmi", 44.54, 2.3).stem, legacy)
+
+    def test_server_mapped_scan_includes_churches_and_preserves_osm_identity(self):
+        church = {"osmId": "way/53", "latitude": 44.54, "longitude": 2.3,
+                  "name": "Notre-Dame", "tags": {"amenity": "place_of_worship"}}
+        self.chunks.bases["firmi"] = {**self.base, "rows": [[{"pois": [church]}]]}
+        found = self.store.mapped("firmi", 44.54, 2.3)
+        self.assertEqual(len(found), 1)
+        self.assertEqual((found[0]["type"], found[0]["id"]), ("way", 53))
+        self.assertEqual(self.store.osm_places(found)[0]["name"], "Notre-Dame")
 
     def test_unavailable_sources_warn_and_do_not_cache_empty_success(self):
         with patch.object(self.store, "mapped", return_value=[]), \
