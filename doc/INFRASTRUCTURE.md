@@ -1,5 +1,45 @@
 # Infrastructure OVHcloud - rapport du 19 octobre 2026
 
+## Nearby hosting consistency and companion placement (20 October 2026)
+
+- Game 0.20.6, production runtime
+  `b594ba833e4464623214ec04d439e232c8725c75`.
+  The administrator chose walking to listed hosting places, not automatic
+  movement or remote sleep. The adopted dog's existing status/care button is
+  now the immediate sibling below the complete player-status panel.
+- Root mismatch: town places can be up to 2 km away and lodging results up to
+  5 km away, whereas sleeping/worship requests require the current 250 m cell.
+  Nearby searches previously omitted places of worship, and sparse final
+  results could replace already known places. Both loaded-map and live OSM
+  node/way/relation queries now include active public places of worship.
+  Per-result FR/EN text explains walking first and the difference between a
+  paid stay and a non-guaranteed shelter request. Arrival guidance distinguishes
+  worship requests from sleeping directly. Local worship no longer causes a
+  misleading "no usable accommodation" context message.
+- Known destinations survive later searches, including arrival at a place
+  absent from the map POIs while lookup is slow/offline. Their distances are
+  recomputed and the 5 km limit remains. Hosting caches use a versioned key;
+  old hotel-only caches are retained, not served as church-complete results.
+  Private/inactive/abandoned exclusions, per-place/day attempts, acceptance
+  probabilities, existing prices and sleep effects are unchanged.
+- Development: 1,111 JavaScript tests and 12 accommodation backend tests passed.
+  Exact production: 1,035 JavaScript tests and 12 backend tests passed.
+  Browser fixtures used production HTML/styles and real economy/equipment
+  controllers with in-memory state and a stub search, not player saves.
+  They verified 1,854 m church/4,045 m hotel destination listings, no remote
+  actions or selection side effects, sparse-final-result retention, simulated
+  church arrival enabling a free request, refusal disabling repeat requests,
+  and simulated hotel arrival enabling its paid offer. Dog placement, care
+  focus, hiding without adoption, English labels and 375 px layout checked.
+  Actions were DOM-dispatched in the hidden browser; actual walking/server
+  source availability were not claimed as browser-tested.
+- Ten runtime files including metadata installed with baseline hash checks,
+  runtime/SQLite backups and backend restart. All nine existing journey genesis
+  checksums remained unchanged; every SQLite integrity check passed.
+  Backend, Nginx and art timer healthy; public changed assets and travel API
+  verified on both apex and www.
+  Backup: `/var/lib/arcane-path/backups/hosting-dog-b594ba833e44`.
+
 ## Story-led travellers' notebook window (20 October 2026)
 
 - Game 0.20.5, production runtime
