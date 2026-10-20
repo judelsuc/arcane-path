@@ -30,6 +30,30 @@ test("zero-health death is durably queued and flushed without publishing extra p
   assert.equal(calls[0].notes, undefined);
 });
 
+test("lost server publications stay archived locally without blocking a new notebook; other errors still block", async () => {
+  const rows = new Map(), calls = [];
+  const old = { id: "old", body: { journey: "old", action: "publish" }, capability: "private" };
+  rows.set(old.id, old);
+  rows.set("new", { ...old, id: "new", body: { journey: "new", action: "publish" } });
+  const client = createJournalClient(storage(), async (_, options) => {
+    const body = JSON.parse(options.body);
+    calls.push(body.journey);
+    return body.journey === "old"
+      ? new Response('{"error":"Unknown journal capability."}', { status: 403 }) : response({});
+  }, { outbox: { list: async () => [...rows.values()],
+    put: async entry => rows.set(entry.id, entry), remove: async id => rows.delete(id) } });
+  await client.flushNotebooks();
+  await client.flushNotebooks();
+  assert.deepEqual(calls, ["old", "new"]);
+  assert.equal(rows.get("old").archived, true);
+  assert.deepEqual(rows.get("old").body, old.body);
+  assert.equal(rows.has("new"), false);
+  const failure = createJournalClient(storage(), async () =>
+    new Response('{"error":"Invalid journal capability."}', { status: 403 }),
+  { outbox: { list: async () => [old] } });
+  await assert.rejects(failure.flushNotebooks(), /Invalid journal capability/);
+});
+
 test("capability and request ID are persisted before network and reused across reloads", () => {
   const local = storage(), pending = pendingJournalCreation(local, "firmi", "Alex");
   assert.match(pending.capability, /^[a-f0-9]{64}$/);

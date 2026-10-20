@@ -1,6 +1,8 @@
 const CREATION = "arcane-journal-creation-v1:";
 const OUTBOX = "arcane-journal-deaths-v1";
 
+export class MissingJournalJourney extends Error {}
+
 export function ensureJournalAccess(state) {
   if (state.journalAccess) return state;
   if (!state.serverJourney) throw new Error("A server-created journey is required to leave a notebook.");
@@ -68,7 +70,12 @@ export function createJournalClient(storage, fetcher = fetch, { outbox = createN
       body: JSON.stringify(body), signal: AbortSignal.timeout(90_000),
     });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error ?? `HTTP ${response.status}`);
+    if (!response.ok) {
+      if (response.status === 403 && result.error === "Unknown journal capability.") {
+        throw new MissingJournalJourney(result.error);
+      }
+      throw new Error(result.error ?? `HTTP ${response.status}`);
+    }
     return result;
   }
   function queueDeath(state) {
@@ -98,9 +105,17 @@ export function createJournalClient(storage, fetcher = fetch, { outbox = createN
     if (flushing) return flushing;
     flushing = (async () => {
       for (const entry of await outbox.list()) {
-        if (entry.body.keeper) await request({ ...entry.body, action: "register",
-          notebook: undefined, clues: undefined }, entry.capability);
-        await request(entry.body, entry.capability);
+        if (entry.archived) continue;
+        try {
+          if (entry.body.keeper) await request({ ...entry.body, action: "register",
+            notebook: undefined, clues: undefined }, entry.capability);
+          await request(entry.body, entry.capability);
+        } catch (error) {
+          if (!(error instanceof MissingJournalJourney)) throw error;
+          await outbox.put({ ...entry, archived: true });
+          console.warn("Notebook publication retained locally: its server journey no longer exists.", entry.id);
+          continue;
+        }
         await outbox.remove(entry.id);
       }
     })();

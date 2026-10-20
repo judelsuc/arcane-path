@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createSave, validateSave, createJourneyStore, mapIdentity } from "../journey-save.mjs";
+import { createSave, validateSave, createJourneyStore, mapIdentity, archivedJourneys } from "../journey-save.mjs";
 import { startSurvival, walkSurvival } from "../survival.mjs";
 import { startEconomy, buyMeal, finishAction, applyBirthTarot, tarotEventChance,
   dailyTarotPending, acknowledgeDailyTarot, refreshPricing } from "../economy.mjs";
@@ -25,6 +25,23 @@ function storage() {
   const data = new Map();
   return { getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v), data };
 }
+
+test("missing-server replacement archives the exact save before replacement and refuses data loss", () => {
+  const memory = storage();
+  Object.defineProperty(memory, "length", { get: () => memory.data.size });
+  memory.key = index => [...memory.data.keys()][index] ?? null;
+  const store = createJourneyStore(memory), original = details();
+  store.read(original.region);
+  const save = store.write(original);
+  store.archive(save);
+  store.archive(save);
+  store.write({ ...original, state: { ...original.state, elapsedMinutes: 5 } });
+  assert.deepEqual(archivedJourneys(memory), [save]);
+  assert.notDeepEqual(store.read(original.region), save);
+  assert.throws(() => store.archive({ ...save, revision: save.revision + 1 }), /refusing to overwrite/);
+  assert.throws(() => createJourneyStore({ ...memory, setItem() { throw new Error("Storage full"); } })
+    .archive(save), /Storage full/);
+});
 
 test("the isolated authoritative lore state cannot be imported into a main-game save", () => {
   const d = details();

@@ -21,6 +21,16 @@ import { validateJourneyWorld } from "./journey-world.mjs";
 export const SAVE_VERSION = 1;
 export const JOURNEY_SAVE_PREFIX = eventPlaytestEnabled() ? "arcane-event-playtest-v1:" : "arcane-journey-v1:";
 const PREFIX = JOURNEY_SAVE_PREFIX;
+export const JOURNEY_ARCHIVE_PREFIX = `${PREFIX}archive:`;
+
+export function archivedJourneys(storage) {
+  const saves = [];
+  for (let index = 0; index < storage.length; index++) {
+    const key = storage.key(index);
+    if (key?.startsWith(JOURNEY_ARCHIVE_PREFIX)) saves.push(validateSave(JSON.parse(storage.getItem(key))));
+  }
+  return saves.sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+}
 
 export function mapIdentity(map) {
   return JSON.stringify([map.width, map.height, map.cellSizeMeters, map.bounds, map.projectionLatitude ?? null]);
@@ -222,6 +232,17 @@ export function createJourneyStore(storage) {
   const observed = new Map();
   const revisions = new Map();
   return {
+    archive(save) {
+      validateSave(save);
+      const owner = save.state.serverJourney?.id ?? String(save.state.startedAt);
+      const key = JOURNEY_ARCHIVE_PREFIX + owner;
+      const previous = storage.getItem(key);
+      if (previous !== null && previous !== JSON.stringify(save)) {
+        throw new Error("An archive already exists for this journey; refusing to overwrite it.");
+      }
+      storage.setItem(key, JSON.stringify(save));
+      if (storage.getItem(key) !== JSON.stringify(save)) throw new Error("Journey archive could not be verified.");
+    },
     read(region) {
       const raw = storage.getItem(PREFIX + region);
       observed.set(region, raw);

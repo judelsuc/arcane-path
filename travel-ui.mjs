@@ -26,7 +26,7 @@ import { setupTrailDream } from "./trail-dream-ui.mjs";
 import { settleTrailDream, trailDreamText, trailDreamVariant } from "./trail-dreams.mjs";
 import { setupJourneyWorld } from "./journey-world-ui.mjs";
 import { transitActive, reserveJourneyTransit, stepJourneyTransit, cancelJourneyTransit } from "./journey-world.mjs";
-import { createServerJourney } from "./server-journey.mjs";
+import { createServerJourney, serverJourneyExists } from "./server-journey.mjs";
 import { prepareParentPaths } from "./parent-path.mjs";
 import { loadAccommodations, cachedAccommodations, mergeAccommodations, withDiscoveredAccommodations } from "./accommodations.mjs";
 import { setFeedback } from "./feedback.mjs";
@@ -1163,13 +1163,19 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     document.querySelector("#map-viewport").classList.add("travel-viewport");
     localize();
     try {
-      if (!restored && savedJourney && !savedJourney.state.journalPublished) {
-        const previous = ensureJournalAccess(savedJourney.state);
-        savedJourney = saveStore.write({ region, map: base, state: previous,
-          survival: savedJourney.survival, economy: savedJourney.economy });
-        await publishNotebook(previous);
-        savedJourney = saveStore.write({ region, map: base, state: { ...previous, journalPublished: true },
-          survival: savedJourney.survival, economy: savedJourney.economy });
+      if (!restored && savedJourney) {
+        if (!await serverJourneyExists(savedJourney.state)) {
+          if (!confirm(t("saveMissingServerConfirm"))) return;
+          saveStore.archive(savedJourney);
+          console.warn("Missing server journey archived locally before replacement.");
+        } else if (!savedJourney.state.journalPublished) {
+          const previous = ensureJournalAccess(savedJourney.state);
+          savedJourney = saveStore.write({ region, map: base, state: previous,
+            survival: savedJourney.survival, economy: savedJourney.economy });
+          await publishNotebook(previous);
+          savedJourney = saveStore.write({ region, map: base, state: { ...previous, journalPublished: true },
+            survival: savedJourney.survival, economy: savedJourney.economy });
+        }
       }
       const health = await fetch("/api/travel", { signal: AbortSignal.timeout(5000) });
       if (!health.ok || !(health.headers.get("content-type") ?? "").includes("application/json")) {

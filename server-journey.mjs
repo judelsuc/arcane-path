@@ -2,6 +2,18 @@ import { validateSave, mapIdentity } from "./journey-save.mjs";
 import { normalizeCharacterName, startSurvival } from "./survival.mjs";
 import { startEconomy, applyBirthTarot } from "./economy.mjs";
 
+export async function serverJourneyExists(state, fetcher = fetch) {
+  if (!state.serverJourney?.id) return false;
+  const response = await fetcher(`/api/journeys/${state.serverJourney.id}`, {
+    cache: "no-store", signal: AbortSignal.timeout(10000),
+  });
+  const record = await response.json();
+  if (response.status === 404 && record.error === "Server journey not found.") return false;
+  if (!response.ok) throw new Error(record.error ?? `Journey lookup HTTP ${response.status}`);
+  if (record.state?.serverJourney?.id !== state.serverJourney.id) throw new Error("Invalid server journey lookup.");
+  return true;
+}
+
 export function validateServerJourney(record, region, map, name) {
   const fail = () => { throw new Error("Invalid server-created journey."); };
   if (!record || record.region !== region || record.version !== 1 ||

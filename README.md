@@ -85,6 +85,13 @@ sous-titre FR/EN est genere une seule fois depuis le cadre du depart, le
 tarot et le motif canonique du depart du parent ; aucun futur repere ou texte
 prive du carnet n'est envoye. L'image et le sous-titre sont repris dans le PDF.
 
+Si le voyage serveur a disparu apres une reconstruction, creer un nouveau
+voyage propose d'archiver l'ancienne sauvegarde dans ce navigateur avant
+remplacement. Le menu **Carnets archives** du carnet permet de consulter les
+photos/pages conservees et de les exporter ; aucune restauration serveur ou
+publication reussie n'est pretendue. Une erreur reseau/authentification ne
+declenche pas cette procedure. Ne pas effacer le stockage du navigateur.
+
 ## Fondation des indices unifies (voyage principal)
 
 Le [registre commun](./discovery.mjs) enregistre les faits gagnes concernant la
