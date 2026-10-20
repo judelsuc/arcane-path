@@ -1,6 +1,11 @@
 {
-  "version": "0.20.4",
+  "version": "0.20.5",
   "entries": [
+    {
+      "version": "0.20.5",
+      "fr": "Les carnets des autres voyageurs ont désormais leur propre fenêtre, comme la piste du parent : une introduction raconte leur histoire, des icônes accompagnent les actions et chaque témoignage se déplie séparément. Une seule entrée récente est affichée par carnet, sans minutes techniques ni coordonnées. Aucun emplacement, indice de proximité ou carnet à recueillir n'est révélé avant qu'un habitant en parle. Les anciennes observations automatiques restent conservées mais ne dévoilent plus de piste.",
+      "en": "Other travellers’ notebooks now have their own window, like the parent trail: an introduction tells their story, icons accompany actions and each witness account unfolds separately. One recent entry is shown per notebook, without technical minute counters or coordinates. No whereabouts, proximity hint or pickup listing is revealed until a local person mentions that notebook. Older automatic observations remain stored but no longer reveal a lead."
+    },
     {
       "version": "0.20.4",
       "fr": "Le récit du départ est écrit automatiquement avec le nom fictif du personnage. Un ancien récit sans cette inspiration est remplacé une seule fois, sans bouton à presser. Un indicateur bien visible demande de patienter avant de commencer ; en cas d'échec, le récit d'origine permet de continuer. Le récit est conservé dans le carnet, qu'il soit généré ou non. Les messages destinés au joueur n'affichent plus le prestataire technique ni de jargon de cache.",

@@ -6,6 +6,7 @@ const ACTIONS = [
   ["open-music", "music"], ["open-trail", "trail"], ["open-town", "town"],
   ["show-photo", "photo"], ["open-hint", "hint"], ["copy-coordinates", "coordinates"],
   ["open-journal", "journal"],
+  ["open-abandoned-journals", "notebooks"],
   ["save-travel", "save"], ["retry-travel", "retry"], ["open-osm", "osm"],
   ["stop-travel", "stop"], ["start-travel", "new"], ["resume-travel", "resume"],
   ["open-options", "options"], ["open-controls", "help"],

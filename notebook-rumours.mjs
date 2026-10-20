@@ -36,8 +36,12 @@ export function applyNotebookRumours(state, rumours = [], indications = []) {
 }
 
 export function knownNotebookRumours(state) {
-  return discoveryEntries(state, { targetType: "abandoned-journal" })
+  const entries = discoveryEntries(state, { targetType: "abandoned-journal" });
+  const mentioned = new Set(entries.filter(entry => entry.evidenceKey.startsWith("town:"))
+    .map(entry => entry.targetId));
+  return entries
     .filter(entry => entry.targetRevision.startsWith("rumour:"))
+    .filter(entry => mentioned.has(entry.targetId))
     .map(entry => ({ id: entry.targetId, ...entry.facts, availability: entry.availability,
       observedMinutes: entry.observedMinutes, evidenceKey: entry.evidenceKey }));
 }
@@ -56,6 +60,16 @@ export function notebookRumourText(item, language = "fr") {
         : "Déjà ramassé ou remis ; ce témoignage est ancien."
       : en ? "Gone or claimed by someone else; do not rely on its presence."
         : "Disparu ou emporté par quelqu’un ; sa présence n’est plus confirmée.";
-  return en ? `Notebook for ${item.parent}: ${direction}, ${band} from the observation point (minute ${item.observedMinutes}). ${status}`
-    : `Carnet pour ${item.parent} : ${direction}, ${band} depuis le lieu du témoignage (minute ${item.observedMinutes}). ${status}`;
+  return en ? `“A traveller left a notebook meant for ${item.parent}. I last heard it was ${direction}, ${band} from here.” ${status}`
+    : `« Un voyageur a laissé un carnet destiné à ${item.parent}. Aux dernières nouvelles, il se trouvait vers le ${direction}, ${band} d’ici. » ${status}`;
+}
+
+export function notebookWitnessReports(items) {
+  const latest = new Map();
+  for (const item of items) {
+    if (!item.evidenceKey.startsWith("town:")) continue;
+    const previous = latest.get(item.id);
+    if (!previous || item.observedMinutes > previous.observedMinutes) latest.set(item.id, item);
+  }
+  return [...latest.values()].sort((a, b) => b.observedMinutes - a.observedMinutes);
 }

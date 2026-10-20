@@ -1,5 +1,24 @@
 # Content workshop and optional live wording
 
+## Travellers' notebook window and witness gate (R-117)
+
+The ordinary abandoned-notebook UI now uses its own dialog, opened from the
+travel controls (shortcut 9) or after an explicit town conversation. Localized
+authored storytelling explains who left these notebooks and why carrying one
+onward is separate from finding the player's parent. Icons accompany text;
+native details/summary controls keep one latest witness report per notebook,
+preserving expanded entries when the UI refreshes. No model call is needed.
+
+The server returns proximity indications and pickup listings only for notebook
+IDs with a persisted `town:` witness record belonging to this keeper. Automatic
+movement/sync no longer creates durable `near:` evidence. Old passive rows
+remain in storage, but are excluded from witness responses; the client likewise
+hides legacy passive sightings from notebook/PDF presentation until a matching
+town report exists. A conversation reveals only approximate bearings/bands,
+never a guaranteed current location. Claims, 200 m pickup, expiry, delivery and
+notebook contents retain their existing rules. The isolated lore playtest's
+explicit magical/search discovery channel is unchanged.
+
 ## Epic closing chronicles (R-166)
 
 At death or parent reunion, the game requests `story.closing` through the existing

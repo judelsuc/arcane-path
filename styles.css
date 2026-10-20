@@ -65,6 +65,13 @@
 }
 @keyframes text-generating { to { transform: rotate(360deg); } }
 .journal-narrative-text { white-space: pre-wrap; line-height: 1.65; }
+.notebook-witness-list { list-style: none; padding: 0; }
+.notebook-witness-list > li { margin-block: 0.65em; }
+.notebook-witness-list details { border-inline-start: 2px solid currentColor; padding: 0.6em 0.9em; }
+.notebook-witness-list summary, #abandoned-town-reports > summary { cursor: pointer; }
+.notebook-witness-list p, .notebook-witness-intro, #abandoned-town-reports > p { line-height: 1.6; max-width: 65ch; }
+.notebook-witness-time { font-size: 0.85em; opacity: 0.85; }
+#abandoned-journals-dialog { width: min(850px, 94vw); max-height: 90dvh; overflow: auto; }
 @media (prefers-reduced-motion: reduce) {
   [role="status"][aria-busy="true"]::before { animation: none; }
 }

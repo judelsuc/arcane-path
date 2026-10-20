@@ -994,6 +994,14 @@
 
 ## R-117 - Rumours help players discover abandoned notebooks
 
+- **20 October presentation/discovery correction:** use a dedicated window like
+  the parent trail, with a story-led explanation, icons, and one foldable witness
+  entry per notebook rather than an inline dump of repeated observations.
+  Open it from travel controls or after asking townspeople. Do not reveal a
+  notebook's whereabouts, proximity hint or pickup listing until a character
+  mentions it. Old automatic nearby observations do not count as a conversation.
+  Hide unearned legacy sightings from notebook/PDF presentation without deleting
+  them. Use readable journey days, not raw fractional minutes or coordinates.
 - **User approval:** Make abandoned notebooks discoverable without relying
   on another player accidentally walking onto the death location.
 - Conversations in nearby towns can occasionally mention an abandoned
@@ -1001,7 +1009,7 @@
   Current balance: up to 20 km, a deterministic 50% chance per notebook,
   mapped settlement cell and game day, with at most 100 candidates per scan.
   Repeated clicks do not reroll the same conversation.
-- Within 1 km, show a nearby-notebook indication to help narrow the search.
+- After a witness has mentioned that notebook, within 1 km show an indication.
   Actual pickup still requires being within the existing 200 m radius.
 - Generate rumours only for unclaimed, undelivered notebooks. Recheck
   availability when following a rumour or attempting pickup; explain when
@@ -1012,7 +1020,7 @@
   delivery side quest under R-103. Rumours must not reveal private access
   capabilities or replace the player's main parent investigation.
 - **Status:** Implemented for ordinary journeys: explicit conversation in the
-  town dialog, an exterior nearby indication, saved shared-discovery evidence,
+  town dialog, a dedicated story window, witness-gated proximity, saved evidence,
   and availability revalidation. Pickup remains exclusive and within 200 m.
 
 ## R-116 - Adventure-style journey overview in the notebook

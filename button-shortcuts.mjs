@@ -10,6 +10,7 @@ const KEYS = {
   "restart-travel": "N", "rest-travel": "R", "sleep-travel": "H",
   "eat-travel": "E", "open-town": "T", "open-music": "B",
   "open-trail": "J", "save-travel": "S", "look-travel": "L",
+  "open-abandoned-journals": "9", "abandoned-close": "Escape",
   "open-hint": "I",
   "open-journal": "A",
   "open-earn-money": "B", "town-earn-money": "B", "cell-earn-money": "B",

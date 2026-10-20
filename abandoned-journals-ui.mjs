@@ -1,7 +1,7 @@
 import { createJournalClient } from "./abandoned-journals.mjs";
 import { setFeedback } from "./feedback.mjs";
 import { decodeNotebook } from "./notebook-transfer.mjs";
-import { knownNotebookRumours, notebookRumourText, validateNotebookRumours } from "./notebook-rumours.mjs";
+import { knownNotebookRumours, notebookRumourText, notebookWitnessReports, validateNotebookRumours } from "./notebook-rumours.mjs";
 
 export function setupAbandonedJournals(t, { context, persist, publishNotebook, showNotebook }) {
   const panel = document.querySelector("#abandoned-journals");
@@ -9,52 +9,78 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
   const status = document.querySelector("#abandoned-status");
   const list = document.querySelector("#abandoned-list");
   const refresh = document.querySelector("#abandoned-refresh");
+  const dialog = document.querySelector("#abandoned-journals-dialog");
+  const openButton = document.querySelector("#open-abandoned-journals");
+  const closeButton = document.querySelector("#abandoned-close");
   const ask = document.createElement("button");
   ask.type = "button";
   ask.id = "abandoned-ask-town";
   const town = document.querySelector("#town-dialog");
   (town ?? panel).append(ask);
   const rumoursList = document.createElement("ul");
-  panel.append(rumoursList);
-  const townReport = document.createElement("div");
-  townReport.setAttribute?.("role", "status");
-  town?.append(townReport);
+  rumoursList.className = "notebook-witness-list";
+  const townReport = document.createElement("details");
+  townReport.id = "abandoned-town-reports";
+  const townSummary = document.createElement("summary"), townIntro = document.createElement("p");
+  const townStatus = document.createElement("p");
+  townStatus.setAttribute?.("role", "status");
+  townReport.append(townSummary, townIntro, townStatus, rumoursList);
+  panel.append(townReport);
+  const intro = document.createElement("p");
+  intro.className = "notebook-witness-intro";
+  status.before?.(intro);
   const proximity = document.createElement("p");
   proximity.id = "abandoned-proximity";
   proximity.setAttribute?.("role", "status");
-  panel.insertAdjacentElement?.("beforebegin", proximity);
+  panel.append(proximity);
   const client = createJournalClient(localStorage);
   let result, error = "", working = false, queued = false, lastKey, conversation = false;
   function localize() {
     const state = context();
-    const language = document.documentElement?.lang === "en" ? "en" : "fr", en = language === "en";
+    const language = document.documentElement?.lang === "en" ? "en" : "fr";
     panel.hidden = !state;
-    ask.textContent = en ? "Ask locals about abandoned notebooks" : "Parler des carnets abandonnés";
+    if (openButton) {
+      openButton.disabled = !state;
+      openButton.textContent = t("abandoned.title");
+    }
+    if (closeButton) closeButton.textContent = t("windowHelpClose");
+    if (!state && dialog?.open) dialog.close();
+    ask.textContent = t("abandoned.ask");
     ask.disabled = working || !state?.journalAccess || Boolean(state?.ended);
     ask.hidden = !state || Boolean(state?.ended);
-    const observations = result ? [...new Map([...(result.rumours ?? []), ...(result.indications ?? [])]
-      .map(item => [item.evidenceKey, item])).values()]
-      : state ? knownNotebookRumours(state) : [];
+    const observations = notebookWitnessReports(result?.rumours ?? (state ? knownNotebookRumours(state) : []));
+    const mentioned = new Set(observations.map(item => item.id));
+    intro.textContent = t("abandoned.story");
+    townIntro.textContent = t("abandoned.witnessIntro");
+    townSummary.textContent = t("abandoned.reports", { count: observations.length });
+    townReport.hidden = false;
+    const expanded = new Set([...rumoursList.children].filter(item => item.children[0]?.open)
+      .map(item => item.children[0].dataset.journal));
     rumoursList.replaceChildren();
     for (const rumour of observations) {
-      const item = document.createElement("li");
-      item.textContent = notebookRumourText(rumour, language);
+      const item = document.createElement("li"), details = document.createElement("details");
+      const summary = document.createElement("summary"), text = document.createElement("p");
+      details.dataset.journal = rumour.id;
+      details.open = expanded.has(rumour.id);
+      summary.textContent = t("abandoned.reportTitle", { parent: rumour.parent });
+      text.textContent = notebookRumourText(rumour, language);
+      const when = document.createElement("p");
+      when.className = "notebook-witness-time";
+      when.textContent = t("abandoned.reportDay", { day: Math.floor(rumour.observedMinutes / 1440) + 1 });
+      details.append(summary, text, when);
+      item.append(details);
       rumoursList.append(item);
     }
-    townReport.textContent = error ? (en ? `Notebook report unavailable: ${error}` : `Témoignage indisponible : ${error}`) : observations
-      .map(item => notebookRumourText(item, language)).join("\n");
+    townStatus.textContent = error ? t("abandoned.offline", { error })
+      : observations.length ? t("abandoned.heard") : t(conversation ? "abandoned.noReport" : "abandoned.notHeard");
     if (conversation && !observations.length && !error) {
       const item = document.createElement("li");
-      item.textContent = en ? "No notebook report here today. That does not prove there are none."
-        : "Aucun témoignage sur un carnet ici aujourd’hui. Cela ne prouve pas leur absence.";
+      item.textContent = t("abandoned.noReport");
       rumoursList.append(item);
-      townReport.textContent = item.textContent;
     }
-    const close = !state?.ended && result?.indications?.length;
+    const close = !state?.ended && result?.indications?.some(item => mentioned.has(item.id));
     proximity.hidden = !close;
-    proximity.textContent = close ? (en
-      ? "An abandoned notebook was reported within 1 km. Pickup requires getting within 200 m; someone else may get there first."
-      : "Un carnet abandonné a été signalé à moins de 1 km. Approchez à moins de 200 m pour le ramasser ; quelqu’un peut vous devancer.") : "";
+    proximity.textContent = close ? t("abandoned.close") : "";
     refresh.disabled = working || !state?.journalAccess;
     status.textContent = t(!state?.journalAccess ? "abandoned.legacy" : error
       ? "abandoned.offline" : working ? "abandoned.loading" : state.ended && state.ended !== "reunion"
@@ -62,12 +88,16 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
       { error });
     setFeedback(status, error ? "failure" : result?.published ? "success" : "");
     list.replaceChildren();
+    if (!(result?.sidequests ?? state?.sidequests ?? []).length && !(result?.nearby ?? []).some(j => mentioned.has(j.id))) {
+      const item = document.createElement("li");
+      item.textContent = t("abandoned.emptyHands");
+      list.append(item);
+    }
     for (const quest of result?.sidequests ?? state?.sidequests ?? []) {
       const item = document.createElement("li");
       const target = quest.stages[quest.step];
       item.textContent = t(quest.delivered ? "abandoned.delivered" : "abandoned.quest", {
-        parent: quest.parent, place: target.name, latitude: target.latitude.toFixed(3),
-        longitude: target.longitude.toFixed(3), step: quest.step + 1, total: quest.stages.length,
+        parent: quest.parent, place: target.name, step: quest.step + 1, total: quest.stages.length,
       });
       if (!quest.delivered && !state?.ended) {
         const button = document.createElement("button");
@@ -88,6 +118,7 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
       }
     }
     if (!state?.ended) for (const journal of result?.nearby ?? []) {
+      if (!mentioned.has(journal.id)) continue;
       const item = document.createElement("li"), button = document.createElement("button");
       item.textContent = t("abandoned.found", { parent: journal.parent,
         history: journal.history.join(" → ") || t("abandoned.noHistory") });
@@ -124,7 +155,10 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
           // Do not show a proximity report from a previous cell after an in-flight move.
           result = { ...next, indications: context()?.col === state.col && context()?.row === state.row
             ? next.indications ?? [] : [] };
-          if (action === "rumours") conversation = true;
+          if (action === "rumours") {
+            conversation = true;
+            townReport.open = true;
+          }
         }
       }
     } catch (reason) {
@@ -133,6 +167,10 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
     } finally {
       working = false;
       localize();
+      if (action === "rumours" && context()?.serverJourney?.id === state?.serverJourney?.id) {
+        town?.close?.();
+        open();
+      }
       if (queued) { queued = false; void sync(); }
     }
   }
@@ -156,5 +194,15 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
   const retry = setInterval(() => { if (error) void sync(); }, 30_000);
   retry.unref?.();
   void sync();
-  return { update, localize };
+  function open() {
+    if (!context() || !dialog) return;
+    if (document.querySelector("dialog[open]") && !dialog.open) return;
+    localize();
+    if (!dialog.open) dialog.showModal();
+    closeButton?.focus?.();
+  }
+  openButton?.addEventListener("click", open);
+  closeButton?.addEventListener("click", () => dialog.close());
+  dialog?.addEventListener("close", () => openButton?.focus?.());
+  return { update, localize, open };
 }
