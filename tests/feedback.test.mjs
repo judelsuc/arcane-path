@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { setFeedback } from "../feedback.mjs";
+import { setFeedback, setGenerating } from "../feedback.mjs";
 
 test("feedback is semantic, neutral by default and clears an old success or failure", () => {
   const element = { dataset: {}, textContent: "Une phrase dans une autre langue." };
@@ -14,6 +14,18 @@ test("feedback is semantic, neutral by default and clears an old success or fail
   assert.equal(element.textContent, "Une phrase dans une autre langue.");
 });
 
+test("generation feedback exposes accessible busy status with a reduced-motion visual indicator", () => {
+  const element = { textContent: "Preparing generated text" };
+  setGenerating(element, true);
+  assert.equal(element.role, "status");
+  assert.equal(element.ariaBusy, "true");
+  setGenerating(element, false);
+  assert.equal(element.ariaBusy, "false");
+  assert.equal(element.textContent, "Preparing generated text");
+  const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  assert.match(css, /\[role="status"\]\[aria-busy="true"\]::before/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\s*\[role="status"\]\[aria-busy="true"\]::before \{ animation: none;/);
+});
 test("success and failure palettes have readable contrast on dark UI and notebook paper", () => {
   const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
   const luminance = hex => {

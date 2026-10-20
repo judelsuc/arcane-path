@@ -1,5 +1,6 @@
 import { trailDreamText, trailDreamVariant } from "./trail-dreams.mjs";
 import { LOST_PLAYER_DREAM } from "./live-narrative.mjs";
+import { setGenerating } from "./feedback.mjs";
 
 export function setupTrailDream(t, { context, openTrail, narrative }) {
   const dialog = document.querySelector("#trail-dream-dialog");
@@ -15,8 +16,11 @@ export function setupTrailDream(t, { context, openTrail, narrative }) {
     const language = document.documentElement.lang === "en" ? "en" : "fr";
     document.querySelector("#trail-dream-title").textContent = t("trailDreamTitle");
     document.querySelector("#trail-dream-text").textContent = trailDreamText(showing, t, wording, language);
-    if (wordingStatus) wordingStatus.textContent = narrative.introductionStatus(
-      context()?.state, LOST_PLAYER_DREAM, language, Boolean(wording), variant);
+    if (wordingStatus) {
+      wordingStatus.textContent = narrative.introductionStatus(
+        context()?.state, LOST_PLAYER_DREAM, language, Boolean(wording), variant);
+      setGenerating(wordingStatus, !wording && narrative.pending?.(context()?.state, LOST_PLAYER_DREAM));
+    }
     document.querySelector("#trail-dream-journal").textContent = t("trailDreamJournal");
     document.querySelector("#trail-dream-continue").textContent = t("trailArrivalContinue");
   }

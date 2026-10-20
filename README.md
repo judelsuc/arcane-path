@@ -90,6 +90,11 @@ et des evenements, avec une case permettant de ne pas l'envoyer a OVH.
 Une biographie deja conservee ne change que via **Regenerer avec le nom fictif**
 et confirmation. Les nouveaux textes d'evenements evoluent par jour de jeu,
 sans modifier leurs effets ni remplacer une introduction deja affichee.
+Un indicateur visible signale les textes en cours de generation (sans animation
+si le navigateur demande de reduire les mouvements). Les biographies generees
+sont ajoutees au carnet en francais et en anglais ; une regeneration conserve
+les anciennes pages. Les evenements y gardent exactement l'introduction affichee,
+avec leurs effets reels. Ces pages font aussi partie du PDF et du carnet partage.
 
 Si le voyage serveur a disparu apres une reconstruction, creer un nouveau
 voyage propose d'archiver l'ancienne sauvegarde dans ce navigateur avant

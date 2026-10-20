@@ -27,6 +27,7 @@ for (const language of ["en", "fr"]) {
       return elements.get(selector);
     } };
     let resolve, started = 0;
+    const journaled = [];
     const requests = [];
     const narrative = createLiveNarrative({ fetcher: async (url, options) => {
       requests.push([url, options]);
@@ -35,6 +36,7 @@ for (const language of ["en", "fr"]) {
     const before = structuredClone(state);
     const ui = setupOpeningStory((key, values) => translate(language, key, values), {
       narrative, doc, context: () => state, onContinue: () => { started++; },
+      onJournal: (owner, wording) => { journaled.push({ owner, wording }); },
     });
     ui.prepare();
     ui.open();
@@ -42,6 +44,7 @@ for (const language of ["en", "fr"]) {
     assert.ok(doc.querySelector("#opening-story-dialog").open);
     assert.match(doc.querySelector("#opening-story-text").textContent, /Camille/);
     assert.equal(requests.length, 1);
+    assert.equal(doc.querySelector("#opening-story-status").ariaBusy, "true");
     assert.deepEqual(JSON.parse(requests[0][1].body), {
       journey: state.serverJourney.id, brief: OPENING_STORY,
     });
@@ -54,6 +57,8 @@ for (const language of ["en", "fr"]) {
     }) });
     await flush();
     assert.equal(doc.querySelector("#opening-story-text").textContent, generated[language]);
+    assert.equal(doc.querySelector("#opening-story-status").ariaBusy, "false");
+    assert.deepEqual(journaled, [{ owner: state, wording: generated }]);
     assert.equal(started, 0);
     doc.querySelector("#opening-story-continue").handlers.click();
     assert.equal(started, 1);
@@ -61,6 +66,7 @@ for (const language of ["en", "fr"]) {
     doc.querySelector("#opening-story-continue").handlers.click();
     assert.equal(started, 1);
     assert.equal(requests.length, 1);
+    assert.equal(journaled.length, 1);
     assert.deepEqual(state, before);
   });
 }

@@ -22,6 +22,17 @@ test("events reuse notebook image storage, original drawing, effects and stable 
   assert.equal(entry.note, journeyEventText(state.events.history[0], t));
   assert.match(entry.title, /2026-10-18 12:15/);
   assert.equal(entry.id, "event:journey-a:2");
+  const wording = { fr: "Vous riez de votre sac troué avant de le réparer.",
+    en: "You laugh at your torn bag before mending it." };
+  for (const language of ["fr", "en"]) {
+    const localized = (key, args) => translate(language, key, args);
+    const generated = journeyEventJournalEntry(state, localized, doc, wording);
+    assert.equal(generated.note, journeyEventText({ ...state.events.history[0], wording }, localized));
+    assert.ok(generated.note.startsWith(wording[language]));
+    assert.ok(generated.note.endsWith(journeyEventText(state.events.history[0], localized)
+      .slice(localized("journeyEvent.tornBag").length)));
+    assert.equal(generated.id, entry.id);
+  }
   assert.notEqual(journeyEventJournalEntry({ ...state, serverJourney: { id: "journey-b" } }, t, doc).id, entry.id);
   const saved = new Map();
   const store = { get: async id => saved.get(id),

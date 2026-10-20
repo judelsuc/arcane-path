@@ -152,7 +152,7 @@ export function journeyEventText(record, t) {
 
 export function journeyEventTextParts(record, t) {
   const signed = (n, digits = 0) => `${n > 0 ? "+" : ""}${n.toFixed(digits)}`;
-  const narrative = `${t(`journeyEvent.${record.kind}`)} `;
+  const narrative = `${record.wording?.[t("discovery.inscriptionLanguage")] ?? t(`journeyEvent.${record.kind}`)} `;
   if (EVENT_CATALOGUE[record.kind].polarity === "story") return [narrative, t("journeyEventStoryOnly")];
   const template = (key, values, benefits) => t(key,
     Object.fromEntries(Object.keys(values).map(name => [name, `{${name}}`])))
@@ -194,6 +194,11 @@ export function validateJourneyEvents(state, economy, survival) {
         !integer(r.opportunity) || r.opportunity <= lastOpportunity || r.opportunity > e.checks ||
         !Object.hasOwn(EVENT_CATALOGUE, r.kind) ||
         r.wordingVariant !== undefined && (!integer(r.wordingVariant) || r.wordingVariant >= 3) ||
+        r.wording !== undefined && r.wording !== null &&
+          (typeof r.wording !== "object" || Array.isArray(r.wording) ||
+            Object.keys(r.wording).length !== 2 || !["fr", "en"].every(language =>
+              typeof r.wording[language] === "string" && r.wording[language].trim() &&
+              r.wording[language].length <= 400)) ||
         !nonnegative(r.elapsedMinutes) || r.elapsedMinutes < lastTime ||
         !nonnegative(r.minutes) || r.elapsedMinutes + r.minutes > state.elapsedMinutes ||
         !Number.isSafeInteger(r.col) || Math.abs(Math.floor(r.col / 8)) > 1000 ||

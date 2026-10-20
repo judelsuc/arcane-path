@@ -1,7 +1,7 @@
 import { journeyEventArt } from "./journey-event-art.mjs";
 import { journeyEventText } from "./journey-events.mjs";
 
-export function journeyEventJournalEntry(state, t, doc = document) {
+export function journeyEventJournalEntry(state, t, doc = document, wording) {
   const event = state.events?.history.at(-1);
   if (!event) throw new Error("No journey event to pin.");
   const date = new Date(state.startedAt + event.elapsedMinutes * 60000).toISOString();
@@ -18,11 +18,13 @@ export function journeyEventJournalEntry(state, t, doc = document) {
   const width = Math.max(...lines.map(line => context.measureText(line).width));
   lines.forEach((line, i) => context.fillText(line, (canvas.width - width) / 2, (i + 1) * 40));
   const identity = state.serverJourney?.id ?? String(state.startedAt);
+  const recorded = wording === undefined ? event : { ...event, wording };
   return {
     id: `event:${identity}:${event.id}`,
     url: canvas.toDataURL("image/png"),
-    title: `${t("journeyEventTitle")} · ${date.slice(0, 16).replace("T", " ")}`,
-    note: journeyEventText(event, t),
+    title: `${t("journeyEventTitle")} · ${date.slice(0, 16).replace("T", " ")}` +
+      (recorded.wording ? ` · ${t("journalGeneratedText")}` : ""),
+    note: journeyEventText(recorded, t),
     sourceUrl: "https://github.com/judelsuc/arcane-path",
     attribution: "Les Arcanes du Chemin · original ASCII illustration",
     license: "Original game artwork",
