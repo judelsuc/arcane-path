@@ -1,5 +1,39 @@
 # Infrastructure OVHcloud - rapport du 19 octobre 2026
 
+## Automatic named opening correction (20 October 2026)
+
+- Game 0.20.4, production runtime
+  `1c2ea05a22268028a3e9cb5173e8018c17df81dd`.
+  The administrator clarified that named biography generation must be automatic,
+  once per character, not a manual action or a new call on every reread.
+  Older unnamed stories receive one replacement while their old rows remain
+  intact; existing named stories and failed named attempts are reused.
+- Root cause of the invisible waiting clue: the opening status had the
+  `.window-help-text` class, so the Help system hid it. The status is now
+  outside Help and names the character while asking the player to wait.
+  A visible spinner, accessible busy state and reduced-motion equivalent remain.
+  Pending prose is hidden, Continue is disabled, and Escape cannot bypass it.
+  An explicit failure restores preserved/original prose and permits continuing.
+  The journal receives the pretext whether generated or authored. Provider names
+  and cache jargon were removed from player-facing text.
+- Exact production: 1,030 JavaScript tests and 34 focused backend tests passed.
+  Browser checks used the real Help controller, confirmed the visible pending
+  message, blocked Continue/Escape, reduced motion, ready-state unblocking,
+  one-call rereading, and complete bilingual IndexedDB journal entries.
+  A failed-generation browser fixture also retained both original language
+  versions in the notebook without an AI label.
+- Nine runtime files, including metadata, installed after baseline hash checks
+  and private runtime/SQLite backups. The seven pre-existing journey genesis
+  checksums remained unchanged; all five databases passed integrity checks.
+  Backend/Nginx/art timer remained healthy. All eight public changed files and
+  authenticated travel API health were verified on apex and www.
+  Backup: `/var/lib/arcane-path/backups/automatic-named-1c2ea05a2226`.
+- A separate real production QA character generated a bilingual opening through
+  the ordinary request, without a manual regeneration or name-opt-in flag.
+  One provider attempt produced 1,572 French and 1,278 English characters;
+  two rereads returned identical text without another attempt. No player save
+  or actual player's biography was changed by this isolated QA.
+
 ## Narrative journal and generation feedback delivery (20 October 2026)
 
 - Game 0.20.3, production runtime
