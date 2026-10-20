@@ -1,12 +1,13 @@
 import { OPENING_STORY } from "./live-narrative.mjs";
 
 export function setupOpeningStory(t, {
-  narrative, context, onContinue, doc = document,
+  narrative, context, onContinue, onNameConsent, doc = document,
 } = {}) {
   const dialog = doc.querySelector("#opening-story-dialog");
   const text = doc.querySelector("#opening-story-text");
   const status = doc.querySelector("#opening-story-status");
   const button = doc.querySelector("#opening-story-continue");
+  const regenerate = doc.querySelector("#opening-story-regenerate");
   let introductory = false;
 
   function localize() {
@@ -18,12 +19,27 @@ export function setupOpeningStory(t, {
       parent: state.trail.parentName,
       motive: t(`parentStory.motive.${state.trail.story?.motive ?? "departure"}`),
     });
-    status.textContent = generated ? t("openingStoryGenerated") :
-      narrative.status(state, OPENING_STORY, language);
+    status.textContent = narrative.status(state, OPENING_STORY, language);
+    regenerate.textContent = t("openingStoryRegenerate");
+    regenerate.disabled = !onNameConsent || !state.serverJourney?.id || !state.journalAccess ||
+      narrative.pending?.(state, OPENING_STORY) === true;
     doc.querySelector("#opening-story-title").textContent = t("openingStoryTitle");
     button.textContent = t(introductory ? "openingStoryBegin" : "windowHelpClose");
   }
   narrative.subscribe(() => { if (dialog.open) localize(); });
+  regenerate.addEventListener("click", () => {
+    const state = context();
+    if (regenerate.disabled || !state ||
+        !confirm(t("openingStoryRegenerateConfirm", { name: state.name }))) return;
+    try {
+      const consented = onNameConsent();
+      narrative.regenerateOpening(consented);
+      localize();
+    } catch (error) {
+      console.error("Opening biography regeneration failed:", error);
+      status.textContent = error.message;
+    }
+  });
   button.addEventListener("click", () => {
     dialog.close();
     if (introductory) onContinue();

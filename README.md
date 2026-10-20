@@ -85,6 +85,12 @@ sous-titre FR/EN est genere une seule fois depuis le cadre du depart, le
 tarot et le motif canonique du depart du parent ; aucun futur repere ou texte
 prive du carnet n'est envoye. L'image et le sous-titre sont repris dans le PDF.
 
+Le nom fictif est propose par defaut comme inspiration des nouvelles biographies
+et des evenements, avec une case permettant de ne pas l'envoyer a OVH.
+Une biographie deja conservee ne change que via **Regenerer avec le nom fictif**
+et confirmation. Les nouveaux textes d'evenements evoluent par jour de jeu,
+sans modifier leurs effets ni remplacer une introduction deja affichee.
+
 Si le voyage serveur a disparu apres une reconstruction, creer un nouveau
 voyage propose d'archiver l'ancienne sauvegarde dans ce navigateur avant
 remplacement. Le menu **Carnets archives** du carnet permet de consulter les

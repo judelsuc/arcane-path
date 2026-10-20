@@ -76,6 +76,71 @@ test("a failed opening uses authored backstory, not a blocking loading screen", 
   assert.match(client.status(state, OPENING_STORY, "en"), /failed/);
 });
 
+test("explicit regeneration sends stable consent, preserves old prose while pending and after failure", async () => {
+  let responseStatus = "ready", calls = [];
+  const client = createLiveNarrative({ schedule: () => 1, cancel() {},
+    fetcher: async (_, options) => {
+      calls.push(JSON.parse(options.body));
+      return { ok: true, json: async () => ({ enabled: true, brief: OPENING_STORY,
+        status: responseStatus, text: responseStatus === "ready" ? generated : null,
+        ...(responseStatus !== "ready" ? { previousText: generated } : {}) }) };
+    },
+  });
+  client.prefetch(state, [OPENING_STORY]);
+  await flush();
+  const consented = { ...state, storyNameFlavour: true };
+  responseStatus = "queued";
+  client.regenerateOpening(consented, "e".repeat(32));
+  assert.deepEqual(client.snapshot(consented, OPENING_STORY), generated);
+  await flush();
+  assert.deepEqual(calls[1], { journey: state.serverJourney.id, brief: OPENING_STORY,
+    nameFlavour: true, regenerate: "e".repeat(32) });
+  assert.equal(client.pending(consented, OPENING_STORY), true);
+  assert.throws(() => client.regenerateOpening(consented), /still being prepared/);
+  const reloaded = createLiveNarrative({ fetcher: async () => ({ ok: true, json: async () => ({
+    enabled: true, brief: OPENING_STORY, status: "failed", previousText: generated,
+  }) }) });
+  reloaded.prefetch(consented, [OPENING_STORY]);
+  await flush();
+  assert.deepEqual(reloaded.snapshot(consented, OPENING_STORY), generated);
+  assert.match(reloaded.status(consented, OPENING_STORY, "en"), /failed/);
+  assert.throws(() => client.regenerateOpening(state), /consent/);
+  client.reset();
+});
+
+test("regenerate button requires confirmation, persists consent and makes one explicit request", async t => {
+  const before = globalThis.confirm;
+  t.after(() => { globalThis.confirm = before; });
+  class Element {
+    open = false; handlers = {};
+    addEventListener(type, handler) { this.handlers[type] = handler; }
+    showModal() { this.open = true; }
+    close() { this.open = false; }
+    focus() {}
+  }
+  const nodes = new Map(), doc = { documentElement: { lang: "en" }, querySelector(key) {
+    if (!nodes.has(key)) nodes.set(key, new Element());
+    return nodes.get(key);
+  } };
+  let current = { ...state, name: "Tom Sawyer" }, calls = 0, enabled = 0;
+  const ui = setupOpeningStory((key, args) => translate("en", key, args), {
+    doc, context: () => current, onContinue() {},
+    onNameConsent() { enabled++; current = { ...current, storyNameFlavour: true }; return current; },
+    narrative: { subscribe() {}, prefetch() {}, snapshot: () => generated, pending: () => false,
+      status: () => "Ready", regenerateOpening(value) { calls++; assert.equal(value.storyNameFlavour, true); } },
+  });
+  ui.open(false);
+  globalThis.confirm = () => false;
+  doc.querySelector("#opening-story-regenerate").handlers.click();
+  assert.equal(enabled, 0);
+  globalThis.confirm = message => { assert.match(message, /Tom Sawyer/); return true; };
+  doc.querySelector("#opening-story-regenerate").handlers.click();
+  assert.equal(enabled, 1);
+  assert.equal(calls, 1);
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(html, /id="story-name-flavour"[^>]*\bchecked\b/);
+});
+
 test("main journey opens story after tarot and before play, including zero-minute resume", () => {
   const ui = readFileSync(new URL("../travel-ui.mjs", import.meta.url), "utf8");
   assert.match(ui, /birthDialog\.close\(\);\s*openingStory\.open\(\)/);

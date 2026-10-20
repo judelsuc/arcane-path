@@ -6,6 +6,13 @@ export const OPENING_STORY = "story.opening";
 export const LOST_PLAYER_DREAM = "dream.lost-player";
 export const JOURNAL_SUBTITLE = "journal.subtitle";
 
+export function eventWordingContext(state) {
+  if (!Number.isFinite(state?.elapsedMinutes)) return null;
+  return { day: Math.floor(state.elapsedMinutes / 1440),
+    walkingKm: Math.floor((state.distanceMeters ?? 0) / 1000),
+    sleeps: state.sleeps ?? 0, encounters: state.events?.count ?? 0, daily: state.dailyCard };
+}
+
 const messages = {
   en: {
     pending: "Optional OVH wording is being prepared. Authored text remains available.",
@@ -34,7 +41,7 @@ export function createLiveNarrative({
   fetcher = fetch, schedule = setTimeout, cancel = clearTimeout, pollMs = 5000,
 } = {}) {
   let owner, access, epoch = 0, busy = false, disabled = false, timer;
-  const records = new Map(), waiting = new Set(), listeners = new Set();
+  const records = new Map(), waiting = new Set(), listeners = new Set(), requests = new Map();
   let endingSummary;
   function activate(state) {
     const next = state?.journalAccess && state?.serverJourney?.id
@@ -42,33 +49,36 @@ export function createLiveNarrative({
     if (next === owner) return;
     owner = next;
     access = next ? { journey: state.serverJourney.id, token: state.journalAccess,
-      nameFlavour: state.storyNameFlavour === true,
       ...(state.journalKeeper ? { keeper: state.journalKeeper } : {}) } : null;
     epoch++;
     busy = disabled = false;
     cancel(timer);
     timer = undefined;
     records.clear();
+    requests.clear();
     waiting.clear();
     endingSummary = undefined;
   }
   const emit = () => { for (const listener of listeners) listener(); };
+  const keyFor = (state, id) => id.startsWith("event.") && Number.isFinite(state?.elapsedMinutes)
+    ? `${id}:day:${Math.floor(state.elapsedMinutes / 1440)}:named:${state.storyNameFlavour === true}` : id;
   async function pump() {
     if (busy || !access || disabled || !waiting.size) return;
     busy = true;
     const current = epoch, credentials = access;
     try {
-      for (const id of [...waiting]) {
+      for (const key of [...waiting]) {
         if (current !== epoch || disabled) return;
-        waiting.delete(id);
+        waiting.delete(key);
+        const { id, ...extra } = requests.get(key);
         try {
-          const { token, nameFlavour, ...identity } = credentials;
+          const { token, ...identity } = credentials;
           const response = await fetcher("/api/live-narrative", {
             method: "POST",
             headers: { "Content-Type": "application/json", "X-Journal-Capability": token },
             body: JSON.stringify({ ...identity, brief: id,
               ...(id === CLOSING_STORY ? { summary: endingSummary } : {}),
-              ...(id === OPENING_STORY && nameFlavour ? { nameFlavour: true } : {}) }),
+              ...extra }),
             signal: AbortSignal.timeout(20000),
           });
           if (!response.ok) throw new Error(`Live wording HTTP ${response.status}`);
@@ -87,15 +97,19 @@ export function createLiveNarrative({
                   !result.alternatives.every(validText)))) {
             throw new Error("Invalid live wording response.");
           }
-          records.set(id, result);
+          if (result.previousText !== undefined && !validText(result.previousText)) {
+            throw new Error("Invalid preserved opening story.");
+          }
+          records.set(key, result);
           disabled = !result.enabled;
-          if (["queued", "running"].includes(result.status)) waiting.add(id);
+          if (["queued", "running"].includes(result.status)) waiting.add(key);
           if (result.status === "failed") console.warn("Optional live wording failed:", id, result.error);
           emit();
         } catch (error) {
           if (current !== epoch) return;
           console.error("Optional live wording request failed:", id, error);
-          records.set(id, { status: "failed" });
+          const previous = records.get(key);
+          records.set(key, { status: "failed", previousText: previous?.text ?? previous?.previousText });
           emit();
         }
       }
@@ -116,24 +130,28 @@ export function createLiveNarrative({
           endingSummary = closingSummary(state);
           if (!endingSummary) continue;
         }
-        if (!records.has(id) && !waiting.has(id)) {
-          records.set(id, { status: "queued" });
-          waiting.add(id);
+        const key = keyFor(state, id);
+        if (!records.has(key) && !waiting.has(key)) {
+          const context = id.startsWith("event.") ? eventWordingContext(state) : null;
+          requests.set(key, { id, ...(context ? { context } : {}),
+            ...((id === OPENING_STORY || context) && state.storyNameFlavour === true ? { nameFlavour: true } : {}) });
+          records.set(key, { status: "queued" });
+          waiting.add(key);
         }
       }
       if (!timer) void pump();
     },
     snapshot(state, id, variant = 0) {
       activate(state);
-      const record = records.get(id);
-      if (record?.status !== "ready") return null;
+      const record = records.get(keyFor(state, id));
+      if (record?.status !== "ready") return record?.previousText ? { ...record.previousText } : null;
       const versions = [record.text, ...(record.alternatives ?? [])];
       return { ...versions[variant % versions.length] };
     },
     introductionStatus(state, id, language, generated, variant = 0) {
       activate(state);
       const copy = messages[language === "en" ? "en" : "fr"];
-      const record = records.get(id);
+      const record = records.get(keyFor(state, id));
       if (generated) {
         const total = 1 + (record?.alternatives?.length ?? 0);
         return copy.usingGenerated.replace("{number}", String(variant % total + 1)).replace("{total}", String(total));
@@ -144,10 +162,28 @@ export function createLiveNarrative({
     },
     status(state, id, language) {
       activate(state);
-      const status = !access ? "local" : disabled ? "disabled" : records.get(id)?.status ?? "pending";
+      const status = !access ? "local" : disabled ? "disabled" : records.get(keyFor(state, id))?.status ?? "pending";
       return messages[language === "en" ? "en" : "fr"][["queued", "running"].includes(status) ? "pending" : status];
     },
     subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
+    regenerateOpening(state, requestId = crypto.randomUUID().replaceAll("-", "")) {
+      activate(state);
+      if (!access || state.storyNameFlavour !== true) throw new Error("Fictional-name consent and server access are required.");
+      if (waiting.has(OPENING_STORY)) throw new Error("A biography is still being prepared.");
+      const previous = records.get(OPENING_STORY);
+      records.set(OPENING_STORY, { status: "queued", previousText: previous?.text ?? previous?.previousText });
+      requests.set(OPENING_STORY, { id: OPENING_STORY, regenerate: requestId, nameFlavour: true });
+      waiting.add(OPENING_STORY);
+      disabled = false;
+      if (timer) cancel(timer);
+      timer = undefined;
+      void pump();
+      emit();
+    },
+    pending(state, id) {
+      activate(state);
+      return ["queued", "running"].includes(records.get(keyFor(state, id))?.status);
+    },
     reset() { activate(null); },
   };
 }
