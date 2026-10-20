@@ -7,6 +7,7 @@ import { journeyStats } from "./journey-stats.mjs";
 import { notebookPdf, downloadNotebookPdf } from "./notebook-pdf.mjs";
 import { journeyMapView, journeyMapDescription, drawJourneyMap } from "./journey-map.mjs";
 import { notebookCover } from "./notebook-cover.mjs";
+import { renderDiscoveryNotebook, discoveryNotebookEntries } from "./discovery-ui.mjs";
 import { createJournalIllustrator, illustrationScenes, COVER_ART_ID } from "./journal-art.mjs";
 
 export function validateJournalPhoto(photo) {
@@ -191,6 +192,11 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     setFeedback(status, "failure");
   }
   function localize() {
+    try {
+      renderDiscoveryNotebook(document.querySelector("#journal-discovery"), readOnly ? null : statsContext?.state, t);
+    } catch (reason) {
+      failure(reason);
+    }
     previous.textContent = t("journalPrevious");
     next.textContent = t("journalNext");
     document.querySelector("#journal-retry").textContent = t("journalRetry");
@@ -507,6 +513,10 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       scope === owner && readOnly === foreign && dialog.open;
     localize();
     try {
+      if (!foreign && statsContext) {
+        clues.push(...discoveryNotebookEntries(statsContext.state, t)
+          .map(record => `${record.context} — ${record.text}`));
+      }
       const groups = !foreign && statsContext
         ? journeyStats(statsContext, t, document.documentElement.lang) : [];
       const cover = !foreign && statsContext ? notebookCover(statsContext, t, document.documentElement.lang) : null;

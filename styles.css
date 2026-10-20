@@ -866,6 +866,7 @@ dialog p { margin: 12px 0; }
   font: 1.3rem/1.5 "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
 }
 .journal-print span[role="status"] { display: block; font-size: 0.8rem; }
+#journal-discovery { overflow-wrap: anywhere; }
 #photo-journal-dialog a { color: #66502d; overflow-wrap: anywhere; }
 .notebook-empty { font: italic 1.2rem/1.8 Georgia, serif; }
 #photo-journal-dialog button { background: #f9f1df; color: #352c24; border-color: #a28b64; }

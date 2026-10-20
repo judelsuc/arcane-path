@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { setupAbandonedJournals } from "../abandoned-journals-ui.mjs";
+import { applyJournalDiscovery } from "../discovery-targets.mjs";
 
 class Element {
   dataset = {};
@@ -44,18 +45,23 @@ test("SIDEQUEST pickup, progress, delivery and death publication never alter own
   try {
     const ui = setupAbandonedJournals(t, {
       context: () => state,
-      persist(sidequests, published) {
-        state = { ...state, sidequests, ...(published ? { journalPublished: true } : {}) };
+      persist(sidequests, published, nearby, observedMinutes) {
+        state = applyJournalDiscovery(state, sidequests, nearby, observedMinutes);
+        if (published) state = { ...state, journalPublished: true };
       },
     });
     await new Promise(resolve => setImmediate(resolve));
     assert.match(nodes["abandoned-list"].children[0].textContent, /Other parent/);
+    assert.equal(state.discovery.entries[0].kind, "rumour");
+    assert.equal(state.discovery.entries[0].observedMinutes, 0);
     await nodes["abandoned-list"].children[0].children[1].listeners.click();
     assert.equal(state.sidequests[0].id, quest.id);
+    assert.equal(state.discovery.entries.length, 2);
     assert.deepEqual(state.trail, ownTrail);
     assert.match(nodes["abandoned-list"].children[0].textContent, /Other town/);
     await nodes["abandoned-list"].children[0].children[1].listeners.click();
     assert.equal(state.sidequests[0].delivered, true);
+    assert.ok(state.discovery.entries.every(entry => entry.availability === "historical"));
     assert.match(nodes["abandoned-list"].children[0].textContent, /abandoned.delivered/);
     state = { ...state, ended: "fatigue", elapsedMinutes: 10 };
     ui.update();

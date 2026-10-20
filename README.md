@@ -64,7 +64,23 @@ be verified; failed refreshes retain the previous published illustration.
 This production-based release also fixes mini-game styling, mobile player
 status, vigilance visibility, fatigue/sleep warnings, shelter washing,
 nearby-town recovery after care, the opening clue, and the nginx journey-map
-route. It does not publish the separate development lore/artifact systems.
+route. It does not publish the separate development artifact playtest or enable
+its powers, broader dreams or lore routes in ordinary journeys.
+
+## Shared discovery in ordinary journeys
+
+The [shared ledger](./discovery.mjs) now records already-earned parent clues and
+abandoned-journal discoveries through the [domain adapters](./discovery-targets.mjs).
+The main notebook's **Clues and discoveries / Indices et decouvertes** section
+and PDF export show these earned facts, including game time and
+current/historical/unavailable status. Suggestions remain explicitly unconfirmed.
+Found notebooks do not inherit the reader's private discoveries.
+
+Save validation accepts old journeys without a ledger and preserves the new
+ledger on resume. This does not change action costs, chances or parent progress,
+disclose hidden destinations, or enable artifact custody and powers. The explicit
+progress-preserving migration required by [R-169](./doc/REQUIREMENTS.md#r-169---lore-in-ordinary-journeys-and-progress-preserving-migration)
+is still unimplemented.
 
 Prototype jouable des **couches 1 a 8** : carte OSM, voyage, temps, besoins,
 localites, economie, musique de rue et piste minimale du parent.

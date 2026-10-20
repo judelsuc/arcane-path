@@ -77,7 +77,7 @@ export function trailClue(state, kind, cell, info, survival, economy) {
   if (exploration && !completed) {
     const witnessState = { ...next, trail: { ...state.trail, index } };
     const precision = fieldSearchRules(witnessState).precision;
-    const hint = { stage: index, kind: precision === "precise" ? "place"
+    const hint = { stage: index, channel: "npc", kind: precision === "precise" ? "place"
       : witnessCooling(witnessState) === 2 ? "direction"
       : discovery.kind === "photo" ? "photo"
         : ["letter", "search", "ticket", "buy"].includes(discovery.kind) ? "prefix" : "direction",

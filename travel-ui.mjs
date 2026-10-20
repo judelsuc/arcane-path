@@ -59,6 +59,7 @@ import { journeyEquipmentAction } from "./equipment-journey.mjs";
 import { setupEquipment } from "./equipment-ui.mjs";
 import { setupJourneyMiniGames } from "./journey-mini-games-ui.mjs";
 import { beginJourneyMiniGame, settleJourneyMiniGame } from "./journey-mini-games.mjs";
+import { synchronizeParentDiscovery, applyJournalDiscovery } from "./discovery-targets.mjs";
 
 export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, cafeAudio, theftAudio, miniGameAudio, pinPhoto, pinTarot, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats }) {
   const start = document.querySelector("#start-travel");
@@ -133,10 +134,12 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const abandonedUI = setupAbandonedJournals(t, {
     publishNotebook, showNotebook,
     context: () => state,
-    persist(sidequests, published) {
+    persist(sidequests, published, nearby, observedMinutes) {
       if (!state) return;
-      state = { ...state, sidequests, ...(published ? { journalPublished: true } : {}) };
+      state = applyJournalDiscovery(state, sidequests, nearby, observedMinutes);
+      if (published) state = { ...state, journalPublished: true };
       autosave();
+      localize();
     },
   });
   const saveFeedback = setupSaveFeedback(t, {
@@ -262,6 +265,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     if (state) state = recordJourneyPosition(recordTrailArrival(state));
     try {
       if (!saveStore) throw new Error(t("saveStorageUnavailable"));
+      state = synchronizeParentDiscovery(state);
       const saved = saveStore.write({ region, map: base, state,
         survival: survivalConfig, economy: economyData });
       savedJourney = saved;

@@ -26,6 +26,12 @@ function storage() {
   return { getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v), data };
 }
 
+test("the isolated authoritative lore state cannot be imported into a main-game save", () => {
+  const d = details();
+  d.state.lore = { version: 1, effects: { remainingMeters: 20000, expiresMinutes: 1440 } };
+  assert.throws(() => createSave(d, 1), /Invalid or incompatible/);
+});
+
 test("private journal capability and independent delivery progress survive exact saves", () => {
   const d = details();
   d.state.serverJourney = { id: "1".repeat(32), seed: "12345678",

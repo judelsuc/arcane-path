@@ -127,6 +127,7 @@ export function applyFieldSearch(state, result, cell, info, survival, economy) {
     : result.kind === "sign" ? "sign" : result.kind ? "found" : "nothing";
   const exploration = state.trail.exploration;
   const hint = outcome === "found" ? { stage: result.stage, kind: result.kind,
+    channel: "search",
     precision: result.precision, col: result.col, row: result.row, elapsedMinutes: next.elapsedMinutes,
     ...(state.pressures ? { witnessMinutes: state.elapsedMinutes,
       witnessFactor: state.pressures.tarotFactor } : {}) } : null;
@@ -156,20 +157,28 @@ export function applyFieldSearch(state, result, cell, info, survival, economy) {
   return next;
 }
 
-export function fieldClueText(state, hint, t) {
+export function fieldClueFacts(state, hint) {
   const target = state.trail.stages[hint.stage];
-  if (hint.kind === "place") return t("fieldClue.place", { place: target.name });
-  if (hint.kind === "photo") return t("fieldClue.photo");
+  if (hint.kind === "place") return { place: target.name };
+  if (hint.kind === "photo") return { photoStage: hint.stage };
   if (hint.kind === "prefix") {
     const chars = Array.from(target.name);
     const length = Math.min(Math.max(1, Math.floor(chars.length / 2)),
       hint.precision === "partial" ? 5 : 2);
-    return t("fieldClue.prefix", { prefix: chars.slice(0, length).join("") });
+    return { prefix: chars.slice(0, length).join("") };
   }
+  return { direction: clueDirection(hint, target) };
+}
+
+export function fieldClueText(state, hint, t) {
+  const facts = fieldClueFacts(state, hint);
+  if (hint.kind === "place") return t("fieldClue.place", facts);
+  if (hint.kind === "photo") return t("fieldClue.photo");
+  if (hint.kind === "prefix") return t("fieldClue.prefix", facts);
   const variant = Math.abs(hint.col * 31 + hint.row * 17 + hint.stage * 13) % 20;
   return t(`fieldDirection.${variant}`, {
     parent: state.trail.parentName,
-    direction: t(`hintCompass.${clueDirection(hint, target)}`),
+    direction: t(`hintCompass.${facts.direction}`),
   });
 }
 
@@ -190,7 +199,7 @@ export function openingClueText(state, t) {
   const hint = openingClue(state);
   if (!hint) throw new Error("No opening clue is available for this journey.");
   return t("trailOpeningClue", { parent: state.trail.parentName,
-    direction: t(`hintCompass.${clueDirection(hint, state.trail.stages[hint.stage])}`) });
+    direction: t(`hintCompass.${fieldClueFacts(state, hint).direction}`) });
 }
 
 export function recognitionHint(state) {
@@ -275,6 +284,7 @@ export function validateExploration(state) {
   const seen = new Set();
   for (const hint of e.hints) {
     if (!hint || !Number.isInteger(hint.stage) || hint.stage < e.firstStage ||
+        (hint.channel !== undefined && !["search", "npc"].includes(hint.channel)) ||
         hint.stage > state.trail.index || hint.stage >= state.trail.stages.length ||
         !["vague", "partial", "precise"].includes(hint.precision) ||
         (hint.precision === "precise" ? hint.kind !== "place"

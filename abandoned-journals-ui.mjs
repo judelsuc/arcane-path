@@ -75,8 +75,8 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
           return;
         }
         if (context()?.serverJourney?.id === state.serverJourney.id) {
+          persist(next.sidequests, next.published, next.nearby ?? [], state.elapsedMinutes);
           result = next;
-          persist(next.sidequests, next.published);
         }
       }
     } catch (reason) {

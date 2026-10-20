@@ -13,6 +13,8 @@ import { validateJourneyEvents, eventPlaytestEnabled } from "./journey-events.mj
 import { validateHealth } from "./health.mjs";
 import { restoreEquipment } from "./equipment.mjs";
 import { validateJourneyMiniGames, abandonJourneyMiniGame } from "./journey-mini-games.mjs";
+import { validateDiscovery } from "./discovery.mjs";
+import { validateDiscoverySchedule } from "./discovery-policy.mjs";
 import { validateTrailDreams } from "./trail-dreams.mjs";
 import { validateJourneyWorld } from "./journey-world.mjs";
 
@@ -36,7 +38,10 @@ export function validateSave(save) {
   validateSurvivalConfig(save.survival);
   validateEconomy(save.economy);
   const s = save.state;
+  if (s?.lore !== undefined) fail();
   validateJourneyMiniGames(s);
+  if (s) validateDiscovery(s);
+  if (s) validateDiscoverySchedule(s);
   validateTrailDreams(s);
   validateJourneyWorld(s);
   if (s?.storyNameFlavour !== undefined && typeof s.storyNameFlavour !== "boolean") fail();
