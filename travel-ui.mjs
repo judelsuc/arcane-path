@@ -108,7 +108,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       const dated = (record, text) =>
         `${trailEntryDate(previous, record.elapsedMinutes, document.documentElement.lang, t)} — ${text}`;
       const closing = closingStoryText(previous, t, liveNarrative.snapshot(previous, CLOSING_STORY),
-        document.documentElement.lang, { milestones: false });
+        document.documentElement.lang, { milestones: false, includePlacement: true });
       const clues = [...(closing ? [closing] : []), trailReminder(previous, t),
         ...(previous.trail.dreams?.checks ?? []).filter(check => check.outcome === "guidance")
           .map(check => dated(check, trailDreamText(check, t,

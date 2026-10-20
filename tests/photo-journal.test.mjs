@@ -9,11 +9,95 @@ import { COVER_ART_ID } from "../journal-art.mjs";
 import { JOURNAL_SUBTITLE } from "../live-narrative.mjs";
 import { createJourneyStore } from "../journey-save.mjs";
 import { createTrail } from "../trail.mjs";
+import { CLOSING_STORY, closingStoryText } from "../closing-story.mjs";
 
 const photo = (id = 1) => ({ blob: new Blob(["image fixture"], { type: "image/png" }),
   title: `Secret photo ${id}`, attribution: "Photographer", license: "CC BY 4.0",
   licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
   sourceUrl: `https://example.org/photo/${id}`, note: "", pinnedAt: `2026-10-17T12:00:0${id}Z` });
+
+for (const language of ["fr", "en"]) {
+  for (const ended of ["health", "hunger", "fatigue", "sleep", "reunion", "placement"]) {
+    test(`${language}/${ended} saved ending recovers in the journal and PDF without changing gameplay`, async test => {
+      const original = globalThis.document;
+      test.after(() => { globalThis.document = original; });
+      class Element {
+        dataset = {}; children = []; events = {}; open = false; textContent = "";
+        append(...children) { this.children.push(...children); }
+        replaceChildren(...children) { this.children = children; }
+        addEventListener(type, callback) { this.events[type] = callback; }
+        showModal() { this.open = true; }
+        close() { this.open = false; this.events.close?.(); }
+      }
+      const elements = new Map(), element = selector => {
+        if (!elements.has(selector)) elements.set(selector, new Element());
+        return elements.get(selector);
+      };
+      globalThis.document = { documentElement: { lang: language }, createElement: () => new Element(),
+        querySelector: selector => selector === "dialog[open]"
+          ? [...elements.values()].find(e => e.open) ?? null : element(selector) };
+      const survival = JSON.parse(readFileSync(new URL("../public/config.json", import.meta.url))).survival;
+      const economy = JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url)));
+      const state = { ...startEconomy(startSurvival(1, 2, Date.UTC(2026, 9, 17),
+        "balanced", survival), economy, () => 0), ended, distanceMeters: 12500, elapsedMinutes: 3000,
+        trail: { index: 0, stages: [{ name: "Known village" }, { name: "Unvisited village" }],
+          arrivals: [{ stage: 0, elapsedMinutes: 120 }], history: [] } };
+      const before = structuredClone(state), requests = [];
+      let generated = null, notify, exported, pending = true;
+      const tr = (key, args) => translate(document.documentElement.lang, key, args);
+      const ui = setupPhotoJournal(tr, {
+        narrative: {
+          prefetch(state, ids) { requests.push(...ids); },
+          snapshot(state, id) { return id === CLOSING_STORY ? generated : null; },
+          status() { return pending ? "Writing" : generated ? "Ready" : "Writing failed"; },
+          pending(state, id) { return id === CLOSING_STORY && pending; },
+          subscribe(listener) { notify = listener; },
+        },
+        store: { list: async () => [], get: async () => null },
+        makePdf: async input => { exported = input; return new Blob(["PDF"]); }, downloadPdf() {},
+      });
+      ui.updateStats({ state, survival, economy });
+      element("#open-journal").events.click();
+      await new Promise(resolve => setImmediate(resolve));
+      const expected = closingStoryText(state, tr, null, language, { includePlacement: true });
+      assert.equal(element("#journal-closing-story").hidden, false);
+      assert.equal(element("#journal-closing-text").textContent, expected);
+      assert.match(expected, /12\.50/);
+      assert.ok(expected.includes("Known village"));
+      assert.ok(!expected.includes("Unvisited village"));
+      assert.equal(requests.includes(CLOSING_STORY), ended !== "placement");
+      assert.equal(element("#journal-closing-status").ariaBusy, ended === "placement" ? "false" : "true");
+      await element("#journal-export-pdf").events.click();
+      assert.ok(exported.clues.includes(expected), "PDF includes the complete closing account");
+      pending = false;
+      notify();
+      assert.equal(element("#journal-closing-text").textContent, expected, "failed generation keeps authored summary");
+      if (ended !== "placement") {
+        generated = { fr: "La chronique complète du voyage.", en: "The complete journey chronicle." };
+        notify();
+        assert.equal(element("#journal-closing-text").textContent, generated[language]);
+        await new Promise(resolve => setImmediate(resolve));
+        await element("#journal-export-pdf").events.click();
+        assert.ok(exported.clues.includes(generated[language]));
+        document.documentElement.lang = language === "fr" ? "en" : "fr";
+        ui.localize();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(element("#journal-closing-text").textContent, generated[document.documentElement.lang]);
+      }
+      element("#photo-journal-dialog").close();
+      await ui.showAbandoned([], ["Another traveller's account"]);
+      assert.equal(element("#journal-closing-story").hidden, true, "never leak own ending into another notebook");
+      await element("#journal-export-pdf").events.click();
+      assert.deepEqual(exported.clues, ["Another traveller's account"]);
+      element("#photo-journal-dialog").close();
+      ui.updateStats(null);
+      assert.equal(element("#journal-closing-story").hidden, true);
+      ui.updateStats({ state: { ...state, ended: null }, survival, economy });
+      assert.equal(element("#journal-closing-story").hidden, true, "ongoing journeys have no ending");
+      assert.deepEqual(state, before);
+    });
+  }
+}
 
 test("biographies keep complete bilingual revisions in the scoped notebook, PDF and shared snapshot", async test => {
   const original = { document: globalThis.document, fetch: globalThis.fetch };
@@ -114,7 +198,7 @@ test("archived notebook selector reads preserved photos without changing or publ
   const survival = JSON.parse(readFileSync(new URL("../public/config.json", import.meta.url))).survival;
   const economy = JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url)));
   const state = { ...startEconomy(startSurvival(14, 10, Date.UTC(2026, 9, 20),
-    "balanced", survival), economy, () => 0), name: "Archived Alex",
+    "balanced", survival), economy, () => 0), name: "Archived Alex", ended: "hunger",
     trail: createTrail(map, 14, 10, () => 0) };
   const saved = createJourneyStore(localStorage);
   saved.read("firmi");
@@ -136,6 +220,8 @@ test("archived notebook selector reads preserved photos without changing or publ
   assert.equal(calls[0].photos[0].caption, "Old notebook photo");
   assert.equal(calls[0].title, "Archived notebooks");
   assert.match(element("#journal-abandoned-clues").children[1].textContent, /Archived Alex/);
+  assert.ok(calls[0].clues.includes(closingStoryText(state,
+    (key, args) => translate("en", key, args), null, "en", { includePlacement: true })));
   assert.equal(rows.size, 2);
 });
 

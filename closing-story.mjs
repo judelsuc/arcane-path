@@ -2,8 +2,9 @@ import { isDeath } from "./death.mjs";
 
 export const CLOSING_STORY = "story.closing";
 
-export function closingSummary(state) {
-  if (!isDeath(state) && state?.ended !== "reunion") return null;
+export function closingSummary(state, { includePlacement = false } = {}) {
+  if (!isDeath(state) && state?.ended !== "reunion" &&
+      !(includePlacement && state?.ended === "placement")) return null;
   const exploration = state.trail?.exploration;
   const reachedStages = (state.trail?.stages ?? []).flatMap((_, stage) => {
     const history = state.trail.history?.[stage];
@@ -34,11 +35,13 @@ export function closingSummary(state) {
   };
 }
 
-export function closingStoryText(state, t, generated, language = "fr", { milestones = true } = {}) {
-  const summary = closingSummary(state);
+export function closingStoryText(state, t, generated, language = "fr",
+  { milestones = true, includePlacement = false } = {}) {
+  const summary = closingSummary(state, { includePlacement });
   if (!summary) return "";
   return generated?.[language === "en" ? "en" : "fr"] ?? [
-    t(state.ended === "reunion" ? "closingStoryReunion" : "closingStoryDeath"),
+    t(state.ended === "reunion" ? "closingStoryReunion" :
+      state.ended === "placement" ? "closingStoryPlacement" : "closingStoryDeath"),
     t("closingStoryStats", {
       km: (summary.walkingMeters / 1000).toFixed(2),
       days: Math.floor(summary.elapsedMinutes / 1440),
