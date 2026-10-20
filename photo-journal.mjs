@@ -437,6 +437,12 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
             title.textContent = photo.caption;
             page.append(title);
           }
+          const prose = /^(?:biography|event):/.test(entry.id) ? document.createElement("p") : null;
+          if (prose) {
+            prose.className = "journal-narrative-text";
+            prose.textContent = drafts.get(entry.id) ?? photo.note;
+            page.append(prose);
+          }
           const frame = document.createElement("figure");
           frame.className = "journal-print";
           const image = document.createElement("img");
@@ -478,12 +484,19 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
           }
           note.addEventListener("input", () => {
             drafts.set(entry.id, note.value);
+            if (prose) prose.textContent = note.value;
             noteStatus.textContent = t("journalNoteUnsaved");
             setFeedback(noteStatus);
           });
           note.addEventListener("change", () => { void saveNote(); });
           save.addEventListener("click", () => { void saveNote(); });
-          caption.append(label, save, noteStatus);
+          if (prose) {
+            const editor = document.createElement("details"), summary = document.createElement("summary");
+            summary.textContent = t("journalNote");
+            editor.hidden = readOnly;
+            editor.append(summary, label, save, noteStatus);
+            caption.append(editor);
+          } else caption.append(label, save, noteStatus);
           frame.append(image, caption);
           page.append(frame);
           const credit = document.createElement("p");
