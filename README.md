@@ -23,6 +23,12 @@ Legacy passive observations remain stored but are hidden from the notebook/PDF
 until the corresponding witness story has been heard. Raw fractional journey
 minutes and coordinate pairs are not shown in this window.
 
+Completed journeys show their closing account directly in the personal
+notebook and include it in PDF exports. Previously ended saves and archived
+journeys recover an account from their saved facts, without restarting.
+The authored text remains readable while optional prose is being written.
+Reunion, death and the third placement retain their distinct endings.
+
 ## Parent-trail rescue dreams
 
 After at least one hour of deliberate sleep, a guiding dream can give a broad

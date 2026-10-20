@@ -1,5 +1,18 @@
 # Requirements tracked outside the design PDF
 
+## R-175 - Closing account in the player's journal
+
+- Display the completed journey's closing account inside the player's own
+  journal, not only on the game screen or in a published notebook.
+- Include the account in PDF exports and recover it for previously ended and
+  archived journeys from their saved facts, without restarting or altering
+  progress. Cover reunion, death and the third placement without inventing
+  unvisited stages or treating placement as death.
+- Show the authored account immediately while optional prose is pending or
+  unavailable; update the journal and subsequent exports when prose is ready.
+  Keep generation status optional except for visible writing progress.
+- Preserve French/English localization and isolate other travellers' notebooks.
+
 ## R-174 - No conversation-topic duplicates on the main toolbar
 
 - Keep G as the main toolbar entry for talking to inhabitants. Remove the

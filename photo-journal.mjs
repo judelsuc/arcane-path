@@ -12,6 +12,7 @@ import { createJournalIllustrator, illustrationScenes, COVER_ART_ID } from "./jo
 import { createLiveNarrative, JOURNAL_SUBTITLE } from "./live-narrative.mjs";
 import { archivedJourneys } from "./journey-save.mjs";
 import { translate } from "./i18n.mjs";
+import { CLOSING_STORY, closingSummary, closingStoryText } from "./closing-story.mjs";
 
 export async function biographyJournalEntries(state, wording, generated = true) {
   if (!wording || !["fr", "en"].every(language =>
@@ -172,6 +173,8 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       const photos = await api.snapshot(save.state);
       await api.showAbandoned(photos, [
         `${save.state.name ?? t("unnamedCharacter")} · ${save.savedAt}`,
+        ...[closingStoryText(save.state, t, null, document.documentElement.lang,
+          { includePlacement: true })].filter(Boolean),
         ...discoveryNotebookEntries(save.state, t).map(record => `${record.context} — ${record.text}`),
       ], t("journalArchives"));
     } catch (reason) { failure(reason); }
@@ -194,7 +197,25 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   function coverContext() {
     return { ...statsContext, coverSubtitle: narrative.snapshot(statsContext.state, JOURNAL_SUBTITLE) };
   }
+  function closingText(state = statsContext?.state) {
+    if (!state?.ended) return "";
+    const generated = state.ended === "placement" ? null : narrative.snapshot(state, CLOSING_STORY);
+    return closingStoryText(state, t, generated, document.documentElement.lang, { includePlacement: true });
+  }
+  function renderClosing() {
+    const section = document.querySelector("#journal-closing-story");
+    const text = readOnly ? "" : closingText();
+    section.hidden = !text;
+    document.querySelector("#journal-closing-title").textContent = t("closingStoryTitle");
+    document.querySelector("#journal-closing-text").textContent = text;
+    const status = document.querySelector("#journal-closing-status");
+    status.textContent = text && statsContext.state.ended !== "placement"
+      ? narrative.status(statsContext.state, CLOSING_STORY, document.documentElement.lang) : "";
+    setGenerating(status, Boolean(text && statsContext.state.ended !== "placement" &&
+      narrative.pending?.(statsContext.state, CLOSING_STORY)));
+  }
   narrative.subscribe(() => {
+    renderClosing();
     if (dialog.open && covering && !readOnly && statsContext) void render();
   });
   const art = createJournalIllustrator({
@@ -236,6 +257,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     setFeedback(status, "failure");
   }
   function localize() {
+    renderClosing();
     archives.replaceChildren();
     const placeholder = document.createElement("option");
     placeholder.value = "";
@@ -600,6 +622,8 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     localize();
     try {
       if (!foreign && statsContext) {
+        const closing = closingText();
+        if (closing) clues.push(closing);
         clues.push(...discoveryNotebookEntries(statsContext.state, t)
           .map(record => `${record.context} — ${record.text}`));
       }
@@ -664,6 +688,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       statsContext = context;
       if (context) {
         narrative.prefetch(context.state, [JOURNAL_SUBTITLE]);
+        if (closingSummary(context.state)) narrative.prefetch(context.state, [CLOSING_STORY]);
         try {
           art.observe(context.state, illustrationScenes(context.artTerrain, context.artWeather));
         } catch (reason) {
@@ -671,6 +696,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
           artStatus = "failed"; artError = reason.message;
         }
       }
+      renderClosing();
       if (!context) statistics = mapping = covering = false;
       if (dialog.open && !readOnly) {
         if (unchangedMap) return;
@@ -698,6 +724,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       mapping = false;
       covering = false;
       statsContext = null;
+      renderClosing();
       store = scoped;
       liveStore = scoped;
       readOnly = false;

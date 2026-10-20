@@ -44,6 +44,8 @@ test("closing brief includes only recorded aggregate counters and eligible termi
   }
   assert.equal(closingSummary(null), null);
   for (const outcome of [null, "placement", "unknown"]) assert.equal(closingSummary(fixture(outcome)), null);
+  assert.equal(closingSummary(fixture("placement"), { includePlacement: true }).outcome, "placement");
+  assert.equal(closingSummary(fixture("unknown"), { includePlacement: true }), null);
   const legacy = fixture("hunger");
   delete legacy.trail; delete legacy.events; delete legacy.performances; delete legacy.cafeShifts;
   assert.equal(closingSummary(legacy).recordedClues, 0);
@@ -194,4 +196,6 @@ test("main host integrates the chronicle after ending, and includes available pr
   assert.match(host, /closingStoryText\(previous, t, liveNarrative\.snapshot\(previous, CLOSING_STORY\)/);
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   assert.match(html, /id="journey-ended"[\s\S]*?id="closing-story" hidden open[\s\S]*?id="closing-story-status" role="status"/);
+  const notebook = html.slice(html.indexOf('<dialog id="photo-journal-dialog"'), html.indexOf('<dialog id="photo-dialog"'));
+  assert.match(notebook, /<section id="journal-closing-story"[^>]*hidden>[\s\S]*?id="journal-closing-title"[\s\S]*?id="journal-closing-text"[\s\S]*?id="journal-closing-status" class="technical-text" role="status"/);
 });

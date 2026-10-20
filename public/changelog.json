@@ -1,6 +1,11 @@
 {
-  "version": "0.20.9",
+  "version": "0.20.10",
   "entries": [
+    {
+      "version": "0.20.10",
+      "fr": "Le récit de fin de voyage apparaît désormais dans votre carnet et son export PDF. Les voyages déjà terminés et les carnets archivés retrouvent un bilan à partir des faits sauvegardés, sans recommencer. Le récit reste lisible pendant l’écriture de la chronique.",
+      "en": "The closing journey account now appears in your notebook and its PDF export. Already-ended journeys and archived notebooks recover an account from saved facts, without restarting. The account remains readable while the chronicle is being written."
+    },
     {
       "version": "0.20.9",
       "fr": "La barre sous la carte est allégée : les sujets accessibles dans « Parler aux habitants » n’y sont plus répétés, y compris J, 9, I et E. Les actions restent disponibles dans leurs fenêtres et leurs raccourcis clavier sont conservés.",
