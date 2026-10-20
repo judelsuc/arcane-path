@@ -11,10 +11,17 @@ the deployment packager still generates `public/release.json` independently.
 In ordinary journeys, the town dialog lets players ask about abandoned
 notebooks from actual mapped named settlements. Reports give approximate
 bearings and distance bands within 20 km, with a stable 50% draw per notebook,
-settlement cell and game day. A separate indication appears within 1 km;
+settlement cell and game day. A dedicated **Travellers' notebooks** window
+(shortcut **9**) explains these other travellers' stories and keeps one foldable
+witness account per notebook. Conversations open this window, not an inline wall
+of reports. No notebook whereabouts, pickup listing or 1 km indication appears
+before a character has mentioned that notebook. After that, proximity can help;
 pickup still requires being within 200 m. Reports are saved as earned clues
 and rechecked for availability; they reveal no private notebook pages and do
 not guarantee that another traveller has not already claimed the notebook.
+Legacy passive observations remain stored but are hidden from the notebook/PDF
+until the corresponding witness story has been heard. Raw fractional journey
+minutes and coordinate pairs are not shown in this window.
 
 ## Parent-trail rescue dreams
 

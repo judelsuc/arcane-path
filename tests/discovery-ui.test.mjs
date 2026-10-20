@@ -36,9 +36,9 @@ function fixture() {
       exploration: { firstStage: 0, knownStage: null, hints: [
         { stage: 0, kind: "prefix", precision: "vague", col: 0, row: 0, elapsedMinutes: 10 },
       ] } },
-  }), [], [{ id: "a".repeat(32), parent: "<b>Other parent</b>", history: [],
-    stages: [{ name: "Unrevealed journal town", latitude: 44, longitude: 2 }],
-    step: 0, delivered: false }]);
+  }), [], [], 30, [{ id: "a".repeat(32), parent: "<b>Other parent</b>",
+    bearing: "north", distanceBand: "within-1km", observedMinutes: 30,
+    evidenceKey: "town:" + "d".repeat(32), availability: "current" }]);
 }
 const texts = node => [node.textContent, ...node.children.flatMap(texts)].join(" ");
 

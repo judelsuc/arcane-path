@@ -45,7 +45,14 @@ export function discoveryClueText(entry, state, t) {
 
 export function discoveryNotebookEntries(state, t, { authored = false } = {}) {
   const counts = new Map();
-  return discoveryEntries(state).map((entry, order) => {
+  const entries = discoveryEntries(state);
+  const mentioned = new Set(entries.filter(entry => entry.targetType === "abandoned-journal" &&
+    entry.evidenceKey.startsWith("town:")).map(entry => entry.targetId));
+  const held = new Set((state.sidequests ?? []).map(quest => quest.id));
+  return entries.filter(entry => entry.targetType !== "abandoned-journal" ||
+    mentioned.has(entry.targetId) || held.has(entry.targetId) ||
+    !entry.targetRevision.startsWith("rumour:") && entry.evidenceKey !== "nearby")
+    .map((entry, order) => {
     const family = entry.targetType, index = counts.get(family) ?? 0;
     counts.set(family, index + (entry.kind === "inscription" ? 0 : 1));
     const plain = discoveryClueText(entry, state, t);

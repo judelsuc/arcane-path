@@ -173,17 +173,15 @@ class AbandonedJournals:
                 observation = self.indication(target, position, "town:" + digest[:32], elapsed)
                 db.execute("INSERT OR IGNORE INTO rumours VALUES (?,?,?,?)",
                            (journey, observation["evidenceKey"], target["id"], json.dumps(observation)))
-            if meters <= 1000:
+            mentioned = db.execute(
+                "SELECT 1 FROM rumours WHERE finder=? AND journal=? AND evidence LIKE 'town:%' LIMIT 1",
+                (journey, target["id"])).fetchone()
+            if meters <= 1000 and mentioned:
                 observation = self.indication(target, position, "near:" + digest[:32], elapsed)
-                # A dropped notebook can move again; different approximate facts are new evidence.
-                revision = hashlib.sha256((seed + observation["bearing"] +
-                                           observation["distanceBand"]).encode()).hexdigest()
-                observation["evidenceKey"] = "near:" + revision[:32]
-                db.execute("INSERT OR IGNORE INTO rumours VALUES (?,?,?,?)",
-                           (journey, observation["evidenceKey"], target["id"], json.dumps(observation)))
                 indications.append(observation)
         earned = db.execute("""SELECT r.observation,j.finder,j.touched,j.delivered,j.id
-            FROM rumours r LEFT JOIN journals j ON j.id=r.journal WHERE r.finder=?
+            FROM rumours r LEFT JOIN journals j ON j.id=r.journal
+            WHERE r.finder=? AND r.evidence LIKE 'town:%'
             ORDER BY r.rowid DESC LIMIT 100""", (journey,)).fetchall()
         rumours = []
         for row in earned:
@@ -327,6 +325,8 @@ class AbandonedJournals:
                 action == "rumours" and not access["dead"])
             return {"sidequests": [public(row) for row in claimed],
                     "nearby": [public(row) for row in nearby if distance(
-                        position, (row["latitude"], row["longitude"])) <= 200],
+                        position, (row["latitude"], row["longitude"])) <= 200 and db.execute(
+                            "SELECT 1 FROM rumours WHERE finder=? AND journal=? AND evidence LIKE 'town:%' LIMIT 1",
+                            (journey, row["id"])).fetchone()],
                     "published": bool(action == "publish" or ended in ("health", "hunger", "fatigue", "sleep", "placement")),
                     "rumours": rumours, "indications": indications}

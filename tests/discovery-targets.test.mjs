@@ -11,7 +11,7 @@ import { startEconomy } from "../economy.mjs";
 import { createTrail } from "../trail.mjs";
 import { translate } from "../i18n.mjs";
 import { discoveryNotebookEntries } from "../discovery-ui.mjs";
-import { knownNotebookRumours, notebookRumourText } from "../notebook-rumours.mjs";
+import { knownNotebookRumours, notebookRumourText, notebookWitnessReports } from "../notebook-rumours.mjs";
 
 const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
 const map = json("../public/map.json"), survival = json("../public/config.json").survival;
@@ -110,6 +110,23 @@ test("rumour projection rejects unsupported bearings, bands, IDs, evidence and f
   }
   assert.throws(() => applyJournalDiscovery(parent(), [], [], 60, [rumour(), rumour()]),
     /Invalid notebook rumours/);
+});
+
+test("legacy passive sightings stay hidden until a character mentions that notebook", () => {
+  const indication = rumour({ evidenceKey: "near:" + "c".repeat(32), observedMinutes: 3.444697 });
+  const passive = applyJournalDiscovery(parent(), [], [journal()], 60, [], [indication]);
+  assert.equal(knownNotebookRumours(passive).length, 0);
+  for (const language of ["fr", "en"]) {
+    assert.ok(discoveryNotebookEntries(passive, t(language)).every(entry => !entry.text.includes("Other parent")));
+    assert.doesNotMatch(notebookRumourText(indication, language), /3\.444697|minute/);
+  }
+  const told = applyJournalDiscovery(passive, [], [], 60, [rumour()]);
+  assert.ok(knownNotebookRumours(told).length > 0);
+  assert.ok(discoveryNotebookEntries(told, t("en")).some(entry => entry.text.includes("Other parent")));
+  const reports = notebookWitnessReports([indication, rumour({ observedMinutes: 0 }),
+    rumour(), rumour({ evidenceKey: "town:" + "e".repeat(32), observedMinutes: 20 })]);
+  assert.equal(reports.length, 1);
+  assert.equal(reports[0].observedMinutes, 55);
 });
 
 test("parent adapter records only earned facts, not full hidden destinations or credentials", () => {

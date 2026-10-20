@@ -51,10 +51,21 @@ class JournalsTests(unittest.TestCase):
     def publish(self):
         return self.call(ended="hunger", index=2)
 
+    def heard(self, finder, *journals):
+        with self.store.connect() as db:
+            for journal in journals:
+                target = db.execute("SELECT * FROM journals WHERE id=?", (journal,)).fetchone()
+                evidence = "town:" + hashlib.sha256(journal.encode()).hexdigest()[:32]
+                observation = self.store.indication(target, self.store.position(
+                    self.records[self.ids[finder]], 0, 0), evidence, 0)
+                db.execute("INSERT OR IGNORE INTO rumours VALUES (?,?,?,?)",
+                           (self.ids[finder], evidence, journal, json.dumps(observation)))
+
     def test_publish_is_private_idempotent_immutable_and_reunion_never_publishes(self):
         self.assertEqual(self.call(ended="reunion")["nearby"], [])
         self.publish()
         self.call(ended="hunger", index=3, row=10)
+        self.heard(1, self.ids[0])
         nearby = self.call(1)["nearby"]
         self.assertEqual(len(nearby), 1)
         self.assertEqual(nearby[0]["history"], ["Town 0", "Town 1"])
@@ -78,6 +89,7 @@ class JournalsTests(unittest.TestCase):
         self.call(1, action="claim", journal=self.ids[0])
         result = self.call(1, ended="placement", row=5, index=1)
         self.assertTrue(result["published"])
+        self.heard(2, self.ids[0], self.ids[1])
         nearby = self.call(2, row=5)["nearby"]
         self.assertIn(self.ids[1], [q["id"] for q in nearby])
         self.assertIn(self.ids[0], [q["id"] for q in nearby])
@@ -88,6 +100,7 @@ class JournalsTests(unittest.TestCase):
         self.call(1, action="claim", journal=self.ids[0])
         result = self.call(1, ended="health", row=5, index=1)
         self.assertTrue(result["published"])
+        self.heard(2, self.ids[0], self.ids[1])
         nearby = self.call(2, row=5)["nearby"]
         self.assertIn(self.ids[0], [q["id"] for q in nearby])
         self.assertIn(self.ids[1], [q["id"] for q in nearby])
@@ -109,6 +122,8 @@ class JournalsTests(unittest.TestCase):
 
     def test_lease_activity_expiry_and_death_release(self):
         self.publish()
+        self.heard(1, self.ids[0])
+        self.heard(2, self.ids[0])
         self.call(1, action="claim", journal=self.ids[0])
         self.now += LEASE_SECONDS - 1
         self.call(1)
@@ -198,7 +213,7 @@ class JournalsTests(unittest.TestCase):
         self.mapped_town(False)
         with self.assertRaises(JourneyConflict):
             self.call(1, action="rumours")
-        self.assertEqual(len(self.call(1)["nearby"]), 1)
+        self.assertEqual(self.call(1)["nearby"], [])
         self.mapped_town()
         with self.assertRaises(JournalForbidden):
             self.store.request({"journey": self.ids[1], "col": 0, "row": 0,
@@ -208,6 +223,9 @@ class JournalsTests(unittest.TestCase):
 
     def test_one_km_indication_is_not_two_hundred_meter_pickup(self):
         self.publish()
+        self.assertEqual(self.call(1, row=3)["indications"], [])
+        self.assertEqual(self.call(1)["nearby"], [])
+        self.heard(1, self.ids[0])
         result = self.call(1, row=3)
         self.assertEqual(result["nearby"], [])
         indication, = result["indications"]
@@ -217,6 +235,30 @@ class JournalsTests(unittest.TestCase):
             self.call(1, action="claim", journal=self.ids[0], row=3)
         self.assertEqual(self.call(1, row=5)["indications"], [])
         self.assertEqual(len(self.call(1, action="claim", journal=self.ids[0])["sidequests"]), 1)
+
+    def test_passive_sync_never_reveals_notebooks_and_old_nearby_rows_do_not_unlock_them(self):
+        self.publish()
+        with self.store.connect() as db:
+            target = db.execute("SELECT * FROM journals WHERE id=?", (self.ids[0],)).fetchone()
+            observation = self.store.indication(target, self.store.position(self.records[self.ids[1]], 0, 0),
+                                                "near:" + "a" * 32, 0)
+            db.execute("INSERT INTO rumours VALUES (?,?,?,?)",
+                       (self.ids[1], observation["evidenceKey"], self.ids[0], json.dumps(observation)))
+        for row in (0, 1, 3):
+            result = self.call(1, row=row, elapsedMinutes=62.470563)
+            for field in ("nearby", "indications", "rumours"):
+                self.assertEqual(result[field], [])
+        self.mapped_town()
+        day = self.rumour_day()
+        result = self.call(1, action="rumours", elapsedMinutes=day * 1440)
+        self.assertEqual(len(result["rumours"]), 1)
+        self.assertEqual(len(result["nearby"]), 1)
+        self.assertEqual(len(result["indications"]), 1)
+        for row in (1, 2, 3, 0):
+            self.call(1, row=row, elapsedMinutes=day * 1440 + row + 1)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM rumours WHERE finder=?",
+                                        (self.ids[1],)).fetchone()[0], 2)
 
     def test_known_rumours_explicitly_report_claim_expiry_delivery_and_deletion(self):
         self.mapped_town()
@@ -254,6 +296,7 @@ class JournalsTests(unittest.TestCase):
         photos = self.notebook()
         result = self.call(action="publish", notebook=photos, clues=["The town begins with To"], row=5)
         self.assertTrue(result["published"])
+        self.heard(1, self.ids[0])
         self.assertEqual(self.call(1)["nearby"], [])
         nearby = self.call(1, row=5)["nearby"]
         self.assertEqual(len(nearby), 1)
@@ -268,6 +311,7 @@ class JournalsTests(unittest.TestCase):
         self.call(action="publish", notebook=changed, clues=[], row=100)
         self.assertEqual(self.call(1, action="read", journal=self.ids[0], row=5)["notebook"], shared)
         self.call(1, action="publish", notebook=[], clues=[], row=8)
+        self.heard(2, self.ids[0])
         nearby = self.call(2, row=8)["nearby"]
         self.assertIn(self.ids[0], [q["id"] for q in nearby])
         self.assertEqual(self.genesis, self.records)
@@ -283,6 +327,8 @@ class JournalsTests(unittest.TestCase):
         with self.assertRaises(JourneyRequest):
             self.store.request({**body, "keeper": self.ids[0], "action": "register"}, token)
         self.store.request({**body, "action": "publish", "notebook": self.notebook(), "clues": []}, token)
+        self.heard(1, keeper)
+        self.heard(0, keeper)
         self.assertIn(keeper, [q["id"] for q in self.call(1)["nearby"]])
         self.assertEqual(self.call()["nearby"][0]["id"], keeper)
 
@@ -303,6 +349,7 @@ class JournalsTests(unittest.TestCase):
         trail["story"] = {"movement": [
             {"stage": 10 + i, "elapsedMinutes": (i + 1) * 7 * 1440} for i in range(3)]}
         self.call(action="publish", notebook=[], clues=[], elapsedMinutes=5 * 1440, index=2)
+        self.heard(1, self.ids[0])
         self.assertEqual(len(self.call(1)["nearby"][0]["stages"]), 10)
         self.call(1, action="claim", journal=self.ids[0])
         for step in range(2, 10):
