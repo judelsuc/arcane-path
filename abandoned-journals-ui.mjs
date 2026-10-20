@@ -73,11 +73,6 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
     }
     townStatus.textContent = error ? t("abandoned.offline", { error })
       : observations.length ? t("abandoned.heard") : t(conversation ? "abandoned.noReport" : "abandoned.notHeard");
-    if (conversation && !observations.length && !error) {
-      const item = document.createElement("li");
-      item.textContent = t("abandoned.noReport");
-      rumoursList.append(item);
-    }
     const close = !state?.ended && result?.indications?.some(item => mentioned.has(item.id));
     proximity.hidden = !close;
     proximity.textContent = close ? t("abandoned.close") : "";

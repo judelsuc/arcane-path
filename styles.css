@@ -958,6 +958,21 @@ dialog p { margin: 12px 0; }
 
 .travel-actions { display: grid; gap: 8px; }
 .travel-directions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.travel-toolbar:not([hidden]) { display: flex; flex-wrap: wrap; gap: 5px; margin-block: 8px; }
+.travel-toolbar button {
+  width: 36px; height: 36px; min-width: 36px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0; overflow: hidden;
+}
+.travel-toolbar .button-shortcut { font-size: 1rem; }
+#open-survival-choices { border: 2px solid var(--accent); }
+#travel-toolbar-help { font-size: 0.8rem; margin-block: 4px 10px; }
+.cell-action-services { display: flex; flex-wrap: wrap; gap: 8px; }
+.cell-action-services button { white-space: normal; text-align: left; }
+.conversation-topics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 8px; }
+.conversation-topics button { text-align: left; white-space: normal; }
+#conversation-dialog { width: min(850px, 94vw); max-height: 90dvh; overflow: auto; }
+#conversation-reply { line-height: 1.65; white-space: pre-line; }
 .travel-help summary { cursor: pointer; color: var(--accent); }
 .travel-panel h3 { margin: 0 0 10px; }
 .travel-panel a { color: var(--accent); }

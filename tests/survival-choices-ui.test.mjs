@@ -83,3 +83,39 @@ test("result and error are placed before the first action in the actual accessib
   assert.ok(html.indexOf('id="survival-choice-error"') < html.indexOf('id="choice-forage"'));
   assert.match(html, /id="survival-choice-result" role="status" tabindex="-1" hidden/);
 });
+
+test("full-word cell actions forward to existing controls only after closing, respecting availability", t => {
+  const h = harness(t);
+  const source = h.get("#open-journey-world");
+  let calls = 0;
+  source.events.click = () => {
+    assert.equal(h.get("#survival-choices-dialog").open, false);
+    calls++;
+  };
+  source.disabled = true;
+  h.ui.localize();
+  assert.equal(h.get("#cell-transport").disabled, true);
+  h.get("#cell-transport").click();
+  assert.equal(calls, 0);
+  source.disabled = false;
+  h.ui.localize();
+  h.get("#cell-transport").click();
+  assert.equal(calls, 1);
+  h.get("#open-survival-choices").click();
+  h.current.blocked = true;
+  h.get("#cell-transport").click();
+  assert.equal(calls, 1);
+  h.current.blocked = false;
+  h.get("#dog-travel").hidden = true;
+  h.ui.localize();
+  assert.equal(h.get("#cell-dog").hidden, true);
+  for (const [id, target] of [["cell-town", "open-town"], ["cell-equipment", "equipment-travel"],
+    ["cell-journal", "open-journal"], ["cell-notebooks", "open-abandoned-journals"],
+    ["cell-photo", "show-photo"], ["cell-save", "save-travel"], ["cell-wash", "wash-travel"]]) {
+    let invoked = false;
+    h.get(`#${target}`).events.click = () => { invoked = true; };
+    h.ui.localize();
+    h.get(`#${id}`).click();
+    assert.equal(invoked, true, target);
+  }
+});

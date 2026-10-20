@@ -138,3 +138,19 @@ test("cell services and clue forms keep stable, non-conflicting action keys", ()
   assert.equal(buttonBindings([{ id: "clue-investigate" }])[0].key, "F");
   assert.equal(buttonBindings([{ id: "clue-field-search" }])[0].key, "F");
 });
+
+test("conversation topics and expanded cell actions retain unique shortcuts within each popup", () => {
+  for (const ids of [
+    ["cell-buy", "cell-rest", "cell-sleep", "cell-earn-money", "cell-clues", "cell-town",
+      "cell-conversation", "cell-transport", "cell-hint", "cell-equipment", "cell-wash", "cell-dog",
+      "cell-journal", "cell-notebooks", "cell-photo", "cell-save", "choice-forage"],
+    ["conversation-close", "conversation-parent", "conversation-clues", "conversation-notebooks",
+      "conversation-artifacts", "conversation-shelter", "conversation-food", "conversation-work",
+      "conversation-transport", "conversation-town"],
+  ]) {
+    const keys = buttonBindings(ids.map(id => ({ id }))).map(binding => binding.key);
+    assert.equal(new Set(keys).size, ids.length);
+  }
+  assert.equal(buttonBindings([{ id: "open-conversation" }])[0].key, "G");
+  assert.equal(buttonBindings([{ id: "open-journey-world" }])[0].key, "6");
+});

@@ -11,6 +11,15 @@ const KEYS = {
   "eat-travel": "E", "open-town": "T", "open-music": "B",
   "open-trail": "J", "save-travel": "S", "look-travel": "L",
   "open-abandoned-journals": "9", "abandoned-close": "Escape",
+  "open-journey-world": "6",
+  "open-conversation": "G", "town-conversation": "G", "cell-conversation": "G",
+  "conversation-close": "Escape",
+  "conversation-parent": "J", "conversation-clues": "I", "conversation-notebooks": "9",
+  "conversation-artifacts": "A", "conversation-shelter": "H", "conversation-food": "E",
+  "conversation-work": "B", "conversation-transport": "6", "conversation-town": "T",
+  "cell-town": "T", "cell-transport": "6", "cell-hint": "I",
+  "cell-equipment": "V", "cell-wash": "4", "cell-dog": "5",
+  "cell-journal": "A", "cell-notebooks": "9", "cell-photo": "P", "cell-save": "S",
   "open-hint": "I",
   "open-journal": "A",
   "open-earn-money": "B", "town-earn-money": "B", "cell-earn-money": "B",
@@ -110,18 +119,20 @@ export function setupButtonShortcuts(t) {
         let caption = element.querySelector(".button-shortcut");
         const action = [...element.childNodes].filter(node => node !== caption)
           .map(node => node.textContent).join("").trim();
+        const compact = Boolean(element.closest("#travel-toolbar"));
         if (!caption) {
           caption = document.createElement("span");
           caption.className = "button-shortcut";
           caption.setAttribute("aria-hidden", "true");
           element.append(caption);
         }
-        const suffix = ` (${label(key)})`;
+        const suffix = compact ? label(key) : ` (${label(key)})`;
         if (caption.textContent !== suffix) caption.textContent = suffix;
         const text = t("buttonTooltip", {
           action, key: label(key),
         });
         element.title = text;
+        if (compact) element.setAttribute("aria-label", action);
         element.setAttribute("aria-keyshortcuts", key);
       }
     }

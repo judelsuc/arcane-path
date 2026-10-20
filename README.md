@@ -25,6 +25,23 @@ minutes and coordinate pairs are not shown in this window.
 
 ## Nearby hosting and companion status
 
+Travel controls now sit in a compact square-key toolbar immediately below the
+map, rather than a long sidebar list. Hover or keyboard-focus a square for its
+localized action name. Press **F** for full-word cell actions, including
+sleep/hosting, town visits, transport (**6**), equipment, washing, companion
+care and journals. Disabled options retain the same availability and action
+locks as their original controls. The toolbar wraps on narrow screens.
+
+In a named settlement, press **G** for **Talk to inhabitants**, also available
+from the town window or **F**. Topics cover the parent, clues, notebooks,
+magical legends, shelter, food, work, transport and local places. The opening
+introduces travellers' notebooks even if no particular notebook can be found
+nearby. Actual notebook leads still require an available notebook within 20 km
+and the existing deterministic conversation draw. Magical hearsay is authored
+storytelling, not an artifact position or activation of the separate playtest.
+Transport now searches automatically when opened, reusing current-place/day
+results on reread; boarding still requires explicit selection and confirmation.
+
 The sleep menu lists real hotels and public places of worship within 5 km,
 including immediately available map data while the online search continues.
 Each result explains the next step: **walk to its cell**, then open sleep

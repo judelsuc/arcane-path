@@ -7,6 +7,13 @@ import { setFeedback } from "./feedback.mjs";
 
 export function setupSurvivalChoices(t, { context, act }) {
   const dialog = document.querySelector("#survival-choices-dialog");
+  const actions = {
+    "cell-town": "open-town", "cell-transport": "open-journey-world", "cell-hint": "open-hint",
+    "cell-equipment": "equipment-travel", "cell-wash": "wash-travel", "cell-dog": "dog-travel",
+    "cell-journal": "open-journal", "cell-notebooks": "open-abandoned-journals",
+    "cell-conversation": "open-conversation",
+    "cell-photo": "show-photo", "cell-save": "save-travel",
+  };
   function localize() {
     const current = context();
     for (const id of ["open-survival-choices", "town-survival-choices"]) {
@@ -21,6 +28,12 @@ export function setupSurvivalChoices(t, { context, act }) {
     document.querySelector("#cell-rest").disabled = current.blocked;
     document.querySelector("#cell-sleep").disabled = current.blocked;
     document.querySelector("#cell-clues").disabled = current.blocked || !atTrailTarget(current.state);
+    for (const [id, target] of Object.entries(actions)) {
+      const source = document.getElementById(target);
+      const button = document.getElementById(id);
+      button.disabled = current.blocked || !source || source.disabled || source.hidden;
+      button.hidden = target === "dog-travel" && (!source || source.hidden);
+    }
     document.querySelector("#survival-choice-save").textContent = current.saveStatus;
     for (const [kind, rule] of Object.entries(CHOICE_RULES)) {
       document.querySelector(`#choice-${kind}`).disabled =
@@ -77,10 +90,13 @@ export function setupSurvivalChoices(t, { context, act }) {
   for (const [id, target] of Object.entries({
     "cell-buy": "eat-travel", "cell-rest": "rest-travel", "cell-sleep": "sleep-travel",
     "cell-clues": "open-trail",
+    ...actions,
   })) {
     document.getElementById(id).addEventListener("click", () => {
+      const source = document.getElementById(target);
+      if (!context() || context().blocked || !source || source.disabled || source.hidden) return;
       dialog.close();
-      document.getElementById(target).click();
+      source.click();
     });
   }
   dialog.addEventListener("keydown", event => {
