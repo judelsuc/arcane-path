@@ -1,5 +1,37 @@
 # Infrastructure OVHcloud - rapport du 19 octobre 2026
 
+## Narrative journal and generation feedback delivery (20 October 2026)
+
+- Game 0.20.3, production runtime
+  `698669a4e80b041ce1c5d9bb8d0e22a4c894985f`.
+  Generated bilingual biographies are automatically retained as scoped notebook
+  pages; explicit revisions preserve earlier pages. Ordinary events retain their
+  first displayed wording, including authored fallback, in saves and notebook
+  pins. Full prose is readable on personal and shared read-only notebook pages.
+- Visible text-generation indicators expose accessible busy status and respect
+  reduced motion. The release also includes confirmed biography regeneration,
+  default-enabled fictional-name consent for new characters, and bounded daily
+  contextual event sets; existing saved preferences and gameplay stay unchanged.
+- Exact production validation: 1,029 JavaScript tests and 42 focused Python
+  tests passed. Browser checks verified pending/ready feedback, reduced motion,
+  complete FR/EN notebook prose, and an actual encode/decode shared-notebook
+  roundtrip. PDF data and pagination regressions pass; the hidden browser again
+  timed out in native canvas PDF export, so a full browser PDF export is not
+  counted as verified.
+- Nineteen runtime files, including release metadata, installed after baseline
+  SHA-256 checks and private runtime/SQLite backups. Backend restarted healthy;
+  the five existing journey genesis checksums remained unchanged and all five
+  SQLite databases passed integrity checks. All seventeen public changed files
+  matched on both HTTPS domains, with authenticated travel API health verified.
+  Backup: `/var/lib/arcane-path/backups/narrative-journal-698669a4e80b`.
+- A separate production QA journey named Tom Sawyer obtained one real OVH
+  bilingual biography and three clear-head event variants with two provider
+  attempts total; repeated requests reused the results. This verifies live
+  wiring and deduplication, not literary quality: the model still produced
+  awkward prose and printed a supplied first name despite the prompt. No
+  automatic paid retry was made. The player's actual biography was not replaced
+  by this QA; its new explicit regeneration action remains available in-game.
+
 ## Personal journal cover delivery (20 October 2026)
 
 - Game 0.20.1, production commit `94080ee3592864052ef55910dc73f2d575dda45b`.
