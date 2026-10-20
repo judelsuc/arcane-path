@@ -23,6 +23,7 @@ test("biographies keep complete bilingual revisions in the scoped notebook, PDF 
     append(...children) { this.children.push(...children); }
     replaceChildren(...children) { this.children = children; }
     addEventListener(type, callback) { this.events[type] = callback; }
+    showModal() { this.open = true; }
   }
   const elements = new Map(), element = selector => {
     if (!elements.has(selector)) elements.set(selector, new Element());
@@ -79,6 +80,10 @@ test("biographies keep complete bilingual revisions in the scoped notebook, PDF 
   assert.deepEqual(await ui.snapshot({ serverJourney: { id: "journey-b" } }), []);
   assert.deepEqual(await biographyJournalEntries(state, wording), await biographyJournalEntries(state, wording));
   await assert.rejects(biographyJournalEntries(state, { en: "Incomplete" }), /Invalid journal biography/);
+  await ui.showAbandoned(snapshot, []);
+  assert.deepEqual(element("#journal-pages").children.map(page =>
+    page.children.find(child => child.className === "journal-narrative-text").textContent),
+  [wording.fr, wording.en]);
 });
 
 test("archived notebook selector reads preserved photos without changing or publishing the new notebook", async test => {

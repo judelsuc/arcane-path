@@ -64,6 +64,7 @@
   animation: text-generating 0.9s linear infinite;
 }
 @keyframes text-generating { to { transform: rotate(360deg); } }
+.journal-narrative-text { white-space: pre-wrap; line-height: 1.65; }
 @media (prefers-reduced-motion: reduce) {
   [role="status"][aria-busy="true"]::before { animation: none; }
 }
