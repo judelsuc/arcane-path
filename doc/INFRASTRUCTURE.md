@@ -1,5 +1,32 @@
 # Infrastructure OVHcloud - rapport du 18 octobre 2026
 
+## Closing journey account recovery in the personal notebook (20 October 2026)
+
+- Game 0.20.10, production runtime
+  `5654781e6a9381a007b896e02fe32bb71e4a1813`.
+- Closing prose was already shown in the terminal game screen and included
+  during publication, but the personal notebook and its PDF export omitted
+  it. They now display/export an immediate account from the saved ending
+  and update when optional prose is ready. Previously ended journeys recover
+  the account without a restart. Archived notebooks include an authored
+  account from their saved state.
+- FR/EN coverage includes health, hunger, fatigue, sleep, reunion and third
+  placement. Placement uses distinct authored copy and is not sent to the
+  generation endpoint, preserving its existing eligibility contract.
+  Ongoing journeys and other travellers' notebooks do not show the player's
+  ending. No gameplay state, action cost or saved progress changes.
+- Development full JavaScript suite: 1,134 passed; exact production suite:
+  1,058 passed. Browser fixtures with in-memory state and source handlers
+  confirmed visible authored/generated FR/EN text, PDF export input containing
+  the ending, visible writing status outside technical folds, ready diagnostics
+  folded, no unvisited destination disclosure, and unchanged journey state.
+  No real save or prose-generation request was used by browser fixtures.
+- Seven runtime files including release metadata installed after guarded
+  baseline verification and backup. All nine journey genesis checksums
+  unchanged; SQLite integrity, services, public asset hashes and API health
+  verified on apex and www. Backup:
+  `/var/lib/arcane-path/backups/conversation-toolbar-5654781e6a93`.
+
 ## Conversation-topic toolbar deduplication (20 October 2026)
 
 - Game 0.20.9, production runtime
