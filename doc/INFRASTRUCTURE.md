@@ -1,5 +1,29 @@
 # Infrastructure OVHcloud - rapport du 19 octobre 2026
 
+## Conversation-topic toolbar deduplication (20 October 2026)
+
+- Game 0.20.9, production runtime
+  `5fe41b5c352fffcabcdf9fb654d6e386529cb83f`.
+  Removed duplicate conversation-topic controls from the map toolbar:
+  parent J, notebooks 9, hints I, eating E, shelter H, work B, transport 6
+  and local places T. G remains the conversation entry; F remains the
+  full-word cell-actions entry.
+- Existing controllers and eligibility are preserved through hidden source
+  controls, without invisible tab stops. Direct action keys remain active
+  only while the map toolbar is active; disabled, hidden and inert controls
+  cannot execute. Conversation and cell-action menu forwarding is unchanged.
+- Development JavaScript suite: 1,122 passed. Exact production suite:
+  1,046 passed. Browser fixture checks confirmed all eight direct shortcuts,
+  conversation/cell eating handoffs, hidden-toolbar key suppression, no
+  journey mutation, absent toolbar duplicates, and 36 px squares without
+  toolbar overflow at 375 px. Fixture source handlers were used; no real
+  food purchases or saved journeys were changed.
+- Guarded deployment installed four runtime files including release metadata,
+  preserved all nine journey genesis checksums, passed SQLite integrity
+  checks, and verified services, changed public hashes and API health on
+  apex and www. Backup:
+  `/var/lib/arcane-path/backups/conversation-toolbar-5fe41b5c352f`.
+
 ## Game-first UI, contextual rules and inhabitant topics (20 October 2026)
 
 - Game 0.20.8, final production runtime
