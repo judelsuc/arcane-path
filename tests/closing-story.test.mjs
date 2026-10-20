@@ -137,7 +137,7 @@ test("failed or truncated closing prose falls back explicitly without automatic 
     client.prefetch(state, [CLOSING_STORY]);
     await flush();
     assert.equal(client.snapshot(state, CLOSING_STORY), null);
-    assert.match(client.status(state, CLOSING_STORY, "en"), /failed/);
+    assert.match(client.status(state, CLOSING_STORY, "en"), /could not be written/);
     client.prefetch(state, [CLOSING_STORY]);
     assert.equal(calls, 1);
   }

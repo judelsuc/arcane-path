@@ -86,7 +86,7 @@ test("a failed opening uses authored backstory, not a blocking loading screen", 
   client.prefetch(state, [OPENING_STORY]);
   await flush();
   assert.equal(client.snapshot(state, OPENING_STORY), null);
-  assert.match(client.status(state, OPENING_STORY, "en"), /failed/);
+  assert.match(client.status(state, OPENING_STORY, "en"), /could not be written/);
 });
 
 test("explicit regeneration sends stable consent, preserves old prose while pending and after failure", async () => {
@@ -116,7 +116,7 @@ test("explicit regeneration sends stable consent, preserves old prose while pend
   reloaded.prefetch(consented, [OPENING_STORY]);
   await flush();
   assert.deepEqual(reloaded.snapshot(consented, OPENING_STORY), generated);
-  assert.match(reloaded.status(consented, OPENING_STORY, "en"), /failed/);
+  assert.match(reloaded.status(consented, OPENING_STORY, "en"), /could not be written/);
   assert.throws(() => client.regenerateOpening(state), /consent/);
   client.reset();
 });
@@ -152,7 +152,7 @@ test("failed or local opening journals the original bilingual pretext without a 
   await flush();
   assert.equal(doc.querySelector("#opening-story-continue").disabled, false);
   assert.equal(doc.querySelector("#opening-story-status").ariaBusy, "false");
-  assert.match(doc.querySelector("#opening-story-status").textContent, /failed/);
+  assert.match(doc.querySelector("#opening-story-status").textContent, /could not be written/);
   assert.equal(journaled.length, 1);
   assert.equal(journaled[0].generated, false);
   assert.match(journaled[0].text.en, /Camille/);
