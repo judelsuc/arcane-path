@@ -1,5 +1,38 @@
 # Requirements tracked outside the design PDF
 
+## R-172 - Inhabitant conversations with visible topics
+
+- A dedicated "Talk to inhabitants" window lists topics instead of scattering
+  conversation entry points across unrelated menus. Reach it from a mapped
+  named town, the map toolbar (G), and the full-word cell actions (F).
+- Topics cover the parent, earned clues, abandoned notebooks, distant magical
+  legends, shelter, food, work, transport and local places. Introduce the story
+  of other children's notebooks even before any particular notebook is known.
+- Keep the real existing notebook rules: an explicit conversation, at most
+  20 km, 50% per notebook/town/day, no reroll, no invented position or notebook.
+  Explain how to ask when the witness list is empty. A broad magical legend
+  may be heard regardless of distance, without a location or a claimed playable
+  artifact in ordinary journeys; full authority/power integration remains R-169.
+- Opening topics must not charge or advance the clock. Forward to existing
+  action controllers; costs and acceptance remain explicit at the next step.
+- Opening transport must start its bounded search rather than requiring an
+  undiscoverable second Refresh click. Reuse same-place/day results on reread.
+
+## R-171 - Compact map toolbar and full-word cell actions
+
+- Replace the offscreen sidebar action-button stack with small square shortcut
+  buttons immediately under the map. Retain localized descriptive tooltips on
+  hover/focus, accessible names and the existing action bindings/availability.
+- F opens the full-word cell-actions popup. Include food, rest, sleep/hosting,
+  earning, investigation, town visits, transport, hints, equipment, washing,
+  companion care, personal/other notebooks, photo and saving. Preserve existing
+  eligibility and action locks; unavailable actions are visibly disabled.
+- Use the existing action controllers, not alternate implementations. Close
+  the popup before forwarding to another window. Opening/reading menus must
+  not advance time or spend money. Keep the toolbar wrapping on narrow screens.
+- Expose transport with a stable 6 key and in shortcut help; do not imply this
+  presentation change makes distant artifact powers playable in normal journeys.
+
 ## R-170 - Game version and changelog in Options
 
 - Display the semantic game version and a readable French/English changelog

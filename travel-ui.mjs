@@ -6,6 +6,7 @@ import {
   walkSurvival, hungerPercent, canEat, normalizeCharacterName,
 } from "./survival.mjs";
 import { setupTowns } from "./towns-ui.mjs";
+import { setupConversations } from "./conversations-ui.mjs";
 import { nearestSettlement } from "./towns.mjs";
 import { refreshPricing, refreshMeals, refreshNightRest, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, restEffect, finishAction, washEconomy, marketPrice } from "./economy.mjs";
 import { setupDailyTarot } from "./daily-tarot-ui.mjs";
@@ -451,6 +452,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       }
     },
   });
+  const conversations = setupConversations(t, { context: () => active ? economyContext() : null });
   const musicUI = setupMusic(t, {
     difficulty: () => state ? musicDifficulty(state) : { level: 0, xp: 0, beats: 24, multiplier: 1 },
     mistakeLimit: () => state ? musicMistakeLimit(state) : null,
@@ -720,6 +722,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     document.querySelector("#map-workspace").classList.toggle("travel-active", active);
     document.body.classList.toggle("is-travelling", active);
     controls.hidden = !active;
+    document.querySelector("#travel-toolbar").hidden = !active;
+    document.querySelector("#travel-toolbar-help").hidden = !active;
     document.querySelector("#travel-overview").hidden = !active;
     onActiveChange?.(active);
     start.hidden = active;
@@ -743,6 +747,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       setFeedback(element, saveError ? "failure" : savedAt ? "success" : "");
     }
     choicesUI.localize();
+    conversations.localize();
     earnMoneyUI.localize();
     document.querySelector("#character-setup").hidden = active;
     retry.disabled = busy;
@@ -1147,6 +1152,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   async function begin(restored, replacementConfirmed = false) {
     if (!base || active || busy || preparingOrigin) return;
     journeyWorldUI.reset();
+    conversations.reset();
     let characterName;
     if (!restored) {
       try {
@@ -1305,6 +1311,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     trailArrivalUI.reset();
     trailDreamUI.reset();
     journeyWorldUI.reset();
+    conversations.reset();
     journeyEventsUI.reset();
     liveNarrative.reset();
     openingStory.reset();

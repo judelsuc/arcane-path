@@ -30,7 +30,9 @@ test("calendar and player status share an overview before the map and secondary 
     assert.equal(html.split(`id="${id}"`).length - 1, 1);
   }
   const script = readFileSync(new URL("../travel-ui.mjs", import.meta.url), "utf8");
-  assert.match(script, /controls\.hidden = !active;\s*document\.querySelector\("#travel-overview"\)\.hidden = !active;/);
+  for (const selector of ["travel-toolbar", "travel-toolbar-help", "travel-overview"]) {
+    assert.ok(script.includes(`document.querySelector("#${selector}").hidden = !active;`));
+  }
   assert.match(script, /document\.querySelector\("#player-vigilance"\)\.hidden = !pressures;/);
 });
 
@@ -42,4 +44,20 @@ test("mobile layout places the overview above the map, retaining a desktop sideb
   assert.match(mobile, /\.travel-active \.travel-overview \{[^}]*grid-column: 1;[^}]*grid-row: 1;/);
   assert.match(mobile, /\.travel-active \.map-comparison \{ grid-column: 1; grid-row: 2;/);
   assert.match(mobile, /\.travel-active \.travel-panel \{[^}]*grid-row: 3;/);
+});
+
+test("travel actions are a compact wrapping toolbar immediately below the map, not the sidebar", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const toolbar = html.slice(html.indexOf('<nav id="travel-toolbar"'), html.indexOf('</nav>', html.indexOf('<nav id="travel-toolbar"')));
+  assert.match(html, /id="ascii-map"[^>]*><\/pre>\s*<\/div>\s*<nav id="travel-toolbar"/);
+  for (const id of ["rest-travel", "sleep-travel", "eat-travel", "open-town",
+    "open-survival-choices", "open-trail", "open-journey-world", "save-travel"]) {
+    assert.match(toolbar, new RegExp(`id="${id}"`));
+    assert.equal(html.split(`id="${id}"`).length - 1, 1);
+  }
+  const sidebar = html.slice(html.indexOf('<section class="travel-panel"'), html.indexOf('<div class="map-comparison"'));
+  assert.doesNotMatch(sidebar, /class="travel-actions"|id="open-town"|data-move=/);
+  const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  assert.match(css, /\.travel-toolbar:not\(\[hidden\]\)[^}]*flex-wrap: wrap/);
+  assert.match(css, /\.travel-toolbar button\s*\{[^}]*width: 36px; height: 36px;/);
 });

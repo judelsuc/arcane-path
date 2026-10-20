@@ -255,30 +255,8 @@
           <div id="travel-controls" hidden>
             <p id="travel-stats" role="status"></p>
             <p id="travel-blocker" role="status" hidden></p>
-            <div class="travel-actions">
-              <div class="travel-directions">
-              <button data-move="0,-1" type="button" data-i18n="travelNorth"></button>
-              <button data-move="-1,0" type="button" data-i18n="travelWest"></button>
-              <button data-move="0,1" type="button" data-i18n="travelSouth"></button>
-              <button data-move="1,0" type="button" data-i18n="travelEast"></button>
-              </div>
-              <button id="rest-travel" type="button" data-i18n="travelRest"></button>
               <p id="rest-effect"></p>
-              <button id="sleep-travel" type="button" data-i18n="needsSleepAction"></button>
-              <button id="eat-travel" type="button" data-i18n="needsEatAction"></button>
-              <button id="open-town" type="button" disabled data-i18n="townOpen"></button>
-              <button id="open-earn-money" type="button" disabled data-i18n="earnMoney"></button>
-              <button id="open-survival-choices" type="button" disabled data-i18n="survivalChoices"></button>
-              <button id="open-trail" type="button" disabled data-i18n="trailTitle"></button>
-              <button id="open-abandoned-journals" type="button" disabled data-i18n="abandoned.title"></button>
-              <button id="open-journey-world" type="button" disabled data-i18n="worldTitle"></button>
               <p id="journey-world-notice" role="status"></p>
-              <button id="open-hint" type="button" disabled data-i18n="hintTitle"></button>
-              <button id="save-travel" type="button" disabled data-i18n="saveNow"></button>
-              <button id="look-travel" type="button" aria-pressed="false" data-i18n="travelLook"></button>
-              <button id="retry-travel" type="button" data-i18n="travelRetry"></button>
-              <button id="stop-travel" type="button" data-i18n="travelStop"></button>
-            </div>
             <p id="look-status" role="status"></p>
             <p id="lodging-target-status" role="status" hidden></p>
             <button id="lodging-target-clear" type="button" data-i18n="lodgingTargetClear" hidden></button>
@@ -300,6 +278,28 @@
             <div class="map-viewport" id="map-viewport" aria-live="polite">
               <pre class="ascii-map" id="ascii-map" aria-label="Carte fixe de la région"></pre>
             </div>
+            <nav id="travel-toolbar" class="travel-toolbar" aria-label="Actions" hidden>
+              <button data-move="0,-1" type="button" data-i18n="travelNorth"></button>
+              <button data-move="-1,0" type="button" data-i18n="travelWest"></button>
+              <button data-move="0,1" type="button" data-i18n="travelSouth"></button>
+              <button data-move="1,0" type="button" data-i18n="travelEast"></button>
+              <button id="open-survival-choices" type="button" disabled data-i18n="survivalChoices" aria-haspopup="dialog" aria-controls="survival-choices-dialog"></button>
+              <button id="open-conversation" type="button" disabled data-i18n="conversation.title" aria-haspopup="dialog" aria-controls="conversation-dialog"></button>
+              <button id="rest-travel" type="button" data-i18n="travelRest"></button>
+              <button id="sleep-travel" type="button" data-i18n="needsSleepAction"></button>
+              <button id="eat-travel" type="button" data-i18n="needsEatAction"></button>
+              <button id="open-town" type="button" disabled data-i18n="townOpen"></button>
+              <button id="open-earn-money" type="button" disabled data-i18n="earnMoney"></button>
+              <button id="open-trail" type="button" disabled data-i18n="trailTitle"></button>
+              <button id="open-abandoned-journals" type="button" disabled data-i18n="abandoned.title"></button>
+              <button id="open-journey-world" type="button" disabled data-i18n="worldTitle"></button>
+              <button id="open-hint" type="button" disabled data-i18n="hintTitle"></button>
+              <button id="save-travel" type="button" disabled data-i18n="saveNow"></button>
+              <button id="look-travel" type="button" aria-pressed="false" data-i18n="travelLook"></button>
+              <button id="retry-travel" type="button" data-i18n="travelRetry"></button>
+              <button id="stop-travel" type="button" data-i18n="travelStop"></button>
+            </nav>
+            <p id="travel-toolbar-help" data-i18n="toolbarHelp" hidden></p>
             <p class="cell-info" id="cell-info" role="status"></p>
             <button id="copy-coordinates" type="button" disabled data-i18n="copyCoordinates"></button>
             <p id="copy-coordinates-status" role="status"></p>
@@ -527,8 +527,30 @@
       <h3 data-i18n="townPlacesTitle"></h3>
       <p id="town-empty" data-i18n="townEmpty"></p>
       <ul id="town-places"></ul>
+      <button id="town-conversation" type="button" data-i18n="conversation.title"></button>
       <div id="town-place-detail" role="status"></div>
       <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" data-i18n="attribution"></a>
+    </dialog>
+    <dialog id="conversation-dialog" aria-labelledby="conversation-title">
+      <header class="journal-header">
+        <h2 id="conversation-title" data-i18n="conversation.title"></h2>
+        <button id="conversation-close" type="button" data-i18n="windowHelpClose"></button>
+      </header>
+      <p id="conversation-context"></p>
+      <p data-i18n="conversation.intro"></p>
+      <div class="conversation-topics">
+        <button id="conversation-parent" type="button" data-i18n="conversation.parent"></button>
+        <button id="conversation-clues" type="button" data-i18n="conversation.clues"></button>
+        <button id="conversation-notebooks" type="button" data-i18n="conversation.notebooks"></button>
+        <button id="conversation-artifacts" type="button" data-i18n="conversation.artifacts"></button>
+        <button id="conversation-shelter" type="button" data-i18n="conversation.shelter"></button>
+        <button id="conversation-food" type="button" data-i18n="conversation.food"></button>
+        <button id="conversation-work" type="button" data-i18n="conversation.work"></button>
+        <button id="conversation-transport" type="button" data-i18n="conversation.transport"></button>
+        <button id="conversation-town" type="button" data-i18n="conversation.town"></button>
+      </div>
+      <p id="conversation-reply" role="status" tabindex="-1" hidden></p>
+      <p data-i18n="conversation.rules"></p>
     </dialog>
     <dialog id="survival-choices-dialog" aria-labelledby="survival-choices-title">
       <h2 id="survival-choices-title" data-i18n="survivalChoices"></h2>
@@ -542,7 +564,19 @@
         <button id="cell-sleep" type="button" data-i18n="cellSleep"></button>
         <button id="cell-earn-money" type="button" data-i18n="earnMoney"></button>
         <button id="cell-clues" type="button" data-i18n="cellClues"></button>
+        <button id="cell-town" type="button" data-i18n="townOpen"></button>
+        <button id="cell-conversation" type="button" data-i18n="conversation.title"></button>
+        <button id="cell-transport" type="button" data-i18n="worldTitle"></button>
+        <button id="cell-hint" type="button" data-i18n="hintTitle"></button>
+        <button id="cell-equipment" type="button" data-i18n="equipmentTitle"></button>
+        <button id="cell-wash" type="button" data-i18n="cellWash"></button>
+        <button id="cell-dog" type="button" data-i18n="cellDog"></button>
+        <button id="cell-journal" type="button" data-i18n="journalTitle"></button>
+        <button id="cell-notebooks" type="button" data-i18n="abandoned.title"></button>
+        <button id="cell-photo" type="button" data-i18n="showPhoto"></button>
+        <button id="cell-save" type="button" data-i18n="saveNow"></button>
       </div>
+      <p data-i18n="cellActionsDisabled"></p>
       <p class="window-help-text" data-i18n="cellActionAvailability"></p>
       <button id="choice-forage" type="button" data-i18n="choice.forage"></button>
       <p id="choice-forage-note"></p>

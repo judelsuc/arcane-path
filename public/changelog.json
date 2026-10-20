@@ -1,6 +1,11 @@
 {
-  "version": "0.20.7",
+  "version": "0.20.8",
   "entries": [
+    {
+      "version": "0.20.8",
+      "fr": "Les commandes du voyage sont regroupées dans une petite barre de touches carrées sous la carte, avec une infobulle au survol ou au focus. F ouvre toutes les actions en toutes lettres. Dans une localité, G ouvre « Parler aux habitants » : parent, indices, carnets, légendes venues de loin, abri, repas, travail, transports et visites. Les carnets sont introduits même sans piste précise ; aucun emplacement n’est inventé. Les transports (6) lancent leur recherche à l’ouverture. Les actions indisponibles restent grisées et les coûts de jeu sont inchangés.",
+      "en": "Travel controls are grouped in a compact square-key toolbar below the map, with hover/focus tooltips. F opens full-word actions. In a settlement, G opens Talk to inhabitants: parent, clues, notebooks, legends of even distant magical objects, shelter, meals, work, transport and local places. Notebooks are introduced even without a precise lead; no location is invented. Transport (6) starts searching when opened. Unavailable actions stay disabled and gameplay costs are unchanged."
+    },
     {
       "version": "0.20.7",
       "fr": "Le statut du chien apparaît juste sous la jauge Propreté, avant le bouton de toilette et son explication.",

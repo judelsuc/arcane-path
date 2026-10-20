@@ -6,6 +6,7 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
   const dialog = $("journey-world-dialog");
   let agenda, payload, offers = [], selected, loading = false, error = "", coverage = "";
   let controller, generation = 0;
+  let searchedDay;
   const language = () => document.documentElement.lang === "en" ? "en" : "fr";
   const date = at => new Intl.DateTimeFormat(language() === "en" ? "en-GB" : "fr-FR",
     { timeZone: "UTC", dateStyle: "short", timeStyle: "short" }).format(new Date(at)) + " UTC";
@@ -139,18 +140,19 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
     }
     throw new Error(t("worldTimeout"));
   }
-  $("journey-world-refresh").addEventListener("click", () => run(async () => {
+  async function refresh() {
     const current = context();
     if (!current || current.busy || transitActive(current.state)) return;
     controller?.abort(); controller = new AbortController();
     const signal = controller.signal, epoch = ++generation;
+    const day = new Date(current.state.startedAt + current.state.elapsedMinutes * 60000).toISOString().slice(0, 10);
     loading = true; agenda = payload = undefined; selected = undefined; coverage = ""; update();
     const results = await Promise.allSettled([
       request(`/api/living-world?${new URLSearchParams({ lat: current.info.latitude.toFixed(2),
         lon: current.info.longitude.toFixed(2) })}`, signal),
       request(`/api/journey-transport?${new URLSearchParams({ region: current.gridId,
         col: current.state.col, row: current.state.row,
-        day: new Date(current.state.startedAt + current.state.elapsedMinutes * 60000).toISOString().slice(0, 10) })}`, signal),
+        day })}`, signal),
     ]);
     if (epoch !== generation) return;
     const latest = context();
@@ -167,13 +169,24 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
       if (results[1].status === "fulfilled") {
         journeyTransportOptions(results[1].value, current.state, current.gridId);
         payload = results[1].value;
+        searchedDay = day;
       } else failures.push(String(results[1].reason));
     } catch (reason) { console.error("Invalid journey world data:", reason); failures.push(reason.message); }
     if (failures.length) throw new Error(failures.join(" · "));
-  }));
-  $("open-journey-world").addEventListener("click", () => { dialog.showModal(); update(); });
+  }
+  $("journey-world-refresh").addEventListener("click", () => run(refresh));
+  $("open-journey-world").addEventListener("click", () => {
+    const current = context();
+    if (!current || current.busy || current.blocked || document.querySelector("dialog[open]")) return;
+    dialog.showModal();
+    update();
+    if (!loading && !transitActive(current.state) &&
+        (!payload || payload.col !== current.state.col || payload.row !== current.state.row ||
+          searchedDay !== new Date(current.state.startedAt + current.state.elapsedMinutes * 60000).toISOString().slice(0, 10))) return run(refresh);
+  });
   return { update, reset() {
     generation++; controller?.abort(); loading = false; agenda = payload = selected = undefined;
+    searchedDay = undefined;
     error = coverage = ""; offers = []; $("journey-world-notice").textContent = ""; dialog.close();
   } };
 }

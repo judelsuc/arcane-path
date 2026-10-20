@@ -20,7 +20,9 @@ for (const language of ["fr", "en"]) {
       if (!nodes.has(key)) nodes.set(key, new Element());
       return nodes.get(key);
     };
-    globalThis.document = { documentElement: { lang: language }, querySelector: get,
+    globalThis.document = { documentElement: { lang: language },
+      querySelector: selector => selector === "dialog[open]"
+        ? [...nodes.values()].find(node => node.open) ?? null : get(selector),
       createElement: () => new Element() };
     const raw = demoTimetable(); raw.kind = "supplied";
     let state = demoJourney(), booked = 0, requests = 0;
@@ -48,9 +50,8 @@ for (const language of ["fr", "en"]) {
     });
     ui.update();
     assert.equal(requests, 0);
-    get("#open-journey-world").events.click();
+    await get("#open-journey-world").events.click();
     assert.equal(get("#journey-world-dialog").open, true);
-    await get("#journey-world-refresh").events.click();
     assert.equal(requests, 2);
     assert.equal(state.elapsedMinutes, before.elapsedMinutes);
     assert.equal(state.walletCents, before.walletCents);
@@ -67,6 +68,9 @@ for (const language of ["fr", "en"]) {
     list.children.at(-1).events.click();
     assert.equal(booked, 1);
     assert.equal(state.walletCents, before.walletCents);
+    get("#journey-world-dialog").close();
+    await get("#open-journey-world").events.click();
+    assert.equal(requests, 2, "rereading the same place/day does not repeat the search");
     eventFailure = true;
     await get("#journey-world-refresh").events.click();
     assert.match(get("#journey-world-error").textContent, /Explicit public provider failure/);
