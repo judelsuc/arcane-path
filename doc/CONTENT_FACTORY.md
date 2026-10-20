@@ -48,9 +48,16 @@ future outcomes. Weave reached places and meaningful intermediate encounters
 into the story, not merely counters. Format validation cannot prove semantic fidelity: the original
 ending remains visible and authoritative, and prose has no gameplay effects.
 
-One attempt per journey/keeper uses the existing durable queue, accounting and
-failure handling. The earliest closing record is immutable across prompt
-revisions and restart; no automatic failure retry. Ongoing journeys and
+The initial attempt per journey/keeper uses the existing durable queue, accounting and
+failure handling. Closing prose is reused across prompt revisions and restart;
+there is no automatic failure retry. An explicitly confirmed back-cover rewrite
+uses a stable request ID, preserves the previous ready prose while pending or
+failed, and reuses the original persisted ending brief rather than revised client
+counters. Rereading that request ID cannot dispatch another provider call.
+The notebook has a dedicated back-cover page; PDF export prints the full chronicle
+after photos, the route and statistics. Archived own journeys can retrieve their
+cached epic, without putting the current player's account into another notebook.
+Ongoing journeys and
 placement do not request a chronicle. An immediate authored bilingual summary
 and explicit pending/disabled/local/failed status keep the ending usable.
 Restart and notebook access never wait for generation. The existing notebook

@@ -190,6 +190,50 @@ class LiveNarrativeTests(unittest.TestCase):
         self.service.future.result(timeout=5)
         return self.request(CLOSING_BRIEF, summary=summary)
 
+    def test_closing_rewrite_is_explicit_replay_safe_and_preserves_original_ending(self):
+        self.writer.return_value = response(
+            en=("Your search has ended, and the road remains in memory. " * 15).strip(),
+            fr=("Votre recherche est finie, et la route reste en mémoire. " * 15).strip())
+        summary = self.closing_summary("hunger")
+        self.request(CLOSING_BRIEF, summary=summary)
+        original = self.settle_closing(summary)
+        before = self.journeys.read(self.owner)
+        brief = self.writer.call_args.args[0]
+        entered, release = threading.Event(), threading.Event()
+
+        def write(payload):
+            entered.set()
+            if not release.wait(5):
+                raise WorkshopError("Test wait expired", 502)
+            return response(
+                en=("Your courage on the road belongs to this remembered journey. " * 15).strip(),
+                fr=("Votre courage sur le chemin appartient au souvenir de ce voyage. " * 15).strip())
+
+        self.writer.side_effect = write
+        altered = {**summary, "outcome": "reunion", "meals": 99}
+        try:
+            pending = self.request(CLOSING_BRIEF, summary=altered, regenerate="d" * 32)
+            self.assertTrue(entered.wait(5))
+            self.assertEqual(pending["previousText"], original["text"])
+            self.request(CLOSING_BRIEF, summary=altered, regenerate="d" * 32)
+        finally:
+            release.set()
+        result = self.settle_closing(summary)
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(self.writer.call_count, 2)
+        self.assertEqual(self.writer.call_args.args[0], brief)
+        self.assertEqual(self.request(CLOSING_BRIEF, summary=summary, regenerate="d" * 32), result)
+        self.writer.side_effect = WorkshopError("Provider unavailable", 502)
+        self.request(CLOSING_BRIEF, summary=summary, regenerate="e" * 32)
+        failed = self.settle_closing(summary)
+        self.assertEqual(failed["status"], "failed")
+        self.assertEqual(failed["previousText"], result["text"])
+        self.assertEqual(self.journeys.read(self.owner), before)
+        self.assertIn("back cover", provider_request(brief, MODEL)["messages"][0]["content"])
+        for changes in [{"regenerate": "bad"}, {"regenerate": "f" * 32, "nameFlavour": True}]:
+            with self.assertRaises(JourneyRequest):
+                self.request(CLOSING_BRIEF, summary=summary, **changes)
+
     def test_closing_prompt_includes_only_reached_places_and_canonical_retained_events(self):
         record = self.journeys.read(self.owner)
         before = json.dumps(record, sort_keys=True)

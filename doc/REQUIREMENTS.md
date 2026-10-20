@@ -1,5 +1,30 @@
 # Requirements tracked outside the design PDF
 
+## R-177 - Individual encounter illustrations and overnight preparation
+
+- Use the configured image generator for journey encounters, dreams and
+  hospitality scenes, with a different illustration for each individual
+  encounter rather than one shared image per event type.
+- Renew available illustrations every seven real-time days, not game days;
+  preserve illustrations already retained in a notebook.
+- Prepare a new illustration batch tonight at 23:00 local time. User requests
+  no item-count maximum; keep generation sequential, respect provider limits
+  and stop on errors rather than retrying indefinitely or using paid fallback.
+
+## R-176 - Epic back cover and reliable death-card popup
+
+- Put the LLM-written epic account on the notebook's back cover, reachable
+  through its own navigation control and printed last in the PDF. Recover
+  back covers for already-ended and archived journeys.
+- Automatically request closing prose for eligible endings; keep a readable
+  authored account while pending or unavailable. Allow an explicitly confirmed
+  rewrite/retry; preserve the earlier prose on failure and reuse the original
+  saved ending facts. Repeated requests with one ID must not generate twice.
+- Give the death-card popup priority over stale action windows after death;
+  do not leave it waiting indefinitely behind a meal, shelter or other modal.
+  Retain arcane XIII, cause, acknowledgment, reduced-motion fade and image retry.
+  Do not show a death card for placement or reunion, or repeat after acknowledgment.
+
 ## R-175 - Closing account in the player's journal
 
 - Display the completed journey's closing account inside the player's own

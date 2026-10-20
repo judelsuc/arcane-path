@@ -238,10 +238,11 @@ class LiveNarrative:
         if contextual:
             expected.add("context")
         if "regenerate" in data:
-            if (data.get("brief") != BRIEF_ID or data.get("nameFlavour") is not True or
+            if (data.get("brief") not in (BRIEF_ID, CLOSING_BRIEF) or
+                    data.get("brief") == BRIEF_ID and data.get("nameFlavour") is not True or
                     not isinstance(data["regenerate"], str) or
                     not re.fullmatch(r"[a-f0-9]{32}", data["regenerate"])):
-                raise JourneyRequest("Opening regeneration requires explicit fictional-name consent and a stable request ID.")
+                raise JourneyRequest("Story regeneration requires a supported brief, a stable request ID and opening-name consent where applicable.")
             expected.add("regenerate")
         if data.get("brief") == CLOSING_BRIEF:
             expected.add("summary")
@@ -274,6 +275,12 @@ class LiveNarrative:
                     raise JourneyCapacity("Live wording queue is full; authored text remains available.")
                 payload = opening_brief(record, self.journeys.chunks,
                                         name_flavour=True) if brief == BRIEF_ID else closing
+                if brief == CLOSING_BRIEF and "regenerate" in data:
+                    original = db.execute(
+                        "SELECT input FROM wording WHERE owner=? AND brief=? ORDER BY created,rowid LIMIT 1",
+                        (owner, brief)).fetchone()
+                    if original:
+                        payload = json.loads(original["input"])
                 if brief == COVER_BRIEF:
                     opening = opening_brief(record, self.journeys.chunks)
                     payload = {key: opening[key] for key in
@@ -294,7 +301,7 @@ class LiveNarrative:
                 "SELECT usage FROM wording WHERE owner=? AND usage IS NOT NULL", (owner,))]
             previous = (db.execute("SELECT output FROM wording WHERE owner=? AND brief=? AND status='ready' "
                                    "ORDER BY created DESC,rowid DESC LIMIT 1", (owner, brief)).fetchone()
-                        if brief == BRIEF_ID and row and row["status"] != "ready" else None)
+                        if brief in (BRIEF_ID, CLOSING_BRIEF) and row and row["status"] != "ready" else None)
         self.kick()
         enabled = self.writer is not None
         output = json.loads(row["output"]) if enabled and row and row["output"] else None
@@ -332,7 +339,9 @@ class LiveNarrative:
                     closing = row["brief"] == CLOSING_BRIEF
                     cover = row["brief"] == COVER_BRIEF
                     base_version = version_for(row["brief"])
-                    regeneration = story and re.fullmatch(re.escape(base_version) + r"-(?:regenerate-[a-f0-9]{32}|named-1)", row["version"])
+                    regeneration = ((story or closing) and re.fullmatch(
+                        re.escape(base_version) + r"-regenerate-[a-f0-9]{32}", row["version"])
+                        or story and row["version"] == base_version + "-named-1")
                     contextual = row["brief"].startswith("event.") and re.fullmatch(
                         re.escape(base_version) + r"-context-1-day-\d+-named-[01]", row["version"])
                     if row["version"] != base_version and not (regeneration or contextual) or row["brief"] not in CATALOGUE and not (story or closing or cover):

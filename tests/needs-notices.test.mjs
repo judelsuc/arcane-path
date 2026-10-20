@@ -132,6 +132,7 @@ for (const locale of ["fr", "en"]) {
       body: new Element(),
       querySelector: key => key === "dialog[open]"
         ? otherDialog || element("#needs-notice-dialog").open : element(key),
+      querySelectorAll: () => otherDialog ? [{ close() { otherDialog = false; } }] : [],
       createElement: tag => Object.assign(new Element(), { tag }),
     };
     globalThis.MutationObserver = class { observe() {} };
@@ -141,10 +142,12 @@ for (const locale of ["fr", "en"]) {
     const ui = setupNeedsNotices(tr, { context: () => current });
     const tick = async () => { ui.update(); await new Promise(resolve => setImmediate(resolve)); };
     otherDialog = true;
+    current.busy = true;
     await tick();
     assert.equal(element("#needs-notice-dialog").open, false);
-    otherDialog = false;
+    current.busy = false;
     await tick();
+    assert.equal(otherDialog, false, "death dismisses the stale action dialog instead of waiting behind it");
     assert.equal(element("#needs-notice-dialog").open, true);
     assert.equal(element("#needs-notice-title").textContent, tr("deathTitle"));
     assert.ok(element("#needs-notice-text").textContent.includes(tr("deathCause.health")));
