@@ -213,6 +213,38 @@
 - Apply this to cached/provisional and completed searches without changing
   prices, eligibility, source attribution, travel selection or sleep effects.
 
+## R-158 - Recognizable-name flavour in opening backstories
+
+- **20 October approved revision:** check fictional-name consent by default
+  for new characters with visible OVH disclosure and an opt-out. Do not change
+  existing saved preferences silently. Add confirmed explicit biography
+  regeneration, keeping older prose readable while pending/failed and all
+  canonical parent/progression facts unchanged. Recognizable traits must be
+  noticeable, not merely generic atmosphere. Broad author-inspired literary
+  qualities are approved for confidently recognized public-domain references,
+  with original prose and no copied passages or imported plot.
+- Extend optional name inspiration to ordinary events together with bounded
+  day/distance/sleep/encounter/tarot context. Cache three variants per event
+  type, game day and consent mode; no per-step call or mid-dialogue replacement.
+  Historical paid/generated rows and actual event effects remain unchanged.
+- In the approved R-165 release, let the text model recognize a well-known
+  character or public-persona name entered by the player and add subtle,
+  original personality flavour to a new opening backstory.
+- The user explicitly chose model recognition of the entered name, rather
+  than a local curated matching list. This is an explicit exception to R-151's
+  no-player-name prompt boundary (extended to events above). A setup
+  checkbox discloses OVH submission; old saves and non-opted-in stories keep
+  names private. The client sends permission, not arbitrary name/prose; the
+  server retrieves the immutable saved name.
+- Use generic traits in original prose, not copied dialogue, lyrics, signature
+  passages or a claim that the traveller is the named character/person.
+  If recognition is uncertain, keep the ordinary backstory; do not infer
+  sensitive personal attributes from names.
+- This changes narrative flavour only. Preserve the saved parent's identity,
+  departure motive, child-traveller premise, clues, route, powers and statistics.
+- Apply only when generating a new story. Retain already saved stories and
+  the existing single-attempt, higher-temperature and authored-fallback rules.
+
 ## R-157 - Window background follows journey time
 
 - During travel only, use night/dawn/day/dusk colours based on the existing
