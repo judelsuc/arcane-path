@@ -1,6 +1,11 @@
 {
-  "version": "0.20.8",
+  "version": "0.20.9",
   "entries": [
+    {
+      "version": "0.20.9",
+      "fr": "La barre sous la carte est allégée : les sujets accessibles dans « Parler aux habitants » n’y sont plus répétés, y compris J, 9, I et E. Les actions restent disponibles dans leurs fenêtres et leurs raccourcis clavier sont conservés.",
+      "en": "The toolbar below the map is simpler: topics available in Talk to inhabitants are no longer repeated there, including J, 9, I and E. Actions remain available in their windows and their keyboard shortcuts are preserved."
+    },
     {
       "version": "0.20.8",
       "fr": "Une interface recentrée sur le jeu : carte, état du voyageur et petite barre de touches carrées. F ouvre les actions en toutes lettres ; G, les sujets de conversation avec les habitants ; 6, les transports. Les règles détaillées passent dans l’aide, les informations techniques et crédits dans des volets fermés. Les récits et messages sont raccourcis ; les attentes et échecs restent signalés. Sur mobile, la carte et ses commandes viennent en premier. Les coûts et sauvegardes sont inchangés.",

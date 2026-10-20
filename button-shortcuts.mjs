@@ -102,6 +102,14 @@ export function setupButtonShortcuts(t) {
   function label(key) {
     return key.length === 1 ? key : t(`shortcutKey.${key}`);
   }
+  function available(element) {
+    if (element.hidden || element.closest("[inert]")) return false;
+    const hidden = element.closest("[hidden]");
+    if (!hidden) return Boolean(element.getClientRects().length);
+    if (hidden !== element.parentElement || !hidden.dataset.shortcutSources) return false;
+    const toolbar = document.getElementById(hidden.dataset.shortcutSources);
+    return Boolean(toolbar?.getClientRects().length && !toolbar.closest("[hidden],[inert]"));
+  }
   function refresh() {
     for (const scope of [document.querySelector("main"), ...document.querySelectorAll("dialog")]) {
       for (const element of scope.querySelectorAll("button")) {
@@ -179,11 +187,9 @@ export function setupButtonShortcuts(t) {
       dialogs.at(-1) ?? document.querySelector("main");
     if (scope.hasAttribute("data-native-controls")) return;
     if (key === "Space" && scope.id === "music-dialog") return;
-    const match = bindings(scope).find(binding => binding.key === key &&
-      binding.button.element.getClientRects().length && !binding.button.element.closest("[hidden],[inert]"));
+    const match = bindings(scope).find(binding => binding.key === key && available(binding.button.element));
     const button = match?.button.element;
-    if (!button || button.disabled || !button.getClientRects().length ||
-        button.closest("[hidden],[inert]")) return;
+    if (!button || button.disabled) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     hide();

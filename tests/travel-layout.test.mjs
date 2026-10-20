@@ -51,8 +51,7 @@ test("travel actions are a compact wrapping toolbar immediately below the map, n
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const toolbar = html.slice(html.indexOf('<nav id="travel-toolbar"'), html.indexOf('</nav>', html.indexOf('<nav id="travel-toolbar"')));
   assert.match(html, /id="ascii-map"[^>]*><\/pre>\s*<\/div>\s*<nav id="travel-toolbar"/);
-  for (const id of ["rest-travel", "sleep-travel", "eat-travel", "open-town",
-    "open-survival-choices", "open-trail", "open-journey-world", "save-travel"]) {
+  for (const id of ["rest-travel", "open-survival-choices", "open-conversation", "save-travel"]) {
     assert.match(toolbar, new RegExp(`id="${id}"`));
     assert.equal(html.split(`id="${id}"`).length - 1, 1);
   }
@@ -61,4 +60,17 @@ test("travel actions are a compact wrapping toolbar immediately below the map, n
   const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
   assert.match(css, /\.travel-toolbar:not\(\[hidden\]\)[^}]*flex-wrap: wrap/);
   assert.match(css, /\.travel-toolbar button\s*\{[^}]*width: 36px; height: 36px;/);
+});
+
+test("conversation topics including J, 9 and I are absent from the toolbar but retain action sources", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const toolbar = html.slice(html.indexOf('<nav id="travel-toolbar"'), html.indexOf('</nav>', html.indexOf('<nav id="travel-toolbar"')));
+  const sources = html.match(/<div data-shortcut-sources="travel-toolbar" hidden>([\s\S]*?)<\/div>/)?.[1];
+  assert.ok(sources);
+  for (const id of ["sleep-travel", "eat-travel", "open-town", "open-earn-money",
+    "open-trail", "open-abandoned-journals", "open-journey-world", "open-hint"]) {
+    assert.doesNotMatch(toolbar, new RegExp(`id="${id}"`));
+    assert.match(sources, new RegExp(`id="${id}"`));
+    assert.equal(html.split(`id="${id}"`).length - 1, 1);
+  }
 });

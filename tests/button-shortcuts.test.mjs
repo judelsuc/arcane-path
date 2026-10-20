@@ -101,6 +101,78 @@ test("directions, reveal, rhythm and photo controls retain meaningful bindings",
   assert.throws(() => buttonBindings(Array.from({ length: 37 }, () => ({}))), /Too many/);
 });
 
+test("hidden conversation action sources retain direct keys only while the map toolbar is active", t => {
+  const original = { document: globalThis.document, window: globalThis.window,
+    MutationObserver: globalThis.MutationObserver };
+  t.after(() => Object.assign(globalThis, original));
+  const sources = { dataset: { shortcutSources: "travel-toolbar" } };
+  const toolbar = { hidden: false, inert: false,
+    getClientRects() { return this.hidden ? [] : [{}]; },
+    closest() { return this.hidden || this.inert ? this : null; } };
+  const keys = { "sleep-travel": "H", "eat-travel": "E", "open-town": "T",
+    "open-earn-money": "B", "open-trail": "J", "open-abandoned-journals": "9",
+    "open-journey-world": "6", "open-hint": "I" };
+  const buttons = Object.keys(keys).map(id => ({
+    id, dataset: {}, parentElement: sources, hidden: false, disabled: false, clicks: 0,
+    title: "", childNodes: [{ textContent: id }], caption: null, inert: false,
+    hasAttribute() { return false; },
+    setAttribute() {},
+    querySelector() { return this.caption; },
+    append(node) { this.caption = node; this.childNodes.push(node); },
+    getClientRects() { return []; },
+    closest(selector) {
+      if (selector === "form" || selector === "#travel-toolbar") return null;
+      if (selector === "[inert]") return this.inert ? this : null;
+      if (selector === "[hidden]") return this.hidden ? this : sources;
+      return null;
+    },
+    click() { this.clicks++; },
+  }));
+  const main = { hasAttribute: () => false, querySelectorAll: () => buttons };
+  const events = {};
+  Object.assign(globalThis, {
+    document: { body: { append() {} },
+      createElement: () => ({ setAttribute() {}, style: {} }),
+      querySelector: () => main, querySelectorAll: () => [],
+      getElementById: id => id === "travel-toolbar" ? toolbar : null,
+      addEventListener: (name, callback) => { events[name] = callback; } },
+    window: { addEventListener() {} },
+    MutationObserver: class { observe() {} },
+  });
+  setupButtonShortcuts((key, args) => args?.action ?? key);
+  function press(key) {
+    let prevented = false;
+    events.keydown({ key, code: /^\d$/.test(key) ? `Digit${key}` : `Key${key}`,
+      target: { closest: () => null }, preventDefault() { prevented = true; },
+      stopImmediatePropagation() {} });
+    return prevented;
+  }
+  for (const button of buttons) {
+    assert.equal(press(keys[button.id]), true, button.id);
+    assert.equal(button.clicks, 1);
+    button.disabled = true;
+    assert.equal(press(keys[button.id]), false);
+    button.disabled = false;
+    button.hidden = true;
+    assert.equal(press(keys[button.id]), false);
+    button.hidden = false;
+    button.inert = true;
+    assert.equal(press(keys[button.id]), false);
+    button.inert = false;
+    toolbar.hidden = true;
+    assert.equal(press(keys[button.id]), false);
+    toolbar.hidden = false;
+    toolbar.inert = true;
+    assert.equal(press(keys[button.id]), false);
+    toolbar.inert = false;
+    assert.equal(button.clicks, 1);
+  }
+  sources.dataset.shortcutSources = "missing-toolbar";
+  assert.equal(press("J"), false);
+  delete sources.dataset.shortcutSources;
+  assert.equal(press("J"), false, "ordinary hidden buttons cannot be activated");
+});
+
 test("single keys follow the keyboard layout and retain the legacy Alt+Shift alias", () => {
   const event = { altKey: true, shiftKey: true, code: "KeyS", key: "Í" };
   assert.equal(shortcutCode(event), "S");

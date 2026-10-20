@@ -1,5 +1,15 @@
 # Requirements tracked outside the design PDF
 
+## R-174 - No conversation-topic duplicates on the main toolbar
+
+- Keep G as the main toolbar entry for talking to inhabitants. Remove the
+  individual parent, clues, notebooks, shelter, food, work, transport and
+  local-place controls from that bar, explicitly including J, 9 and I.
+- Preserve conversation topics, full-word cell actions and existing direct
+  shortcuts with their current availability, costs and action controllers.
+- Removing duplicate presentation must not hide or disable the corresponding
+  conversation choices or introduce invisible keyboard-focus stops.
+
 ## R-173 - Game-first presentation and optional explanations
 
 - Present a classic map-first game screen: compact needs/status HUD, square
