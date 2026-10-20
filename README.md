@@ -107,13 +107,17 @@ Les prompts musicaux 8-bit et sons de jeu sont dans [audio-prompts](./audio-prom
 
 ## Couverture personnelle du carnet
 
-Le nom fictif est propose par defaut comme inspiration des nouvelles biographies
-et des evenements, avec une case permettant de ne pas l'envoyer a OVH.
-Une biographie deja conservee ne change que via **Regenerer avec le nom fictif**
-et confirmation. Les nouveaux textes d'evenements evoluent par jour de jeu,
+Le recit du depart est ecrit automatiquement a partir du nom fictif du personnage,
+sans bouton de regeneration. Une ancienne biographie sans cette inspiration est
+remplacee une seule fois ; les relectures reutilisent ensuite le recit conserve.
+Un message visible « Veuillez patienter » et un indicateur accompagnent l'ecriture ;
+le voyage ne peut pas commencer avant son terme. En cas d'echec explicite, le recit
+d'origine permet de continuer. La case de personnalisation concerne les evenements
+uniquement. Les nouveaux textes d'evenements evoluent par jour de jeu,
 sans modifier leurs effets ni remplacer une introduction deja affichee.
 Un indicateur visible signale les textes en cours de generation (sans animation
-si le navigateur demande de reduire les mouvements). Les biographies generees
+si le navigateur demande de reduire les mouvements). Tous les recits de depart,
+generes ou d'origine,
 sont ajoutees au carnet en francais et en anglais ; une regeneration conserve
 les anciennes pages. Les evenements y gardent exactement l'introduction affichee,
 avec leurs effets reels. Ces pages font aussi partie du PDF et du carnet partage.

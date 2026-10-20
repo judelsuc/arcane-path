@@ -263,12 +263,17 @@ class LiveNarrative:
                               (owner, brief)).fetchone() if brief in (BRIEF_ID, CLOSING_BRIEF, COVER_BRIEF) and "regenerate" not in data else
                    db.execute("SELECT * FROM wording WHERE owner=? AND brief=? AND version=?",
                               (owner, brief, version)).fetchone())
+            if brief == BRIEF_ID and "regenerate" not in data:
+                if row is not None and json.loads(row["input"] or "{}").get("characterName") != record["state"]["name"]:
+                    version += "-named-1"
+                    row = db.execute("SELECT * FROM wording WHERE owner=? AND brief=? AND version=?",
+                                     (owner, brief, version)).fetchone()
             if row is None and self.writer and not self.closed:
                 queued = db.execute("SELECT COUNT(*) FROM wording WHERE status IN ('queued','running')").fetchone()[0]
                 if queued >= QUEUE_LIMIT:
                     raise JourneyCapacity("Live wording queue is full; authored text remains available.")
                 payload = opening_brief(record, self.journeys.chunks,
-                                        name_flavour=data.get("nameFlavour") is True) if brief == BRIEF_ID else closing
+                                        name_flavour=True) if brief == BRIEF_ID else closing
                 if brief == COVER_BRIEF:
                     opening = opening_brief(record, self.journeys.chunks)
                     payload = {key: opening[key] for key in
@@ -327,7 +332,7 @@ class LiveNarrative:
                     closing = row["brief"] == CLOSING_BRIEF
                     cover = row["brief"] == COVER_BRIEF
                     base_version = version_for(row["brief"])
-                    regeneration = story and re.fullmatch(re.escape(base_version) + r"-regenerate-[a-f0-9]{32}", row["version"])
+                    regeneration = story and re.fullmatch(re.escape(base_version) + r"-(?:regenerate-[a-f0-9]{32}|named-1)", row["version"])
                     contextual = row["brief"].startswith("event.") and re.fullmatch(
                         re.escape(base_version) + r"-context-1-day-\d+-named-[01]", row["version"])
                     if row["version"] != base_version and not (regeneration or contextual) or row["brief"] not in CATALOGUE and not (story or closing or cover):

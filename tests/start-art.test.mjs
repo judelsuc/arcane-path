@@ -41,7 +41,8 @@ for (const language of ["en", "fr"]) {
     image.handlers.load();
     assert.equal(doc.querySelector("#title-daily-art").hidden, false);
     assert.equal(doc.querySelector(".title-art").hidden, true);
-    assert.match(doc.querySelector("#title-art-credit").textContent, /2026-10-19.*OVH SDXL/);
+    assert.match(doc.querySelector("#title-art-credit").textContent, /2026-10-19/);
+    assert.doesNotMatch(doc.querySelector("#title-art-credit").textContent, /OVH|SDXL/);
     assert.ok(image.alt.length > 20);
     assert.equal(doc.querySelector("#title-art-status").hidden, true);
   });

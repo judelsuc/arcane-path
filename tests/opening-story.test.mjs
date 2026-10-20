@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createLiveNarrative, OPENING_STORY } from "../live-narrative.mjs";
 import { setupOpeningStory } from "../opening-story-ui.mjs";
-import { translate } from "../i18n.mjs";
+import { translate, translations } from "../i18n.mjs";
 
 const flush = () => new Promise(resolve => setImmediate(resolve));
 const state = { name: "PRIVATE", notes: "SECRET", col: 12, row: 34,
@@ -42,11 +42,16 @@ for (const language of ["en", "fr"]) {
     ui.open();
     assert.equal(started, 0);
     assert.ok(doc.querySelector("#opening-story-dialog").open);
-    assert.match(doc.querySelector("#opening-story-text").textContent, /Camille/);
+    assert.equal(doc.querySelector("#opening-story-text").hidden, true);
+    assert.equal(doc.querySelector("#opening-story-text").textContent, "");
+    assert.equal(doc.querySelector("#opening-story-continue").disabled, true);
+    doc.querySelector("#opening-story-continue").handlers.click();
+    assert.equal(started, 0);
+    assert.match(doc.querySelector("#opening-story-status").textContent, language === "fr" ? /PRIVATE.*patienter/ : /PRIVATE.*wait/);
     assert.equal(requests.length, 1);
     assert.equal(doc.querySelector("#opening-story-status").ariaBusy, "true");
     assert.deepEqual(JSON.parse(requests[0][1].body), {
-      journey: state.serverJourney.id, brief: OPENING_STORY,
+      journey: state.serverJourney.id, brief: OPENING_STORY, nameFlavour: true,
     });
     assert.ok(!requests[0][1].body.includes("PRIVATE"));
     let prevented = false;
@@ -58,6 +63,8 @@ for (const language of ["en", "fr"]) {
     await flush();
     assert.equal(doc.querySelector("#opening-story-text").textContent, generated[language]);
     assert.equal(doc.querySelector("#opening-story-status").ariaBusy, "false");
+    assert.equal(doc.querySelector("#opening-story-text").hidden, false);
+    assert.equal(doc.querySelector("#opening-story-continue").disabled, false);
     assert.deepEqual(journaled, [{ owner: state, wording: generated }]);
     assert.equal(started, 0);
     doc.querySelector("#opening-story-continue").handlers.click();
@@ -114,9 +121,7 @@ test("explicit regeneration sends stable consent, preserves old prose while pend
   client.reset();
 });
 
-test("regenerate button requires confirmation, persists consent and makes one explicit request", async t => {
-  const before = globalThis.confirm;
-  t.after(() => { globalThis.confirm = before; });
+test("failed or local opening journals the original bilingual pretext without a manual generation action", async () => {
   class Element {
     open = false; handlers = {};
     addEventListener(type, handler) { this.handlers[type] = handler; }
@@ -128,23 +133,38 @@ test("regenerate button requires confirmation, persists consent and makes one ex
     if (!nodes.has(key)) nodes.set(key, new Element());
     return nodes.get(key);
   } };
-  let current = { ...state, name: "Tom Sawyer" }, calls = 0, enabled = 0;
+  const journaled = [];
+  let resolve;
+  const narrative = createLiveNarrative({ fetcher: async () => new Promise(done => { resolve = done; }) });
   const ui = setupOpeningStory((key, args) => translate("en", key, args), {
-    doc, context: () => current, onContinue() {},
-    onNameConsent() { enabled++; current = { ...current, storyNameFlavour: true }; return current; },
-    narrative: { subscribe() {}, prefetch() {}, snapshot: () => generated, pending: () => false,
-      status: () => "Ready", regenerateOpening(value) { calls++; assert.equal(value.storyNameFlavour, true); } },
+    doc, context: () => state, onContinue() {}, narrative,
+    onJournal: (owner, text, generated) => { journaled.push({ text, generated }); },
   });
   ui.open(false);
-  globalThis.confirm = () => false;
-  doc.querySelector("#opening-story-regenerate").handlers.click();
-  assert.equal(enabled, 0);
-  globalThis.confirm = message => { assert.match(message, /Tom Sawyer/); return true; };
-  doc.querySelector("#opening-story-regenerate").handlers.click();
-  assert.equal(enabled, 1);
-  assert.equal(calls, 1);
+  assert.equal(doc.querySelector("#opening-story-continue").disabled, true);
+  let prevented = false;
+  doc.querySelector("#opening-story-dialog").handlers.cancel({ preventDefault() { prevented = true; } });
+  assert.equal(prevented, true);
+  await flush();
+  assert.equal(journaled.length, 0);
+  resolve({ ok: true, json: async () => ({ enabled: true, brief: OPENING_STORY,
+    status: "failed", text: null, error: "Test failure" }) });
+  await flush();
+  assert.equal(doc.querySelector("#opening-story-continue").disabled, false);
+  assert.equal(doc.querySelector("#opening-story-status").ariaBusy, "false");
+  assert.match(doc.querySelector("#opening-story-status").textContent, /failed/);
+  assert.equal(journaled.length, 1);
+  assert.equal(journaled[0].generated, false);
+  assert.match(journaled[0].text.en, /Camille/);
+  assert.match(journaled[0].text.fr, /Camille/);
+  ui.localize();
+  await flush();
+  assert.equal(journaled.length, 1);
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   assert.match(html, /id="story-name-flavour"[^>]*\bchecked\b/);
+  assert.doesNotMatch(html, /id="opening-story-regenerate"/);
+  assert.match(html, /<p id="opening-story-status" role="status" aria-live="polite">/);
+  assert.doesNotMatch(html, /id="opening-story-status"[^>]*window-help-text/);
 });
 
 test("main journey opens story after tarot and before play, including zero-minute resume", () => {
@@ -154,4 +174,15 @@ test("main journey opens story after tarot and before play, including zero-minut
   assert.match(ui, /openingStory\.prepare\(\);\s*state = migrateHealth/);
   assert.match(ui, /openingStory\.reset\(\)/);
   assert.match(ui, /openingStory\.localize\(\)/);
+});
+
+test("player messages have no provider name or cache terminology", () => {
+  for (const language of ["fr", "en"]) {
+    for (const text of Object.values(translations[language])) assert.doesNotMatch(text, /\bOVH\b/);
+    const client = createLiveNarrative();
+    for (const message of [client.status({}, OPENING_STORY, language),
+      client.introductionStatus({}, "event.coins", language, true)]) {
+      assert.doesNotMatch(message, /\bOVH\b|\bcache\b|\bcached\b/);
+    }
+  }
 });

@@ -1,6 +1,11 @@
 {
-  "version": "0.20.3",
+  "version": "0.20.4",
   "entries": [
+    {
+      "version": "0.20.4",
+      "fr": "Le récit du départ est écrit automatiquement avec le nom fictif du personnage. Un ancien récit sans cette inspiration est remplacé une seule fois, sans bouton à presser. Un indicateur bien visible demande de patienter avant de commencer ; en cas d'échec, le récit d'origine permet de continuer. Le récit est conservé dans le carnet, qu'il soit généré ou non. Les messages destinés au joueur n'affichent plus le prestataire technique ni de jargon de cache.",
+      "en": "The opening story is written automatically using the character's fictional name. An older story without that inspiration is replaced once, with no button to press. A prominent indicator asks you to wait before beginning; if writing fails, the original story lets you continue. The story is kept in the journal whether generated or not. Player messages no longer name the technical provider or use cache jargon."
+    },
     {
       "version": "0.20.3",
       "fr": "La personnalisation par nom fictif est cochée par défaut pour les nouveaux personnages et reste désactivable. La biographie peut être régénérée après confirmation, sans changer le parent ni la progression ; le texte précédent reste conservé en cas d'échec. Les événements disposent de trois nouvelles formulations par type et jour de jeu, inspirées du contexte enregistré et du nom autorisé. Les références littéraires reconnues peuvent inspirer une voix originale, sans reprendre de passages ni de faits d'autres récits. Un indicateur animé signale les textes en cours de génération, avec respect de la préférence de mouvement réduit. Les biographies générées et les introductions d'événements effectivement affichées sont conservées dans le carnet, le PDF et le carnet partagé.",

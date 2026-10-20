@@ -119,7 +119,7 @@ test("ongoing journeys and placement cannot queue endings; local endings retain 
   narrative.prefetch(local, [CLOSING_STORY]);
   await flush();
   assert.equal(calls, 0);
-  assert.match(narrative.status(local, CLOSING_STORY, "en"), /local journey/);
+  assert.match(narrative.status(local, CLOSING_STORY, "en"), /unavailable.*saved journey/);
 });
 
 test("failed or truncated closing prose falls back explicitly without automatic retries", async () => {
@@ -166,7 +166,7 @@ for (const language of ["fr", "en"]) {
       const authored = doc.querySelector("#closing-story-text").textContent;
       assert.equal(authored, closingStoryText(state, tr));
       assert.ok(authored.includes("309.00"));
-      assert.match(doc.querySelector("#closing-story-status").textContent, /préparation|prepared/);
+      assert.match(doc.querySelector("#closing-story-status").textContent, /patienter|please wait/);
       resolve({ ok: true, json: async () => ({
         brief: CLOSING_STORY, enabled: true, status: "ready", text: generated,
       }) });

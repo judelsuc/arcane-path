@@ -15,24 +15,24 @@ export function eventWordingContext(state) {
 
 const messages = {
   en: {
-    pending: "Optional OVH wording is being prepared. Authored text remains available.",
-    ready: "Generated OVH wording is cached.",
-    usingGenerated: "AI-generated introduction (OVH), version {number}/{total}. Game effects are unchanged.",
+    pending: "Writing the text—please wait. The existing text remains available.",
+    ready: "Your generated text is ready.",
+    usingGenerated: "AI-generated introduction, version {number}/{total}. Game effects are unchanged.",
     authoredPending: "Authored introduction shown. Generated wording is still being prepared for later encounters.",
     authoredReady: "Authored introduction shown for this encounter. Generated wording is ready for the next encounter.",
-    failed: "Optional OVH wording failed. Authored text retained; no automatic retry.",
-    disabled: "Optional OVH wording is disabled. Authored text is in use.",
-    local: "This local journey has no server capability. Authored text is in use.",
+    failed: "Text generation failed. The original text is retained; no automatic retry.",
+    disabled: "Text generation is unavailable. The original text is shown.",
+    local: "Generated text is unavailable for this saved journey. The original text is shown.",
   },
   fr: {
-    pending: "La formulation OVH facultative est en préparation. Le texte écrit reste disponible.",
-    ready: "La formulation générée OVH est en cache.",
-    usingGenerated: "Introduction générée par IA (OVH), version {number}/{total}. Les effets du jeu sont inchangés.",
+    pending: "Écriture du texte en cours — veuillez patienter. Le texte existant reste disponible.",
+    ready: "Votre texte généré est prêt.",
+    usingGenerated: "Introduction générée par IA, version {number}/{total}. Les effets du jeu sont inchangés.",
     authoredPending: "Introduction écrite affichée. La formulation générée est en préparation pour de prochaines rencontres.",
     authoredReady: "Introduction écrite affichée pour cette rencontre. La formulation générée est prête pour la prochaine rencontre.",
-    failed: "Échec de la formulation OVH facultative. Texte écrit conservé ; aucun nouvel essai automatique.",
-    disabled: "La formulation OVH facultative est désactivée. Le texte écrit est utilisé.",
-    local: "Ce voyage local n'a pas d'autorisation serveur. Le texte écrit est utilisé.",
+    failed: "La génération du texte a échoué. Le texte d'origine est conservé ; aucun nouvel essai automatique.",
+    disabled: "La génération du texte est indisponible. Le texte d'origine est affiché.",
+    local: "Le texte généré n'est pas disponible pour cette sauvegarde. Le texte d'origine est affiché.",
   },
 };
 
@@ -134,7 +134,7 @@ export function createLiveNarrative({
         if (!records.has(key) && !waiting.has(key)) {
           const context = id.startsWith("event.") ? eventWordingContext(state) : null;
           requests.set(key, { id, ...(context ? { context } : {}),
-            ...((id === OPENING_STORY || context) && state.storyNameFlavour === true ? { nameFlavour: true } : {}) });
+            ...(id === OPENING_STORY || context && state.storyNameFlavour === true ? { nameFlavour: true } : {}) });
           records.set(key, { status: "queued" });
           waiting.add(key);
         }

@@ -66,21 +66,21 @@ existing opening stories. This implementation is not a deployment claim.
 
 ## Recognizable-name backstories (R-158)
 
-New journey setup includes an unchecked optional disclosure/checkbox allowing
-the saved character name to reach OVH for the opening story only. With this
-opt-in, the model may recognize a well-known character/public-persona name and
-use subtle, original generic traits as narrative flavour. No local matching
-list is used. The browser sends only `nameFlavour: true`; the server takes the
-name from immutable genesis, never an arbitrary client prompt.
-Without opt-in (including older saves), names remain excluded. Ordinary event
-and hospitality briefs never receive a name. Format and parent-name checks do
-not prove recognition, semantic fidelity or originality; authored fallback,
-single-attempt accounting and the immutable earliest saved story still apply.
+The latest approved correction automatically includes the saved fictional name
+in every opening biography request, without a manual regeneration action.
+The server takes the name from immutable genesis, never arbitrary client prose.
+An older biography whose persisted input lacks that name gets one named
+replacement under a stable `-named-1` revision. Historical rows are retained;
+repeated requests, rereads and prompt changes reuse the latest named result,
+including a failed named attempt, rather than repeatedly making paid calls.
+The event-name checkbox now controls encounters only; hospitality remains unnamed.
+The model may recognize a well-known reference and use original generic traits,
+but format and parent-name checks do not prove recognition or semantic quality.
 
 Keep the child traveller and saved parent/motive/investigation authoritative.
 Do not copy dialogue or lyrics, invent sensitive personal attributes, or change
-statistics/powers. Uncertain recognition leaves an ordinary story. Existing
-saved stories are immutable and must not be regenerated for this feature.
+statistics/powers. Uncertain recognition leaves an ordinary story. Previously
+named stories are reused; historical generic prose is not deleted by the upgrade.
 
 ## Future map tile-set generation (R-156, not implemented)
 
@@ -272,9 +272,13 @@ These source changes have no effect on an already deployed proxy.
 ### Player experience and public boundary
 
 - Text-generation statuses have a visible spinner and `aria-busy`; reduced-motion
-  preferences keep the indicator static. Existing prose remains readable while
-  generation is pending, and completion/failure clears the busy indicator.
-- Generated biographies are automatically pinned as two complete FR/EN notebook
+  preferences keep the indicator static. The opening-story wait message is
+  outside `.window-help-text`, which the Help system intentionally hides. It
+  names the character and asks the player to wait; pending prose is hidden and
+  Continue/Escape cannot bypass generation. Completion or explicit failure clears
+  the busy state; failure shows preserved/original text and permits continuing.
+  Player-facing messages omit the provider name and technical cache terminology.
+- All opening biographies, generated or authored, are pinned as complete FR/EN notebook
   entries, illustrated with the existing birth tarot artwork. Content-addressed
   IDs deduplicate rereads; explicit new revisions add pages without overwriting
   earlier text or player notes. Journal storage errors are surfaced and block
@@ -284,15 +288,12 @@ These source changes have no effect on an already deployed proxy.
   explicit authored fallback). Resume, journal pins, PDF and shared snapshots
   retain that wording alongside the unchanged numerical effects, rather than
   looking up newly available generated text. Existing event saves remain valid.
-- **20 October named-voice update:** the fictional-name checkbox is checked by
-  default for new characters, visibly describes OVH processing and can be
-  unchecked. Existing saved preferences are not silently changed. The biography
-  dialog offers explicit confirmed regeneration, also enabling name-inspired
-  future events for that local save. A stable random request ID makes polling
-  idempotent; each requested revision remains a separate database row. The latest
-  successful story remains readable while a replacement is pending or failed.
-  Rereading/resuming never requests another revision. Regeneration uses the
-  canonical saved name, parent and departure facts, not client free text.
+- **20 October corrected named-voice flow:** biography name inspiration is
+  automatic, including a one-time upgrade of unnamed legacy prose. The checkbox,
+  checked by default for new characters, now controls future events only.
+  Existing event preferences are not silently changed. The earlier manual
+  regeneration API remains compatible with old clients, but has no player-facing
+  button. Saved parent/progression facts and historical prose remain unchanged.
 - For a recognized fictional reference, prompts now ask for at least two
   noticeable original personality traits. Public-domain literary references may
   inspire broad qualities of the original author's voice (for Tom Sawyer:

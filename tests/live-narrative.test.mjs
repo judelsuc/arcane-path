@@ -99,7 +99,7 @@ test("pending polls durable result, failures are explicit and never retried", as
   client.prefetch(state, ["event.coins"]);
   await flush();
   assert.equal(client.snapshot(state, "event.coins"), null);
-  assert.match(client.status(state, "event.coins", "en"), /prepared/);
+  assert.match(client.status(state, "event.coins", "en"), /please wait/);
   assert.equal(jobs.length, 1);
   jobs.shift()();
   await flush();
@@ -112,7 +112,7 @@ test("pending polls durable result, failures are explicit and never retried", as
   failing.prefetch(state, ["event.food"]);
   await flush();
   assert.equal(failures, 1);
-  assert.match(failing.status(state, "event.food", "fr"), /Échec/);
+  assert.match(failing.status(state, "event.food", "fr"), /échoué/);
 });
 
 test("three cached bilingual introductions rotate without new calls or mutable snapshots", async () => {
@@ -173,11 +173,11 @@ test("disabled mode stops prefetch without a key; local saves never request", as
   } });
   client.prefetch({}, Object.keys(NARRATIVE_BRIEFS));
   assert.equal(calls, 0);
-  assert.match(client.status({}, "event.food", "en"), /local journey/);
+  assert.match(client.status({}, "event.food", "en"), /unavailable.*saved journey/);
   client.prefetch(state, Object.keys(NARRATIVE_BRIEFS));
   await flush();
   assert.equal(calls, 1);
-  assert.match(client.status(state, "event.food", "en"), /disabled/);
+  assert.match(client.status(state, "event.food", "en"), /unavailable/);
   client.reset();
 });
 
@@ -190,7 +190,7 @@ test("ownership switch ignores stale responses and never shares generated wordin
   release(reply("event.coins"));
   await flush();
   assert.equal(client.snapshot(other, "event.coins"), null);
-  assert.match(client.status(other, "event.coins", "en"), /prepared/);
+  assert.match(client.status(other, "event.coins", "en"), /please wait/);
 });
 
 test("registry excludes all story events, dog choices and lore; NPC authored speech is bilingual", () => {
