@@ -33,7 +33,7 @@ test("journal subtitle uses only canonical server facts, stays bilingual and rej
   invalid.prefetch(state, [JOURNAL_SUBTITLE]);
   await flush();
   assert.equal(invalid.snapshot(state, JOURNAL_SUBTITLE), null);
-  assert.match(invalid.status(state, JOURNAL_SUBTITLE, "en"), /failed/);
+  assert.match(invalid.status(state, JOURNAL_SUBTITLE, "en"), /could not be written/);
 });
 
 test("only registered public ids and owner capability are sent; stable bilingual snapshot", async () => {
@@ -159,7 +159,7 @@ test("invalid or oversized variant sets fail explicitly without automatic retrie
     client.prefetch(state, ["event.coins"]);
     await flush();
     assert.equal(client.snapshot(state, "event.coins"), null);
-    assert.match(client.status(state, "event.coins", "en"), /failed/);
+    assert.match(client.status(state, "event.coins", "en"), /could not be written/);
     client.prefetch(state, ["event.coins"]);
     assert.equal(calls, 1);
   }
@@ -237,7 +237,7 @@ test("dream factory rejects incomplete version sets without automatic retries", 
   client.prefetch(state, [LOST_PLAYER_DREAM]);
   await flush();
   assert.equal(client.snapshot(state, LOST_PLAYER_DREAM), null);
-  assert.match(client.status(state, LOST_PLAYER_DREAM, "en"), /failed/);
+  assert.match(client.status(state, LOST_PLAYER_DREAM, "en"), /could not be written/);
   client.prefetch(state, [LOST_PLAYER_DREAM]);
   await flush();
   assert.equal(calls, 1);
