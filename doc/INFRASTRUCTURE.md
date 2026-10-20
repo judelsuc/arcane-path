@@ -1,5 +1,26 @@
 # Infrastructure OVHcloud - rapport du 18 octobre 2026
 
+## Personal journal cover delivery (20 October 2026)
+
+- Game 0.20.1, production commit `94080ee3592864052ef55910dc73f2d575dda45b`.
+  The administrator explicitly approved the existing free symbolic
+  tarot/scenery cover independently of postponed photo-based generation.
+- Enabled the separate journal-art token-file environment setting; the
+  shared daily title-screen illustration is not reused as a personal cover.
+  Added one private, durable bilingual departure-based subtitle per owner.
+- Exact production validation: 1,018 JavaScript tests and 50 focused Python
+  tests passed. Browser fixture verified a loaded personal cover image and
+  live EN/FR subtitle updates. PDF cover data/image wiring passes regressions;
+  the hidden browser stalled during the full canvas PDF export, so that
+  browser export is not counted as validated.
+- Nine runtime files installed with a private pre-update backup; existing
+  journey genesis unchanged. Public updated assets matched on both domains.
+  Backup: `/var/lib/arcane-path/backups/journal-cover-94080ee35928`.
+- A separate production QA journey generated one real normalized 1024 x 1024
+  WebP cover (181,524 bytes) and one bilingual subtitle. Repeated requests
+  retained the same text with one text-provider attempt and one cover row.
+  No private player notes, capabilities or future route stages were sent.
+
 ## SSH recovery and approved access policy (20 October 2026)
 
 The administrator approved SSH from any source IP with public-key
