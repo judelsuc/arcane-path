@@ -1,5 +1,60 @@
 # Infrastructure OVHcloud - rapport du 19 octobre 2026
 
+## Placement chronicles, optional companions and overnight encounter art (20 October 2026)
+
+- Game 0.20.12, runtime `c80b085e8eefc8da0a1e3c720fd2d12e4fbbf7d8`.
+  The reported journey ended with the third placement, not death. Placement
+  had been excluded from generated closing prose, explaining the absence of
+  closing requests; it now requests the back-cover chronicle too. No death
+  card is shown for placement.
+- The closing brief may include an adopted dog's saved fictional name and
+  recorded settlement visits. No dog, an unnamed adopted dog and a named dog
+  are distinct cases. Mentioning a dog/place is prompt guidance, never an
+  output-acceptance gate. An otherwise valid story omitting those details
+  remains available. A stray encounter alone is not adoption.
+- New saves retain up to 128 distinct mapped settlement visits. Older saves
+  recover only named origins and actual settlement hospitality attempts;
+  suggested towns are not visits. The authored back cover is titled as
+  retained traces and no longer concatenates event/rules text. Generated
+  prose still has no gameplay effects and cannot prove semantic fidelity.
+- Individual event, guidance-dream and hospitality images use private
+  capability-scoped occurrence assignments. Images expire after seven real
+  days, retain an old assignment while renewal is pending, and never replace
+  the first picture already pinned into a notebook.
+- Installed and enabled `arcane-encounter-art.timer`: Tuesday 23:00
+  Europe/Paris, next trigger **20 October 2026 at 21:00 UTC / 23:00 Paris**.
+  No missed-run catch-up. The service was inactive with no start timestamp;
+  the image bank contained zero images before the scheduled batch.
+  Sequential generation has no item-count maximum, a seven-hour window,
+  15-second spacing, disk bounds and an exclusive lock. The configured
+  image model's zero-USD offer was verified; every actual call checks it
+  again and stops on provider/free-offer failure without paid fallback.
+  `TimeoutStartSec=7h5min` bounds the oneshot service.
+- HTTPS required an explicit `/api/encounter-art` POST proxy and a 16 KiB
+  `/api/live-narrative` body override. These are installed and regression
+  tested; public checks on apex/www confirmed capability rejection as JSON
+  and requests larger than the former 4 KiB reaching narrative validation.
+  Nginx configuration and both systemd units passed native verification.
+- Development: 1,148 JavaScript tests, 39 live-narrative, 27 image-service,
+  13 travel-server and 12 HTTPS-configuration Python tests passed.
+  Exact production: 1,072 JavaScript, 39 live-narrative, 27 image-service
+  and 11 HTTPS-configuration tests passed. Browser fixtures checked a
+  solitary placement's bilingual back cover/PDF, decoded individual event
+  artwork, folded credits, French/English relocalization and a 208 px image
+  at a 375 px viewport, without modifying gameplay or real saves.
+- Isolated real-provider prose fixtures exercised named-dog and solitary
+  inputs, without reading or changing private journeys. Both were accepted
+  in the first check; a later style-refinement check returned one valid
+  named-dog response and one invalid provider response. No automatic retry
+  or dog-mention rejection was introduced. Provider prose still needs human
+  judgment; existing failure status/authored fallback remain authoritative.
+- Guarded runtime deployment, backups, all SQLite integrity checks and
+  nine unchanged journey genesis checksums passed. Public runtime hashes
+  and API health were verified on apex and www. Backups:
+  `/var/lib/arcane-path/backups/conversation-toolbar-45bf009ba5f4`
+  and `/var/lib/arcane-path/backups/conversation-toolbar-c80b085e8eef`.
+  The first also retains pre-change nginx and encounter-service files.
+
 ## Epic back cover and death-popup priority (20 October 2026)
 
 - Game 0.20.11, runtime `3b8ed9b418095e12861896a70bd0057a233754b5`.
