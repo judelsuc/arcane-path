@@ -1,5 +1,29 @@
 # Infrastructure OVHcloud - rapport du 18 octobre 2026
 
+## Epic back cover and death-popup priority (20 October 2026)
+
+- Game 0.20.11, runtime `3b8ed9b418095e12861896a70bd0057a233754b5`.
+  Own and archived ended notebooks have a dedicated back-cover page for
+  the generated epic, printed last in PDF exports. Explicitly confirmed
+  rewrites preserve original ending facts, prior ready prose and stable-ID
+  request deduplication; failures do not erase the earlier chronicle.
+- Death had waited behind any open modal, including stale action windows.
+  It now closes those windows when no action is busy and opens arcane XIII
+  immediately. Placement/reunion are not deaths; acknowledgment prevents
+  repeats. Existing artwork retry and reduced-motion fade are preserved.
+- Development: 1,136 JavaScript tests passed. Exact production:
+  1,060 JavaScript and 35 live-narrative Python tests passed.
+  Production browser fixtures verified dedicated back-cover navigation,
+  generated FR/EN display, final-cover PDF input without duplicate clue text,
+  death preempting an economy window, loaded historical arcane XIII and
+  acknowledgment without reopening. Fixtures did not use real saves or
+  call the text generator.
+- Eleven runtime files including release metadata installed with baseline
+  hash checks, backup, SQLite integrity checks, nine unchanged journey
+  genesis checksums, healthy services and public hashes/API verified on
+  apex and www. Backup:
+  `/var/lib/arcane-path/backups/conversation-toolbar-3b8ed9b41809`.
+
 ## Closing journey account recovery in the personal notebook (20 October 2026)
 
 - Game 0.20.10, production runtime
