@@ -207,7 +207,9 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       image.alt = t("cluePhotoAlt");
       image.onerror = () => { if (generation === photoGeneration) paragraph(photo, t("cluePhotoMissing")); };
       photo.append(image);
-      paragraph(photo, t("contentCredit", unannotated ? { ...content, title: t("fieldClue.photo") } : content));
+      const provenance = document.createElement("div");
+      provenance.className = "technical-text";
+      paragraph(provenance, t("contentCredit", unannotated ? { ...content, title: t("fieldClue.photo") } : content));
       for (const [url, label] of [[content.sourceUrl, unannotated ? t("fieldPhotoSource") : content.title],
         [content.licenseUrl, t("contentLicense")]]) {
         const parsed = new URL(url);
@@ -217,8 +219,9 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         link.textContent = label;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
-        photo.append(link, " ");
+        provenance.append(link, " ");
       }
+      photo.append(provenance);
       pinPhoto?.(photo, content, { unannotated });
     } catch (error) {
       if (generation !== photoGeneration) return;
@@ -228,9 +231,10 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     }
   }
 
-  function paragraph(container, text, outcome = "") {
+  function paragraph(container, text, outcome = "", className = "") {
     const p = document.createElement("p");
     p.textContent = text;
+    p.className = className;
     setFeedback(p, outcome);
     container.append(p);
   }
@@ -511,6 +515,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       button.disabled = blocked || searching || !state.serverJourney;
       const help = document.createElement("details"), summary = document.createElement("summary");
       summary.textContent = t("fieldSearchHelp");
+      help.className = "window-help-text";
       help.append(summary);
       paragraph(help, t("fieldSearchCosts", rules));
       paragraph(help, t("fieldSearchSupport"));
@@ -518,13 +523,13 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       item.append(button);
       paragraph(item, t("fieldSearchCostSummary", rules));
       item.append(help);
-      if (!state.serverJourney) paragraph(item, t("fieldSearchServer"));
+      if (!state.serverJourney) paragraph(item, t("fieldSearchServer"), "", "technical-text");
       const last = trail.exploration.lastSearch;
       if (last?.stage === trail.index) {
-        if (last.destinationBased) paragraph(item, t("fieldDestinationSearch"));
+        if (last.destinationBased) paragraph(item, t("fieldDestinationSearch"), "", "window-help-text");
         paragraph(item, t(`fieldOutcome.${last.repeated ? "repeated" : last.outcome}`, last),
           !last.repeated && ["found", "sign"].includes(last.outcome) ? "success" : "failure");
-        if (last.outcome === "nothing") paragraph(item, t("fieldNothingAdvice"));
+        if (last.outcome === "nothing") paragraph(item, t("fieldNothingAdvice"), "", "window-help-text");
         if (fieldPhotoUnavailable) paragraph(item, t("fieldPhotoFallback"));
       }
       button.addEventListener("click", async () => {

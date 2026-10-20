@@ -63,15 +63,16 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     searchButton.dataset.i18n = accommodationLoading ? "accommodationCancel" : "accommodationSearch";
     searchButton.textContent = t(searchButton.dataset.i18n);
     const nearbyStatus = document.querySelector("#accommodation-status");
-    nearbyStatus.textContent = accommodationError ? t("accommodationError", { error: accommodationError })
+    nearbyStatus.textContent = accommodationError ? t("accommodationUnavailable")
       : t(accommodationLoading ? "accommodationLoading" : accommodationCancelled ? "accommodationCancelled" : accommodationResult
         ? accommodationResult.warnings.length ? "accommodationIncomplete"
           : accommodationResult.places.length ? "accommodationReady" : "accommodationEmpty"
         : "accommodationHint");
     setFeedback(nearbyStatus, accommodationError || accommodationResult?.warnings.length ? "failure"
       : accommodationLoading || !accommodationResult ? "" : accommodationResult.places.length ? "success" : "failure");
-    if (accommodationResult?.warnings.length) nearbyStatus.textContent += ` ${accommodationResult.warnings.join(" ")}`;
-    if (accommodationPartial && !accommodationLoading) nearbyStatus.textContent += ` ${t("accommodationCached")}`;
+    const diagnostics = document.querySelector("#accommodation-details");
+    diagnostics.textContent = accommodationError || accommodationResult?.warnings.join(" ") || "";
+    if (accommodationPartial) diagnostics.textContent += ` ${t("accommodationCached")}`;
     if (accommodationLoading && accommodationProgress) showAccommodationProgress();
     const nearby = document.querySelector("#accommodation-results");
     nearby.replaceChildren();
@@ -93,6 +94,8 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
         ? worship ? "accommodationWalkWorship" : "accommodationWalkLodging"
         : worship ? "accommodationHereWorship" : "accommodationHereLodging");
       const credit = document.createElement("p"), source = document.createElement("a");
+      const provenance = document.createElement("div");
+      provenance.className = "technical-text";
       credit.textContent = `${place.credit} · ${place.license}${place.updated ? ` · ${place.updated}` : ""}`;
       source.href = place.sourceUrl;
       source.textContent = place.source;
@@ -103,7 +106,8 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       license.textContent = t("contentLicense");
       license.target = "_blank";
       license.rel = "noopener noreferrer";
-      item.append(text, availability, credit, source, " ", license);
+      provenance.append(credit, source, " ", license);
+      item.append(text, availability, provenance);
       if (selectAccommodation) {
         const go = document.createElement("button");
         go.type = "button";
@@ -162,6 +166,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
         const a = document.createElement("a");
         a.href = url;
         a.textContent = sourceName;
+        a.className = "technical-text";
         a.target = "_blank";
         a.rel = "noopener noreferrer";
         item.append(a);
@@ -179,11 +184,15 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
         let note = restaurant ? t("restaurantMealNote") : meal.kind === "basic" ? t("basicMealNote") : meal[language];
         if (meal.kind === "specialty" && meal.area) note = `${t(
           meal.scope === "national" ? "mealNationalOrigin" : "mealRegionalOrigin", { area: meal.area })} ${note}`;
-        add(title, meal.cents,
+        const description = add(`${title} · ${survival.meal_minutes} min`, meal.cents,
           { kind: "meal", id: meal.id },
-          `${note} ${t("mealEffect", { kcal: meal.reserveKcal, minutes: survival.meal_minutes })}`,
+          note,
           restaurant ? `https://www.openstreetmap.org/${meal.venue.osmId}` : meal.source,
           restaurant ? t("townOsm") : meal.publisher);
+        const effects = document.createElement("p");
+        effects.className = "window-help-text";
+        effects.textContent = t("mealEffect", { kcal: meal.reserveKcal, minutes: survival.meal_minutes });
+        description.after(effects);
       }
     } else {
       document.querySelector("#economy-empty").hidden = true;
@@ -194,9 +203,10 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       const addShelter = shelter => {
         const cents = shelter.free ? 0 : marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents;
         const credit = shelter.credit ? ` ${shelter.credit} · ${shelter.license}${shelter.updated ? ` · ${shelter.updated}` : ""}` : "";
-        add(shelter.name || t("mappedShelter"), cents, { kind: "sleep", id: shelter.osmId },
+        const note = add(`${shelter.name || t("mappedShelter")} · ${survival.sleep_hours} h`, cents, { kind: "sleep", id: shelter.osmId },
           t(shelter.camping ? "campingRecoveryNote" : shelter.free ? "shelterNote" : "hotelRecoveryNote", { hours: survival.sleep_hours }) + credit,
           shelter.sourceUrl ?? `https://www.openstreetmap.org/${shelter.osmId}`, shelter.source ?? t("townOsm"));
+        note.className = "window-help-text";
       };
       for (const hotel of mapped.filter(shelter => shelter.tags.tourism === "hotel")) addShelter(hotel);
       const hospitality = hospitalityStatus(state, cell);
@@ -205,9 +215,13 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
             town: hospitality.town.name, minutes: HOSPITALITY_RULES.minutes, hours: survival.sleep_hours,
             chance: Math.round((1 - socialFailureChance(tarotEventChance(HOSPITALITY_RULES.failureChance, state, data), state)) * 100),
           });
-        const feedback = add(t("hospitalityAsk"), 0, { kind: "hospitality" },
-          hospitality.attempt ? `${hospitalityResult(hospitality.attempt)} ${note}` : note,
+        const feedback = add(`${t("hospitalityAsk")} · ${HOSPITALITY_RULES.minutes} min`, 0, { kind: "hospitality" },
+          hospitality.attempt ? hospitalityResult(hospitality.attempt) : "",
           undefined, undefined, !hospitality.available);
+        const rules = document.createElement("p");
+        rules.className = "window-help-text";
+        rules.textContent = note;
+        feedback.after(rules);
         feedback.id = "economy-hospitality-feedback";
         setFeedback(feedback, hospitality.attempt
           ? hospitality.attempt.outcome === "hosted" ? "success" : "failure" : "");
@@ -244,10 +258,14 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
           place: name, minutes: HOSPITALITY_RULES.minutes, hours: survival.sleep_hours,
           chance: Math.round((1 - socialFailureChance(tarotEventChance(HOSPITALITY_RULES.failureChance, state, data), state)) * 100),
         });
-        const feedback = add(t("worshipAsk", { place: name }), 0,
+        const feedback = add(`${t("worshipAsk", { place: name })} · ${HOSPITALITY_RULES.minutes} min`, 0,
           { kind: "hospitality", id: place.osmId },
-          status.attempt ? `${hospitalityResult(status.attempt)} ${note}` : note,
+          status.attempt ? hospitalityResult(status.attempt) : "",
           `https://www.openstreetmap.org/${place.osmId}`, t("townOsm"), !status.available);
+        const rules = document.createElement("p");
+        rules.className = "window-help-text";
+        rules.textContent = note;
+        feedback.after(rules);
         feedback.id = `economy-worship-${place.osmId.replace("/", "-")}`;
         setFeedback(feedback, status.attempt
           ? status.attempt.outcome === "hosted" ? "success" : "failure" : "");
@@ -262,7 +280,8 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
         hospitalityStatus(state, cell, place.osmId).attempt === result)) {
         document.querySelector("#economy-hospitality-result").textContent = hospitalityResult(result);
       }
-      add(t("outdoorSleep"), 0, { kind: "sleep", id: null }, t("outdoorSleepNote"));
+      add(`${t("outdoorSleep")} · ${survival.sleep_hours} h`, 0,
+        { kind: "sleep", id: null }, t("outdoorSleepNote")).className = "window-help-text";
       for (const shelter of mapped.filter(shelter => shelter.tags.tourism !== "hotel")) addShelter(shelter);
     }
   }
@@ -301,11 +320,12 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     await accommodationSearch;
   }
   function showAccommodationProgress() {
-    document.querySelector("#accommodation-status").textContent = `${t("accommodationLoading")} ${
+    document.querySelector("#accommodation-status").textContent = t("accommodationLoading");
+    document.querySelector("#accommodation-details").textContent = `${
       t(`accommodationPhase.${accommodationProgress.phase}`)}${
       accommodationProgress.provider ? ` (${accommodationProgress.provider})` : ""} · ${
       t("accommodationElapsed", { seconds: accommodationProgress.elapsedSeconds })}`;
-    if (accommodationPartial) document.querySelector("#accommodation-status").textContent += ` ${t("accommodationCached")}`;
+    if (accommodationPartial) document.querySelector("#accommodation-details").textContent += ` ${t("accommodationCached")}`;
   }
   async function searchAccommodations() {
     const current = context();

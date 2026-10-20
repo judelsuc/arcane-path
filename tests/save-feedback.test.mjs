@@ -29,8 +29,8 @@ for (const language of ["fr", "en"]) {
     assert.equal(h.status.role, "status");
     assert.equal(h.status.dataset.state, "saved");
     assert.equal(h.status.dataset.feedback, "success");
-    assert.match(h.status.children[0].textContent, language === "fr" ? /Voyage sauvegardé/ : /Journey saved/);
-    assert.match(h.status.children[0].textContent, language === "fr" ? /dans ce navigateur/ : /in this browser/);
+    assert.match(h.status.children[0].textContent, language === "fr" ? /Carnet gardé/ : /Notebook kept/);
+    assert.doesNotMatch(h.status.children[0].textContent, /navigateur|browser|server/);
     const first = h.status.children[0];
     h.button.click();
     assert.notEqual(h.status.children[0], first);
@@ -46,8 +46,11 @@ test("storage errors are alerts, never success confirmations; unavailable action
   assert.equal(h.status.role, "alert");
   assert.equal(h.status.dataset.state, "error");
   assert.equal(h.status.dataset.feedback, "failure");
-  assert.match(h.status.children[0].textContent, /Quota exceeded/);
-  assert.doesNotMatch(h.status.children[0].textContent, /Journey saved/);
+  assert.match(h.status.children[0].textContent, /could not be kept/);
+  assert.doesNotMatch(h.status.children[0].textContent, /Quota/);
+  assert.equal(h.status.children[1].className, "technical-text");
+  assert.equal(h.status.children[1].textContent, "Quota exceeded");
+  assert.doesNotMatch(h.status.children[0].textContent, /Notebook kept/);
   h.disable();
   h.button.click();
   assert.equal(h.calls(), 1);

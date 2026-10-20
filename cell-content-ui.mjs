@@ -120,6 +120,8 @@ export function setupCellContent(t, { pinPhoto } = {}) {
       paragraph(container, t("contentError"), "failure");
       return;
     }
+    const provenance = document.createElement("div");
+    provenance.className = "technical-text";
     const content = result.content;
     if (content) {
       if (content.blob) {
@@ -135,29 +137,31 @@ export function setupCellContent(t, { pinPhoto } = {}) {
         container.append(image);
       } else {
         paragraph(container, content.text);
-        paragraph(container, t("contentLanguage", { language: content.language }));
+        paragraph(provenance, t("contentLanguage", { language: content.language }));
       }
-      paragraph(container, content.nearby
+      paragraph(provenance, content.nearby
         ? t("contentNearby", { distance: content.distance }) : t("contentLocal"));
-      if (content.nature) paragraph(container, t("contentNature", { provider: content.provider }));
-      if (content.aerial) paragraph(container, t("contentAerial", { provider: content.provider }));
-      link(container, content.sourceUrl, t("contentSource", { title: content.title }));
-      paragraph(container, t("contentCredit", content));
-      link(container, content.licenseUrl, t("contentLicense"));
+      if (content.nature) paragraph(provenance, t("contentNature", { provider: content.provider }));
+      if (content.aerial) paragraph(provenance, t("contentAerial", { provider: content.provider }));
+      link(provenance, content.sourceUrl, t("contentSource", { title: content.title }));
+      paragraph(provenance, t("contentCredit", content));
+      link(provenance, content.licenseUrl, t("contentLicense"));
       if (content.blob) pinPhoto?.(container, content);
     } else {
       paragraph(container, t(result.errors.length ? "contentError" : "contentMissing"), "failure");
     }
     if (result.errors.length) {
-      paragraph(container, t("contentWarnings", { errors: result.errors.join("; ") }), "failure");
+      if (content) paragraph(container, t("contentPartial"), "failure");
+      paragraph(provenance, t("contentWarnings", { errors: result.errors.join("; ") }), "failure");
     }
     if (result.loading) {
       paragraph(container, t("contentLoading"));
     } else if (content || !result.errors.length) {
-      paragraph(container, t(result.cached ? "contentCached" : "contentStored", {
+      paragraph(provenance, t(result.cached ? "contentCached" : "contentStored", {
         date: new Date(result.retrievedAt).toLocaleString(locale),
       }), "success");
     }
+    container.append(provenance);
   }
 
   async function load(kind, force = false) {

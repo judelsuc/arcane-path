@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { setFeedback, setGenerating } from "../feedback.mjs";
+import { setFeedback, setGenerating, focusFeedback } from "../feedback.mjs";
 
 test("feedback is semantic, neutral by default and clears an old success or failure", () => {
   const element = { dataset: {}, textContent: "Une phrase dans une autre langue." };
@@ -12,6 +12,22 @@ test("feedback is semantic, neutral by default and clears an old success or fail
   setFeedback(element);
   assert.equal(element.dataset.feedback, "");
   assert.equal(element.textContent, "Une phrase dans une autre langue.");
+});
+
+test("feedback focuses the visible disclosure instead of an error hidden inside closed details", () => {
+  let focused, scrolled;
+  const summary = { focus() { focused = "summary"; }, scrollIntoView() { scrolled = "summary"; } };
+  const details = { open: false, hidden: true, querySelector: () => summary };
+  const element = { hidden: false, textContent: "Failure details", closest: () => details,
+    focus() { focused = "source"; }, scrollIntoView() { scrolled = "source"; } };
+  focusFeedback(element);
+  assert.equal(details.hidden, false);
+  assert.equal(details.open, false);
+  assert.equal(focused, "summary");
+  assert.equal(scrolled, "summary");
+  details.open = true;
+  focusFeedback(element);
+  assert.equal(focused, "source");
 });
 
 test("generation feedback exposes accessible busy status with a reduced-motion visual indicator", () => {

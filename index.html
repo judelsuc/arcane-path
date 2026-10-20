@@ -14,7 +14,7 @@
     <main class="game-shell">
       <header class="masthead">
         <div class="masthead-tools">
-          <p class="eyebrow" data-i18n="prototype">Les Arcanes du Chemin · Prototype 01</p>
+          <p class="eyebrow" data-i18n="prototype">Les Arcanes du Chemin</p>
           <div class="masthead-actions">
             <button id="open-journal" type="button" aria-haspopup="dialog" aria-controls="photo-journal-dialog" data-i18n="journalTitle"></button>
             <button id="open-controls" type="button" aria-haspopup="dialog" aria-controls="controls-dialog" data-i18n="controlsTitle"></button>
@@ -88,6 +88,7 @@
           <button id="use-location" type="button" data-i18n="placeUseLocation"></button>
           <button id="cancel-place" type="button" data-i18n="placeCancel" hidden></button>
           <p id="place-status" role="status"></p>
+          <p id="place-technical-status" class="technical-text"></p>
           <ul id="place-results"></ul>
           <details class="place-privacy">
             <summary data-i18n="placePrivacyTitle"></summary>
@@ -101,7 +102,8 @@
           <div id="character-setup">
             <label for="character-name" data-i18n="characterName"></label>
             <input id="character-name" type="text" required maxlength="40" autocomplete="off" spellcheck="false">
-            <label><input id="story-name-flavour" type="checkbox" checked><span data-i18n="storyNameFlavour"></span></label>
+            <label><input id="story-name-flavour" type="checkbox" checked><span data-i18n="storyNameFlavourLabel"></span></label>
+            <p class="window-help-text" data-i18n="storyNameFlavour"></p>
             <select id="character-profile" hidden aria-label="Legacy profile">
               <option value="balanced" data-i18n="profile.balanced"></option>
               <option value="sturdy" data-i18n="profile.sturdy"></option>
@@ -112,6 +114,7 @@
           <button id="start-travel" type="button" disabled data-i18n="travelStart"></button>
           <button id="resume-travel" type="button" hidden disabled data-i18n="saveResume"></button>
           <p id="journey-start-status" role="status"></p>
+          <p id="journey-start-diagnostics" class="technical-text"></p>
           <button id="cancel-journey-start" type="button" hidden data-i18n="journeyStartCancel"></button>
           <p id="journey-save-status" role="status"></p>
         </section>
@@ -253,7 +256,10 @@
         </section>
         <section class="travel-panel" aria-labelledby="travel-title">
           <div id="travel-controls" hidden>
-            <p id="travel-stats" role="status"></p>
+            <details class="journey-details">
+              <summary data-i18n="journeyDetails"></summary>
+              <p id="travel-stats" role="status"></p>
+            </details>
             <p id="travel-blocker" role="status" hidden></p>
               <p id="rest-effect"></p>
               <p id="journey-world-notice" role="status"></p>
@@ -269,6 +275,7 @@
             </details>
           </div>
           <p id="travel-status" role="status"></p>
+          <p id="travel-diagnostics" class="technical-text"></p>
           <p id="journey-path-status" role="status"></p>
           <button id="journey-path-retry" type="button" data-i18n="journeyPath.retry" hidden></button>
         </section>
@@ -335,11 +342,11 @@
 
       <footer class="status-line">
         <span class="status-dot" aria-hidden="true"></span>
-        <span data-i18n="status">Carte fixe — le déplacement arrive à la couche 02.</span>
+        <span data-i18n="status">Un pas après l’autre.</span>
       </footer>
       </div>
     </main>
-    <p id="save-feedback" role="status" aria-atomic="true" hidden></p>
+    <div id="save-feedback" role="status" aria-atomic="true" hidden></div>
     <dialog id="controls-dialog" aria-labelledby="controls-title">
       <h2 id="controls-title" data-i18n="controlsTitle"></h2>
       <form method="dialog"><button autofocus data-i18n="controlsClose"></button></form>
@@ -391,6 +398,7 @@
       <p id="journey-world-help" class="window-help-text"></p>
       <button id="journey-world-refresh" type="button"></button>
       <p id="journey-world-status" role="status"></p>
+      <p id="journey-world-coverage" class="technical-text"></p>
       <p id="journey-world-error" role="alert"></p>
       <h3 data-i18n="worldEvents"></h3>
       <ul id="journey-world-events"></ul>
@@ -611,8 +619,11 @@
     <dialog id="economy-dialog" aria-labelledby="economy-title">
       <h2 id="economy-title"></h2>
       <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
-      <p id="economy-pricing"></p>
-      <a id="economy-price-source" target="_blank" rel="noopener noreferrer" data-i18n="priceSource"></a>
+      <details class="technical-details">
+        <summary data-i18n="technicalDetails"></summary>
+        <p id="economy-pricing"></p>
+        <a id="economy-price-source" target="_blank" rel="noopener noreferrer" data-i18n="priceSource"></a>
+      </details>
       <p id="economy-empty" data-i18n="noLocalMeal"></p>
       <p id="economy-dream-help" class="window-help-text" hidden></p>
       <p id="economy-shelter-context"></p>
@@ -621,6 +632,7 @@
         <h3 data-i18n="accommodationTitle"></h3>
         <button id="accommodation-search" type="button" data-i18n="accommodationSearch"></button>
         <p id="accommodation-status" role="status"></p>
+        <p id="accommodation-details" class="technical-text"></p>
         <ul id="accommodation-results"></ul>
       </section>
       <ul id="economy-options"></ul>

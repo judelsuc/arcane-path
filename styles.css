@@ -71,6 +71,12 @@
 .notebook-witness-list summary, #abandoned-town-reports > summary { cursor: pointer; }
 .notebook-witness-list p, .notebook-witness-intro, #abandoned-town-reports > p { line-height: 1.6; max-width: 65ch; }
 .notebook-witness-time { font-size: 0.85em; opacity: 0.85; }
+.technical-details { margin-block: 6px; font-size: 0.75rem; line-height: 1.5; overflow-wrap: anywhere; }
+.technical-details > summary, .journey-details > summary { cursor: pointer; color: var(--muted); }
+.technical-details[data-feedback="failure"] > summary { color: var(--feedback-failure); }
+.technical-details[open] { padding: 8px; border: 1px solid var(--line); }
+.notebook-page .technical-details > summary { color: #695139; }
+.travel-overview p:empty, .travel-panel p:empty, dialog p:empty { display: none; }
 #abandoned-journals-dialog { width: min(850px, 94vw); max-height: 90dvh; overflow: auto; }
 @media (prefers-reduced-motion: reduce) {
   [role="status"][aria-busy="true"]::before { animation: none; }
@@ -965,6 +971,9 @@ dialog p { margin: 12px 0; }
   font-size: 0; overflow: hidden;
 }
 .travel-toolbar .button-shortcut { font-size: 1rem; }
+.travel-toolbar { padding: 8px; border: 1px solid var(--line); background: #101711cc; border-radius: 6px; }
+.travel-active .map-viewport { max-height: 58dvh; }
+.travel-overview p { margin-block: 6px; }
 #open-survival-choices { border: 2px solid var(--accent); }
 #travel-toolbar-help { font-size: 0.8rem; margin-block: 4px 10px; }
 .cell-action-services { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -1141,10 +1150,11 @@ dialog p { margin: 12px 0; }
   .travel-active { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; }
   .travel-active .travel-overview {
     grid-column: 1;
-    grid-row: 1;
+    grid-row: 2;
     border-left: 0;
   }
-  .travel-active .map-comparison { grid-column: 1; grid-row: 2; }
+  .travel-active .map-comparison { grid-column: 1; grid-row: 1; }
+  .travel-active .map-viewport { max-height: 45dvh; }
   .travel-active .travel-panel {
     grid-column: 1;
     grid-row: 3;

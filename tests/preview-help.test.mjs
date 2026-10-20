@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { setupPreviewHelp } from "../preview-help.mjs";
-import { setupGameHelp } from "../game-help.mjs";
+import { setupGameHelp, GAME_HELP_SOURCES } from "../game-help.mjs";
 import { translate } from "../i18n.mjs";
 import { readFile } from "node:fs/promises";
 
@@ -9,9 +9,19 @@ class Element {
   constructor(tagName, doc) {
     Object.assign(this, { tagName, ownerDocument: doc, nodeType: 1, children: [],
       className: "", id: "", textContent: "", hidden: false, open: false, listeners: new Map(), attributes: {} });
+    this.dataset = {};
+  }
+  before(node) {
+    node.parentElement?.children.splice(node.parentElement.children.indexOf(node), 1);
+    node.parentElement = this.parentElement;
+    this.parentElement.children.splice(this.parentElement.children.indexOf(this), 0, node);
   }
   append(...nodes) {
-    for (const node of nodes) { node.parentElement = this; this.children.push(node); }
+    for (const node of nodes) {
+      node.parentElement?.children.splice(node.parentElement.children.indexOf(node), 1);
+      node.parentElement = this;
+      this.children.push(node);
+    }
   }
   prepend(node) { node.parentElement = this; this.children.unshift(node); }
   after(node) {
@@ -228,6 +238,98 @@ test("main-game Help relocalizes labels and open content without changing its ow
   f.rules.textContent = "Les règles mises à jour";
   f.update({ nodeType: 3, parentElement: f.rules });
   assert.equal(f.popup.querySelector("div").children[1].textContent, "Les règles mises à jour");
+  f.api.destroy();
+});
+
+test("washing formulas and the other rule explanations are only visible in contextual Help", () => {
+  for (const language of ["fr", "en"]) {
+    const f = fixture(language, false, true);
+    const wash = f.doc.createElement("p");
+    wash.setAttribute("data-i18n", "washHelp");
+    wash.textContent = translate(language, "washHelp");
+    const conversation = f.doc.createElement("p");
+    conversation.setAttribute("data-i18n", "conversation.rules");
+    conversation.textContent = translate(language, "conversation.rules");
+    f.main.append(wash, conversation);
+    f.update(f.main, [wash, conversation]);
+    assert.equal(wash.hidden, true);
+    assert.equal(conversation.hidden, true);
+    assert.equal(f.status.hidden, false);
+    f.trigger.emit("click");
+    const paragraphs = f.popup.querySelector("div").children.map(node => node.textContent);
+    assert.ok(paragraphs.includes(wash.textContent));
+    assert.ok(paragraphs.includes(conversation.textContent));
+    for (const id of ["choice-forage-note", "choice-beg-note", "choice-steal-note", "rest-effect",
+      "music-card-effect", "music-skill", "cafe-skill", "birth-tarot-events", "daily-tarot-events"]) {
+      assert.ok(GAME_HELP_SOURCES.includes(`#${id}`), id);
+    }
+    f.api.destroy();
+  }
+});
+
+test("technical details stay closed, retain original links, show failures, and update without losing expansion", () => {
+  const f = fixture("en", false, true);
+  const source = f.doc.createElement("p");
+  source.className = "technical-text";
+  source.textContent = "Cached from a dated source.";
+  const link = f.doc.createElement("a");
+  link.setAttribute("href", "https://example.org/license");
+  source.append(link);
+  f.main.append(source);
+  f.update(f.main, [source]);
+  const fold = source.parentElement;
+  assert.equal(fold.tagName, "details");
+  assert.equal(fold.open, false);
+  assert.equal(fold.hidden, false);
+  assert.equal(fold.querySelector("a"), link, "link identity and destination survive folding");
+  assert.equal(fold.querySelector("summary").textContent, "Details");
+  fold.open = true;
+  source.dataset.feedback = "failure";
+  source.textContent = "Provider failure";
+  f.update(source);
+  assert.equal(fold.open, true);
+  assert.equal(fold.dataset.feedback, "failure");
+  assert.equal(fold.querySelector("summary").textContent, "Something went wrong — details");
+  f.doc.documentElement.lang = "fr";
+  f.api.localize();
+  assert.equal(fold.querySelector("summary").textContent, "Un problème est survenu — détails");
+  source.ariaBusy = "true";
+  f.update(source);
+  assert.equal(source.parentElement, f.main, "waiting indicators stay visible outside closed details");
+  source.ariaBusy = "false";
+  f.update(source);
+  const replacement = source.parentElement;
+  assert.equal(replacement.tagName, "details");
+  assert.equal(replacement.open, false);
+  source.textContent = "";
+  f.update(source);
+  assert.equal(replacement.hidden, true);
+  source.textContent = "Recovered";
+  source.hidden = true;
+  f.update(source);
+  assert.equal(replacement.hidden, true, "a source hidden by its controller must remain hidden");
+  source.className = "";
+  f.update(source);
+  assert.equal(source.parentElement, f.main, "retry success can remove its diagnostic classification");
+  f.api.destroy();
+  assert.equal(source.parentElement, f.main);
+  assert.equal(source.hidden, true);
+  assert.equal(f.main.querySelector(".technical-details"), null);
+});
+
+test("rerendering a whole game window restores its Help button and new rules", () => {
+  const f = fixture("en", true, true);
+  const rules = f.doc.createElement("p");
+  rules.className = "window-help-text";
+  rules.textContent = "New inventory rules";
+  f.host.replaceChildren(f.doc.createElement("h2"), rules);
+  f.update(f.host, [rules]);
+  const trigger = f.host.querySelector(".window-help-button");
+  assert.ok(trigger);
+  assert.notEqual(trigger, f.trigger);
+  assert.equal(rules.hidden, true);
+  trigger.emit("click");
+  assert.ok(f.popup.querySelector("div").children.some(node => node.textContent === rules.textContent));
   f.api.destroy();
 });
 

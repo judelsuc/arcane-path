@@ -30,9 +30,11 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
   intro.className = "notebook-witness-intro";
   status.before?.(intro);
   const proximity = document.createElement("p");
+  const diagnostics = document.createElement("p");
+  diagnostics.className = "technical-text";
   proximity.id = "abandoned-proximity";
   proximity.setAttribute?.("role", "status");
-  panel.append(proximity);
+  panel.append(proximity, diagnostics);
   const client = createJournalClient(localStorage);
   let result, error = "", working = false, queued = false, lastKey, conversation = false;
   function localize() {
@@ -71,16 +73,17 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
       item.append(details);
       rumoursList.append(item);
     }
-    townStatus.textContent = error ? t("abandoned.offline", { error })
+    diagnostics.textContent = error;
+    townStatus.textContent = error ? ""
       : observations.length ? t("abandoned.heard") : t(conversation ? "abandoned.noReport" : "abandoned.notHeard");
     const close = !state?.ended && result?.indications?.some(item => mentioned.has(item.id));
     proximity.hidden = !close;
     proximity.textContent = close ? t("abandoned.close") : "";
     refresh.disabled = working || !state?.journalAccess;
-    status.textContent = t(!state?.journalAccess ? "abandoned.legacy" : error
+    const statusKey = !state?.journalAccess ? "abandoned.legacy" : error
       ? "abandoned.offline" : working ? "abandoned.loading" : state.ended && state.ended !== "reunion"
-        ? result?.published ? "abandoned.published" : "abandoned.pending" : "abandoned.help",
-      { error });
+        ? result?.published ? "abandoned.published" : "abandoned.pending" : "";
+    status.textContent = statusKey ? t(statusKey) : "";
     setFeedback(status, error ? "failure" : result?.published ? "success" : "");
     list.replaceChildren();
     if (!(result?.sidequests ?? state?.sidequests ?? []).length && !(result?.nearby ?? []).some(j => mentioned.has(j.id))) {

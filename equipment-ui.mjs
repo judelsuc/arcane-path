@@ -30,7 +30,7 @@ const copy = {
     hunger: "Faim", careNeed: "Besoin de soins", ready: "Bonus actifs : fatigue de marche ×0,95 ; chance d'indice +8 points ; revenus musicaux ×1,1 ; risque de vol lors d'un évanouissement nocturne ×0,9.",
     notReady: "Le chien a besoin d'attention : ses bonus sont suspendus (faim ou besoin de soins ≥65).",
     needs: "Faim : +4/h ; soins : +1/h et +0,8/km. Les besoins avancent avec tout le temps de jeu, jamais avec le temps réel. Nourrir enlève 55 points, entretenir 65 ; disponibles dès 20 points de besoin.",
-    done: "Action effectuée et sauvegarde demandée.", error: "Action impossible", stale: "Le voyage a changé. Réessayez.",
+    done: "C’est fait.", error: "Action impossible", stale: "Le voyage a changé. Réessayez.",
   },
   en: {
     title: "Bag and companion", close: "Close", load: "Load", wallet: "Money", condition: "Condition",
@@ -55,7 +55,7 @@ const copy = {
     hunger: "Hunger", careNeed: "Care need", ready: "Active bonuses: walking fatigue ×0.95; clue chance +8 points; music income ×1.1; robbery risk during night-time fainting ×0.9.",
     notReady: "The dog needs attention: bonuses are suspended (hunger or care need ≥65).",
     needs: "Hunger: +4/hour; care: +1/hour and +0.8/km. Needs advance with all game time, never real time. Feeding removes 55 points, care 65; available from 20 points of need.",
-    done: "Action completed and save requested.", error: "Action unavailable", stale: "The journey changed. Try again.",
+    done: "Done.", error: "Action unavailable", stale: "The journey changed. Try again.",
   },
 };
 
@@ -90,12 +90,13 @@ export function setupEquipment(t, { context, act }) {
       act(action);
       render();
       const feedback = dialog.querySelector(".equipment-status");
-      feedback.textContent = `${w.done} ${context()?.saveStatus ?? ""}`;
+      feedback.textContent = w.done;
       setFeedback(feedback, "success");
     } catch (reason) {
       console.error("Equipment action failed:", reason);
       const feedback = dialog.querySelector(".equipment-status");
       feedback.textContent = `${w.error}: ${reason.message}`;
+      feedback.className = "equipment-status technical-text";
       setFeedback(feedback, "failure");
     }
   }
@@ -134,8 +135,8 @@ export function setupEquipment(t, { context, act }) {
           dialog.querySelector(`[data-item="${id}"]`)?.focus();
         },
       });
-      node("p", w.rules, controls);
-      node("p", equipmentShopAvailable(cell) ? w.shop : w.noShop, controls);
+      node("p", w.rules, controls).className = "window-help-text";
+      node("p", equipmentShopAvailable(cell) ? w.shop : w.noShop, controls).className = "window-help-text";
       const list = node("ul", "", controls);
       for (const item of ITEMS) {
         const row = node("li", "", list), art = node("span", "", row);
@@ -143,7 +144,7 @@ export function setupEquipment(t, { context, act }) {
         art.append(itemArt(document, item.id));
         const owned = gear.items.find(entry => entry.id === item.id);
         node("strong", `${w[item.id]} · ${new Intl.NumberFormat(language, { maximumFractionDigits: 2 }).format(item.grams / 1000)} kg${owned ? ` · ${w.condition}: ${format(owned.condition)}%` : ""}`, row);
-        node("p", w[`${item.id}Effect`], row);
+        node("p", w[`${item.id}Effect`], row).className = "window-help-text";
         const add = (type, label, cents, minutes) => {
           const action = { type, itemId: item.id };
           let available = !current.blocked;
@@ -182,15 +183,15 @@ export function setupEquipment(t, { context, act }) {
     } else node("p", w.noDog, controls);
     if (gear.dog) {
       node("p", `${gear.dog.name ?? w.dog} · ${w.hunger}: ${format(gear.dog.hunger)} / 100 · ${w.careNeed}: ${format(gear.dog.careNeed)} / 100`, controls);
-      node("p", modifiers.dogReady ? w.ready : w.notReady, controls);
+      node("p", modifiers.dogReady ? w.ready : w.notReady, controls).className = "window-help-text";
       for (const [type, label, need, cost, minutes] of [
         ["feedDog", w.feed, gear.dog.hunger, 150, 10],
         ["careDog", w.care, gear.dog.careNeed, 200, 20],
       ]) button(controls, `${label} · ${money(cost)} · ${minutes} ${w.minutes}`,
         () => run({ type }, revision), !equipmentShopAvailable(cell) || need < 20 || state.walletCents < cost);
     }
-    node("p", w.needs, controls);
-    node("p", current.saveStatus ?? "");
+    node("p", w.needs, controls).className = "window-help-text";
+    node("p", current.saveStatus ?? "").className = "technical-text";
   }
   function update() {
     const current = context();

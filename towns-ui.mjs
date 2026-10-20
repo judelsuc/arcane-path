@@ -11,9 +11,10 @@ export function setupTowns(t) {
   const service = createContentService({ cache: openContentCache() });
   let view, lastPosition, locale, generation = 0, result, selectedPlace, loading = false;
 
-  function paragraph(container, text) {
+  function paragraph(container, text, className = "") {
     const p = document.createElement("p");
     p.textContent = text;
+    p.className = className;
     container.append(p);
   }
 
@@ -34,7 +35,7 @@ export function setupTowns(t) {
     paragraph(detail, t("townPlace", { name: selectedPlace.name,
       category: t(`poi.${selectedPlace.category}`), distance: selectedPlace.distance }));
     link(detail, `https://www.openstreetmap.org/${selectedPlace.osmId}`, t("townOsm"));
-    paragraph(detail, t("townVisitNote"));
+    paragraph(detail, t("townVisitNote"), "window-help-text");
   }
 
   function localize(nextLocale = locale) {
@@ -60,6 +61,8 @@ export function setupTowns(t) {
     document.querySelector("#town-empty").hidden = view.places.length > 0;
     renderDetail();
     welcome.replaceChildren();
+    const provenance = document.createElement("div");
+    provenance.className = "technical-text";
     if (changed && dialog.open) {
       loadWelcome();
       return;
@@ -69,15 +72,19 @@ export function setupTowns(t) {
     else if (result.content) {
       const content = result.content;
       paragraph(welcome, content.text);
-      paragraph(welcome, t("contentLanguage", { language: content.language }));
-      link(welcome, content.sourceUrl, t("contentSource", { title: content.title }));
-      paragraph(welcome, t("contentCredit", content));
-      link(welcome, content.licenseUrl, t("contentLicense"));
-      paragraph(welcome, t(result.cached ? "contentCached" : "contentStored", {
+      paragraph(provenance, t("contentLanguage", { language: content.language }));
+      link(provenance, content.sourceUrl, t("contentSource", { title: content.title }));
+      paragraph(provenance, t("contentCredit", content));
+      link(provenance, content.licenseUrl, t("contentLicense"));
+      paragraph(provenance, t(result.cached ? "contentCached" : "contentStored", {
         date: new Date(result.retrievedAt).toLocaleString(locale),
       }));
     } else paragraph(welcome, t(result.errors.length ? "contentError" : "townNoSummary"));
-    if (result?.errors?.length) paragraph(welcome, t("contentWarnings", { errors: result.errors.join("; ") }));
+    if (result?.errors?.length) {
+      if (result.content) paragraph(welcome, t("contentPartial"));
+      paragraph(provenance, t("contentWarnings", { errors: result.errors.join("; ") }));
+    }
+    welcome.append(provenance);
   }
 
   async function loadWelcome(force = false) {

@@ -733,6 +733,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     document.querySelector("#journey-start-status").textContent = active ? ""
       : error ? t("journeyStartError", { error }) : busy && transient ? t(transient) : "";
     document.querySelector("#journey-start-status").classList.toggle("is-loading", !active && busy);
+    document.querySelector("#journey-start-diagnostics").textContent = active ? "" : error || saveError;
     setFeedback(document.querySelector("#journey-start-status"), !active && error ? "failure" : "");
     document.querySelector("#cancel-journey-start").hidden = active || !busy;
     document.querySelector("#save-travel").disabled = !state || busy;
@@ -753,6 +754,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     retry.disabled = busy;
     stop.disabled = busy;
     status.textContent = error ? t("travelError", { error }) : transient ? t(transient) : "";
+    document.querySelector("#travel-diagnostics").textContent = error || saveError;
     setFeedback(status, error ? "failure" : "");
     if (state?.ended) parentPathStatus = "";
     document.querySelector("#journey-path-status").textContent = parentPathStatus
@@ -956,11 +958,13 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       if (missingHeightMoves) {
         const warning = document.createElement("p");
         warning.textContent = t("travelHeightEstimates", { count: missingHeightMoves });
+        warning.className = "technical-text";
         height.append(warning);
       }
       if (chunk?.elevation?.sourceUrl) {
         const credit = document.createElement("a");
         credit.href = chunk.elevation.sourceUrl;
+        credit.className = "technical-text";
         credit.target = "_blank";
         credit.rel = "noopener noreferrer";
         credit.textContent = `${chunk.elevation.source} · ${chunk.elevation.license}`;

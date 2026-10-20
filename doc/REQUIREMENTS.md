@@ -1,5 +1,23 @@
 # Requirements tracked outside the design PDF
 
+## R-173 - Game-first presentation and optional explanations
+
+- Present a classic map-first game screen: compact needs/status HUD, square
+  action toolbar, short contextual dialogue. On narrow screens, put the map
+  and its actions before the status sidebar.
+- Keep story, observations, choices and concise prices/durations in play.
+  Move all rule explanations to the owning window's Help, including washing,
+  pressure, tarot modifiers, equipment/dog bonuses, activity terms, notebook
+  eligibility, probabilities and recovery formulas.
+- Keep source/licence links and technical diagnostics reachable in closed
+  details, without dropping links or changing gameplay state. Empty details
+  must not clutter the screen; rerendering a window must retain working Help.
+- Keep waiting indicators visible, especially while the opening text is
+  being written. Failures must remain explicit and retryable; folding their
+  diagnostics must not hide the fact that something failed.
+- Apply the same policy in French and English. Preserve saves, action costs,
+  eligibility and explicit confirmations.
+
 ## R-172 - Inhabitant conversations with visible topics
 
 - A dedicated "Talk to inhabitants" window lists topics instead of scattering

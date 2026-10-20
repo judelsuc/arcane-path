@@ -35,7 +35,7 @@ export function renderInventory(parent, { state, walletCents, language, selected
     else el("span", t.empty, box);
   }
   el("h3", t.bag);
-  el("p", t.instructions);
+  el("p", t.instructions).className = "window-help-text";
   const feedback = el("p");
   feedback.setAttribute("role", "status");
   const placements = restorePlacements(state.items, state.placements, ITEMS);
