@@ -4,9 +4,11 @@ import { journeyEventArt } from "./journey-event-art.mjs";
 import { NARRATIVE_BRIEFS, LOST_PLAYER_DREAM } from "./live-narrative.mjs";
 import { setGenerating } from "./feedback.mjs";
 
-export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrative, rememberWording }) {
+export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrative, rememberWording, illustrations }) {
   const dialog = document.querySelector("#journey-event-dialog");
   const proceed = document.querySelector("#journey-event-continue");
+  const illustration = illustrations ? document.createElement("figure") : null;
+  if (illustration) proceed.before(illustration);
   const testMode = eventPlaytestEnabled();
   const banner = testMode ? document.createElement("p") : null;
   if (banner) {
@@ -36,6 +38,7 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
     if (!dialog.open || !event) return;
     const language = document.documentElement.lang === "en" ? "en" : "fr";
     const brief = `event.${event.kind}`;
+    if (illustration) illustrations.render(illustration, current.state, brief, `event:${event.id}`, t);
     if (wordingId !== event.id) {
       wordingId = event.id;
       wording = Object.hasOwn(event, "wording") ? event.wording
@@ -111,5 +114,6 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
     subtree: true, attributes: true, attributeFilter: ["open"],
   });
   narrative?.subscribe(localize);
+  illustrations?.subscribe(localize);
   return { update, reset() { wordingId = undefined; wording = null; dialog.close(); } };
 }

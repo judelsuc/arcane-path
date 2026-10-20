@@ -281,6 +281,13 @@ class LiveNarrative:
                         (owner, brief)).fetchone()
                     if original:
                         payload = json.loads(original["input"])
+                        for key in ("companion", "visitedPlaces"):
+                            if key not in payload and key in closing:
+                                if key == "visitedPlaces" and any(
+                                        visit["elapsedMinutes"] > payload["recordedJourney"]["elapsedMinutes"]
+                                        for visit in closing[key]):
+                                    raise JourneyRequest("Recorded visits exceed the original ending time.")
+                                payload[key] = closing[key]
                 if brief == COVER_BRIEF:
                     opening = opening_brief(record, self.journeys.chunks)
                     payload = {key: opening[key] for key in

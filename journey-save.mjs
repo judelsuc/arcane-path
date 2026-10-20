@@ -17,6 +17,7 @@ import { validateDiscovery } from "./discovery.mjs";
 import { validateDiscoverySchedule } from "./discovery-policy.mjs";
 import { validateTrailDreams } from "./trail-dreams.mjs";
 import { validateJourneyWorld } from "./journey-world.mjs";
+import { validateJourneyVisits } from "./journey-visits.mjs";
 
 export const SAVE_VERSION = 1;
 export const JOURNEY_SAVE_PREFIX = eventPlaytestEnabled() ? "arcane-event-playtest-v1:" : "arcane-journey-v1:";
@@ -54,6 +55,7 @@ export function validateSave(save) {
   if (s) validateDiscoverySchedule(s);
   validateTrailDreams(s);
   validateJourneyWorld(s);
+  validateJourneyVisits(s);
   if (s?.storyNameFlavour !== undefined && typeof s.storyNameFlavour !== "boolean") fail();
   if (s?.equipment !== undefined) {
     const gear = restoreEquipment(s.equipment, { elapsedMinutes: s.elapsedMinutes });

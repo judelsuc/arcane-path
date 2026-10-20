@@ -15,6 +15,8 @@ export function setupClosingStory(t, { narrative, context, doc = document }) {
     }
     const language = doc.documentElement.lang === "en" ? "en" : "fr";
     const generated = narrative.snapshot(state, CLOSING_STORY);
+    const heading = section.querySelector?.("summary");
+    if (heading) heading.textContent = t(generated ? "closingStoryTitle" : "closingStoryDraftTitle");
     text.textContent = closingStoryText(state, t, generated, language);
     status.textContent = generated ? t("closingStoryGenerated") : narrative.status(state, CLOSING_STORY, language);
     setGenerating(status, narrative.pending?.(state, CLOSING_STORY));

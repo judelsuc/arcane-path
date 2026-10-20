@@ -257,11 +257,88 @@ class LiveNarrativeTests(unittest.TestCase):
         self.assertIn("seemed", brief["recordedEvents"][1]["event"])
         self.assertIn("not established", brief["recordedEvents"][2]["event"])
         self.assertEqual([event["elapsedMinutes"] for event in brief["recordedEvents"]], [60, 200, 300])
-        self.assertIn("Older events may be missing", brief["coverage"])
+        self.assertIn("Older records may be missing", brief["coverage"])
         self.assertEqual(json.dumps(record, sort_keys=True), before)
         prompt = provider_request(brief, MODEL)["messages"][0]["content"]
         self.assertIn("several meaningful intermediate encounters", prompt)
         self.assertIn("null time supplies no chronology", prompt)
+
+    def test_placement_epic_receives_dog_and_places_without_blocking_on_narrative_omissions(self):
+        summary = {**self.closing_summary("placement"), "companion": {"name": "Milou"},
+                   "visitedPlaces": [{"name": "Marseille", "elapsedMinutes": 0},
+                                     {"name": "Arles", "elapsedMinutes": 40}]}
+        self.writer.return_value = response(
+            en=("Milou walked with you, past Marseille and Arles. You remain alive in care. " * 10).strip(),
+            fr=("Milou vous accompagnait, de Marseille à Arles. Vous êtes vivant et accueilli. " * 10).strip())
+        self.request(CLOSING_BRIEF, summary=summary)
+        result = self.settle_closing(summary)
+        self.assertEqual(result["status"], "ready")
+        brief = self.writer.call_args.args[0]
+        self.assertEqual(brief["companion"], {"name": "Milou"})
+        self.assertEqual(brief["visitedPlaces"], summary["visitedPlaces"])
+        self.assertIn("alive", brief["ending"])
+        prompt = provider_request(brief, MODEL)["messages"][0]["content"]
+        self.assertIn("Placement is not death", prompt)
+        self.writer.return_value = response(
+            en=("A generic journey ends beside an unnamed road. " * 20).strip(),
+            fr=("Un voyage anonyme se termine sur un chemin sans nom. " * 20).strip())
+        self.request(CLOSING_BRIEF, summary=summary, regenerate="f" * 32)
+        rewritten = self.settle_closing(summary)
+        self.assertEqual(rewritten["status"], "ready")
+        self.assertIn("generic", rewritten["text"]["en"])
+
+    def test_old_closing_rewrite_can_enrich_missing_names_without_changing_frozen_facts(self):
+        summary = self.closing_summary("placement")
+        self.writer.return_value = response(
+            en=("Your journey has paused, and you remain alive in care. " * 15).strip(),
+            fr=("Votre voyage marque une pause, vous êtes vivant et accueilli. " * 15).strip())
+        self.request(CLOSING_BRIEF, summary=summary)
+        self.settle_closing(summary)
+        with self.service.connect() as db:
+            row = db.execute("SELECT rowid,input FROM wording WHERE brief=?", (CLOSING_BRIEF,)).fetchone()
+            legacy = json.loads(row["input"])
+            del legacy["companion"]
+            del legacy["visitedPlaces"]
+            db.execute("UPDATE wording SET input=? WHERE rowid=?", (json.dumps(legacy), row["rowid"]))
+        self.writer.return_value = response(
+            en=("Milou shared your road through Arles, before this pause in care. " * 15).strip(),
+            fr=("Milou partageait votre route à travers Arles, avant cette pause en foyer. " * 15).strip())
+        enriched = {**summary, "companion": {"name": "Milou"},
+                    "visitedPlaces": [{"name": "Arles", "elapsedMinutes": 40}]}
+        self.request(CLOSING_BRIEF, summary=enriched, regenerate="d" * 32)
+        self.assertEqual(self.settle_closing(enriched)["status"], "ready")
+        brief = self.writer.call_args.args[0]
+        self.assertEqual(brief["companion"]["name"], "Milou")
+        self.assertEqual(brief["recordedJourney"]["walkingMeters"], summary["walkingMeters"])
+        self.assertIn("alive", brief["ending"])
+
+    def test_closing_optional_names_reject_unbounded_or_private_fields_and_bad_times(self):
+        summary = self.closing_summary("placement")
+        for changes in [
+            {"companion": {"name": ""}}, {"companion": {"name": "x" * 41}},
+            {"companion": {"name": "Milou", "notes": "PRIVATE"}},
+            {"companion": {"name": "Mi\nlou"}}, {"visitedPlaces": [{}]},
+            {"visitedPlaces": [{"name": "Arles", "elapsedMinutes": True}]},
+            {"visitedPlaces": [{"name": "Arles", "elapsedMinutes": 50000}]},
+            {"visitedPlaces": [{"name": "Arles", "elapsedMinutes": 0, "notes": "PRIVATE"}]},
+            {"visitedPlaces": [{"name": "x" * 121, "elapsedMinutes": 0}]},
+        ]:
+            with self.subTest(changes=changes), self.assertRaises(JourneyRequest):
+                self.request(CLOSING_BRIEF, summary={**summary, **changes})
+        self.writer.assert_not_called()
+
+    def test_solitary_and_unnamed_dog_journeys_do_not_invent_a_named_companion(self):
+        record = self.journeys.read(self.owner)
+        summary = {**self.closing_summary("placement"), "recordedEncounters": 1,
+                   "events": [{"kind": "dogEncounter", "elapsedMinutes": 30}]}
+        brief = closing_brief(summary, record)
+        self.assertIsNone(brief["companion"])
+        self.assertIn("not established", brief["recordedEvents"][0]["event"])
+        prompt = provider_request(brief, MODEL)["messages"][0]["content"]
+        self.assertIn("If no companion is supplied, never invent a travelling dog or adoption", prompt)
+        unnamed = closing_brief({**summary, "companion": {"name": None}}, record)
+        self.assertEqual(unnamed["companion"], {"name": None})
+        self.assertIn("never invent a name", provider_request(unnamed, MODEL)["messages"][0]["content"])
 
     def test_closing_milestones_reject_arbitrary_text_hidden_details_and_invalid_order(self):
         base = self.closing_summary("hunger")
@@ -290,12 +367,13 @@ class LiveNarrativeTests(unittest.TestCase):
 
     def test_closing_input_accepts_only_terminal_outcomes_and_strict_bounded_counters(self):
         record = self.journeys.read(self.owner)
-        for outcome in ["health", "hunger", "fatigue", "sleep", "reunion"]:
+        for outcome in ["health", "hunger", "fatigue", "sleep", "reunion", "placement"]:
             brief = closing_brief(self.closing_summary(outcome), record)
             self.assertIn("triumphant" if outcome == "reunion" else "bittersweet", brief["tone"])
-            self.assertIn("reunited" if outcome == "reunion" else "died", brief["ending"])
+            self.assertIn("reunited" if outcome == "reunion" else
+                          "alive" if outcome == "placement" else "died", brief["ending"])
         for summary in [
-            None, {}, self.closing_summary(None), self.closing_summary("placement"),
+            None, {}, self.closing_summary(None), self.closing_summary("unknown"),
             {**self.closing_summary(), "notes": "PRIVATE"}, {**self.closing_summary(), "name": "PRIVATE"},
             {**self.closing_summary(), "walkingMeters": True},
             {**self.closing_summary(), "elapsedMinutes": float("nan")},

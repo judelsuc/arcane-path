@@ -71,8 +71,8 @@ for (const language of ["fr", "en"]) {
       assert.match(expected, /12\.50/);
       assert.ok(expected.includes("Known village"));
       assert.ok(!expected.includes("Unvisited village"));
-      assert.equal(requests.includes(CLOSING_STORY), ended !== "placement");
-      assert.equal(element("#journal-closing-status").ariaBusy, ended === "placement" ? "false" : "true");
+      assert.equal(requests.includes(CLOSING_STORY), true);
+      assert.equal(element("#journal-closing-status").ariaBusy, "true");
       await element("#journal-export-pdf").events.click();
       assert.equal(exported.backCover.text, expected, "PDF ends with the complete closing account");
       assert.ok(!exported.clues.includes(expected), "closing account is not duplicated among clues");
@@ -88,7 +88,7 @@ for (const language of ["fr", "en"]) {
       pending = false;
       notify();
       assert.equal(element("#journal-closing-text").textContent, expected, "failed generation keeps authored summary");
-      if (ended !== "placement") {
+      {
         generated = { fr: "La chronique complète du voyage.", en: "The complete journey chronicle." };
         notify();
         assert.equal(element("#journal-closing-text").textContent, generated[language]);
