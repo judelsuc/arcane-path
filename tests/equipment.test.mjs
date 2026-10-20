@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { ITEMS, CAPACITY_GRAMS, createEquipment, restoreEquipment, validateEquipment,
-  equipmentModifiers, advanceEquipment, equipmentAction } from "../equipment.mjs";
+  equipmentModifiers, advanceEquipment, equipmentAction, companionCondition } from "../equipment.mjs";
+import { companionArt } from "../equipment-art.mjs";
 
 const context = (state, extra = {}) => ({ expectedRevision: state.revision,
   elapsedMinutes: state.elapsedMinutes, walletCents: 100000, atShop: true, dogEncounter: true, ...extra });
@@ -32,6 +33,54 @@ test("catalogue is finite, immutable, integer cents and a bounded starter load",
   assert.equal(validateEquipment(state), state);
   assert.equal(equipmentModifiers(state).carriedGrams, 1400);
   assert.equal(state.dog, null);
+});
+
+test("companion condition reflects either saved need at care and bonus thresholds", () => {
+  const gear = createEquipment();
+  assert.equal(companionCondition(gear), null);
+  for (const [need, expected] of [[0, "well"], [19.99, "well"], [20, "attention"],
+    [64.99, "attention"], [65, "urgent"], [100, "urgent"]]) {
+    for (const key of ["hunger", "careNeed"]) {
+      const withDog = { ...gear, dog: { hunger: 0, careNeed: 0, [key]: need } };
+      const before = structuredClone(withDog);
+      assert.equal(companionCondition(withDog), expected);
+      assert.equal(equipmentModifiers(withDog).dogReady, expected !== "urgent");
+      assert.deepEqual(withDog, before);
+      assert.equal(companionCondition(restoreEquipment(JSON.parse(JSON.stringify(withDog)))),
+        expected);
+    }
+  }
+  assert.throws(() => companionCondition({ ...gear, dog: { hunger: NaN, careNeed: 0 } }));
+});
+
+test("companion condition follows game time and recovers after feeding and care", () => {
+  let gear = createEquipment({ starterDog: true });
+  assert.equal(companionCondition(gear), "well");
+  gear = advance(gear, 16.25 * 60).state;
+  assert.equal(companionCondition(gear), "urgent");
+  gear = act(gear, "feedDog").state;
+  assert.equal(companionCondition(gear), "well");
+  gear = advance(gear, 60, 60000).state;
+  assert.equal(companionCondition(gear), "urgent");
+  gear = act(gear, "careDog").state;
+  assert.equal(companionCondition(gear), "well");
+});
+
+test("companion icon has distinct expressions and defers accessible text to its button", () => {
+  const doc = { createElementNS(namespace, tag) {
+    assert.equal(namespace, "http://www.w3.org/2000/svg");
+    assert.equal(tag, "svg");
+    return { attributes: {}, setAttribute(key, value) { this.attributes[key] = value; } };
+  } };
+  const icons = ["well", "attention", "urgent"].map(condition => companionArt(doc, condition));
+  for (const icon of icons) {
+    assert.equal(icon.attributes["aria-hidden"], "true");
+    assert.equal(icon.attributes.focusable, "false");
+    assert.equal(icon.attributes.viewBox, "0 0 100 90");
+    assert.match(icon.innerHTML, /<path/);
+  }
+  assert.equal(new Set(icons.map(icon => icon.innerHTML)).size, 3);
+  assert.throws(() => companionArt(doc, "unknown"), /Invalid companion condition/);
 });
 
 test("authoritative artifact mass contributes to the normal load formulas and capacity", () => {

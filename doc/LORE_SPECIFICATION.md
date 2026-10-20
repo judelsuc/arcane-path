@@ -11,6 +11,13 @@ integration and persistent shared ownership. The main game is unchanged.
 All 22 powers below now have executable rules in that separate world. This
 does not activate them in ordinary main-game saves or finish the story ending.
 
+**Next integration scope, approved:** bring lore, shared discovery, broader
+dreams, power-aware gameplay and lore routing into ordinary journeys. Existing
+journeys must retain progress through an explicit one-time migration into
+server authority, not restart from immutable genesis. After migration, normal
+actions and powers must share one authoritative timeline. This is a requirement,
+not an implemented migration; see [R-169](./REQUIREMENTS.md#r-169---lore-in-ordinary-journeys-and-progress-preserving-migration).
+
 **19 October power revision:** globally unique objects must give substantial,
 deliberately unfair advantages: they should feel like cheating. This supersedes
 the earlier modest convenience powers. Teleportation, strong restoration,

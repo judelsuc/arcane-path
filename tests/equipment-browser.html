@@ -6,11 +6,12 @@
 <main>
   <h1>Equipment host integration check (no journey storage)</h1>
   <button id="equipment-travel">Sac et compagnon</button>
+  <button id="dog-travel" hidden></button>
   <button id="offer">Test dog event</button>
   <button id="wait">Pass six game hours</button>
   <button id="restore">Save/restore in memory</button>
   <button id="english">English</button>
-  <output id="snapshot"></output>
+  <output id="snapshot" style="display:block;overflow-wrap:anywhere"></output>
 </main>
 <script type="module">
   import { startSurvival, restSurvival } from "../survival.mjs";

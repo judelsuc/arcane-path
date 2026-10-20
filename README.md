@@ -284,6 +284,12 @@ sauvegardes avec le voyage ; une ancienne partie recoit le materiel de base
 sans usure retroactive. Les autres compagnons, dont un imaginaire, restent
 des exigences futures.
 
+Apres adoption, une icone de chien reste visible dans l'etat du personnage.
+Son expression et son texte suivent la faim et les soins sauvegardes :
+en forme sous 20 pour les deux besoins, attention des 20, soins urgents des 65.
+Cliquer l'icone ouvre directement la section du compagnon dans le sac.
+Il ne s'agit pas d'une nouvelle jauge de sante ; recharger ne change pas ses besoins.
+
 ### Couche 13 : evenements du voyage
 
 Chaque evenement rencontre est automatiquement epingle une seule fois dans le
