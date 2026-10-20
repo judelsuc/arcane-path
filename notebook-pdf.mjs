@@ -42,7 +42,8 @@ export function jpegPagesPdf(pages) {
   return new Blob(chunks, { type: "application/pdf" });
 }
 
-export async function notebookPdf({ title, photos, groups = [], clues = [], route = null, cover = null, t }) {
+export async function notebookPdf({ title, photos, groups = [], clues = [], route = null, cover = null,
+  backCover = null, t }) {
   const canvas = document.createElement("canvas");
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
@@ -125,7 +126,7 @@ export async function notebookPdf({ title, photos, groups = [], clues = [], rout
     for (const row of group.rows) await text(`${row.label}: ${row.value}`);
   }
   if (groups.length) await flush();
-  if (!photos.length && !groups.length && !clues.length && !route) await text(t("journalEmpty"));
+  if (!photos.length && !groups.length && !clues.length && !route && !backCover) await text(t("journalEmpty"));
   const map = route ? await journeyMapPhoto(route, t) : null;
   for (const photo of [...(map ? [map] : []), ...photos]) {
     if (dirty) await flush();
@@ -154,6 +155,12 @@ export async function notebookPdf({ title, photos, groups = [], clues = [], rout
     await flush();
   }
   await flush();
+  if (backCover) {
+    await text(backCover.title, 36, true);
+    y += 32;
+    await text(backCover.text, 22);
+    await flush();
+  }
   return jpegPagesPdf(pages);
 }
 

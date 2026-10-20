@@ -124,6 +124,41 @@ test("ongoing journeys and placement cannot queue endings; local endings retain 
   assert.match(narrative.status(local, CLOSING_STORY, "en"), /unavailable.*saved journey/);
 });
 
+test("explicit epic rewriting reuses fixed ending facts, preserves previous text and can recover a failed request", async () => {
+  const requests = [];
+  let fail = false;
+  const narrative = createLiveNarrative({ fetcher: async (_, options) => {
+    requests.push(JSON.parse(options.body));
+    return { ok: true, json: async () => ({
+      brief: CLOSING_STORY, enabled: true, status: fail ? "failed" : "ready",
+      text: fail ? null : generated, alternatives: [],
+      ...(fail ? { previousText: generated } : {}),
+    }) };
+  } });
+  const state = fixture();
+  narrative.prefetch(state, [CLOSING_STORY]);
+  await flush();
+  const summary = closingSummary(state);
+  state.meals++;
+  fail = true;
+  narrative.regenerateClosing(state, "d".repeat(32));
+  assert.deepEqual(narrative.snapshot(state, CLOSING_STORY), generated);
+  assert.throws(() => narrative.regenerateClosing(state), /still being written/);
+  await flush();
+  assert.deepEqual(narrative.snapshot(state, CLOSING_STORY), generated);
+  assert.match(narrative.status(state, CLOSING_STORY, "en"), /could not be written/);
+  fail = false;
+  narrative.regenerateClosing(state, "e".repeat(32));
+  await flush();
+  assert.equal(requests.length, 3);
+  assert.deepEqual(requests[1], {
+    journey: state.serverJourney.id, brief: CLOSING_STORY, summary, regenerate: "d".repeat(32),
+  });
+  assert.deepEqual(narrative.snapshot(state, CLOSING_STORY), generated);
+  assert.throws(() => narrative.regenerateClosing({ ...state, ended: null }), /completed journey/);
+  assert.throws(() => narrative.regenerateClosing({ ...state, journalAccess: null }), /server access/);
+});
+
 test("failed or truncated closing prose falls back explicitly without automatic retries", async () => {
   for (const response of [
     { enabled: true, status: "failed", text: null },

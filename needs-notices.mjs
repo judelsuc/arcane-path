@@ -109,10 +109,14 @@ export function setupNeedsNotices(t, { context }) {
       const current = context();
       if (!current) return;
       const pending = notices.pending(current.state, current.survival);
-      if (!pending || current.busy || document.querySelector("dialog[open]")) return;
+      if (!pending || current.busy) return;
+      if (isDeath(current.state) && !dialog.open) {
+        for (const other of document.querySelectorAll("dialog[open]")) other.close();
+      }
+      if (document.querySelector("dialog[open]")) return;
       kind = pending;
-      notices.shown(kind, current.state);
       dialog.showModal();
+      notices.shown(kind, current.state);
       localize();
     });
   }

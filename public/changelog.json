@@ -1,6 +1,11 @@
 {
-  "version": "0.20.10",
+  "version": "0.20.11",
   "entries": [
+    {
+      "version": "0.20.11",
+      "fr": "L’épopée de votre voyage occupe la quatrième de couverture du carnet et termine le PDF. La chronique peut être réécrite après confirmation, sans changer les faits du voyage ni perdre le texte précédent en cas d’échec. La carte XIII apparaît désormais à la mort même si une fenêtre d’action est restée ouverte.",
+      "en": "Your journey’s epic occupies the notebook’s back cover and closes the PDF. You can request a rewrite after confirmation without changing journey facts or losing the previous text on failure. At death, card XIII now appears even if an action window was left open."
+    },
     {
       "version": "0.20.10",
       "fr": "Le récit de fin de voyage apparaît désormais dans votre carnet et son export PDF. Les voyages déjà terminés et les carnets archivés retrouvent un bilan à partir des faits sauvegardés, sans recommencer. Le récit reste lisible pendant l’écriture de la chronique.",

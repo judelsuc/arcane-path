@@ -180,6 +180,24 @@ export function createLiveNarrative({
       void pump();
       emit();
     },
+    regenerateClosing(state, requestId = crypto.randomUUID().replaceAll("-", "")) {
+      activate(state);
+      const summary = closingSummary(state);
+      if (!access || !summary) throw new Error("A completed journey and server access are required.");
+      if (["queued", "running"].includes(records.get(CLOSING_STORY)?.status)) {
+        throw new Error("A chronicle is still being written.");
+      }
+      endingSummary ??= summary;
+      const previous = records.get(CLOSING_STORY);
+      records.set(CLOSING_STORY, { status: "queued", previousText: previous?.text ?? previous?.previousText });
+      requests.set(CLOSING_STORY, { id: CLOSING_STORY, regenerate: requestId });
+      waiting.add(CLOSING_STORY);
+      disabled = false;
+      if (timer) cancel(timer);
+      timer = undefined;
+      void pump();
+      emit();
+    },
     pending(state, id) {
       activate(state);
       return ["queued", "running"].includes(records.get(keyFor(state, id))?.status);

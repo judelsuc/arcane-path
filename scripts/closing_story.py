@@ -95,6 +95,8 @@ def closing_request(brief, model):
                 "Write an epic but faithful closing chronicle of a fictional child traveller's search "
                 "for their parent, in English and French. Return JSON with en and fr strings, "
                 "600-3000 characters each, equivalent in meaning, in two to four short paragraphs. "
+                "This prose belongs on the notebook's back cover: make it a memorable literary epic, "
+                "not a numerical report or a rules explanation. Give it a strong opening and a resonant final sentence. "
                 "Address the traveller as 'you'. Use ONLY the supplied ending, counters, reached stages and recorded events. "
                 "Weave the reached places and several meaningful intermediate encounters into the chronicle, "
                 "not just a list of statistics. Use relative game minutes to respect known order; "

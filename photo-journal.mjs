@@ -173,16 +173,16 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       const photos = await api.snapshot(save.state);
       await api.showAbandoned(photos, [
         `${save.state.name ?? t("unnamedCharacter")} · ${save.savedAt}`,
-        ...[closingStoryText(save.state, t, null, document.documentElement.lang,
-          { includePlacement: true })].filter(Boolean),
         ...discoveryNotebookEntries(save.state, t).map(record => `${record.context} — ${record.text}`),
-      ], t("journalArchives"));
+      ], t("journalArchives"), save.state);
     } catch (reason) { failure(reason); }
   });
   let exporting = false, exported = false, exportEpoch = 0;
   let abandonedClues = [];
   let foreignTitle;
-  let statsContext = null, statistics = false;
+  let statsContext = null, statistics = false, backing = false, archiveState = null;
+  const backButton = document.querySelector("#journal-back-cover-page");
+  const rewriteButton = document.querySelector("#journal-closing-rewrite");
   let mapping = false, animation;
   function stopAnimation() {
     if (animation !== undefined) cancelAnimationFrame(animation);
@@ -197,22 +197,31 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   function coverContext() {
     return { ...statsContext, coverSubtitle: narrative.snapshot(statsContext.state, JOURNAL_SUBTITLE) };
   }
-  function closingText(state = statsContext?.state) {
+  const closingState = () => readOnly ? archiveState : statsContext?.state;
+  function closingText(state = closingState()) {
     if (!state?.ended) return "";
     const generated = state.ended === "placement" ? null : narrative.snapshot(state, CLOSING_STORY);
     return closingStoryText(state, t, generated, document.documentElement.lang, { includePlacement: true });
   }
   function renderClosing() {
     const section = document.querySelector("#journal-closing-story");
-    const text = readOnly ? "" : closingText();
-    section.hidden = !text;
+    const state = closingState();
+    const text = closingText(state);
+    section.hidden = !backing || !text;
+    pages.hidden = backing;
+    backButton.hidden = !text;
+    backButton.disabled = backing;
+    backButton.textContent = t("journalBackCoverPage");
     document.querySelector("#journal-closing-title").textContent = t("closingStoryTitle");
     document.querySelector("#journal-closing-text").textContent = text;
     const status = document.querySelector("#journal-closing-status");
-    status.textContent = text && statsContext.state.ended !== "placement"
-      ? narrative.status(statsContext.state, CLOSING_STORY, document.documentElement.lang) : "";
-    setGenerating(status, Boolean(text && statsContext.state.ended !== "placement" &&
-      narrative.pending?.(statsContext.state, CLOSING_STORY)));
+    status.textContent = text && state.ended !== "placement"
+      ? narrative.status(state, CLOSING_STORY, document.documentElement.lang) : "";
+    const pending = Boolean(text && state.ended !== "placement" && narrative.pending?.(state, CLOSING_STORY));
+    setGenerating(status, pending);
+    rewriteButton.textContent = t("closingStoryRewrite");
+    rewriteButton.hidden = !text || !state?.journalAccess || !state?.serverJourney || state.ended === "placement";
+    rewriteButton.disabled = pending;
   }
   narrative.subscribe(() => {
     renderClosing();
@@ -292,15 +301,16 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     statsButton.textContent = t("journalStatsPage");
     mapButton.textContent = t("journalMapPage");
     photosButton.hidden = statsButton.hidden = mapButton.hidden = readOnly;
-    photosButton.disabled = !statistics && !mapping && !covering;
+    photosButton.disabled = !statistics && !mapping && !covering && !backing;
     statsButton.disabled = statistics || !statsContext;
     mapButton.disabled = mapping || !statsContext;
     exportButton.textContent = t(exporting ? "journalPdfPreparing" : "journalExportPdf");
     exportButton.disabled = exporting || loading;
-    previous.disabled = covering || mapping || statistics || loading || spread === 0;
-    next.disabled = covering || mapping || statistics || loading || (spread + 1) * 2 >= entries.length;
+    previous.disabled = covering || mapping || statistics || loading || (!backing && spread === 0);
+    next.disabled = backing || covering || mapping || statistics || loading ||
+      ((spread + 1) * 2 >= entries.length && !closingText());
     document.querySelector("#journal-count").textContent =
-      covering ? t("journalCoverPage") : mapping ? t("journalMapPage") : statistics ? t("journalStatsPage") :
+      backing ? t("journalBackCoverPage") : covering ? t("journalCoverPage") : mapping ? t("journalMapPage") : statistics ? t("journalStatsPage") :
         t("journalCount", { spread: spread + 1, total: Math.max(1, Math.ceil(entries.length / 2)) });
     status.textContent = error ? t("journalError", { error }) : exporting ? t("journalPdfPreparing") :
       loading ? t("journalLoading") : exported ? t("journalPdfReady") : "";
@@ -313,6 +323,11 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     error = "";
     localize();
     try {
+      if (backing) {
+        revoke();
+        pages.replaceChildren();
+        return;
+      }
       pages.dataset.statistics = String(statistics);
       pages.dataset.mapping = String(mapping);
       pages.dataset.covering = String(covering);
@@ -570,13 +585,15 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   }
   document.querySelector("#open-journal").addEventListener("click", () => {
     if (document.querySelector("dialog[open]")) return;
-    covering = Boolean(statsContext);
+    backing = Boolean(closingText());
+    covering = !backing && Boolean(statsContext);
     statistics = mapping = false;
     dialog.showModal();
     void load();
   });
   photosButton.addEventListener("click", () => {
     if (readOnly) return;
+    backing = false;
     statistics = false;
     mapping = false;
     covering = false;
@@ -584,6 +601,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   });
   statsButton.addEventListener("click", () => {
     if (readOnly || !statsContext) return;
+    backing = false;
     statistics = true;
     mapping = false;
     covering = false;
@@ -591,6 +609,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   });
   mapButton.addEventListener("click", () => {
     if (readOnly || !statsContext) return;
+    backing = false;
     mapping = true;
     statistics = false;
     covering = false;
@@ -598,13 +617,35 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   });
   coverButton.addEventListener("click", () => {
     if (readOnly || !statsContext) return;
+    backing = false;
     covering = true;
     statistics = mapping = false;
     void render();
   });
-  previous.addEventListener("click", () => { if (!statistics && !loading && spread > 0) { spread--; void render(); } });
+  backButton.addEventListener("click", () => {
+    if (!closingText()) return;
+    backing = true;
+    statistics = mapping = covering = false;
+    void render();
+  });
+  rewriteButton.addEventListener("click", () => {
+    const state = closingState();
+    if (rewriteButton.hidden || rewriteButton.disabled || !confirm(t("closingStoryRewriteConfirm"))) return;
+    try {
+      narrative.regenerateClosing(state);
+      renderClosing();
+    } catch (reason) { failure(reason); }
+  });
+  previous.addEventListener("click", () => {
+    if (backing && !loading) {
+      backing = false;
+      spread = Math.max(0, Math.ceil(entries.length / 2) - 1);
+      void render();
+    } else if (!statistics && !loading && spread > 0) { spread--; void render(); }
+  });
   next.addEventListener("click", () => {
     if (!statistics && !loading && (spread + 1) * 2 < entries.length) { spread++; void render(); }
+    else if (!loading && !covering && !mapping && !statistics && closingText()) backButton.click();
   });
   document.querySelector("#journal-retry").addEventListener("click", () => {
     if (!loading) { art.refresh(); void load(); }
@@ -621,9 +662,9 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       scope === owner && readOnly === foreign && dialog.open;
     localize();
     try {
+      const closing = closingText();
+      const backCover = closing ? { title: t("closingStoryTitle"), text: closing } : null;
       if (!foreign && statsContext) {
-        const closing = closingText();
-        if (closing) clues.push(closing);
         clues.push(...discoveryNotebookEntries(statsContext.state, t)
           .map(record => `${record.context} — ${record.text}`));
       }
@@ -656,7 +697,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       }
       if (!stillCurrent()) return;
       const pdf = await makePdf({ title: foreign ? foreignTitle ?? t("journalAbandonedTitle") : t("journalTitle"),
-        photos, groups, clues, route, cover, t });
+        photos, groups, clues, route, cover, backCover, t });
       if (!stillCurrent()) return;
       downloadPdf(pdf);
       exported = true;
@@ -676,17 +717,19 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     statistics = false;
     mapping = false;
     covering = false;
+    backing = false;
+    archiveState = null;
     abandonedClues = [];
     exported = false;
     document.querySelector("#journal-abandoned-clues")?.replaceChildren();
   });
   const api = {
     updateStats(context) {
-      const wasSpecialPage = statistics || mapping || covering;
+      const wasSpecialPage = statistics || mapping || covering || backing;
       const unchangedMap = mapping && context?.state === statsContext?.state &&
         context?.mapTerrain === statsContext?.mapTerrain;
       statsContext = context;
-      if (context) {
+      if (context && !archiveState) {
         narrative.prefetch(context.state, [JOURNAL_SUBTITLE]);
         if (closingSummary(context.state)) narrative.prefetch(context.state, [CLOSING_STORY]);
         try {
@@ -697,10 +740,10 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         }
       }
       renderClosing();
-      if (!context) statistics = mapping = covering = false;
+      if (!context) statistics = mapping = covering = backing = false;
       if (dialog.open && !readOnly) {
         if (unchangedMap) return;
-        if (statistics || mapping || covering || wasSpecialPage) void render();
+        if (statistics || mapping || covering || backing || wasSpecialPage) void render();
         else localize();
       }
     },
@@ -723,6 +766,8 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       statistics = false;
       mapping = false;
       covering = false;
+      backing = false;
+      archiveState = null;
       statsContext = null;
       renderClosing();
       store = scoped;
@@ -745,12 +790,15 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       if (cover) photos.unshift({ ...cover, id: COVER_ART_ID });
       return photos;
     },
-    async showAbandoned(notebook, clues, title = t("journalAbandonedTitle")) {
+    async showAbandoned(notebook, clues, title = t("journalAbandonedTitle"), savedState = null) {
       exportEpoch++;
       readOnly = true;
       statistics = false;
       mapping = false;
       covering = false;
+      archiveState = savedState;
+      backing = Boolean(closingText());
+      if (closingSummary(savedState)) narrative.prefetch(savedState, [CLOSING_STORY]);
       abandonedClues = [...clues];
       foreignTitle = title;
       exported = false;

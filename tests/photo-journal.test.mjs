@@ -19,8 +19,8 @@ const photo = (id = 1) => ({ blob: new Blob(["image fixture"], { type: "image/pn
 for (const language of ["fr", "en"]) {
   for (const ended of ["health", "hunger", "fatigue", "sleep", "reunion", "placement"]) {
     test(`${language}/${ended} saved ending recovers in the journal and PDF without changing gameplay`, async test => {
-      const original = globalThis.document;
-      test.after(() => { globalThis.document = original; });
+      const original = { document: globalThis.document, confirm: globalThis.confirm };
+      test.after(() => Object.assign(globalThis, original));
       class Element {
         dataset = {}; children = []; events = {}; open = false; textContent = "";
         append(...children) { this.children.push(...children); }
@@ -43,7 +43,7 @@ for (const language of ["fr", "en"]) {
         trail: { index: 0, stages: [{ name: "Known village" }, { name: "Unvisited village" }],
           arrivals: [{ stage: 0, elapsedMinutes: 120 }], history: [] } };
       const before = structuredClone(state), requests = [];
-      let generated = null, notify, exported, pending = true;
+      let generated = null, notify, exported, pending = true, rewrites = 0;
       const tr = (key, args) => translate(document.documentElement.lang, key, args);
       const ui = setupPhotoJournal(tr, {
         narrative: {
@@ -52,6 +52,12 @@ for (const language of ["fr", "en"]) {
           status() { return pending ? "Writing" : generated ? "Ready" : "Writing failed"; },
           pending(state, id) { return id === CLOSING_STORY && pending; },
           subscribe(listener) { notify = listener; },
+          regenerateClosing(owner) {
+            assert.equal(owner, state);
+            rewrites++;
+            pending = true;
+            notify();
+          },
         },
         store: { list: async () => [], get: async () => null },
         makePdf: async input => { exported = input; return new Blob(["PDF"]); }, downloadPdf() {},
@@ -68,7 +74,17 @@ for (const language of ["fr", "en"]) {
       assert.equal(requests.includes(CLOSING_STORY), ended !== "placement");
       assert.equal(element("#journal-closing-status").ariaBusy, ended === "placement" ? "false" : "true");
       await element("#journal-export-pdf").events.click();
-      assert.ok(exported.clues.includes(expected), "PDF includes the complete closing account");
+      assert.equal(exported.backCover.text, expected, "PDF ends with the complete closing account");
+      assert.ok(!exported.clues.includes(expected), "closing account is not duplicated among clues");
+      assert.equal(element("#journal-pages").hidden, true);
+      assert.equal(element("#journal-count").textContent, tr("journalBackCoverPage"));
+      element("#journal-cover-page").events.click();
+      await new Promise(resolve => setImmediate(resolve));
+      assert.equal(element("#journal-closing-story").hidden, true);
+      assert.equal(element("#journal-pages").hidden, false);
+      element("#journal-back-cover-page").events.click();
+      await new Promise(resolve => setImmediate(resolve));
+      assert.equal(element("#journal-closing-story").hidden, false);
       pending = false;
       notify();
       assert.equal(element("#journal-closing-text").textContent, expected, "failed generation keeps authored summary");
@@ -78,7 +94,25 @@ for (const language of ["fr", "en"]) {
         assert.equal(element("#journal-closing-text").textContent, generated[language]);
         await new Promise(resolve => setImmediate(resolve));
         await element("#journal-export-pdf").events.click();
-        assert.ok(exported.clues.includes(generated[language]));
+        assert.equal(exported.backCover.text, generated[language]);
+        state.journalAccess = "a".repeat(64);
+        state.serverJourney = { id: "b".repeat(32) };
+        ui.localize();
+        assert.equal(element("#journal-closing-rewrite").hidden, false);
+        globalThis.confirm = () => false;
+        element("#journal-closing-rewrite").events.click();
+        assert.equal(rewrites, 0);
+        globalThis.confirm = () => true;
+        element("#journal-closing-rewrite").events.click();
+        assert.equal(rewrites, 1);
+        assert.equal(element("#journal-closing-rewrite").disabled, true);
+        assert.equal(element("#journal-closing-text").textContent, generated[language]);
+        element("#journal-closing-rewrite").events.click();
+        assert.equal(rewrites, 1);
+        pending = false;
+        notify();
+        delete state.journalAccess;
+        delete state.serverJourney;
         document.documentElement.lang = language === "fr" ? "en" : "fr";
         ui.localize();
         await new Promise(resolve => setImmediate(resolve));
@@ -89,6 +123,7 @@ for (const language of ["fr", "en"]) {
       assert.equal(element("#journal-closing-story").hidden, true, "never leak own ending into another notebook");
       await element("#journal-export-pdf").events.click();
       assert.deepEqual(exported.clues, ["Another traveller's account"]);
+      assert.equal(exported.backCover, null);
       element("#photo-journal-dialog").close();
       ui.updateStats(null);
       assert.equal(element("#journal-closing-story").hidden, true);
@@ -220,8 +255,8 @@ test("archived notebook selector reads preserved photos without changing or publ
   assert.equal(calls[0].photos[0].caption, "Old notebook photo");
   assert.equal(calls[0].title, "Archived notebooks");
   assert.match(element("#journal-abandoned-clues").children[1].textContent, /Archived Alex/);
-  assert.ok(calls[0].clues.includes(closingStoryText(state,
-    (key, args) => translate("en", key, args), null, "en", { includePlacement: true })));
+  assert.equal(calls[0].backCover.text, closingStoryText(state,
+    (key, args) => translate("en", key, args), null, "en", { includePlacement: true }));
   assert.equal(rows.size, 2);
 });
 
