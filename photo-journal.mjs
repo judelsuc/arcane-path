@@ -10,6 +10,7 @@ import { notebookCover } from "./notebook-cover.mjs";
 import { renderDiscoveryNotebook, discoveryNotebookEntries } from "./discovery-ui.mjs";
 import { createJournalIllustrator, illustrationScenes, COVER_ART_ID } from "./journal-art.mjs";
 import { createLiveNarrative, JOURNAL_SUBTITLE } from "./live-narrative.mjs";
+import { archivedJourneys } from "./journey-save.mjs";
 
 export function validateJournalPhoto(photo) {
   if (!photo || typeof photo.sourceUrl !== "string" || typeof photo.licenseUrl !== "string" ||
@@ -141,8 +142,25 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   const statsButton = document.querySelector("#journal-stats-page");
   const mapButton = document.querySelector("#journal-map-page");
   const exportButton = document.querySelector("#journal-export-pdf");
+  const archives = document.createElement("select");
+  archives.id = "journal-archives";
+  exportButton.insertAdjacentElement?.("afterend", archives);
+  archives.addEventListener("change", async () => {
+    if (!archives.value) return;
+    try {
+      const save = archivedJourneys(localStorage).find(save =>
+        (save.state.serverJourney?.id ?? String(save.state.startedAt)) === archives.value);
+      if (!save) throw new Error("Archived notebook is unavailable.");
+      const photos = await api.snapshot(save.state);
+      await api.showAbandoned(photos, [
+        `${save.state.name ?? t("unnamedCharacter")} · ${save.savedAt}`,
+        ...discoveryNotebookEntries(save.state, t).map(record => `${record.context} — ${record.text}`),
+      ], t("journalArchives"));
+    } catch (reason) { failure(reason); }
+  });
   let exporting = false, exported = false, exportEpoch = 0;
   let abandonedClues = [];
+  let foreignTitle;
   let statsContext = null, statistics = false;
   let mapping = false, animation;
   function stopAnimation() {
@@ -199,6 +217,25 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     setFeedback(status, "failure");
   }
   function localize() {
+    archives.replaceChildren();
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = t("journalArchives");
+    archives.append(placeholder);
+    archives.setAttribute?.("aria-label", t("journalArchives"));
+    try {
+      const saved = globalThis.localStorage ? archivedJourneys(localStorage) : [];
+      archives.hidden = !saved.length;
+      for (const save of saved) {
+        const option = document.createElement("option");
+        option.value = save.state.serverJourney?.id ?? String(save.state.startedAt);
+        option.textContent = `${save.state.name ?? t("unnamedCharacter")} · ${save.savedAt}`;
+        archives.append(option);
+      }
+    } catch (reason) {
+      console.error("Archived notebooks unavailable:", reason);
+      error = reason.message;
+    }
     try {
       renderDiscoveryNotebook(document.querySelector("#journal-discovery"), readOnly ? null : statsContext?.state, t);
     } catch (reason) {
@@ -557,7 +594,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         photos.push({ ...photo });
       }
       if (!stillCurrent()) return;
-      const pdf = await makePdf({ title: t(foreign ? "journalAbandonedTitle" : "journalTitle"),
+      const pdf = await makePdf({ title: foreign ? foreignTitle ?? t("journalAbandonedTitle") : t("journalTitle"),
         photos, groups, clues, route, cover, t });
       if (!stillCurrent()) return;
       downloadPdf(pdf);
@@ -582,7 +619,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     exported = false;
     document.querySelector("#journal-abandoned-clues")?.replaceChildren();
   });
-  return {
+  const api = {
     updateStats(context) {
       const wasSpecialPage = statistics || mapping || covering;
       const unchangedMap = mapping && context?.state === statsContext?.state &&
@@ -644,18 +681,19 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       if (cover) photos.unshift({ ...cover, id: COVER_ART_ID });
       return photos;
     },
-    async showAbandoned(notebook, clues) {
+    async showAbandoned(notebook, clues, title = t("journalAbandonedTitle")) {
       exportEpoch++;
       readOnly = true;
       statistics = false;
       mapping = false;
       covering = false;
       abandonedClues = [...clues];
+      foreignTitle = title;
       exported = false;
       const evidence = document.querySelector("#journal-abandoned-clues");
       evidence.replaceChildren();
       const heading = document.createElement("h3");
-      heading.textContent = t("journalAbandonedTitle");
+      heading.textContent = title;
       evidence.append(heading);
       for (const text of clues) {
         const p = document.createElement("p");
@@ -734,4 +772,5 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       container.append(button, feedback);
     },
   };
+  return api;
 }

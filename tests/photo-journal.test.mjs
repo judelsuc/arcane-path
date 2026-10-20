@@ -7,11 +7,63 @@ import { startSurvival } from "../survival.mjs";
 import { startEconomy } from "../economy.mjs";
 import { COVER_ART_ID } from "../journal-art.mjs";
 import { JOURNAL_SUBTITLE } from "../live-narrative.mjs";
+import { createJourneyStore } from "../journey-save.mjs";
+import { createTrail } from "../trail.mjs";
 
 const photo = (id = 1) => ({ blob: new Blob(["image fixture"], { type: "image/png" }),
   title: `Secret photo ${id}`, attribution: "Photographer", license: "CC BY 4.0",
   licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
   sourceUrl: `https://example.org/photo/${id}`, note: "", pinnedAt: `2026-10-17T12:00:0${id}Z` });
+
+test("archived notebook selector reads preserved photos without changing or publishing the new notebook", async test => {
+  const original = { document: globalThis.document, localStorage: globalThis.localStorage };
+  test.after(() => Object.assign(globalThis, original));
+  class Element {
+    dataset = {}; children = []; events = {}; open = false; textContent = ""; value = "";
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    addEventListener(type, callback) { this.events[type] = callback; }
+    insertAdjacentElement(position, child) { this.children.push(child); }
+    showModal() { this.open = true; }
+  }
+  const elements = new Map(), element = selector => {
+    if (!elements.has(selector)) elements.set(selector, new Element());
+    return elements.get(selector);
+  };
+  globalThis.document = { documentElement: { lang: "en" }, createElement: () => new Element(),
+    querySelector: selector => selector === "dialog[open]"
+      ? [...elements.values()].find(e => e.open) ?? null : element(selector) };
+  const rows = new Map();
+  globalThis.localStorage = { get length() { return rows.size; }, key: i => [...rows.keys()][i] ?? null,
+    getItem: key => rows.get(key) ?? null, setItem: (key, value) => rows.set(key, value) };
+  const map = JSON.parse(readFileSync(new URL("../public/map.json", import.meta.url)));
+  const survival = JSON.parse(readFileSync(new URL("../public/config.json", import.meta.url))).survival;
+  const economy = JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url)));
+  const state = { ...startEconomy(startSurvival(14, 10, Date.UTC(2026, 9, 20),
+    "balanced", survival), economy, () => 0), name: "Archived Alex",
+    trail: createTrail(map, 14, 10, () => 0) };
+  const saved = createJourneyStore(localStorage);
+  saved.read("firmi");
+  saved.archive(saved.write({ region: "firmi", map, state, survival, economy }));
+  const scopes = [], calls = [];
+  const oldPhoto = { ...photo(7), caption: "Old notebook photo", id: "old" };
+  const ui = setupPhotoJournal((key, args) => translate("en", key, args), { store: {
+    scope: async scope => { scopes.push(scope); return {
+      list: async () => [{ id: "old" }], get: async id => id === "old" ? oldPhoto : null,
+    }; },
+  }, makePdf: async input => { calls.push(input); return new Blob(["PDF"]); }, downloadPdf() {} });
+  ui.localize();
+  const select = element("#journal-export-pdf").children[0];
+  assert.equal(select.hidden, false);
+  select.value = select.children[1].value;
+  await select.events.change();
+  await element("#journal-export-pdf").events.click();
+  assert.deepEqual(scopes, [`local:${state.startedAt}`]);
+  assert.equal(calls[0].photos[0].caption, "Old notebook photo");
+  assert.equal(calls[0].title, "Archived notebooks");
+  assert.match(element("#journal-abandoned-clues").children[1].textContent, /Archived Alex/);
+  assert.equal(rows.size, 2);
+});
 
 test("own cover image and generated bilingual subtitle appear on the cover and in its PDF", async test => {
   const original = globalThis.document;

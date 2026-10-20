@@ -2,12 +2,24 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { createServerJourney, validateServerJourney } from "../server-journey.mjs";
+import { createServerJourney, validateServerJourney, serverJourneyExists } from "../server-journey.mjs";
 import { createJourneyStore, createSave, validateSave } from "../journey-save.mjs";
 import { walkSurvival } from "../survival.mjs";
 import { finishAction, refreshPricing } from "../economy.mjs";
 
 const root = new URL("../", import.meta.url);
+test("replacement detects only an explicitly missing server journey, never connectivity/auth failures", async () => {
+  const state = { serverJourney: { id: "a".repeat(32) } };
+  const reply = (value, status = 200) => new Response(JSON.stringify(value), { status });
+  assert.equal(await serverJourneyExists(state, async () => reply({ state })), true);
+  assert.equal(await serverJourneyExists(state, async () => reply({ error: "Server journey not found." }, 404)), false);
+  for (const status of [401, 403, 404, 500]) {
+    await assert.rejects(serverJourneyExists(state, async () => reply({ error: "Unavailable" }, status)), /Unavailable/);
+  }
+  await assert.rejects(serverJourneyExists(state, async () => { throw new Error("offline"); }), /offline/);
+  await assert.rejects(serverJourneyExists(state, async () => reply({ state: {} })), /Invalid/);
+});
+
 const python = existsSync(new URL(".venv/bin/python", root)) ? ".venv/bin/python" : "python3";
 const { record, variants } = JSON.parse(execFileSync(python, ["-c", `
 import copy, json, sys, tempfile, uuid

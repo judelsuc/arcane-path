@@ -1,6 +1,11 @@
 {
-  "version": "0.20.1",
+  "version": "0.20.2",
   "entries": [
+    {
+      "version": "0.20.2",
+      "fr": "Après une perte des données serveur, un nouveau voyage peut être créé en conservant l'ancienne sauvegarde et son carnet dans ce navigateur. Les carnets archivés restent consultables depuis le carnet. Une ancienne publication devenue impossible ne bloque plus les nouveaux carnets ; les autres erreurs restent signalées.",
+      "en": "After server data loss, a new journey can be created while preserving the old save and notebook in this browser. Archived notebooks remain accessible from the notebook. An old publication whose server journey is missing no longer blocks new notebooks; other failures remain explicit."
+    },
     {
       "version": "0.20.1",
       "fr": "La couverture du carnet reçoit sa propre illustration onirique, distincte de l'image d'accueil. Son sous-titre bilingue est généré à partir du départ, du tarot et de l'histoire enregistrée du parent, sans dévoiler les étapes futures. L'image et le sous-titre sont conservés pour ce voyage et repris dans le PDF.",

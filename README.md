@@ -107,6 +107,13 @@ Les prompts musicaux 8-bit et sons de jeu sont dans [audio-prompts](./audio-prom
 
 ## Couverture personnelle du carnet
 
+Si le voyage serveur a disparu apres une reconstruction, creer un nouveau
+voyage propose d'archiver l'ancienne sauvegarde dans ce navigateur avant
+remplacement. Le menu **Carnets archives** du carnet permet de consulter les
+photos/pages conservees et de les exporter ; aucune restauration serveur ou
+publication reussie n'est pretendue. Une erreur reseau/authentification ne
+declenche pas cette procedure. Ne pas effacer le stockage du navigateur.
+
 La couverture dispose de sa propre illustration symbolique tarot/decor,
 distincte de l'image d'accueil, generee en arriere-plan par la file privee
 du carnet. Son sous-titre FR/EN est genere une seule fois depuis le cadre
