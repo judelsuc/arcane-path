@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { setupPreviewHelp } from "../preview-help.mjs";
-import { setupGameHelp, GAME_HELP_SOURCES } from "../game-help.mjs";
+import { setupGameHelp, GAME_HELP_SOURCES, GAME_TECHNICAL_SOURCES } from "../game-help.mjs";
 import { translate } from "../i18n.mjs";
 import { readFile } from "node:fs/promises";
 
@@ -389,6 +389,12 @@ test("all shipped game windows have bilingual contextual help; consequential con
   const ids = ["title-screen", "journey-setup", "game-content",
     ...[...html.matchAll(/<dialog id="([^"]+)"/g)].map(match => match[1])];
   assert.equal(ids.length, 27);
+  for (const id of ["release-deployment", "release-status"]) {
+    assert.ok(GAME_TECHNICAL_SOURCES.includes(`#${id}`), `${id} stays in closed technical details`);
+  }
+  for (const href of ["./lore-playtest.html", "./layers/living-world/preview.html"]) {
+    assert.ok(html.includes(`technical-text"><a href="${href}"`), `${href} stays outside the ordinary game surface`);
+  }
   for (const language of ["en", "fr"]) {
     for (const id of ids) assert.ok(translate(language, `windowHelp.${id}`).length > 30, `${language}: ${id}`);
   }

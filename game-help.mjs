@@ -30,6 +30,7 @@ export const GAME_TECHNICAL_SOURCES = [
     "theft-audio-status", "cafe-audio-status",
     "opening-story-status", "closing-story-status", "journey-event-wording-status",
     "trail-dream-wording-status", "economy-npc-wording-status",
+    "release-deployment", "release-status",
   ].map(id => `#${id}`),
 ].join(", ");
 
