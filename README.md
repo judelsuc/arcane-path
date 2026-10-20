@@ -65,7 +65,7 @@ generees en arriere-plan depuis des motifs symboliques et observations
 generales, jamais des lieux precis ou notes privees. Voir les
 [conditions, activation et limites](./doc/CONTENT_FACTORY.md#personalized-journal-illustrations).
 
-## Fondation des indices unifies (19 octobre, locale non deployee)
+## Fondation des indices unifies (voyage principal)
 
 Le [registre commun](./discovery.mjs) enregistre les faits gagnes concernant la
 piste du parent et les carnets abandonnes, sans changer les couts ni les chances

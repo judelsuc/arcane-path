@@ -35,7 +35,7 @@ For concrete evidence declarations, authored FR/EN templates, selection rules
 and sleep-dream integration, see the [hint engine developer guide](./HINT_ENGINE.md).
 
 **Implementation checkpoint, 19 October:** the first shared-discovery increment
-now exists locally; it is not deployed. [Discovery ledger](../discovery.mjs)
+is included in the production release. [Discovery ledger](../discovery.mjs)
 validates versioned knowledge, deduplicates semantic evidence across channels
 and retains historical/unavailable observations. [Domain adapters](../discovery-targets.mjs)
 project already-earned parent clues and journal-service results into it.

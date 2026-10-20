@@ -16,22 +16,24 @@ Increasing clarity is different from increasing precision: pressing **Explain**
 must not reveal a town or cell that the player has not earned.
 
 The ledger and existing parent/journal projections are used by the main game.
+The ledger is also included in the production release's main notebook/PDF.
 The combined three-domain selector, authored presentation and sleep dreams
 described in section 7 remain wired into the **isolated lore playtest**, not the
 main journey. That broader lore work is local and not deployed.
 
 The main journey has a separate, bounded **parent rescue dream** (R-163):
-deliberate sleep of at least 60 minutes permits a check every 720 journey
-minutes. Three unsuccessful field searches (even far from the route), or 1,440
-minutes without new parent progress, guarantee a broad direction toward the
-current stage; otherwise the chance is 50%. Checks and misses persist in
-`trail.dreams`; a stable draw prevents rerolling the same sleep on reload.
+deliberate sleep of at least 60 minutes gives a broad direction only after
+2,880 journey minutes (48 hours) without new parent-clue progress. Successful
+guidance restarts that delay; unsuccessful/duplicate searches do not shorten it.
+Checks remain at least 720 journey minutes apart and persist in `trail.dreams`;
+no random early rescue or reroll on reload is offered.
 Guidance is anchored to the sleeping cell, never names hidden destinations,
 and is not a promise of a walkable route. It appears after existing dialogs
 and is retained in the stage's trail page, discovery notebook and PDF
 projection. Rest, fainting, detention, care and interrupted/terminal sleeps do
 not count; hotel, shelter, outdoor and accepted hospitality sleep do count.
-There is no extra resource cost or model call. This does not enable the
+There is no extra resource cost. Optional factory wording introduces the dream
+but never changes its game-calculated bearing. This does not enable the
 three-domain lore dream selector or change its separate probability rules.
 
 In the main journey, field searches keep the **Investigate / Enquêter** tab

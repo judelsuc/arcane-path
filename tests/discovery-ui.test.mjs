@@ -8,6 +8,14 @@ import { translate } from "../i18n.mjs";
 import { startSurvival } from "../survival.mjs";
 import { startEconomy } from "../economy.mjs";
 
+test("the main notebook contains the shared-discovery host", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const notebook = html.slice(html.indexOf('<dialog id="photo-journal-dialog"'));
+  assert.match(notebook.slice(0, notebook.indexOf("</dialog>")),
+    /<details id="journal-discovery" hidden><\/details>/);
+  assert.equal(html.match(/id="journal-discovery"/g)?.length, 1);
+});
+
 class Element {
   children = [];
   events = {};
