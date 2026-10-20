@@ -11,6 +11,7 @@ import { setupShortcutHelp } from "./shortcut-help.mjs";
 import { setupPhotoJournal } from "./photo-journal.mjs";
 import { setupGameHelp } from "./game-help.mjs";
 import { setupStartArt } from "./start-art.mjs";
+import { setupGameRelease } from "./game-release-ui.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
 const viewport = document.querySelector("#map-viewport");
@@ -197,6 +198,15 @@ function t(key, parameters) {
   return translate(locale, key, parameters);
 }
 
+const gameRelease = setupGameRelease({
+  versionElement: document.querySelector("#release-version"),
+  deploymentElement: document.querySelector("#release-deployment"),
+  entriesElement: document.querySelector("#release-entries"),
+  statusElement: document.querySelector("#release-status"),
+  t,
+  language: locale,
+});
+
 function localize() {
   document.documentElement.lang = locale;
   document.title = t("pageTitle");
@@ -215,6 +225,7 @@ function localize() {
   controls.localize();
   windowHelp.localize();
   startArt.localize();
+  gameRelease.localize(locale);
   document.querySelector("#starting-map-status").textContent = mapData
     ? t("setupSelected", { name: mapData.origin ? mapData.name.split(",")[0] : mapData.name })
     : t(loadFailed ? "loadError" : "loading");

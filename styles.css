@@ -360,6 +360,11 @@ h1 {
 .option-group { padding: 20px 0; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
 #options-dialog .audio-controls { margin-bottom: 0; }
 #options-dialog #audio-status { flex-basis: 100%; }
+.release-info p { margin-block: 8px; overflow-wrap: anywhere; }
+.release-info details { margin-top: 12px; }
+.release-info summary { cursor: pointer; }
+.release-info ul { padding-inline-start: 1.25em; }
+.release-info li { margin-block: 10px; line-height: 1.5; overflow-wrap: anywhere; }
 .comparison-panel {
   min-width: 0;
 }

@@ -80,8 +80,11 @@ for (const locale of ["fr", "en"]) {
     const survival = json("../public/config.json").survival, economy = json("../public/economy.json");
     const actual = startEconomy(startSurvival(1, 2, Date.UTC(2026, 9, 17),
       "balanced", survival), economy, () => 0);
-    const state = { ...actual, elapsedMinutes: 30, trail: { index: 0 },
-      discovery: fixture().discovery };
+    const state = applyJournalDiscovery({ ...actual, elapsedMinutes: 30, trail: { index: 0 },
+      discovery: fixture().discovery }, [], [], 30, [{
+      id: "b".repeat(32), parent: "Reported parent", bearing: "north-east", distanceBand: "5-10km",
+      observedMinutes: 25, evidenceKey: `town:${"c".repeat(32)}`, availability: "unavailable",
+    }]);
     const exported = [];
     const ui = setupPhotoJournal(t, { store: { list: async () => [], get: async () => null },
       makePdf: async input => { exported.push(input); return new Blob(["PDF"]); },
@@ -91,8 +94,11 @@ for (const locale of ["fr", "en"]) {
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(element("#journal-discovery").hidden, false);
     assert.doesNotMatch(texts(element("#journal-discovery")), /Secret destination/);
+    assert.match(texts(element("#journal-discovery")), /Reported parent.*(?:north-east|nord-est).*5–10 km/);
     await element("#journal-export-pdf").events.click();
-    assert.equal(exported[0].clues.length, 2);
+    assert.equal(exported[0].clues.length, 3);
+    assert.match(exported[0].clues.join(" "), /Reported parent.*(?:north-east|nord-est).*5–10 km/);
+    assert.match(exported[0].clues.join(" "), /Disparu ou emporté|Gone or claimed/);
     assert.doesNotMatch(exported[0].clues.join(" "), /Secret destination|Unrevealed journal town/);
     element("#photo-journal-dialog").close();
     await ui.showAbandoned([], ["Only the explicitly shared clue"]);

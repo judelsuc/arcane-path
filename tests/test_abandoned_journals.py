@@ -1,6 +1,7 @@
 import copy
 import base64
 import json
+import hashlib
 from pathlib import Path
 import shutil
 import sys
@@ -183,6 +184,105 @@ class JournalsTests(unittest.TestCase):
                 self.call(1, **changes)
         with self.assertRaises(JourneyConflict):
             self.call(1, action="claim", journal=self.ids[0], row=50)
+
+    def mapped_town(self, named=True):
+        for record in self.records.values():
+            record["region"] = "test-region"
+        cell = {"terrain": "place", "settlements": [{"name": "Mapped town"}] if named else []}
+        self.journeys.chunks = SimpleNamespace(
+            read=lambda region, x, y: {"rows": [[cell for _ in range(8)] for _ in range(8)]})
+
+    def rumour_day(self, succeeds=True):
+        for day in range(100):
+            seed = json.dumps([self.ids[1], "test-region", 0, 0, day, self.ids[0]],
+                              separators=(",", ":"))
+            hit = int(hashlib.sha256(seed.encode()).hexdigest()[:8], 16) < 0x80000000
+            if hit == succeeds:
+                return day
+        self.fail("No deterministic rumour draw found")
+
+    def test_town_rumours_are_stable_bounded_sanitized_and_persist_across_restart(self):
+        self.mapped_town()
+        self.call(ended="hunger", index=2, row=40)
+        day = self.rumour_day()
+        result = self.call(1, action="rumours", elapsedMinutes=day * 1440)
+        rumour, = result["rumours"]
+        self.assertEqual(rumour["bearing"], "south")
+        self.assertIn(rumour["distanceBand"], ("5-10km", "10-20km"))
+        self.assertEqual(rumour["observedMinutes"], day * 1440)
+        self.assertEqual(result["nearby"], [])
+        self.assertEqual(result["indications"], [])
+        self.assertEqual(set(rumour), {"id", "parent", "bearing", "distanceBand",
+                                      "availability", "observedMinutes", "evidenceKey"})
+        self.assertEqual(self.call(1, action="rumours", elapsedMinutes=day * 1440 + 10)["rumours"],
+                         result["rumours"])
+        store = AbandonedJournals(self.journeys, lambda: self.now)
+        self.assertEqual(store.request({"journey": self.ids[1], "col": 0, "row": 0,
+                                       "elapsedMinutes": day * 1440}, self.tokens[1])["rumours"],
+                         result["rumours"])
+        for secret in ("Town 2", "Town 9", "stages", "photos", "history", "latitude", self.tokens[0]):
+            self.assertNotIn(secret, json.dumps(rumour))
+
+    def test_daily_miss_does_not_reroll_and_new_day_can_succeed(self):
+        self.mapped_town()
+        self.call(ended="hunger", index=2, row=40)
+        miss = self.rumour_day(False)
+        for minute in (0, 1, 700, 1439):
+            self.assertEqual(self.call(1, action="rumours", elapsedMinutes=miss * 1440 + minute)["rumours"], [])
+        self.assertEqual(len(self.call(1, action="rumours",
+                                       elapsedMinutes=self.rumour_day() * 1440)["rumours"]), 1)
+
+    def test_conversation_requires_actual_named_mapped_cell_and_capability(self):
+        self.publish()
+        with self.assertRaises(JourneyConflict):
+            self.call(1, action="rumours")
+        self.mapped_town(False)
+        with self.assertRaises(JourneyConflict):
+            self.call(1, action="rumours")
+        self.assertEqual(len(self.call(1)["nearby"]), 1)
+        self.mapped_town()
+        with self.assertRaises(JournalForbidden):
+            self.store.request({"journey": self.ids[1], "col": 0, "row": 0,
+                                "action": "rumours"}, "f" * 64)
+        with self.assertRaises(JourneyConflict):
+            self.call(1, action="rumours", ended="hunger")
+
+    def test_one_km_indication_is_not_two_hundred_meter_pickup(self):
+        self.publish()
+        result = self.call(1, row=3)
+        self.assertEqual(result["nearby"], [])
+        indication, = result["indications"]
+        self.assertEqual(indication["distanceBand"], "within-1km")
+        self.assertEqual(indication["bearing"], "north")
+        with self.assertRaises(JourneyConflict):
+            self.call(1, action="claim", journal=self.ids[0], row=3)
+        self.assertEqual(self.call(1, row=5)["indications"], [])
+        self.assertEqual(len(self.call(1, action="claim", journal=self.ids[0])["sidequests"]), 1)
+
+    def test_known_rumours_explicitly_report_claim_expiry_delivery_and_deletion(self):
+        self.mapped_town()
+        self.call(ended="hunger", index=2, row=40)
+        self.call(1, action="rumours", elapsedMinutes=self.rumour_day() * 1440)
+        self.call(2, action="claim", journal=self.ids[0], row=40)
+        self.assertEqual(self.call(1)["rumours"][0]["availability"], "unavailable")
+        self.assertEqual(self.call(3)["rumours"], [])
+        self.now += LEASE_SECONDS
+        self.assertEqual(self.call(1)["rumours"][0]["availability"], "current")
+        with self.store.connect() as db:
+            db.execute("UPDATE journals SET delivered=1 WHERE id=?", (self.ids[0],))
+        self.assertEqual(self.call(1)["rumours"][0]["availability"], "historical")
+        with self.store.connect() as db:
+            db.execute("DELETE FROM journals WHERE id=?", (self.ids[0],))
+        self.assertEqual(self.call(1)["rumours"][0]["availability"], "unavailable")
+
+    def test_twenty_km_search_excludes_distant_and_unavailable_notebooks(self):
+        self.mapped_town()
+        self.call(ended="hunger", index=2, row=81)
+        for day in range(5):
+            self.assertEqual(self.call(1, action="rumours", elapsedMinutes=day * 1440)["rumours"], [])
+        self.call(2, action="claim", journal=self.ids[0], row=81)
+        self.assertEqual(self.call(1, action="rumours", row=81)["rumours"], [])
+        self.assertEqual(self.call(1, row=81)["indications"], [])
 
     def notebook(self):
         return [{"id": "photo:one", "title": "A photo", "sourceUrl": "https://example.org/image",

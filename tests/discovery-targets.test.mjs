@@ -11,6 +11,7 @@ import { startEconomy } from "../economy.mjs";
 import { createTrail } from "../trail.mjs";
 import { translate } from "../i18n.mjs";
 import { discoveryNotebookEntries } from "../discovery-ui.mjs";
+import { knownNotebookRumours, notebookRumourText } from "../notebook-rumours.mjs";
 
 const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
 const map = json("../public/map.json"), survival = json("../public/config.json").survival;
@@ -47,6 +48,69 @@ const journal = (overrides = {}) => ({ id: "a".repeat(32), parent: "Other parent
   history: ["Earlier town"], stages: [{ name: "Journal town", latitude: 44, longitude: 2 },
     { name: "Next journal town", latitude: 45, longitude: 3 }], step: 0, delivered: false,
   ...overrides });
+const rumour = (overrides = {}) => ({ id: "a".repeat(32), parent: "Other parent",
+  bearing: "north-east", distanceBand: "5-10km", observedMinutes: 55,
+  evidenceKey: `town:${"b".repeat(32)}`, availability: "current", ...overrides });
+
+test("ordinary journey host forwards both town and nearby observations into autosaved discovery", () => {
+  const source = readFileSync(new URL("../travel-ui.mjs", import.meta.url), "utf8");
+  const callback = source.match(/persist\(sidequests, published, nearby, observedMinutes, rumours, indications\) \{([\s\S]*?)\n    \},/);
+  assert.ok(callback, "The ordinary journey must handle both observation channels.");
+  const initial = parent();
+  let saves = 0, renders = 0;
+  const run = new Function("state", "applyJournalDiscovery", "autosave", "localize", "rumours", "indications",
+    `const sidequests = [], published = false, nearby = [], observedMinutes = state.elapsedMinutes;
+    ${callback[1]}
+    return state;`);
+  const next = run(initial, applyJournalDiscovery, () => saves++, () => renders++,
+    [rumour()], [rumour({ evidenceKey: `near:${"c".repeat(32)}`, distanceBand: "within-1km" })]);
+  assert.equal(knownNotebookRumours(next).length, 2);
+  assert.equal(saves, 1);
+  assert.equal(renders, 1);
+  assert.equal(initial.discovery, undefined);
+});
+
+test("town and proximity rumours persist only earned approximate facts and explicit availability", () => {
+  const state = parent();
+  const learned = applyJournalDiscovery(state, [], [], 60, [
+    rumour({ privatePages: "SECRET", latitude: 47, stages: ["SECRET"] }),
+  ]);
+  const restored = JSON.parse(JSON.stringify(learned));
+  assert.equal(knownNotebookRumours(restored).length, 1);
+  assert.deepEqual(restored.trail, state.trail);
+  assert.equal(JSON.stringify(restored.discovery).includes("SECRET"), false);
+  assert.equal(JSON.stringify(restored.discovery).includes("latitude"), false);
+  const moved = applyJournalDiscovery(restored, [], []);
+  assert.equal(knownNotebookRumours(moved)[0].availability, "current");
+  const claimed = applyJournalDiscovery(moved, [], [], 60, [rumour({ availability: "unavailable" })]);
+  assert.equal(knownNotebookRumours(claimed)[0].availability, "unavailable");
+  const expired = applyJournalDiscovery(claimed, [], [], 60, [rumour()]);
+  assert.equal(knownNotebookRumours(expired)[0].availability, "current");
+  const delivered = applyJournalDiscovery(expired, [], [], 60, [rumour({ availability: "historical" })]);
+  assert.equal(knownNotebookRumours(delivered)[0].availability, "historical");
+  const indication = rumour({ evidenceKey: `near:${"c".repeat(32)}`, distanceBand: "within-1km" });
+  const close = applyJournalDiscovery(delivered, [], [], 60, [], [indication]);
+  assert.equal(knownNotebookRumours(close).length, 2);
+  assert.deepEqual(close.trail, state.trail);
+  for (const lang of ["fr", "en"]) {
+    const text = notebookRumourText(indication, lang);
+    assert.match(text, /1 km/);
+    assert.match(text, /Other parent/);
+    assert.match(text, /garantie|guarantee/);
+    assert.match(notebookRumourText(rumour({ availability: "unavailable" }), lang), /Disparu|Gone/);
+  }
+});
+
+test("rumour projection rejects unsupported bearings, bands, IDs, evidence and future observations", () => {
+  for (const change of [{ bearing: "precise-secret-address" }, { distanceBand: "200m" },
+    { id: "invalid" }, { observedMinutes: 61 }, { availability: "guaranteed" },
+    { evidenceKey: "private-pages" }, { parent: "" }]) {
+    assert.throws(() => applyJournalDiscovery(parent(), [], [], 60, [rumour(change)]),
+      /Invalid notebook rumours/);
+  }
+  assert.throws(() => applyJournalDiscovery(parent(), [], [], 60, [rumour(), rumour()]),
+    /Invalid notebook rumours/);
+});
 
 test("parent adapter records only earned facts, not full hidden destinations or credentials", () => {
   const state = parent(), before = structuredClone(state);

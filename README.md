@@ -1,5 +1,21 @@
 # Les Arcanes du Chemin
 
+## Game version and notebook rumours
+
+Options includes the game version and a French/English changelog, with the
+packaged commit and UTC date when deployment metadata is available. Local
+builds and unavailable metadata are labelled explicitly. Update
+[release notes](public/changelog.json) whenever delivered game behavior changes;
+the deployment packager still generates `public/release.json` independently.
+
+In ordinary journeys, the town dialog lets players ask about abandoned
+notebooks from actual mapped named settlements. Reports give approximate
+bearings and distance bands within 20 km, with a stable 50% draw per notebook,
+settlement cell and game day. A separate indication appears within 1 km;
+pickup still requires being within 200 m. Reports are saved as earned clues
+and rechecked for availability; they reveal no private notebook pages and do
+not guarantee that another traveller has not already claimed the notebook.
+
 ## Public agenda and transport
 
 Normal journeys include **Public agenda and transport** (R-165). Explicit

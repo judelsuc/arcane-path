@@ -1,5 +1,6 @@
 import { discoveryEntries, discoveryIdentity } from "./discovery.mjs";
 import { authoredHint, authoredCopy } from "./discovery-authored.mjs";
+import { notebookRumourText } from "./notebook-rumours.mjs";
 
 const explanationProgress = new WeakMap();
 
@@ -14,6 +15,11 @@ const TEXT_KEYS = Object.freeze({
 });
 
 export function discoveryClueText(entry, state, t) {
+  if (entry.targetType === "abandoned-journal" && entry.kind === "rumour" &&
+      entry.targetRevision.startsWith("rumour:")) {
+    return notebookRumourText({ ...entry.facts, availability: entry.availability,
+      observedMinutes: entry.observedMinutes }, t("discovery.inscriptionLanguage"));
+  }
   if (entry.targetType === "parent-trail" && entry.source === "parent-sleep-dream") {
     return t("trailDreamText", { direction: t(`hintCompass.${entry.facts.direction}`) });
   }

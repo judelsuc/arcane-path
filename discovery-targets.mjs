@@ -1,5 +1,6 @@
 import { discoveryEntries, learnDiscovery, reconcileDiscoveryAvailability } from "./discovery.mjs";
 import { fieldClueFacts, fieldSearchRules, openingClue } from "./trail-search.mjs";
+import { applyNotebookRumours } from "./notebook-rumours.mjs";
 
 function clue(targetType, targetId, targetRevision, evidenceKey, kind, precision,
   facts, observedMinutes, channel, source) {
@@ -121,7 +122,8 @@ function validateJournal(journal) {
   }
 }
 
-export function applyJournalDiscovery(state, sidequests, nearby, observedMinutes = state.elapsedMinutes) {
+export function applyJournalDiscovery(state, sidequests, nearby, observedMinutes = state.elapsedMinutes,
+  rumours = [], indications = []) {
   if (!Array.isArray(sidequests) || sidequests.length > 1000 ||
       !Array.isArray(nearby) || nearby.length > 100 ||
       !Number.isFinite(observedMinutes) || observedMinutes < 0 ||
@@ -151,6 +153,7 @@ export function applyJournalDiscovery(state, sidequests, nearby, observedMinutes
   const held = new Map(sidequests.map(journal => [journal.id, journal]));
   const visible = new Set(nearby.map(journal => journal.id));
   for (const entry of discoveryEntries(next, { targetType: "abandoned-journal" })) {
+    if (entry.targetRevision.startsWith("rumour:") && !held.has(entry.targetId)) continue;
     const quest = held.get(entry.targetId);
     const availability = quest
       ? quest.delivered || entry.targetRevision !== `step:${quest.step}` ? "historical" : "current"
@@ -158,5 +161,5 @@ export function applyJournalDiscovery(state, sidequests, nearby, observedMinutes
     updates.push({ targetType: entry.targetType, targetId: entry.targetId,
       targetRevision: entry.targetRevision, availability });
   }
-  return reconcileDiscoveryAvailability(next, updates);
+  return applyNotebookRumours(reconcileDiscoveryAvailability(next, updates), rumours, indications);
 }

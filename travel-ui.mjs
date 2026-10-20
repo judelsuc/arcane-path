@@ -134,9 +134,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const abandonedUI = setupAbandonedJournals(t, {
     publishNotebook, showNotebook,
     context: () => state,
-    persist(sidequests, published, nearby, observedMinutes) {
+    persist(sidequests, published, nearby, observedMinutes, rumours, indications) {
       if (!state) return;
-      state = applyJournalDiscovery(state, sidequests, nearby, observedMinutes);
+      state = applyJournalDiscovery(state, sidequests, nearby, observedMinutes, rumours, indications);
       if (published) state = { ...state, journalPublished: true };
       autosave();
       localize();
