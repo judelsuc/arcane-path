@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { createServerJourney, validateServerJourney, serverJourneyExists } from "../server-journey.mjs";
-import { createJourneyStore, createSave, validateSave } from "../journey-save.mjs";
+import { createJourneyStore, createSave, validateSave, archivedJourneys } from "../journey-save.mjs";
 import { walkSurvival } from "../survival.mjs";
 import { finishAction, refreshPricing } from "../economy.mjs";
 
@@ -46,6 +46,28 @@ with tempfile.TemporaryDirectory() as directory:
 const map = JSON.parse(readFileSync(new URL("../public/map.json", import.meta.url)));
 const response = (value = record, status = 201) => new Response(JSON.stringify(value), {
   status, headers: { "Content-Type": "application/json" },
+});
+
+test("a missing old server journey can be archived and replaced without losing the exact old save", async () => {
+  const values = new Map();
+  const storage = { get length() { return values.size; }, key: i => [...values.keys()][i] ?? null,
+    getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
+  const store = createJourneyStore(storage);
+  store.read("firmi");
+  const old = structuredClone(record.state);
+  old.serverJourney.id = "0".repeat(32);
+  old.journalAccess = "a".repeat(64);
+  const saved = store.write({ region: "firmi", map, state: old, survival: record.survival, economy: record.economy });
+  assert.equal(await serverJourneyExists(old, async () =>
+    response({ error: "Server journey not found." }, 404)), false);
+  store.archive(saved);
+  const fresh = await createServerJourney("firmi", map, "Alex", crypto.randomUUID(),
+    new AbortController().signal, async () => response());
+  store.write({ region: "firmi", map, state: { ...fresh.state, journalAccess: "b".repeat(64) },
+    survival: fresh.survival, economy: fresh.economy });
+  assert.deepEqual(archivedJourneys(storage), [saved]);
+  assert.equal(store.read("firmi").state.serverJourney.id, record.state.serverJourney.id);
+  assert.equal(archivedJourneys(storage)[0].state.journalAccess, old.journalAccess);
 });
 
 test("Python initial states match existing JavaScript rules for every starting tarot", () => {
