@@ -229,12 +229,6 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const openingStory = setupOpeningStory(t, {
     narrative: liveNarrative, context: () => state, onContinue: () => trailUI.open(),
     onJournal: pinBiography,
-    onNameConsent() {
-      state = { ...state, storyNameFlavour: true };
-      autosave();
-      if (saveError) throw new Error(saveError);
-      return state;
-    },
   });
   const journeyEventsUI = setupJourneyEvents(t, {
     narrative: liveNarrative,

@@ -79,6 +79,9 @@ test("biographies keep complete bilingual revisions in the scoped notebook, PDF 
     [wording.fr, wording.en, revised.fr, revised.en]);
   assert.deepEqual(await ui.snapshot({ serverJourney: { id: "journey-b" } }), []);
   assert.deepEqual(await biographyJournalEntries(state, wording), await biographyJournalEntries(state, wording));
+  const authored = await biographyJournalEntries(state, wording, false);
+  assert.deepEqual(authored.map(entry => entry.note), [wording.fr, wording.en]);
+  assert.ok(authored.every(entry => !/AI|IA|OVH/.test(entry.title)));
   await assert.rejects(biographyJournalEntries(state, { en: "Incomplete" }), /Invalid journal biography/);
   await ui.showAbandoned(snapshot, []);
   assert.deepEqual(element("#journal-pages").children.map(page =>

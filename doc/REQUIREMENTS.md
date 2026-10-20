@@ -204,6 +204,15 @@
 
 ## R-158 - Recognizable-name flavour in opening backstories
 
+- **20 October correction (supersedes the manual flow below):** automatically
+  generate the opening story with the saved fictional name for every character.
+  Upgrade an old unnamed story once; do not regenerate on each reread. Remove
+  the manual biography action. Show a prominent character-specific waiting
+  indicator outside collapsible Help and prevent starting while generation is
+  pending. On explicit failure, show the retained/original story and allow play.
+  Keep the opening pretext in the journal whether generated or authored. Omit
+  provider names and cache jargon from player-facing messages. The remaining
+  fictional-name checkbox controls event personalization only.
 - **20 October journal/feedback additions:** visibly indicate text generation,
   including accessible busy status and reduced-motion support. Automatically
   retain generated FR/EN biographies and their explicit revisions in the

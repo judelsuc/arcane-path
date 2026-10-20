@@ -326,7 +326,7 @@ class LiveNarrativeTests(unittest.TestCase):
         self.request(DREAM_BRIEF)
         self.writer.assert_called_once()
 
-    def test_name_flavour_requires_explicit_story_opt_in_and_preserves_saved_stories(self):
+    def test_named_opening_is_automatic_and_preserves_already_named_stories(self):
         record = self.journeys.read(self.owner)
         self.assertNotIn("characterName", opening_brief(record, self.chunks))
         brief = opening_brief(record, self.chunks, name_flavour=True)
@@ -339,7 +339,7 @@ class LiveNarrativeTests(unittest.TestCase):
         name = record["state"]["trail"]["parentName"]
         self.writer.return_value = response(en=(f"Your parent {name} left. " * 30).strip(),
                                             fr=(f"Votre parent {name} est parti. " * 30).strip())
-        self.request(BRIEF_ID, nameFlavour=True)
+        self.request(BRIEF_ID)
         result = self.settle(BRIEF_ID)
         self.assertEqual(result["status"], "ready")
         self.assertEqual(self.writer.call_args.args[0]["characterName"], record["state"]["name"])
@@ -350,6 +350,56 @@ class LiveNarrativeTests(unittest.TestCase):
             self.request("event.coins", nameFlavour=True)
         with self.assertRaises(JourneyRequest):
             self.request(BRIEF_ID, nameFlavour="yes")
+
+    def test_generic_opening_is_automatically_replaced_once_without_mutating_historical_prose(self):
+        record = self.journeys.read(self.owner)
+        name = record["state"]["trail"]["parentName"]
+        old = {"en": (f"Your parent {name} left. " * 30).strip(),
+               "fr": (f"Votre parent {name} est parti. " * 30).strip()}
+        new = {"en": (f"Your parent {name} inspires your mischievous curiosity. " * 20).strip(),
+               "fr": (f"Votre parent {name} inspire votre malicieuse curiosité. " * 20).strip()}
+        with self.service.connect() as db:
+            db.execute("INSERT INTO wording(owner,brief,version,status,created,output,input) "
+                       "VALUES(?,?,?,'ready',1,?,?)",
+                       (self.owner, BRIEF_ID, "historical-generic", json.dumps(old),
+                        json.dumps({"parent": name})))
+        self.writer.return_value = response(**new)
+        pending = self.request(BRIEF_ID)
+        self.assertIn(pending["status"], ("queued", "running"))
+        self.assertEqual(pending["previousText"], old)
+        self.request(BRIEF_ID)
+        result = self.settle(BRIEF_ID)
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(result["text"], new)
+        self.assertEqual(self.writer.call_args.args[0]["characterName"], record["state"]["name"])
+        self.writer.assert_called_once()
+        for _ in range(3):
+            self.assertEqual(self.request(BRIEF_ID)["text"], new)
+        with self.service.connect() as db:
+            rows = db.execute("SELECT version,output FROM wording WHERE brief=? ORDER BY created",
+                              (BRIEF_ID,)).fetchall()
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(json.loads(rows[0]["output"]), old)
+        self.assertTrue(rows[1]["version"].endswith("-named-1"))
+        self.assertEqual(self.journeys.read(self.owner), record)
+        self.service.close()
+        reopened = LiveNarrative(self.journeys, self.auth, self.writer)
+        self.addCleanup(reopened.close)
+        with patch("live_narrative.VERSION", "another-prompt"):
+            self.assertEqual(reopened.request({"journey": self.owner, "brief": BRIEF_ID}, self.token)["text"], new)
+        self.writer.assert_called_once()
+
+    def test_failed_automatic_named_upgrade_is_not_retried(self):
+        with self.service.connect() as db:
+            db.execute("INSERT INTO wording(owner,brief,version,status,created) VALUES(?,?,?,'failed',1)",
+                       (self.owner, BRIEF_ID, "historical-generic"))
+        self.writer.side_effect = WorkshopError("Provider unavailable", 502)
+        self.request(BRIEF_ID)
+        failed = self.settle(BRIEF_ID)
+        self.assertEqual(failed["status"], "failed")
+        for _ in range(3):
+            self.assertEqual(self.request(BRIEF_ID)["status"], "failed")
+        self.writer.assert_called_once()
 
     def test_opening_story_uses_only_saved_public_context_and_higher_temperature(self):
         record = self.journeys.read(self.owner)

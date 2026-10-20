@@ -13,7 +13,7 @@ import { createLiveNarrative, JOURNAL_SUBTITLE } from "./live-narrative.mjs";
 import { archivedJourneys } from "./journey-save.mjs";
 import { translate } from "./i18n.mjs";
 
-export async function biographyJournalEntries(state, wording) {
+export async function biographyJournalEntries(state, wording, generated = true) {
   if (!wording || !["fr", "en"].every(language =>
     typeof wording[language] === "string" && wording[language].trim() && wording[language].length <= 1800)) {
     throw new Error("Invalid journal biography.");
@@ -24,7 +24,8 @@ export async function biographyJournalEntries(state, wording) {
   return ["fr", "en"].map(language => ({
     ...tarotArtwork(state.birthCard ?? null),
     id: `biography:${notebookScope(state)}:${revision}:${language}`,
-    title: `${translate(language, "openingStoryTitle")} · ${language.toUpperCase()} · ${translate(language, "journalGeneratedText")}`,
+    title: `${translate(language, "openingStoryTitle")} · ${language.toUpperCase()}` +
+      (generated ? ` · ${translate(language, "journalGeneratedText")}` : ""),
     note: wording[language],
   }));
 }
@@ -215,7 +216,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         (brief.partial ? "Partial observation / Observation partielle." : "");
       await target.pin({
         blob, title, sourceUrl: "https://www.ovhcloud.com/en/public-cloud/ai-endpoints/catalog/stable-diffusion-xl/",
-        attribution: `AI-generated / Généré par IA · OVH ${entry.model}`, license: "CreativeML Open RAIL++-M",
+        attribution: "AI-generated / Généré par IA", license: "CreativeML Open RAIL++-M",
         licenseUrl: entry.license,
       }, { id, caption: title, note });
       if (scope === notebookScope(owner) && dialog.open && !readOnly) await load();
@@ -741,14 +742,14 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       spread = 0;
       await load();
     },
-    pinBiography(state, wording) {
+    pinBiography(state, wording, generated = true) {
       const pinScope = notebookScope(state);
-      const key = JSON.stringify([pinScope, wording]);
+      const key = JSON.stringify([pinScope, wording, generated]);
       if (biographyPins.has(key)) return biographyPins.get(key);
       const pending = (async () => {
         const target = rootStore.scope ? await rootStore.scope(pinScope) : rootStore;
         const pin = createTarotJournalPinner(target);
-        for (const entry of await biographyJournalEntries(state, wording)) await pin(entry);
+        for (const entry of await biographyJournalEntries(state, wording, generated)) await pin(entry);
         failedPins.delete(key);
         if (scope === pinScope && dialog.open && !readOnly) await load();
       })();
