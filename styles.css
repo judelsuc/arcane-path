@@ -46,6 +46,28 @@
 .notebook-page [data-feedback="success"] { color: #216232; }
 .notebook-page [data-feedback="failure"] { color: #a12727; }
 
+[role="status"][aria-busy="true"] {
+  padding: 10px 12px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+}
+[role="status"][aria-busy="true"]::before {
+  content: "";
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  margin-inline-end: 0.65em;
+  vertical-align: -0.12em;
+  border: 2px solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  animation: text-generating 0.9s linear infinite;
+}
+@keyframes text-generating { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  [role="status"][aria-busy="true"]::before { animation: none; }
+}
+
 body {
   min-width: 320px;
   min-height: 100vh;

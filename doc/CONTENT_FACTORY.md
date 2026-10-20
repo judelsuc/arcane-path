@@ -271,6 +271,19 @@ These source changes have no effect on an already deployed proxy.
 
 ### Player experience and public boundary
 
+- Text-generation statuses have a visible spinner and `aria-busy`; reduced-motion
+  preferences keep the indicator static. Existing prose remains readable while
+  generation is pending, and completion/failure clears the busy indicator.
+- Generated biographies are automatically pinned as two complete FR/EN notebook
+  entries, illustrated with the existing birth tarot artwork. Content-addressed
+  IDs deduplicate rereads; explicit new revisions add pages without overwriting
+  earlier text or player notes. Journal storage errors are surfaced and block
+  incomplete PDF/snapshot export. These entries reuse scoped IndexedDB storage,
+  PDF pagination and notebook publication; no new text-service call is needed.
+- Ordinary event records persist the first displayed bilingual introduction (or
+  explicit authored fallback). Resume, journal pins, PDF and shared snapshots
+  retain that wording alongside the unchanged numerical effects, rather than
+  looking up newly available generated text. Existing event saves remain valid.
 - **20 October named-voice update:** the fictional-name checkbox is checked by
   default for new characters, visibly describes OVH processing and can be
   unchecked. Existing saved preferences are not silently changed. The biography

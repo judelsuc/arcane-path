@@ -1,7 +1,7 @@
 import { mealOffers, marketPrice, shelters, tarotEventChance } from "./economy.mjs";
 import { HOSPITALITY_RULES, hospitalityStatus, worshipPlaces } from "./hospitality.mjs";
 import { socialFailureChance } from "./pressures.mjs";
-import { setFeedback } from "./feedback.mjs";
+import { setFeedback, setGenerating } from "./feedback.mjs";
 import { NARRATIVE_BRIEFS } from "./live-narrative.mjs";
 
 export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodations, selectAccommodation, narrative }) {
@@ -25,8 +25,10 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
   function speechStatus() {
     if (!npcStatus || !speechBrief || !dialog.open) return;
     const current = context();
-    if (current) npcStatus.textContent = narrative.status(current.state, speechBrief,
-      document.documentElement.lang);
+    if (current) {
+      npcStatus.textContent = narrative.status(current.state, speechBrief, document.documentElement.lang);
+      setGenerating(npcStatus, narrative.pending?.(current.state, speechBrief));
+    }
   }
   narrative?.subscribe(speechStatus);
   const money = cents => `${(cents / 100).toFixed(2)} ${t("gameMoney")}`;

@@ -44,6 +44,7 @@ const travel = setupTravel({
   t, renderMap,
   pinPhoto: photoJournal.pinButton,
   pinTarot: photoJournal.pinTarot,
+  pinBiography: photoJournal.pinBiography,
   useNotebook: photoJournal.useJourney,
   snapshotNotebook: photoJournal.snapshot,
   showNotebook: photoJournal.showAbandoned,

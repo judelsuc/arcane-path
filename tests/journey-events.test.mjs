@@ -104,6 +104,24 @@ function example(kind, transform = s => s) {
   throw new Error(`Missing deterministic fixture for ${kind}`);
 }
 
+test("the displayed bilingual event wording survives save/load without changing effects", () => {
+  const { next } = example("coins");
+  const wording = { fr: "Votre curiosité découvre quelques pièces.", en: "Your curiosity uncovers a few coins." };
+  const state = { ...next, events: { ...next.events,
+    history: next.events.history.map(event => ({ ...event, wording })) } };
+  validateJourneyEvents(state, economy, survival);
+  const restored = validateSave(JSON.parse(JSON.stringify(
+    createSave({ region: "firmi", map, state, survival, economy }, 1))));
+  assert.deepEqual(restored.state.events, state.events);
+  assert.equal(restored.state.walletCents, next.walletCents);
+  for (const bad of [{ fr: "Missing English" }, [], { en: "x".repeat(401), fr: "ok" },
+    { en: "English", fr: "French", extra: "Unvalidated" }]) {
+    const invalid = { ...state, events: { ...state.events,
+      history: state.events.history.map(event => ({ ...event, wording: bad })) } };
+    assert.throws(() => validateJourneyEvents(invalid, economy, survival), /Invalid saved journey events/);
+  }
+});
+
 test("wording versions rotate per event kind without extra random draws or changed effects", () => {
   const { previous, moved, next } = example("coins");
   assert.equal(next.events.history.at(-1).wordingVariant, 0);

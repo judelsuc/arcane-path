@@ -250,7 +250,8 @@ for (const language of ["en", "fr"]) {
       replaceChildren(...children) { this.children = children; this.textContent = children.map(c => typeof c === "string" ? c : c.textContent).join(""); }
       addEventListener(name, fn) { this.handlers[name] = fn; }
       setAttribute() {}
-      before(node) { this.beforeNode = node; }
+      before(node) { nodes.set(`#${node.id}`, node); }
+      querySelector(selector) { return nodes.get(selector); }
       showModal() { this.open = true; }
       close() { this.open = false; }
       focus() {}
@@ -268,6 +269,7 @@ for (const language of ["en", "fr"]) {
     const snapshots = [];
     const narrative = {
       prefetch() {}, snapshot: (_, brief, variant) => { snapshots.push({ brief, variant }); return cached; },
+      pending: () => cached === null,
       introductionStatus: (_, brief, language, generated, variant) => `${generated ? "GENERATED" : "AUTHORED"} ${variant}`,
       subscribe(fn) { subscriber = fn; },
     };
@@ -277,17 +279,26 @@ for (const language of ["en", "fr"]) {
       events: { pending: 1, history: [event] } }, busy: false, saveStatus: "Saved",
       economy: JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url))) };
     let acknowledged = 0;
+    const remembered = [], pinned = [];
     const ui = setupJourneyEvents((key, args) => translate(language, key, args), {
       context: () => current, narrative, acknowledge() { acknowledged++; current.state.events.pending = null; },
+      rememberWording(id, wording) {
+        remembered.push(wording);
+        current.state.events.history = current.state.events.history.map(event =>
+          event.id === id ? { ...event, wording } : event);
+      },
+      pinEvent(container, state, economy, wording) { pinned.push(wording); },
     });
     ui.update();
     await flush();
     const authored = el("#journey-event-text").textContent;
     assert.ok(authored.startsWith(translate(language, "journeyEvent.coins")));
-    assert.equal(el("#journey-event-continue").beforeNode.textContent, "AUTHORED 0");
+    assert.equal(el("#journey-event-wording-status").textContent, "AUTHORED 0");
+    assert.equal(el("#journey-event-wording-status").ariaBusy, "true");
     cached = generated;
     subscriber();
     assert.equal(el("#journey-event-text").textContent, authored);
+    assert.equal(el("#journey-event-wording-status").ariaBusy, "false");
     el("#journey-event-continue").handlers.click();
     assert.equal(acknowledged, 1);
     current.state.events = { pending: 2, history: [{ ...event, id: 2, wordingVariant: 1 }] };
@@ -295,7 +306,14 @@ for (const language of ["en", "fr"]) {
     await flush();
     const dynamic = el("#journey-event-text").textContent;
     assert.ok(dynamic.startsWith(generated[language]));
-    assert.equal(el("#journey-event-continue").beforeNode.textContent, "GENERATED 1");
+    assert.equal(el("#journey-event-wording-status").textContent, "GENERATED 1");
+    assert.deepEqual(remembered, [null, generated]);
+    assert.deepEqual(pinned.at(-1), generated);
+    cached = { en: "Different later wording.", fr: "Un autre texte plus tard." };
+    ui.reset();
+    ui.update();
+    await flush();
+    assert.equal(el("#journey-event-text").textContent, dynamic);
     assert.deepEqual(snapshots, [{ brief: "event.coins", variant: 0 }, { brief: "event.coins", variant: 1 }]);
     assert.equal(dynamic.slice(generated[language].length + 1),
       authored.slice(translate(language, "journeyEvent.coins").length + 1));

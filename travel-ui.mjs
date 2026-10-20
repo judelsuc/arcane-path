@@ -61,7 +61,7 @@ import { setupJourneyMiniGames } from "./journey-mini-games-ui.mjs";
 import { beginJourneyMiniGame, settleJourneyMiniGame } from "./journey-mini-games.mjs";
 import { synchronizeParentDiscovery, applyJournalDiscovery } from "./discovery-targets.mjs";
 
-export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, cafeAudio, theftAudio, miniGameAudio, pinPhoto, pinTarot, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats }) {
+export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, cafeAudio, theftAudio, miniGameAudio, pinPhoto, pinTarot, pinBiography, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats }) {
   const start = document.querySelector("#start-travel");
   const resume = document.querySelector("#resume-travel");
   const saveStatus = document.querySelector("#journey-save-status");
@@ -228,6 +228,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   });
   const openingStory = setupOpeningStory(t, {
     narrative: liveNarrative, context: () => state, onContinue: () => trailUI.open(),
+    onJournal: pinBiography,
     onNameConsent() {
       state = { ...state, storyNameFlavour: true };
       autosave();
@@ -237,7 +238,12 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   });
   const journeyEventsUI = setupJourneyEvents(t, {
     narrative: liveNarrative,
-    pinEvent: (container, current, economy) => pinTarot(container, current, "event", economy),
+    pinEvent: (container, current, economy, wording) => pinTarot(container, current, "event", economy, wording),
+    rememberWording(id, wording) {
+      state = { ...state, events: { ...state.events,
+        history: state.events.history.map(event => event.id === id ? { ...event, wording } : event) } };
+      autosave();
+    },
     context: () => active && state && economyData ? {
       state, economy: economyData, busy, saveStatus: saveStatus.textContent,
     } : null,

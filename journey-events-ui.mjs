@@ -2,8 +2,9 @@ import { dailyTarotPending } from "./economy.mjs";
 import { journeyEventTextParts, eventPlaytestEnabled, JOURNEY_EVENTS } from "./journey-events.mjs";
 import { journeyEventArt } from "./journey-event-art.mjs";
 import { NARRATIVE_BRIEFS, LOST_PLAYER_DREAM } from "./live-narrative.mjs";
+import { setGenerating } from "./feedback.mjs";
 
-export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrative }) {
+export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrative, rememberWording }) {
   const dialog = document.querySelector("#journey-event-dialog");
   const proceed = document.querySelector("#journey-event-continue");
   const testMode = eventPlaytestEnabled();
@@ -37,12 +38,15 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
     const brief = `event.${event.kind}`;
     if (wordingId !== event.id) {
       wordingId = event.id;
-      wording = narrative?.snapshot(current.state, brief, event.wordingVariant ?? 0);
+      wording = Object.hasOwn(event, "wording") ? event.wording
+        : narrative?.snapshot(current.state, brief, event.wordingVariant ?? 0) ?? null;
+      if (!Object.hasOwn(event, "wording")) rememberWording?.(event.id, wording);
     }
     if (wordingStatus) {
       wordingStatus.hidden = !Object.hasOwn(NARRATIVE_BRIEFS, brief);
       wordingStatus.textContent = wordingStatus.hidden ? "" : narrative.introductionStatus(
         current.state, brief, language, Boolean(wording), event.wordingVariant ?? 0);
+      setGenerating(wordingStatus, !wordingStatus.hidden && !wording && narrative.pending?.(current.state, brief));
     }
     const card = id => current.economy.tarot.find(c => c.id === id)[language];
     const parts = journeyEventTextParts(event, t);
@@ -70,7 +74,7 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
         pinned.id = "journey-event-pin";
         proceed.before(pinned);
       }
-      pinEvent(pinned, current.state, current.economy);
+      pinEvent(pinned, current.state, current.economy, wording);
     }
   }
   function update() {

@@ -215,6 +215,12 @@
 
 ## R-158 - Recognizable-name flavour in opening backstories
 
+- **20 October journal/feedback additions:** visibly indicate text generation,
+  including accessible busy status and reduced-motion support. Automatically
+  retain generated FR/EN biographies and their explicit revisions in the
+  journey's journal. Pin the exact ordinary-event introduction displayed to
+  the player with unchanged effects; preserve it on resume. Include these
+  texts in the PDF and shared notebook, with explicit storage-error reporting.
 - **20 October approved revision:** check fictional-name consent by default
   for new characters with visible OVH disclosure and an opt-out. Do not change
   existing saved preferences silently. Add confirmed explicit biography

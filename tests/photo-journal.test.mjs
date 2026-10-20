@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { setupPhotoJournal, validateJournalPhoto } from "../photo-journal.mjs";
+import { setupPhotoJournal, validateJournalPhoto, biographyJournalEntries } from "../photo-journal.mjs";
 import { translate } from "../i18n.mjs";
 import { readFileSync } from "node:fs";
 import { startSurvival } from "../survival.mjs";
@@ -14,6 +14,72 @@ const photo = (id = 1) => ({ blob: new Blob(["image fixture"], { type: "image/pn
   title: `Secret photo ${id}`, attribution: "Photographer", license: "CC BY 4.0",
   licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
   sourceUrl: `https://example.org/photo/${id}`, note: "", pinnedAt: `2026-10-17T12:00:0${id}Z` });
+
+test("biographies keep complete bilingual revisions in the scoped notebook, PDF and shared snapshot", async test => {
+  const original = { document: globalThis.document, fetch: globalThis.fetch };
+  test.after(() => Object.assign(globalThis, original));
+  class Element {
+    dataset = {}; children = []; events = {}; open = false;
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    addEventListener(type, callback) { this.events[type] = callback; }
+  }
+  const elements = new Map(), element = selector => {
+    if (!elements.has(selector)) elements.set(selector, new Element());
+    return elements.get(selector);
+  };
+  globalThis.document = { documentElement: { lang: "en" }, createElement: () => new Element(),
+    querySelector: element };
+  let imageCalls = 0, fail = false, exported;
+  globalThis.fetch = async url => {
+    imageCalls++;
+    assert.equal(url, "/public/tarot/star.jpg");
+    return new Response(new Blob(["image"], { type: "image/jpeg" }));
+  };
+  const books = new Map();
+  const store = { async scope(owner) {
+    if (!books.has(owner)) books.set(owner, new Map());
+    const entries = books.get(owner);
+    return {
+      async list() { return [...entries.keys()].map(id => ({ id })); },
+      async get(id) { return entries.get(id); },
+      async pin(photo, options) {
+        if (fail) throw new Error("Biography storage full");
+        if (entries.has(options.id)) return false;
+        entries.set(options.id, { ...photo, ...options });
+        return true;
+      },
+    };
+  } };
+  const ui = setupPhotoJournal((key, args) => translate("en", key, args), {
+    store, makePdf: async input => { exported = input; return new Blob(["pdf"]); }, downloadPdf() {},
+  });
+  const state = { serverJourney: { id: "journey-a" }, birthCard: "star" };
+  const wording = { fr: "Un récit complet. ".repeat(100), en: "A complete story. ".repeat(100) };
+  await ui.useJourney(state);
+  const pending = ui.pinBiography(state, wording);
+  assert.equal(ui.pinBiography(state, wording), pending);
+  const snapshot = await ui.snapshot(state);
+  await pending;
+  assert.deepEqual(snapshot.map(entry => entry.note), [wording.fr, wording.en]);
+  assert.equal(imageCalls, 2);
+  element("#photo-journal-dialog").open = true;
+  await element("#journal-export-pdf").events.click();
+  assert.deepEqual(exported.photos.map(entry => entry.note), [wording.fr, wording.en]);
+  element("#photo-journal-dialog").open = false;
+  const revised = { fr: "Un nouveau récit.", en: "A new story." };
+  fail = true;
+  await assert.rejects(ui.pinBiography(state, revised), /Biography storage full/);
+  await assert.rejects(ui.snapshot(state), /Biography storage full/);
+  assert.match(element("#journal-status").textContent, /Biography storage full/);
+  fail = false;
+  await ui.pinBiography(state, revised);
+  assert.deepEqual((await ui.snapshot(state)).map(entry => entry.note),
+    [wording.fr, wording.en, revised.fr, revised.en]);
+  assert.deepEqual(await ui.snapshot({ serverJourney: { id: "journey-b" } }), []);
+  assert.deepEqual(await biographyJournalEntries(state, wording), await biographyJournalEntries(state, wording));
+  await assert.rejects(biographyJournalEntries(state, { en: "Incomplete" }), /Invalid journal biography/);
+});
 
 test("archived notebook selector reads preserved photos without changing or publishing the new notebook", async test => {
   const original = { document: globalThis.document, localStorage: globalThis.localStorage };

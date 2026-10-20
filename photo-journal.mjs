@@ -1,7 +1,7 @@
 const STORE = "photos";
 
-import { setFeedback } from "./feedback.mjs";
-import { createTarotJournalPinner, tarotJournalEntry } from "./tarot-cards.mjs";
+import { setFeedback, setGenerating } from "./feedback.mjs";
+import { createTarotJournalPinner, tarotArtwork, tarotJournalEntry } from "./tarot-cards.mjs";
 import { journeyEventJournalEntry } from "./journey-event-journal.mjs";
 import { journeyStats } from "./journey-stats.mjs";
 import { notebookPdf, downloadNotebookPdf } from "./notebook-pdf.mjs";
@@ -11,6 +11,23 @@ import { renderDiscoveryNotebook, discoveryNotebookEntries } from "./discovery-u
 import { createJournalIllustrator, illustrationScenes, COVER_ART_ID } from "./journal-art.mjs";
 import { createLiveNarrative, JOURNAL_SUBTITLE } from "./live-narrative.mjs";
 import { archivedJourneys } from "./journey-save.mjs";
+import { translate } from "./i18n.mjs";
+
+export async function biographyJournalEntries(state, wording) {
+  if (!wording || !["fr", "en"].every(language =>
+    typeof wording[language] === "string" && wording[language].trim() && wording[language].length <= 1800)) {
+    throw new Error("Invalid journal biography.");
+  }
+  const digest = await crypto.subtle.digest("SHA-256",
+    new TextEncoder().encode(JSON.stringify([wording.fr, wording.en])));
+  const revision = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+  return ["fr", "en"].map(language => ({
+    ...tarotArtwork(state.birthCard ?? null),
+    id: `biography:${notebookScope(state)}:${revision}:${language}`,
+    title: `${translate(language, "openingStoryTitle")} · ${language.toUpperCase()} · ${translate(language, "journalGeneratedText")}`,
+    note: wording[language],
+  }));
+}
 
 export function validateJournalPhoto(photo) {
   if (!photo || typeof photo.sourceUrl !== "string" || typeof photo.licenseUrl !== "string" ||
@@ -206,6 +223,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   });
   const pendingPins = new Set();
   const failedPins = new Map();
+  const biographyPins = new Map();
   function revoke() {
     for (const url of urls) URL.revokeObjectURL(url);
     urls.clear();
@@ -289,6 +307,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         wordingStatus.className = "journal-cover-wording-status";
         wordingStatus.textContent = narrative.status(statsContext.state, JOURNAL_SUBTITLE,
           document.documentElement.lang);
+        setGenerating(wordingStatus, narrative.pending?.(statsContext.state, JOURNAL_SUBTITLE));
         page.append(wordingStatus);
         const artwork = await store.get(COVER_ART_ID);
         if (current !== generation || !dialog.open) return;
@@ -709,8 +728,29 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       spread = 0;
       await load();
     },
-    pinTarot(container, state, role, data) {
-      const entry = role === "event" ? journeyEventJournalEntry(state, t)
+    pinBiography(state, wording) {
+      const pinScope = notebookScope(state);
+      const key = JSON.stringify([pinScope, wording]);
+      if (biographyPins.has(key)) return biographyPins.get(key);
+      const pending = (async () => {
+        const target = rootStore.scope ? await rootStore.scope(pinScope) : rootStore;
+        const pin = createTarotJournalPinner(target);
+        for (const entry of await biographyJournalEntries(state, wording)) await pin(entry);
+        failedPins.delete(key);
+        if (scope === pinScope && dialog.open && !readOnly) await load();
+      })();
+      biographyPins.set(key, pending);
+      pendingPins.add(pending);
+      void pending.then(() => { pendingPins.delete(pending); }, reason => {
+        pendingPins.delete(pending);
+        biographyPins.delete(key);
+        failedPins.set(key, { scope: pinScope, message: reason.message });
+        failure(reason);
+      });
+      return pending;
+    },
+    pinTarot(container, state, role, data, wording) {
+      const entry = role === "event" ? journeyEventJournalEntry(state, t, document, wording)
         : tarotJournalEntry(state, role, data, t,
           document.documentElement.lang === "en" ? "en" : "fr");
       const previous = tarotPins.get(container);
