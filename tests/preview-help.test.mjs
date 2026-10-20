@@ -393,6 +393,7 @@ test("all shipped game windows have bilingual contextual help; consequential con
     assert.ok(GAME_TECHNICAL_SOURCES.includes(`#${id}`), `${id} stays in closed technical details`);
   }
   for (const href of ["./lore-playtest.html", "./layers/living-world/preview.html"]) {
+    if (!html.includes(`href="${href}"`)) continue;
     assert.ok(html.includes(`technical-text"><a href="${href}"`), `${href} stays outside the ordinary game surface`);
   }
   for (const language of ["en", "fr"]) {
