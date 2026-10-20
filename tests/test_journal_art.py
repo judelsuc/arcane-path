@@ -31,6 +31,15 @@ def fixture_image(size=(1024, 1024)):
 
 
 class JournalArtTests(unittest.TestCase):
+    def test_production_configuration_enables_separate_personal_art_and_cover_prompt(self):
+        config = (Path(__file__).resolve().parents[1] /
+                  "infra/systemd/arcane-path-content-factory.conf").read_text()
+        self.assertIn("ARCANE_JOURNAL_IMAGES_TOKEN_FILE=/etc/arcane-path/ovh-ai-endpoints-token", config)
+        prompt = art_prompt(self.brief)["prompt"]
+        self.assertIn("personal notebook cover", prompt)
+        self.assertNotEqual(prompt, art_prompt({**self.brief, "key": "2026-10-20"})["prompt"])
+        self.assertNotIn("Private name", prompt)
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)

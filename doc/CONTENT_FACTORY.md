@@ -473,6 +473,28 @@ sample packs remain outside game discovery, authority and release content.
 
 ## Personalized journal illustrations
 
+**20 October approved clarification:** enable the existing symbolic
+tarot/scenery cover independently of the postponed photo-based flow below.
+The production content-factory systemd drop-in now enables both the separate
+journal-image queue and live text. The private provider-token file must be a
+regular file owned/readable by the service user with mode 0600. Reload systemd
+and restart the game service to apply a changed environment; daily shared
+start-page art remains separate.
+
+The journal also requests the registered `journal.subtitle` live-text brief.
+Its provider payload is derived server-side from the immutable journey:
+departure setting, broad landscape, season, birth card and the canonical
+reason for the parent's departure. No player/parent name, coordinates, future
+stage, journal text or arbitrary client prompt is sent. One FR/EN pair
+(5-160 characters per language, at most 500 completion tokens) is retained per
+journal owner, including across restarts and later prompt revisions. Provider
+failures remain explicit and are not automatically retried. Before it is
+ready, local-only journeys, and disabled/failed service states use a factual
+departure-based authored subtitle with a visible wording status; no injuries
+or discoveries are invented. The generated subtitle and dedicated cover image
+are used in the onscreen cover and PDF. These are symbolic expression, not
+new evidence or authoritative journey events.
+
 **Later R-139 refinement (not implemented):** ask the player to choose a
 game-offered photograph of the current location before cover/day generation.
 The cover uses the birth card; a daily page uses that day's card and photographs

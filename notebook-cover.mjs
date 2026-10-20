@@ -8,7 +8,8 @@ export function notebookCover(context, t, language = "fr") {
   if (!Number.isFinite(date.getTime())) throw new Error("Invalid notebook starting date.");
   return {
     title: t("journalCoverTitle", { name: state.name ?? t("unnamedCharacter") }),
-    subtitle: t("journalCoverSubtitle"),
+    subtitle: context.coverSubtitle?.[language === "en" ? "en" : "fr"] ??
+      t("journalCoverSubtitle", { point }),
     rows: [
       { label: t("journalCoverFrom"), value: point },
       { label: t("journalCoverDate"), value: `${date.toLocaleDateString(language === "en" ? "en-GB" : "fr-FR",

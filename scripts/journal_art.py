@@ -79,8 +79,9 @@ def art_prompt(brief):
     scenes = ", ".join(SCENES[value] for value in brief["scenes"]) or "an abstract paper landscape"
     activities = ", ".join(ACTIVITIES[value] for value in brief["activities"])
     return {"prompt": (
-        "A symbolic dream illustration for a traveller's notebook. "
-        f"Combine the motifs of {CARDS[brief['birth']]} and {CARDS[brief['daily']]}. "
+        ("A personal notebook cover illustration, with an open central composition. "
+         if brief["key"] == "cover" else "A symbolic dream illustration for a traveller's notebook day. ")
+        + f"Combine the motifs of {CARDS[brief['birth']]} and {CARDS[brief['daily']]}. "
         f"Broad atmosphere: {scenes}. "
         + (f"Visual memories of recorded activities: {activities}. " if activities else "")
         + "No exact place, identifiable person, readable text, maps or clues. "

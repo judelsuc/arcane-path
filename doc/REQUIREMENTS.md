@@ -270,6 +270,17 @@
   same-day retry. Persist attempts and archive successful images.
 - See [the content-factory guide](CONTENT_FACTORY.md) for timer installation.
 
+## R-137 - Personal journal cover and journey-based subtitle
+
+- **20 October clarification:** enable the existing free symbolic tarot/scenery
+  cover now, independently of the postponed photo-based R-139 flow. Keep its
+  dedicated image separate from the shared start-page illustration. Generate
+  one durable bilingual subtitle from the saved departure setting, birth tarot
+  and canonical parent motive; no future stages, private notes or invented
+  blisters. Display generation status and reuse the subtitle in PDF exports.
+- Keep provider access private, generation asynchronous, owner binding and
+  durable deduplication. No paid image fallback or automatic provider retry.
+
 ## R-145 to R-150 - Latest gameplay feedback
 
 - Warn about fatigue and lack of sleep at their configured thresholds, once per

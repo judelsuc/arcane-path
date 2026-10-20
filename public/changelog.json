@@ -1,6 +1,11 @@
 {
-  "version": "0.20.0",
+  "version": "0.20.1",
   "entries": [
+    {
+      "version": "0.20.1",
+      "fr": "La couverture du carnet reçoit sa propre illustration onirique, distincte de l'image d'accueil. Son sous-titre bilingue est généré à partir du départ, du tarot et de l'histoire enregistrée du parent, sans dévoiler les étapes futures. L'image et le sous-titre sont conservés pour ce voyage et repris dans le PDF.",
+      "en": "The notebook cover receives its own dream illustration, separate from the title-screen image. Its bilingual subtitle is generated from the saved departure setting, tarot and parent backstory, without revealing future stops. The image and subtitle are retained for the journey and included in the PDF."
+    },
     {
       "version": "0.20.0",
       "fr": "Les Options affichent la version du jeu et l'historique des nouveautés. Dans les lieux habités cartographiés, les conversations peuvent révéler des rumeurs de carnets abandonnés ; un signalement apparaît à moins d'un kilomètre et le ramassage reste limité à 200 mètres. Le carnet réunit les indices des pistes du parent et des carnets abandonnés. L'icône du chien adopté, son nom et son état sont visibles dans l'interface.",

@@ -105,6 +105,16 @@ grille ASCII de 250 m, exploration a pied, horloge simulee, effort et streaming.
 Les ajouts au document de conception sont suivis dans [doc/REQUIREMENTS.md](./doc/REQUIREMENTS.md).
 Les prompts musicaux 8-bit et sons de jeu sont dans [audio-prompts](./audio-prompts/README.md).
 
+## Couverture personnelle du carnet
+
+La couverture dispose de sa propre illustration symbolique tarot/decor,
+distincte de l'image d'accueil, generee en arriere-plan par la file privee
+du carnet. Son sous-titre FR/EN est genere une seule fois depuis le cadre
+du depart, le tarot et le motif canonique du depart du parent, sans futur
+repere ni texte prive. L'image et le sous-titre sont repris dans le PDF.
+La generation photo-basee reste reportee. Voir les
+[conditions et limites](./doc/CONTENT_FACTORY.md#personalized-journal-illustrations).
+
 ## Suivi des prochaines etapes
 
 Mise a jour : 18 octobre 2026. Une coche signifie une etape effectivement
