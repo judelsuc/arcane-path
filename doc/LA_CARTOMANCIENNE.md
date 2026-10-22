@@ -7,7 +7,7 @@ des pouvoirs liés aux lames du tarot, des objets personnels cachés en Europe
 et des parents qui s'éloignent des leurs en poursuivant ces objets.
 Elle prépare l'écriture, pas l'implémentation.
 
-**Raccordement du 22 octobre 2026 :** les nouveaux voyages utilisent les
+**Raccordement déployé en 0.21.0 le 22 octobre 2026 :** les nouveaux voyages utilisent les
 22 profils de `public/parent-intimacy.json` pour la biographie, la lettre
 initiale et les motivations révélées par les témoins. Le LLM reçoit ces faits
 pour le récit de départ, les témoignages et les énigmes associés aux indices

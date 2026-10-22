@@ -4,6 +4,13 @@
 
 ### État de l'implémentation
 
+Déployé le 22 octobre 2026 en **0.21.0**, commit
+`8da7ac97745b878c3f0b5bf73f79481d86b38874`.
+Les deux domaines HTTPS servent les fichiers vérifiés ; les neuf bases sont
+intègres et les neuf départs existants n'ont pas été modifiés.
+Validation avant publication : 1 183 tests JavaScript et 387 tests Python.
+Une nouvelle partie est nécessaire, sans conversion des anciennes sauvegardes.
+
 Le catalogue des 44 canevas, les offres rejouables, les étapes, les récompenses
 figées, la sauvegarde et les formulations bilingues sont implémentés. Dialogue
 regroupe les échanges et « Demander son chemin » ; Quêtes regroupe les quatre

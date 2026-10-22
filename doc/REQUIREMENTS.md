@@ -22,8 +22,8 @@
 - Save bilingual generated wording against earned evidence before displaying it.
   Reopening or changing language must not reroll it or repeat a generation call.
   Explicitly show generation unavailability/failure without blocking progress.
-- **Status:** Implemented locally. Main saves use schema 3; obsolete saves show
-  the incompatibility notice and are not migrated. No deployment implied.
+- **Status:** Deployed in 0.21.0 on 22 October 2026. Main saves use schema 3;
+  obsolete saves show the incompatibility notice and are not migrated.
 
 ## R-180 - Repeatable arcana quests anchored to geographic POIs
 
@@ -70,10 +70,10 @@
   inventory shares ordinary equipment's packing cells and weight limit.
 - During design, obsolete saves are rejected with an incompatibility notice,
   without migration. The current main-save schema is 3.
-- **Status:** Implemented locally: 44 templates, geographic selection, frozen
+- **Status:** Deployed in 0.21.0 on 22 October 2026: 44 templates, geographic selection, frozen
   distance-based rewards, LLM wording, two-window UI and common tracking.
   See [Quêtes des lames](./QUETES_DES_LAMES.md) for limits and remaining narrative
-  work. Reward balancing remains subject to playtesting; no deployment implied.
+  work. Reward balancing remains subject to playtesting.
 
 ## R-179 - Fortune-teller narrative bible before gameplay adaptation
 
