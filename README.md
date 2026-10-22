@@ -1037,6 +1037,11 @@ ce n'est pas un contournement de l'invalidation pour un vrai changement raster.
 
 Pour preparer un transfert sans credentials ni fichiers non suivis :
 `python3 scripts/package_preview.py /chemin/prive/preview.tar.gz`.
+Le worker des objets utilise Node.js 22 LTS ou plus recent : les modules
+partages avec le navigateur importent les catalogues JSON avec
+`with { type: "json" }`. Le paquet `nodejs` de la VM ne suffit pas s'il fournit Node 18.
+La VM utilise Node 22.23.4 dans `/opt/arcane-path-node/v22.23.4`, accessible
+au service par `/usr/local/bin/node` ; `/usr/bin/node` reste inchange.
 Le paquet normalise les permissions des fichiers a 0644 pour le service non
 privilegie. Ne pas inclure l'etat Terraform ou le cache local dans le transfert.
 Le runtime doit etre committe avant empaquetage. Chaque paquet contient
