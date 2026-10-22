@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createSave, validateSave, createJourneyStore, mapIdentity, archivedJourneys } from "../journey-save.mjs";
+import { createSave, validateSave, createJourneyStore, mapIdentity, archivedJourneys, SAVE_VERSION } from "../journey-save.mjs";
 import { startSurvival, walkSurvival } from "../survival.mjs";
 import { startEconomy, buyMeal, finishAction, applyBirthTarot, tarotEventChance,
   dailyTarotPending, acknowledgeDailyTarot, refreshPricing } from "../economy.mjs";
@@ -295,7 +295,9 @@ test("corrupt, incompatible and invalid saves are rejected without deleting orig
   memory.setItem("arcane-journey-v1:firmi", "{broken");
   assert.throws(() => store.read("firmi"));
   assert.equal(memory.getItem("arcane-journey-v1:firmi"), "{broken");
-  assert.equal(store.write(details()).version, 1);
+  assert.equal(store.write(details()).version, SAVE_VERSION);
+  assert.throws(() => validateSave({ ...valid, version: 1 }), /incompatible/);
+  assert.throws(() => validateSave({ ...valid, version: 2 }), /incompatible/);
   assert.notEqual(mapIdentity(map), mapIdentity({ ...map, cellSizeMeters: 50 }));
 });
 

@@ -25,6 +25,23 @@ import { loreCell, loreViewport } from "./lore-map.mjs";
 import { nearestSettlement } from "./towns.mjs";
 
 const PACKING = [...ITEMS, ...LORE_ITEMS];
+export function deliverMoonDream(previous, state, instances, journalContext) {
+  const moon = previous.lore.moon;
+  if (!moon || previous.elapsedMinutes >= moon.expiresMinutes || actionInterrupted(previous, state) ||
+      state.elapsedMinutes - previous.elapsedMinutes < 60) return state;
+  const receipts = [];
+  for (const clue of moon.clues) {
+    const valid = clue.targetType === "parent-trail" ? clue.targetId === `stage:${state.trail.index}`
+      : clue.targetType === "artifact" ? instances.some(item => item.id === clue.targetId &&
+        item.owner === null && String(item.generation) === clue.targetRevision)
+      : (journalContext?.truths ?? []).some(item => discoveryIdentity(item) === discoveryIdentity(clue));
+    state = revealTruth(state, { ...clue, availability: valid ? "current" : "historical" });
+    receipts.push({ evidence: discoveryIdentity(clue), availability: valid ? "current" : "historical" });
+  }
+  return { ...state, lore: { ...state.lore, moon: null,
+    moonReceipts: [...(state.lore.moonReceipts ?? []), { observedMinutes: state.elapsedMinutes, clues: receipts }] } };
+}
+
 function artifactWeight(instances, journey) {
   return instances.filter(instance => instance.owner === journey)
     .reduce((sum, instance) => sum + loreItem(instance.id).grams, 0);
@@ -129,14 +146,18 @@ function recallTargets(instances, journey) {
     instance.recallJourney === journey && instance.marker.startsWith("cache:"));
 }
 
+export function createArtifactProgress(state, map) {
+  return { version: 1, effects: null, outcome: "started", shared: [], carriedGrams: 0,
+    dreams: { version: 1, episodes: [] }, interpretations: [], visitedSettlements: [],
+    start: { col: state.col, row: state.row },
+    lastSettlement: { col: state.col, row: state.row,
+      town: settlementAt(map, state.col, state.row)?.name ?? map.name } };
+}
+
 export function createLoreState(genesis, map, economy) {
   cellAt(map, genesis.col, genesis.row);
   return recordSettlement(synchronizeParentDiscovery(beginPressures(beginExploration(beginEquipment({
-    ...structuredClone(genesis), lore: { version: 1, effects: null, outcome: "started", shared: [], carriedGrams: 0,
-      dreams: { version: 1, episodes: [] }, interpretations: [], visitedSettlements: [],
-      start: { col: genesis.col, row: genesis.row },
-      lastSettlement: { col: genesis.col, row: genesis.row,
-        town: settlementAt(map, genesis.col, genesis.row)?.name ?? map.name } },
+    ...structuredClone(genesis), lore: createArtifactProgress(genesis, map),
     discovery: { version: 1, entries: [] },
     discoverySchedule: { walkingMinutes: 0, lastAutomaticMinutes: 0 },
   })), economy)), map);
@@ -411,21 +432,7 @@ export async function applyLoreAction(runtime, originalInstances, journey, map, 
     state = { ...state, sleeps: sleeps + 1 };
     if (!actionInterrupted(previous, state) && state.elapsedMinutes - previous.elapsedMinutes >= 60) {
       state.lore.sleptSixty = (state.lore.sleptSixty ?? 0) + 1;
-      const moon = previous.lore.moon;
-      if (moon && previous.elapsedMinutes < moon.expiresMinutes) {
-        const receipts = [];
-        for (const clue of moon.clues) {
-          const valid = clue.targetType === "parent-trail" ? clue.targetId === `stage:${state.trail.index}`
-            : clue.targetType === "artifact" ? instances.some(item => item.id === clue.targetId &&
-              item.owner === null && String(item.generation) === clue.targetRevision)
-            : (journalContext?.truths ?? []).some(item => discoveryIdentity(item) === discoveryIdentity(clue));
-          state = revealTruth(state, { ...clue, availability: valid ? "current" : "historical" });
-          receipts.push({ evidence: discoveryIdentity(clue), availability: valid ? "current" : "historical" });
-        }
-        state.lore.moon = null;
-        state.lore.moonReceipts = [...(state.lore.moonReceipts ?? []),
-          { observedMinutes: state.elapsedMinutes, clues: receipts }];
-      }
+      state = deliverMoonDream(previous, state, instances, journalContext);
     }
     state = settleDream(previous, state, loreCandidates(previous, instances, map, journalContext)
       .filter(candidate => !discoveryKnown(state, candidate.clue)),

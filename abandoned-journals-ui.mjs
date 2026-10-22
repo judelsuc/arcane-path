@@ -3,20 +3,24 @@ import { setFeedback } from "./feedback.mjs";
 import { decodeNotebook } from "./notebook-transfer.mjs";
 import { knownNotebookRumours, notebookRumourText, notebookWitnessReports, validateNotebookRumours } from "./notebook-rumours.mjs";
 
-export function setupAbandonedJournals(t, { context, persist, publishNotebook, showNotebook }) {
+export function setupAbandonedJournals(t, { context, persist, publishNotebook, showNotebook,
+  blocked = () => false, canHandover = () => true }) {
   const panel = document.querySelector("#abandoned-journals");
   if (!panel) return { update() {}, localize() {} };
   const status = document.querySelector("#abandoned-status");
   const list = document.querySelector("#abandoned-list");
   const refresh = document.querySelector("#abandoned-refresh");
-  const dialog = document.querySelector("#abandoned-journals-dialog");
-  const openButton = document.querySelector("#open-abandoned-journals");
-  const closeButton = document.querySelector("#abandoned-close");
+  const dialog = document.querySelector("#trail-dialog");
+  const openButton = document.querySelector("#open-quests");
   const ask = document.createElement("button");
   ask.type = "button";
   ask.id = "abandoned-ask-town";
-  const town = document.querySelector("#town-dialog");
+  const town = document.querySelector("#dialogue-journals");
   (town ?? panel).append(ask);
+  const handovers = document.createElement("div");
+  const reply = document.createElement("p");
+  reply.setAttribute("role", "status");
+  (town ?? panel).append(reply, handovers);
   const rumoursList = document.createElement("ul");
   rumoursList.className = "notebook-witness-list";
   const townReport = document.createElement("details");
@@ -37,18 +41,17 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
   panel.append(proximity, diagnostics);
   const client = createJournalClient(localStorage);
   let result, error = "", working = false, queued = false, lastKey, conversation = false;
+  const idleWaiters = [];
   function localize() {
     const state = context();
     const language = document.documentElement?.lang === "en" ? "en" : "fr";
     panel.hidden = !state;
     if (openButton) {
       openButton.disabled = !state;
-      openButton.textContent = t("abandoned.title");
     }
-    if (closeButton) closeButton.textContent = t("windowHelpClose");
     if (!state && dialog?.open) dialog.close();
     ask.textContent = t("abandoned.ask");
-    ask.disabled = working || !state?.journalAccess || Boolean(state?.ended);
+    ask.disabled = working || blocked() || !state?.journalAccess || Boolean(state?.ended);
     ask.hidden = !state || Boolean(state?.ended);
     const observations = notebookWitnessReports(result?.rumours ?? (state ? knownNotebookRumours(state) : []));
     const mentioned = new Set(observations.map(item => item.id));
@@ -79,13 +82,15 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
     const close = !state?.ended && result?.indications?.some(item => mentioned.has(item.id));
     proximity.hidden = !close;
     proximity.textContent = close ? t("abandoned.close") : "";
-    refresh.disabled = working || !state?.journalAccess;
+    refresh.disabled = working || blocked() || !state?.journalAccess;
     const statusKey = !state?.journalAccess ? "abandoned.legacy" : error
       ? "abandoned.offline" : working ? "abandoned.loading" : state.ended && state.ended !== "reunion"
         ? result?.published ? "abandoned.published" : "abandoned.pending" : "";
     status.textContent = statusKey ? t(statusKey) : "";
     setFeedback(status, error ? "failure" : result?.published ? "success" : "");
     list.replaceChildren();
+    handovers.replaceChildren();
+    reply.textContent = error || (conversation ? t(observations.length ? "abandoned.heard" : "abandoned.noReport") : "");
     if (!(result?.sidequests ?? state?.sidequests ?? []).length && !(result?.nearby ?? []).some(j => mentioned.has(j.id))) {
       const item = document.createElement("li");
       item.textContent = t("abandoned.emptyHands");
@@ -101,16 +106,21 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
         const button = document.createElement("button");
         button.type = "button";
         button.textContent = t("abandoned.advance");
-        button.disabled = working;
+        button.disabled = working || blocked() || !canHandover(quest);
         button.addEventListener("click", () => sync("advance", quest));
-        item.append(" ", button);
+        const handover = document.createElement("p");
+        handover.textContent = t("abandoned.quest", {
+          parent: quest.parent, place: target.name, step: quest.step + 1, total: quest.stages.length,
+        });
+        handover.append(button);
+        handovers.append(handover);
       }
       list.append(item);
       if (showNotebook) {
         const read = document.createElement("button");
         read.type = "button";
         read.textContent = t("abandoned.read");
-        read.disabled = working;
+        read.disabled = working || blocked();
         read.addEventListener("click", () => sync("read", quest));
         item.append(" ", read);
       }
@@ -122,13 +132,14 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
         history: journal.history.join(" → ") || t("abandoned.noHistory") });
       button.type = "button";
       button.textContent = t("abandoned.claim");
-      button.disabled = working;
+      button.disabled = working || blocked();
       button.addEventListener("click", () => sync("claim", journal));
       item.append(" ", button);
       list.append(item);
     }
   }
   async function sync(action = "sync", journal) {
+    if (blocked() || action === "advance" && !canHandover(journal)) return;
     if (working) { queued = true; return; }
     const state = context();
     working = true;
@@ -165,14 +176,12 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
     } finally {
       working = false;
       localize();
-      if (action === "rumours" && context()?.serverJourney?.id === state?.serverJourney?.id) {
-        town?.close?.();
-        open();
-      }
+      for (const resolve of idleWaiters.splice(0)) resolve();
       if (queued) { queued = false; void sync(); }
     }
   }
   function update() {
+    if (blocked()) { localize(); return; }
     const state = context();
     const key = state ? `${state.serverJourney?.id}:${state.col}:${state.row}:${state.elapsedMinutes}:${state.ended}` : "";
     if (key !== lastKey) {
@@ -197,10 +206,9 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
     if (document.querySelector("dialog[open]") && !dialog.open) return;
     localize();
     if (!dialog.open) dialog.showModal();
-    closeButton?.focus?.();
+    openButton?.focus?.();
   }
-  openButton?.addEventListener("click", open);
-  closeButton?.addEventListener("click", () => dialog.close());
   dialog?.addEventListener("close", () => openButton?.focus?.());
-  return { update, localize, open };
+  return { update, localize, open,
+    whenIdle: () => working ? new Promise(resolve => idleWaiters.push(resolve)) : Promise.resolve() };
 }

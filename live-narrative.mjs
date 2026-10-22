@@ -1,10 +1,13 @@
 import briefs from "./public/narrative-briefs.json" with { type: "json" };
 import { CLOSING_STORY, closingSummary } from "./closing-story.mjs";
+import { parentWordingKey } from "./parent-intimacy.mjs";
 
 export const NARRATIVE_BRIEFS = Object.freeze(briefs);
 export const OPENING_STORY = "story.opening";
 export const LOST_PLAYER_DREAM = "dream.lost-player";
 export const JOURNAL_SUBTITLE = "journal.subtitle";
+export const SERVICE_QUEST = "quest.service";
+export const PARENT_CLUE = "parent.clue";
 
 export function eventWordingContext(state) {
   if (!Number.isFinite(state?.elapsedMinutes)) return null;
@@ -140,6 +143,44 @@ export function createLiveNarrative({
         }
       }
       if (!timer) void pump();
+    },
+    prefetchQuest(state, quest) {
+      activate(state);
+      if (!access || disabled) return;
+      const key = `${SERVICE_QUEST}:${quest.instance}:${quest.phase}`;
+      if (!records.has(key) && !waiting.has(key)) {
+        requests.set(key, { id: SERVICE_QUEST, quest });
+        records.set(key, { status: "queued" });
+        waiting.add(key);
+        if (!timer) void pump();
+      }
+    },
+    prefetchParent(state, evidence) {
+      activate(state);
+      if (!access || disabled) return;
+      const key = `${PARENT_CLUE}:${parentWordingKey(evidence)}`;
+      if (!records.has(key) && !waiting.has(key)) {
+        requests.set(key, { id: PARENT_CLUE, evidence });
+        records.set(key, { status: "queued" });
+        waiting.add(key);
+        if (!timer) void pump();
+      }
+    },
+    parentRecord(state, evidence) {
+      activate(state);
+      return records.get(`${PARENT_CLUE}:${parentWordingKey(evidence)}`) ??
+        (!access || disabled ? { status: "disabled" } : undefined);
+    },
+    questSnapshot(state, instance, phase) {
+      activate(state);
+      const record = records.get(`${SERVICE_QUEST}:${instance}:${phase}`);
+      return record?.status === "ready" ? { ...record.text } : null;
+    },
+    questStatus(state, instance, phase, language) {
+      activate(state);
+      const status = !access ? "local" : disabled ? "disabled"
+        : records.get(`${SERVICE_QUEST}:${instance}:${phase}`)?.status ?? "pending";
+      return messages[language === "en" ? "en" : "fr"][["queued", "running"].includes(status) ? "pending" : status];
     },
     snapshot(state, id, variant = 0) {
       activate(state);

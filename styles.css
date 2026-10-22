@@ -1267,3 +1267,26 @@ dialog p { margin: 12px 0; }
 #equipment-dialog .inventory-item[aria-pressed="true"] { border: 3px solid #ffd276; background: #596448; }
 #equipment-dialog .inventory-item svg { width: 90%; height: 90%; }
 #equipment-dialog .inventory-item span { position: absolute; right: 3px; bottom: 1px; background: #151c22; font-size: .7rem; padding: 1px 3px; }
+.quest-tabs, .quest-command-block {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-block: .75rem;
+}
+.quest-command-block > p { flex-basis: 100%; }
+.quest-command-block > select,
+#quests-artifacts select, #dialogue-artifacts select {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+.quest-command-block > section { flex: 1 1 100%; min-width: 0; }
+#quests-services > section, #dialogue-services > div > section {
+  border-block-end: 1px solid currentColor;
+  padding-block: .75rem;
+}
+#dialogue-services select { display: block; max-width: 100%; margin-block: .5rem; }
+.tile--quest { outline: 2px solid #b377df; outline-offset: -2px; }
+.tile--artifact-route { box-shadow: inset 0 0 0 2px #e0bc69; }
+.quest-overview-map { display: block; width: 100%; max-width: 42rem; height: auto; }

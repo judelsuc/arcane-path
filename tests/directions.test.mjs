@@ -19,6 +19,15 @@ const start = (hour = 12) => ({
 const ask = (state, terrain = "place", roll = 0) =>
   askDirections(state, { terrain }, info, survival, economy, () => roll);
 
+test("directions to another quest remain available when the parent trail is complete", () => {
+  const state = start();
+  state.trail.completed = true;
+  const destination = { name: "Quest town", latitude: 44.6, longitude: 2.4 };
+  const result = askDirections(state, { terrain: "place" }, info, survival, economy, () => 0, destination);
+  assert.equal(result.outcome, "helped");
+  assert.equal(result.state.trail.completed, true);
+  assert.ok(result.state.elapsedMinutes > state.elapsedMinutes);
+});
 test("town choices retain old witness suggestions without exposing uncollected future destinations", () => {
   const stages = ["Visited", "CURRENT SECRET", "FUTURE SECRET"].map((name, i) => ({
     name, latitude: 44 + i, longitude: 2,
@@ -166,7 +175,8 @@ test("directions dialog hides guidance until a paid successful attempt, permits 
       return result.outcome;
     },
   });
-  element("#open-hint").events.click();
+  ui.localize();
+  element("#conversation-dialog").showModal();
   assert.equal(attempts, 0);
   assert.equal(state.elapsedMinutes, 0);
   assert.equal(element("#hint-guidance").textContent, translate("en", "hintBeforeAsk"));
@@ -178,8 +188,9 @@ test("directions dialog hides guidance until a paid successful attempt, permits 
   element("#hint-ask").events.click();
   assert.equal(state.elapsedMinutes, 20);
   assert.ok(element("#hint-guidance").textContent.includes(state.trail.stages[0].name));
-  element("#hint-dialog").close();
-  element("#open-hint").events.click();
+  ui.reset();
+  ui.localize();
+  element("#conversation-dialog").showModal();
   assert.equal(element("#hint-guidance").textContent, translate("en", "hintBeforeAsk"));
   assert.equal(attempts, 2);
   state = { ...state, elapsedMinutes: 60, trail: { ...state.trail, version: 2, index: 1,

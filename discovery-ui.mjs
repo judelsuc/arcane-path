@@ -1,6 +1,7 @@
 import { discoveryEntries, discoveryIdentity } from "./discovery.mjs";
 import { authoredHint, authoredCopy } from "./discovery-authored.mjs";
 import { notebookRumourText } from "./notebook-rumours.mjs";
+import { openingClueText, fieldClueText } from "./trail-search.mjs";
 
 const explanationProgress = new WeakMap();
 
@@ -15,6 +16,15 @@ const TEXT_KEYS = Object.freeze({
 });
 
 export function discoveryClueText(entry, state, t) {
+  if (entry.targetType === "parent-trail" && entry.source === "parent-opening-lead") {
+    return openingClueText(state, t);
+  }
+  if (entry.targetType === "parent-trail" && ["parent-field-search", "parent-stage-witness"].includes(entry.source)) {
+    const stage = Number(entry.targetId.slice("stage:".length));
+    const hint = state.trail?.exploration?.hints.find(hint =>
+      hint.stage === stage && hint.kind === entry.kind && hint.precision === entry.precision);
+    if (hint) return fieldClueText(state, hint, t);
+  }
   if (entry.targetType === "abandoned-journal" && entry.kind === "rumour" &&
       entry.targetRevision.startsWith("rumour:")) {
     return notebookRumourText({ ...entry.facts, availability: entry.availability,

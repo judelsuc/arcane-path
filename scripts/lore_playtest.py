@@ -35,11 +35,12 @@ ACTION_FIELDS = {
 
 
 class LorePlaytest:
-    def __init__(self, journeys, abandoned, clock=time.time, paths=None, chunk_jobs=None):
+    def __init__(self, journeys, abandoned, clock=time.time, paths=None, chunk_jobs=None,
+                 database="lore-playtest.sqlite3"):
         self.journeys, self.abandoned = journeys, abandoned
         self.clock = clock
         self.paths, self.chunk_jobs = paths, chunk_jobs
-        self.path = journeys.path.parent / "lore-playtest.sqlite3"
+        self.path = journeys.path.parent / database
         with self.connect() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
             if version not in (0, 1):

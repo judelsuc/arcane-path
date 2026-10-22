@@ -53,8 +53,8 @@ export function citedTowns(state) {
   return [...towns.values()].sort((a, b) => b.elapsedMinutes - a.elapsedMinutes || a.name.localeCompare(b.name));
 }
 
-export function askDirections(state, cell, info, survival, economy, random = Math.random) {
-  if (state.ended || !state.trail || state.trail.completed) {
+export function askDirections(state, cell, info, survival, economy, random = Math.random, destination = null) {
+  if (state.ended || !state.trail || state.trail.completed && !destination) {
     throw new Error("No active journey destination to ask about.");
   }
   const chance = directionsChance(cell, state), roll = random();

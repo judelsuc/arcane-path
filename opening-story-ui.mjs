@@ -1,6 +1,7 @@
 import { OPENING_STORY } from "./live-narrative.mjs";
 import { setGenerating } from "./feedback.mjs";
 import { translate } from "./i18n.mjs";
+import { intimateBiography } from "./parent-intimacy.mjs";
 
 export function setupOpeningStory(t, {
   narrative, context, onContinue, onJournal, doc = document,
@@ -20,7 +21,7 @@ export function setupOpeningStory(t, {
     const pending = narrative.pending?.(state, OPENING_STORY) === true;
     const generated = narrative.snapshot(state, OPENING_STORY);
     const wording = generated ?? Object.fromEntries(["fr", "en"].map(language => [
-      language, translate(language, "openingStoryAuthored", {
+      language, intimateBiography(state, language) ?? translate(language, "openingStoryAuthored", {
         parent: state.trail.parentName,
         motive: translate(language, `parentStory.motive.${state.trail.story?.motive ?? "departure"}`),
       }),

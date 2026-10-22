@@ -33,8 +33,9 @@ export function searchClueOptions(state, cell, info, economy) {
       state.walletCents >= marketPrice(cell, CLUE_ACTIONS[kind].mealUnits, economy, info).cents));
 }
 
-export async function prepareClueSearch(state, cell, info, economy, resolvePhoto, random = Math.random) {
-  const options = searchClueOptions(state, cell, info, economy);
+export async function prepareClueSearch(state, cell, info, economy, resolvePhoto, random = Math.random, allowedKinds) {
+  const options = searchClueOptions(state, cell, info, economy)
+    .filter(kind => !allowedKinds || allowedKinds.includes(kind));
   if (!options.length) throw new Error("No affordable clue search available here.");
   const choose = values => {
     const roll = random();

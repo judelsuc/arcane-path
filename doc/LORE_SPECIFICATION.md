@@ -1,5 +1,12 @@
 # Lore completion specification
 
+> **Narrative direction superseded, 21 October 2026.** The old-game, inherited
+> wager and empty-chair explanation below is historical and is no longer the
+> selected story direction. See [La Cartomancienne — bible narrative](./LA_CARTOMANCIENNE.md)
+> for the new travelling fortune-teller premise and twenty-two object stories.
+> Existing powers, code and inscriptions have not been migrated. The new bible
+> separates confirmed premises from proposed character histories.
+
 **Status: all 22 powers implemented in the isolated authoritative playtest;
 main-game integration remains partial; not deployed.**
 

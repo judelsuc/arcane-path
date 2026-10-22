@@ -356,6 +356,12 @@ export function sleepEconomy(state, cell, info, shelterId, survival, data,
 }
 
 export function restEffect(state, info, survival, data) {
+  const sanctuary = activePower(state, "emperor");
+  if (sanctuary && sanctuary.col === state.col && sanctuary.row === state.row &&
+      powerCoverage(state, "emperor", survival.rest_minutes) === survival.rest_minutes) {
+    return { recovery: survival.rest_fatigue_recovery,
+      fatigue: Math.max(0, state.fatigue - survival.rest_fatigue_recovery) };
+  }
   const night = nightMinutes(state, survival.rest_minutes, info) / survival.rest_minutes;
   const recovery = survival.rest_fatigue_recovery * (1 - night * (1 - data.rules.nightRestRecoveryFactor));
   const rested = { ...state, elapsedMinutes: state.elapsedMinutes + survival.rest_minutes,
@@ -370,5 +376,8 @@ export function restEconomy(state, info, survival, data, { minutes = survival.re
     rest_fatigue_recovery: survival.rest_fatigue_recovery * minutes / survival.rest_minutes };
   const next = restSurvival(state, { ...config,
     rest_fatigue_recovery: restEffect(state, info, config, data).recovery });
-  return finishAction(state, next, info, data, { survival });
+  const sanctuary = activePower(state, "emperor");
+  const sheltered = Boolean(sanctuary && sanctuary.col === state.col && sanctuary.row === state.row &&
+    powerCoverage(state, "emperor", minutes) === minutes);
+  return finishAction(state, next, info, data, { survival, sheltered });
 }

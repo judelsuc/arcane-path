@@ -225,7 +225,6 @@
               <div id="player-hygiene" hidden>
                 <label><span data-i18n="pressureCleanliness"></span><meter id="pressure-cleanliness" min="0" max="100" low="30" high="70" optimum="100"></meter><output id="pressure-cleanliness-value"></output></label>
                 <button id="dog-travel" type="button" hidden></button>
-                <button id="wash-travel" type="button" disabled></button>
                 <p data-i18n="washHelp"></p>
               </div>
               <p id="needs-speed-effect" role="status"></p>
@@ -293,6 +292,7 @@
               <button data-move="1,0" type="button" data-i18n="travelEast"></button>
               <button id="open-survival-choices" type="button" disabled data-i18n="survivalChoices" aria-haspopup="dialog" aria-controls="survival-choices-dialog"></button>
               <button id="open-conversation" type="button" disabled data-i18n="conversation.title" aria-haspopup="dialog" aria-controls="conversation-dialog"></button>
+              <button id="open-quests" type="button" disabled data-i18n="quests.title" aria-haspopup="dialog" aria-controls="trail-dialog"></button>
               <button id="rest-travel" type="button" data-i18n="travelRest"></button>
               <button id="save-travel" type="button" disabled data-i18n="saveNow"></button>
               <button id="look-travel" type="button" aria-pressed="false" data-i18n="travelLook"></button>
@@ -304,12 +304,10 @@
               <button id="eat-travel" type="button" data-i18n="needsEatAction"></button>
               <button id="open-town" type="button" disabled data-i18n="townOpen"></button>
               <button id="open-earn-money" type="button" disabled data-i18n="earnMoney"></button>
-              <button id="open-trail" type="button" disabled data-i18n="trailTitle"></button>
-              <button id="open-abandoned-journals" type="button" disabled data-i18n="abandoned.title"></button>
               <button id="open-journey-world" type="button" disabled data-i18n="worldTitle"></button>
-              <button id="open-hint" type="button" disabled data-i18n="hintTitle"></button>
             </div>
             <p id="travel-toolbar-help" data-i18n="toolbarHelp" hidden></p>
+            <p id="quest-followed-target" role="status" hidden></p>
             <p class="cell-info" id="cell-info" role="status"></p>
             <button id="copy-coordinates" type="button" disabled data-i18n="copyCoordinates"></button>
             <p id="copy-coordinates-status" role="status"></p>
@@ -540,8 +538,9 @@
         <button id="town-accommodation" type="button" data-i18n="accommodationTitle"></button>
         <button id="town-earn-money" type="button" data-i18n="earnMoney"></button>
         <button id="town-survival-choices" type="button" data-i18n="survivalChoices"></button>
-        <button id="town-trail" type="button" data-i18n="trailTitle"></button>
+        <button id="wash-travel" type="button" disabled></button>
       </div>
+      <p id="town-wash-status" role="status"></p>
       <h3 data-i18n="townPlacesTitle"></h3>
       <p id="town-empty" data-i18n="townEmpty"></p>
       <ul id="town-places"></ul>
@@ -561,6 +560,7 @@
         <button id="conversation-clues" type="button" data-i18n="conversation.clues"></button>
         <button id="conversation-notebooks" type="button" data-i18n="conversation.notebooks"></button>
         <button id="conversation-artifacts" type="button" data-i18n="conversation.artifacts"></button>
+        <button id="conversation-services" type="button" data-i18n="quests.services"></button>
         <button id="conversation-shelter" type="button" data-i18n="conversation.shelter"></button>
         <button id="conversation-food" type="button" data-i18n="conversation.food"></button>
         <button id="conversation-work" type="button" data-i18n="conversation.work"></button>
@@ -581,16 +581,12 @@
         <button id="cell-rest" type="button" data-i18n="cellRest"></button>
         <button id="cell-sleep" type="button" data-i18n="cellSleep"></button>
         <button id="cell-earn-money" type="button" data-i18n="earnMoney"></button>
-        <button id="cell-clues" type="button" data-i18n="cellClues"></button>
         <button id="cell-town" type="button" data-i18n="townOpen"></button>
         <button id="cell-conversation" type="button" data-i18n="conversation.title"></button>
         <button id="cell-transport" type="button" data-i18n="worldTitle"></button>
-        <button id="cell-hint" type="button" data-i18n="hintTitle"></button>
         <button id="cell-equipment" type="button" data-i18n="equipmentTitle"></button>
-        <button id="cell-wash" type="button" data-i18n="cellWash"></button>
         <button id="cell-dog" type="button" data-i18n="cellDog"></button>
         <button id="cell-journal" type="button" data-i18n="journalTitle"></button>
-        <button id="cell-notebooks" type="button" data-i18n="abandoned.title"></button>
         <button id="cell-photo" type="button" data-i18n="showPhoto"></button>
         <button id="cell-save" type="button" data-i18n="saveNow"></button>
       </div>
@@ -753,13 +749,13 @@
       </header>
       <nav class="trail-sections" aria-label="Pages">
         <button id="trail-section-current" type="button" data-i18n="trailSectionCurrent" aria-pressed="true"></button>
-        <button id="trail-section-actions" type="button" data-i18n="trailSectionActions" aria-pressed="false"></button>
         <button id="trail-section-past" type="button" data-i18n="trailSectionPast" aria-pressed="false"></button>
       </nav>
       <div class="trail-layout">
         <aside class="trail-guide" aria-labelledby="trail-guide-title">
           <h3 id="trail-guide-title" data-i18n="trailGuideTitle"></h3>
           <p id="trail-intro" class="window-help-text"></p>
+          <p id="parent-narrative-status" role="status"></p>
           <button id="read-opening-story" type="button" data-i18n="openingStoryRead"></button>
           <p id="trail-target" role="status"></p>
           <section id="parent-story" hidden aria-labelledby="parent-story-title">

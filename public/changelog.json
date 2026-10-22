@@ -1,6 +1,11 @@
 {
-  "version": "0.20.12",
+  "version": "0.21.0",
   "entries": [
+    {
+      "version": "0.21.0",
+      "fr": "Dialogue rassemble les échanges avec les habitants ; Quêtes réunit la piste du parent, les services, les carnets perdus et les objets magiques. Quarante-quatre canevas de quêtes répétables conduisent vers des lieux réels, parfois en plusieurs étapes, avec une récompense liée à la distance. Les destinations connues figurent dans les demandes de chemin. La biographie, la lettre de départ et les témoignages suivent désormais l’histoire intime du parent et de la Cartomancienne. Les textes générés enrichissent les indices sans remplacer leurs indications utiles. La toilette se trouve dans le menu de la ville. Cette version nécessite une nouvelle partie ; les anciennes sauvegardes ne sont pas converties.",
+      "en": "Dialogue brings together conversations with inhabitants; Quests groups the parent trail, errands, lost notebooks and magical objects. Forty-four repeatable quest templates lead to real places, sometimes in several stages, with distance-based rewards. Known destinations appear when asking for directions. The biography, opening letter and testimony now follow the intimate story of the parent and the Cartomancer. Generated prose enriches clues without replacing their useful guidance. Washing is in the town menu. This version requires a new journey; old saves are not converted."
+    },
     {
       "version": "0.20.12",
       "fr": "La chronique est aussi écrite après une troisième mise en foyer, sans la confondre avec une mort. Elle peut évoquer les lieux conservés dans vos souvenirs et votre chien, si vous en avez un ; ces détails ne bloquent pas le récit. Le carnet n’accumule plus les textes d’événements en guise d’épopée. Des illustrations distinctes accompagnent rencontres, rêves et accueil, préparées la nuit et renouvelées chaque semaine sans remplacer les images déjà gardées dans le carnet.",

@@ -3,10 +3,9 @@ import { buttonBindings } from "./button-shortcuts.mjs";
 const ACTIONS = [
   ["look-travel", "look"], ["open-survival-choices", "actions"],
   ["eat-travel", "eat"], ["rest-travel", "rest"], ["sleep-travel", "sleep"],
-  ["open-music", "music"], ["open-trail", "trail"], ["open-town", "town"],
-  ["show-photo", "photo"], ["open-hint", "hint"], ["copy-coordinates", "coordinates"],
+  ["open-music", "music"], ["open-quests", "quests"], ["open-town", "town"],
+  ["show-photo", "photo"], ["copy-coordinates", "coordinates"],
   ["open-journal", "journal"],
-  ["open-abandoned-journals", "notebooks"],
   ["open-journey-world", "transport"],
   ["open-conversation", "conversation"],
   ["save-travel", "save"], ["retry-travel", "retry"], ["open-osm", "osm"],

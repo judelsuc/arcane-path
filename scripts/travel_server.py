@@ -37,10 +37,12 @@ from parent_paths import ParentPaths
 from accommodations import Accommodations
 from journey_terrain import cached_terrain
 from lore_playtest import LorePlaytest
+from main_artifacts import MainArtifacts
 from journal_art import JournalArt
 from encounter_art import EncounterArt
 from live_narrative import LiveNarrative
 from start_art import StartArt
+from quest_destinations import QuestDestinations
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_SIZE = 8
@@ -441,8 +443,10 @@ def make_handler(store, jobs, path_pool=None):
     start_art = StartArt(store.cache / "start-art.sqlite3")
     living_world = ChunkJobs(LivingWorld(store.cache / "living-world", atomic_write), workers=1, capacity=4)
     journey_transport = JourneyTransport(store)
+    quest_destinations = QuestDestinations(store, journal_art, journey_transport)
     parent_paths = ParentPaths(store, journeys, atomic_write, pool=path_pool)
     lore = LorePlaytest(journeys, abandoned, paths=parent_paths, chunk_jobs=jobs)
+    main_artifacts = MainArtifacts(journeys, abandoned, paths=parent_paths, chunk_jobs=jobs)
     accommodations = ChunkJobs(Accommodations(store, atomic_write), capacity=2, pool=jobs.pool)
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
@@ -464,7 +468,7 @@ def make_handler(store, jobs, path_pool=None):
 
         def do_POST(self):
             endpoint = urllib.parse.urlsplit(self.path).path
-            if endpoint not in ("/api/journeys", "/api/abandoned-journals", "/api/lore-playtest", "/api/journal-art", "/api/live-narrative", "/api/encounter-art"):
+            if endpoint not in ("/api/journeys", "/api/abandoned-journals", "/api/lore-playtest", "/api/artifacts", "/api/journal-art", "/api/live-narrative", "/api/encounter-art", "/api/quest-destinations"):
                 return self.send_json(404, {"error": "Unknown API endpoint."})
             origin = self.headers.get("Origin")
             try:
@@ -483,6 +487,7 @@ def make_handler(store, jobs, path_pool=None):
             except ValueError:
                 return self.send_json(400, {"error": "Invalid request body length."})
             maximum = (68 * 1024 * 1024 if endpoint == "/api/abandoned-journals"
+                       else 2 * 1024 * 1024 if endpoint == "/api/artifacts"
                        else 16384 if endpoint == "/api/live-narrative" else 4096)
             if length < 1 or length > maximum or self.headers.get("Transfer-Encoding"):
                 return self.send_json(413, {"error": f"Request must contain 1 to {maximum} bytes."})
@@ -497,6 +502,10 @@ def make_handler(store, jobs, path_pool=None):
                 except (ValueError, UnicodeError) as error:
                     raise JourneyRequest("Invalid journey JSON.") from error
                 capability = self.headers.get("X-Journal-Capability")
+                if endpoint == "/api/artifacts":
+                    return self.send_json(200, main_artifacts.request(request, capability))
+                if endpoint == "/api/quest-destinations":
+                    return self.send_json(200, quest_destinations.request(request, capability))
                 if endpoint == "/api/live-narrative":
                     return self.send_json(200, live_narrative.request(request, capability))
                 if endpoint in ("/api/journal-art", "/api/encounter-art"):
@@ -711,6 +720,7 @@ def make_handler(store, jobs, path_pool=None):
     Handler.encounter_art = encounter_art
     Handler.live_narrative = live_narrative
     Handler.living_world = living_world
+    Handler.quest_destinations = quest_destinations
     return Handler
 
 
@@ -732,6 +742,7 @@ def main():
         server.server_close()
         server.RequestHandlerClass.journal_art.close()
         server.RequestHandlerClass.live_narrative.close()
+        server.RequestHandlerClass.quest_destinations.close()
         server.RequestHandlerClass.living_world.pool.shutdown(wait=True, cancel_futures=True)
         jobs.pool.shutdown(wait=True, cancel_futures=True)
         path_pool.shutdown(wait=True, cancel_futures=True)

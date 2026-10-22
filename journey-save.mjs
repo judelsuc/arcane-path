@@ -18,8 +18,19 @@ import { validateDiscoverySchedule } from "./discovery-policy.mjs";
 import { validateTrailDreams } from "./trail-dreams.mjs";
 import { validateJourneyWorld } from "./journey-world.mjs";
 import { validateJourneyVisits } from "./journey-visits.mjs";
+import { validateQuestDirections } from "./quest-knowledge.mjs";
+import { validateServiceQuests } from "./service-quests.mjs";
+import { validateLoreEffects } from "./lore-effects.mjs";
+import { validateDreams } from "./discovery-dreams.mjs";
+import { validateInterpretations } from "./discovery-interpretation.mjs";
+import { validateQuestTracking } from "./quest-objectives.mjs";
+import { validateArtifactInventory } from "./artifact-inventory.mjs";
+import { validateParentWording } from "./parent-intimacy.mjs";
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 3;
+export class IncompatibleJourneySaveError extends Error {
+  constructor() { super("This journey save is incompatible. Start a new journey."); }
+}
 export const JOURNEY_SAVE_PREFIX = eventPlaytestEnabled() ? "arcane-event-playtest-v1:" : "arcane-journey-v1:";
 const PREFIX = JOURNEY_SAVE_PREFIX;
 export const JOURNEY_ARCHIVE_PREFIX = `${PREFIX}archive:`;
@@ -38,6 +49,7 @@ export function mapIdentity(map) {
 }
 
 export function validateSave(save) {
+  if (save && save.version !== SAVE_VERSION) throw new IncompatibleJourneySaveError();
   const fail = () => { throw new Error("Invalid or incompatible journey save."); };
   const finite = value => typeof value === "number" && Number.isFinite(value);
   const nonnegative = value => finite(value) && value >= 0;
@@ -49,18 +61,30 @@ export function validateSave(save) {
   validateSurvivalConfig(save.survival);
   validateEconomy(save.economy);
   const s = save.state;
-  if (s?.lore !== undefined) fail();
+  validateParentWording(s);
+  if (s?.lore !== undefined) {
+    if (s.artifactWorld !== "main-artifacts-v1" || !integer(s.artifactRevision) || s.artifactRevision < 1 ||
+        s.lore?.version !== 1 || !Array.isArray(s.lore.shared) ||
+        !integer(s.lore.carriedGrams) || s.lore.carriedGrams < 0 || s.lore.carriedGrams > 5500) fail();
+    validateLoreEffects(s);
+    validateDreams(s);
+    validateInterpretations(s);
+  } else if (s?.artifactWorld !== undefined || s?.artifactRevision !== undefined) fail();
   validateJourneyMiniGames(s);
   if (s) validateDiscovery(s);
   if (s) validateDiscoverySchedule(s);
   validateTrailDreams(s);
   validateJourneyWorld(s);
   validateJourneyVisits(s);
+  if (s) validateQuestDirections(s);
+  if (s) validateQuestTracking(s);
+  if (s) validateServiceQuests(s);
   if (s?.storyNameFlavour !== undefined && typeof s.storyNameFlavour !== "boolean") fail();
   if (s?.equipment !== undefined) {
     const gear = restoreEquipment(s.equipment, { elapsedMinutes: s.elapsedMinutes });
     if (gear.walkedMeters > s.distanceMeters + 1e-6) fail();
   }
+  if (s?.artifactWorld !== undefined) validateArtifactInventory(s);
   for (const item of [...(s?.trail?.history ?? []),
     ...(s?.trail?.discovery ? [s.trail.discovery] : [])]) {
     if (item.elapsedMinutes !== undefined && (!nonnegative(item.elapsedMinutes) ||

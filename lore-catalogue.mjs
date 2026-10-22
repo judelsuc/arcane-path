@@ -1,4 +1,5 @@
 export const LORE_WORLD = "lore-playtest-v1";
+export const MAIN_ARTIFACT_WORLD = "main-artifacts-v1";
 export const LORE_ITEMS = Object.freeze([
   { id: "hermit", footprint: [1, 1], grams: 15,
     fr: "Le dé à coudre ajouré", en: "The pierced thimble",

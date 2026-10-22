@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { setupTrail, parentClueText } from "../trail-ui.mjs";
 import { translate } from "../i18n.mjs";
+import { PARENT_PROFILES } from "../parent-intimacy.mjs";
 
 const data = JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url)));
 
@@ -62,10 +63,8 @@ for (const locale of ["fr", "en"]) {
     assert.ok(history.includes(element("#trail-discovery-text").textContent));
     assert.ok(!history.includes("fictional-traveler-1"));
     assert.ok(!history.includes("SECRET FUTURE"));
-    assert.equal(element("#trail-investigation-page").hidden, true);
-    element("#trail-section-actions").events.click();
     assert.equal(element("#trail-investigation-page").hidden, false);
-    assert.equal(element("#trail-evidence-page").hidden, true);
+    assert.equal(element("#trail-evidence-page").hidden, false);
     element("#trail-section-past").events.click();
     assert.equal(element("#trail-archive-pages").hidden, false);
     assert.equal(element("#trail-history").children.length, 0);
@@ -118,14 +117,26 @@ for (const locale of ["fr", "en"]) {
         discovery: { kind: "search", step: state.trail.index, pending: true,
           venue: "Known café", nextName: "SECRET NEXT" },
       } };
-    element("#trail-section-actions").events.click();
-    const directions = element("#trail-actions").children.flatMap(item => item.children)
+    ui.localize();
+    const directions = element("#dialogue-parent").children.flatMap(item => item.children ?? [])
       .find(button => button.id === "clue-directions");
     assert.ok(directions);
     directions.events.click();
     assert.equal(element("#trail-investigation-page").hidden, false);
-    assert.equal(element("#trail-evidence-page").hidden, true);
+    assert.equal(element("#trail-evidence-page").hidden, false);
     assert.equal(element("#trail-action-error").textContent, "Investigation rejected");
+    state.trail.story = { ...state.trail.story, motive: "cartomancer", intimacy: { version: 1, card: "fool" },
+      visits: state.trail.stages.map(() => ({ ...state.trail.story.visits[0], clues: ["discuss", "letter"] })),
+    };
+    state.trail.discovery = { kind: "discuss", step: 0, pending: false,
+      place: "Known stop", nextName: "Known destination", elapsedMinutes: 20 };
+    ui.localize();
+    const conversationText = () => element("#dialogue-parent").children.map(item => item.textContent).join(" ");
+    assert.ok(conversationText().includes(PARENT_PROFILES.fool.witness[0][locale]));
+    const generated = { fr: "Ce souvenir comptait plus que tout.", en: "That memory mattered above all." };
+    state.parentWording = [{ key: "witness:0", text: generated }];
+    ui.localize();
+    assert.ok(conversationText().includes(generated[locale]));
     ui.reset();
   });
 }

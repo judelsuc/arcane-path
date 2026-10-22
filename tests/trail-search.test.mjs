@@ -69,7 +69,7 @@ test("a new journey starts with a stable vague directional clue, without a town,
   }
   assert.deepEqual(state, before);
   const legacy = { ...state, trail: { ...state.trail, exploration: undefined } };
-  assert.equal(openingClue(beginExploration(legacy, true)), undefined);
+  assert.deepEqual(openingClue(beginExploration(legacy, true)), hint);
 });
 
 test("loaded land cells allow field searches; unavailable cells, water and ended journeys do not", () => {
@@ -482,12 +482,11 @@ for (const locale of ["fr", "en"]) {
     });
     const texts = node => [node.textContent, ...node.children.flatMap(texts)];
     ui.open();
-    assert.equal(element("#trail-investigation-page").hidden, true);
+    assert.equal(element("#trail-investigation-page").hidden, false);
     assert.ok(texts(element("#trail-history")).includes(translate(locale, "trailOpeningClueTitle")));
     assert.ok(texts(element("#trail-history")).includes(openingClueText(state,
       (key, args) => translate(locale, key, args))));
-    element("#trail-section-actions").events.click();
-    assert.equal(element("#trail-evidence-page").hidden, true);
+    assert.equal(element("#trail-evidence-page").hidden, false);
     const searchItem = element("#trail-actions").children.find(c =>
       c.children.some(b => b.id === "clue-field-search"));
     assert.equal(searchItem.children[0].id, "clue-field-search");
@@ -501,15 +500,14 @@ for (const locale of ["fr", "en"]) {
       .children.find(b => b.id === "clue-field-search").events.click();
     assert.equal(state.elapsedMinutes, 30);
     assert.equal(element("#trail-investigation-page").hidden, false);
-    assert.equal(element("#trail-evidence-page").hidden, true);
-    assert.equal(element("#trail-section-actions")["aria-pressed"], "true");
+    assert.equal(element("#trail-evidence-page").hidden, false);
     const successfulState = state;
     rolls = [0, 0, 0.999];
     await element("#trail-actions").children.flatMap(c => c.children)
       .find(b => b.id === "clue-field-search").events.click();
     assert.equal(state.trail.exploration.lastSearch.outcome, "nothing");
     assert.equal(element("#trail-investigation-page").hidden, false);
-    assert.equal(element("#trail-section-actions")["aria-pressed"], "true");
+    assert.equal(element("#trail-section-current")["aria-pressed"], "true");
     assert.ok(texts(element("#trail-actions")).includes(translate(locale,
       "fieldOutcome.nothing", state.trail.exploration.lastSearch)));
     assert.ok(texts(element("#trail-actions")).includes(translate(locale, "fieldNothingAdvice")));
@@ -518,8 +516,8 @@ for (const locale of ["fr", "en"]) {
     assert.match(element("#trail-target").textContent, /Se/);
     assert.ok(element("#trail-history").children[0].children.every(b => !b.events.click));
     element("#trail-dialog").close();
-    element("#open-hint").events.click();
-    assert.equal(element("#hint-dialog").open, true);
+    element("#conversation-dialog").showModal();
+    assert.equal(element("#conversation-dialog").open, true);
     const ask = element("#hint-clues").children[0].children.find(b => b.events.click);
     await ask.events.click();
     assert.equal(state.elapsedMinutes, 40);
@@ -562,7 +560,7 @@ for (const locale of ["fr", "en"]) {
     const dates = element("#trail-history").children.map(item => item.children.at(-1).dateTime);
     assert.deepEqual(dates, [...dates].sort().reverse());
     state = recordTrailArrival({ ...state, col: state.trail.stages[0].col });
-    element("#trail-section-actions").events.click();
+    element("#trail-section-current").events.click();
     ui.localize();
     assert.equal(element("#trail-investigation-page").hidden, false);
     assert.equal(element("#trail-page-status").textContent,

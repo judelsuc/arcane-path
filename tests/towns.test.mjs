@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { settlementView, nearestSettlement } from "../towns.mjs";
 import { createContentService, contentKey } from "../cell-content.mjs";
+import { setupTowns } from "../towns-ui.mjs";
+import { translate } from "../i18n.mjs";
 
 const settlement = { osmId: "node/10", name: "Firmi", wikipedia: null };
 const poi = (id, overrides = {}) => ({
@@ -15,6 +17,41 @@ function map(pois = []) {
     rows: [[{ terrain: "place", names: ["Firmi"], settlements: [settlement], pois }]],
   };
 }
+
+test("town menu remains accessible at public washing facilities outside named settlements", t => {
+  const original = globalThis.document;
+  t.after(() => { globalThis.document = original; });
+  class Element {
+    children = []; events = {}; open = false; hidden = false;
+    addEventListener(type, listener) { this.events[type] = listener; }
+    append(...children) { this.children.push(...children); }
+    replaceChildren() { this.children = []; }
+    showModal() { this.open = true; }
+    close() { this.open = false; }
+  }
+  const nodes = new Map();
+  const node = selector => {
+    if (!nodes.has(selector)) nodes.set(selector, new Element());
+    return nodes.get(selector);
+  };
+  globalThis.document = { createElement: () => new Element(),
+    querySelector: selector => selector === "dialog[open]"
+      ? [...nodes.values()].find(element => element.open) ?? null : node(selector) };
+  const ui = setupTowns((key, args) => translate("fr", key, args));
+  const data = map([poi(1, { tags: { amenity: "shower" } })]);
+  data.rows[0][0] = { ...data.rows[0][0], terrain: "plain", settlements: [] };
+  ui.update(data, 0, 0);
+  assert.equal(node("#open-town").disabled, false);
+  assert.equal(node("#town-dialog").open, false);
+  assert.equal(node("#town-refresh").disabled, true);
+  node("#open-town").events.click();
+  assert.equal(node("#town-dialog").open, true);
+  assert.equal(node("#town-title").textContent, "Services sur place");
+  data.rows[0][0].pois[0].tags.access = "private";
+  ui.update(data, 0, 0, false);
+  assert.equal(node("#open-town").disabled, true);
+  assert.equal(node("#town-dialog").open, false);
+});
 function service(fetcher) {
   const values = new Map();
   return createContentService({ fetcher, cache: {

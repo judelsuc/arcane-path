@@ -9,6 +9,7 @@ class Element {
   open = false;
   textContent = "";
   events = {};
+  setAttribute(name, value) { this[name] = value; }
   addEventListener(type, callback) { this.events[type] = callback; }
   click() { if (!this.disabled) return this.events.click?.(); }
   showModal() { this.open = true; }
@@ -31,6 +32,8 @@ for (const language of ["fr", "en"]) {
     const before = structuredClone(current);
     const ui = setupConversations((key, args) => translate(language, key, args), { context: () => current });
     ui.localize();
+    assert.equal(translate(language, "conversation.clues"),
+      language === "fr" ? "Demander son chemin" : "Ask for directions");
     get("open-conversation").click();
     assert.equal(get("conversation-dialog").open, true);
     assert.match(get("conversation-context").textContent, /Firmi/);
@@ -38,8 +41,13 @@ for (const language of ["fr", "en"]) {
     assert.equal(get("conversation-reply").hidden, false);
     assert.match(get("conversation-reply").textContent, language === "fr" ? /ami d’un ami.*très loin/ : /friend of a friend.*long way/);
     assert.deepEqual(current, before);
+    for (const [topic, pane] of Object.entries({ parent: "dialogue-parent", clues: "dialogue-directions",
+      notebooks: "dialogue-journals", artifacts: "dialogue-artifacts", services: "dialogue-services" })) {
+      get(`conversation-${topic}`).click();
+      assert.equal(get("conversation-dialog").open, true);
+      assert.equal(get(pane).hidden, false);
+    }
     for (const [topic, target] of Object.entries({
-      parent: "open-trail", clues: "open-hint", notebooks: "abandoned-ask-town",
       shelter: "sleep-travel", food: "eat-travel", work: "open-earn-money",
       transport: "open-journey-world", town: "open-town",
     })) {
@@ -52,6 +60,7 @@ for (const language of ["fr", "en"]) {
       assert.equal(invoked, true, topic);
       get("open-conversation").click();
     }
+    get("conversation-parent").click();
     assert.equal(get("conversation-reply").hidden, true);
     get("conversation-close").click();
     assert.equal(get("open-conversation").focused, true);
@@ -62,10 +71,10 @@ for (const language of ["fr", "en"]) {
     ui.reset();
     current.cell = { terrain: "forest" };
     ui.localize();
-    assert.equal(get("open-conversation").disabled, true);
-    assert.equal(get("town-conversation").disabled, true);
+    assert.equal(get("open-conversation").disabled, false);
+    assert.equal(get("town-conversation").disabled, false);
     get("open-conversation").click();
-    assert.equal(get("conversation-dialog").open, false);
+    assert.equal(get("conversation-dialog").open, true);
     current.cell = before.cell;
     current.blocked = true;
     ui.localize();

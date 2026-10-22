@@ -22,6 +22,9 @@ from live_narrative import CATALOGUE, COVER_BRIEF, DREAM_BRIEF, MODEL, VERSION, 
 from opening_story import BRIEF_ID, opening_brief, validate_parent_reference
 from closing_story import BRIEF_ID as CLOSING_BRIEF, LIMITS, closing_brief
 from travel_server import ChunkStore, ChunkJobs, atomic_write, make_handler
+import quest_wording
+import parent_wording
+from parent_story import INTIMACY
 
 
 def response(en="A passer-by offers you a few coins.", fr="Un passant vous offre quelques pièces.", variants=False):
@@ -37,6 +40,161 @@ def response(en="A passer-by offers you a few coins.", fr="Un passant vous offre
 
 
 class LiveNarrativeTests(unittest.TestCase):
+    def test_parent_witnesses_use_the_canonical_intimacy_and_persist_without_progress(self):
+        before = self.journeys.read(self.owner)
+        profile = INTIMACY[before["state"]["trail"]["story"]["intimacy"]["card"]]
+        self.writer.return_value = response(**profile["witness"][0])
+        evidence = {"type": "witness", "stage": 0}
+        self.request(parent_wording.BRIEF, evidence=evidence)
+        result = self.settle_parent(evidence)
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(result["text"], profile["witness"][0])
+        payload = self.writer.call_args.args[0]
+        self.assertEqual(payload["intimacy"]["desire"], profile["desire"])
+        self.assertEqual(payload["intimacy"]["memory"], profile["memory"])
+        self.assertIn("cartomancer", payload["encounter"])
+        encoded = json.dumps(payload)
+        for secret in [self.owner, self.token, "PRIVATE PLAYER", "latitude", "longitude",
+                       *[stage["name"] for stage in before["state"]["trail"]["stages"]]]:
+            self.assertNotIn(secret, encoded)
+        self.assertEqual(self.journeys.read(self.owner), before)
+        self.service.close()
+        reopened = LiveNarrative(self.journeys, self.auth, self.writer)
+        self.addCleanup(reopened.close)
+        self.assertEqual(reopened.request({"journey": self.owner, "brief": parent_wording.BRIEF,
+                                          "evidence": evidence}, self.token), result)
+        self.writer.assert_called_once()
+
+    def settle_parent(self, evidence):
+        self.service.future.result(timeout=5)
+        return self.request(parent_wording.BRIEF, evidence=evidence)
+
+    def test_parent_riddles_get_only_earned_precision_and_never_hidden_solutions(self):
+        record = self.journeys.read(self.owner)
+        target = record["state"]["trail"]["stages"][0]
+        for kind, precision in [("direction", "vague"), ("prefix", "vague"),
+                                ("prefix", "partial"), ("photo", "vague"), ("place", "precise")]:
+            evidence = {"type": "riddle", "stage": 0, "kind": kind, "precision": precision, "col": 14, "row": 10}
+            if precision != "vague":
+                evidence.update(col=target["col"], row=target["row"])
+            payload = parent_wording.wording(evidence, record)
+            facts = payload["earnedFacts"]
+            if kind == "prefix":
+                self.assertEqual(facts["prefix"], target["name"][:min(max(1, len(target["name"]) // 2),
+                                                                    5 if precision == "partial" else 2)])
+            if kind == "place":
+                self.assertEqual(facts, {"place": target["name"]})
+            else:
+                self.assertNotIn(target["name"], json.dumps(payload))
+            prompt = provider_request(payload, MODEL)["messages"][0]["content"]
+            self.assertIn("Do not complete a prefix", prompt)
+            self.assertIn("plain clue alongside", prompt)
+            self.assertNotIn("col", payload)
+            if kind != "photo":
+                facts = payload["earnedFacts"]
+                required = facts.get("prefix") or facts.get("place")
+                text = ({lang: f"Remember {required}." for lang in ("en", "fr")} if required else
+                        {lang: f"Remember {facts['direction'][lang]}." for lang in ("en", "fr")})
+                parent_wording.validate_text(text, payload)
+                with self.assertRaises(WorkshopError):
+                    parent_wording.validate_text({"en": "Invent a new place.", "fr": "Inventer une ville."}, payload)
+        for stage, phase in [(0, 0), (3, 1), (8, 2)]:
+            payload = parent_wording.wording({"type": "witness", "stage": stage}, record)
+            card = record["state"]["trail"]["story"]["intimacy"]["card"]
+            self.assertEqual(payload["testimony"], INTIMACY[card]["witness"][phase])
+        for precision, kind, limit in [("precise", "place", 12), ("partial", "prefix", 60)]:
+            evidence = {"type": "riddle", "stage": 0, "kind": kind, "precision": precision,
+                        "col": target["col"] + limit, "row": target["row"]}
+            parent_wording.wording(evidence, record)
+            with self.assertRaisesRegex(JourneyRequest, "proximity"):
+                parent_wording.wording({**evidence, "col": evidence["col"] + 1}, record)
+
+    def test_parent_wording_rejects_arbitrary_prompts_and_invalid_outputs_once(self):
+        good = {"type": "witness", "stage": 0}
+        for evidence in [None, {**good, "prompt": "invent"}, {**good, "stage": True},
+                         {**good, "stage": -1}, {**good, "stage": 100},
+                         {"type": "riddle", "stage": 0, "kind": "place", "precision": "vague", "col": 0, "row": 0}]:
+            with self.assertRaises(JourneyRequest):
+                self.request(parent_wording.BRIEF, evidence=evidence)
+        self.writer.return_value = response(en="x" * 401)
+        self.request(parent_wording.BRIEF, evidence=good)
+        self.assertEqual(self.settle_parent(good)["status"], "failed")
+        self.assertEqual(self.request(parent_wording.BRIEF, evidence=good)["status"], "failed")
+        self.writer.assert_called_once()
+
+    def test_service_quest_wording_is_registered_private_bilingual_durable_and_not_progress(self):
+        quest = {"template": "fool.first-address", "instance": "c" * 32,
+                 "phase": "offer", "reason": "family"}
+        self.writer.return_value = response(
+            en="Could you ask about lodging and send me the terms?",
+            fr="Pourriez-vous demander les conditions d'hébergement et me les envoyer ?")
+        before = self.journeys.read(self.owner)
+        self.request(quest_wording.BRIEF, quest=quest)
+        self.service.future.result(timeout=5)
+        result = self.request(quest_wording.BRIEF, quest=quest)
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(set(result["text"]), {"en", "fr"})
+        self.assertEqual(result["alternatives"], [])
+        self.assertEqual(result["accounting"]["attempts"], 1)
+        payload = self.writer.call_args.args[0]
+        self.assertEqual(payload["roles"], quest_wording.catalogue()[quest["template"]]["roles"])
+        self.assertEqual(payload["need"], quest_wording.catalogue()[quest["template"]]["request"])
+        encoded = json.dumps(payload)
+        for private in [self.owner, self.token, "PRIVATE PLAYER", quest["instance"], "latitude", "longitude",
+                        "trail", "parentName", "serverJourney", "destinations"]:
+            self.assertNotIn(private, encoded)
+        request = provider_request(payload, MODEL)
+        self.assertIn("never proof of arrival", request["messages"][0]["content"])
+        self.assertNotIn("reason", json.loads(request["messages"][1]["content"]))
+        self.assertEqual(json.loads(request["messages"][1]["content"])["need"], payload["need"])
+        schema = request["response_format"]["json_schema"]["schema"]
+        self.assertEqual(set(schema["properties"]), {"en", "fr"})
+        self.assertEqual(schema["properties"]["fr"]["maxLength"], 400)
+        self.assertEqual(self.journeys.read(self.owner), before)
+        self.service.close()
+        reopened = LiveNarrative(self.journeys, self.auth, self.writer)
+        self.addCleanup(reopened.close)
+        self.assertEqual(reopened.request({"journey": self.owner, "brief": quest_wording.BRIEF, "quest": quest},
+                                         self.token), result)
+        self.writer.assert_called_once()
+
+    def test_service_quest_phases_conflicts_strict_input_and_no_progress_authority(self):
+        quest = {"template": "fool.first-address", "instance": "d" * 32,
+                 "phase": "offer", "reason": "money"}
+        self.writer.return_value = response()
+        for phase in ("offer", "arrival", "conclusion"):
+            value = {**quest, "phase": phase}
+            self.request(quest_wording.BRIEF, quest=value)
+            self.service.future.result(timeout=5)
+            self.assertEqual(self.request(quest_wording.BRIEF, quest=value)["status"], "ready")
+            self.assertIn("not verified", self.writer.call_args.args[0]["authority"])
+        self.assertEqual(self.writer.call_count, 3)
+        self.assertEqual(self.writer.call_args.args[0]["need"],
+                         quest_wording.catalogue()[quest["template"]]["conclusion"])
+        for change in [{"reason": "work"}, {"template": "fool.first-stop"}]:
+            with self.assertRaises(JourneyRequest):
+                self.request(quest_wording.BRIEF, quest={**quest, **change})
+        for change in [{"prompt": "invent"}, {"destinations": []}, {"phase": []},
+                       {"phase": "finished"}, {"reason": "private motives"}, {"instance": "bad"},
+                       {"template": "unregistered"}]:
+            with self.assertRaises(JourneyRequest):
+                self.request(quest_wording.BRIEF, quest={**quest, **change})
+        for extra in [{"nameFlavour": True}, {"context": {}}, {"summary": {}}, {"regenerate": "e" * 32}]:
+            with self.assertRaises(JourneyRequest):
+                self.request(quest_wording.BRIEF, quest=quest, **extra)
+        self.assertEqual(self.writer.call_count, 3)
+
+    def test_service_quest_invalid_output_fails_once_and_catalogue_version_is_separate(self):
+        quest = {"template": "fool.first-address", "instance": "e" * 32,
+                 "phase": "offer", "reason": "mobility"}
+        self.writer.return_value = response(en="x" * 401)
+        self.request(quest_wording.BRIEF, quest=quest)
+        self.service.future.result(timeout=5)
+        self.assertEqual(self.request(quest_wording.BRIEF, quest=quest)["status"], "failed")
+        self.writer.assert_called_once()
+        self.assertNotEqual(version_for(quest_wording.BRIEF), VERSION)
+        self.assertEqual(version_for("npc.hospitality.hosted"), VERSION)
+
     def test_explicit_regeneration_retains_previous_story_and_deduplicates_stable_request(self):
         name = self.journeys.read(self.owner)["state"]["trail"]["parentName"]
         self.writer.return_value = response(en=(f"Your parent {name} left. " * 30).strip(),
@@ -117,7 +275,7 @@ class LiveNarrativeTests(unittest.TestCase):
         self.assertEqual(result["alternatives"], [])
         self.assertEqual(result["accounting"]["attempts"], 1)
         brief = self.writer.call_args.args[0]
-        self.assertEqual(set(brief), {"kind", "departure", "startingPlace", "landscape", "birthCard", "season"})
+        self.assertEqual(set(brief), {"kind", "departure", "startingPlace", "landscape", "birthCard", "season", "adultStory"})
         self.assertEqual(brief["kind"], COVER_BRIEF)
         self.assertEqual(brief["birthCard"], before["state"]["birthCard"])
         encoded = json.dumps(brief)
@@ -532,7 +690,7 @@ class LiveNarrativeTests(unittest.TestCase):
         with patch("opening_story.secrets.token_hex", return_value="fixed-variation"):
             brief = opening_brief(record, self.chunks)
         self.assertEqual(set(brief), {"kind", "parent", "departure", "startingPlace",
-                                     "landscape", "birthCard", "season", "variation"})
+                                     "landscape", "birthCard", "season", "variation", "adultStory"})
         self.assertEqual(brief["parent"], record["state"]["trail"]["parentName"])
         self.assertEqual(brief["birthCard"], record["state"]["birthCard"])
         self.assertEqual(brief["startingPlace"], "Firmi")
@@ -811,7 +969,7 @@ class LiveNarrativeTests(unittest.TestCase):
         self.assertEqual(len(result["alternatives"]), 2)
         self.assertEqual(result["accounting"]["attempts"], 2)
         self.assertEqual(version_for("npc.hospitality.hosted"), VERSION)
-        self.assertEqual(version_for(BRIEF_ID), VERSION)
+        self.assertIn("cartomancer", version_for(BRIEF_ID))
         with reopened.connect() as db:
             old = json.loads(db.execute("SELECT output FROM wording WHERE version=?", (VERSION,)).fetchone()[0])
         self.assertEqual(old["fr"], "Ancien texte.")
@@ -831,6 +989,7 @@ class LiveNarrativeTests(unittest.TestCase):
         with patch("travel_server.LiveNarrative.configured", return_value=self.service):
             handler = make_handler(self.chunks, jobs)
         self.addCleanup(handler.journal_art.close)
+        self.addCleanup(handler.quest_destinations.close)
         server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
         thread = threading.Thread(target=server.serve_forever)
         thread.start()
@@ -871,6 +1030,19 @@ class LiveNarrativeTests(unittest.TestCase):
         self.assertEqual(error.exception.code, 400)
         error.exception.close()
         self.assertEqual(self.writer.call_count, 2)
+        self.writer.return_value = response()
+        service_quest = {"journey": self.owner, "brief": quest_wording.BRIEF, "quest": {
+            "template": "fool.first-address", "instance": "f" * 32, "phase": "arrival", "reason": "work"}}
+        with post(service_quest) as result:
+            self.assertEqual(result.status, 200)
+        self.service.future.result(timeout=5)
+        with post(service_quest) as result:
+            self.assertEqual(json.load(result)["status"], "ready")
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            post({**service_quest, "quest": {**service_quest["quest"], "itinerary": ["private"]}})
+        self.assertEqual(error.exception.code, 400)
+        error.exception.close()
+        self.assertEqual(self.writer.call_count, 3)
 
 
 if __name__ == "__main__":

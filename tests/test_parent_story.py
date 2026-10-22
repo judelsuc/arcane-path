@@ -17,7 +17,7 @@ def trail(count):
 
 class ParentStoryTests(unittest.TestCase):
     def test_seeded_profiles_and_facts_are_deterministic_diverse_and_solvable(self):
-        motives, modes, states = set(), set(), set()
+        motives, modes, states, intimate_cards = set(), set(), set(), set()
         for seed in range(200):
             profile = story_profile(str(seed), "fool")
             route = trail(13 if profile["finalState"] == "mobile" else 10)
@@ -29,7 +29,10 @@ class ParentStoryTests(unittest.TestCase):
             motives.add(profile["motive"])
             modes.add(profile["mode"])
             states.add(profile["finalState"])
-        self.assertEqual(len(motives), 6)
+            intimate_cards.add(facts["intimacy"]["card"])
+            self.assertEqual(profile["intimacyCard"], story_profile(str(seed), "sun")["intimacyCard"])
+        self.assertEqual(motives, {"cartomancer"})
+        self.assertEqual(len(intimate_cards), 22)
         self.assertEqual(len(modes), 4)
         self.assertEqual(states, {"mobile", "stationary"})
 

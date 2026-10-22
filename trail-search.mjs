@@ -3,6 +3,7 @@ import { finishAction, didFaint } from "./economy.mjs";
 import { askDirections } from "./directions.mjs";
 import { didPlace, witnessCooling } from "./pressures.mjs";
 import { journeyEquipmentModifiers } from "./equipment.mjs";
+import { parentIntimacy, savedParentWording } from "./parent-intimacy.mjs";
 
 const COMPASS = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
 
@@ -171,6 +172,13 @@ export function fieldClueFacts(state, hint) {
 }
 
 export function fieldClueText(state, hint, t) {
+  const authored = authoredFieldClueText(state, hint, t);
+  const generated = state.parentWording?.length
+    ? savedParentWording(state, { ...hint, type: "riddle" }, t("languageCode")) : undefined;
+  return generated ? `${generated}\n${authored}` : authored;
+}
+
+function authoredFieldClueText(state, hint, t) {
   const facts = fieldClueFacts(state, hint);
   if (hint.kind === "place") return t("fieldClue.place", facts);
   if (hint.kind === "photo") return t("fieldClue.photo");
@@ -189,8 +197,7 @@ export function vagueLead(state, stage, t) {
 
 export function openingClue(state) {
   const trail = state.trail, exploration = trail?.exploration;
-  if (trail?.version !== 2 || !trail.origin || exploration?.firstStage !== 0 ||
-      exploration.knownStage !== null) return undefined;
+  if (trail?.version !== 2 || !trail.origin || exploration?.firstStage !== 0) return undefined;
   return { stage: 0, kind: "direction", precision: "vague",
     col: trail.origin.col, row: trail.origin.row, elapsedMinutes: 0 };
 }
@@ -198,7 +205,9 @@ export function openingClue(state) {
 export function openingClueText(state, t) {
   const hint = openingClue(state);
   if (!hint) throw new Error("No opening clue is available for this journey.");
+  const profile = parentIntimacy(state);
   return t("trailOpeningClue", { parent: state.trail.parentName,
+    letter: profile ? profile.letter[t("languageCode")] : t("trailOpeningLetterDefault"),
     direction: t(`hintCompass.${fieldClueFacts(state, hint).direction}`) });
 }
 

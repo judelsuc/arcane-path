@@ -23,9 +23,10 @@ test("parent trail separates guidance from investigation while keeping action/re
   for (const id of ["trail-page-previous", "trail-page-next", "trail-page-current", "trail-page-status"]) {
     assert.match(main, new RegExp(`id="${id}"`));
   }
-  for (const id of ["trail-section-current", "trail-section-actions", "trail-section-past"]) {
+  for (const id of ["trail-section-current", "trail-section-past"]) {
     assert.match(dialog, new RegExp(`id="${id}"`));
   }
+  assert.doesNotMatch(dialog, /id="trail-section-actions"/);
   const actionsPage = main.split('id="trail-investigation-page"')[1].split("</section>")[0];
   assert.match(actionsPage, /id="trail-actions"/);
   assert.doesNotMatch(actionsPage, /id="trail-history"/);

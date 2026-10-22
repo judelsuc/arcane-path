@@ -17,6 +17,8 @@ from journeys import JourneyRequest, JourneyCapacity
 from terraform_ovh import private_file
 from opening_story import BRIEF_ID, MAX_CHARACTERS, opening_brief, story_request, validate_parent_reference
 from journal_art import CARDS
+import quest_wording
+import parent_wording
 from closing_story import (BRIEF_ID as CLOSING_BRIEF, VERSION as CLOSING_VERSION,
                            MIN_CHARACTERS as CLOSING_MIN, MAX_CHARACTERS as CLOSING_MAX,
                            closing_brief, closing_request)
@@ -48,6 +50,12 @@ def event_context(value, record, name_flavour):
 
 
 def version_for(brief):
+    if brief == parent_wording.BRIEF:
+        return parent_wording.VERSION
+    if brief == BRIEF_ID:
+        return VERSION + "-cartomancer-" + parent_wording.VERSION
+    if brief == quest_wording.BRIEF:
+        return quest_wording.version()
     if brief == COVER_BRIEF:
         return "journal-subtitle-1"
     if brief == CLOSING_BRIEF:
@@ -58,6 +66,10 @@ def version_for(brief):
 
 
 def provider_request(brief, model):
+    if brief.get("kind") == parent_wording.BRIEF:
+        return parent_wording.provider_request(brief, model)
+    if brief.get("kind") == quest_wording.BRIEF:
+        return quest_wording.provider_request(brief, model)
     if brief.get("kind") == BRIEF_ID:
         return story_request(brief, model)
     if brief.get("kind") == CLOSING_BRIEF:
@@ -232,6 +244,12 @@ class LiveNarrative:
         if not isinstance(data, dict):
             raise JourneyRequest("Invalid live narrative request.")
         expected = {"journey", "brief"} | ({"keeper"} if "keeper" in data else set())
+        quest = data.get("brief") == quest_wording.BRIEF
+        parent = data.get("brief") == parent_wording.BRIEF
+        if quest:
+            expected.add("quest")
+        if parent:
+            expected.add("evidence")
         contextual = isinstance(data.get("brief"), str) and data["brief"].startswith("event.") and "context" in data
         if (data.get("brief") == BRIEF_ID or contextual) and data.get("nameFlavour") is True:
             expected.add("nameFlavour")
@@ -247,12 +265,18 @@ class LiveNarrative:
         if data.get("brief") == CLOSING_BRIEF:
             expected.add("summary")
         if (set(data) != expected or not isinstance(data.get("brief"), str)
-                or data["brief"] not in CATALOGUE and data["brief"] not in (BRIEF_ID, CLOSING_BRIEF, COVER_BRIEF)):
+                or data["brief"] not in CATALOGUE and data["brief"] not in (BRIEF_ID, CLOSING_BRIEF, COVER_BRIEF, quest_wording.BRIEF, parent_wording.BRIEF)):
             raise JourneyRequest("Only registered public narrative briefs are accepted.")
         owner, record = self.authorization.authorize(data, token)
         brief = data["brief"]
         closing = closing_brief(data["summary"], record) if brief == CLOSING_BRIEF else None
         version = version_for(brief)
+        quest_payload = quest_wording.wording(data["quest"]) if quest else None
+        parent_payload = parent_wording.wording(data["evidence"], record) if parent else None
+        if parent:
+            version = parent_wording.evidence_version(data["evidence"])
+        if quest:
+            version += "-instance-" + data["quest"]["instance"] + "-" + data["quest"]["phase"]
         context = event_context(data["context"], record, data.get("nameFlavour") is True) if contextual else None
         if contextual:
             version += f"-context-1-day-{context['day']}-named-{int(data.get('nameFlavour') is True)}"
@@ -260,12 +284,24 @@ class LiveNarrative:
             version += "-regenerate-" + data["regenerate"]
         with self.lock, self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
+            if quest:
+                original = db.execute(
+                    "SELECT input FROM wording WHERE owner=? AND brief=? AND version LIKE ? LIMIT 1",
+                    (owner, brief, "%-instance-" + data["quest"]["instance"] + "-%")).fetchone()
+                if original and any(json.loads(original["input"]).get(key) != quest_payload[key]
+                                    for key in ("template", "reason")):
+                    raise JourneyRequest("Quest instance wording conflicts with its original template or reason.")
             row = (db.execute("SELECT * FROM wording WHERE owner=? AND brief=? ORDER BY created DESC,rowid DESC LIMIT 1",
                               (owner, brief)).fetchone() if brief in (BRIEF_ID, CLOSING_BRIEF, COVER_BRIEF) and "regenerate" not in data else
                    db.execute("SELECT * FROM wording WHERE owner=? AND brief=? AND version=?",
                               (owner, brief, version)).fetchone())
+            if quest and row is not None and json.loads(row["input"]) != quest_payload:
+                raise JourneyRequest("Quest instance wording conflicts with its original template or reason.")
             if brief == BRIEF_ID and "regenerate" not in data:
-                if row is not None and json.loads(row["input"] or "{}").get("characterName") != record["state"]["name"]:
+                if row is not None and (
+                        json.loads(row["input"] or "{}").get("characterName") != record["state"]["name"]
+                        or json.loads(row["input"] or "{}").get("adultStory") !=
+                        opening_brief(record, self.journeys.chunks).get("adultStory")):
                     version += "-named-1"
                     row = db.execute("SELECT * FROM wording WHERE owner=? AND brief=? AND version=?",
                                      (owner, brief, version)).fetchone()
@@ -275,6 +311,11 @@ class LiveNarrative:
                     raise JourneyCapacity("Live wording queue is full; authored text remains available.")
                 payload = opening_brief(record, self.journeys.chunks,
                                         name_flavour=True) if brief == BRIEF_ID else closing
+                if quest:
+                    # Identity and itinerary never enter the provider's durable input.
+                    payload = quest_payload
+                if parent:
+                    payload = parent_payload
                 if brief == CLOSING_BRIEF and "regenerate" in data:
                     original = db.execute(
                         "SELECT input FROM wording WHERE owner=? AND brief=? ORDER BY created,rowid LIMIT 1",
@@ -293,6 +334,8 @@ class LiveNarrative:
                     payload = {key: opening[key] for key in
                                ("departure", "startingPlace", "landscape", "birthCard", "season")}
                     payload["kind"] = COVER_BRIEF
+                    if "adultStory" in opening:
+                        payload["adultStory"] = opening["adultStory"]
                 if contextual:
                     payload = {**CATALOGUE[brief], "recordedJourney": {
                         key: value for key, value in context.items() if key != "characterName"}}
@@ -345,13 +388,18 @@ class LiveNarrative:
                     story = row["brief"] == BRIEF_ID
                     closing = row["brief"] == CLOSING_BRIEF
                     cover = row["brief"] == COVER_BRIEF
+                    quest = row["brief"] == quest_wording.BRIEF
                     base_version = version_for(row["brief"])
                     regeneration = ((story or closing) and re.fullmatch(
                         re.escape(base_version) + r"-regenerate-[a-f0-9]{32}", row["version"])
                         or story and row["version"] == base_version + "-named-1")
                     contextual = row["brief"].startswith("event.") and re.fullmatch(
                         re.escape(base_version) + r"-context-1-day-\d+-named-[01]", row["version"])
-                    if row["version"] != base_version and not (regeneration or contextual) or row["brief"] not in CATALOGUE and not (story or closing or cover):
+                    parent = row["brief"] == parent_wording.BRIEF
+                    parent_version = parent and re.fullmatch(re.escape(base_version) + r"-[a-f0-9]{24}", row["version"])
+                    quest_version = quest and re.fullmatch(
+                        re.escape(base_version) + r"-instance-[a-f0-9]{32}-(offer|arrival|conclusion)", row["version"])
+                    if row["version"] != base_version and not (regeneration or contextual or quest_version or parent_version) or row["brief"] not in CATALOGUE and not (story or closing or cover or quest or parent):
                         db.execute("UPDATE wording SET status='failed',error=? WHERE rowid=?",
                                    ("Public brief version changed; no call made.", row["rowid"]))
                         continue
@@ -360,13 +408,15 @@ class LiveNarrative:
                 logging.info("Live narrative provider attempt: brief=%s model=%s", row["brief"], MODEL)
                 output, usage, error = None, None, None
                 try:
-                    brief = json.loads(row["input"]) if story or closing or cover or contextual else CATALOGUE[row["brief"]]
+                    brief = json.loads(row["input"]) if story or closing or cover or contextual or quest or parent else CATALOGUE[row["brief"]]
                     response = self.writer(brief)
                     usage = usage_of(response)
                     output = validate_output(response, story=story, closing=closing, cover=cover,
                                              variants=row["brief"].startswith("event.") or row["brief"] == DREAM_BRIEF)
                     if story and not validate_parent_reference(output, brief):
                         raise WorkshopError("Opening backstory changed the saved parent identity; authored text retained.", 502)
+                    if parent:
+                        parent_wording.validate_text(output, brief)
                 except WorkshopError as failure:
                     output = None
                     error = str(failure)

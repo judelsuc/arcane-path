@@ -5,6 +5,7 @@ import { itemArt, companionArt } from "./equipment-art.mjs";
 import { dailyTarotPending } from "./economy.mjs";
 import { journeyEventArt } from "./journey-event-art.mjs";
 import { setFeedback } from "./feedback.mjs";
+import { LORE_ITEMS } from "./lore-catalogue.mjs";
 
 const copy = {
   fr: {
@@ -107,7 +108,7 @@ export function setupEquipment(t, { context, act }) {
     const language = document.documentElement.lang === "en" ? "en" : "fr";
     const money = cents => new Intl.NumberFormat(language, { style: "currency", currency: "EUR" }).format(cents / 100);
     const format = value => new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(value);
-    const modifiers = equipmentModifiers(gear), pending = gear.dogEncounter === "pending";
+    const modifiers = equipmentModifiers(gear, state.lore?.carriedGrams ?? 0), pending = gear.dogEncounter === "pending";
     const revision = gear.revision;
     renderedState = state;
     renderedLanguage = language;
@@ -122,6 +123,8 @@ export function setupEquipment(t, { context, act }) {
     controls.disabled = current.blocked;
     if (!pending) {
       renderInventory(controls, { state: gear, walletCents: state.walletCents, language, selected,
+        obstacles: (state.lore?.inventory ?? []).map(item => ({ ...item.placement, id: item.id })),
+        extraItems: LORE_ITEMS,
         itemName: id => w[id],
         onSelect(id) {
           selected = id;

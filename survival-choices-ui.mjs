@@ -2,15 +2,14 @@ import { CHOICE_RULES, choiceAvailable } from "./survival-choices.mjs";
 import { tarotEventChance } from "./economy.mjs";
 import { socialFailureChance } from "./pressures.mjs";
 import { canEat } from "./survival.mjs";
-import { atTrailTarget } from "./trail.mjs";
 import { setFeedback, focusFeedback } from "./feedback.mjs";
 
 export function setupSurvivalChoices(t, { context, act }) {
   const dialog = document.querySelector("#survival-choices-dialog");
   const actions = {
-    "cell-town": "open-town", "cell-transport": "open-journey-world", "cell-hint": "open-hint",
-    "cell-equipment": "equipment-travel", "cell-wash": "wash-travel", "cell-dog": "dog-travel",
-    "cell-journal": "open-journal", "cell-notebooks": "open-abandoned-journals",
+    "cell-town": "open-town", "cell-transport": "open-journey-world",
+    "cell-equipment": "equipment-travel", "cell-dog": "dog-travel",
+    "cell-journal": "open-journal",
     "cell-conversation": "open-conversation",
     "cell-photo": "show-photo", "cell-save": "save-travel",
   };
@@ -27,7 +26,6 @@ export function setupSurvivalChoices(t, { context, act }) {
     document.querySelector("#cell-buy").disabled = current.blocked || !canEat(current.cell);
     document.querySelector("#cell-rest").disabled = current.blocked;
     document.querySelector("#cell-sleep").disabled = current.blocked;
-    document.querySelector("#cell-clues").disabled = current.blocked || !atTrailTarget(current.state);
     for (const [id, target] of Object.entries(actions)) {
       const source = document.getElementById(target);
       const button = document.getElementById(id);
@@ -88,7 +86,6 @@ export function setupSurvivalChoices(t, { context, act }) {
   }
   for (const [id, target] of Object.entries({
     "cell-buy": "eat-travel", "cell-rest": "rest-travel", "cell-sleep": "sleep-travel",
-    "cell-clues": "open-trail",
     ...actions,
   })) {
     document.getElementById(id).addEventListener("click", () => {

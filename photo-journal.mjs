@@ -14,6 +14,7 @@ import { archivedJourneys } from "./journey-save.mjs";
 import { translate } from "./i18n.mjs";
 import { CLOSING_STORY, closingSummary, closingStoryText } from "./closing-story.mjs";
 import { createEncounterIllustrator } from "./encounter-art.mjs";
+import { questJournalEntries } from "./quest-journal.mjs";
 
 export async function biographyJournalEntries(state, wording, generated = true) {
   if (!wording || !["fr", "en"].every(language =>
@@ -310,6 +311,19 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
     }
     try {
       renderDiscoveryNotebook(document.querySelector("#journal-discovery"), readOnly ? null : statsContext?.state, t);
+      if (!readOnly && statsContext?.state) {
+        const entries = questJournalEntries(statsContext.state, document.documentElement.lang);
+        if (entries.length) {
+          const heading = document.createElement("h3"), list = document.createElement("ul");
+          heading.textContent = t("quests.title");
+          for (const entry of entries) {
+            const item = document.createElement("li");
+            item.textContent = entry;
+            list.append(item);
+          }
+          document.querySelector("#journal-discovery").append(heading, list);
+        }
+      }
     } catch (reason) {
       failure(reason);
     }
@@ -689,6 +703,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       if (!foreign && statsContext) {
         clues.push(...discoveryNotebookEntries(statsContext.state, t)
           .map(record => `${record.context} — ${record.text}`));
+        clues.push(...questJournalEntries(statsContext.state, document.documentElement.lang));
       }
       const groups = !foreign && statsContext
         ? journeyStats(statsContext, t, document.documentElement.lang) : [];

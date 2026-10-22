@@ -110,8 +110,8 @@ test("full-word cell actions forward to existing controls only after closing, re
   h.ui.localize();
   assert.equal(h.get("#cell-dog").hidden, true);
   for (const [id, target] of [["cell-town", "open-town"], ["cell-equipment", "equipment-travel"],
-    ["cell-journal", "open-journal"], ["cell-notebooks", "open-abandoned-journals"],
-    ["cell-photo", "show-photo"], ["cell-save", "save-travel"], ["cell-wash", "wash-travel"]]) {
+    ["cell-journal", "open-journal"],
+    ["cell-photo", "show-photo"], ["cell-save", "save-travel"]]) {
     let invoked = false;
     h.get(`#${target}`).events.click = () => { invoked = true; };
     h.ui.localize();

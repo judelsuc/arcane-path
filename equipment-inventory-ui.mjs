@@ -1,5 +1,5 @@
 import { ITEMS, equipmentAction } from "./equipment.mjs";
-import { BAG, dimensions, restorePlacements } from "./equipment-inventory.mjs";
+import { BAG, dimensions, restorePlacements, fits } from "./equipment-inventory.mjs";
 import { itemArt } from "./equipment-art.mjs";
 
 const copy = {
@@ -15,7 +15,8 @@ const copy = {
     selected: "Selected item", moved: "Item moved.", cell: "Cell" },
 };
 
-export function renderInventory(parent, { state, walletCents, language, selected, onSelect, onMove, itemName = id => id }) {
+export function renderInventory(parent, { state, walletCents, language, selected, onSelect, onMove, itemName = id => id,
+  obstacles = [], extraItems = [] }) {
   const doc = parent.ownerDocument, t = copy[language];
   const el = (tag, text, host = parent) => {
     const node = doc.createElement(tag);
@@ -44,6 +45,8 @@ export function renderInventory(parent, { state, walletCents, language, selected
     const original = placements.find(p => p.id === id);
     if (!original) return;
     try {
+      if (!fits([...placements, ...obstacles], ITEMS.find(item => item.id === id),
+        { x, y, rotated: rotated ?? original.rotated }, [...ITEMS, ...extraItems])) throw new Error("Occupied inventory space.");
       const outcome = equipmentAction(state, { type: "move", itemId: id, x, y, rotated: rotated ?? original.rotated },
         { expectedRevision: state.revision, elapsedMinutes: state.elapsedMinutes, walletCents });
       onMove(outcome.state, id);
@@ -97,6 +100,14 @@ export function renderInventory(parent, { state, walletCents, language, selected
       if (delta) move(p.x + delta[0], p.y + delta[1]);
       else move(p.x, p.y, !p.rotated);
     });
+  }
+  for (const placement of obstacles) {
+    const item = extraItems.find(candidate => candidate.id === placement.id), size = dimensions(item, placement.rotated);
+    const occupied = el("div", item[language] ?? item.id, grid);
+    occupied.className = "inventory-item";
+    occupied.style.gridColumn = `${placement.x + 1} / span ${size.width}`;
+    occupied.style.gridRow = `${placement.y + 1} / span ${size.height}`;
+    occupied.setAttribute("aria-label", item[language] ?? item.id);
   }
   const rotate = el("button", t.rotate);
   rotate.id = "equipment-rotate";

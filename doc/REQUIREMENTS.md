@@ -1,5 +1,97 @@
 # Requirements tracked outside the design PDF
 
+## R-181 - Intimate parent history throughout the new lore
+
+- Bind each newly generated adult story to one of 22 bilingual intimate profiles:
+  a personal need, a shared memory and an object evoked by the cartomancer's card.
+  Choose that adult card independently of the child's birth tarot; do not assert
+  that the parent is the original owner of the world's unique artifact.
+- Ground both the authored biography and the LLM opening in these canonical
+  facts: a brief real power, the hidden personal object, a promised short
+  absence and the increasingly postponed return. Do not revive the discarded
+  gambling-game/empty-chair premise or invent a different motive.
+- The initial clue is always a letter left by the adult, including the profile's
+  intimate words and only an origin-relative direction. Retain it in Quests,
+  discovery notebook and PDF, including after the first destination becomes known.
+- Social parent encounters reveal the need, memory and rationalized postponement
+  in three phases. Their replies appear in Dialogue and remain in the quest history.
+- Generate optional witness speech and short riddles from the canonical intimate
+  history. Supply only the earned geographical precision, never the hidden town
+  behind a prefix, an unidentified photo, a later stop or an artifact cache.
+  Always retain the engine's usable plain clue and authored fallback.
+- Save bilingual generated wording against earned evidence before displaying it.
+  Reopening or changing language must not reroll it or repeat a generation call.
+  Explicitly show generation unavailability/failure without blocking progress.
+- **Status:** Implemented locally. Main saves use schema 3; obsolete saves show
+  the incompatibility notice and are not migrated. No deployment implied.
+
+## R-180 - Repeatable arcana quests anchored to geographic POIs
+
+- Replace abstract secondary encounters with repeatable quest templates that
+  require travel to identified POIs, potentially very far away and through
+  several ordered steps. Arcana inspire concrete human needs, not mandatory
+  esoteric scenes.
+- Adapt each instance to the player's position at the encounter, selecting
+  compatible, supported destinations beyond already-loaded cells when needed.
+  Validate every required POI and route before offering the quest.
+- Increase rewards with the required journey distance and number of steps;
+  freeze the accepted contract and never reward voluntary detours or duplicate
+  completion. Templates remain reusable through new instances.
+- The game owns locations, objectives, progression and rewards. The LLM varies
+  presentation within those facts, with persistent wording, a clear objective
+  and an authored fallback. It cannot invent destinations or extra steps.
+- Reference examples: a candle at a distant church for the Hierophant, an
+  authorized inheritance document for the Wheel, and checking a distant job
+  opportunity for the Star. All interactions are fictional in-game actions.
+- Simplify these functions to two windows: Dialogue for interacting with people
+  (offers, acceptance, witnesses, directions and handovers); Quests for objectives,
+  earned clues, progression and tracking across parent, services, lost journals
+  and magical objects. Non-social on-site gestures stay in Quests, without a
+  third specialized window. Preserve each system's rules and information limits.
+- Remove old specialized shortcuts and entry points for parent, hints/directions,
+  lost journals and artifact searches, including hidden buttons and help entries.
+  Do not retain compatibility aliases or redirect them to Quests sections.
+  Keep one visible Dialogue button and one Quests button; do not introduce a
+  separate shortcut per category.
+- In Dialogue, the ask-for-directions destination list includes known destinations
+  from all accepted quests, including announced later steps and untracked
+  quests. Retain existing cited places, distinguish POIs and preserve evidence
+  precision: no hidden parent stages, unknown caches or private/current player
+  locations. Asking directions does not complete or unlock a quest step;
+  its earned response is retained with the relevant clues in Quests.
+- Preserve keyboard/mobile access and notebook/PDF consistency. Distance-based
+  service rewards do not replace the rules of parent, journal or artifact quests.
+- Move washing into the town menu only, not the main status/action area or
+  duplicated cell actions. Preserve existing availability, price and effects.
+- One common objective selector tracks any of the four threads, with a known-only
+  schematic overview and a marker on the travel map. A schematic is not a route.
+- Main-game artifacts use a dedicated shared server world, unique custody and
+  durable commands acknowledged only after the local save succeeds. Their
+  inventory shares ordinary equipment's packing cells and weight limit.
+- During design, obsolete saves are rejected with an incompatibility notice,
+  without migration. The current main-save schema is 3.
+- **Status:** Implemented locally: 44 templates, geographic selection, frozen
+  distance-based rewards, LLM wording, two-window UI and common tracking.
+  See [Quêtes des lames](./QUETES_DES_LAMES.md) for limits and remaining narrative
+  work. Reward balancing remains subject to playtesting; no deployment implied.
+
+## R-179 - Fortune-teller narrative bible before gameplay adaptation
+
+- Replace the old-game and empty-chair story direction with an itinerant
+  fortune-teller travelling through Europe. She offers a special power
+  through a tarot major arcana and an object personally evoked by that card.
+- The object becomes the power's vessel. She hides it and tells its owner
+  to earn the power by finding it; parents become absorbed in the search
+  and leave their families behind.
+- Hidden objects remain stationary unless players take and move them.
+  Do not invent moving caches to prolong a story.
+- Write a complete background document and a distinct story for each of
+  the twenty-two cards, retaining the existing objects and distinguishing
+  confirmed premises from proposed developments.
+- Defer gameplay reflection, runtime text changes and implementation until
+  the narrative direction has been explored. See
+  [La Cartomancienne](./LA_CARTOMANCIENNE.md).
+
 ## R-177 - Individual encounter illustrations and overnight preparation
 
 - Use the configured image generator for journey encounters, dreams and
@@ -124,7 +216,7 @@
   metadata may indicate a local build, not a confirmed deployment.
 - Keep release notes limited to delivered features, with no invented dates.
   Preserve keyboard navigation and a readable mobile layout.
-- **Status:** Implemented in Options with versioned bilingual notes and
+- **Status:** Implemented in Opnanotions with versioned bilingual notes and
   generated deployment metadata; shipped with the notebook-rumour release.
 
 ## R-169 - Lore in ordinary journeys and progress-preserving migration

@@ -1,4 +1,5 @@
-const MOTIVES = ["seasonal", "debt", "family", "departure", "collectors", "legend"];
+import { PARENT_PROFILES, PARENT_INTIMACY_VERSION } from "./parent-intimacy.mjs";
+const MOTIVES = ["seasonal", "debt", "family", "departure", "collectors", "legend", "cartomancer"];
 const MODES = ["walk", "hitch", "bus", "train"];
 const CLUES = [
   ["discuss", "photo", "letter", "buy"],
@@ -47,6 +48,8 @@ export function validateParentStory(trail) {
       story.visits.length !== trail.stages.length ||
       trail.stages.length !== (story.finalState === "mobile" ? 13 : 10) ||
       !Array.isArray(story.movement) || story.movement.length !== trail.stages.length - 10) fail();
+  if (story.motive === "cartomancer" ? story.intimacy?.version !== PARENT_INTIMACY_VERSION ||
+      !Object.hasOwn(PARENT_PROFILES, story.intimacy.card) : story.intimacy !== undefined) fail();
   for (const [index, visit] of story.visits.entries()) {
     if (!visit || !integer(visit.arrival) || !integer(visit.departure) ||
         !Number.isFinite(new Date(visit.arrival).getTime()) ||

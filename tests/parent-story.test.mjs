@@ -18,7 +18,7 @@ const map = json("public/map.json");
 const info = { latitude: 44.54, longitude: 2.3 }, cell = { terrain: "place", countryCodes: ["FR"] };
 const startedAt = Date.UTC(2026, 9, 17, 12);
 const python = existsSync(new URL(".venv/bin/python", root)) ? ".venv/bin/python" : "python3";
-function state(mobile = true) {
+function state(mobile = true, intimate = false) {
   const initial = startEconomy(startSurvival(0, 0, startedAt, "balanced", survival), economy, () => 0);
   const origin = { ...info, col: 14, row: 10 };
   const step = 45000 / 6371008.8 * 180 / Math.PI / Math.cos(info.latitude * Math.PI / 180);
@@ -32,15 +32,29 @@ function state(mobile = true) {
   trail.story = JSON.parse(execFileSync(python, ["-c", `
 import json,sys
 sys.path.insert(0,"scripts")
-from parent_story import build_parent_story
+from parent_story import build_parent_story, story_profile
 trail=json.loads(sys.argv[1])
 print(json.dumps(build_parent_story(trail, "fixed", sys.argv[2], int(sys.argv[3]),
-    {"motive":"family","mode":"walk","orientation":"upright","finalState":sys.argv[4]})))
-`, JSON.stringify(trail), initial.birthCard, String(startedAt), mobile ? "mobile" : "stationary"],
+    {**(story_profile("fixed", sys.argv[2]) if sys.argv[5] == "yes" else {"motive":"family"}),
+     "mode":"walk","orientation":"upright","finalState":sys.argv[4]})))
+`, JSON.stringify(trail), initial.birthCard, String(startedAt), mobile ? "mobile" : "stationary", intimate ? "yes" : "no"],
   { cwd: root, encoding: "utf8" }));
   return { ...initial, ...stages[0], trail };
 }
 const save = s => createSave({ region: "firmi", map, state: s, survival, economy }, 1);
+
+test("new Python cartomancer genesis validates and round-trips its independent intimate profile", () => {
+  const s = state(false, true);
+  assert.equal(s.trail.story.motive, "cartomancer");
+  assert.equal(s.trail.story.intimacy.version, 1);
+  const restored = validateSave(JSON.parse(JSON.stringify(save(s)))).state;
+  assert.deepEqual(restored.trail.story.intimacy, s.trail.story.intimacy);
+  for (const corrupt of [{ version: 1, card: "missing" }, { version: 2, card: "fool" }, null]) {
+    const invalid = structuredClone(s);
+    invalid.trail.story.intimacy = corrupt;
+    assert.throws(() => validateParentStory(invalid.trail), /Invalid/);
+  }
+});
 
 test("witness memories age at seven and thirty days without mutating story facts or rerolling voice", () => {
   const s = state(false), before = structuredClone(s);

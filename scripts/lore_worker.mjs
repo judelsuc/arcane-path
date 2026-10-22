@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { createLoreState, applyLoreAction, loreView } from "../lore-engine.mjs";
+import { mainArtifactRequest } from "../main-artifacts.mjs";
 
 const input = JSON.parse(readFileSync(0, "utf8"));
 let counter = 0;
@@ -10,6 +11,10 @@ Math.random = () => {
   return bytes.readUInt32BE(0) / 2 ** 32;
 };
 try {
+  if (input.operation === "main-artifacts") {
+    process.stdout.write(JSON.stringify(await mainArtifactRequest(input)));
+    process.exit(0);
+  }
   let runtime = input.runtime, instances = input.instances;
   if (input.operation === "start") {
     runtime = { state: createLoreState(input.genesis.state, input.map, input.genesis.economy),

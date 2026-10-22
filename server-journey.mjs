@@ -1,4 +1,4 @@
-import { validateSave, mapIdentity } from "./journey-save.mjs";
+import { validateSave, mapIdentity, SAVE_VERSION } from "./journey-save.mjs";
 import { normalizeCharacterName, startSurvival } from "./survival.mjs";
 import { startEconomy, applyBirthTarot } from "./economy.mjs";
 
@@ -28,7 +28,7 @@ export function validateServerJourney(record, region, map, name) {
   if (identity !== mapIdentity(map)) fail();
   const metadata = record.state?.serverJourney;
   if (!metadata) fail();
-  validateSave({ ...record, revision: 1, savedAt: metadata?.createdAt });
+  validateSave({ ...record, version: SAVE_VERSION, revision: 1, savedAt: metadata?.createdAt });
   const state = record.state;
   if (state.name !== normalizeCharacterName(name) ||
       Date.parse(metadata.createdAt) !== state.startedAt ||

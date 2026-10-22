@@ -3,13 +3,13 @@ import assert from "node:assert/strict";
 import { buttonBindings, shortcutCode, setupButtonShortcuts } from "../button-shortcuts.mjs";
 
 test("fixed shortcuts and dynamic menu options have distinct keys in each dialog", () => {
-  const buttons = [{ close: true }, ...["town-refresh", "town-services", "town-music", "town-trail"]
+  const buttons = [{ close: true }, ...["town-refresh", "town-services", "town-music"]
     .map(id => ({ id })), ...Array.from({ length: 25 }, () => ({}))];
   const bindings = buttonBindings(buttons);
   assert.equal(new Set(bindings.map(b => b.key)).size, buttons.length);
   assert.equal(bindings[0].key, "Escape");
   assert.equal(bindings[1].key, "U");
-  assert.equal(bindings[5].key, "1");
+  assert.equal(bindings[4].key, "1");
   assert.deepEqual(buttonBindings(buttons), bindings);
 });
 
@@ -110,8 +110,7 @@ test("hidden conversation action sources retain direct keys only while the map t
     getClientRects() { return this.hidden ? [] : [{}]; },
     closest() { return this.hidden || this.inert ? this : null; } };
   const keys = { "sleep-travel": "H", "eat-travel": "E", "open-town": "T",
-    "open-earn-money": "B", "open-trail": "J", "open-abandoned-journals": "9",
-    "open-journey-world": "6", "open-hint": "I" };
+    "open-earn-money": "B", "open-journey-world": "6" };
   const buttons = Object.keys(keys).map(id => ({
     id, dataset: {}, parentElement: sources, hidden: false, disabled: false, clicks: 0,
     title: "", childNodes: [{ textContent: id }], caption: null, inert: false,

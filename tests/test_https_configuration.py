@@ -7,6 +7,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class HttpsConfigurationTests(unittest.TestCase):
+    def test_main_artifacts_have_a_bounded_post_only_route(self):
+        config = (ROOT / "infra/nginx/preview.conf").read_text()
+        endpoint = config.split("location = /api/artifacts {", 1)[1].split("\n    }", 1)[0]
+        self.assertIn("limit_except POST { deny all; }", endpoint)
+        self.assertIn("client_max_body_size 2m;", endpoint)
+        self.assertIn("proxy_pass http://127.0.0.1:8766;", endpoint)
+
     def test_individual_art_and_enriched_epic_have_narrow_post_routes_and_nightly_timer(self):
         config = (ROOT / "infra/nginx/preview.conf").read_text()
         for name in ["encounter-art", "live-narrative"]:
@@ -186,3 +193,12 @@ class HttpsConfigurationTests(unittest.TestCase):
         self.assertIn("limit_req zone=arcane_api_requests", endpoint)
         self.assertIn("proxy_pass http://127.0.0.1:8766;", endpoint)
         self.assertIn(r"narrative-briefs\.json", config)
+        self.assertIn(r"parent-intimacy\.json", config)
+
+    def test_quest_destination_lookup_is_post_only_and_catalogue_is_allowed(self):
+        config = (ROOT / "infra/nginx/preview.conf").read_text()
+        endpoint = config.split("location = /api/quest-destinations {", 1)[1].split("\n    }", 1)[0]
+        self.assertIn("limit_except POST { deny all; }", endpoint)
+        self.assertIn("limit_req zone=arcane_api_requests", endpoint)
+        self.assertIn("proxy_pass http://127.0.0.1:8766;", endpoint)
+        self.assertIn(r"quest-templates\.json", config)

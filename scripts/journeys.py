@@ -18,7 +18,7 @@ from town_trail import TownTrailStore
 from parent_story import story_profile, build_parent_story
 
 MAX_JOURNEYS = 1000
-GENERATOR_VERSION = "parent-story-genesis-v2"
+GENERATOR_VERSION = "parent-story-cartomancer-v3"
 
 
 class JourneyConflict(ValueError):
@@ -167,6 +167,8 @@ class JourneyStore:
                         raise JourneyGeneration(str(error)) from error
             journey_id = uuid.uuid4().hex
             content = {"generator": GENERATOR_VERSION, "survival": survival, "economy": economy,
+                       "parentIntimacy": hashlib.sha256(
+                           (self.chunks.root / "public/parent-intimacy.json").read_bytes()).hexdigest(),
                        "mapIdentity": json.loads(map_identity(base)),
                        "mapSource": self.chunks.fingerprints[region],
                        "code": {name: hashlib.sha256((self.chunks.root / "scripts" / name).read_bytes()).hexdigest()

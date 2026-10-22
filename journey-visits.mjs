@@ -9,7 +9,13 @@ export function recordJourneyVisit(state, cell) {
     if (visits.some(visit => visit.name === name) || visits.length >= 128) continue;
     visits.push({ name, elapsedMinutes: state.elapsedMinutes });
   }
-  return visits.length === (state.journeyVisits?.length ?? 0) ? state : { ...state, journeyVisits: visits };
+  let next = visits.length === (state.journeyVisits?.length ?? 0) ? state : { ...state, journeyVisits: visits };
+  if (state.artifactWorld === "main-artifacts-v1" && cell?.terrain === "place" && names.length &&
+      !state.lore.visitedSettlements.some(visit => visit.col === state.col && visit.row === state.row)) {
+    next = { ...next, lore: { ...next.lore, visitedSettlements: [...next.lore.visitedSettlements,
+      { col: state.col, row: state.row, town: names[0], observedMinutes: state.elapsedMinutes }] } };
+  }
+  return next;
 }
 
 export function validateJourneyVisits(state) {

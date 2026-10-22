@@ -6,14 +6,22 @@ import { clueActions, CLUE_ACTIONS, searchClueOptions, prepareClueSearch } from 
 import { marketPrice } from "./economy.mjs";
 import { parentSighting, parentReunion } from "./parent-story.mjs";
 import { DIRECTIONS_RULES, directionsChance, citedTowns } from "./directions.mjs";
+import { questDirectionTargets } from "./quest-knowledge.mjs";
 import { setFeedback } from "./feedback.mjs";
 import { witnessCooling } from "./pressures.mjs";
 import { trailDreamText, trailDreamVariant } from "./trail-dreams.mjs";
 import { LOST_PLAYER_DREAM } from "./live-narrative.mjs";
+import { intimateWitness, parentIntimacy } from "./parent-intimacy.mjs";
 import { fieldSearchAvailable, fieldSearchRules, prepareFieldSearch, fieldClueText, vagueLead,
   recognitionHint, prepareRecognition, openingClue, openingClueText } from "./trail-search.mjs";
 
 export function parentClueText(state, discovery, t) {
+  const testimony = ["discuss", "buy"].includes(discovery.kind) ? intimateWitness(state, discovery.step, t) : "";
+  const text = parentLeadText(state, discovery, t);
+  return testimony ? `${testimony} ${text}` : text;
+}
+
+function parentLeadText(state, discovery, t) {
   if (!discovery.nextName) return t("trailReunion", { parent: state.trail.parentName });
   if (state.trail.exploration && discovery.step >= state.trail.exploration.firstStage && !discovery.pending) {
     const hint = state.trail.exploration.hints.find(h => h.stage === discovery.step + 1);
@@ -26,7 +34,7 @@ export function parentClueText(state, discovery, t) {
   const sighting = parentSighting(state, discovery.step);
   const parts = [t(`parentWitness.${sighting.variant}`, { parent: state.trail.parentName })];
   if (sighting.precision) parts.push(t(`parentWitness.${sighting.precision}`));
-  if (state.trail.story) parts.push(t("parentWitness.reason", {
+  if (state.trail.story && !parentIntimacy(state)) parts.push(t("parentWitness.reason", {
     motive: t(`parentStory.motive.${state.trail.story.motive}`),
   }));
   parts.push(t("parentWitness.lead", { hint }));
@@ -128,8 +136,9 @@ export function trailEntryDate(state, minutes, language, t) {
 
 export function setupTrail(t, { context, interview, discover, askDirections, searchField, recognizeField, pinPhoto, narrative }) {
   const dialog = document.querySelector("#trail-dialog");
-  const hintDialog = document.querySelector("#hint-dialog");
+  const hintDialog = document.querySelector("#conversation-dialog");
   const action = document.querySelector("#trail-interview");
+  const actionCost = action.nextElementSibling;
   const photo = document.querySelector("#trail-clue-photo");
   const ask = document.querySelector("#hint-ask");
   let directionsOutcome, directionsTown, selectedTownKey;
@@ -292,6 +301,9 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       mode: t(`parentStory.mode.${story.mode}`),
       orientation: t(`parentStory.${story.orientation}`),
     });
+    const intimate = parentIntimacy(state);
+    if (intimate) document.querySelector("#parent-story-summary").textContent += ` ${
+      intimate.desire[t("languageCode")]} · ${intimate.object[t("languageCode")]}`;
     document.querySelector("#parent-story-motion").textContent =
       t(`parentStory.${story.finalState}`);
     const records = document.querySelector("#parent-story-records");
@@ -312,7 +324,6 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
   }
   function localize() {
     const current = context();
-    document.querySelector("#open-hint").disabled = !current?.state.trail || current.blocked || Boolean(current.state.ended);
     if (current?.state.trail) {
       ask.disabled = current.blocked || Boolean(current.state.ended) || searching;
       document.querySelector("#hint-cost").textContent = t("hintCost", {
@@ -345,15 +356,17 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         item.append(button);
         clues.append(item);
       }
-      const towns = citedTowns(current.state), select = document.querySelector("#hint-town");
+      const towns = questDirectionTargets(current.state), select = document.querySelector("#hint-town");
       document.querySelector("#hint-towns").hidden = towns.length === 0;
       select.replaceChildren();
       for (const town of towns) {
         const option = document.createElement("option");
         option.value = town.key;
-        option.textContent = t("hintTownOption", {
-          place: town.name, status: t(`hintTownStatus.${town.status}`), page: town.stage + 1,
-        });
+        option.textContent = `${town.town ? `${town.town} — ` : ""}${town.name} · ${
+          town.references.map(reference => reference.startsWith("service:") ? t("quests.services")
+            : reference.startsWith("journal:") || reference.startsWith("abandoned-journal:")
+              ? t("quests.journals") : reference.startsWith("artifact:")
+                ? t("quests.artifacts") : t("quests.parent")).join(", ")}`;
         select.append(option);
       }
       selectedTownKey = towns.some(town => town.key === selectedTownKey) ? selectedTownKey : towns[0]?.key;
@@ -361,8 +374,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       document.querySelector("#hint-town-ask").disabled = !towns.length || current.blocked ||
         Boolean(current.state.ended) || searching;
     }
-    document.querySelector("#open-trail").disabled = !current?.state.trail;
-    document.querySelector("#town-trail").disabled = !current?.state.trail;
+    document.querySelector("#open-quests").disabled = !current?.state.trail;
     if (!current?.state.trail) return;
     const { state, blocked } = current;
     const trail = state.trail;
@@ -380,12 +392,12 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     }
     if (section !== "past") viewedStage = activeStage;
     const currentPage = viewedStage === activeStage;
-    for (const name of ["current", "actions", "past"]) {
+    for (const name of ["current", "past"]) {
       const button = document.querySelector(`#trail-section-${name}`);
       button.setAttribute("aria-pressed", String(section === name));
       button.disabled = name === "past" && activeStage === 0;
     }
-    document.querySelector("#trail-investigation-page").hidden = section !== "actions";
+    document.querySelector("#trail-investigation-page").hidden = false;
     document.querySelector("#trail-evidence-page").hidden = section === "actions";
     document.querySelector("#trail-archive-pages").hidden = section !== "past";
     document.querySelector("#trail-main-title").textContent = t(
@@ -418,7 +430,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       : t("trailPageReached", { page: viewedStage + 1, place: trail.stages[viewedStage].name });
     action.disabled = blocked || !atTrailTarget(state);
     action.hidden = modern;
-    action.nextElementSibling.hidden = modern;
+    actionCost.hidden = modern;
     action.textContent = t(trail.index === trail.stages.length - 1 ? "trailMeet" : "trailInterview");
     const history = document.querySelector("#trail-history");
     history.replaceChildren();
@@ -446,6 +458,9 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
           if (!progressive) paragraph(item, parentClueText(state, {
             kind: facts.clueKind, step: index, nextName: facts.next.name, pending: false,
           }, t));
+          else if (parentIntimacy(state) && ["discuss", "buy"].includes(facts.clueKind)) {
+            paragraph(item, intimateWitness(state, index, t));
+          }
           if (!progressive && facts.clueKind === "photo") photoButton(item, state, viewedStage);
         }
         else if (facts.next) paragraph(item, t("trailDialogue", {
@@ -500,9 +515,14 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       history.append(item);
     }
     const actions = document.querySelector("#trail-actions");
+    const socialActions = document.querySelector("#dialogue-parent");
+    if (socialActions) {
+      socialActions.replaceChildren();
+      socialActions.append(action, actionCost);
+    }
     actions.hidden = !currentPage;
-    action.hidden = modern || !currentPage;
-    action.nextElementSibling.hidden = modern || !currentPage;
+    action.hidden = modern;
+    actionCost.hidden = modern;
     actions.replaceChildren();
     if (awaitingLead && !atTrailTarget(state)) paragraph(actions, t("clueTravelFirst"));
     if (modern && !atTrailTarget(state) && !trail.completed && !trail.exploration) paragraph(actions, t("clueTravelFirst"));
@@ -564,7 +584,8 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       actions.append(item);
     }
     const available = clueActions(state);
-    const options = searchClueOptions(state, current.cell, current.info, current.data);
+    const options = searchClueOptions(state, current.cell, current.info, current.data)
+      .filter(kind => !["discuss", "buy"].includes(kind));
     if (options.length) {
       const item = document.createElement("div"), button = document.createElement("button");
       button.id = "clue-investigate";
@@ -580,7 +601,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         document.querySelector("#trail-action-error").textContent = "";
         localize();
         try {
-          const found = await prepareClueSearch(state, current.cell, current.info, current.data, availablePhoto);
+          const found = await prepareClueSearch(state, current.cell, current.info, current.data, availablePhoto, Math.random, options);
           if (generation !== searchGeneration) return;
           const latest = context();
           if (!latest || latest.blocked || latest.state !== state) return;
@@ -608,7 +629,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       }
       actions.append(item);
     }
-    for (const kind of available.filter(kind => ["directions", "rumor"].includes(kind))) {
+    for (const kind of available.filter(kind => ["discuss", "buy", "directions", "rumor"].includes(kind))) {
       const rule = CLUE_ACTIONS[kind];
       const button = document.createElement("button");
       button.id = `clue-${kind}`;
@@ -624,11 +645,16 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       item.append(button);
       paragraph(item, t("clueCost", { minutes: rule.minutes, fatigue: rule.fatigue, kcal: rule.kcal,
         money: ((rule.mealUnits ? marketPrice(current.cell, rule.mealUnits, current.data, current.info).cents : 0) / 100).toFixed(2) }));
-      actions.append(item);
+      (socialActions ?? actions).append(item);
     }
     const discovery = trail.discovery;
     document.querySelector("#trail-discovery").hidden = true;
     if (discovery) {
+      if (socialActions && parentIntimacy(state) && ["discuss", "buy"].includes(discovery.kind)) {
+        paragraph(socialActions, `${discovery.place} · ${
+          trailEntryDate(state, discovery.elapsedMinutes, document.documentElement.lang, t)}`);
+        paragraph(socialActions, parentClueText(state, discovery, t));
+      }
       document.querySelector("#trail-discovery-date").textContent =
         trailEntryDate(state, discovery.elapsedMinutes, document.documentElement.lang, t);
       document.querySelector("#trail-discovery-title").textContent =
@@ -671,7 +697,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     if (viewedStage < lastActiveStage) changePage(viewedStage + 1);
   });
   document.querySelector("#trail-page-current").addEventListener("click", () => changePage(lastActiveStage));
-  for (const name of ["current", "actions", "past"]) {
+  for (const name of ["current", "past"]) {
     document.querySelector(`#trail-section-${name}`).addEventListener("click", () => {
       section = name;
       viewedStage = name === "past" ? Math.max(0, lastActiveStage - 1) : lastActiveStage;
@@ -679,15 +705,6 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       localize();
     });
   }
-  document.querySelector("#open-trail").addEventListener("click", open);
-  document.querySelector("#open-hint").addEventListener("click", () => {
-    const current = context();
-    if (!current?.state.trail || current.blocked || current.state.ended || document.querySelector("dialog[open]")) return;
-    directionsOutcome = directionsTown = undefined;
-    document.querySelector("#hint-action-error").textContent = "";
-    localize();
-    hintDialog.showModal();
-  });
   ask.addEventListener("click", () => {
     const current = context();
     if (!current || current.blocked || current.state.ended) return;
@@ -709,21 +726,17 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
   document.querySelector("#hint-town-ask").addEventListener("click", () => {
     const current = context();
     if (!current || current.blocked || current.state.ended || searching) return;
-    const town = citedTowns(current.state).find(town => town.key === selectedTownKey);
+    const town = questDirectionTargets(current.state).find(town => town.key === selectedTownKey);
     if (!town) {
       document.querySelector("#hint-action-error").textContent = t("hintTownUnavailable");
       return;
     }
     document.querySelector("#hint-action-error").textContent = "";
-    const outcome = askDirections();
+    const outcome = askDirections(town);
     if (!outcome) return;
     directionsTown = town;
     directionsOutcome = outcome;
     localize();
-  });
-  document.querySelector("#town-trail").addEventListener("click", () => {
-    document.querySelector("#town-dialog").close();
-    open();
   });
   action.addEventListener("click", () => {
     if (!interview()) return;

@@ -1,6 +1,7 @@
 import { equipmentAction, advanceEquipment, companionName } from "./equipment.mjs";
 import { restSurvival } from "./survival.mjs";
 import { finishAction } from "./economy.mjs";
+import { validateArtifactInventory } from "./artifact-inventory.mjs";
 
 export function equipmentShopAvailable(cell) {
   return Boolean(cell && !cell.unavailable && cell.terrain === "place");
@@ -19,6 +20,7 @@ export function journeyEquipmentAction(state, action, cell, info, survival, econ
     walletCents: state.walletCents, atShop: equipmentShopAvailable(cell),
     dogEncounter: state.equipment.dogEncounter === "pending",
   });
+  validateArtifactInventory({ ...state, equipment: outcome.state });
   if (!outcome.timeMinutes) return { ...state, equipment: outcome.state };
   const paid = { ...state, walletCents: state.walletCents + outcome.walletDeltaCents,
     lastExpenseCents: outcome.costCents };

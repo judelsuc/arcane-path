@@ -3,9 +3,12 @@
 from datetime import datetime, timezone
 import math
 import random
+import json
+from pathlib import Path
 
 DAY = 86_400_000
-MOTIVES = ("seasonal", "debt", "family", "departure", "collectors", "legend")
+MOTIVES = ("seasonal", "debt", "family", "departure", "collectors", "legend", "cartomancer")
+INTIMACY = json.loads((Path(__file__).resolve().parents[1] / "public/parent-intimacy.json").read_text())
 MODES = {"walk": 30, "hitch": 150, "bus": 200, "train": 300}
 CLUES = (
     ("discuss", "photo", "letter", "buy"),
@@ -13,13 +16,26 @@ CLUES = (
     ("ticket", "photo", "buy", "search"),
 )
 
+def intimate_story(trail):
+    intimacy = trail.get("story", {}).get("intimacy")
+    if not intimacy:
+        return None
+    profile = INTIMACY[intimacy["card"]]
+    return {
+        "card": intimacy["card"], **{key: profile[key] for key in ("desire", "memory", "object", "letter")},
+        "encounter": "The cartomancer presented a card and asked for a personal object it evoked. "
+                     "A real power appeared briefly. She hid the object, claiming its recovery must be deserved. "
+                     "The adult expected a short absence, but kept postponing the return.",
+        "child": "The child seeks the parent, not a magical object. The child's birth card does not "
+                 "identify the adult's card or make the adult the original owner of a unique artifact.",
+    }
+
 
 def story_profile(seed, card):
     rng = random.Random(f"parent-story-v1:{seed}:{card}")
-    # All motives remain possible; each arcane favors one family of stories.
-    bias = sum((i + 1) * ord(c) for i, c in enumerate(card)) % len(MOTIVES)
-    weights = [4 if i == bias else 1 for i in range(len(MOTIVES))]
-    return {"motive": rng.choices(MOTIVES, weights=weights)[0],
+    # The adult's encounter is independent of the child's birth tarot.
+    intimate_card = random.Random(f"parent-intimacy-v1:{seed}").choice(tuple(INTIMACY))
+    return {"motive": "cartomancer", "intimacyCard": intimate_card,
             "orientation": rng.choice(("upright", "reversed")),
             "mode": rng.choice(tuple(MODES)),
             "finalState": rng.choice(("stationary", "mobile"))}
@@ -62,6 +78,9 @@ def build_parent_story(trail, seed, card, started_at, profile):
     story = {"version": 1, "birthCard": card, **profile, "visits": visits,
              "movement": movement, "falseLeads": false_leads, "lore": lore,
              "generatedAt": started_at, "fictional": True}
+    if profile["motive"] == "cartomancer":
+        story.pop("intimacyCard", None)
+        story["intimacy"] = {"version": 1, "card": profile["intimacyCard"]}
     validate_parent_story(trail, story)
     return story
 
@@ -73,6 +92,9 @@ def validate_parent_story(trail, story):
             raise ValueError("Parent story is not narratively solvable.")
     count = len(trail["stages"])
     require(story["motive"] in MOTIVES and story["mode"] in MODES)
+    if story["motive"] == "cartomancer":
+        require(story.get("intimacy", {}).get("version") == 1
+                and story["intimacy"].get("card") in INTIMACY)
     require(count == (13 if story["finalState"] == "mobile" else 10))
     require(len(story["visits"]) == count)
     for index, (stage, visit) in enumerate(zip(trail["stages"], story["visits"])):
