@@ -9,9 +9,41 @@ Les exigences R-182 à R-185 couvrent aussi les personnages persistants,
 le sélecteur avant Dialogue, les tilesets/skins et l'accueil documentaire des villes.
 Il s'agit d'un plan : aucun service payant n'est provisionné ni aucune donnée
 supprimée. La cible peut démarrer vide, sans migration des données existantes.
-Le dernier runtime vérifié est la 0.21.0 du 22 octobre
-(`8da7ac97745b878c3f0b5bf73f79481d86b38874`) ; les sections suivantes
-conservent l'historique des publications précédentes.
+Le checkpoint courant de prévisualisation est décrit ci-dessous ; les sections
+suivantes conservent l'historique des publications précédentes.
+
+## Checkpoint déployé : stockage partagé et cache de terrain (23 octobre 2026)
+
+- Commit runtime `4934a99d610df71469e6a397fd1accccac671b85`, tag local
+  `deploy-2026-10-23-shared-cache`. Le paquet ne contient que les fichiers
+  runtime suivis ; aucun changement Terraform, secret, donnée de partie ou
+  ressource payante n'a été créé.
+- Contient les incréments cumulés depuis `0.21.0` : stockage privé SQLite/
+  PostgreSQL et local/S3, files durables avec baux/fencing, partage optionnel
+  des illustrations, voyages/carnets/objets/quêtes/textes, origines
+  personnalisées, routes parent épinglées et grilles terrain/altitudes.
+  Inclut aussi les modifications de parcours équipement/ville et l'histoire
+  intime du parent présentes dans le worktree approuvé.
+- Validation avant empaquetage : **1 189 tests JavaScript** ; **525 tests
+  Python**, dont 35 ignorés, soit 490 réussis ; **35 tests PostgreSQL/S3
+  réels** réussis ; `pip check`, test de paquet et contrôles de différences
+  propres. Les conteneurs de recette ont été nettoyés.
+- Archive de retour code : `/home/ubuntu/arcane-path-before-deploy-4934a99.tar.gz`,
+  mode `0600`, sans `.cache` ni `.git`. Le cache persistant existant a été
+  préservé.
+- Après installation et redémarrage, `arcane-path.service` et `nginx.service`
+  sont actifs ; port loopback 8766 : `/`, `/api/travel` et
+  `/public/release.json` répondent 200. Le manifeste annonce le commit exact.
+  Aucun contrôle HTTPS authentifié n'a été fait ; la requête HTTPS sans
+  authentification a renvoyé 401, conforme à la protection de prévisualisation.
+- **Limite importante :** seul le code est déployé. Le mode PostgreSQL/S3 est
+  désactivé sur la VM : aucune configuration privée n'est définie et les
+  modules `psycopg`/`psycopg-pool` ne sont pas installés. Aucun service géré
+  OVH n'a été provisionné. Le serveur continue donc à utiliser ses caches et
+  stockages locaux ; le partage effectif entre plusieurs instances attend le
+  devis, l'approbation budgétaire, les services, la configuration privée et
+  l'installation contrôlée des dépendances. Aucun tag/commit n'a été poussé
+  vers GitHub.
 
 ## Placement chronicles, optional companions and overnight encounter art (20 October 2026)
 

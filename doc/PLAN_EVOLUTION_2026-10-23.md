@@ -795,7 +795,8 @@ principaux et lore passent (**74 tests**). La suite Python complète passe :
 échec**. Les **34 tests PostgreSQL/S3 réels** passent également. Le test
 d'intégration vérifie qu'une seconde instance relit la route épinglée sans la
 recalculer ; les conteneurs de recette sont nettoyés. `pip check` et
-`git diff --check` sont propres. Aucun déploiement ni commit réalisé.
+`git diff --check` sont propres. Ces changements sont inclus dans le checkpoint
+de prévisualisation du 23 octobre ci-dessous.
 
 ### Quatorzième incrément : grilles de terrain partagées
 
@@ -828,12 +829,16 @@ complète passe : **525 tests**, dont **35 ignorés explicitement**, soit
 **490 exécutés sans échec**. Les **35 tests PostgreSQL/S3 réels** passent
 également ; un test à deux services concurrents confirme un unique calcul et
 la réutilisation de la même grille. Les conteneurs de recette sont nettoyés,
-`pip check` et `git diff --check` passent. Aucun déploiement ni commit réalisé.
+`pip check` et `git diff --check` passent. Déployé sur la prévisualisation OVH
+dans le checkpoint `4934a99d610df71469e6a397fd1accccac671b85`; le mode partagé
+reste inactif faute de services PostgreSQL/S3 et de configuration sur cette VM.
 
 ## 1. État actuel : où vont les données ?
 
-Inventaire fondé sur le code courant et la publication 0.21.0 vérifiée le
-22 octobre. Ce n'est pas une nouvelle inspection de la VM le 23 octobre.
+Inventaire fondé sur le code du checkpoint de prévisualisation
+`4934a99d610df71469e6a397fd1accccac671b85`, installé le 23 octobre. La VM
+continue d'utiliser son mode local faute de configuration PostgreSQL/S3 ;
+les caches restent sur le disque existant.
 Le runtime est dans `/opt/arcane-path` ; les données serveur sont principalement
 sur le disque de la VM, sous `/var/lib/arcane-path/cache/travel`.
 Le mot « cache » recouvre aujourd'hui aussi des données irremplaçables.

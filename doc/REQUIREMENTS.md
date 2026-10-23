@@ -241,8 +241,16 @@
   event caches remain local; the pool alone does not coordinate their downloads.
   The authoring
   workshop and lore prototype remain separate local tools.
-  OVH acceptance, provider-wide text/download policies and externalizing these
-  remaining stores still block full multi-instance activation.
+  **Preview deployment:** the storage/cache code is deployed in commit
+  `4934a99d610df71469e6a397fd1accccac671b85` (`deploy-2026-10-23-shared-cache`).
+  Shared mode is not activated on that VM: the private asset-storage setting
+  is absent, `psycopg`/`psycopg-pool` are not installed there, and no managed
+  PostgreSQL or S3 service was provisioned. The preview therefore continues to
+  use its existing local storage and caches. Enabling shared mode requires the
+  approved OVH services, private credentials, dependencies and explicit schema
+  initialization. Provider-wide text/download policies, remaining local
+  geographic caches and browser-local progression still block full
+  multi-instance activation.
   Inventory and phased plan:
   [Infrastructure, personnages et habillages](./PLAN_EVOLUTION_2026-10-23.md).
 
