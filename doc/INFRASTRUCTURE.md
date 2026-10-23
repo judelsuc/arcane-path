@@ -7,10 +7,81 @@ sont décrits dans le
 [plan du 23 octobre](./PLAN_EVOLUTION_2026-10-23.md).
 Les exigences R-182 à R-185 couvrent aussi les personnages persistants,
 le sélecteur avant Dialogue, les tilesets/skins et l'accueil documentaire des villes.
-Il s'agit d'un plan : aucun service payant n'est provisionné ni aucune donnée
-supprimée. La cible peut démarrer vide, sans migration des données existantes.
-Le checkpoint courant de prévisualisation est décrit ci-dessous ; les sections
-suivantes conservent l'historique des publications précédentes.
+Lors de la rédaction du plan, aucun service payant n'était provisionné ni aucune
+donnée supprimée. La cible peut démarrer vide, sans migration des données existantes.
+Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
+explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
+
+## Stockage partagé activé sur OVHcloud (23 octobre 2026)
+
+- Autorisation explicite de créer PostgreSQL géré et Object Storage, puis
+  relèvement du plafond total à **150 EUR TTC/mois**, VM comprise. Les accès
+  OpenStack et les clés de gestion OVH sont distincts ; les nouvelles clés
+  de gestion ont été vérifiées avant toute création.
+- PostgreSQL **18**, plan **Essential db1-4**, **un noeud, 80 Go**, région
+  **GRA (Gravelines)**. La connexion publique est limitée à l'IPv4 de la VM
+  de prévisualisation, sans règle ouverte à Internet ; TLS utilise
+  `sslmode=verify-full` et le certificat CA du service. Le compte applicatif
+  a CONNECT et USAGE/CREATE dans les deux bases concernées, sans superuser,
+  création de rôles ni réplication. Le compte administrateur n'est pas utilisé
+  par le jeu.
+- Un bucket S3 privé en GRA, versioning activé. Les identifiants applicatifs
+  sont dédiés ; leur politique autorise seulement la lecture du bucket et
+  GetObject/PutObject sous `v1/*`, sans suppression ni accès aux autres buckets.
+  La lecture anonyme d'un objet existant a été refusée pendant la recette.
+- Devis conservateur sur **744 heures** : VM **45,71 EUR TTC** ;
+  PostgreSQL **80,87 EUR TTC** en comptant le compute et les 80 Go au tarif
+  horaire additionnel, même si le stockage de base est inclus dans l'offre ;
+  réserve S3/transferts **10 EUR TTC** ; total estimé **136,58 EUR TTC/mois**.
+  Cette estimation ne cumule pas le SKU PostgreSQL forfaitaire et son SKU
+  compute. Le stockage et les transferts restent facturés à l'usage : la réserve
+  n'est ni un quota fournisseur ni une garantie de plafond automatique.
+- Configuration privée sous `/etc/arcane-path/` : `shared-storage.json`,
+  `shared-storage-ca.pem` et `shared-storage-aws.ini`, propriétaires `arcane`,
+  permissions 0600. La base de référence est `arcane_path` pour l'API et les
+  deux tâches d'illustration ; `arcane_storage_acceptance` est une base isolée
+  réservée à la recette, pas une seconde base autoritative.
+- Les trois services utilisent les mêmes variables de configuration dans
+  leur drop-in `shared-storage.conf` et le Python du venv root-owned
+  `/opt/arcane-path/.venv-shared-storage`. Les dépendances du runtime ont été
+  installées dans ce venv, pas dans le Python système ; `pip check` passe.
+  Le catalogue a été initialisé explicitement. Le quota `images` est configuré
+  sans plafond d'appels, avec comptabilité, conformément au choix antérieur ;
+  les gardes existantes d'offre gratuite et de génération restent inchangées.
+  Aucun appel de génération texte/image n'a été déclenché par cette opération.
+- **Sept tests réels OVH réussis** : TLS/version PostgreSQL, publication
+  concurrente sur deux pools, écritures S3 conditionnelles et conflits,
+  refus d'accès anonyme, sauvegarde/restauration d'un asset et de sa métadonnée
+  SQL de test, bail/quota partagé et grille partagée entre deux services.
+  Les fixtures utilisent uniquement la base de recette ; aucune table
+  applicative n'a été tronquée. Ce test de restauration ciblé ne remplace
+  pas une restauration complète du service géré et de tous les assets.
+- Une **vraie grille terrain de production**, sans élévations simulées,
+  a ensuite été publiée et relue par un second store à cache local vide.
+  Le manifeste PostgreSQL comporte bien une grille prête.
+- API active après redémarrage, timers conservés activés et tâches oneshot
+  non lancées. Vérifications **HTTPS authentifiées : 200** sur `/`,
+  `/public/release.json`, `/api/travel`, `/api/origins`, `/api/start-art`.
+  Connexion applicative réelle : PostgreSQL 18.6, TLS actif, 28 tables et
+  quatre connexions observées lors du contrôle.
+- Runtime inchangé : commit `4934a99d610df71469e6a397fd1accccac671b85`.
+  Les travaux R-183 en cours dans le worktree ne sont **pas** livrés par cette
+  activation d'infrastructure.
+- Avant activation : sauvegardes cohérentes et intégrité vérifiée de neuf bases
+  SQLite locales et archive des unités/drop-ins dans
+  `/var/lib/arcane-path/backups/shared-storage-20261023-preactivation`, privé
+  root 0700, fichiers 0600. Le cache et les anciennes données sont conservés,
+  **sans migration vers le nouveau monde** ; ne pas promettre la compatibilité
+  des anciennes parties avec ce catalogue neuf.
+- Retour de configuration : retirer uniquement les trois nouveaux drop-ins
+  `shared-storage.conf`, faire `systemctl daemon-reload`, puis redémarrer
+  `arcane-path.service`. Cela réactive le stockage local historique ; les
+  données écrites dans le nouveau monde PostgreSQL ne sont pas recopiées en
+  SQLite et les ressources payantes continuent d'exister.
+- Restent notamment : supervision de coût/volume et rétention/réconciliation,
+  restauration complète PostgreSQL + assets, sources OSM ordinaires et autres
+  caches encore locaux, puis provisionnement reproductible/import Terraform.
+  Aucun TTL aveugle n'a été ajouté aux objets référencés par SQL.
 
 ## Checkpoint déployé : stockage partagé et cache de terrain (23 octobre 2026)
 
