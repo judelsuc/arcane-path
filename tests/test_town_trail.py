@@ -10,7 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from town_trail import build_town_trail, starting_point, distance, grid_position, TownTrailStore
 from travel_server import ChunkStore, atomic_write, ChunkJobs
-from fetch_osm import fetch_towns, OVERPASS_URLS, _COOLDOWNS, SourceUnavailable
+from fetch_osm import fetch_towns, OVERPASS_URLS, _COOLDOWNS, _SOURCE_CURSORS, SourceUnavailable
 from local_towns import LocalTowns
 from prepare_town_catalogue import extract_towns
 
@@ -32,6 +32,7 @@ def towns(latitude, longitude, venues=False, on_progress=None):
 class TownTrailTests(unittest.TestCase):
     def tearDown(self):
         _COOLDOWNS.clear()
+        _SOURCE_CURSORS.clear()
 
     def test_offline_routes_use_random_coordinates_real_towns_and_zero_external_requests(self):
         store = TownTrailStore(ChunkStore(), atomic_write)

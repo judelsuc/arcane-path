@@ -1,10 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createSave, validateSave, createJourneyStore, mapIdentity } from "../journey-save.mjs";
+import { createSave, validateSave, createJourneyStore, mapIdentity, archivedJourneys, SAVE_VERSION } from "../journey-save.mjs";
 import { startSurvival, walkSurvival } from "../survival.mjs";
 import { startEconomy, buyMeal, finishAction, applyBirthTarot, tarotEventChance,
   dailyTarotPending, acknowledgeDailyTarot, refreshPricing } from "../economy.mjs";
+import { refreshNightRest, restEconomy } from "../economy.mjs";
 import { createTrail, interviewTrail, trailTarget } from "../trail.mjs";
 import { beginBusking, settleBusking } from "../music.mjs";
 
@@ -24,6 +25,89 @@ function storage() {
   const data = new Map();
   return { getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v), data };
 }
+
+test("missing-server replacement archives the exact save before replacement and refuses data loss", () => {
+  const memory = storage();
+  Object.defineProperty(memory, "length", { get: () => memory.data.size });
+  memory.key = index => [...memory.data.keys()][index] ?? null;
+  const store = createJourneyStore(memory), original = details();
+  store.read(original.region);
+  const save = store.write(original);
+  store.archive(save);
+  store.archive(save);
+  store.write({ ...original, state: { ...original.state, elapsedMinutes: 5 } });
+  assert.deepEqual(archivedJourneys(memory), [save]);
+  assert.notDeepEqual(store.read(original.region), save);
+  assert.throws(() => store.archive({ ...save, revision: save.revision + 1 }), /refusing to overwrite/);
+  assert.throws(() => createJourneyStore({ ...memory, setItem() { throw new Error("Storage full"); } })
+    .archive(save), /Storage full/);
+});
+
+test("the isolated authoritative lore state cannot be imported into a main-game save", () => {
+  const d = details();
+  d.state.lore = { version: 1, effects: { remainingMeters: 20000, expiresMinutes: 1440 } };
+  assert.throws(() => createSave(d, 1), /Invalid or incompatible/);
+});
+
+test("private journal capability and independent delivery progress survive exact saves", () => {
+  const d = details();
+  d.state.serverJourney = { id: "1".repeat(32), seed: "12345678",
+    contentVersion: "2".repeat(64), createdAt: new Date(d.state.startedAt).toISOString() };
+  d.state.journalAccess = "3".repeat(64);
+  d.state.sidequests = [{ id: "4".repeat(32), parent: "Fictional parent", history: ["Town"],
+    stages: Array.from({ length: 10 }, (_, n) => ({ name: `Town ${n}`, latitude: 44, longitude: 2 })),
+    step: 3, delivered: false }];
+  const before = structuredClone(d.state.trail), memory = storage();
+  const store = createJourneyStore(memory);
+  store.read(d.region);
+  store.write(d);
+  const restored = createJourneyStore(memory).read(d.region);
+  assert.deepEqual(restored.state, d.state);
+  assert.deepEqual(restored.state.trail, before);
+  for (const mutate of [
+    s => { s.journalAccess = s.serverJourney.id; },
+    s => { s.sidequests[0].step = 10; },
+    s => { s.sidequests[0].stages[0].latitude = Infinity; },
+    s => { s.journalPublished = "yes"; },
+  ]) {
+    const bad = structuredClone(restored);
+    mutate(bad.state);
+    assert.throws(() => validateSave(bad));
+  }
+});
+
+test("dated arrivals survive resume and malformed or future records are rejected", () => {
+  const d = details();
+  d.state.elapsedMinutes = 10;
+  d.state.trail.arrivals = [{ stage: 0, elapsedMinutes: 5 }];
+  assert.deepEqual(validateSave(createSave(d, 1)).state.trail.arrivals, d.state.trail.arrivals);
+  for (const arrivals of [[{ stage: 0, elapsedMinutes: 11 }], [{ stage: 1, elapsedMinutes: 5 }],
+    [{ stage: 0, elapsedMinutes: -1 }], [d.state.trail.arrivals[0], d.state.trail.arrivals[0]]]) {
+    const malformed = structuredClone(d);
+    malformed.state.trail.arrivals = arrivals;
+    assert.throws(() => validateSave(createSave(malformed, 1)));
+  }
+});
+
+test("legacy resume applies only the approved rest migration and persists it without altering progress", () => {
+  const d = details(), legacy = structuredClone(d.economy), memory = storage();
+  delete legacy.restRuleVersion;
+  legacy.rules.nightRestRecoveryFactor = 0;
+  legacy.rules.lodgingMealUnits = 3;
+  const store = createJourneyStore(memory);
+  store.read(d.region);
+  store.write({ ...d, economy: legacy });
+  const resumed = store.read(d.region);
+  const migrated = refreshNightRest(refreshPricing(resumed.economy, economy), economy);
+  store.write({ ...d, state: resumed.state, economy: migrated });
+  const saved = createJourneyStore(memory).read(d.region);
+  assert.deepEqual(saved.state, resumed.state);
+  assert.equal(saved.economy.rules.nightRestRecoveryFactor, 0.5);
+  assert.equal(saved.economy.rules.lodgingMealUnits, 3);
+  const night = { ...saved.state, startedAt: Date.UTC(2026, 9, 17, 23), fatigue: 90,
+    tarotDay: "2026-10-17", awakeHours: 16 };
+  assert.equal(restEconomy(night, info, survival, saved.economy).fatigue, 81);
+});
 
 test("custom coordinate origins save independently and retain strict region validation", () => {
   const memory = storage(), store = createJourneyStore(memory), d = details();
@@ -199,7 +283,7 @@ test("corrupt, incompatible and invalid saves are rejected without deleting orig
     s => { s.state.character.bodyMassKg = 0; }, s => { s.state.startedAt = 1e30; },
     s => { s.state.trail.index = 3; }, s => { s.state.trail.stages[1] = s.state.trail.stages[0]; },
     s => { s.state.lastMove = {}; }, s => { s.survival.sleep_hours = 0; },
-    s => { s.economy.version = 99; }, s => { s.state.reserveKcal = 0; },
+    s => { s.economy.version = 99; }, s => { s.state.health = 0; },
     s => { s.savedAt = 0; }, s => { s.state.trail.stages[0].col = -1; },
   ];
   for (const mutate of mutations) {
@@ -211,7 +295,9 @@ test("corrupt, incompatible and invalid saves are rejected without deleting orig
   memory.setItem("arcane-journey-v1:firmi", "{broken");
   assert.throws(() => store.read("firmi"));
   assert.equal(memory.getItem("arcane-journey-v1:firmi"), "{broken");
-  assert.equal(store.write(details()).version, 1);
+  assert.equal(store.write(details()).version, SAVE_VERSION);
+  assert.throws(() => validateSave({ ...valid, version: 1 }), /incompatible/);
+  assert.throws(() => validateSave({ ...valid, version: 2 }), /incompatible/);
   assert.notEqual(mapIdentity(map), mapIdentity({ ...map, cellSizeMeters: 50 }));
 });
 

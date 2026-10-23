@@ -1,3 +1,5 @@
+import { setFeedback } from "./feedback.mjs";
+
 export function validateStartingMap(map) {
   if (!map || !Number.isSafeInteger(map.width) || map.width < 1 ||
       !Number.isSafeInteger(map.height) || map.height < 1 || map.cellSizeMeters !== 250 ||
@@ -72,8 +74,12 @@ export function setupStartingPoint(t, { select, addOrigin, setPreparing }) {
 
   function localize() {
     status.textContent = statusKey ? t(statusKey, { error: detail }) : "";
+    const diagnostics = document.querySelector("#place-technical-status");
+    diagnostics.textContent = detail;
+    setFeedback(status, ["placeError", "placeNoResults", "placeLocatingRetry"].includes(statusKey)
+      ? "failure" : statusKey === "placeReady" ? "success" : "");
     if (statusKey === "placePreparing") {
-      status.textContent += ` ${startingMapProgress(t, progress, (Date.now() - preparationStarted) / 1000)}`;
+      diagnostics.textContent = startingMapProgress(t, progress, (Date.now() - preparationStarted) / 1000);
     }
     status.classList.toggle("is-loading", busy);
     form.querySelector("button").disabled = locate.disabled = input.disabled = busy;

@@ -1,22 +1,69 @@
 import gzip
 import json
+import os
 import sys
 import tempfile
 import threading
+import time
 import unittest
 import urllib.error
 import urllib.request
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from travel_server import ChunkJobs, ChunkStore, OriginStore, CHUNK_SIZE, chunk_geometry, fetch_elevations, make_handler
+from travel_server import (COMPATIBLE_CHUNK_PIPELINE, ChunkJobs, ChunkStore, OriginStore,
+                           CHUNK_SIZE, chunk_geometry, fetch_elevations, make_handler)
 from http.server import ThreadingHTTPServer
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class TravelServerTests(unittest.TestCase):
+    def test_grid_identity_ignores_api_and_fetch_transport_edits_but_tracks_rasterizer(self):
+        original = ChunkStore()
+        original_read = Path.read_bytes
+        def changed(path):
+            data = original_read(path)
+            return data + b"\n# transport-only change\n" if path.name in {"travel_server.py", "fetch_osm.py"} else data
+        with patch.object(Path, "read_bytes", changed):
+            self.assertEqual(ChunkStore().pipeline, original.pipeline)
+        def raster_changed(path):
+            data = original_read(path)
+            return data + b"\n# raster change\n" if path.name == "build_map.py" else data
+        with patch.object(Path, "read_bytes", raster_changed):
+            self.assertNotEqual(ChunkStore().pipeline, original.pipeline)
+
+    def test_existing_partial_chunk_source_is_repaired_before_rasterizing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ChunkStore(cache=Path(directory))
+            source = store.source_path("firmi", -1, 0).with_suffix(".osm.gz")
+            source.parent.mkdir(parents=True)
+            snapshot = ROOT / store.regions["firmi"]["snapshot"]
+            with gzip.open(snapshot, "rb") as stream:
+                root = ET.parse(stream).getroot()
+            partial = ET.fromstring(ET.tostring(root))
+            relation = ET.SubElement(partial, "relation", {"id": "987654321"})
+            ET.SubElement(relation, "member", {"type": "way", "ref": "missing", "role": "outer"})
+            ET.SubElement(relation, "tag", {"k": "type", "v": "multipolygon"})
+            ET.SubElement(relation, "tag", {"k": "landuse", "v": "meadow"})
+            source.write_bytes(gzip.compress(ET.tostring(partial)))
+
+            def repair(bounds, name, output, refresh):
+                self.assertTrue(refresh)
+                self.assertEqual(output, source)
+                b = root.find("bounds")
+                b.attrib.update(dict(zip(("minlon", "minlat", "maxlon", "maxlat"), map(str, bounds))))
+                output.write_bytes(gzip.compress(ET.tostring(root)))
+
+            with patch("travel_server.download_region", side_effect=repair) as fetch, \
+                    patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}):
+                data = store.build("firmi", -1, 0)
+            fetch.assert_called_once()
+            self.assertEqual(data["width"], 8)
+            self.assertEqual(store.read("firmi", -1, 0), data)
+
     def test_origin_progress_is_polled_without_blocking_and_counts_only_requests(self):
         store = ChunkStore()
         origins = OriginStore(store)
@@ -87,19 +134,122 @@ class TravelServerTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Corrupt travel cache"):
                 store.read("firmi", 1, 1)
 
-    def test_elevation_failure_is_explicit_and_retry_preserves_osm(self):
+    def test_compatible_old_chunk_cache_is_migrated_without_reprocessing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ChunkStore(cache=Path(directory))
+            self.assertEqual(store.pipeline, COMPATIBLE_CHUNK_PIPELINE)
+            with patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}):
+                expected = store.build("firmi", 1, 1)
+            current = store.path("firmi", 1, 1).with_suffix(".json")
+            legacy = store.legacy_path("firmi", 1, 1).with_suffix(".json")
+            legacy.parent.mkdir(parents=True)
+            current.replace(legacy)
+            restarted = ChunkStore(cache=Path(directory))
+            with patch("travel_server.fetch_elevations", side_effect=AssertionError("Reuse elevations")), \
+                    patch("travel_server.download_region", side_effect=AssertionError("Reuse source")), \
+                    patch("travel_server.rasterize", side_effect=AssertionError("Reuse raster")):
+                self.assertEqual(restarted.build("firmi", 1, 1), expected)
+            self.assertTrue(restarted.path("firmi", 1, 1).with_suffix(".json").is_file())
+
+    def test_shared_chunk_cache_and_elevation_cooldown_are_reused_by_another_instance(self):
+        from asset_storage import local_storage
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            assets = local_storage(root / "assets")
+            first = ChunkStore(cache=root / "first")
+            second = ChunkStore(cache=root / "second")
+            first.set_shared_assets(assets)
+            second.set_shared_assets(assets)
+            with patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}) as fetch:
+                expected = first.build("firmi", 1, 1)
+            fetch.assert_called_once()
+            with patch("travel_server.fetch_elevations", side_effect=AssertionError("Use shared elevation")), \
+                    patch("travel_server.download_region", side_effect=AssertionError("Use shared chunk")), \
+                    patch("travel_server.rasterize", side_effect=AssertionError("Use shared raster")):
+                self.assertEqual(second.build("firmi", 1, 1), expected)
+            self.assertTrue(second.path("firmi", 1, 1).with_suffix(".json").is_file())
+            retry_at = time.time() + 3600
+            first.set_elevation_cooldown(retry_at)
+            self.assertEqual(second.elevation_cooldown_until(), retry_at)
+
+    def test_elevation_failure_preserves_visible_grid_across_restart_and_retries_after_cooldown(self):
         with tempfile.TemporaryDirectory() as directory:
             store = ChunkStore(cache=Path(directory))
             with patch("travel_server.fetch_elevations", side_effect=OSError("Provider offline")):
                 data = store.build("firmi", 1, 1)
             self.assertIn("Provider offline", data["elevation"]["error"])
             self.assertNotIn("elevationMeters", data["rows"][0][0])
-            self.assertIsNone(store.read("firmi", 1, 1))
+            restarted = ChunkStore(cache=Path(directory))
+            self.assertEqual(restarted.read("firmi", 1, 1), data)
+            with patch("travel_server.fetch_elevations", side_effect=AssertionError("Cooldown forbids network")):
+                self.assertEqual(restarted.build("firmi", 1, 1), data)
             self.assertTrue(store.source_path("firmi", 1, 1).with_suffix(".osm.gz").exists())
+            path = store.path("firmi", 1, 1).with_suffix(".json")
+            os.utime(path, (0, 0))
             with patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}), \
+                    patch("travel_server.rasterize", side_effect=AssertionError("Reuse cached terrain")), \
                     patch("travel_server.download_region", side_effect=AssertionError("No new download")):
                 retried = store.build("firmi", 1, 1)
             self.assertEqual(retried["rows"][0][0]["elevationMeters"], 100)
+            self.assertNotIn("error", retried["elevation"])
+            self.assertEqual(restarted.read("firmi", 1, 1), retried)
+
+    def test_provider_429_cooldown_is_shared_persistent_and_does_not_invalidate_terrain(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ChunkStore(cache=Path(directory))
+            pipeline = store.pipeline
+            limit = urllib.error.HTTPError("https://api.open-meteo.com", 429, "Too Many Requests",
+                                          {"Retry-After": "7200"}, None)
+            with patch("travel_server.fetch_elevations", side_effect=limit) as fetch:
+                first = store.build("firmi", 1, 1)
+                second = store.build("firmi", 0, 0)
+            self.assertEqual(fetch.call_count, 1, "another tile must not re-contact a throttled provider")
+            self.assertIn("429", first["elevation"]["error"])
+            self.assertIn("cooldown", second["elevation"]["error"])
+            self.assertNotIn("elevationMeters", second["rows"][0][0])
+            restarted = ChunkStore(cache=Path(directory))
+            self.assertEqual(restarted.pipeline, pipeline)
+            self.assertEqual(restarted.elevation_retry_at, store.elevation_retry_at)
+            self.assertGreaterEqual(store.elevation_retry_at, __import__("time").time() + 7190)
+            path = restarted.path("firmi", 1, 1).with_suffix(".json")
+            os.utime(path, (0, 0))
+            self.assertFalse(restarted.refresh_due("firmi", 1, 1, first))
+            with patch("travel_server.fetch_elevations", side_effect=AssertionError("Provider cooling down")):
+                self.assertEqual(restarted.build("firmi", 1, 1), first)
+            with patch("travel_server.time.time", return_value=store.elevation_retry_at + 1), \
+                    patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}) as fetch, \
+                    patch("travel_server.download_region", side_effect=AssertionError("Keep cached terrain")):
+                refreshed = restarted.build("firmi", 1, 1)
+            self.assertEqual(fetch.call_count, 1)
+            self.assertEqual(refreshed["rows"][0][0]["elevationMeters"], 100)
+
+    def test_elevation_refresh_serves_cached_terrain_while_background_provider_is_pending(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ChunkStore(cache=Path(directory))
+            with patch("travel_server.fetch_elevations", side_effect=OSError("Provider offline")):
+                data = store.build("firmi", 1, 1)
+            path = store.path("firmi", 1, 1).with_suffix(".json")
+            os.utime(path, (0, 0))
+            started, release = threading.Event(), threading.Event()
+            def heights(centers):
+                started.set()
+                release.wait(timeout=3)
+                return {"values": [100] * len(centers)}
+            jobs = ChunkJobs(store, workers=1)
+            try:
+                with patch("travel_server.fetch_elevations", side_effect=heights):
+                    self.assertEqual(jobs.request("firmi", 1, 1), (200, data))
+                    self.assertTrue(started.wait(timeout=3))
+                    self.assertEqual(jobs.request("firmi", 1, 1), (200, data))
+                    release.set()
+                    jobs.jobs[("firmi", 1, 1)].result(timeout=3)
+                    status, refreshed = jobs.request("firmi", 1, 1)
+                    self.assertEqual(status, 200)
+                    self.assertEqual(refreshed["rows"][0][0]["elevationMeters"], 100)
+            finally:
+                release.set()
+                jobs.pool.shutdown()
 
     def test_external_chunk_download_has_same_projection_and_persistent_source(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -151,6 +301,16 @@ class TravelServerTests(unittest.TestCase):
                     self.assertEqual(json.load(response)["chunkSize"], 8)
                 with urllib.request.urlopen(url + "/api/origins") as response:
                     self.assertEqual(json.load(response), [])
+                cached_chunk = {"chunk": {"region": "firmi", "x": 0, "y": 0}}
+                with patch.object(store, "read", side_effect=[cached_chunk, None]) as read, \
+                        patch.object(jobs, "request") as request, \
+                        patch.object(store, "build") as build:
+                    query = urllib.parse.urlencode({"region": "firmi", "positions": "[[0,0],[1,0]]"})
+                    with urllib.request.urlopen(url + "/api/chunks-cached?" + query) as response:
+                        self.assertEqual(json.load(response), {"chunks": [cached_chunk]})
+                    self.assertEqual(read.call_count, 2)
+                    request.assert_not_called()
+                    build.assert_not_called()
                 place = {"latitude": 44.5, "longitude": 2.3, "name": "Firmi"}
                 with patch.object(store.places, "search", return_value=[place]) as search:
                     with urllib.request.urlopen(url + "/api/places?q=Firmi") as response:
@@ -177,7 +337,7 @@ class TravelServerTests(unittest.TestCase):
                 with urllib.request.urlopen(url + "/public/config.json") as response:
                     settings = json.load(response)
                     self.assertEqual(settings["survival"]["reserve_kcal"], 1800)
-                    self.assertEqual(settings["photos"]["max_per_cell"], 5)
+                    self.assertEqual(settings["photos"]["max_per_cell"], 10)
                 with patch("travel_server.WeatherStore.get", return_value={"months": []}) as weather:
                     with urllib.request.urlopen(url + "/api/weather?region=firmi&x=1&y=1") as response:
                         self.assertEqual(json.load(response), {"months": []})
@@ -192,6 +352,13 @@ class TravelServerTests(unittest.TestCase):
                     ("/api/chunk?region=unknown&x=0&y=0", 400),
                     ("/api/chunk?region=firmi&x=1001&y=0", 400),
                     ("/api/chunk?region=firmi&x=a&y=0", 400),
+                    *[("/api/chunks-cached?" + urllib.parse.urlencode({
+                        "region": region, "positions": json.dumps(positions),
+                    }), 400) for region, positions in [
+                        ("unknown", [[0, 0]]), ("firmi", []), ("firmi", [[0, 0]] * 10),
+                        ("firmi", [[True, 0]]), ("firmi", [[1001, 0]]),
+                        ("firmi", [[0]]), ("firmi", {"x": 0}), ("firmi", [[0.5, 0]]),
+                    ]],
                     ("/api/origin?latitude=nan&longitude=2.3", 502),
                     ("/api/origin-map?region=firmi", 400),
                     ("/api/trail?region=unknown&seed=00000001", 400),

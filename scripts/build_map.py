@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 from config import load_config
+from shoreline import CREDIT as SHORELINE_CREDIT, load_shoreline
 
 EARTH_RADIUS_METERS = 6_371_008.8
 DEFAULT_CELL_SIZE_METERS = 250
@@ -153,7 +154,7 @@ def poi_category(tags: dict[str, str]) -> str | None:
 
 
 def visible_at_scale(terrain: str, cell_size_meters: int) -> bool:
-    return terrain not in {"building", "road"} or cell_size_meters < DEFAULT_CELL_SIZE_METERS
+    return terrain != "road" or cell_size_meters < DEFAULT_CELL_SIZE_METERS
 
 
 def _join_rings(parts: list[list[str]]) -> list[list[str]]:
@@ -224,7 +225,7 @@ def _clip_segment(start, end, min_x, min_y, max_x, max_y):
 
 
 def rasterize(
-    source: Path, name: str, cell_size_meters: int = DEFAULT_CELL_SIZE_METERS
+    source: Path, name: str, cell_size_meters: int = DEFAULT_CELL_SIZE_METERS, *, shoreline=None
 ) -> dict[str, Any]:
     if cell_size_meters <= 0:
         raise ValueError("La taille d'une case doit etre superieure a zero.")
@@ -240,7 +241,7 @@ def rasterize(
 
     nodes: dict[str, tuple[float, float]] = {}
     node_elements = root.findall("node")
-    if not node_elements:
+    if not node_elements and root.find("bounds") is None:
         raise ValueError("L'extrait OSM ne contient aucun noeud.")
 
     all_lons = [float(node.attrib["lon"]) for node in node_elements]
@@ -268,6 +269,8 @@ def rasterize(
     ]
     water_samples = {}
     water_features = {}
+    building_samples = {}
+    building_threshold = 15
     coverage_threshold = load_config()["map"]["water_coverage_percent"]
     sample_count = 20
 
@@ -290,12 +293,13 @@ def rasterize(
         max_col, max_row = grid_position(
             (max(point[0] for point in outer), max(point[1] for point in outer))
         )
-        if terrain == "water":
+        if terrain == "water" or terrain == "building" and cell_size_meters >= DEFAULT_CELL_SIZE_METERS:
             sample_water(
                 min(point[0] for point in outer), min(point[1] for point in outer),
                 max(point[0] for point in outer), max(point[1] for point in outer),
                 lambda x, y: _point_in_polygon(x, y, outer) and not any(
                     _point_in_polygon(x, y, hole) for hole in holes),
+                target=building_samples if terrain == "building" else water_samples,
             )
             return
         for row in range(min(min_row, max_row), max(min_row, max_row) + 1):
@@ -307,7 +311,11 @@ def rasterize(
                 ):
                     paint(col, row, terrain)
 
-    def sample_water(west, south, east, north, contains):
+    def sample_water(west, south, east, north, contains, *, target=None):
+        if east < min_x or west > max_x or north < min_y or south > max_y:
+            return
+        if target is None:
+            target = water_samples
         first_col, first_row = grid_position((west, north))
         last_col, last_row = grid_position((east, south))
         for row in range(first_row, last_row + 1):
@@ -316,13 +324,30 @@ def rasterize(
             for col in range(first_col, last_col + 1):
                 left = min_x + col * cell_size_meters
                 right = min(max_x, left + cell_size_meters)
-                samples = water_samples.setdefault((col, row), set())
+                samples = target.setdefault((col, row), set())
                 for sy in range(sample_count):
                     y = top - (sy + 0.5) / sample_count * (top - bottom)
+                    if not south <= y <= north:
+                        continue
                     for sx in range(sample_count):
                         x = left + (sx + 0.5) / sample_count * (right - left)
-                        if contains(x, y):
+                        if west <= x <= east and contains(x, y):
                             samples.add(sy * sample_count + sx)
+
+    if shoreline is not None:
+        xs = [min_x + col * cell_size_meters + (sx + 0.5) / sample_count *
+              (min(max_x, min_x + (col + 1) * cell_size_meters) - min_x - col * cell_size_meters)
+              for col in range(width) for sx in range(sample_count)]
+        ys = [max_y - row * cell_size_meters - (sy + 0.5) / sample_count *
+              (max_y - row * cell_size_meters - max(min_y, max_y - (row + 1) * cell_size_meters))
+              for row in range(height) for sy in range(sample_count)]
+        longitudes = [math.degrees(x / EARTH_RADIUS_METERS) / math.cos(math.radians(center_lat)) for x in xs]
+        latitudes = [math.degrees(y / EARTH_RADIUS_METERS) for y in reversed(ys)]
+        for iy, ocean in enumerate(shoreline.ocean_samples(longitudes, latitudes)):
+            row, sy = divmod(len(ys) - 1 - iy, sample_count)
+            for ix in ocean:
+                col, sx = divmod(ix, sample_count)
+                water_samples.setdefault((col, row), set()).add(sy * sample_count + sx)
 
     for node in node_elements:
         nodes[node.attrib["id"]] = project(
@@ -330,10 +355,10 @@ def rasterize(
         )
 
     ways = {way.attrib["id"]: way for way in root.findall("way")}
-    water_members = {
+    area_members = {
         member.attrib["ref"]
         for relation in root.findall("relation")
-        if _tags(relation).get("type") == "multipolygon" and classify(_tags(relation)) == "water"
+        if _tags(relation).get("type") == "multipolygon" and classify(_tags(relation)) in {"water", "building"}
         for member in relation.findall("member") if member.attrib.get("type") == "way"
     }
     for way in ways.values():
@@ -341,7 +366,7 @@ def rasterize(
         terrain = classify(tags)
         if terrain is None or not visible_at_scale(terrain, cell_size_meters):
             continue
-        if terrain == "water" and way.attrib["id"] in water_members:
+        if terrain in {"water", "building"} and way.attrib["id"] in area_members:
             continue
         refs = [ref.attrib["ref"] for ref in way.findall("nd")]
         missing_refs = [ref for ref in refs if ref not in nodes]
@@ -363,6 +388,8 @@ def rasterize(
         )
         if is_area:
             fill_polygon(points, [], terrain)
+        if terrain == "building" and cell_size_meters >= DEFAULT_CELL_SIZE_METERS:
+            continue
 
         if terrain == "water" and not is_area:
             raw_width = tags.get("width")
@@ -416,7 +443,7 @@ def rasterize(
         tags = _tags(relation)
         terrain = classify(tags)
         if tags.get("type") != "multipolygon" or terrain not in {
-            "forest", "grass", "field", "vineyard", "park", "water", "mountain"
+            "forest", "grass", "field", "vineyard", "park", "water", "mountain", "building"
         }:
             continue
         parts = {"outer": [], "inner": []}
@@ -442,6 +469,10 @@ def rasterize(
         for outer in outers:
             fill_polygon(outer, holes, terrain)
 
+    for (col, row), samples in building_samples.items():
+        if len(samples) * 100 / sample_count ** 2 >= building_threshold:
+            paint(col, row, "building")
+
     for (col, row), samples in water_samples.items():
         if len(samples) * 100 / sample_count ** 2 >= coverage_threshold:
             paint(col, row, "water")
@@ -450,7 +481,8 @@ def rasterize(
     settlements = {}
     for node in node_elements:
         terrain = classify(_tags(node), is_node=True)
-        if terrain is not None and terrain != "water" and visible_at_scale(terrain, cell_size_meters):
+        if (terrain is not None and terrain != "water" and visible_at_scale(terrain, cell_size_meters)
+                and not (terrain == "building" and cell_size_meters >= DEFAULT_CELL_SIZE_METERS)):
             point = nodes[node.attrib["id"]]
             if not (min_x <= point[0] <= max_x and min_y <= point[1] <= max_y):
                 continue
@@ -568,6 +600,9 @@ def rasterize(
             samples = water_samples.get((col_index, row_index))
             if samples:
                 output_cell["waterCoveragePercent"] = len(samples) * 100 / sample_count ** 2
+            buildings = building_samples.get((col_index, row_index))
+            if buildings:
+                output_cell["buildingCoveragePercent"] = len(buildings) * 100 / sample_count ** 2
             waterways = water_features.get((col_index, row_index))
             if waterways:
                 output_cell["waterways"] = sorted(waterways)
@@ -601,6 +636,8 @@ def rasterize(
         **reference_bounds,
         "cellSizeMeters": cell_size_meters,
         "waterCoverageThresholdPercent": coverage_threshold,
+        "buildingCoverageThresholdPercent": building_threshold,
+        "oceanCoverage": {**SHORELINE_CREDIT, "sha256": shoreline.sha256} if shoreline else None,
         "width": width,
         "height": height,
         "bounds": {
@@ -635,7 +672,7 @@ def _payload_hash(data):
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
-def build_cached(source, output, name, cell_size_meters=DEFAULT_CELL_SIZE_METERS, force=False):
+def build_cached(source, output, name, cell_size_meters=DEFAULT_CELL_SIZE_METERS, force=False, *, shoreline=None):
     inputs = {
         "schemaVersion": CACHE_SCHEMA_VERSION,
         "sourceSha256": hashlib.sha256(source.read_bytes()).hexdigest(),
@@ -643,6 +680,9 @@ def build_cached(source, output, name, cell_size_meters=DEFAULT_CELL_SIZE_METERS
         "name": name,
         "cellSizeMeters": cell_size_meters,
         "configuration": load_config()["map"],
+        "shorelineSha256": shoreline.sha256 if shoreline else None,
+        "shorelinePipelineSha256": (hashlib.sha256(Path(__file__).with_name("shoreline.py").read_bytes()).hexdigest()
+                                    if shoreline else None),
     }
     key = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode("utf-8")).hexdigest()
     if output.exists() and not force:
@@ -652,7 +692,7 @@ def build_cached(source, output, name, cell_size_meters=DEFAULT_CELL_SIZE_METERS
                 raise ValueError(f"Cache corrompu : {output}. Regenerer avec --force.")
             return cached, True
 
-    data = rasterize(source, name, cell_size_meters)
+    data = rasterize(source, name, cell_size_meters, shoreline=shoreline)
     data["cache"] = {**inputs, "key": key, "payloadSha256": _payload_hash(data)}
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = None
@@ -696,7 +736,7 @@ def main() -> int:
 
     try:
         map_data, reused = build_cached(
-            args.input, args.output, args.name, args.cell_size, args.force
+            args.input, args.output, args.name, args.cell_size, args.force, shoreline=load_shoreline()
         )
     except (OSError, ValueError) as error:
         print(f"Erreur de generation de carte: {error}", file=sys.stderr)

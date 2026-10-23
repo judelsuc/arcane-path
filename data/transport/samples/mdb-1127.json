@@ -1,0 +1,2811 @@
+{
+  "version": 1,
+  "kind": "real-gtfs-routes",
+  "source": {
+    "id": "mdb-1127",
+    "country": "FI",
+    "provider": "Waltti - Kotka",
+    "mirrorUrl": "https://files.mobilitydatabase.org/mdb-1127/latest.zip",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "licenseReviewed": true,
+    "official": true
+  },
+  "retrievedAt": "2026-10-19T08:29:13.177005+00:00",
+  "sha256": "6502e3e9c012b3a437007a4184fc8ecfbb15899d51649e9c6e5ef56838ebc08c",
+  "serviceDate": "2026-10-19",
+  "timeZones": [
+    "Europe/Helsinki"
+  ],
+  "feedInfo": [
+    {
+      "feed_publisher_name": "Kotka",
+      "feed_lang": "fi",
+      "feed_start_date": "20260812",
+      "feed_end_date": "20270101",
+      "feed_version": "202610161738",
+      "feed_publisher_url": "http://kotka.fi"
+    }
+  ],
+  "routes": [
+    {
+      "id": "5012",
+      "shortName": "P012",
+      "longName": "P012 Keskusta - Karhula - Peippola",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "5013",
+      "shortName": "P013",
+      "longName": "P013 Karhula - Korkeakoski / Sutela / Emännänraitti",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "5230",
+      "shortName": "P023",
+      "longName": "P023 Kantasatama - Hirssaari - Munsaari",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "6073",
+      "shortName": "P073",
+      "longName": "P073 Linja-autoas - Summa - Reitkalli - Kusula - Salmenkylä - linja-autoas",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "6175",
+      "shortName": "P075",
+      "longName": "P075 Linja-autoasema - Husula - Kitula",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "6179",
+      "shortName": "P079",
+      "longName": "P079 Linja-autoasema - Neuvoton - Uusi-Summa - linja-autoasema",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "60701",
+      "shortName": "P070B",
+      "longName": "P070B Linja-autoasema - tori - Et-Poitsila - Hillo - uusi-Summa - Pitäjäsaari - tori - linja-autoasema",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "6275",
+      "shortName": "P075B",
+      "longName": "P075B Linja-autoasema - Tallinmäki - Kirkkojärvi - Töytäri - Kitula",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "5001",
+      "shortName": "P001",
+      "longName": "P001 Keskusta - Hovinsaari -. Keskussairaala - Koskenrinne",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "12",
+      "shortName": "12",
+      "longName": "12 Keskusta - Lankila - Aittakorpi - Karhuvuori - Mussalo",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "131",
+      "shortName": "13M",
+      "longName": "13M Kantasatama-Karhuvuori-Munsaari-Mussalo-Kantasatama",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "135",
+      "shortName": "13H",
+      "longName": "13H Hirssaari-MussaloKeskusta",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "13",
+      "shortName": "13",
+      "longName": "13 Keskusta - Lankila - Aittakorpi - Karhuvuori - Mussalo - Keskusta",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "1",
+      "shortName": "1",
+      "longName": "1 Kotka - Karhula - Hamina",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "2501",
+      "shortName": "25S",
+      "longName": "25S Keskusta - Mussalo - Karhuvuori - Karhula - Suulisniemi",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "2502",
+      "shortName": "25T",
+      "longName": "25T Keskusta - Mussalo - Karhuvuori - Karhula - Sunila - Tiutinen",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "2503",
+      "shortName": "25Y",
+      "longName": "25Y Keskusta - Mussalo - Karhuvuori - Karhula - Tavastilan as - Ylänummi",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "25O",
+      "shortName": "25O",
+      "longName": "25O Keskusta-Mussalo-K:vuori-Karhula-Mäntykangas",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "25",
+      "shortName": "25",
+      "longName": "25 Keskusta - Mussalo - Karhuvuori - Karhula",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "274",
+      "shortName": "27H",
+      "longName": "27H Kantasatma-Hirssaari-Mussalo-K:vuori-Kantasatama",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "27M",
+      "shortName": "27M",
+      "longName": "27M Kotkan keskusta-Mussalo-Munsaari-Karhuvuori-Kesk",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "2J",
+      "shortName": "2J",
+      "longName": "2J Jäppilä - Kaukola - keskusta",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "2P",
+      "shortName": "2P",
+      "longName": "2P Pernoo - Jäppilä - Kaukola - keskusta",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "342",
+      "shortName": "34B",
+      "longName": "34B Karhula - Peippola - Laajakoski",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "371",
+      "shortName": "37B",
+      "longName": "37B Karhula - Mäntykangas - Ristinkallio - Karhula",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "391",
+      "shortName": "39B",
+      "longName": "39B Karhula - Peippola",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "501",
+      "shortName": "5B",
+      "longName": "5B Tiutinen - Sunila - Karhula",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "521",
+      "shortName": "2C",
+      "longName": "2C Sutela - Jäppilä - Pernoo",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "522",
+      "shortName": "2L",
+      "longName": "2L Pernoo - Sutela - Lankila - Langinkosken koulu",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "62",
+      "shortName": "6S",
+      "longName": "6S Keskusta- Karhula - Sunila",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "6M",
+      "shortName": "6M",
+      "longName": "6M Suulisniemi-Karhula-moottoritie-Keskusta",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "6",
+      "shortName": "6",
+      "longName": "6 Keskusta - Karhula - Suulisniemi",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "7070",
+      "shortName": "775",
+      "longName": "775 Traficom Hamina-Lelu th-Virolahti (Liikenne Vuorela)",
+      "mode": "bus",
+      "agency": "Liikenne Vuorela Oy / Kotkan Seudun Liikenne",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "7071",
+      "shortName": "775A",
+      "longName": "775A Traficom Virolahti-Lelu th-Hamina (Liikenne Vuorela)",
+      "mode": "bus",
+      "agency": "Liikenne Vuorela Oy / Kotkan Seudun Liikenne",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "7V",
+      "shortName": "7V",
+      "longName": "7V Keskusta - Koivula - Korkeakoski - Karhula",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "892",
+      "shortName": "89S",
+      "longName": "89S Huutjärvi - Sutela",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "921",
+      "shortName": "9J",
+      "longName": "9J Karhula Tavastila - Ylänummi",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "922",
+      "shortName": "9M",
+      "longName": "9M Karhula - Juurikorpi",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "923",
+      "shortName": "9R",
+      "longName": "9R Karhula - Tavastila - Ylänummi",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "936",
+      "shortName": "93S",
+      "longName": "93S Sutela - Huutjärvi - Siltakylä",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "372",
+      "shortName": "37B",
+      "longName": "37B Karhula - Mäntykangas - Ristinkallio - Malminki - Karhula",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "6081",
+      "shortName": "P081",
+      "longName": "P081 Linja-autoasema - terveysasema",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "933",
+      "shortName": "93P",
+      "longName": "93P Sutela -  Huutjärvi - Purola - Kangas",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Taksikuljetukset Harri Vuolle Oy",
+      "timeZone": "Europe/Helsinki"
+    },
+    {
+      "id": "377",
+      "shortName": "37K",
+      "longName": "37K Karhula - Mäntykangas - Keltakallio",
+      "mode": "bus",
+      "agency": "Kotkan Seudun Liikenne / Oy Pohjolan liikenne Ab",
+      "timeZone": "Europe/Helsinki"
+    }
+  ],
+  "stops": [
+    {
+      "id": "155501",
+      "name": "Kauppatori Kirkkokatu",
+      "latitude": 60.46772668245459,
+      "longitude": 26.944991075241944
+    },
+    {
+      "id": "155502",
+      "name": "Kirkkokatu 26 L, Kotkan kirkko",
+      "latitude": 60.46448585770926,
+      "longitude": 26.937132043073465
+    },
+    {
+      "id": "155503",
+      "name": "Kotkantie 2 L (Rautatieasema)",
+      "latitude": 60.46534273509346,
+      "longitude": 26.92689633085557
+    },
+    {
+      "id": "155723",
+      "name": "Hovinsaari, Kotkantie P",
+      "latitude": 60.468467187799234,
+      "longitude": 26.92219901811946
+    },
+    {
+      "id": "155716",
+      "name": "Hovinsaaren koulu P",
+      "latitude": 60.4704853987698,
+      "longitude": 26.9225619025663
+    },
+    {
+      "id": "155652",
+      "name": "Kotkantie / Liitulahdentie th P",
+      "latitude": 60.47516445871199,
+      "longitude": 26.91627532364292
+    },
+    {
+      "id": "155668",
+      "name": "Kotkantie - Keskussairaala P",
+      "latitude": 60.479494198493,
+      "longitude": 26.9128622217208
+    },
+    {
+      "id": "155679",
+      "name": "Allintie 2 L",
+      "latitude": 60.4822403666457,
+      "longitude": 26.9086180237073
+    },
+    {
+      "id": "155675",
+      "name": "Allintie L",
+      "latitude": 60.4829850310583,
+      "longitude": 26.9051868193032
+    },
+    {
+      "id": "155677",
+      "name": "Lokintie P",
+      "latitude": 60.48513682584385,
+      "longitude": 26.90208516135455
+    },
+    {
+      "id": "155526",
+      "name": "Langinkosken koulu, Allintie P",
+      "latitude": 60.48739907911229,
+      "longitude": 26.89957022597601
+    },
+    {
+      "id": "155529",
+      "name": "Naakantie P",
+      "latitude": 60.48932895561999,
+      "longitude": 26.898222229543634
+    },
+    {
+      "id": "155741",
+      "name": "Satakielentie P",
+      "latitude": 60.49137525546459,
+      "longitude": 26.896798616912164
+    },
+    {
+      "id": "155728",
+      "name": "Allintie P",
+      "latitude": 60.49240587900768,
+      "longitude": 26.896086792403754
+    },
+    {
+      "id": "309909",
+      "name": "Närhintie 2",
+      "latitude": 60.4929323302403,
+      "longitude": 26.8915112532421
+    },
+    {
+      "id": "155617",
+      "name": "Jylppy th P",
+      "latitude": 60.49682151322625,
+      "longitude": 26.901341092116287
+    },
+    {
+      "id": "135002",
+      "name": "Huumantie P",
+      "latitude": 60.5035172615751,
+      "longitude": 26.901822165815
+    },
+    {
+      "id": "301175",
+      "name": "Kyminlinna Kyminlinnantie Karhulaan",
+      "latitude": 60.506135956772894,
+      "longitude": 26.899124466338808
+    },
+    {
+      "id": "302096",
+      "name": "Turvalantie th I",
+      "latitude": 60.506533090483885,
+      "longitude": 26.907258315772285
+    },
+    {
+      "id": "309913",
+      "name": "Jumalniementie, kauppakeskus, pohjoisosa",
+      "latitude": 60.5061958653834,
+      "longitude": 26.9139112421029
+    },
+    {
+      "id": "309914",
+      "name": "Jumalniementie, kauppakeskus, eteläosa",
+      "latitude": 60.5050159071746,
+      "longitude": 26.9155151694333
+    },
+    {
+      "id": "155486",
+      "name": "Jumalniemi, Kyminsuuntie I",
+      "latitude": 60.5069704541533,
+      "longitude": 26.9187245067353
+    },
+    {
+      "id": "155488",
+      "name": "Jumalniemi, Uittoväylä I",
+      "latitude": 60.50856375019782,
+      "longitude": 26.92369720116135
+    },
+    {
+      "id": "155715",
+      "name": "Pajatie P",
+      "latitude": 60.5111234019616,
+      "longitude": 26.9306798115235
+    },
+    {
+      "id": "155578",
+      "name": "Karhukuja I",
+      "latitude": 60.513455359865134,
+      "longitude": 26.934217711344836
+    },
+    {
+      "id": "309919",
+      "name": "Karhulan tori, palvelulinjat (T)",
+      "latitude": 60.5150489327177,
+      "longitude": 26.933932953469203
+    },
+    {
+      "id": "155001",
+      "name": "Vesivallintie I (virtuaali)",
+      "latitude": 60.51523306023592,
+      "longitude": 26.940225094198613
+    },
+    {
+      "id": "155560",
+      "name": "Korsulankatu P",
+      "latitude": 60.5165676221403,
+      "longitude": 26.945981393753375
+    },
+    {
+      "id": "155563",
+      "name": "Tikankatu I",
+      "latitude": 60.5185379095865,
+      "longitude": 26.944981737413567
+    },
+    {
+      "id": "155591",
+      "name": "Tikankatu I",
+      "latitude": 60.52049164678837,
+      "longitude": 26.94937958853451
+    },
+    {
+      "id": "82658",
+      "name": "Hurukselantie 41 L",
+      "latitude": 60.5237633081967,
+      "longitude": 26.9452414786652
+    },
+    {
+      "id": "82661",
+      "name": "Hurukselantie 98 P",
+      "latitude": 60.5285330637984,
+      "longitude": 26.9408096671875
+    },
+    {
+      "id": "82663",
+      "name": "Hurukselantie 164 P",
+      "latitude": 60.5338519591352,
+      "longitude": 26.9363769175056
+    },
+    {
+      "id": "82664",
+      "name": "Hurukselantie 267 P",
+      "latitude": 60.5415718112562,
+      "longitude": 26.9268100025158
+    },
+    {
+      "id": "82669",
+      "name": "Hurukselantie 338 L",
+      "latitude": 60.5458673001785,
+      "longitude": 26.9178082997832
+    },
+    {
+      "id": "82670",
+      "name": "Hurukselantie 360 P",
+      "latitude": 60.5473062581482,
+      "longitude": 26.9143862869822
+    },
+    {
+      "id": "133813",
+      "name": "Karhulantie 316 E",
+      "latitude": 60.543269765785126,
+      "longitude": 26.911802602273855
+    },
+    {
+      "id": "155689",
+      "name": "Mukasentie P",
+      "latitude": 60.542296986891124,
+      "longitude": 26.904162346571475
+    },
+    {
+      "id": "155522",
+      "name": "Kukkatarhantie  P",
+      "latitude": 60.54883819275697,
+      "longitude": 26.902904325033457
+    },
+    {
+      "id": "443718",
+      "name": "Mukasentie 242 P",
+      "latitude": 60.554648224631364,
+      "longitude": 26.898598210608288
+    },
+    {
+      "id": "82671",
+      "name": "Hurukselantie 490 P",
+      "latitude": 60.5554141402431,
+      "longitude": 26.898190608772
+    },
+    {
+      "id": "309924",
+      "name": "Terripolku",
+      "latitude": 60.5577170368407,
+      "longitude": 26.9009546511515
+    },
+    {
+      "id": "155697",
+      "name": "Mukasentie 242 E",
+      "latitude": 60.55457386374124,
+      "longitude": 26.898448441197356
+    },
+    {
+      "id": "155523",
+      "name": "Mukasentie 178 E",
+      "latitude": 60.54875695664364,
+      "longitude": 26.902171475452228
+    },
+    {
+      "id": "155516",
+      "name": "Mukasentie 94 E",
+      "latitude": 60.541954702813975,
+      "longitude": 26.90328500247641
+    },
+    {
+      "id": "133811",
+      "name": "Karhulantie 253 I",
+      "latitude": 60.54001693937435,
+      "longitude": 26.904863660569184
+    },
+    {
+      "id": "133812",
+      "name": "Karhulantie 313 P",
+      "latitude": 60.54335974880544,
+      "longitude": 26.91212693476269
+    },
+    {
+      "id": "133814",
+      "name": "Karhulantie 354 P",
+      "latitude": 60.5469751246655,
+      "longitude": 26.9129299088161
+    },
+    {
+      "id": "82668",
+      "name": "Hurukselantie 334 I",
+      "latitude": 60.5457189870671,
+      "longitude": 26.9181827492451
+    },
+    {
+      "id": "82667",
+      "name": "Hurukselantie 304 I",
+      "latitude": 60.5438959611677,
+      "longitude": 26.9226821094377
+    },
+    {
+      "id": "82666",
+      "name": "Hurukselantie 298 L",
+      "latitude": 60.5435696487446,
+      "longitude": 26.9233771087432
+    },
+    {
+      "id": "82665",
+      "name": "Hurukselantie 276 E",
+      "latitude": 60.5421186569539,
+      "longitude": 26.9259824386824
+    },
+    {
+      "id": "155695",
+      "name": "Lautakatontie / Sahrankatu I",
+      "latitude": 60.534333836054124,
+      "longitude": 26.941998772760385
+    },
+    {
+      "id": "155696",
+      "name": "Lautakatontie / Rosokatu I",
+      "latitude": 60.5351842391755,
+      "longitude": 26.9460425388344
+    },
+    {
+      "id": "155609",
+      "name": "Hiidenkirnuntie / Lautakatontie E",
+      "latitude": 60.53540858191772,
+      "longitude": 26.951151363604136
+    },
+    {
+      "id": "69013",
+      "name": "Muurahaistie (I)",
+      "latitude": 60.53237957621346,
+      "longitude": 26.95787617618581
+    },
+    {
+      "id": "155643",
+      "name": "Hiidenkirnuntie E",
+      "latitude": 60.5284963062437,
+      "longitude": 26.9656013972573
+    },
+    {
+      "id": "155641",
+      "name": "Talvikkitie E",
+      "latitude": 60.526554111882,
+      "longitude": 26.9672372758535
+    },
+    {
+      "id": "155744",
+      "name": "Muuralankuja 41 L",
+      "latitude": 60.523330340338525,
+      "longitude": 26.96575477152236
+    },
+    {
+      "id": "155576",
+      "name": "Muuralankuja L",
+      "latitude": 60.522049076978774,
+      "longitude": 26.959474018901094
+    },
+    {
+      "id": "155574",
+      "name": "Muuralankuja 4 L",
+      "latitude": 60.52068410169829,
+      "longitude": 26.954281208119614
+    },
+    {
+      "id": "155581",
+      "name": "Tikankatu L",
+      "latitude": 60.51937826018059,
+      "longitude": 26.946652413420978
+    },
+    {
+      "id": "155562",
+      "name": "Opintokeskus Karhu E",
+      "latitude": 60.5179946841289,
+      "longitude": 26.9445167593473
+    },
+    {
+      "id": "155561",
+      "name": "Karhulan liikuntahalli E",
+      "latitude": 60.51637420343033,
+      "longitude": 26.945928260269213
+    },
+    {
+      "id": "155002",
+      "name": "Vesivallintie L (virtuaali)",
+      "latitude": 60.515246356628666,
+      "longitude": 26.939795490833603
+    },
+    {
+      "id": "155521",
+      "name": "Karhula C (Vesitorninkatu E)",
+      "latitude": 60.51467275014426,
+      "longitude": 26.935180861781422
+    },
+    {
+      "id": "155615",
+      "name": "Kartanonkatu  L",
+      "latitude": 60.51323746415255,
+      "longitude": 26.93306116039492
+    },
+    {
+      "id": "155637",
+      "name": "Pajatie E",
+      "latitude": 60.5103686007487,
+      "longitude": 26.9293742058765
+    },
+    {
+      "id": "155487",
+      "name": "Jumalniemi, Uittoväylä L",
+      "latitude": 60.50857921797359,
+      "longitude": 26.92327978202822
+    },
+    {
+      "id": "155485",
+      "name": "Jumalniemi, Kyminsuuntie L",
+      "latitude": 60.5069958289715,
+      "longitude": 26.9183993257364
+    },
+    {
+      "id": "302204",
+      "name": "Kyminsuuntie th E",
+      "latitude": 60.5085797627682,
+      "longitude": 26.9118344928432
+    },
+    {
+      "id": "302092",
+      "name": "Turvalantie th L",
+      "latitude": 60.506287339199645,
+      "longitude": 26.90577030336222
+    },
+    {
+      "id": "135001",
+      "name": "Kyminlinna Kotkan suunta E",
+      "latitude": 60.5059172799142,
+      "longitude": 26.9002730029267
+    },
+    {
+      "id": "155732",
+      "name": "Huumantie E",
+      "latitude": 60.5027237948674,
+      "longitude": 26.9023167472162
+    },
+    {
+      "id": "155616",
+      "name": "Jylppy th E",
+      "latitude": 60.49610049449197,
+      "longitude": 26.90011542372314
+    },
+    {
+      "id": "155729",
+      "name": "Allintie 57 E",
+      "latitude": 60.4940229225394,
+      "longitude": 26.8950039130758
+    },
+    {
+      "id": "155727",
+      "name": "Allintie 53 E",
+      "latitude": 60.4925186227267,
+      "longitude": 26.8958998758339
+    },
+    {
+      "id": "155538",
+      "name": "Allintie 45 E",
+      "latitude": 60.4907710420527,
+      "longitude": 26.8971188994813
+    },
+    {
+      "id": "155676",
+      "name": "Allintie 23 E",
+      "latitude": 60.4857728459978,
+      "longitude": 26.9011701371697
+    },
+    {
+      "id": "155674",
+      "name": "Allintie 7 I",
+      "latitude": 60.4825536933448,
+      "longitude": 26.9062674608815
+    },
+    {
+      "id": "155678",
+      "name": "Allintie I",
+      "latitude": 60.4822386806836,
+      "longitude": 26.9093561494313
+    },
+    {
+      "id": "155673",
+      "name": "Kotkantie - Allintie etelään",
+      "latitude": 60.4816065149144,
+      "longitude": 26.9112674618531
+    },
+    {
+      "id": "155669",
+      "name": "Kotkantie  Keskussairaala etelään",
+      "latitude": 60.47803422159885,
+      "longitude": 26.913902634600678
+    },
+    {
+      "id": "155724",
+      "name": "Hovinsaari, Kotkantie keskustaan",
+      "latitude": 60.46891749694731,
+      "longitude": 26.92215287066946
+    },
+    {
+      "id": "155504",
+      "name": "Kotkantie 1 Rautatieasema keskustaan",
+      "latitude": 60.46530622187274,
+      "longitude": 26.92763628635247
+    },
+    {
+      "id": "155515",
+      "name": "Korkeavuorenkatu 10 L",
+      "latitude": 60.4642673867144,
+      "longitude": 26.934435871355
+    },
+    {
+      "id": "155513",
+      "name": "Keskuskoulu I",
+      "latitude": 60.46264394686676,
+      "longitude": 26.935185673360117
+    },
+    {
+      "id": "155498",
+      "name": "Kapteeninkatu",
+      "latitude": 60.463717742045816,
+      "longitude": 26.938993941423796
+    },
+    {
+      "id": "155499",
+      "name": "Keskuskatu 17 I",
+      "latitude": 60.46540574645573,
+      "longitude": 26.943061180408854
+    },
+    {
+      "id": "155500",
+      "name": "Kauppatori Keskuskatu",
+      "latitude": 60.467007812333605,
+      "longitude": 26.946956785685188
+    },
+    {
+      "id": "155769",
+      "name": "Karhula Y (Karjalantie paikallisliikenne L)",
+      "latitude": 60.51604549676455,
+      "longitude": 26.931310173003865
+    },
+    {
+      "id": "155638",
+      "name": "Kyminlinnantie L",
+      "latitude": 60.514786638889376,
+      "longitude": 26.924786548103917
+    },
+    {
+      "id": "155648",
+      "name": "Kalervonkatu L",
+      "latitude": 60.5129744210161,
+      "longitude": 26.9167327973594
+    },
+    {
+      "id": "155761",
+      "name": "Kalevantie, Temppelinkatu L",
+      "latitude": 60.5145041355264,
+      "longitude": 26.9052193316271
+    },
+    {
+      "id": "155752",
+      "name": "Kalevantie L",
+      "latitude": 60.5168409225802,
+      "longitude": 26.8980880951893
+    },
+    {
+      "id": "155749",
+      "name": "Kymintie L",
+      "latitude": 60.51809819071592,
+      "longitude": 26.893239291664347
+    },
+    {
+      "id": "443418",
+      "name": "Ahonkuja kääntöpaikka (virtuaali)",
+      "latitude": 60.52817923732738,
+      "longitude": 26.89856259495384
+    },
+    {
+      "id": "309931",
+      "name": "Mutkapolku",
+      "latitude": 60.5280721446723,
+      "longitude": 26.8830714025488
+    },
+    {
+      "id": "309920",
+      "name": "Kanavapolu",
+      "latitude": 60.524373454425,
+      "longitude": 26.8737706291103
+    },
+    {
+      "id": "155711",
+      "name": "Koivulan koulu",
+      "latitude": 60.5203446301036,
+      "longitude": 26.8708849966439
+    },
+    {
+      "id": "155739",
+      "name": "Kotipolku I",
+      "latitude": 60.52014625913483,
+      "longitude": 26.8779950888246
+    },
+    {
+      "id": "155746",
+      "name": "Juhaninkatu",
+      "latitude": 60.51977890539584,
+      "longitude": 26.88232999435054
+    },
+    {
+      "id": "155748",
+      "name": "Koivulantie I",
+      "latitude": 60.51885777335892,
+      "longitude": 26.889290786384436
+    },
+    {
+      "id": "155751",
+      "name": "Kalevantie I",
+      "latitude": 60.5173564225898,
+      "longitude": 26.8954803527112
+    },
+    {
+      "id": "155650",
+      "name": "Kalevantie E",
+      "latitude": 60.5139657459857,
+      "longitude": 26.9062839844374
+    },
+    {
+      "id": "155649",
+      "name": "Kullervonkatu I",
+      "latitude": 60.5129516980374,
+      "longitude": 26.9163001487701
+    },
+    {
+      "id": "134982",
+      "name": "Raakunkuja th P",
+      "latitude": 60.51305665284083,
+      "longitude": 26.92144751099108
+    },
+    {
+      "id": "155720",
+      "name": "Kyminlinnantie I",
+      "latitude": 60.51508750478121,
+      "longitude": 26.926230964579965
+    },
+    {
+      "id": "155109",
+      "name": "Koulukatu E/Toivo Pekkasen puisto",
+      "latitude": 60.46220943693359,
+      "longitude": 26.935901600427414
+    },
+    {
+      "id": "155509",
+      "name": "Puistotie 4 E",
+      "latitude": 60.46003529367422,
+      "longitude": 26.93850415333946
+    },
+    {
+      "id": "322130",
+      "name": "Haukkavuoren koulu L",
+      "latitude": 60.45725294823862,
+      "longitude": 26.93612857001097
+    },
+    {
+      "id": "155690",
+      "name": "Haukkavuorenkatu E",
+      "latitude": 60.4590881829476,
+      "longitude": 26.9276011845838
+    },
+    {
+      "id": "301838",
+      "name": "Hirssaarentie 4 P",
+      "latitude": 60.45567487570136,
+      "longitude": 26.907494952722956
+    },
+    {
+      "id": "301807",
+      "name": "Madesalmentie 2 L",
+      "latitude": 60.456669098862534,
+      "longitude": 26.904926455145233
+    },
+    {
+      "id": "155583",
+      "name": "Mussalontie, Vasikkaniemi P",
+      "latitude": 60.46541409282056,
+      "longitude": 26.880710406588108
+    },
+    {
+      "id": "155658",
+      "name": "Munsaarentie I",
+      "latitude": 60.47478849061437,
+      "longitude": 26.87818631481527
+    },
+    {
+      "id": "155659",
+      "name": "Munsaarentie 34 I",
+      "latitude": 60.47530808010055,
+      "longitude": 26.882645321473564
+    },
+    {
+      "id": "155662",
+      "name": "Munsaarentie E",
+      "latitude": 60.474095629757784,
+      "longitude": 26.88955251102052
+    },
+    {
+      "id": "155647",
+      "name": "Munsaarentie kääntöpaikka",
+      "latitude": 60.47189404927673,
+      "longitude": 26.89227932469476
+    }
+  ],
+  "trips": [
+    {
+      "id": "2026-2027_TALVI_(Maanantai)_1112_0_091500_104500_0",
+      "routeId": "5012",
+      "mode": "bus",
+      "headsign": "Peippola - Kotkan kauppatori",
+      "serviceDate": "2026-10-19",
+      "timeZone": "Europe/Helsinki",
+      "calls": [
+        {
+          "stopId": "155501",
+          "sequence": 1,
+          "arrivalSeconds": 33300,
+          "departureSeconds": 33300,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:15:00+03:00",
+          "arrivalServiceSeconds": 33300,
+          "departure": "2026-10-19T09:15:00+03:00",
+          "departureServiceSeconds": 33300
+        },
+        {
+          "stopId": "155502",
+          "sequence": 2,
+          "arrivalSeconds": 33374,
+          "departureSeconds": 33374,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:16:14+03:00",
+          "arrivalServiceSeconds": 33374,
+          "departure": "2026-10-19T09:16:14+03:00",
+          "departureServiceSeconds": 33374
+        },
+        {
+          "stopId": "155503",
+          "sequence": 3,
+          "arrivalSeconds": 33459,
+          "departureSeconds": 33459,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:17:39+03:00",
+          "arrivalServiceSeconds": 33459,
+          "departure": "2026-10-19T09:17:39+03:00",
+          "departureServiceSeconds": 33459
+        },
+        {
+          "stopId": "155723",
+          "sequence": 4,
+          "arrivalSeconds": 33533,
+          "departureSeconds": 33533,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:18:53+03:00",
+          "arrivalServiceSeconds": 33533,
+          "departure": "2026-10-19T09:18:53+03:00",
+          "departureServiceSeconds": 33533
+        },
+        {
+          "stopId": "155716",
+          "sequence": 5,
+          "arrivalSeconds": 33563,
+          "departureSeconds": 33563,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:19:23+03:00",
+          "arrivalServiceSeconds": 33563,
+          "departure": "2026-10-19T09:19:23+03:00",
+          "departureServiceSeconds": 33563
+        },
+        {
+          "stopId": "155652",
+          "sequence": 6,
+          "arrivalSeconds": 33652,
+          "departureSeconds": 33652,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:20:52+03:00",
+          "arrivalServiceSeconds": 33652,
+          "departure": "2026-10-19T09:20:52+03:00",
+          "departureServiceSeconds": 33652
+        },
+        {
+          "stopId": "155668",
+          "sequence": 7,
+          "arrivalSeconds": 33722,
+          "departureSeconds": 33722,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:22:02+03:00",
+          "arrivalServiceSeconds": 33722,
+          "departure": "2026-10-19T09:22:02+03:00",
+          "departureServiceSeconds": 33722
+        },
+        {
+          "stopId": "155679",
+          "sequence": 8,
+          "arrivalSeconds": 33781,
+          "departureSeconds": 33781,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:23:01+03:00",
+          "arrivalServiceSeconds": 33781,
+          "departure": "2026-10-19T09:23:01+03:00",
+          "departureServiceSeconds": 33781
+        },
+        {
+          "stopId": "155675",
+          "sequence": 9,
+          "arrivalSeconds": 33809,
+          "departureSeconds": 33809,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:23:29+03:00",
+          "arrivalServiceSeconds": 33809,
+          "departure": "2026-10-19T09:23:29+03:00",
+          "departureServiceSeconds": 33809
+        },
+        {
+          "stopId": "155677",
+          "sequence": 10,
+          "arrivalSeconds": 33848,
+          "departureSeconds": 33848,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:24:08+03:00",
+          "arrivalServiceSeconds": 33848,
+          "departure": "2026-10-19T09:24:08+03:00",
+          "departureServiceSeconds": 33848
+        },
+        {
+          "stopId": "155526",
+          "sequence": 11,
+          "arrivalSeconds": 33886,
+          "departureSeconds": 33886,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:24:46+03:00",
+          "arrivalServiceSeconds": 33886,
+          "departure": "2026-10-19T09:24:46+03:00",
+          "departureServiceSeconds": 33886
+        },
+        {
+          "stopId": "155529",
+          "sequence": 12,
+          "arrivalSeconds": 33916,
+          "departureSeconds": 33916,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:25:16+03:00",
+          "arrivalServiceSeconds": 33916,
+          "departure": "2026-10-19T09:25:16+03:00",
+          "departureServiceSeconds": 33916
+        },
+        {
+          "stopId": "155741",
+          "sequence": 13,
+          "arrivalSeconds": 33947,
+          "departureSeconds": 33947,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:25:47+03:00",
+          "arrivalServiceSeconds": 33947,
+          "departure": "2026-10-19T09:25:47+03:00",
+          "departureServiceSeconds": 33947
+        },
+        {
+          "stopId": "155728",
+          "sequence": 14,
+          "arrivalSeconds": 33963,
+          "departureSeconds": 33963,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:26:03+03:00",
+          "arrivalServiceSeconds": 33963,
+          "departure": "2026-10-19T09:26:03+03:00",
+          "departureServiceSeconds": 33963
+        },
+        {
+          "stopId": "309909",
+          "sequence": 15,
+          "arrivalSeconds": 33998,
+          "departureSeconds": 33998,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:26:38+03:00",
+          "arrivalServiceSeconds": 33998,
+          "departure": "2026-10-19T09:26:38+03:00",
+          "departureServiceSeconds": 33998
+        },
+        {
+          "stopId": "155617",
+          "sequence": 16,
+          "arrivalSeconds": 34051,
+          "departureSeconds": 34051,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:27:31+03:00",
+          "arrivalServiceSeconds": 34051,
+          "departure": "2026-10-19T09:27:31+03:00",
+          "departureServiceSeconds": 34051
+        },
+        {
+          "stopId": "135002",
+          "sequence": 17,
+          "arrivalSeconds": 34157,
+          "departureSeconds": 34157,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:29:17+03:00",
+          "arrivalServiceSeconds": 34157,
+          "departure": "2026-10-19T09:29:17+03:00",
+          "departureServiceSeconds": 34157
+        },
+        {
+          "stopId": "301175",
+          "sequence": 18,
+          "arrivalSeconds": 34206,
+          "departureSeconds": 34206,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:30:06+03:00",
+          "arrivalServiceSeconds": 34206,
+          "departure": "2026-10-19T09:30:06+03:00",
+          "departureServiceSeconds": 34206
+        },
+        {
+          "stopId": "302096",
+          "sequence": 19,
+          "arrivalSeconds": 34283,
+          "departureSeconds": 34283,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:31:23+03:00",
+          "arrivalServiceSeconds": 34283,
+          "departure": "2026-10-19T09:31:23+03:00",
+          "departureServiceSeconds": 34283
+        },
+        {
+          "stopId": "309913",
+          "sequence": 20,
+          "arrivalSeconds": 34424,
+          "departureSeconds": 34424,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T09:33:44+03:00",
+          "arrivalServiceSeconds": 34424,
+          "departure": "2026-10-19T09:33:44+03:00",
+          "departureServiceSeconds": 34424
+        },
+        {
+          "stopId": "309914",
+          "sequence": 21,
+          "arrivalSeconds": 34424,
+          "departureSeconds": 34424,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T09:33:44+03:00",
+          "arrivalServiceSeconds": 34424,
+          "departure": "2026-10-19T09:33:44+03:00",
+          "departureServiceSeconds": 34424
+        },
+        {
+          "stopId": "155486",
+          "sequence": 22,
+          "arrivalSeconds": 34481,
+          "departureSeconds": 34481,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:34:41+03:00",
+          "arrivalServiceSeconds": 34481,
+          "departure": "2026-10-19T09:34:41+03:00",
+          "departureServiceSeconds": 34481
+        },
+        {
+          "stopId": "155488",
+          "sequence": 23,
+          "arrivalSeconds": 34536,
+          "departureSeconds": 34536,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:35:36+03:00",
+          "arrivalServiceSeconds": 34536,
+          "departure": "2026-10-19T09:35:36+03:00",
+          "departureServiceSeconds": 34536
+        },
+        {
+          "stopId": "155715",
+          "sequence": 24,
+          "arrivalSeconds": 34611,
+          "departureSeconds": 34611,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:36:51+03:00",
+          "arrivalServiceSeconds": 34611,
+          "departure": "2026-10-19T09:36:51+03:00",
+          "departureServiceSeconds": 34611
+        },
+        {
+          "stopId": "155578",
+          "sequence": 25,
+          "arrivalSeconds": 34672,
+          "departureSeconds": 34672,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:37:52+03:00",
+          "arrivalServiceSeconds": 34672,
+          "departure": "2026-10-19T09:37:52+03:00",
+          "departureServiceSeconds": 34672
+        },
+        {
+          "stopId": "309919",
+          "sequence": 26,
+          "arrivalSeconds": 34724,
+          "departureSeconds": 34724,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T09:38:44+03:00",
+          "arrivalServiceSeconds": 34724,
+          "departure": "2026-10-19T09:38:44+03:00",
+          "departureServiceSeconds": 34724
+        },
+        {
+          "stopId": "155001",
+          "sequence": 27,
+          "arrivalSeconds": 34761,
+          "departureSeconds": 34761,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:39:21+03:00",
+          "arrivalServiceSeconds": 34761,
+          "departure": "2026-10-19T09:39:21+03:00",
+          "departureServiceSeconds": 34761
+        },
+        {
+          "stopId": "155560",
+          "sequence": 28,
+          "arrivalSeconds": 34816,
+          "departureSeconds": 34816,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:40:16+03:00",
+          "arrivalServiceSeconds": 34816,
+          "departure": "2026-10-19T09:40:16+03:00",
+          "departureServiceSeconds": 34816
+        },
+        {
+          "stopId": "155563",
+          "sequence": 29,
+          "arrivalSeconds": 34843,
+          "departureSeconds": 34843,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:40:43+03:00",
+          "arrivalServiceSeconds": 34843,
+          "departure": "2026-10-19T09:40:43+03:00",
+          "departureServiceSeconds": 34843
+        },
+        {
+          "stopId": "155591",
+          "sequence": 30,
+          "arrivalSeconds": 34876,
+          "departureSeconds": 34876,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:41:16+03:00",
+          "arrivalServiceSeconds": 34876,
+          "departure": "2026-10-19T09:41:16+03:00",
+          "departureServiceSeconds": 34876
+        },
+        {
+          "stopId": "82658",
+          "sequence": 31,
+          "arrivalSeconds": 34929,
+          "departureSeconds": 34929,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:42:09+03:00",
+          "arrivalServiceSeconds": 34929,
+          "departure": "2026-10-19T09:42:09+03:00",
+          "departureServiceSeconds": 34929
+        },
+        {
+          "stopId": "82661",
+          "sequence": 32,
+          "arrivalSeconds": 34989,
+          "departureSeconds": 34989,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:43:09+03:00",
+          "arrivalServiceSeconds": 34989,
+          "departure": "2026-10-19T09:43:09+03:00",
+          "departureServiceSeconds": 34989
+        },
+        {
+          "stopId": "82663",
+          "sequence": 33,
+          "arrivalSeconds": 35055,
+          "departureSeconds": 35055,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:44:15+03:00",
+          "arrivalServiceSeconds": 35055,
+          "departure": "2026-10-19T09:44:15+03:00",
+          "departureServiceSeconds": 35055
+        },
+        {
+          "stopId": "82664",
+          "sequence": 34,
+          "arrivalSeconds": 35159,
+          "departureSeconds": 35159,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:45:59+03:00",
+          "arrivalServiceSeconds": 35159,
+          "departure": "2026-10-19T09:45:59+03:00",
+          "departureServiceSeconds": 35159
+        },
+        {
+          "stopId": "82669",
+          "sequence": 35,
+          "arrivalSeconds": 35230,
+          "departureSeconds": 35230,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:47:10+03:00",
+          "arrivalServiceSeconds": 35230,
+          "departure": "2026-10-19T09:47:10+03:00",
+          "departureServiceSeconds": 35230
+        },
+        {
+          "stopId": "82670",
+          "sequence": 36,
+          "arrivalSeconds": 35255,
+          "departureSeconds": 35255,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:47:35+03:00",
+          "arrivalServiceSeconds": 35255,
+          "departure": "2026-10-19T09:47:35+03:00",
+          "departureServiceSeconds": 35255
+        },
+        {
+          "stopId": "133813",
+          "sequence": 37,
+          "arrivalSeconds": 35315,
+          "departureSeconds": 35315,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:48:35+03:00",
+          "arrivalServiceSeconds": 35315,
+          "departure": "2026-10-19T09:48:35+03:00",
+          "departureServiceSeconds": 35315
+        },
+        {
+          "stopId": "155689",
+          "sequence": 38,
+          "arrivalSeconds": 35407,
+          "departureSeconds": 35407,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:50:07+03:00",
+          "arrivalServiceSeconds": 35407,
+          "departure": "2026-10-19T09:50:07+03:00",
+          "departureServiceSeconds": 35407
+        },
+        {
+          "stopId": "155522",
+          "sequence": 39,
+          "arrivalSeconds": 35488,
+          "departureSeconds": 35488,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:51:28+03:00",
+          "arrivalServiceSeconds": 35488,
+          "departure": "2026-10-19T09:51:28+03:00",
+          "departureServiceSeconds": 35488
+        },
+        {
+          "stopId": "443718",
+          "sequence": 40,
+          "arrivalSeconds": 35562,
+          "departureSeconds": 35562,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:52:42+03:00",
+          "arrivalServiceSeconds": 35562,
+          "departure": "2026-10-19T09:52:42+03:00",
+          "departureServiceSeconds": 35562
+        },
+        {
+          "stopId": "82671",
+          "sequence": 41,
+          "arrivalSeconds": 35572,
+          "departureSeconds": 35572,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:52:52+03:00",
+          "arrivalServiceSeconds": 35572,
+          "departure": "2026-10-19T09:52:52+03:00",
+          "departureServiceSeconds": 35572
+        },
+        {
+          "stopId": "309924",
+          "sequence": 42,
+          "arrivalSeconds": 35624,
+          "departureSeconds": 35624,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T09:53:44+03:00",
+          "arrivalServiceSeconds": 35624,
+          "departure": "2026-10-19T09:53:44+03:00",
+          "departureServiceSeconds": 35624
+        },
+        {
+          "stopId": "155697",
+          "sequence": 43,
+          "arrivalSeconds": 35683,
+          "departureSeconds": 35683,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:54:43+03:00",
+          "arrivalServiceSeconds": 35683,
+          "departure": "2026-10-19T09:54:43+03:00",
+          "departureServiceSeconds": 35683
+        },
+        {
+          "stopId": "155523",
+          "sequence": 44,
+          "arrivalSeconds": 35758,
+          "departureSeconds": 35758,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:55:58+03:00",
+          "arrivalServiceSeconds": 35758,
+          "departure": "2026-10-19T09:55:58+03:00",
+          "departureServiceSeconds": 35758
+        },
+        {
+          "stopId": "155516",
+          "sequence": 45,
+          "arrivalSeconds": 35846,
+          "departureSeconds": 35846,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:57:26+03:00",
+          "arrivalServiceSeconds": 35846,
+          "departure": "2026-10-19T09:57:26+03:00",
+          "departureServiceSeconds": 35846
+        },
+        {
+          "stopId": "133811",
+          "sequence": 46,
+          "arrivalSeconds": 35877,
+          "departureSeconds": 35877,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:57:57+03:00",
+          "arrivalServiceSeconds": 35877,
+          "departure": "2026-10-19T09:57:57+03:00",
+          "departureServiceSeconds": 35877
+        },
+        {
+          "stopId": "133812",
+          "sequence": 47,
+          "arrivalSeconds": 35938,
+          "departureSeconds": 35938,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:58:58+03:00",
+          "arrivalServiceSeconds": 35938,
+          "departure": "2026-10-19T09:58:58+03:00",
+          "departureServiceSeconds": 35938
+        },
+        {
+          "stopId": "133814",
+          "sequence": 48,
+          "arrivalSeconds": 35983,
+          "departureSeconds": 35983,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:59:43+03:00",
+          "arrivalServiceSeconds": 35983,
+          "departure": "2026-10-19T09:59:43+03:00",
+          "departureServiceSeconds": 35983
+        },
+        {
+          "stopId": "82668",
+          "sequence": 49,
+          "arrivalSeconds": 36029,
+          "departureSeconds": 36029,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:00:29+03:00",
+          "arrivalServiceSeconds": 36029,
+          "departure": "2026-10-19T10:00:29+03:00",
+          "departureServiceSeconds": 36029
+        },
+        {
+          "stopId": "82667",
+          "sequence": 50,
+          "arrivalSeconds": 36064,
+          "departureSeconds": 36064,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:01:04+03:00",
+          "arrivalServiceSeconds": 36064,
+          "departure": "2026-10-19T10:01:04+03:00",
+          "departureServiceSeconds": 36064
+        },
+        {
+          "stopId": "82666",
+          "sequence": 51,
+          "arrivalSeconds": 36069,
+          "departureSeconds": 36069,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:01:09+03:00",
+          "arrivalServiceSeconds": 36069,
+          "departure": "2026-10-19T10:01:09+03:00",
+          "departureServiceSeconds": 36069
+        },
+        {
+          "stopId": "82665",
+          "sequence": 52,
+          "arrivalSeconds": 36092,
+          "departureSeconds": 36092,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:01:32+03:00",
+          "arrivalServiceSeconds": 36092,
+          "departure": "2026-10-19T10:01:32+03:00",
+          "departureServiceSeconds": 36092
+        },
+        {
+          "stopId": "155695",
+          "sequence": 53,
+          "arrivalSeconds": 36254,
+          "departureSeconds": 36254,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:04:14+03:00",
+          "arrivalServiceSeconds": 36254,
+          "departure": "2026-10-19T10:04:14+03:00",
+          "departureServiceSeconds": 36254
+        },
+        {
+          "stopId": "155696",
+          "sequence": 54,
+          "arrivalSeconds": 36284,
+          "departureSeconds": 36284,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:04:44+03:00",
+          "arrivalServiceSeconds": 36284,
+          "departure": "2026-10-19T10:04:44+03:00",
+          "departureServiceSeconds": 36284
+        },
+        {
+          "stopId": "155609",
+          "sequence": 55,
+          "arrivalSeconds": 36321,
+          "departureSeconds": 36321,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:05:21+03:00",
+          "arrivalServiceSeconds": 36321,
+          "departure": "2026-10-19T10:05:21+03:00",
+          "departureServiceSeconds": 36321
+        },
+        {
+          "stopId": "69013",
+          "sequence": 56,
+          "arrivalSeconds": 36379,
+          "departureSeconds": 36379,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:06:19+03:00",
+          "arrivalServiceSeconds": 36379,
+          "departure": "2026-10-19T10:06:19+03:00",
+          "departureServiceSeconds": 36379
+        },
+        {
+          "stopId": "155643",
+          "sequence": 57,
+          "arrivalSeconds": 36451,
+          "departureSeconds": 36451,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:07:31+03:00",
+          "arrivalServiceSeconds": 36451,
+          "departure": "2026-10-19T10:07:31+03:00",
+          "departureServiceSeconds": 36451
+        },
+        {
+          "stopId": "155641",
+          "sequence": 58,
+          "arrivalSeconds": 36477,
+          "departureSeconds": 36477,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:07:57+03:00",
+          "arrivalServiceSeconds": 36477,
+          "departure": "2026-10-19T10:07:57+03:00",
+          "departureServiceSeconds": 36477
+        },
+        {
+          "stopId": "155744",
+          "sequence": 59,
+          "arrivalSeconds": 36534,
+          "departureSeconds": 36534,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:08:54+03:00",
+          "arrivalServiceSeconds": 36534,
+          "departure": "2026-10-19T10:08:54+03:00",
+          "departureServiceSeconds": 36534
+        },
+        {
+          "stopId": "155576",
+          "sequence": 60,
+          "arrivalSeconds": 36575,
+          "departureSeconds": 36575,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:09:35+03:00",
+          "arrivalServiceSeconds": 36575,
+          "departure": "2026-10-19T10:09:35+03:00",
+          "departureServiceSeconds": 36575
+        },
+        {
+          "stopId": "155574",
+          "sequence": 61,
+          "arrivalSeconds": 36612,
+          "departureSeconds": 36612,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:10:12+03:00",
+          "arrivalServiceSeconds": 36612,
+          "departure": "2026-10-19T10:10:12+03:00",
+          "departureServiceSeconds": 36612
+        },
+        {
+          "stopId": "155581",
+          "sequence": 62,
+          "arrivalSeconds": 36664,
+          "departureSeconds": 36664,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:11:04+03:00",
+          "arrivalServiceSeconds": 36664,
+          "departure": "2026-10-19T10:11:04+03:00",
+          "departureServiceSeconds": 36664
+        },
+        {
+          "stopId": "155562",
+          "sequence": 63,
+          "arrivalSeconds": 36697,
+          "departureSeconds": 36697,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:11:37+03:00",
+          "arrivalServiceSeconds": 36697,
+          "departure": "2026-10-19T10:11:37+03:00",
+          "departureServiceSeconds": 36697
+        },
+        {
+          "stopId": "155561",
+          "sequence": 64,
+          "arrivalSeconds": 36719,
+          "departureSeconds": 36719,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:11:59+03:00",
+          "arrivalServiceSeconds": 36719,
+          "departure": "2026-10-19T10:11:59+03:00",
+          "departureServiceSeconds": 36719
+        },
+        {
+          "stopId": "155002",
+          "sequence": 65,
+          "arrivalSeconds": 36775,
+          "departureSeconds": 36775,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:12:55+03:00",
+          "arrivalServiceSeconds": 36775,
+          "departure": "2026-10-19T10:12:55+03:00",
+          "departureServiceSeconds": 36775
+        },
+        {
+          "stopId": "309919",
+          "sequence": 66,
+          "arrivalSeconds": 36824,
+          "departureSeconds": 36824,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:13:44+03:00",
+          "arrivalServiceSeconds": 36824,
+          "departure": "2026-10-19T10:13:44+03:00",
+          "departureServiceSeconds": 36824
+        },
+        {
+          "stopId": "155521",
+          "sequence": 67,
+          "arrivalSeconds": 36844,
+          "departureSeconds": 36844,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:14:04+03:00",
+          "arrivalServiceSeconds": 36844,
+          "departure": "2026-10-19T10:14:04+03:00",
+          "departureServiceSeconds": 36844
+        },
+        {
+          "stopId": "155615",
+          "sequence": 68,
+          "arrivalSeconds": 36887,
+          "departureSeconds": 36887,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:14:47+03:00",
+          "arrivalServiceSeconds": 36887,
+          "departure": "2026-10-19T10:14:47+03:00",
+          "departureServiceSeconds": 36887
+        },
+        {
+          "stopId": "155637",
+          "sequence": 69,
+          "arrivalSeconds": 36954,
+          "departureSeconds": 36954,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:15:54+03:00",
+          "arrivalServiceSeconds": 36954,
+          "departure": "2026-10-19T10:15:54+03:00",
+          "departureServiceSeconds": 36954
+        },
+        {
+          "stopId": "155487",
+          "sequence": 70,
+          "arrivalSeconds": 37022,
+          "departureSeconds": 37022,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:17:02+03:00",
+          "arrivalServiceSeconds": 37022,
+          "departure": "2026-10-19T10:17:02+03:00",
+          "departureServiceSeconds": 37022
+        },
+        {
+          "stopId": "155485",
+          "sequence": 71,
+          "arrivalSeconds": 37066,
+          "departureSeconds": 37066,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:17:46+03:00",
+          "arrivalServiceSeconds": 37066,
+          "departure": "2026-10-19T10:17:46+03:00",
+          "departureServiceSeconds": 37066
+        },
+        {
+          "stopId": "309913",
+          "sequence": 72,
+          "arrivalSeconds": 37124,
+          "departureSeconds": 37124,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:18:44+03:00",
+          "arrivalServiceSeconds": 37124,
+          "departure": "2026-10-19T10:18:44+03:00",
+          "departureServiceSeconds": 37124
+        },
+        {
+          "stopId": "309914",
+          "sequence": 73,
+          "arrivalSeconds": 37124,
+          "departureSeconds": 37124,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:18:44+03:00",
+          "arrivalServiceSeconds": 37124,
+          "departure": "2026-10-19T10:18:44+03:00",
+          "departureServiceSeconds": 37124
+        },
+        {
+          "stopId": "302204",
+          "sequence": 74,
+          "arrivalSeconds": 37184,
+          "departureSeconds": 37184,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:19:44+03:00",
+          "arrivalServiceSeconds": 37184,
+          "departure": "2026-10-19T10:19:44+03:00",
+          "departureServiceSeconds": 37184
+        },
+        {
+          "stopId": "302092",
+          "sequence": 75,
+          "arrivalSeconds": 37217,
+          "departureSeconds": 37217,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:20:17+03:00",
+          "arrivalServiceSeconds": 37217,
+          "departure": "2026-10-19T10:20:17+03:00",
+          "departureServiceSeconds": 37217
+        },
+        {
+          "stopId": "135001",
+          "sequence": 76,
+          "arrivalSeconds": 37261,
+          "departureSeconds": 37261,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:21:01+03:00",
+          "arrivalServiceSeconds": 37261,
+          "departure": "2026-10-19T10:21:01+03:00",
+          "departureServiceSeconds": 37261
+        },
+        {
+          "stopId": "155732",
+          "sequence": 77,
+          "arrivalSeconds": 37290,
+          "departureSeconds": 37290,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:21:30+03:00",
+          "arrivalServiceSeconds": 37290,
+          "departure": "2026-10-19T10:21:30+03:00",
+          "departureServiceSeconds": 37290
+        },
+        {
+          "stopId": "155616",
+          "sequence": 78,
+          "arrivalSeconds": 37353,
+          "departureSeconds": 37353,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:22:33+03:00",
+          "arrivalServiceSeconds": 37353,
+          "departure": "2026-10-19T10:22:33+03:00",
+          "departureServiceSeconds": 37353
+        },
+        {
+          "stopId": "155729",
+          "sequence": 79,
+          "arrivalSeconds": 37388,
+          "departureSeconds": 37388,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:23:08+03:00",
+          "arrivalServiceSeconds": 37388,
+          "departure": "2026-10-19T10:23:08+03:00",
+          "departureServiceSeconds": 37388
+        },
+        {
+          "stopId": "309909",
+          "sequence": 80,
+          "arrivalSeconds": 37424,
+          "departureSeconds": 37424,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:23:44+03:00",
+          "arrivalServiceSeconds": 37424,
+          "departure": "2026-10-19T10:23:44+03:00",
+          "departureServiceSeconds": 37424
+        },
+        {
+          "stopId": "155727",
+          "sequence": 81,
+          "arrivalSeconds": 37476,
+          "departureSeconds": 37476,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:24:36+03:00",
+          "arrivalServiceSeconds": 37476,
+          "departure": "2026-10-19T10:24:36+03:00",
+          "departureServiceSeconds": 37476
+        },
+        {
+          "stopId": "155538",
+          "sequence": 82,
+          "arrivalSeconds": 37519,
+          "departureSeconds": 37519,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:25:19+03:00",
+          "arrivalServiceSeconds": 37519,
+          "departure": "2026-10-19T10:25:19+03:00",
+          "departureServiceSeconds": 37519
+        },
+        {
+          "stopId": "155676",
+          "sequence": 83,
+          "arrivalSeconds": 37645,
+          "departureSeconds": 37645,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:27:25+03:00",
+          "arrivalServiceSeconds": 37645,
+          "departure": "2026-10-19T10:27:25+03:00",
+          "departureServiceSeconds": 37645
+        },
+        {
+          "stopId": "155674",
+          "sequence": 84,
+          "arrivalSeconds": 37741,
+          "departureSeconds": 37741,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:29:01+03:00",
+          "arrivalServiceSeconds": 37741,
+          "departure": "2026-10-19T10:29:01+03:00",
+          "departureServiceSeconds": 37741
+        },
+        {
+          "stopId": "155678",
+          "sequence": 85,
+          "arrivalSeconds": 37778,
+          "departureSeconds": 37778,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:29:38+03:00",
+          "arrivalServiceSeconds": 37778,
+          "departure": "2026-10-19T10:29:38+03:00",
+          "departureServiceSeconds": 37778
+        },
+        {
+          "stopId": "155673",
+          "sequence": 86,
+          "arrivalSeconds": 37810,
+          "departureSeconds": 37810,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:30:10+03:00",
+          "arrivalServiceSeconds": 37810,
+          "departure": "2026-10-19T10:30:10+03:00",
+          "departureServiceSeconds": 37810
+        },
+        {
+          "stopId": "155669",
+          "sequence": 87,
+          "arrivalSeconds": 37899,
+          "departureSeconds": 37899,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:31:39+03:00",
+          "arrivalServiceSeconds": 37899,
+          "departure": "2026-10-19T10:31:39+03:00",
+          "departureServiceSeconds": 37899
+        },
+        {
+          "stopId": "155724",
+          "sequence": 88,
+          "arrivalSeconds": 38154,
+          "departureSeconds": 38154,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:35:54+03:00",
+          "arrivalServiceSeconds": 38154,
+          "departure": "2026-10-19T10:35:54+03:00",
+          "departureServiceSeconds": 38154
+        },
+        {
+          "stopId": "155504",
+          "sequence": 89,
+          "arrivalSeconds": 38291,
+          "departureSeconds": 38291,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:38:11+03:00",
+          "arrivalServiceSeconds": 38291,
+          "departure": "2026-10-19T10:38:11+03:00",
+          "departureServiceSeconds": 38291
+        },
+        {
+          "stopId": "155515",
+          "sequence": 90,
+          "arrivalSeconds": 38390,
+          "departureSeconds": 38390,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:39:50+03:00",
+          "arrivalServiceSeconds": 38390,
+          "departure": "2026-10-19T10:39:50+03:00",
+          "departureServiceSeconds": 38390
+        },
+        {
+          "stopId": "155513",
+          "sequence": 91,
+          "arrivalSeconds": 38441,
+          "departureSeconds": 38441,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:40:41+03:00",
+          "arrivalServiceSeconds": 38441,
+          "departure": "2026-10-19T10:40:41+03:00",
+          "departureServiceSeconds": 38441
+        },
+        {
+          "stopId": "155498",
+          "sequence": 92,
+          "arrivalSeconds": 38498,
+          "departureSeconds": 38498,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:41:38+03:00",
+          "arrivalServiceSeconds": 38498,
+          "departure": "2026-10-19T10:41:38+03:00",
+          "departureServiceSeconds": 38498
+        },
+        {
+          "stopId": "155499",
+          "sequence": 93,
+          "arrivalSeconds": 38559,
+          "departureSeconds": 38559,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:42:39+03:00",
+          "arrivalServiceSeconds": 38559,
+          "departure": "2026-10-19T10:42:39+03:00",
+          "departureServiceSeconds": 38559
+        },
+        {
+          "stopId": "155500",
+          "sequence": 94,
+          "arrivalSeconds": 38624,
+          "departureSeconds": 38624,
+          "pickupType": 1,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:43:44+03:00",
+          "arrivalServiceSeconds": 38624,
+          "departure": "2026-10-19T10:43:44+03:00",
+          "departureServiceSeconds": 38624
+        }
+      ],
+      "timingQuality": "source-approximate",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 250
+      }
+    },
+    {
+      "id": "2026-2027_TALVI_(Maanantai)_1113_0_091000_093000_0",
+      "routeId": "5013",
+      "mode": "bus",
+      "headsign": "Reitti 1 Parikka - Koivula - Karhula",
+      "serviceDate": "2026-10-19",
+      "timeZone": "Europe/Helsinki",
+      "calls": [
+        {
+          "stopId": "309919",
+          "sequence": 1,
+          "arrivalSeconds": 33000,
+          "departureSeconds": 33000,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:10:00+03:00",
+          "arrivalServiceSeconds": 33000,
+          "departure": "2026-10-19T09:10:00+03:00",
+          "departureServiceSeconds": 33000
+        },
+        {
+          "stopId": "155769",
+          "sequence": 2,
+          "arrivalSeconds": 33057,
+          "departureSeconds": 33057,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:10:57+03:00",
+          "arrivalServiceSeconds": 33057,
+          "departure": "2026-10-19T09:10:57+03:00",
+          "departureServiceSeconds": 33057
+        },
+        {
+          "stopId": "155638",
+          "sequence": 3,
+          "arrivalSeconds": 33130,
+          "departureSeconds": 33130,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:12:10+03:00",
+          "arrivalServiceSeconds": 33130,
+          "departure": "2026-10-19T09:12:10+03:00",
+          "departureServiceSeconds": 33130
+        },
+        {
+          "stopId": "155648",
+          "sequence": 4,
+          "arrivalSeconds": 33214,
+          "departureSeconds": 33214,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:13:34+03:00",
+          "arrivalServiceSeconds": 33214,
+          "departure": "2026-10-19T09:13:34+03:00",
+          "departureServiceSeconds": 33214
+        },
+        {
+          "stopId": "155761",
+          "sequence": 5,
+          "arrivalSeconds": 33324,
+          "departureSeconds": 33324,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:15:24+03:00",
+          "arrivalServiceSeconds": 33324,
+          "departure": "2026-10-19T09:15:24+03:00",
+          "departureServiceSeconds": 33324
+        },
+        {
+          "stopId": "155752",
+          "sequence": 6,
+          "arrivalSeconds": 33398,
+          "departureSeconds": 33398,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:16:38+03:00",
+          "arrivalServiceSeconds": 33398,
+          "departure": "2026-10-19T09:16:38+03:00",
+          "departureServiceSeconds": 33398
+        },
+        {
+          "stopId": "155749",
+          "sequence": 7,
+          "arrivalSeconds": 33449,
+          "departureSeconds": 33449,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:17:29+03:00",
+          "arrivalServiceSeconds": 33449,
+          "departure": "2026-10-19T09:17:29+03:00",
+          "departureServiceSeconds": 33449
+        },
+        {
+          "stopId": "443418",
+          "sequence": 8,
+          "arrivalSeconds": 33714,
+          "departureSeconds": 33714,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:21:54+03:00",
+          "arrivalServiceSeconds": 33714,
+          "departure": "2026-10-19T09:21:54+03:00",
+          "departureServiceSeconds": 33714
+        },
+        {
+          "stopId": "309931",
+          "sequence": 9,
+          "arrivalSeconds": 33876,
+          "departureSeconds": 33876,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:24:36+03:00",
+          "arrivalServiceSeconds": 33876,
+          "departure": "2026-10-19T09:24:36+03:00",
+          "departureServiceSeconds": 33876
+        },
+        {
+          "stopId": "309920",
+          "sequence": 10,
+          "arrivalSeconds": 34011,
+          "departureSeconds": 34011,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:26:51+03:00",
+          "arrivalServiceSeconds": 34011,
+          "departure": "2026-10-19T09:26:51+03:00",
+          "departureServiceSeconds": 34011
+        },
+        {
+          "stopId": "155711",
+          "sequence": 11,
+          "arrivalSeconds": 34137,
+          "departureSeconds": 34137,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:28:57+03:00",
+          "arrivalServiceSeconds": 34137,
+          "departure": "2026-10-19T09:28:57+03:00",
+          "departureServiceSeconds": 34137
+        },
+        {
+          "stopId": "155739",
+          "sequence": 12,
+          "arrivalSeconds": 34201,
+          "departureSeconds": 34201,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:30:01+03:00",
+          "arrivalServiceSeconds": 34201,
+          "departure": "2026-10-19T09:30:01+03:00",
+          "departureServiceSeconds": 34201
+        },
+        {
+          "stopId": "155746",
+          "sequence": 13,
+          "arrivalSeconds": 34238,
+          "departureSeconds": 34238,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:30:38+03:00",
+          "arrivalServiceSeconds": 34238,
+          "departure": "2026-10-19T09:30:38+03:00",
+          "departureServiceSeconds": 34238
+        },
+        {
+          "stopId": "155748",
+          "sequence": 14,
+          "arrivalSeconds": 34300,
+          "departureSeconds": 34300,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:31:40+03:00",
+          "arrivalServiceSeconds": 34300,
+          "departure": "2026-10-19T09:31:40+03:00",
+          "departureServiceSeconds": 34300
+        },
+        {
+          "stopId": "155751",
+          "sequence": 15,
+          "arrivalSeconds": 34372,
+          "departureSeconds": 34372,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:32:52+03:00",
+          "arrivalServiceSeconds": 34372,
+          "departure": "2026-10-19T09:32:52+03:00",
+          "departureServiceSeconds": 34372
+        },
+        {
+          "stopId": "155650",
+          "sequence": 16,
+          "arrivalSeconds": 34483,
+          "departureSeconds": 34483,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:34:43+03:00",
+          "arrivalServiceSeconds": 34483,
+          "departure": "2026-10-19T09:34:43+03:00",
+          "departureServiceSeconds": 34483
+        },
+        {
+          "stopId": "155649",
+          "sequence": 17,
+          "arrivalSeconds": 34576,
+          "departureSeconds": 34576,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:36:16+03:00",
+          "arrivalServiceSeconds": 34576,
+          "departure": "2026-10-19T09:36:16+03:00",
+          "departureServiceSeconds": 34576
+        },
+        {
+          "stopId": "134982",
+          "sequence": 18,
+          "arrivalSeconds": 34684,
+          "departureSeconds": 34684,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:38:04+03:00",
+          "arrivalServiceSeconds": 34684,
+          "departure": "2026-10-19T09:38:04+03:00",
+          "departureServiceSeconds": 34684
+        },
+        {
+          "stopId": "155720",
+          "sequence": 19,
+          "arrivalSeconds": 34859,
+          "departureSeconds": 34859,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T09:40:59+03:00",
+          "arrivalServiceSeconds": 34859,
+          "departure": "2026-10-19T09:40:59+03:00",
+          "departureServiceSeconds": 34859
+        },
+        {
+          "stopId": "309919",
+          "sequence": 20,
+          "arrivalSeconds": 34980,
+          "departureSeconds": 34980,
+          "pickupType": 1,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T09:43:00+03:00",
+          "arrivalServiceSeconds": 34980,
+          "departure": "2026-10-19T09:43:00+03:00",
+          "departureServiceSeconds": 34980
+        }
+      ],
+      "timingQuality": "source-approximate",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 250
+      }
+    },
+    {
+      "id": "2026-2027_TALVI_(Maanantai)_5230_0_103000_104500_0",
+      "routeId": "5230",
+      "mode": "bus",
+      "headsign": "Hirssaari - Munsaari",
+      "serviceDate": "2026-10-19",
+      "timeZone": "Europe/Helsinki",
+      "calls": [
+        {
+          "stopId": "155501",
+          "sequence": 1,
+          "arrivalSeconds": 37800,
+          "departureSeconds": 37800,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:30:00+03:00",
+          "arrivalServiceSeconds": 37800,
+          "departure": "2026-10-19T10:30:00+03:00",
+          "departureServiceSeconds": 37800
+        },
+        {
+          "stopId": "155502",
+          "sequence": 2,
+          "arrivalSeconds": 37852,
+          "departureSeconds": 37852,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:30:52+03:00",
+          "arrivalServiceSeconds": 37852,
+          "departure": "2026-10-19T10:30:52+03:00",
+          "departureServiceSeconds": 37852
+        },
+        {
+          "stopId": "155109",
+          "sequence": 3,
+          "arrivalSeconds": 37890,
+          "departureSeconds": 37890,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:31:30+03:00",
+          "arrivalServiceSeconds": 37890,
+          "departure": "2026-10-19T10:31:30+03:00",
+          "departureServiceSeconds": 37890
+        },
+        {
+          "stopId": "155509",
+          "sequence": 4,
+          "arrivalSeconds": 37922,
+          "departureSeconds": 37922,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:32:02+03:00",
+          "arrivalServiceSeconds": 37922,
+          "departure": "2026-10-19T10:32:02+03:00",
+          "departureServiceSeconds": 37922
+        },
+        {
+          "stopId": "322130",
+          "sequence": 5,
+          "arrivalSeconds": 37964,
+          "departureSeconds": 37964,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:32:44+03:00",
+          "arrivalServiceSeconds": 37964,
+          "departure": "2026-10-19T10:32:44+03:00",
+          "departureServiceSeconds": 37964
+        },
+        {
+          "stopId": "155690",
+          "sequence": 6,
+          "arrivalSeconds": 38022,
+          "departureSeconds": 38022,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:33:42+03:00",
+          "arrivalServiceSeconds": 38022,
+          "departure": "2026-10-19T10:33:42+03:00",
+          "departureServiceSeconds": 38022
+        },
+        {
+          "stopId": "301838",
+          "sequence": 7,
+          "arrivalSeconds": 38192,
+          "departureSeconds": 38192,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:36:32+03:00",
+          "arrivalServiceSeconds": 38192,
+          "departure": "2026-10-19T10:36:32+03:00",
+          "departureServiceSeconds": 38192
+        },
+        {
+          "stopId": "301807",
+          "sequence": 8,
+          "arrivalSeconds": 38216,
+          "departureSeconds": 38216,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:36:56+03:00",
+          "arrivalServiceSeconds": 38216,
+          "departure": "2026-10-19T10:36:56+03:00",
+          "departureServiceSeconds": 38216
+        },
+        {
+          "stopId": "155583",
+          "sequence": 9,
+          "arrivalSeconds": 38469,
+          "departureSeconds": 38469,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:41:09+03:00",
+          "arrivalServiceSeconds": 38469,
+          "departure": "2026-10-19T10:41:09+03:00",
+          "departureServiceSeconds": 38469
+        },
+        {
+          "stopId": "155658",
+          "sequence": 10,
+          "arrivalSeconds": 38558,
+          "departureSeconds": 38558,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:42:38+03:00",
+          "arrivalServiceSeconds": 38558,
+          "departure": "2026-10-19T10:42:38+03:00",
+          "departureServiceSeconds": 38558
+        },
+        {
+          "stopId": "155659",
+          "sequence": 11,
+          "arrivalSeconds": 38585,
+          "departureSeconds": 38585,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:43:05+03:00",
+          "arrivalServiceSeconds": 38585,
+          "departure": "2026-10-19T10:43:05+03:00",
+          "departureServiceSeconds": 38585
+        },
+        {
+          "stopId": "155662",
+          "sequence": 12,
+          "arrivalSeconds": 38631,
+          "departureSeconds": 38631,
+          "pickupType": 0,
+          "dropOffType": 0,
+          "timepoint": 0,
+          "arrival": "2026-10-19T10:43:51+03:00",
+          "arrivalServiceSeconds": 38631,
+          "departure": "2026-10-19T10:43:51+03:00",
+          "departureServiceSeconds": 38631
+        },
+        {
+          "stopId": "155647",
+          "sequence": 13,
+          "arrivalSeconds": 38666,
+          "departureSeconds": 38666,
+          "pickupType": 1,
+          "dropOffType": 0,
+          "timepoint": 1,
+          "arrival": "2026-10-19T10:44:26+03:00",
+          "arrivalServiceSeconds": 38666,
+          "departure": "2026-10-19T10:44:26+03:00",
+          "departureServiceSeconds": 38666
+        }
+      ],
+      "timingQuality": "source-approximate",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 250
+      }
+    }
+  ],
+  "omitted": {},
+  "notice": "Real scheduled services, not live operating guarantees. Fares are fictional EUR game prices, not operator tickets. Stop sequences are not track/road geometry. Source-supplied approximate times are marked; no missing times are interpolated. Unsupported services are reported, not invented.",
+  "sampling": {
+    "notice": "Complete sample trips only, not the full imported timetable. Route metadata lists all imported active routes.",
+    "totalTrips": 375,
+    "totalStops": 717,
+    "sampleTrips": 3
+  }
+}

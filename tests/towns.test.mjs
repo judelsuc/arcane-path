@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { settlementView } from "../towns.mjs";
+import { settlementView, nearestSettlement } from "../towns.mjs";
 import { createContentService, contentKey } from "../cell-content.mjs";
+import { setupTowns } from "../towns-ui.mjs";
+import { translate } from "../i18n.mjs";
 
 const settlement = { osmId: "node/10", name: "Firmi", wikipedia: null };
 const poi = (id, overrides = {}) => ({
@@ -15,6 +17,41 @@ function map(pois = []) {
     rows: [[{ terrain: "place", names: ["Firmi"], settlements: [settlement], pois }]],
   };
 }
+
+test("town menu remains accessible at public washing facilities outside named settlements", t => {
+  const original = globalThis.document;
+  t.after(() => { globalThis.document = original; });
+  class Element {
+    children = []; events = {}; open = false; hidden = false;
+    addEventListener(type, listener) { this.events[type] = listener; }
+    append(...children) { this.children.push(...children); }
+    replaceChildren() { this.children = []; }
+    showModal() { this.open = true; }
+    close() { this.open = false; }
+  }
+  const nodes = new Map();
+  const node = selector => {
+    if (!nodes.has(selector)) nodes.set(selector, new Element());
+    return nodes.get(selector);
+  };
+  globalThis.document = { createElement: () => new Element(),
+    querySelector: selector => selector === "dialog[open]"
+      ? [...nodes.values()].find(element => element.open) ?? null : node(selector) };
+  const ui = setupTowns((key, args) => translate("fr", key, args));
+  const data = map([poi(1, { tags: { amenity: "shower" } })]);
+  data.rows[0][0] = { ...data.rows[0][0], terrain: "plain", settlements: [] };
+  ui.update(data, 0, 0);
+  assert.equal(node("#open-town").disabled, false);
+  assert.equal(node("#town-dialog").open, false);
+  assert.equal(node("#town-refresh").disabled, true);
+  node("#open-town").events.click();
+  assert.equal(node("#town-dialog").open, true);
+  assert.equal(node("#town-title").textContent, "Services sur place");
+  data.rows[0][0].pois[0].tags.access = "private";
+  ui.update(data, 0, 0, false);
+  assert.equal(node("#open-town").disabled, true);
+  assert.equal(node("#town-dialog").open, false);
+});
 function service(fetcher) {
   const values = new Map();
   return createContentService({ fetcher, cache: {
@@ -28,6 +65,33 @@ const page = (title = "Firmi", overrides = {}) => ({
 const response = pages => new Response(JSON.stringify({ query: {
   pages: Object.fromEntries(pages.map((entry, index) => [index, entry])),
 } }));
+
+test("placement finds the nearest usable named town cell, not a POI, water or unavailable cell", () => {
+  const data = { width: 4, height: 4,
+    rows: Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => ({ terrain: "plain" }))) };
+  data.rows[0][0] = { terrain: "place", settlements: [{ ...settlement, name: "Farther" }] };
+  data.rows[1][1] = { terrain: "place", settlements: [settlement], unavailable: true };
+  data.rows[1][2] = { terrain: "water", settlements: [settlement] };
+  data.rows[2][1] = { terrain: "place", settlements: [{ ...settlement, name: " " }] };
+  data.rows[2][2] = { terrain: "plain", pois: [poi(10)] };
+  data.rows[3][3] = { terrain: "place", settlements: [settlement] };
+  const before = structuredClone(data);
+  assert.deepEqual(nearestSettlement({ col: 2, row: 2 }, [data]), { col: 3, row: 3, town: "Firmi" });
+  assert.deepEqual(nearestSettlement({ col: 3, row: 3 }, [data]), { col: 3, row: 3, town: "Firmi" });
+  assert.equal(nearestSettlement({ col: 0, row: 0 }, []), null);
+  assert.deepEqual(data, before);
+});
+
+test("nearest town accounts for negative streamed coordinates and resolves ties independently of chunk order", () => {
+  const chunk = x => ({ chunk: { x, y: -1 }, width: 8, height: 8,
+    rows: Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => ({ terrain: "plain" }))) });
+  const left = chunk(-1), right = chunk(0);
+  left.rows[4][7] = { terrain: "place", settlements: [settlement] };
+  right.rows[4][1] = { terrain: "place", settlements: [{ ...settlement, name: "Other" }] };
+  const expected = { col: -1, row: -4, town: "Firmi" };
+  assert.deepEqual(nearestSettlement({ col: 0, row: -4 }, [left, right]), expected);
+  assert.deepEqual(nearestSettlement({ col: 0, row: -4 }, [right, left]), expected);
+});
 
 test("only real named public-facing POIs within 2km enter the settlement menu", () => {
   const data = map([
@@ -51,6 +115,17 @@ test("town menu is bounded to five entries per category and deduplicated", () =>
   assert.equal(view.places.length, 5);
   assert.equal(new Set(view.places.map(item => item.osmId)).size, 5);
   assert.deepEqual(settlementView(data, 0, 0), view);
+});
+
+test("accommodation has a separate bounded allowance and includes lodging relations and huts", () => {
+  const museum = poi(100, { category: "tourism", tags: { tourism: "museum" } });
+  const hotels = Array.from({ length: 25 }, (_, i) => poi(i, {
+    category: "tourism", osmId: `relation/${i + 1}`, tags: { tourism: i ? "hotel" : "alpine_hut" },
+  }));
+  const view = settlementView(map([museum, ...hotels]), 0, 0);
+  assert.equal(view.places.filter(p => p.tags.tourism === "museum").length, 1);
+  assert.equal(view.places.filter(p => p.tags.tourism !== "museum").length, 20);
+  assert.ok(view.places.some(p => p.tags.tourism === "alpine_hut"));
 });
 
 test("unloaded and non-settlement cells never open a town, and empty towns remain honest", () => {

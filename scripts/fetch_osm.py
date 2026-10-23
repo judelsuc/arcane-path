@@ -16,13 +16,25 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
+from build_map import classify
 
+MAX_LANDCOVER_COMPLETIONS = 16
 OVERPASS_URLS = (
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
 )
 _SOURCE_LOCK = threading.Lock()
 _COOLDOWNS = {}
+_SOURCE_CURSORS = {}
+
+
+def _rotating_sources(sources):
+    """Rotate after the last selected source; caller holds _SOURCE_LOCK."""
+    start = _SOURCE_CURSORS.get(sources, 0)
+    for offset in range(len(sources)):
+        index = (start + offset) % len(sources)
+        _SOURCE_CURSORS[sources] = (index + 1) % len(sources)
+        yield sources[index]
 
 
 class SourceUnavailable(ValueError):
@@ -41,6 +53,60 @@ def _http_failure(error, reason):
 def _map_url(bounds):
     bbox = ",".join(format(value, ".12g") for value in bounds)
     return f"https://api.openstreetmap.org/api/0.6/map?bbox={bbox}"
+
+
+def incomplete_landcover(root):
+    nodes = {node.attrib["id"] for node in root.findall("node")}
+    ways = {way.attrib["id"]: way for way in root.findall("way")}
+    incomplete = []
+    for relation in root.findall("relation"):
+        tags = {tag.attrib["k"]: tag.attrib["v"] for tag in relation.findall("tag")}
+        if tags.get("type") != "multipolygon" or classify(tags) not in {
+            "forest", "grass", "field", "vineyard", "park", "water", "mountain", "building",
+        }:
+            continue
+        for member in relation.findall("member"):
+            if member.attrib.get("type") != "way":
+                continue
+            way = ways.get(member.attrib["ref"])
+            if way is None or any(nd.attrib["ref"] not in nodes for nd in way.findall("nd")):
+                incomplete.append(relation.attrib["id"])
+                break
+    return incomplete
+
+
+def _complete_landcover(root, on_progress):
+    missing = incomplete_landcover(root)
+    if len(missing) > MAX_LANDCOVER_COMPLETIONS:
+        raise SourceUnavailable("Too many incomplete land-cover relations; use recursive source fallback.")
+    urls = []
+    elements = {(e.tag, e.attrib["id"]): e for e in root if e.tag in {"node", "way", "relation"}}
+    for relation_id in missing:
+        url = f"https://api.openstreetmap.org/api/0.6/relation/{relation_id}/full"
+        if on_progress:
+            on_progress({"phase": "download", "provider": "api.openstreetmap.org",
+                         "relation": relation_id})
+        request = urllib.request.Request(url, headers={"User-Agent": "ArcanePath/0.1 (OSM map prototype)"})
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                part = ET.fromstring(response.read())
+        except urllib.error.HTTPError as error:
+            raise _http_failure(error, error.read(4096).decode("utf-8", errors="replace")) from error
+        if part.tag != "osm" or not any(
+                r.attrib["id"] == relation_id for r in part.findall("relation")):
+            raise SourceUnavailable(f"Incomplete land-cover response for relation {relation_id}.")
+        for element in part:
+            if element.tag in {"node", "way", "relation"}:
+                elements[(element.tag, element.attrib["id"])] = element
+        urls.append(url)
+    if missing:
+        for element in list(root):
+            if element.tag in {"node", "way", "relation"}:
+                root.remove(element)
+        root.extend(elements.values())
+        if incomplete_landcover(root):
+            raise SourceUnavailable("OSM returned incomplete land-cover geometry after completion.")
+    return urls
 
 
 def _request_map(bounds, depth=0, on_progress=None):
@@ -83,17 +149,22 @@ def _request_map(bounds, depth=0, on_progress=None):
                     if previous is None or int(element.attrib.get("version", "0")) > int(previous.attrib.get("version", "0")):
                         elements[key] = element
         root.extend(elements.values())
+        if depth == 0:
+            first_urls += _complete_landcover(root, on_progress)
         return root, first_urls + second_urls
-    if root.tag != "osm" or root.find("bounds") is None or root.find("node") is None:
-        raise SourceUnavailable("The OSM API did not return a bounded map with nodes.")
-    return root, [url]
+    if root.tag != "osm" or root.find("bounds") is None:
+        raise SourceUnavailable("The OSM API did not return a bounded map.")
+    return root, [url, *(_complete_landcover(root, on_progress) if depth == 0 else [])]
 
 
 def _request_overpass(bounds, url, on_progress=None):
     west, south, east, north = bounds
     bbox = ",".join(format(value, ".12g") for value in (south, west, north, east))
-    # Recursive descent includes way nodes and relation members for rasterization.
-    query = f"[out:xml][timeout:60];nwr({bbox});(._;>>;);out body;"
+    # Transport and administrative relations can span entire countries.
+    # Recurse only into the multipolygons used by the rasterizer.
+    query = (f"[out:xml][timeout:60];"
+             f"(node({bbox});way({bbox});rel({bbox})[type=multipolygon];);"
+             "(._;>>;);out body;")
     request = urllib.request.Request(
         url, data=urllib.parse.urlencode({"data": query}).encode("ascii"),
         headers={"User-Agent": "ArcanePath/0.1 (OSM map prototype)"},
@@ -107,8 +178,10 @@ def _request_overpass(bounds, url, on_progress=None):
     except urllib.error.HTTPError as error:
         reason = error.read(4096).decode("utf-8", errors="replace")
         raise _http_failure(error, reason) from error
-    if root.tag != "osm" or root.find("remark") is not None or root.find("node") is None:
+    if root.tag != "osm" or root.find("remark") is not None:
         raise SourceUnavailable("Overpass returned incomplete data or a runtime error.")
+    if incomplete_landcover(root):
+        raise SourceUnavailable("Overpass returned incomplete land-cover geometry.")
     for element in list(root.findall("bounds")):
         root.remove(element)
     ET.SubElement(root, "bounds", {
@@ -124,7 +197,7 @@ def _request_sources(bounds, on_progress=None):
     if on_progress:
         on_progress({"phase": "sourceQueue"})
     with _SOURCE_LOCK:
-        for source in ("https://api.openstreetmap.org", *OVERPASS_URLS):
+        for source in _rotating_sources(("https://api.openstreetmap.org", *OVERPASS_URLS)):
             remaining = _COOLDOWNS.get(source, 0) - time.monotonic()
             if remaining > 0:
                 if on_progress:
@@ -153,9 +226,22 @@ def fetch_towns(latitude, longitude, venues=False, on_progress=None):
              f'{latitude:.6f},{longitude:.6f})' +
              ('["amenity"~"^(library|cafe|restaurant|theatre)$"]["name"];out body;'
               if venues else '["place"~"^(city|town)$"]["name"];out body;'))
+    return fetch_catalogue(query, on_progress)
+
+
+def fetch_accommodations(latitude, longitude, on_progress=None):
+    query = ('[out:json][timeout:20];(nwr(around:5000,'
+             f'{latitude:.6f},{longitude:.6f})'
+             '["tourism"~"^(hotel|hostel|guest_house|motel|alpine_hut)$"];'
+             f'nwr(around:5000,{latitude:.6f},{longitude:.6f})'
+             '["amenity"="place_of_worship"];);out center tags;')
+    return fetch_catalogue(query, on_progress)["elements"]
+
+
+def fetch_catalogue(query, on_progress=None):
     failures = []
     with _SOURCE_LOCK:
-        for source in OVERPASS_URLS:
+        for source in _rotating_sources(OVERPASS_URLS):
             remaining = _COOLDOWNS.get(source, 0) - time.monotonic()
             if remaining > 0:
                 failures.append(f"{source}: cooldown ({math.ceil(remaining)} seconds)")
@@ -176,7 +262,11 @@ def fetch_towns(latitude, longitude, venues=False, on_progress=None):
                 return {"elements": data["elements"], "sourceUrl": source,
                         "retrievedAt": datetime.now(timezone.utc).isoformat()}
             except (OSError, ValueError) as error:
-                _COOLDOWNS[source] = time.monotonic() + 60
+                if isinstance(error, urllib.error.HTTPError):
+                    error = _http_failure(error, error.read(4096).decode("utf-8", errors="replace"))
+                _COOLDOWNS[source] = time.monotonic() + (
+                    error.retry_after if isinstance(error, SourceUnavailable) else 60
+                )
                 failures.append(f"{source}: {error}")
                 print(f"Town catalogue unavailable; trying fallback: {source}: {error}", file=sys.stderr)
     delay = max(1, math.ceil(min(
@@ -207,7 +297,7 @@ def download_region(bounds, name, output, refresh=False, reference_bounds=None, 
         reference_bbox = ",".join(map(str, reference_bounds)) if reference_bounds else None
         if (cached.attrib.get("source_url") == url and cached.attrib.get("region_name") == name
                 and cached.attrib.get("reference_bbox") == reference_bbox):
-            if cached.find("bounds") is None or cached.find("node") is None:
+            if cached.find("bounds") is None:
                 raise ValueError("Incomplete cached OSM snapshot; use --refresh to download again.")
             if on_progress:
                 on_progress({"phase": "cache"})

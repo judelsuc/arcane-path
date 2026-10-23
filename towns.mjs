@@ -8,12 +8,34 @@ const PUBLIC_AMENITIES = new Set([
 ]);
 const PUBLIC_TOURISM = new Set([
   "museum", "gallery", "attraction", "zoo", "theme_park", "hotel", "hostel",
-  "guest_house", "camp_site", "viewpoint", "information", "picnic_site",
+  "guest_house", "motel", "alpine_hut", "camp_site", "viewpoint", "information", "picnic_site",
 ]);
+
+export function nearestSettlement(position, maps) {
+  let nearest, distance = Infinity;
+  for (const map of maps) {
+    const offsetCol = (map.chunk?.x ?? 0) * 8, offsetRow = (map.chunk?.y ?? 0) * 8;
+    for (let row = 0; row < map.height; row++) for (let col = 0; col < map.width; col++) {
+      const cell = map.rows[row][col];
+      if (cell.unavailable || cell.terrain !== "place") continue;
+      const settlement = [...(cell.settlements ?? [])].filter(place => place.name?.trim())
+        .sort((a, b) => a.osmId.localeCompare(b.osmId))[0];
+      if (!settlement) continue;
+      const candidate = { col: col + offsetCol, row: row + offsetRow, town: settlement.name };
+      const squared = (candidate.col - position.col) ** 2 + (candidate.row - position.row) ** 2;
+      if (squared < distance || squared === distance &&
+          (candidate.row < nearest.row || candidate.row === nearest.row && candidate.col < nearest.col)) {
+        nearest = candidate;
+        distance = squared;
+      }
+    }
+  }
+  return nearest ?? null;
+}
 
 export function publicPlace(poi) {
   const tags = poi.tags;
-  if (!poi.name?.trim() || !/^(node|way)\/\d+$/.test(poi.osmId) || !tags ||
+  if (!poi.name?.trim() || !/^(node|way|relation)\/\d+$/.test(poi.osmId) || !tags ||
       ["no", "private"].includes(tags.access) ||
       (tags.disused && tags.disused !== "no") || (tags.abandoned && tags.abandoned !== "no")) return false;
   if (poi.category === "station" || poi.category === "cable_station") return true;
@@ -44,9 +66,11 @@ export function settlementView(map, row, col) {
   const counts = new Map();
   const places = [...candidates.values()].sort((a, b) => a.distance - b.distance ||
     a.osmId.localeCompare(b.osmId)).filter(poi => {
-    const count = counts.get(poi.category) ?? 0;
-    counts.set(poi.category, count + 1);
-    return count < 5;
+    const category = ["hotel", "hostel", "guest_house", "motel", "alpine_hut"].includes(poi.tags?.tourism)
+      ? "accommodation" : poi.category;
+    const count = counts.get(category) ?? 0;
+    counts.set(category, count + 1);
+    return count < (category === "accommodation" ? 20 : 5);
   });
   return { ...info, settlement, settlements, places,
     identity: settlements.map(item => item.osmId).join(",") };

@@ -1,4 +1,5 @@
 import { naturePhotos } from "./nature-photos.mjs";
+import { aerialPhoto } from "./aerial-photos.mjs";
 
 const COMMONS = "https://commons.wikimedia.org/w/api.php";
 const OSM_LICENSE = "https://opendatacommons.org/licenses/odbl/1-0/";
@@ -102,10 +103,21 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
     return pages.map(page => photoMetadata(page, info, association)).filter(Boolean);
   }
 
+  async function commonsNearby(info) {
+    const pages = await json(COMMONS, {
+      generator: "geosearch", ggscoord: `${info.latitude}|${info.longitude}`,
+      ggsradius: "2000", ggsnamespace: "6", ggslimit: "20",
+      prop: "imageinfo|coordinates", iiprop: "url|extmetadata",
+      iiurlwidth: "1000", colimit: "max",
+    });
+    return pages.map(p => photoMetadata(p, info)).filter(Boolean)
+      .sort((a, b) => a.distance - b.distance);
+  }
+
   async function resolve(info, locale, kind, refresh = false, onProgress = () => {}) {
     const key = `${await contentKey(info, locale, kind)}${kind === "photo" ? `:${maxPhotos}` : ""}`;
     const cached = await cache.get(key);
-    if (cached && !refresh) return { ...cached, cached: true };
+    if (cached && !refresh && (kind !== "photo" || cached.content)) return { ...cached, cached: true };
     const previous = kind === "photo" && !refresh
       ? await cache.get(key.replace(/^v3:/, "v2:")) : undefined;
     const legacy = kind === "photo" && !refresh
@@ -191,16 +203,7 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
       await download(candidates?.filter(p => !p.nearby));
       const nearby = candidates?.filter(p => p.nearby) ?? [];
       if (photos.length < maxPhotos) {
-        candidates = await attempt("Commons geosearch", async () => {
-          const pages = await json(COMMONS, {
-            generator: "geosearch", ggscoord: `${info.latitude}|${info.longitude}`,
-            ggsradius: "2000", ggsnamespace: "6", ggslimit: "20",
-            prop: "imageinfo|coordinates", iiprop: "url|extmetadata",
-            iiurlwidth: "1000", colimit: "max",
-          });
-          return pages.map(p => photoMetadata(p, info)).filter(Boolean)
-            .sort((a, b) => a.distance - b.distance);
-        });
+        candidates = await attempt("Commons geosearch", () => commonsNearby(info));
         await download(candidates?.filter(p => !p.nearby));
         nearby.push(...(candidates?.filter(p => p.nearby) ?? []));
       }
@@ -233,6 +236,10 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
       if (!photos.length) {
         photos.push(...savedPhotos.filter(photo => photo.blob).slice(0, maxPhotos));
       }
+      if (!photos.length) {
+        const aerial = await attempt("IGN aerial photo", () => aerialPhoto(info, fetcher));
+        if (aerial) await download([aerial]);
+      }
       content = photos[0];
     } else {
       throw new Error(`Unknown content kind: ${kind}`);
@@ -247,5 +254,5 @@ export function createContentService({ cache, fetcher = fetch, maxPhotos = MAX_C
     if (content || !errors.length) await cache.put(key, result);
     return { ...result, cached: false };
   }
-  return { resolve };
+  return { resolve, commonsNearby };
 }

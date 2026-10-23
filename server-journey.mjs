@@ -1,6 +1,18 @@
-import { validateSave, mapIdentity } from "./journey-save.mjs";
+import { validateSave, mapIdentity, SAVE_VERSION } from "./journey-save.mjs";
 import { normalizeCharacterName, startSurvival } from "./survival.mjs";
 import { startEconomy, applyBirthTarot } from "./economy.mjs";
+
+export async function serverJourneyExists(state, fetcher = fetch) {
+  if (!state.serverJourney?.id) return false;
+  const response = await fetcher(`/api/journeys/${state.serverJourney.id}`, {
+    cache: "no-store", signal: AbortSignal.timeout(10000),
+  });
+  const record = await response.json();
+  if (response.status === 404 && record.error === "Server journey not found.") return false;
+  if (!response.ok) throw new Error(record.error ?? `Journey lookup HTTP ${response.status}`);
+  if (record.state?.serverJourney?.id !== state.serverJourney.id) throw new Error("Invalid server journey lookup.");
+  return true;
+}
 
 export function validateServerJourney(record, region, map, name) {
   const fail = () => { throw new Error("Invalid server-created journey."); };
@@ -16,7 +28,7 @@ export function validateServerJourney(record, region, map, name) {
   if (identity !== mapIdentity(map)) fail();
   const metadata = record.state?.serverJourney;
   if (!metadata) fail();
-  validateSave({ ...record, revision: 1, savedAt: metadata?.createdAt });
+  validateSave({ ...record, version: SAVE_VERSION, revision: 1, savedAt: metadata?.createdAt });
   const state = record.state;
   if (state.name !== normalizeCharacterName(name) ||
       Date.parse(metadata.createdAt) !== state.startedAt ||
@@ -34,11 +46,12 @@ export function validateServerJourney(record, region, map, name) {
   return record;
 }
 
-export async function createServerJourney(region, map, name, requestId, signal, fetcher = fetch) {
+export async function createServerJourney(region, map, name, requestId, signal, fetcher = fetch, capability) {
   signal.throwIfAborted();
   const response = await fetcher("/api/journeys", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json",
+      ...(capability ? { "X-Journal-Capability": capability } : {}) },
     body: JSON.stringify({ region, name, requestId }),
     signal: AbortSignal.any([signal, AbortSignal.timeout(30_000)]),
   });

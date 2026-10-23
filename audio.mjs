@@ -7,7 +7,7 @@ const TRACKS = [
 ];
 
 export function musicTrack({ active, ended, terrain, sources = [], night, dialog, sleeping } = {}) {
-  if (dialog === "music-dialog") return null;
+  if (dialog === "music-dialog" || dialog === "cafe-dialog") return null;
   if (!active) return "music-title-song";
   if (ended) return ended === "reunion" ? "music-reunion" : "music-journey-ended";
   if (["trail-dialog", "birth-tarot-dialog", "daily-tarot-dialog"].includes(dialog)) return "music-tarot-trail";

@@ -47,14 +47,15 @@ def starting_point(base):
             (col + 0.5) * step / math.cos(math.radians(projection))}
 
 
-def build_town_trail(base, seed, catalogue, venues=None, on_progress=None, random_coordinates=False):
+def build_town_trail(base, seed, catalogue, venues=None, on_progress=None, random_coordinates=False,
+                     prefix=None, stage_count=STAGES):
     rng = random.Random(seed)
     origin = starting_point(base)
-    current = origin
-    visited = [origin]
-    stages = []
+    stages = [dict(stage) for stage in prefix] if prefix else []
+    current = stages[-1] if stages else origin
+    visited = [origin, *stages]
     heading = rng.uniform(-math.pi, math.pi)
-    for index in range(STAGES):
+    for index in range(len(stages), stage_count):
         if on_progress:
             on_progress({"phase": "towns", "stage": index + 1})
         envelope = catalogue(current["latitude"], current["longitude"])
@@ -104,7 +105,7 @@ def build_town_trail(base, seed, catalogue, venues=None, on_progress=None, rando
             }, angle))
         if not candidates:
             raise ValueError(
-                f"No onward town 30–60 km away for stage {index + 1}/10. "
+                f"No onward town 30–60 km away for stage {index + 1}/{stage_count}. "
                 "Try another route or starting point; no short-distance substitute was generated.")
         candidates.sort(key=lambda candidate: candidate[:3])
         chosen = candidates[0] if random_coordinates else candidates[rng.randrange(min(3, len(candidates)))]
@@ -144,6 +145,17 @@ class TownTrailStore:
         self.lock = threading.Lock()
         self.offline = offline
         self.local = None
+
+    def extend(self, region, seed, trail):
+        if self.local is None:
+            self.local = LocalTowns()
+        extended = build_town_trail(
+            self.chunks.bases[region], "continuation:" + seed, self.local.catalogue,
+            random_coordinates=True, prefix=trail["stages"], stage_count=13)
+        return {**trail, "stages": extended["stages"], "generation": {
+            **trail.get("generation", {}), "townSearches": 13,
+            "initialStages": 10, "continuationStages": 3,
+        }}
 
     def get_progress(self, region, seed):
         with self.lock:

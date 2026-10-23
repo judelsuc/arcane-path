@@ -5,11 +5,27 @@ const KEYS = {
   "cancel-journey-start": "A",
   "back-title": "Escape",
   "open-options": "K",
+  "open-controls": "?",
   "start-travel": "N", "resume-travel": "C", "open-osm": "O",
   "restart-travel": "N", "rest-travel": "R", "sleep-travel": "H",
   "eat-travel": "E", "open-town": "T", "open-music": "B",
-  "open-trail": "J", "save-travel": "S", "look-travel": "L",
-  "open-hint": "I",
+  "save-travel": "S", "look-travel": "L",
+  "open-journey-world": "6",
+  "open-conversation": "G", "town-conversation": "G", "cell-conversation": "G",
+  "open-quests": "2",
+  "conversation-close": "Escape",
+  "conversation-shelter": "H", "conversation-food": "E",
+  "conversation-work": "B", "conversation-transport": "6", "conversation-town": "T",
+  "cell-town": "T", "cell-transport": "6",
+  "cell-equipment": "V", "cell-dog": "5",
+  "cell-journal": "A", "cell-photo": "P", "cell-save": "S",
+  "open-journal": "A",
+  "open-earn-money": "B", "town-earn-money": "B", "cell-earn-money": "B",
+  "journal-previous": "ArrowLeft", "journal-next": "ArrowRight",
+  "journal-export-pdf": "P",
+  "journal-map-page": "M",
+  "copy-coordinates": "D",
+  "equipment-travel": "V", "equipment-close": "Escape", "equipment-rotate": "R",
   "needs-notice-cell": "F",
   "retry-travel": "Y", "stop-travel": "Q", "show-photo": "P",
   "refresh-content": "U", "clear-content": "X",
@@ -17,20 +33,30 @@ const KEYS = {
   "daily-tarot-draw": "D", "daily-tarot-continue": "Enter",
   "previous-photo": "ArrowLeft", "next-photo": "ArrowRight",
   "town-refresh": "U", "town-services": "E", "town-music": "B",
-  "town-trail": "J", "music-start": "Enter", "music-tap": "Space",
+  "music-start": "Enter", "music-tap": "Space",
+  "open-cafe": "W", "town-cafe": "W", "cell-cafe": "W",
+  "cafe-start": "G", "cafe-serve": "Enter", "cafe-clear": "X",
+  "cafe-sound-toggle": "M",
+  "cafe-coffee": "Q", "cafe-tea": "W", "cafe-water": "E",
+  "cafe-bread": "R", "cafe-cake": "T",
+  "cafe-customer-1": "1", "cafe-customer-2": "2", "cafe-customer-3": "3",
   "trail-interview": "I", "trail-restart": "N",
   "open-survival-choices": "F", "town-survival-choices": "F",
   "choice-forage": "F", "choice-beg": "A", "choice-steal": "T",
+  "theft-start": "Enter", "theft-grab": "Space",
+  "journey-event-continue": "Enter",
   "cell-buy": "E", "cell-rest": "R", "cell-sleep": "H",
-  "cell-music": "B", "cell-clues": "J",
+  "cell-music": "B",
   "clue-discuss": "D", "clue-photo": "P", "clue-letter": "L",
   "clue-search": "F", "clue-buy": "A", "clue-guestbook": "G",
   "clue-ticket": "T", "clue-directions": "I",
+  "clue-investigate": "F",
+  "clue-field-search": "F",
 };
 const DIRECTIONS = { "0,-1": "ArrowUp", "1,0": "ArrowRight", "0,1": "ArrowDown", "-1,0": "ArrowLeft" };
 
 export function buttonBindings(buttons) {
-  const bindings = buttons.map(button => ({
+  const bindings = buttons.filter(button => !button.native).map(button => ({
     button,
     key: KEYS[button.id] ?? DIRECTIONS[button.move] ?? (button.close ? "Escape" : null),
   }));
@@ -47,6 +73,7 @@ export function buttonBindings(buttons) {
 
 export function shortcutCode(event) {
   if (event.ctrlKey || event.metaKey || event.isComposing || (event.altKey && !event.shiftKey)) return null;
+  if (event.key === "?") return "?";
   if (!event.altKey && /^[a-z0-9]$/i.test(event.key)) return event.key.toUpperCase();
   if (/^Key[A-Z]$/.test(event.code)) return event.code.slice(3);
   if (/^Digit[0-9]$/.test(event.code)) return event.code.slice(5);
@@ -61,34 +88,57 @@ export function setupButtonShortcuts(t) {
   tooltip.hidden = true;
   document.body.append(tooltip);
   let current;
+  const nativeTitles = new WeakMap();
   function bindings(scope) {
+    if (scope.hasAttribute("data-native-controls")) return [];
     return buttonBindings([...scope.querySelectorAll("button")].map(button => ({
       id: button.id, move: button.dataset.move,
+      native: button.hasAttribute("data-shortcut-skip"),
       close: button.closest("form")?.getAttribute("method") === "dialog", element: button,
     })));
   }
   function label(key) {
     return key.length === 1 ? key : t(`shortcutKey.${key}`);
   }
+  function available(element) {
+    if (element.hidden || element.closest("[inert]")) return false;
+    const hidden = element.closest("[hidden]");
+    if (!hidden) return Boolean(element.getClientRects().length);
+    if (hidden !== element.parentElement || !hidden.dataset.shortcutSources) return false;
+    const toolbar = document.getElementById(hidden.dataset.shortcutSources);
+    return Boolean(toolbar?.getClientRects().length && !toolbar.closest("[hidden],[inert]"));
+  }
   function refresh() {
     for (const scope of [document.querySelector("main"), ...document.querySelectorAll("dialog")]) {
+      for (const element of scope.querySelectorAll("button")) {
+        if (!scope.hasAttribute("data-native-controls") && !element.hasAttribute("data-shortcut-skip")) continue;
+        if (!element.title || element.title === nativeTitles.get(element)) {
+          const action = element.getAttribute("aria-label") || element.textContent.trim();
+          if (action) {
+            element.title = action;
+            nativeTitles.set(element, action);
+          }
+        }
+      }
       for (const { button, key } of bindings(scope)) {
         const element = button.element;
         let caption = element.querySelector(".button-shortcut");
         const action = [...element.childNodes].filter(node => node !== caption)
           .map(node => node.textContent).join("").trim();
+        const compact = Boolean(element.closest("#travel-toolbar"));
         if (!caption) {
           caption = document.createElement("span");
           caption.className = "button-shortcut";
           caption.setAttribute("aria-hidden", "true");
           element.append(caption);
         }
-        const suffix = ` (${label(key)})`;
+        const suffix = compact ? label(key) : ` (${label(key)})`;
         if (caption.textContent !== suffix) caption.textContent = suffix;
         const text = t("buttonTooltip", {
           action, key: label(key),
         });
         element.title = text;
+        if (compact) element.setAttribute("aria-label", action);
         element.setAttribute("aria-keyshortcuts", key);
       }
     }
@@ -98,6 +148,7 @@ export function setupButtonShortcuts(t) {
   function show(event) {
     const button = event.target.closest?.("button");
     if (!button) return;
+    if (!button.title) { hide(); return; }
     current = button;
     tooltip.textContent = button.title;
     const host = button.closest("dialog") ?? document.body;
@@ -128,15 +179,15 @@ export function setupButtonShortcuts(t) {
   document.addEventListener("keydown", event => {
     const key = shortcutCode(event);
     if (!key || event.defaultPrevented || event.repeat ||
-        event.target.closest?.("input,select,textarea,[contenteditable]")) return;
+        event.target.closest?.("input,select,textarea,[contenteditable],[data-shortcut-skip]")) return;
     const dialogs = [...document.querySelectorAll("dialog[open]")];
     const scope = dialogs.find(dialog => dialog.contains(document.activeElement)) ??
       dialogs.at(-1) ?? document.querySelector("main");
-    const match = bindings(scope).find(binding => binding.key === key &&
-      binding.button.element.getClientRects().length && !binding.button.element.closest("[hidden],[inert]"));
+    if (scope.hasAttribute("data-native-controls")) return;
+    if (key === "Space" && scope.id === "music-dialog") return;
+    const match = bindings(scope).find(binding => binding.key === key && available(binding.button.element));
     const button = match?.button.element;
-    if (!button || button.disabled || !button.getClientRects().length ||
-        button.closest("[hidden],[inert]")) return;
+    if (!button || button.disabled) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     hide();

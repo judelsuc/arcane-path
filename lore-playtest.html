@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arcane Path — Artifact playtest</title>
+  <link rel="stylesheet" href="./lore-playtest.css">
+  <script type="module" src="./lore-playtest.mjs"></script>
+</head>
+<body>
+  <header>
+    <h1 id="title"></h1>
+    <a href="./index.html" id="main-game"></a>
+    <label><span id="language-label"></span> <select id="language"><option value="en">English</option><option value="fr">Français</option></select></label>
+    <p id="scope"></p>
+  </header>
+  <section aria-labelledby="start-title">
+    <h2 id="start-title"></h2>
+    <label><span id="journey-label"></span> <select id="journey"></select></label>
+    <button id="start" type="button"></button>
+    <label><span id="name-label"></span> <input id="name" maxlength="40" value="Alex"></label>
+    <button id="create" type="button"></button>
+  </section>
+  <p id="feedback" role="status" aria-live="polite"></p>
+  <main id="game" hidden>
+    <section aria-labelledby="state-title">
+      <h2 id="state-title"></h2>
+      <p id="state"></p>
+      <p id="effects"></p>
+      <p id="outcome"></p>
+      <p id="parent-search-result"></p>
+      <div id="actions"></div>
+      <p id="travel-help"></p>
+      <div id="movement"></div>
+      <div id="map" role="img"></div>
+      <p id="map-credit"></p>
+    </section>
+    <section aria-labelledby="artifacts-title">
+      <h2 id="artifacts-title"></h2>
+      <p id="rarity"></p>
+      <div id="offers"></div>
+      <div id="artifacts"></div>
+    </section>
+    <section aria-labelledby="bag-title">
+      <h2 id="bag-title"></h2>
+      <p id="bag-weight"></p>
+      <p id="bag-help"></p>
+      <div id="bag"></div>
+      <button id="rotate" type="button"></button>
+    </section>
+    <details id="journal-discovery" open></details>
+    <section aria-labelledby="dream-title">
+      <h2 id="dream-title"></h2>
+      <p id="dream-help"></p>
+      <div id="dream-history"></div>
+    </section>
+  </main>
+</body>
+</html>

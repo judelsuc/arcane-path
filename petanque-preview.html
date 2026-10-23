@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Village petanque - game 8</title>
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./mini-games.css">
+    <style>
+      main { max-width: 900px; margin: 1rem auto; padding: 1rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 id="preview-title"></h1>
+      <p id="preview-note"></p>
+      <label for="preview-level" id="preview-level-label"></label>
+      <select id="preview-level">
+        <option value="0">0</option><option value="1">1</option>
+        <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+      </select>
+      <button id="preview-reset" type="button"></button>
+      <button id="preview-sound" type="button" aria-pressed="true"></button>
+      <p id="preview-result" role="status"></p>
+      <p id="preview-error" role="alert"></p>
+      <div id="petanque-board"></div>
+      <p><a href="?lang=en">English</a> / <a href="?lang=fr">Francais</a></p>
+    </main>
+    <script type="module" src="./petanque-preview.mjs"></script>
+  </body>
+</html>

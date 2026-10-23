@@ -7,20 +7,30 @@
     <meta name="description" content="Prototype de cartographie ASCII pour Les Arcanes du Chemin.">
     <title>Les Arcanes du Chemin — Carte</title>
     <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./mini-games.css">
     <script type="module" src="./app.js"></script>
   </head>
   <body class="is-title">
     <main class="game-shell">
       <header class="masthead">
         <div class="masthead-tools">
-          <p class="eyebrow" data-i18n="prototype">Les Arcanes du Chemin · Prototype 01</p>
-          <button id="open-options" type="button" aria-haspopup="dialog" aria-controls="options-dialog" data-i18n="optionsTitle"></button>
+          <p class="eyebrow" data-i18n="prototype">Les Arcanes du Chemin</p>
+          <div class="masthead-actions">
+            <button id="open-journal" type="button" aria-haspopup="dialog" aria-controls="photo-journal-dialog" data-i18n="journalTitle"></button>
+            <button id="open-controls" type="button" aria-haspopup="dialog" aria-controls="controls-dialog" data-i18n="controlsTitle"></button>
+            <button id="open-options" type="button" aria-haspopup="dialog" aria-controls="options-dialog" data-i18n="optionsTitle"></button>
+          </div>
         </div>
       </header>
 
       <section id="title-screen" aria-labelledby="title-heading">
         <p class="eyebrow" data-i18n="titleKicker"></p>
         <h1 id="title-heading" tabindex="-1">Les Arcanes<br><span>du Chemin</span></h1>
+        <figure id="title-daily-art" hidden>
+          <img id="title-daily-image" width="1024" height="1024" alt="" decoding="async">
+          <figcaption><span id="title-art-credit"></span> · <a href="https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/LICENSE.md" target="_blank" rel="noopener noreferrer">Open RAIL++-M</a></figcaption>
+        </figure>
+        <p id="title-art-status" class="title-note" role="status" hidden></p>
         <pre class="title-art" aria-hidden="true">
                     .             *
        *                    .
@@ -48,12 +58,13 @@
           <p data-i18n="titleStoryThree"></p>
         </div>
         <button id="enter-world" type="button" data-i18n="titleEnter"></button>
-        <p class="title-note" data-i18n="titleContinueNote"></p>
+        <p class="title-note window-help-text" data-i18n="titleContinueNote"></p>
+        <p class="title-note technical-text"><a href="./lore-playtest.html" data-i18n="lorePlaytestLink"></a></p>
       </section>
 
       <section id="journey-setup" class="map-card journey-setup" aria-labelledby="setup-title" hidden>
         <h1 id="setup-title" data-i18n="setupTitle"></h1>
-        <p data-i18n="setupIntro"></p>
+        <p class="window-help-text" data-i18n="setupIntro"></p>
         <div class="setup-grid">
           <section class="setup-presets" aria-labelledby="setup-region-title">
             <h2 id="setup-region-title" data-i18n="setupRegions"></h2>
@@ -78,6 +89,7 @@
           <button id="use-location" type="button" data-i18n="placeUseLocation"></button>
           <button id="cancel-place" type="button" data-i18n="placeCancel" hidden></button>
           <p id="place-status" role="status"></p>
+          <p id="place-technical-status" class="technical-text"></p>
           <ul id="place-results"></ul>
           <details class="place-privacy">
             <summary data-i18n="placePrivacyTitle"></summary>
@@ -91,16 +103,19 @@
           <div id="character-setup">
             <label for="character-name" data-i18n="characterName"></label>
             <input id="character-name" type="text" required maxlength="40" autocomplete="off" spellcheck="false">
+            <label><input id="story-name-flavour" type="checkbox" checked><span data-i18n="storyNameFlavourLabel"></span></label>
+            <p class="window-help-text" data-i18n="storyNameFlavour"></p>
             <select id="character-profile" hidden aria-label="Legacy profile">
               <option value="balanced" data-i18n="profile.balanced"></option>
               <option value="sturdy" data-i18n="profile.sturdy"></option>
               <option value="enduring" data-i18n="profile.enduring"></option>
             </select>
-            <p data-i18n="tarotCharacterSetup"></p>
+            <p class="window-help-text" data-i18n="tarotCharacterSetup"></p>
           </div>
           <button id="start-travel" type="button" disabled data-i18n="travelStart"></button>
           <button id="resume-travel" type="button" hidden disabled data-i18n="saveResume"></button>
           <p id="journey-start-status" role="status"></p>
+          <p id="journey-start-diagnostics" class="technical-text"></p>
           <button id="cancel-journey-start" type="button" hidden data-i18n="journeyStartCancel"></button>
           <p id="journey-save-status" role="status"></p>
         </section>
@@ -121,49 +136,52 @@
           </div>
         </div>
         <div id="map-workspace">
-        <section class="travel-panel" aria-labelledby="travel-title">
+        <section id="travel-overview" class="travel-overview" aria-labelledby="travel-title" hidden>
           <h3 id="travel-title" data-i18n="travelTitle"></h3>
           <p id="journey-play-save" role="status"></p>
-          <div id="travel-controls" hidden>
-            <time id="travel-clock"></time>
-            <section class="player-needs" aria-labelledby="needs-title">
-              <h4 id="needs-title" data-i18n="needsTitle"></h4>
-              <p id="player-name"></p>
-              <p id="player-character"></p>
-              <p id="player-wallet"></p>
-              <p id="player-food"></p>
-              <p id="player-tarot"></p>
-              <p id="outdoor-status"></p>
-              <label><span data-i18n="needsHunger"></span><meter id="needs-hunger" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-hunger-value"></output></label>
-              <label><span data-i18n="needsFatigue"></span><meter id="needs-fatigue" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-fatigue-value"></output></label>
-              <label><span data-i18n="needsSleep"></span><meter id="needs-sleep" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-sleep-value"></output></label>
-              <p id="needs-warning" role="status"></p>
-              <div id="journey-ended" role="alert" hidden>
-                <p id="journey-outcome"></p>
-                <button id="restart-travel" type="button" data-i18n="journeyRestart"></button>
-              </div>
-            </section>
-            <div class="travel-atmosphere">
+            <section id="journey-atmosphere" class="journey-atmosphere" aria-labelledby="weather-title" data-temperature="unknown" data-raining="false">
             <figure id="travel-sky" class="travel-sky" hidden>
-              <svg viewBox="0 0 200 190" role="img" aria-labelledby="sky-title">
-                <title id="sky-title"></title>
-                <circle class="sky-circle" cx="100" cy="100" r="76"/>
+              <svg viewBox="0 0 200 110" preserveAspectRatio="none" aria-hidden="true">
                 <path class="sky-arc" d="M24 100 A76 76 0 0 1 176 100"/>
                 <path class="sky-horizon" d="M14 100 H186"/>
-                <g id="sky-marker">
+              </svg>
+              <svg id="sky-marker" viewBox="-18 -18 36 36" role="img" aria-labelledby="sky-title">
+                <title id="sky-title"></title>
                   <g id="sky-sun">
                     <circle r="8"/>
                     <path d="M0 -12 V-16 M0 12 V16 M-12 0 H-16 M12 0 H16 M-9 -9 L-12 -12 M9 9 L12 12 M9 -9 L12 -12 M-9 9 L-12 12"/>
                   </g>
                   <path id="sky-moon" d="M4 -10 A11 11 0 1 0 4 10 A10 10 0 0 1 4 -10"/>
-                </g>
-                <text id="sky-phase" x="100" y="133" text-anchor="middle"></text>
               </svg>
-              <figcaption id="sky-times"></figcaption>
+              <figcaption id="sky-times" hidden></figcaption>
             </figure>
+            <svg class="climate-drops" viewBox="0 0 320 190" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M20 20q-8 12 0 12t0-12 M85 55q-8 12 0 12t0-12 M150 14q-8 12 0 12t0-12 M230 40q-8 12 0 12t0-12 M300 12q-8 12 0 12t0-12 M45 140q-8 12 0 12t0-12 M120 155q-8 12 0 12t0-12 M200 125q-8 12 0 12t0-12 M280 155q-8 12 0 12t0-12"/>
+            </svg>
+            <time id="travel-clock" class="journey-time">
+              <span class="agenda-page" aria-hidden="true">
+                <span id="agenda-weekday" class="agenda-weekday"></span>
+                <span id="agenda-day" class="agenda-day"></span>
+                <span id="agenda-month" class="agenda-month"></span>
+                <span id="agenda-year" class="agenda-year"></span>
+              </span>
+              <span class="agenda-clock" aria-hidden="true">
+                <svg viewBox="0 0 80 80" class="clock-face">
+                  <circle cx="40" cy="40" r="36"/>
+                  <path d="M40 7V11 M73 40H69 M40 73V69 M7 40H11"/>
+                  <g class="clock-numerals">
+                    <text x="40" y="21">12</text><text x="61" y="44">3</text>
+                    <text x="40" y="66">6</text><text x="19" y="44">9</text>
+                  </g>
+                  <path id="agenda-hour-hand" class="clock-hand clock-hour" d="M40 40V23"/>
+                  <path id="agenda-minute-hand" class="clock-hand" d="M40 40V15"/>
+                  <circle class="clock-pin" cx="40" cy="40" r="2"/>
+                </svg>
+              </span>
+            </time>
             <section class="weather-card" aria-labelledby="weather-title">
-              <h4 id="weather-title" data-i18n="weatherTitle"></h4>
-              <div id="weather-display" hidden>
+              <h4 id="weather-title" data-i18n="weatherTitle" hidden></h4>
+              <div id="weather-display" tabindex="0" aria-describedby="weather-tooltip" hidden>
                 <svg class="weather-icon" viewBox="0 0 64 56" aria-hidden="true">
                   <g data-weather-icon="clear">
                     <circle cx="32" cy="26" r="12"/>
@@ -179,50 +197,87 @@
                 </svg>
                 <strong id="weather-temperature"></strong>
                 <span id="weather-condition"></span>
-                <span id="weather-range"></span>
-                <span class="weather-average" data-i18n="weatherAverage"></span>
               </div>
               <p id="weather-state" role="status"></p>
-            </section>
-            <details class="travel-weather">
+              <div id="weather-tooltip" role="tooltip">
+              <p id="weather-effects"></p>
+              <p id="weather-range"></p>
+              <p class="weather-average" data-i18n="weatherAverage"></p>
+              <details class="travel-weather">
               <summary data-i18n="weatherDetails"></summary>
               <p id="weather-summary"></p>
               <p data-i18n="weatherTemperatureNote"></p>
               <p id="weather-altitude" role="status"></p>
               <a id="weather-source" target="_blank" rel="noopener noreferrer" hidden></a>
             </details>
-            </div>
-            <p id="travel-stats" role="status"></p>
-            <div class="travel-actions">
-              <div class="travel-directions">
-              <button data-move="0,-1" type="button" data-i18n="travelNorth"></button>
-              <button data-move="-1,0" type="button" data-i18n="travelWest"></button>
-              <button data-move="0,1" type="button" data-i18n="travelSouth"></button>
-              <button data-move="1,0" type="button" data-i18n="travelEast"></button>
               </div>
-              <button id="rest-travel" type="button" data-i18n="travelRest"></button>
-              <button id="sleep-travel" type="button" data-i18n="needsSleepAction"></button>
-              <button id="eat-travel" type="button" data-i18n="needsEatAction"></button>
-              <button id="open-town" type="button" disabled data-i18n="townOpen"></button>
-              <button id="open-music" type="button" disabled data-i18n="musicOpen"></button>
-              <button id="open-survival-choices" type="button" disabled data-i18n="survivalChoices"></button>
-              <button id="open-trail" type="button" disabled data-i18n="trailTitle"></button>
-              <button id="open-hint" type="button" disabled data-i18n="hintTitle"></button>
-              <button id="save-travel" type="button" disabled data-i18n="saveNow"></button>
-              <button id="look-travel" type="button" aria-pressed="false" data-i18n="travelLook"></button>
-              <button id="retry-travel" type="button" data-i18n="travelRetry"></button>
-              <button id="stop-travel" type="button" data-i18n="travelStop"></button>
-            </div>
+            </section>
+            </section>
+            <section class="player-needs" aria-labelledby="needs-title">
+              <h4 id="needs-title" data-i18n="needsTitle"></h4>
+              <label><span data-i18n="needsHealth"></span><meter id="needs-health" min="0" max="100" low="25" high="60" optimum="100"></meter><output id="needs-health-value"></output></label>
+              <label><span data-i18n="needsHunger"></span><meter id="needs-hunger" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-hunger-value"></output></label>
+              <label><span data-i18n="needsFatigue"></span><meter id="needs-fatigue" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-fatigue-value"></output></label>
+              <label><span data-i18n="needsSleep"></span><meter id="needs-sleep" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-sleep-value"></output></label>
+              <div id="player-vigilance" hidden>
+                <label><span data-i18n="pressureVigilance"></span><meter id="pressure-vigilance" min="0" max="100" low="40" high="75" optimum="0"></meter><output id="pressure-vigilance-value"></output></label>
+              </div>
+              <div id="player-hygiene" hidden>
+                <label><span data-i18n="pressureCleanliness"></span><meter id="pressure-cleanliness" min="0" max="100" low="30" high="70" optimum="100"></meter><output id="pressure-cleanliness-value"></output></label>
+                <button id="dog-travel" type="button" hidden></button>
+                <p data-i18n="washHelp"></p>
+              </div>
+              <p id="needs-speed-effect" role="status"></p>
+              <p id="needs-warning" role="status"></p>
+              <p id="player-name"></p>
+              <p id="player-character"></p>
+              <p id="player-wallet"></p>
+              <button id="equipment-travel" type="button" data-i18n="equipmentTitle" disabled></button>
+              <p id="player-food"></p>
+              <p id="player-tarot"></p>
+              <p id="outdoor-status"></p>
+              <details id="pressure-panel" hidden>
+                <summary data-i18n="pressureTitle"></summary>
+                <label><span data-i18n="pressureSympathy"></span><meter id="pressure-sympathy" min="0" max="100" low="30" high="70" optimum="100"></meter><output id="pressure-sympathy-value"></output></label>
+                <p id="pressure-status"></p>
+                <p id="pressure-tarot"></p>
+                <p data-i18n="pressureHelp"></p>
+              </details>
+              <div id="journey-ended" role="alert" hidden>
+                <p id="journey-outcome"></p>
+                <details id="closing-story" hidden open>
+                  <summary data-i18n="closingStoryTitle"></summary>
+                  <p id="closing-story-text"></p>
+                  <p id="closing-story-status" role="status"></p>
+                </details>
+                <button id="restart-travel" type="button" data-i18n="journeyRestart"></button>
+              </div>
+            </section>
+        </section>
+        <section class="travel-panel" aria-labelledby="travel-title">
+          <div id="travel-controls" hidden>
+            <details class="journey-details">
+              <summary data-i18n="journeyDetails"></summary>
+              <p id="travel-stats" role="status"></p>
+            </details>
+            <p id="travel-blocker" role="status" hidden></p>
+              <p id="rest-effect"></p>
+              <p id="journey-world-notice" role="status"></p>
             <p id="look-status" role="status"></p>
+            <p id="lodging-target-status" role="status" hidden></p>
+            <button id="lodging-target-clear" type="button" data-i18n="lodgingTargetClear" hidden></button>
             <p id="meal-location"></p>
             <div id="travel-elevation"></div>
             <p id="travel-streaming" role="status"></p>
-            <details class="travel-help">
+            <details class="travel-help window-help-text">
               <summary data-i18n="travelHelp"></summary>
               <p id="travel-note"></p>
             </details>
           </div>
           <p id="travel-status" role="status"></p>
+          <p id="travel-diagnostics" class="technical-text"></p>
+          <p id="journey-path-status" role="status"></p>
+          <button id="journey-path-retry" type="button" data-i18n="journeyPath.retry" hidden></button>
         </section>
         <div class="map-comparison">
           <section class="comparison-panel" aria-labelledby="ascii-title">
@@ -230,9 +285,34 @@
             <div class="map-viewport" id="map-viewport" aria-live="polite">
               <pre class="ascii-map" id="ascii-map" aria-label="Carte fixe de la région"></pre>
             </div>
+            <nav id="travel-toolbar" class="travel-toolbar" aria-label="Actions" hidden>
+              <button data-move="0,-1" type="button" data-i18n="travelNorth"></button>
+              <button data-move="-1,0" type="button" data-i18n="travelWest"></button>
+              <button data-move="0,1" type="button" data-i18n="travelSouth"></button>
+              <button data-move="1,0" type="button" data-i18n="travelEast"></button>
+              <button id="open-survival-choices" type="button" disabled data-i18n="survivalChoices" aria-haspopup="dialog" aria-controls="survival-choices-dialog"></button>
+              <button id="open-conversation" type="button" disabled data-i18n="conversation.title" aria-haspopup="dialog" aria-controls="conversation-dialog"></button>
+              <button id="open-quests" type="button" disabled data-i18n="quests.title" aria-haspopup="dialog" aria-controls="trail-dialog"></button>
+              <button id="rest-travel" type="button" data-i18n="travelRest"></button>
+              <button id="save-travel" type="button" disabled data-i18n="saveNow"></button>
+              <button id="look-travel" type="button" aria-pressed="false" data-i18n="travelLook"></button>
+              <button id="retry-travel" type="button" data-i18n="travelRetry"></button>
+              <button id="stop-travel" type="button" data-i18n="travelStop"></button>
+            </nav>
+            <div data-shortcut-sources="travel-toolbar" hidden>
+              <button id="sleep-travel" type="button" data-i18n="needsSleepAction"></button>
+              <button id="eat-travel" type="button" data-i18n="needsEatAction"></button>
+              <button id="open-town" type="button" disabled data-i18n="townOpen"></button>
+              <button id="open-earn-money" type="button" disabled data-i18n="earnMoney"></button>
+              <button id="open-journey-world" type="button" disabled data-i18n="worldTitle"></button>
+            </div>
+            <p id="travel-toolbar-help" data-i18n="toolbarHelp" hidden></p>
+            <p id="quest-followed-target" role="status" hidden></p>
             <p class="cell-info" id="cell-info" role="status"></p>
+            <button id="copy-coordinates" type="button" disabled data-i18n="copyCoordinates"></button>
+            <p id="copy-coordinates-status" role="status"></p>
             <section class="cell-content" aria-labelledby="ascii-title">
-              <p id="content-hint" data-i18n="contentHint"></p>
+              <p id="content-hint" class="window-help-text" data-i18n="contentHint"></p>
               <p id="content-position"></p>
               <div id="cell-description" role="status"></div>
               <details id="cell-pois" hidden>
@@ -263,10 +343,21 @@
 
       <footer class="status-line">
         <span class="status-dot" aria-hidden="true"></span>
-        <span data-i18n="status">Carte fixe — le déplacement arrive à la couche 02.</span>
+        <span data-i18n="status">Un pas après l’autre.</span>
       </footer>
       </div>
     </main>
+    <div id="save-feedback" role="status" aria-atomic="true" hidden></div>
+    <dialog id="controls-dialog" aria-labelledby="controls-title">
+      <h2 id="controls-title" data-i18n="controlsTitle"></h2>
+      <form method="dialog"><button autofocus data-i18n="controlsClose"></button></form>
+      <p id="controls-intro" class="window-help-text" data-i18n="controlsIntro"></p>
+      <table>
+        <thead><tr><th scope="col" data-i18n="controlsKey"></th><th scope="col" data-i18n="controlsUsage"></th></tr></thead>
+        <tbody id="controls-list"></tbody>
+      </table>
+      <p class="window-help-text" data-i18n="controlsDialogs"></p>
+    </dialog>
     <dialog id="options-dialog" aria-labelledby="options-title">
       <h2 id="options-title" data-i18n="optionsTitle"></h2>
       <section class="option-group">
@@ -285,39 +376,100 @@
           <label for="audio-volume" data-i18n="audioVolume"></label>
           <input id="audio-volume" type="range" min="0" max="100" value="25">
           <span id="audio-status" role="status"></span>
+          <p class="window-help-text" data-i18n="footstepNote"></p>
+          <p id="footstep-status" role="status"></p>
+          <p id="journey-audio-status" role="status"></p>
         </div>
       </section>
+      <section class="option-group release-info" aria-labelledby="options-release-title">
+        <h3 id="options-release-title" data-i18n="releaseTitle"></h3>
+        <p id="release-version"></p>
+        <p id="release-deployment"></p>
+        <p id="release-status" role="status" aria-live="polite"></p>
+        <details>
+          <summary data-i18n="releaseChangelog"></summary>
+          <ul id="release-entries"></ul>
+        </details>
+      </section>
+      <p class="technical-text"><a href="./layers/living-world/preview.html" target="_blank" rel="noopener noreferrer" data-i18n="livingWorldPreview"></a></p>
       <form method="dialog"><button id="close-options" data-i18n="optionsClose"></button></form>
+    </dialog>
+    <dialog id="journey-world-dialog" aria-labelledby="journey-world-title">
+      <h2 id="journey-world-title"></h2>
+      <p id="journey-world-help" class="window-help-text"></p>
+      <button id="journey-world-refresh" type="button"></button>
+      <p id="journey-world-status" role="status"></p>
+      <p id="journey-world-coverage" class="technical-text"></p>
+      <p id="journey-world-error" role="alert"></p>
+      <h3 data-i18n="worldEvents"></h3>
+      <ul id="journey-world-events"></ul>
+      <h3 data-i18n="worldTransport"></h3>
+      <div id="journey-world-transports"></div>
+      <form method="dialog"><button data-i18n="windowHelpClose"></button></form>
+    </dialog>
+    <dialog id="trail-dream-dialog" aria-labelledby="trail-dream-title" aria-describedby="trail-dream-text">
+      <h2 id="trail-dream-title"></h2>
+      <p id="trail-dream-text"></p>
+      <p class="window-help-text" data-i18n="trailDreamRules"></p>
+      <button id="trail-dream-journal" type="button"></button>
+      <button id="trail-dream-continue" type="button"></button>
+    </dialog>
+    <dialog id="trail-arrival-dialog" aria-labelledby="trail-arrival-title" aria-describedby="trail-arrival-text">
+      <h2 id="trail-arrival-title"></h2>
+      <p id="trail-arrival-text"></p>
+      <button id="trail-arrival-investigate" type="button"></button>
+      <button id="trail-arrival-continue" type="button"></button>
+    </dialog>
+    <dialog id="abandoned-journals-dialog" aria-labelledby="abandoned-title">
+      <header class="journal-header">
+        <h2 id="abandoned-title" data-i18n="abandoned.title"></h2>
+        <button id="abandoned-close" type="button" data-i18n="windowHelpClose"></button>
+      </header>
+      <section id="abandoned-journals">
+        <p id="abandoned-status" role="status"></p>
+        <button id="abandoned-refresh" type="button" data-i18n="abandoned.refresh"></button>
+        <h3 data-i18n="abandoned.carried"></h3>
+        <ul id="abandoned-list"></ul>
+      </section>
+    </dialog>
+    <dialog id="opening-story-dialog" aria-labelledby="opening-story-title">
+      <h2 id="opening-story-title" data-i18n="openingStoryTitle"></h2>
+      <p id="opening-story-text"></p>
+      <p id="opening-story-status" role="status" aria-live="polite"></p>
+      <button id="opening-story-continue" type="button" data-i18n="openingStoryBegin"></button>
     </dialog>
     <dialog id="birth-tarot-dialog" aria-labelledby="birth-tarot-title">
       <h2 id="birth-tarot-title" data-i18n="birthTarotTitle"></h2>
       <p id="birth-character-name"></p>
-      <p data-i18n="birthTarotIntro"></p>
+      <p class="window-help-text" data-i18n="birthTarotIntro"></p>
       <p id="birth-tarot-save" role="status"></p>
-      <pre class="birth-card-art" aria-hidden="true"></pre>
+      <figure class="birth-card-art"></figure>
       <button id="birth-tarot-draw" type="button" data-i18n="birthTarotDraw"></button>
       <div id="birth-tarot-reveal" hidden>
+        <div id="birth-tarot-journal"></div>
+        <div id="birth-daily-tarot-journal"></div>
         <h3 id="birth-tarot-name"></h3>
         <p id="birth-tarot-meaning"></p>
         <p id="birth-tarot-budget"></p>
         <p id="birth-tarot-attributes"></p>
         <p id="birth-tarot-events"></p>
-        <p data-i18n="birthTarotNote"></p>
+        <p class="window-help-text" data-i18n="birthTarotNote"></p>
         <button id="birth-tarot-continue" type="button" data-i18n="birthTarotContinue"></button>
       </div>
     </dialog>
     <dialog id="daily-tarot-dialog" aria-labelledby="daily-tarot-title">
       <h2 id="daily-tarot-title" data-i18n="dailyTarotTitle"></h2>
       <p id="daily-tarot-date"></p>
-      <p data-i18n="dailyTarotIntro"></p>
+      <p class="window-help-text" data-i18n="dailyTarotIntro"></p>
       <p id="daily-tarot-save" role="status"></p>
-      <pre id="daily-tarot-art" class="birth-card-art" aria-hidden="true"></pre>
+      <figure id="daily-tarot-art" class="birth-card-art"></figure>
       <button id="daily-tarot-draw" type="button" data-i18n="birthTarotDraw"></button>
       <div id="daily-tarot-reveal" hidden>
+        <div id="daily-tarot-journal"></div>
         <h3 id="daily-tarot-name"></h3>
         <p id="daily-tarot-meaning"></p>
         <p id="daily-tarot-events"></p>
-        <p data-i18n="dailyTarotNote"></p>
+        <p class="window-help-text" data-i18n="dailyTarotNote"></p>
         <button id="daily-tarot-continue" type="button" data-i18n="birthTarotContinue"></button>
       </div>
     </dialog>
@@ -328,9 +480,40 @@
       </div>
       <div id="osm-reference" hidden>
         <iframe id="osm-frame" title="Carte OpenStreetMap de comparaison" referrerpolicy="no-referrer"></iframe>
-        <p class="reference-note" data-i18n="referenceNote"></p>
+        <p class="reference-note window-help-text" data-i18n="referenceNote"></p>
         <a class="reference-link" id="osm-link" target="_blank" rel="noopener noreferrer" data-i18n="referenceLink"></a>
       </div>
+    </dialog>
+    <dialog id="photo-journal-dialog" aria-labelledby="journal-title">
+      <section id="journal-abandoned-clues"></section>
+      <header class="notebook-heading">
+        <h2 id="journal-title" data-i18n="journalTitle"></h2>
+        <form method="dialog"><button data-i18n="closePhoto"></button></form>
+      </header>
+      <p class="journal-storage-note" data-i18n="journalStorage"></p>
+      <details id="journal-discovery" hidden></details>
+      <nav class="content-actions" aria-label="Carnet">
+        <button id="journal-cover-page" type="button" data-i18n="journalCoverPage" disabled></button>
+        <button id="journal-photos-page" type="button" data-i18n="journalPhotosPage"></button>
+        <button id="journal-stats-page" type="button" data-i18n="journalStatsPage" disabled></button>
+        <button id="journal-map-page" type="button" data-i18n="journalMapPage" disabled></button>
+        <button id="journal-back-cover-page" type="button" data-i18n="journalBackCoverPage" hidden></button>
+        <button id="journal-export-pdf" type="button" data-i18n="journalExportPdf"></button>
+      </nav>
+      <div id="journal-pages" class="notebook-spread"></div>
+      <section id="journal-closing-story" class="notebook-page journal-back-cover" aria-labelledby="journal-closing-title" hidden>
+        <h3 id="journal-closing-title" data-i18n="closingStoryTitle"></h3>
+        <p id="journal-closing-text" class="journal-narrative-text"></p>
+        <p id="journal-closing-status" class="technical-text" role="status"></p>
+        <button id="journal-closing-rewrite" type="button" data-i18n="closingStoryRewrite"></button>
+      </section>
+      <footer class="notebook-navigation">
+        <button id="journal-previous" type="button"></button>
+        <span id="journal-count" role="status"></span>
+        <button id="journal-next" type="button"></button>
+      </footer>
+      <p id="journal-status" role="status"></p>
+      <button id="journal-retry" type="button"></button>
     </dialog>
     <dialog id="photo-dialog" aria-labelledby="photo-title">
       <h2 id="photo-title" data-i18n="photoTitle"></h2>
@@ -347,59 +530,128 @@
         <h2 id="town-title"></h2>
         <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
       </div>
-      <p data-i18n="townScope"></p>
+      <p class="window-help-text" data-i18n="townScope"></p>
       <div id="town-welcome" role="status"></div>
       <div class="content-actions">
         <button id="town-refresh" type="button" data-i18n="townRefresh"></button>
         <button id="town-services" type="button" data-i18n="mealTitle"></button>
-        <button id="town-music" type="button" data-i18n="musicOpen"></button>
+        <button id="town-accommodation" type="button" data-i18n="accommodationTitle"></button>
+        <button id="town-equipment-shop" type="button" data-i18n="equipmentShopTitle" aria-haspopup="dialog" aria-controls="equipment-shop-dialog" disabled></button>
+        <button id="town-earn-money" type="button" data-i18n="earnMoney"></button>
         <button id="town-survival-choices" type="button" data-i18n="survivalChoices"></button>
-        <button id="town-trail" type="button" data-i18n="trailTitle"></button>
+        <button id="wash-travel" type="button" disabled></button>
       </div>
+      <p id="town-wash-status" role="status"></p>
       <h3 data-i18n="townPlacesTitle"></h3>
       <p id="town-empty" data-i18n="townEmpty"></p>
       <ul id="town-places"></ul>
+      <button id="town-conversation" type="button" data-i18n="conversation.title"></button>
       <div id="town-place-detail" role="status"></div>
-      <p data-i18n="townFiction"></p>
       <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" data-i18n="attribution"></a>
+    </dialog>
+    <dialog id="conversation-dialog" aria-labelledby="conversation-title">
+      <header class="journal-header">
+        <h2 id="conversation-title" data-i18n="conversation.title"></h2>
+        <button id="conversation-close" type="button" data-i18n="windowHelpClose"></button>
+      </header>
+      <p id="conversation-context"></p>
+      <p data-i18n="conversation.intro"></p>
+      <div class="conversation-topics">
+        <button id="conversation-parent" type="button" data-i18n="conversation.parent"></button>
+        <button id="conversation-clues" type="button" data-i18n="conversation.clues"></button>
+        <button id="conversation-notebooks" type="button" data-i18n="conversation.notebooks"></button>
+        <button id="conversation-artifacts" type="button" data-i18n="conversation.artifacts"></button>
+        <button id="conversation-services" type="button" data-i18n="quests.services"></button>
+        <button id="conversation-shelter" type="button" data-i18n="conversation.shelter"></button>
+        <button id="conversation-food" type="button" data-i18n="conversation.food"></button>
+        <button id="conversation-work" type="button" data-i18n="conversation.work"></button>
+        <button id="conversation-transport" type="button" data-i18n="conversation.transport"></button>
+        <button id="conversation-town" type="button" data-i18n="conversation.town"></button>
+      </div>
+      <p id="conversation-reply" role="status" tabindex="-1" hidden></p>
+      <p data-i18n="conversation.rules"></p>
     </dialog>
     <dialog id="survival-choices-dialog" aria-labelledby="survival-choices-title">
       <h2 id="survival-choices-title" data-i18n="survivalChoices"></h2>
       <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
-      <p data-i18n="survivalChoicesFiction"></p>
+      <p id="survival-choice-result" role="status" tabindex="-1" hidden></p>
+      <p id="survival-choice-error" role="alert" tabindex="-1" hidden></p>
       <p id="cell-action-context"></p>
       <div class="cell-action-services">
         <button id="cell-buy" type="button" data-i18n="cellBuy"></button>
         <button id="cell-rest" type="button" data-i18n="cellRest"></button>
         <button id="cell-sleep" type="button" data-i18n="cellSleep"></button>
-        <button id="cell-music" type="button" data-i18n="musicOpen"></button>
-        <button id="cell-clues" type="button" data-i18n="cellClues"></button>
+        <button id="cell-earn-money" type="button" data-i18n="earnMoney"></button>
+        <button id="cell-town" type="button" data-i18n="townOpen"></button>
+        <button id="cell-conversation" type="button" data-i18n="conversation.title"></button>
+        <button id="cell-transport" type="button" data-i18n="worldTitle"></button>
+        <button id="cell-equipment" type="button" data-i18n="equipmentTitle"></button>
+        <button id="cell-dog" type="button" data-i18n="cellDog"></button>
+        <button id="cell-journal" type="button" data-i18n="journalTitle"></button>
+        <button id="cell-photo" type="button" data-i18n="showPhoto"></button>
+        <button id="cell-save" type="button" data-i18n="saveNow"></button>
       </div>
-      <p data-i18n="cellActionAvailability"></p>
+      <p data-i18n="cellActionsDisabled"></p>
+      <p class="window-help-text" data-i18n="cellActionAvailability"></p>
       <button id="choice-forage" type="button" data-i18n="choice.forage"></button>
       <p id="choice-forage-note"></p>
-      <button id="choice-beg" type="button" data-i18n="choice.beg"></button>
-      <p id="choice-beg-note"></p>
-      <button id="choice-steal" type="button" data-i18n="choice.steal"></button>
-      <p id="choice-steal-note"></p>
-      <p id="survival-choice-result" role="status"></p>
       <p id="survival-choice-save" role="status"></p>
-      <p id="survival-choice-error" role="alert"></p>
+    </dialog>
+    <dialog id="earn-money-dialog" aria-labelledby="earn-money-title">
+      <h2 id="earn-money-title" data-i18n="earnMoney"></h2>
+      <form method="dialog"><button data-i18n="townLeave"></button></form>
+      <p class="window-help-text" data-i18n="earnMoneyScope"></p>
+      <p id="earn-money-empty" data-i18n="earnMoneyEmpty"></p>
+      <p id="earn-money-result" role="status" tabindex="-1"></p>
+      <p id="earn-money-error" role="alert" tabindex="-1"></p>
+      <section id="earn-beg">
+        <button id="choice-beg" type="button" data-i18n="choice.beg"></button>
+        <p id="choice-beg-note"></p>
+      </section>
+      <section id="earn-steal">
+        <button id="choice-steal" type="button" data-i18n="choice.steal"></button>
+        <p id="choice-steal-note"></p>
+        <p class="window-help-text" data-i18n="earnTheftFood"></p>
+      </section>
+      <section id="earn-music">
+        <button id="open-music" type="button" data-i18n="musicOpen"></button>
+        <p data-i18n="musicCost"></p>
+      </section>
+      <section id="earn-cafe">
+        <button id="open-cafe" type="button" data-i18n="cafeOpen"></button>
+        <p data-i18n="cafeCost"></p>
+      </section>
+      <p id="earn-money-save" role="status"></p>
     </dialog>
     <dialog id="economy-dialog" aria-labelledby="economy-title">
       <h2 id="economy-title"></h2>
       <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
-      <p id="economy-pricing"></p>
-      <a id="economy-price-source" target="_blank" rel="noopener noreferrer" data-i18n="priceSource"></a>
-      <p data-i18n="economyFiction"></p>
+      <details class="technical-details">
+        <summary data-i18n="technicalDetails"></summary>
+        <p id="economy-pricing"></p>
+        <a id="economy-price-source" target="_blank" rel="noopener noreferrer" data-i18n="priceSource"></a>
+      </details>
       <p id="economy-empty" data-i18n="noLocalMeal"></p>
+      <p id="economy-dream-help" class="window-help-text" hidden></p>
+      <p id="economy-shelter-context"></p>
+      <p id="economy-hospitality-result" role="status"></p>
       <ul id="economy-options"></ul>
       <p id="economy-action-error" role="alert"></p>
+      <details id="nearby-accommodation" hidden>
+        <summary data-i18n="accommodationTitle"></summary>
+        <button id="accommodation-search" type="button" data-i18n="accommodationSearch"></button>
+        <p id="accommodation-status" role="status"></p>
+        <p id="accommodation-details" class="technical-text"></p>
+        <ul id="accommodation-results"></ul>
+      </details>
     </dialog>
     <dialog id="music-dialog" aria-labelledby="music-title">
       <h2 id="music-title" data-i18n="musicOpen"></h2>
       <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
-      <p data-i18n="musicInstructions"></p>
+      <p class="window-help-text" data-i18n="musicInstructions"></p>
+      <p id="music-card-effect"></p>
+      <p id="music-skill"></p>
+      <p id="music-audio-status" role="status"></p>
       <p data-i18n="musicCost"></p>
       <button id="music-start" type="button" data-i18n="musicStart"></button>
       <div id="music-track" aria-hidden="true"></div>
@@ -408,40 +660,142 @@
       <p id="music-score" role="status"></p>
       <p id="music-result" role="status"></p>
     </dialog>
+    <dialog id="theft-dialog" aria-labelledby="theft-title">
+      <h2 id="theft-title" data-i18n="theftTitle"></h2>
+      <form method="dialog"><button data-i18n="townLeave"></button></form>
+      <p class="window-help-text" data-i18n="theftInstructions"></p>
+      <p data-i18n="theftCost"></p>
+      <button id="theft-start" type="button" data-i18n="theftStart"></button>
+      <div class="theft-track" aria-hidden="true">
+        <span class="theft-target"></span><span id="theft-marker">|</span>
+      </div>
+      <p id="theft-clock" role="status"></p>
+      <button id="theft-grab" type="button" data-i18n="theftGrab" disabled></button>
+      <p id="theft-result" role="status"></p>
+      <p id="theft-audio-status" role="status"></p>
+    </dialog>
+    <dialog id="cafe-dialog" aria-labelledby="cafe-title">
+      <h2 id="cafe-title" data-i18n="cafeOpen"></h2>
+      <form method="dialog"><button data-i18n="townLeave"></button></form>
+      <p class="window-help-text" data-i18n="cafeInstructions"></p>
+      <p data-i18n="cafeCost"></p>
+      <p id="cafe-audio-status" role="status"></p>
+      <p id="cafe-skill"></p>
+      <label><span data-i18n="cafeChooseVenue"></span><select id="cafe-venue"></select></label>
+      <button id="cafe-start" type="button" data-i18n="cafeStart"></button>
+      <div id="cafe-orders" class="cafe-orders" role="group"></div>
+      <div id="cafe-tray-art" class="cafe-tray-art" aria-hidden="true"></div>
+      <p id="cafe-tray"></p>
+      <div class="cafe-ingredients">
+        <button id="cafe-coffee" type="button" disabled><span class="cafe-item-art cafe-item-coffee" aria-hidden="true"></span><span data-i18n="cafeItem.coffee"></span></button>
+        <button id="cafe-tea" type="button" disabled><span class="cafe-item-art cafe-item-tea" aria-hidden="true"></span><span data-i18n="cafeItem.tea"></span></button>
+        <button id="cafe-water" type="button" disabled><span class="cafe-item-art cafe-item-water" aria-hidden="true"></span><span data-i18n="cafeItem.water"></span></button>
+        <button id="cafe-bread" type="button" disabled><span class="cafe-item-art cafe-item-bread" aria-hidden="true"></span><span data-i18n="cafeItem.bread"></span></button>
+        <button id="cafe-cake" type="button" disabled><span class="cafe-item-art cafe-item-cake" aria-hidden="true"></span><span data-i18n="cafeItem.cake"></span></button>
+      </div>
+      <div class="content-actions">
+        <button id="cafe-clear" type="button" data-i18n="cafeClear" disabled></button>
+        <button id="cafe-serve" type="button" data-i18n="cafeServe" disabled></button>
+      </div>
+      <p id="cafe-score" role="status"></p>
+      <p id="cafe-result" role="status"></p>
+    </dialog>
+    <dialog id="journey-event-dialog" aria-labelledby="journey-event-title" aria-describedby="journey-event-text">
+      <h2 id="journey-event-title" data-i18n="journeyEventTitle"></h2>
+      <figure class="journey-event-illustration">
+        <pre id="journey-event-art" aria-hidden="true"></pre>
+        <figcaption data-i18n="journeyEventIllustration"></figcaption>
+      </figure>
+      <p id="journey-event-text"></p>
+      <p id="journey-event-cards"></p>
+      <p class="window-help-text" data-i18n="journeyEventRules"></p>
+      <p id="journey-event-save" role="status"></p>
+      <button id="journey-event-continue" type="button" data-i18n="journeyEventContinue"></button>
+    </dialog>
     <dialog id="needs-notice-dialog" aria-labelledby="needs-notice-title" aria-describedby="needs-notice-text">
       <h2 id="needs-notice-title"></h2>
+      <figure id="needs-death-card" hidden></figure>
+      <button id="needs-death-retry" type="button" data-i18n="deathArtworkRetry" hidden></button>
       <p id="needs-notice-text"></p>
       <div id="needs-notice-actions">
         <button id="needs-notice-cell" type="button" data-i18n="survivalChoices"></button>
+        <button id="needs-notice-rest" type="button" data-i18n="travelRest" hidden></button>
+        <button id="needs-notice-sleep" type="button" data-i18n="sleepTitle" hidden></button>
       </div>
       <form method="dialog"><button data-i18n="needsNoticeClose" autofocus></button></form>
     </dialog>
+    <div id="death-fade" aria-hidden="true"></div>
     <dialog id="hint-dialog" aria-labelledby="hint-title">
       <h2 id="hint-title" data-i18n="hintTitle"></h2>
-      <p data-i18n="hintFree"></p>
+      <p class="window-help-text" data-i18n="hintFree"></p>
+      <p data-i18n="hintWarning"></p>
+      <p id="hint-cost"></p>
+      <ul id="hint-clues"></ul>
+      <button id="hint-ask" type="button" data-i18n="hintAsk"></button>
+      <section id="hint-towns" hidden>
+        <h3 data-i18n="hintTownsTitle"></h3>
+        <label for="hint-town" data-i18n="hintTownSelect"></label>
+        <select id="hint-town"></select>
+        <p class="window-help-text" data-i18n="hintTownHelp"></p>
+        <button id="hint-town-ask" type="button" data-i18n="hintTownAsk"></button>
+      </section>
       <p id="hint-guidance" role="status"></p>
+      <p id="hint-action-error" role="alert"></p>
       <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
     </dialog>
     <dialog id="trail-dialog" aria-labelledby="trail-title">
-      <h2 id="trail-title"></h2>
-      <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
-      <p id="trail-intro"></p>
-      <p id="trail-catalogue-credit" hidden><a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames contributors</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
-      <p data-i18n="trailFiction"></p>
-      <p id="trail-target" role="status"></p>
-      <a id="trail-map-link" target="_blank" rel="noopener noreferrer" data-i18n="townOsm"></a>
-      <button id="trail-interview" type="button" disabled></button>
-      <p data-i18n="trailCost"></p>
-      <div id="trail-actions"></div>
-      <section id="trail-discovery" hidden>
-        <h3 id="trail-discovery-title"></h3>
-        <blockquote id="trail-discovery-text"></blockquote>
-        <figure id="trail-clue-photo"></figure>
-      </section>
-      <p id="trail-action-error" role="alert"></p>
-      <p id="trail-save-status" role="status"></p>
-      <ol id="trail-history"></ol>
-      <button id="trail-restart" type="button" data-i18n="journeyRestart"></button>
+      <header class="trail-heading">
+        <h2 id="trail-title"></h2>
+        <form method="dialog"><button data-i18n="townLeave" autofocus></button></form>
+      </header>
+      <nav class="trail-sections" aria-label="Pages">
+        <button id="trail-section-current" type="button" data-i18n="trailSectionCurrent" aria-pressed="true"></button>
+        <button id="trail-section-past" type="button" data-i18n="trailSectionPast" aria-pressed="false"></button>
+      </nav>
+      <div class="trail-layout">
+        <aside class="trail-guide" aria-labelledby="trail-guide-title">
+          <h3 id="trail-guide-title" data-i18n="trailGuideTitle"></h3>
+          <p id="trail-intro" class="window-help-text"></p>
+          <p id="parent-narrative-status" role="status"></p>
+          <button id="read-opening-story" type="button" data-i18n="openingStoryRead"></button>
+          <p id="trail-target" role="status"></p>
+          <section id="parent-story" hidden aria-labelledby="parent-story-title">
+            <h3 id="parent-story-title" data-i18n="parentStory.title"></h3>
+            <p id="parent-story-summary"></p>
+            <p id="parent-story-motion"></p>
+            <ul id="parent-story-records"></ul>
+          </section>
+          <p id="trail-catalogue-credit" hidden><a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames contributors</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
+          <p id="trail-save-status" role="status"></p>
+          <div id="restored-birth-tarot-journal"></div>
+          <div id="restored-daily-tarot-journal"></div>
+        </aside>
+        <section class="trail-main" aria-labelledby="trail-main-title">
+          <h3 id="trail-main-title"></h3>
+          <section id="trail-investigation-page" hidden>
+          <button id="trail-interview" type="button" disabled></button>
+          <p data-i18n="trailCost"></p>
+          <div id="trail-actions"></div>
+          <p id="trail-action-error" role="alert"></p>
+          </section>
+          <section id="trail-evidence-page">
+          <div id="trail-archive-pages" class="trail-pages" aria-label="Pages" hidden>
+            <button id="trail-page-previous" type="button" data-i18n="trailPagePrevious"></button>
+            <button id="trail-page-current" type="button" data-i18n="trailPageCurrent"></button>
+            <button id="trail-page-next" type="button" data-i18n="trailPageNext"></button>
+          </div>
+          <p id="trail-page-status" role="status"></p>
+          <p id="trail-evidence-summary" role="status"></p>
+          <section id="trail-discovery" hidden>
+            <h3 id="trail-discovery-title"></h3>
+            <blockquote id="trail-discovery-text"></blockquote>
+            <time id="trail-discovery-date" class="trail-entry-date"></time>
+          </section>
+          <figure id="trail-clue-photo" hidden></figure>
+          <ol id="trail-history"></ol>
+          </section>
+        </section>
+      </div>
     </dialog>
   </body>
 </html>

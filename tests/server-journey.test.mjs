@@ -2,12 +2,24 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { createServerJourney, validateServerJourney } from "../server-journey.mjs";
-import { createJourneyStore, createSave, validateSave } from "../journey-save.mjs";
+import { createServerJourney, validateServerJourney, serverJourneyExists } from "../server-journey.mjs";
+import { createJourneyStore, createSave, validateSave, archivedJourneys } from "../journey-save.mjs";
 import { walkSurvival } from "../survival.mjs";
 import { finishAction, refreshPricing } from "../economy.mjs";
 
 const root = new URL("../", import.meta.url);
+test("replacement detects only an explicitly missing server journey, never connectivity/auth failures", async () => {
+  const state = { serverJourney: { id: "a".repeat(32) } };
+  const reply = (value, status = 200) => new Response(JSON.stringify(value), { status });
+  assert.equal(await serverJourneyExists(state, async () => reply({ state })), true);
+  assert.equal(await serverJourneyExists(state, async () => reply({ error: "Server journey not found." }, 404)), false);
+  for (const status of [401, 403, 404, 500]) {
+    await assert.rejects(serverJourneyExists(state, async () => reply({ error: "Unavailable" }, status)), /Unavailable/);
+  }
+  await assert.rejects(serverJourneyExists(state, async () => { throw new Error("offline"); }), /offline/);
+  await assert.rejects(serverJourneyExists(state, async () => reply({ state: {} })), /Invalid/);
+});
+
 const python = existsSync(new URL(".venv/bin/python", root)) ? ".venv/bin/python" : "python3";
 const { record, variants } = JSON.parse(execFileSync(python, ["-c", `
 import copy, json, sys, tempfile, uuid
@@ -26,12 +38,36 @@ with tempfile.TemporaryDirectory() as directory:
             record["state"]["startedAt"], card, record["survival"], record["economy"],
             record["state"]["trail"])
         variant["state"]["serverJourney"] = record["state"]["serverJourney"]
+        variant["state"]["trail"] = copy.deepcopy(record["state"]["trail"])
+        variant["state"]["trail"]["story"]["birthCard"] = card["id"]
         variants.append(variant)
     print(json.dumps({"record": record, "variants": variants}))
 `], { cwd: root, encoding: "utf8" }));
 const map = JSON.parse(readFileSync(new URL("../public/map.json", import.meta.url)));
 const response = (value = record, status = 201) => new Response(JSON.stringify(value), {
   status, headers: { "Content-Type": "application/json" },
+});
+
+test("a missing old server journey can be archived and replaced without losing the exact old save", async () => {
+  const values = new Map();
+  const storage = { get length() { return values.size; }, key: i => [...values.keys()][i] ?? null,
+    getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
+  const store = createJourneyStore(storage);
+  store.read("firmi");
+  const old = structuredClone(record.state);
+  old.serverJourney.id = "0".repeat(32);
+  old.journalAccess = "a".repeat(64);
+  const saved = store.write({ region: "firmi", map, state: old, survival: record.survival, economy: record.economy });
+  assert.equal(await serverJourneyExists(old, async () =>
+    response({ error: "Server journey not found." }, 404)), false);
+  store.archive(saved);
+  const fresh = await createServerJourney("firmi", map, "Alex", crypto.randomUUID(),
+    new AbortController().signal, async () => response());
+  store.write({ region: "firmi", map, state: { ...fresh.state, journalAccess: "b".repeat(64) },
+    survival: fresh.survival, economy: fresh.economy });
+  assert.deepEqual(archivedJourneys(storage), [saved]);
+  assert.equal(store.read("firmi").state.serverJourney.id, record.state.serverJourney.id);
+  assert.equal(archivedJourneys(storage)[0].state.journalAccess, old.journalAccess);
 });
 
 test("Python initial states match existing JavaScript rules for every starting tarot", () => {

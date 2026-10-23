@@ -1,8 +1,11 @@
+import { recordJourneyPosition } from "./journey-map.mjs";
+
 export const TRAVEL_MODEL = {
   baseSpeedKmh: 4.5,
   bodyMassKg: 40,
   restMinutes: 30,
   restFatigueRecovery: 20,
+  waterFatiguePerCell: 40,
 };
 
 const GROUND_COST = {
@@ -23,6 +26,21 @@ export function journeyDate(state) {
   return new Date(state.startedAt + state.elapsedMinutes * 60_000);
 }
 
+export function journeyActionBlocker(state, { busy = false, cell } = {}) {
+  if (!state) return null;
+  if (busy) return "loading";
+  if (!cell) return "terrain";
+  if (state.ended) return "ended";
+  if (state.transport?.booking?.status === "active") return "transport";
+  if (state.events?.pending) return "event";
+  if (state.equipment?.dogEncounter === "pending") return "dog";
+  if (state.performancePending) return "music";
+  if (state.cafePending) return "cafe";
+  if (state.theftPending) return "theft";
+  if (state.miniGamePending) return "minigame";
+  return null;
+}
+
 export function travelCost(from, to, meters, fatigue, character = TRAVEL_MODEL) {
   if (!(meters > 0) || !Number.isFinite(meters) || !Number.isFinite(fatigue) ||
       fatigue < 0 || fatigue > 100 || !(from.terrain in GROUND_COST) || !(to.terrain in GROUND_COST)) {
@@ -41,7 +59,8 @@ export function travelCost(from, to, meters, fatigue, character = TRAVEL_MODEL) 
     0.75 * meters / 1000 * terrainCost + ascentMeters * 0.009 + descentMeters * 0.002
   ) * (1 + fatigue / 200) * (character.effortFactor ?? 1);
   const fatigueGain = (minutes * 0.08 * terrainCost + ascentMeters / 80 + descentMeters / 400) /
-    (character.enduranceFactor ?? 1);
+    (character.enduranceFactor ?? 1) +
+    (to.terrain === "water" ? TRAVEL_MODEL.waterFatiguePerCell * meters / 250 : 0);
   return { meters, minutes, speedKmh, energyKcal, fatigueGain, ascentMeters, descentMeters,
     elevationKnown, terrainCost };
 }
@@ -51,13 +70,13 @@ export function moveJourney(state, dc, dr, from, to, meters = 250) {
     throw new Error("Travel requires one orthogonal cell step.");
   }
   const cost = travelCost(from, to, meters, state.fatigue, state.character);
-  return {
-    ...state, col: state.col + dc, row: state.row + dr,
+  return recordJourneyPosition({
+    ...recordJourneyPosition(state), col: state.col + dc, row: state.row + dr,
     distanceMeters: state.distanceMeters + meters, elapsedMinutes: state.elapsedMinutes + cost.minutes,
     fatigue: Math.min(100, state.fatigue + cost.fatigueGain),
     energyKcal: state.energyKcal + cost.energyKcal, ascentMeters: state.ascentMeters + cost.ascentMeters,
     descentMeters: state.descentMeters + cost.descentMeters, lastMove: cost,
-  };
+  });
 }
 
 export function restJourney(state) {

@@ -97,15 +97,16 @@ test("town meals refill reserve up to capacity, take time and do not grant sleep
   assert.equal(canEat(undefined), false);
 });
 
-test("each exhaustion threshold is exact and the terminal journey rejects all survival actions", () => {
-  const hungry = restSurvival({ ...start(), reserveKcal: 20 }, config);
+test("zero health remains terminal; fatigue reaches 100 for the action finalizer to resolve", () => {
+  const hungry = restSurvival({ ...start(), reserveKcal: 0, health: 0.01 }, config);
   const sleepy = restSurvival({ ...start(), awakeHours: config.sleep_limit_hours - 0.5 }, config);
   const exhausted = walkSurvival({ ...start(), fatigue: 99.99 }, 1, 0, road,
     { ...road, elevationMeters: 400 }, config);
-  assert.equal(hungry.ended, "hunger");
+  assert.equal(hungry.ended, "health");
   assert.equal(sleepy.ended, "sleep");
-  assert.equal(exhausted.ended, "fatigue");
-  for (const ended of [hungry, sleepy, exhausted]) {
+  assert.equal(exhausted.ended, null);
+  assert.equal(exhausted.fatigue, 100);
+  for (const ended of [hungry, sleepy, { ...exhausted, ended: "fatigue" }]) {
     for (const action of [
       () => restSurvival(ended, config), () => sleepSurvival(ended, config),
       () => eatSurvival(ended, town, config), () => walkSurvival(ended, 1, 0, road, road, config),
@@ -114,7 +115,8 @@ test("each exhaustion threshold is exact and the terminal journey rejects all su
 });
 
 test("sleeping hungry can end a journey; terrain water remains traversable", () => {
-  assert.equal(sleepSurvival({ ...start(), reserveKcal: 100 }, config).ended, "hunger");
+  assert.equal(sleepSurvival({ ...start(), reserveKcal: 100, health: 1 }, config).ended, "health");
+  assert.equal(sleepSurvival({ ...start(), reserveKcal: 100 }, config).ended, null);
   assert.equal(walkSurvival(start(), 1, 0, road, { ...road, terrain: "water" }, config).col, 1);
 });
 
