@@ -22,6 +22,8 @@ from content_factory import IMAGE_MODEL, OvhImageWriter, WorkshopError, normaliz
 from journal_art import JournalArt, art_prompt, validate_brief
 from journeys import JourneyStore, JourneyRequest
 from travel_server import ChunkStore, ChunkJobs, atomic_write, make_handler
+from asset_storage import local_storage
+from durable_jobs import DurableJobs
 
 
 def fixture_image(size=(1024, 1024)):
@@ -120,6 +122,92 @@ class JournalArtTests(unittest.TestCase):
             "journey": self.owner, "operation": "enqueue", "brief": self.brief,
         }, self.token), {"enabled": False, "entries": []})
         self.writer.assert_not_called()
+
+    def test_configured_journal_generation_uses_shared_jobs_without_private_prompt_data(self):
+        self.art.close()
+        assets = local_storage(self.art.path.parent / "assets")
+        DurableJobs(assets.catalogue).configure_quota("images", daily=None, monthly=None)
+        self.art = JournalArt(self.journeys, self.abandoned, self.writer, assets=assets)
+        self.addCleanup(self.art.close)
+        self.request("enqueue", brief=self.brief)
+        self.assertEqual(self.settle()["entries"][0]["status"], "ready")
+        self.writer.assert_called_once()
+        with assets.catalogue.connection() as db:
+            rows = db.execute("SELECT kind,request,payload,status FROM worker_jobs").fetchall()
+            self.assertEqual(len(rows), 1)
+            self.assertEqual((rows[0][0], rows[0][3]), ("image-journal-art", "ready"))
+            self.assertNotIn(self.owner, rows[0][2])
+            self.assertNotIn(self.token, rows[0][2])
+            self.assertNotIn("Private name", rows[0][2])
+            self.assertEqual([row[0] for row in db.execute("SELECT calls FROM provider_usage")], [1, 1])
+        self.assertEqual(assets.read("journal-art", rows[0][1])[1], self.request("image", key="cover"))
+
+    def test_shared_quota_failure_is_visible_in_journal_without_provider_call(self):
+        self.art.close()
+        assets = local_storage(self.art.path.parent / "assets")
+        DurableJobs(assets.catalogue).configure_quota("images", daily=0, monthly=0)
+        self.art = JournalArt(self.journeys, self.abandoned, self.writer, assets=assets)
+        self.addCleanup(self.art.close)
+        with self.assertLogs(level="WARNING"):
+            self.request("enqueue", brief=self.brief)
+            result = self.settle()
+        self.assertEqual(result["entries"][0]["status"], "failed")
+        self.assertIn("quota exhausted", result["entries"][0]["error"])
+        self.writer.assert_not_called()
+
+    def test_configured_factory_supplies_shared_assets_to_journal_worker(self):
+        assets = local_storage(self.art.path.parent / "assets")
+        with patch("journal_art.configured_storage", return_value=assets), \
+                patch.dict("os.environ", {}, clear=True):
+            art = JournalArt.configured(self.journeys, self.abandoned)
+        self.addCleanup(art.close)
+        self.assertIs(art.assets, assets)
+        self.assertIsNone(art.writer)
+
+    def test_http_shared_journal_retains_authorization_private_reads_and_storage_errors(self):
+        self.art.close()
+        assets = local_storage(self.art.path.parent / "assets")
+        DurableJobs(assets.catalogue).configure_quota("images", daily=None, monthly=None)
+        self.art = JournalArt(self.journeys, self.abandoned, self.writer, assets=assets)
+        self.addCleanup(self.art.close)
+        self.request("enqueue", brief=self.brief)
+        self.settle()
+        jobs = ChunkJobs(self.chunks)
+        with patch("travel_server.JournalArt.configured", return_value=self.art):
+            handler = make_handler(self.chunks, jobs)
+        server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        url = f"http://127.0.0.1:{server.server_port}/api/journal-art"
+        def post(operation, token=self.token, **extra):
+            return urllib.request.urlopen(urllib.request.Request(
+                url, data=json.dumps({"journey": self.owner, "operation": operation, **extra}).encode(),
+                headers={"Content-Type": "application/json", "X-Journal-Capability": token}), timeout=5)
+        try:
+            with post("sync") as response:
+                self.assertEqual(json.load(response)["entries"][0]["status"], "ready")
+            with post("image", key="cover") as response:
+                self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+                self.assertEqual(response.read(), self.request("image", key="cover"))
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                post("image", token="b" * 64, key="cover")
+            self.assertEqual(error.exception.code, 403)
+            error.exception.close()
+            record, _ = assets.read("journal-art", self.art.shared.request_id(self.owner, "cover"))
+            (assets.blobs.root / record.key).write_bytes(b"corrupt")
+            with self.assertLogs(level="ERROR"), self.assertRaises(urllib.error.HTTPError) as error:
+                post("image", key="cover")
+            self.assertEqual(error.exception.code, 503)
+            self.assertEqual(json.load(error.exception),
+                             {"error": "Asset storage unavailable; check server logs."})
+            error.exception.close()
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(5)
+            handler.live_narrative.close()
+            jobs.pool.shutdown(wait=True)
+        self.writer.assert_called_once()
 
     def test_failure_is_explicit_and_never_automatically_retried(self):
         self.writer.side_effect = WorkshopError("OVH free service unavailable", 502)

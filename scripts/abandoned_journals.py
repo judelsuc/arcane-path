@@ -12,6 +12,7 @@ import sqlite3
 import time
 
 from journeys import JourneyRequest, JourneyConflict
+from journey_storage import StoreConnection
 
 LEASE_SECONDS = 7 * 24 * 60 * 60
 MAX_NOTEBOOK_BYTES = 48 * 1024 * 1024
@@ -78,6 +79,9 @@ class AbandonedJournals:
     def __init__(self, journeys, clock=time.time):
         self.journeys, self.clock = journeys, clock
         self.path = journeys.path.parent / "abandoned-journals.sqlite3"
+        self.assets = getattr(journeys, "assets", None)
+        if self.assets is not None:
+            return
         with self.connect() as db:
             db.executescript("""
                 CREATE TABLE IF NOT EXISTS capabilities (
@@ -98,6 +102,10 @@ class AbandonedJournals:
 
     @contextmanager
     def connect(self):
+        if self.assets is not None:
+            with self.assets.catalogue.connection() as db:
+                yield StoreConnection(db, self.assets.catalogue, mapping=True)
+            return
         db = sqlite3.connect(self.path, timeout=10)
         db.row_factory = sqlite3.Row
         try:
@@ -106,11 +114,17 @@ class AbandonedJournals:
         finally:
             db.close()
 
+    def begin(self, db):
+        if self.assets is not None:
+            db.begin("notebooks")
+        else:
+            db.execute("BEGIN IMMEDIATE")
+
     def bind(self, journey, token):
         digest = capability_hash(token)
         with self.connect() as db:
-            db.execute("BEGIN IMMEDIATE")
-            db.execute("INSERT OR IGNORE INTO capabilities(journey,digest) VALUES (?,?)",
+            self.begin(db)
+            db.execute("INSERT INTO capabilities(journey,digest) VALUES (?,?) ON CONFLICT(journey) DO NOTHING",
                        (journey, digest))
             if not hmac.compare_digest(db.execute(
                     "SELECT digest FROM capabilities WHERE journey=?", (journey,)).fetchone()[0], digest):
@@ -229,7 +243,8 @@ class AbandonedJournals:
             digest = hashlib.sha256(seed.encode()).hexdigest()
             if conversation and int(digest[:8], 16) < 0x80000000:
                 observation = self.indication(target, position, "town:" + digest[:32], elapsed)
-                db.execute("INSERT OR IGNORE INTO rumours VALUES (?,?,?,?)",
+                db.execute("INSERT INTO rumours(finder,evidence,journal,observation) VALUES (?,?,?,?) "
+                           "ON CONFLICT(finder,evidence) DO NOTHING",
                            (journey, observation["evidenceKey"], target["id"], json.dumps(observation)))
             mentioned = db.execute(
                 "SELECT 1 FROM rumours WHERE finder=? AND journal=? AND evidence LIKE 'town:%' LIMIT 1",
@@ -241,10 +256,11 @@ class AbandonedJournals:
                                            observation["distanceBand"]).encode()).hexdigest()
                 observation["evidenceKey"] = "near:" + revision[:32]
                 indications.append(observation)
+        order = "r.seq" if self.assets is not None else "r.rowid"
         earned = db.execute("""SELECT r.observation,j.finder,j.touched,j.delivered,j.id
             FROM rumours r LEFT JOIN journals j ON j.id=r.journal
             WHERE r.finder=? AND r.evidence LIKE 'town:%'
-            ORDER BY r.rowid DESC LIMIT 100""", (journey,)).fetchall()
+            ORDER BY """ + order + " DESC LIMIT 100", (journey,)).fetchall()
         rumours = []
         for row in earned:
             observation = json.loads(row["observation"])
@@ -286,12 +302,14 @@ class AbandonedJournals:
         elif "notebook" in data or "clues" in data:
             raise JourneyRequest("Notebook content is only accepted when publishing.")
         with self.connect() as db:
-            db.execute("BEGIN IMMEDIATE")
+            self.begin(db)
             if action == "register":
                 if "keeper" not in data or journey == data["journey"]:
                     raise JourneyRequest("Legacy keepers need a separate random identity.")
-                db.execute("INSERT OR IGNORE INTO capabilities(journey,digest) VALUES (?,?)", (journey, digest))
-                db.execute("INSERT OR IGNORE INTO keepers(id,genesis) VALUES (?,?)", (journey, data["journey"]))
+                db.execute("INSERT INTO capabilities(journey,digest) VALUES (?,?) "
+                           "ON CONFLICT(journey) DO NOTHING", (journey, digest))
+                db.execute("INSERT INTO keepers(id,genesis) VALUES (?,?) "
+                           "ON CONFLICT(id) DO NOTHING", (journey, data["journey"]))
             if "keeper" in data:
                 keeper = db.execute("SELECT genesis FROM keepers WHERE id=?", (journey,)).fetchone()
                 if not keeper or keeper["genesis"] != data["journey"]:
@@ -325,11 +343,11 @@ class AbandonedJournals:
                                for stage in stages],
                     "history": [stage["name"] for stage in stages[:index]],
                 }
-                db.execute("""INSERT OR IGNORE INTO journals
-                    (id,payload,latitude,longitude,step) VALUES (?,?,?,?,?)""",
+                db.execute("""INSERT INTO journals
+                    (id,payload,latitude,longitude,step) VALUES (?,?,?,?,?) ON CONFLICT(id) DO NOTHING""",
                            (journey, json.dumps(payload), *position, index))
                 if action == "publish":
-                    db.execute("INSERT OR IGNORE INTO notebooks(id,content) VALUES (?,?)",
+                    db.execute("INSERT INTO notebooks(id,content) VALUES (?,?) ON CONFLICT(id) DO NOTHING",
                                (journey, json.dumps({"photos": data["notebook"], "clues": data["clues"]})))
                 db.execute("UPDATE capabilities SET dead=1 WHERE journey=?", (journey,))
                 db.execute("""UPDATE journals SET finder=NULL,touched=NULL,latitude=?,longitude=?

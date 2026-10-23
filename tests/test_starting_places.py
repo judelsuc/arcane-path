@@ -3,12 +3,16 @@ import json
 import math
 import sys
 import tempfile
+import threading
+import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from starting_places import PlaceLookup, coordinates, european
+from asset_storage import AssetConflict, AssetError, local_storage
 from travel_server import CELL_METERS, RADIUS, ChunkStore, chunk_geometry
 
 
@@ -120,3 +124,141 @@ class StartingPlaceTests(unittest.TestCase):
                 chunk = restored.build(key, 1, 1)
                 self.assertEqual(chunk["chunk"]["region"], key)
                 self.assertEqual(chunk["projectionLatitude"], latitude)
+
+    def test_shared_custom_origin_and_osm_source_survive_another_api_restart(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            assets = local_storage(root / "shared")
+            first = ChunkStore(cache=root / "one")
+            second = ChunkStore(cache=root / "two")
+            first.set_shared_assets(assets)
+            second.set_shared_assets(assets)
+            latitude, longitude = 44.540499, 2.309377
+            place = {"latitude": latitude, "longitude": longitude, "name": "Test place"}
+
+            def download(bounds, name, output, on_progress=None):
+                output.parent.mkdir(parents=True, exist_ok=True)
+                with gzip.open(output, "wt") as stream:
+                    stream.write(f'<osm><bounds minlon="{bounds[0]}" minlat="{bounds[1]}" '
+                                 f'maxlon="{bounds[2]}" maxlat="{bounds[3]}"/>'
+                                 f'<node id="1" lon="{longitude}" lat="{latitude}"/></osm>')
+
+            with patch.object(first.places, "reverse", return_value=place), \
+                    patch("travel_server.download_region", side_effect=download) as fetch:
+                expected = first.prepare_origin(latitude, longitude)
+                assets_reopened = local_storage(root / "shared")
+                restarted = ChunkStore(cache=root / "three")
+                restarted.set_shared_assets(assets_reopened)
+                self.assertTrue(restarted.load_origin(expected["region"]))
+                self.assertEqual(restarted.prepare_origin(latitude, longitude), expected)
+                self.assertEqual(fetch.call_count, 1)
+                with patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}), \
+                        patch("travel_server.download_region",
+                              side_effect=AssertionError("Shared OSM source must be reused")):
+                    chunk = restarted.build(expected["region"], 1, 1)
+                self.assertEqual(chunk["chunk"]["region"], expected["region"])
+                restored_source = Path(restarted.regions[expected["region"]]["snapshot"])
+                self.assertTrue(restored_source.is_file())
+                source_request, source_hash, _ = restarted.origin_sources[expected["region"]]
+                record, raw = assets_reopened.read("custom-origin-source", source_request)
+                self.assertEqual(record.sha256, source_hash)
+                self.assertEqual(restored_source.read_bytes(), raw)
+            self.assertFalse((root / "three" / "journeys.sqlite3").exists())
+
+    def test_two_api_workers_coordinate_origin_download_and_publish_one_result(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            assets = local_storage(root / "shared")
+            stores = [ChunkStore(cache=root / name) for name in ("one", "two")]
+            for store in stores:
+                store.set_shared_assets(assets)
+            latitude, longitude = 44.540499, 2.309377
+            place = {"latitude": latitude, "longitude": longitude, "name": "Test place"}
+            entered, release = threading.Event(), threading.Event()
+            calls = []
+
+            def download(bounds, name, output, on_progress=None):
+                calls.append(output)
+                entered.set()
+                if not release.wait(10):
+                    raise OSError("Fixture was not released.")
+                output.parent.mkdir(parents=True, exist_ok=True)
+                with gzip.open(output, "wt") as stream:
+                    stream.write(f'<osm><bounds minlon="{bounds[0]}" minlat="{bounds[1]}" '
+                                 f'maxlon="{bounds[2]}" maxlat="{bounds[3]}"/>'
+                                 f'<node id="1" lon="{longitude}" lat="{latitude}"/></osm>')
+
+            with patch.object(stores[0].places, "reverse", return_value=place), \
+                    patch.object(stores[1].places, "reverse", return_value=place), \
+                    patch("travel_server.download_region", side_effect=download):
+                with ThreadPoolExecutor(max_workers=2) as workers:
+                    first = workers.submit(stores[0].prepare_origin, latitude, longitude)
+                    self.assertTrue(entered.wait(5))
+                    second = workers.submit(stores[1].prepare_origin, latitude, longitude)
+                    time.sleep(.1)
+                    release.set()
+                    first_result, second_result = first.result(timeout=10), second.result(timeout=10)
+            self.assertEqual(first_result, second_result)
+            self.assertEqual(len(calls), 1)
+
+    def test_shared_origin_integrity_errors_are_explicit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            assets = local_storage(root / "shared")
+            writer = ChunkStore(cache=root / "writer")
+            latitude, longitude = 44.540499, 2.309377
+            place = {"latitude": latitude, "longitude": longitude, "name": "Test place"}
+
+            def download(bounds, name, output, on_progress=None):
+                output.parent.mkdir(parents=True, exist_ok=True)
+                with gzip.open(output, "wt") as stream:
+                    stream.write(f'<osm><bounds minlon="{bounds[0]}" minlat="{bounds[1]}" '
+                                 f'maxlon="{bounds[2]}" maxlat="{bounds[3]}"/>'
+                                 f'<node id="1" lon="{longitude}" lat="{latitude}"/></osm>')
+
+            writer.set_shared_assets(assets)
+            with patch.object(writer.places, "reverse", return_value=place), \
+                    patch("travel_server.download_region", side_effect=download):
+                origin = writer.prepare_origin(latitude, longitude)
+            with assets.catalogue.connection() as db:
+                db.execute("UPDATE custom_origins SET payload='{}' WHERE region=?", (origin["region"],))
+            reader = ChunkStore(cache=root / "reader")
+            with self.assertRaisesRegex(AssetError, "integrity"):
+                reader.set_shared_assets(assets)
+
+    def test_expired_custom_origin_lease_cannot_publish_a_late_map(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            assets = local_storage(root / "shared")
+            store = ChunkStore(cache=root / "writer")
+            store.set_shared_assets(assets)
+            latitude, longitude = 44.540499, 2.309377
+            place = {"latitude": latitude, "longitude": longitude, "name": "Test place"}
+
+            def download(bounds, name, output, on_progress=None):
+                output.parent.mkdir(parents=True, exist_ok=True)
+                with gzip.open(output, "wt") as stream:
+                    stream.write(f'<osm><bounds minlon="{bounds[0]}" minlat="{bounds[1]}" '
+                                 f'maxlon="{bounds[2]}" maxlat="{bounds[3]}"/>'
+                                 f'<node id="1" lon="{longitude}" lat="{latitude}"/></osm>')
+
+            with patch.object(store.places, "reverse", return_value=place), \
+                    patch("travel_server.download_region", side_effect=download):
+                origin = store.prepare_origin(latitude, longitude)
+            key = origin["region"]
+            stale = store._claim_origin(key)
+            self.assertIsNotNone(stale)
+            with assets.catalogue.connection() as db:
+                db.execute("UPDATE custom_origin_leases SET expires=0 WHERE region=?", (key,))
+            current = store._claim_origin(key)
+            self.assertIsNotNone(current)
+            self.assertNotEqual(stale, current)
+            source = Path(store.regions[key]["snapshot"])
+            with self.assertRaisesRegex(AssetConflict, "lease expired"):
+                store.register_origin(key, origin["map"], source, lease_token=stale)
+            with assets.catalogue.connection() as db:
+                self.assertEqual(db.execute(
+                    "SELECT token FROM custom_origin_leases WHERE region=?", (key,)).fetchone()[0], current)
+                self.assertEqual(db.execute(
+                    "SELECT COUNT(*) FROM custom_origins WHERE region=?", (key,)).fetchone()[0], 1)
+            store._release_origin(key, current)

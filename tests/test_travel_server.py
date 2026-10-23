@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import threading
+import time
 import unittest
 import urllib.error
 import urllib.request
@@ -12,7 +13,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from travel_server import ChunkJobs, ChunkStore, OriginStore, CHUNK_SIZE, chunk_geometry, fetch_elevations, make_handler
+from travel_server import (COMPATIBLE_CHUNK_PIPELINE, ChunkJobs, ChunkStore, OriginStore,
+                           CHUNK_SIZE, chunk_geometry, fetch_elevations, make_handler)
 from http.server import ThreadingHTTPServer
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -131,6 +133,45 @@ class TravelServerTests(unittest.TestCase):
             path.write_text(json.dumps(cached))
             with self.assertRaisesRegex(ValueError, "Corrupt travel cache"):
                 store.read("firmi", 1, 1)
+
+    def test_compatible_old_chunk_cache_is_migrated_without_reprocessing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ChunkStore(cache=Path(directory))
+            self.assertEqual(store.pipeline, COMPATIBLE_CHUNK_PIPELINE)
+            with patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}):
+                expected = store.build("firmi", 1, 1)
+            current = store.path("firmi", 1, 1).with_suffix(".json")
+            legacy = store.legacy_path("firmi", 1, 1).with_suffix(".json")
+            legacy.parent.mkdir(parents=True)
+            current.replace(legacy)
+            restarted = ChunkStore(cache=Path(directory))
+            with patch("travel_server.fetch_elevations", side_effect=AssertionError("Reuse elevations")), \
+                    patch("travel_server.download_region", side_effect=AssertionError("Reuse source")), \
+                    patch("travel_server.rasterize", side_effect=AssertionError("Reuse raster")):
+                self.assertEqual(restarted.build("firmi", 1, 1), expected)
+            self.assertTrue(restarted.path("firmi", 1, 1).with_suffix(".json").is_file())
+
+    def test_shared_chunk_cache_and_elevation_cooldown_are_reused_by_another_instance(self):
+        from asset_storage import local_storage
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            assets = local_storage(root / "assets")
+            first = ChunkStore(cache=root / "first")
+            second = ChunkStore(cache=root / "second")
+            first.set_shared_assets(assets)
+            second.set_shared_assets(assets)
+            with patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}) as fetch:
+                expected = first.build("firmi", 1, 1)
+            fetch.assert_called_once()
+            with patch("travel_server.fetch_elevations", side_effect=AssertionError("Use shared elevation")), \
+                    patch("travel_server.download_region", side_effect=AssertionError("Use shared chunk")), \
+                    patch("travel_server.rasterize", side_effect=AssertionError("Use shared raster")):
+                self.assertEqual(second.build("firmi", 1, 1), expected)
+            self.assertTrue(second.path("firmi", 1, 1).with_suffix(".json").is_file())
+            retry_at = time.time() + 3600
+            first.set_elevation_cooldown(retry_at)
+            self.assertEqual(second.elevation_cooldown_until(), retry_at)
 
     def test_elevation_failure_preserves_visible_grid_across_restart_and_retries_after_cooldown(self):
         with tempfile.TemporaryDirectory() as directory:

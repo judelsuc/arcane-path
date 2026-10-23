@@ -15,6 +15,7 @@ from http.server import ThreadingHTTPServer
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from asset_storage import AssetConflict, local_storage
 from parent_paths import ParentPaths, PathLimit, find_path, walk_minutes, in_corridor
 from travel_server import atomic_write, ChunkStore, ChunkJobs, make_handler
 
@@ -26,6 +27,8 @@ class Grid:
         self.fingerprints = {"test": "source"}
         self.built = []
         self.cached = {}
+        self.bases = {"test": {"width": 8, "height": 8,
+                               "rows": [[{"terrain": "road"} for _ in range(8)] for _ in range(8)]}}
 
     def read(self, region, x, y):
         return self.cached.get((x, y))
@@ -316,6 +319,125 @@ class PathStoreTests(unittest.TestCase):
                       f"journey={self.identity}&stage=0&recognize=vague-prefix"]:
             self.assertEqual(call(query)[0], 400)
         self.assertEqual(call("journey=missing&stage=0")[0], 404)
+
+
+class SharedPathTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.assets = local_storage(self.root / "assets")
+        self.journeys = Journeys()
+        self.journeys.assets = self.assets
+        self.first = ParentPaths(Grid(self.root / "first"), self.journeys, atomic_write)
+        self.second_journeys = Journeys()
+        self.second_journeys.assets = local_storage(self.root / "assets")
+        self.second = ParentPaths(Grid(self.root / "second"), self.second_journeys, atomic_write)
+        self.addCleanup(self.first.pool.shutdown, wait=True)
+        self.addCleanup(self.second.pool.shutdown, wait=True)
+
+    def settle(self, service, key=("a" * 32, 0), record=None):
+        record = record or self.journeys.read(key[0])
+        status, payload = service.request_record(key, record)
+        if status == 202:
+            service.jobs[service.assignment_id(key)].result(timeout=10)
+            status, payload = service.request_record(key, record)
+        return status, payload
+
+    def test_shared_route_is_pinned_and_readable_after_restart_without_recalculation(self):
+        status, first = self.settle(self.first)
+        self.assertEqual(status, 200)
+        self.assertNotIn("points", first)
+        route = self.first.decode(self.first.location("a" * 32, 0))
+        key = ("a" * 32, 0)
+        self.assertTrue(self.first.location(*key).is_file())
+        self.second.build = lambda *args: self.fail("Pinned shared route must not rerun A*.")
+        status, second = self.settle(self.second, key)
+        self.assertEqual((status, second), (200, first))
+        self.assertEqual(self.second.decode(self.second.location(*key)), route)
+        with self.assets.catalogue.connection() as db:
+            row = db.execute("SELECT status,asset_request,sha256 FROM parent_path_assignments").fetchone()
+        self.assertEqual(row[0], "ready")
+        record, raw = self.assets.read("parent-path", row[1])
+        self.assertEqual(record.sha256, row[2])
+        self.assertEqual(json.loads(raw), route)
+        self.assertFalse(self.root.joinpath("first", "parent-paths.sqlite3").exists())
+
+    def test_concurrent_services_assign_one_pinned_route_for_the_same_journey_stage(self):
+        entered, release = threading.Event(), threading.Event()
+        original = self.first.build
+        calls = []
+
+        def blocked_build(key, record):
+            calls.append(key)
+            entered.set()
+            if not release.wait(5):
+                raise TimeoutError("Route test was not released.")
+            return original(key, record)
+
+        self.first.build = blocked_build
+        key = ("a" * 32, 0)
+        self.assertEqual(self.first.request_record(key, self.journeys.read(key[0]))[0], 202)
+        try:
+            self.assertTrue(entered.wait(5))
+            self.assertEqual(self.second.request_record(key, self.second_journeys.read(key[0]))[0], 202)
+        finally:
+            release.set()
+        self.first.jobs[self.first.assignment_id(key)].result(timeout=10)
+        self.second.jobs[self.second.assignment_id(key)].result(timeout=10)
+        status, first = self.first.request_record(key, self.journeys.read(key[0]))
+        status_other, second = self.second.request_record(key, self.second_journeys.read(key[0]))
+        self.assertEqual((status, status_other), (200, 200))
+        self.assertEqual(first, second)
+        self.assertEqual(calls, [key])
+
+    def test_shared_lore_routes_keep_authoritative_start_and_distinct_assignments(self):
+        position = (-3, -2)
+        key = self.first.lore_key("a" * 32, 0, position)
+        status, _ = self.settle(self.first, key)
+        self.assertEqual(status, 200)
+        route = self.first.decode(self.first.location(*key))
+        self.assertEqual(route["points"][0], list(position))
+        self.assertEqual(route["points"][-1], [14, 5])
+        self.assertNotEqual(self.first.assignment_id(key), self.first.assignment_id(("a" * 32, 0)))
+        status, _ = self.settle(self.second, key, self.second_journeys.read("a" * 32))
+        self.assertEqual(status, 200)
+        self.assertEqual(self.second.decode(self.second.location(*key)), route)
+
+    def test_shared_queue_enforces_global_capacity_and_retries_are_bounded(self):
+        with patch.object(self.first, "schedule_shared"):
+            first = self.first.request_record(("a" * 32, 0), self.journeys.read("a" * 32))
+            second_key = ("lore-" + "a" * 32 + "-1-0", 0)
+            self.first.request_record(second_key, self.journeys.read("a" * 32))
+            third_key = ("lore-" + "a" * 32 + "-2-0", 0)
+            self.assertEqual(first[0], 202)
+            self.assertEqual(self.first.request_record(third_key, self.journeys.read("a" * 32))[0], 429)
+        key = ("a" * 32, 0)
+        assignment = self.first.assignment_id(key)
+        with self.assets.catalogue.connection() as db:
+            db.execute("UPDATE parent_path_assignments SET status='failed',error='fixture',attempts=3 "
+                       "WHERE assignment=?", (assignment,))
+        self.assertEqual(self.first.request_record(key, self.journeys.read(key[0]), retry=True)[0], 422)
+
+    def test_shared_lease_recovery_fences_late_assignment(self):
+        key = ("a" * 32, 0)
+        with patch.object(self.first, "schedule_shared"):
+            self.first.request_record(key, self.journeys.read(key[0]))
+        assignment = self.first.assignment_id(key)
+        first = self.first.claim_shared(assignment)
+        self.assertIsNotNone(first)
+        with self.assets.catalogue.connection() as db:
+            db.execute("UPDATE parent_path_assignments SET expires=0 WHERE assignment=?", (assignment,))
+        second = self.second.claim_shared(assignment)
+        self.assertNotEqual(first["token"], second["token"])
+        route = find_path((0, 0), (1, 0), lambda *_: {"terrain": "road"})
+        route.update(chunks=1, downloads=0, terrainSource={"region": "test"})
+        with self.assertRaisesRegex(AssetConflict, "lease expired"):
+            self.first.finish_shared(assignment, first["token"], route)
+        with self.assets.catalogue.connection() as db:
+            row = db.execute("SELECT status,token FROM parent_path_assignments WHERE assignment=?",
+                             (assignment,)).fetchone()
+        self.assertEqual(tuple(row), ("running", second["token"]))
 
 
 if __name__ == "__main__":

@@ -52,6 +52,22 @@ for (const locale of ["fr", "en"]) {
       return false;
     } });
     ui.open();
+    const parentText = () => element("#dialogue-parent").children.map(item => item.textContent).join(" ");
+    assert.ok(parentText().includes(tr("parentTalkNoWitness")));
+    const originalState = state;
+    state = { ...state, trail: { ...state.trail, index: 0, history: [], discovery: undefined,
+      origin: { col: state.col, row: state.row },
+      exploration: { version: 1, firstStage: 0, knownStage: null, hints: [] },
+    } };
+    const fresh = structuredClone(state);
+    ui.localize();
+    assert.ok(parentText().includes(tr("parentTalkNoWitness")));
+    assert.ok(parentText().includes(tr("parentTalkExplore")));
+    assert.match(parentText(), locale === "fr" ? /lettre/i : /letter/i);
+    assert.doesNotMatch(parentText(), /Known stop|Known destination|SECRET FUTURE/);
+    assert.deepEqual(state, fresh);
+    state = originalState;
+    ui.localize();
     assert.equal(element("#trail-target").textContent,
       tr("trailKnownDestination", { place: "Known destination" }));
     assert.equal(element("#trail-discovery-text").textContent, parentClueText(state, state.trail.discovery, tr));
@@ -125,6 +141,7 @@ for (const locale of ["fr", "en"]) {
     assert.equal(element("#trail-investigation-page").hidden, false);
     assert.equal(element("#trail-evidence-page").hidden, false);
     assert.equal(element("#trail-action-error").textContent, "Investigation rejected");
+    assert.match(parentText(), /Investigation rejected/);
     state.trail.story = { ...state.trail.story, motive: "cartomancer", intimacy: { version: 1, card: "fool" },
       visits: state.trail.stages.map(() => ({ ...state.trail.story.visits[0], clues: ["discuss", "letter"] })),
     };

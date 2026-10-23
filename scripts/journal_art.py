@@ -19,6 +19,8 @@ from content_factory import (
 )
 from journeys import JourneyRequest, JourneyCapacity
 from terraform_ovh import private_file
+from asset_storage import AssetError, configured_storage
+from journal_storage import JournalStorage
 
 CARDS = {
     "fool": "an open road", "magician": "a hand of possibilities",
@@ -90,14 +92,19 @@ def art_prompt(brief):
 
 
 class JournalArt:
-    def __init__(self, journeys, abandoned, writer=None):
+    def __init__(self, journeys, abandoned, writer=None, assets=None):
         self.journeys, self.abandoned, self.writer = journeys, abandoned, writer
+        self.assets = assets
+        self.shared = JournalStorage(assets) if assets is not None else None
         self.path = journeys.path.parent / "journal-art.sqlite3"
         self.lock = threading.Lock()
         self.running = False
         self.closed = False
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="journal-art") if writer else None
         self.future = None
+        if self.shared is not None:
+            self.kick()
+            return
         with self.connect() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
             if version not in (0, 1):
@@ -126,10 +133,14 @@ class JournalArt:
             if not token or not token.isascii() or any(char.isspace() for char in token):
                 raise ValueError("Invalid private journal illustration access key.")
             writer = OvhImageWriter(token)
-        return cls(journeys, abandoned, writer)
+        assets = getattr(journeys, "assets", None)
+        return cls(journeys, abandoned, writer,
+                   assets=assets if assets is not None else configured_storage())
 
     @contextmanager
     def connect(self):
+        if self.shared is not None:
+            raise AssetError("Configured journal queue uses the shared catalogue, not a local database.")
         db = sqlite3.connect(self.path, timeout=10)
         db.row_factory = sqlite3.Row
         try:
@@ -175,26 +186,19 @@ class JournalArt:
             brief = validate_brief(data["brief"], started)
             if brief["birth"] != state["birthCard"]:
                 raise JourneyRequest("The birth-card motif must match the journey.")
-            with self.connect() as db:
-                db.execute("BEGIN IMMEDIATE")
-                if not db.execute("SELECT 1 FROM art WHERE owner=? AND key=?", (owner, brief["key"])).fetchone():
-                    count = db.execute("SELECT COUNT(*) FROM art WHERE owner=?", (owner,)).fetchone()[0]
-                    total = db.execute("SELECT COUNT(*) FROM art").fetchone()[0]
-                    queued = db.execute("SELECT COUNT(*) FROM art WHERE status IN ('queued','running')").fetchone()[0]
-                    if count >= MAX_PER_JOURNEY or total >= MAX_ART or queued >= 32:
-                        raise JourneyCapacity("Journal illustration queue is full; keep the existing journal and try later.")
-                    db.execute("INSERT INTO art(owner,key,brief,status,created) VALUES(?,?,?,'queued',?)",
-                               (owner, brief["key"], json.dumps({
-                                   **brief, "recipe": {
-                                       "version": 1, "model": IMAGE_MODEL, "license": IMAGE_LICENSE,
-                                       "prompt": IMAGE_STYLE + art_prompt(brief)["prompt"],
-                                       "purpose": "decorative-only",
-                                   },
-                               }), datetime.now(timezone.utc).isoformat()))
+            if self.shared is not None:
+                self.shared.enqueue(owner, {**brief, "recipe": {
+                    "version": 1, "model": IMAGE_MODEL, "license": IMAGE_LICENSE,
+                    "prompt": IMAGE_STYLE + art_prompt(brief)["prompt"], "purpose": "decorative-only",
+                }}, per_owner=MAX_PER_JOURNEY, total_limit=MAX_ART)
+            else:
+                self.enqueue_local(owner, brief)
             self.kick()
         if operation == "image":
             if not isinstance(data["key"], str):
                 raise JourneyRequest("Invalid illustration key.")
+            if self.shared is not None:
+                return self.shared.image(owner, data["key"])
             with self.connect() as db:
                 row = db.execute("SELECT image FROM art WHERE owner=? AND key=? AND status='ready'",
                                  (owner, data["key"])).fetchone()
@@ -202,15 +206,36 @@ class JournalArt:
                 raise JourneyRequest("Illustration is not ready.")
             return bytes(row["image"])
         self.kick()
-        with self.connect() as db:
-            rows = db.execute(
-                "SELECT key,brief,status,created,finished,elapsed,error FROM art WHERE owner=? ORDER BY key", (owner,),
-            ).fetchall()
+        if self.shared is not None:
+            rows = self.shared.entries(owner)
+        else:
+            with self.connect() as db:
+                rows = db.execute(
+                    "SELECT key,brief,status,created,finished,elapsed,error FROM art WHERE owner=? ORDER BY key", (owner,),
+                ).fetchall()
         return {
             "enabled": self.writer is not None,
             "entries": [{**dict(row), "brief": json.loads(row["brief"]),
                          "model": IMAGE_MODEL, "license": IMAGE_LICENSE} for row in rows],
         }
+
+    def enqueue_local(self, owner, brief):
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            if not db.execute("SELECT 1 FROM art WHERE owner=? AND key=?", (owner, brief["key"])).fetchone():
+                count = db.execute("SELECT COUNT(*) FROM art WHERE owner=?", (owner,)).fetchone()[0]
+                total = db.execute("SELECT COUNT(*) FROM art").fetchone()[0]
+                queued = db.execute("SELECT COUNT(*) FROM art WHERE status IN ('queued','running')").fetchone()[0]
+                if count >= MAX_PER_JOURNEY or total >= MAX_ART or queued >= 32:
+                    raise JourneyCapacity("Journal illustration queue is full; keep the existing journal and try later.")
+                db.execute("INSERT INTO art(owner,key,brief,status,created) VALUES(?,?,?,'queued',?)",
+                           (owner, brief["key"], json.dumps({
+                               **brief, "recipe": {
+                                   "version": 1, "model": IMAGE_MODEL, "license": IMAGE_LICENSE,
+                                   "prompt": IMAGE_STYLE + art_prompt(brief)["prompt"],
+                                   "purpose": "decorative-only",
+                               },
+                           }), datetime.now(timezone.utc).isoformat()))
 
     def kick(self):
         if self.pool is None:
@@ -224,11 +249,13 @@ class JournalArt:
         try:
             self.drain_queue()
         except Exception:
-            logging.exception("Journal illustration queue failed; queued records retained for restart")
+            logging.exception("Journal illustration worker failed; durable records retained for inspection/recovery")
             with self.lock:
                 self.running = False
 
     def drain_queue(self):
+        if self.shared is not None:
+            return self.drain_shared()
         while True:
             with self.lock:
                 if self.closed:
@@ -243,8 +270,9 @@ class JournalArt:
                     db.execute("UPDATE art SET status='running' WHERE owner=? AND key=?", (row["owner"], row["key"]))
             started = time.monotonic()
             try:
-                image = normalize_image(self.writer(art_prompt(json.loads(row["brief"]))))
-            except WorkshopError as error:
+                brief = art_prompt(json.loads(row["brief"]))
+                image = normalize_image(self.writer(brief))
+            except (WorkshopError, AssetError, OSError, sqlite3.Error) as error:
                 logging.warning("Journal illustration generation failed: %s", error)
                 with self.connect() as db:
                     db.execute("UPDATE art SET status='failed',error=? WHERE owner=? AND key=?",
@@ -266,3 +294,22 @@ class JournalArt:
             self.closed = True
         if self.pool:
             self.pool.shutdown(wait=True)
+
+    def drain_shared(self):
+        while True:
+            with self.lock:
+                if self.closed:
+                    self.running = False
+                    return
+                job = self.shared.acquire()
+                if job is None:
+                    self.running = False
+                    return
+            started = time.monotonic()
+            try:
+                self.shared.generate(job, self.writer, art_prompt(job["brief"]))
+            except (WorkshopError, AssetError, OSError, sqlite3.Error) as error:
+                logging.warning("Shared journal illustration failed: %s", error)
+                self.shared.finish(job, round(time.monotonic() - started, 2), error=str(error)[:2000])
+            else:
+                self.shared.finish(job, round(time.monotonic() - started, 2))

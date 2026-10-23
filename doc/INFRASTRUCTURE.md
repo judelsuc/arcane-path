@@ -1,5 +1,18 @@
 # Infrastructure OVHcloud - rapport du 19 octobre 2026
 
+## Projet de stockage externe et évolution du jeu (23 octobre 2026)
+
+L'inventaire actuel et la cible PostgreSQL géré + Object Storage compatible S3
+sont décrits dans le
+[plan du 23 octobre](./PLAN_EVOLUTION_2026-10-23.md).
+Les exigences R-182 à R-185 couvrent aussi les personnages persistants,
+le sélecteur avant Dialogue, les tilesets/skins et l'accueil documentaire des villes.
+Il s'agit d'un plan : aucun service payant n'est provisionné ni aucune donnée
+supprimée. La cible peut démarrer vide, sans migration des données existantes.
+Le dernier runtime vérifié est la 0.21.0 du 22 octobre
+(`8da7ac97745b878c3f0b5bf73f79481d86b38874`) ; les sections suivantes
+conservent l'historique des publications précédentes.
+
 ## Placement chronicles, optional companions and overnight encounter art (20 October 2026)
 
 - Game 0.20.12, runtime `c80b085e8eefc8da0a1e3c720fd2d12e4fbbf7d8`.

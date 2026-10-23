@@ -14,6 +14,8 @@ from abandoned_journals import JournalForbidden
 from content_factory import WorkshopError
 from encounter_art import EncounterArt, SCENES, WEEK, run_batch
 from journeys import JourneyRequest
+from asset_storage import AssetConflict, AssetError, local_storage
+from durable_jobs import DurableJobs
 
 
 def picture():
@@ -26,7 +28,7 @@ class EncounterArtTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.auth = Mock()
+        self.auth = Mock(assets=None)
         self.auth.authorize.return_value = ("owner", {})
         self.art = EncounterArt(Path(temporary.name) / "art.sqlite3", self.auth, True)
         self.writer = Mock(return_value=picture())
@@ -147,3 +149,40 @@ class EncounterArtTests(unittest.TestCase):
             with self.assertRaises(BlockingIOError):
                 run_batch(self.art, self.writer, hours=1 / 3600)
         self.writer.assert_not_called()
+
+    def configure_assets(self):
+        assets = local_storage(self.art.path.parent / "assets")
+        DurableJobs(assets.catalogue).configure_quota("images", daily=None, monthly=None)
+        self.art = EncounterArt(self.art.path.parent / "configured-vm" / "encounters.sqlite3",
+                                self.auth, True, assets=assets)
+        return assets
+
+    def test_configured_generation_is_accounted_and_same_request_reuses_shared_image(self):
+        assets = self.configure_assets()
+        request = "c" * 32
+        identity = self.art.generate("event.food", self.writer, request=request)
+        other = EncounterArt(self.art.path.parent / "other-vm.sqlite3", self.auth, True, assets=assets)
+        self.assertEqual(other.generate("event.food", self.writer, request=request), identity)
+        self.writer.assert_called_once()
+        with assets.catalogue.connection() as db:
+            self.assertEqual([row[0] for row in db.execute("SELECT calls FROM provider_usage")], [1, 1])
+        third = EncounterArt(self.art.path.parent / "third-vm.sqlite3", assets=assets)
+        with self.assertRaises(JourneyRequest):
+            third.generate("event.coins", self.writer, request=request)
+
+    def test_configured_batch_restart_same_slot_never_repeats_uncertain_provider_call(self):
+        self.configure_assets()
+        self.writer.side_effect = WorkshopError("Provider unavailable")
+        with patch("encounter_art.time.time", return_value=100):
+            with self.assertLogs(level="ERROR"), self.assertRaises(WorkshopError):
+                run_batch(self.art, self.writer, hours=1 / 3600)
+            with self.assertRaises(AssetError):
+                run_batch(self.art, self.writer, hours=1 / 3600)
+        self.writer.assert_called_once()
+
+    def test_configured_factory_uses_private_shared_storage(self):
+        assets = self.configure_assets()
+        with patch("encounter_art.configured_storage", return_value=assets):
+            art = EncounterArt.configured(self.art.path, self.auth, True)
+        self.assertIs(art.assets, assets)
+        self.assertIsNotNone(art.shared)

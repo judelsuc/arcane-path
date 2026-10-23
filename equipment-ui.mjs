@@ -15,6 +15,7 @@ const copy = {
     buy: "Acheter", repair: "Réparer", discard: "Abandonner sans remboursement", minutes: "min",
     shop: "Achats, réparations et provisions disponibles dans cette localité. Prix de jeu fixes.",
     noShop: "Rejoignez une localité pour acheter, réparer ou obtenir des provisions pour le chien.",
+    shopHelp: "Pour acheter des objets, ouvrez le menu de la ville puis « Acheter des objets ».",
     bootsEffect: "Évite le malus de vitesse de 15 % des chaussures cassées.",
     backpackEffect: "Sac de 6 × 4 cases, charge totale maximale 5,5 kg, équipement porté compris.",
     raincoatEffect: "Réduit de 35 % les effets de la pluie sur la marche et la fatigue.",
@@ -40,6 +41,7 @@ const copy = {
     buy: "Buy", repair: "Repair", discard: "Discard without refund", minutes: "min",
     shop: "Purchases, repairs and supplies available in this settlement. Fixed game prices.",
     noShop: "Reach a settlement to buy equipment, repair it or obtain dog supplies.",
+    shopHelp: "To buy equipment, open the town menu and choose “Buy equipment”.",
     bootsEffect: "Avoids the 15% speed penalty of broken boots.",
     backpackEffect: "6 × 4 bag, maximum total load 5.5 kg including worn equipment.",
     raincoatEffect: "Reduces rain effects on walking speed and fatigue by 35%.",
@@ -63,10 +65,15 @@ const copy = {
 export function setupEquipment(t, { context, act }) {
   const trigger = document.querySelector("#equipment-travel");
   const dogTrigger = document.querySelector("#dog-travel");
-  const dialog = document.createElement("dialog");
-  dialog.id = "equipment-dialog";
-  dialog.setAttribute("aria-labelledby", "equipment-heading");
-  document.body.append(dialog);
+  const inventoryDialog = document.createElement("dialog");
+  inventoryDialog.id = "equipment-dialog";
+  inventoryDialog.setAttribute("aria-labelledby", "equipment-heading");
+  const shopDialog = document.createElement("dialog");
+  shopDialog.id = "equipment-shop-dialog";
+  shopDialog.setAttribute("aria-labelledby", "equipment-shop-heading");
+  document.body.append(inventoryDialog, shopDialog);
+  const shopTrigger = document.querySelector("#town-equipment-shop");
+  let dialog = inventoryDialog;
   let selected = null, renderedState, renderedLanguage, queued = false;
   const words = () => copy[document.documentElement.lang === "en" ? "en" : "fr"];
   const node = (tag, text, parent = dialog) => {
@@ -108,12 +115,14 @@ export function setupEquipment(t, { context, act }) {
     const language = document.documentElement.lang === "en" ? "en" : "fr";
     const money = cents => new Intl.NumberFormat(language, { style: "currency", currency: "EUR" }).format(cents / 100);
     const format = value => new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(value);
-    const modifiers = equipmentModifiers(gear, state.lore?.carriedGrams ?? 0), pending = gear.dogEncounter === "pending";
+    const shopping = dialog === shopDialog;
+    const modifiers = equipmentModifiers(gear, state.lore?.carriedGrams ?? 0), pending = !shopping && gear.dogEncounter === "pending";
     const revision = gear.revision;
     renderedState = state;
     renderedLanguage = language;
     dialog.replaceChildren();
-    node("h2", pending ? w.encounter : w.title).id = "equipment-heading";
+    node("h2", shopping ? t("equipmentShopTitle") : pending ? w.encounter : w.title).id =
+      shopping ? "equipment-shop-heading" : "equipment-heading";
     const feedback = node("p");
     feedback.className = "equipment-status";
     feedback.setAttribute("role", "status");
@@ -122,30 +131,34 @@ export function setupEquipment(t, { context, act }) {
     const controls = node("fieldset");
     controls.disabled = current.blocked;
     if (!pending) {
-      renderInventory(controls, { state: gear, walletCents: state.walletCents, language, selected,
-        obstacles: (state.lore?.inventory ?? []).map(item => ({ ...item.placement, id: item.id })),
-        extraItems: LORE_ITEMS,
-        itemName: id => w[id],
-        onSelect(id) {
-          selected = id;
-          render();
-          dialog.querySelector(`[data-item="${id}"]`)?.focus();
-        },
-        onMove(next, id) {
-          selected = id;
-          const placement = next.placements.find(p => p.id === id);
-          run({ type: "move", itemId: id, x: placement.x, y: placement.y, rotated: placement.rotated }, revision);
-          dialog.querySelector(`[data-item="${id}"]`)?.focus();
-        },
-      });
-      node("p", w.rules, controls).className = "window-help-text";
+      if (!shopping) {
+        renderInventory(controls, { state: gear, walletCents: state.walletCents, language, selected,
+          obstacles: (state.lore?.inventory ?? []).map(item => ({ ...item.placement, id: item.id })),
+          extraItems: LORE_ITEMS,
+          itemName: id => w[id],
+          onSelect(id) {
+            selected = id;
+            render();
+            dialog.querySelector(`[data-item="${id}"]`)?.focus();
+          },
+          onMove(next, id) {
+            selected = id;
+            const placement = next.placements.find(p => p.id === id);
+            run({ type: "move", itemId: id, x: placement.x, y: placement.y, rotated: placement.rotated }, revision);
+            dialog.querySelector(`[data-item="${id}"]`)?.focus();
+          },
+        });
+        node("p", w.rules, controls).className = "window-help-text";
+        node("p", w.shopHelp, controls).className = "window-help-text";
+      }
       node("p", equipmentShopAvailable(cell) ? w.shop : w.noShop, controls).className = "window-help-text";
       const list = node("ul", "", controls);
       for (const item of ITEMS) {
+        const owned = gear.items.find(entry => entry.id === item.id);
+        if (shopping ? Boolean(owned) : !owned) continue;
         const row = node("li", "", list), art = node("span", "", row);
         art.className = "catalogue-art";
         art.append(itemArt(document, item.id));
-        const owned = gear.items.find(entry => entry.id === item.id);
         node("strong", `${w[item.id]} · ${new Intl.NumberFormat(language, { maximumFractionDigits: 2 }).format(item.grams / 1000)} kg${owned ? ` · ${w.condition}: ${format(owned.condition)}%` : ""}`, row);
         node("p", w[`${item.id}Effect`], row).className = "window-help-text";
         const add = (type, label, cents, minutes) => {
@@ -162,6 +175,10 @@ export function setupEquipment(t, { context, act }) {
           add("repair", w.repair, item.repairCents, 30);
           if (!item.essential) add("discard", w.discard, 0, 5);
         } else add("buy", w.buy, item.priceCents, 10);
+      }
+      if (shopping) {
+        node("p", current.saveStatus ?? "").className = "technical-text";
+        return;
       }
     }
     const dogHeading = node("h3", w.dog, controls);
@@ -199,6 +216,9 @@ export function setupEquipment(t, { context, act }) {
   function update() {
     const current = context();
     trigger.disabled = !current?.state.equipment || current.blocked;
+    if (shopTrigger) shopTrigger.disabled = !current?.state.equipment || current.blocked ||
+      Boolean(current.state.ended) || !equipmentShopAvailable(current.cell) ||
+      current.state.equipment.dogEncounter === "pending";
     if (dogTrigger) {
       const gear = current?.state.equipment;
       dogTrigger.hidden = !gear?.dog;
@@ -230,6 +250,7 @@ export function setupEquipment(t, { context, act }) {
       const next = context();
       if (!next || next.blocked || next.state.equipment?.dogEncounter !== "pending" ||
           dailyTarotPending(next.state) || document.querySelector("dialog[open]")) return;
+      dialog = inventoryDialog;
       render();
       dialog.showModal();
       dialog.querySelector("input")?.focus();
@@ -237,16 +258,30 @@ export function setupEquipment(t, { context, act }) {
   }
   function openEquipment(focusDog = false) {
     if (!context() || context().blocked || document.querySelector("dialog[open]")) return;
+    dialog = inventoryDialog;
     render();
     dialog.showModal();
     if (focusDog) dialog.querySelector("#equipment-dog-heading")?.focus();
   }
   trigger.addEventListener("click", () => openEquipment());
   dogTrigger?.addEventListener("click", () => openEquipment(true));
-  dialog.addEventListener("cancel", event => {
+  shopTrigger?.addEventListener("click", () => {
+    update();
+    if (shopTrigger.disabled) return;
+    const town = document.querySelector("#town-dialog");
+    if (document.querySelector("dialog[open]") !== town) return;
+    town.close();
+    dialog = shopDialog;
+    render();
+    shopDialog.showModal();
+  });
+  inventoryDialog.addEventListener("cancel", event => {
     if (context()?.state.equipment?.dogEncounter === "pending") event.preventDefault();
   });
-  dialog.addEventListener("close", update);
+  inventoryDialog.addEventListener("close", update);
+  shopDialog.addEventListener("close", () => { update(); trigger.focus(); });
   new MutationObserver(update).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["open"] });
-  return { update, localize() { if (dialog.open) render(); update(); }, reset() { dialog.close(); selected = null; renderedState = undefined; } };
+  return { update, localize() { if (dialog.open) render(); update(); }, reset() {
+    inventoryDialog.close(); shopDialog.close(); dialog = inventoryDialog; selected = null; renderedState = undefined;
+  } };
 }

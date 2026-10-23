@@ -18,7 +18,34 @@ const town = { terrain: "place", countryCodes: ["FR"],
 const start = offset => applyBirthTarot(startEconomy(startSurvival(14, 10,
   Date.UTC(2026, 9, 17, 12) + offset, "balanced", survival), economy, () => 0), economy);
 
+test("nearby accommodation POIs are in a closed drawer after local actions", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const options = html.indexOf('<ul id="economy-options">');
+  const drawer = html.indexOf('<details id="nearby-accommodation" hidden>');
+  assert.ok(options > 0 && drawer > options);
+  const content = html.slice(drawer, html.indexOf("</details>", drawer));
+  assert.match(content, /<summary data-i18n="accommodationTitle"><\/summary>/);
+  assert.match(content, /id="accommodation-results"/);
+  assert.doesNotMatch(content.split(">")[0], /\bopen\b/);
+});
+
 for (const language of ["en", "fr"]) {
+  test(`${language} accommodation drawer starts folded on each opening without changing local options`, async t => {
+    const h = harness(t, language);
+    await h.ui.open("sleep");
+    const choices = h.buttons().map(button => button.textContent);
+    assert.ok(choices.length > 0);
+    assert.equal(h.element("#nearby-accommodation").open, false);
+    h.element("#nearby-accommodation").open = true;
+    h.ui.localize();
+    assert.equal(h.element("#nearby-accommodation").open, true);
+    assert.deepEqual(h.buttons().map(button => button.textContent), choices);
+    h.element("#economy-dialog").close();
+    await h.ui.open("sleep");
+    assert.equal(h.element("#nearby-accommodation").open, false);
+    assert.equal(h.actions.length, 0);
+  });
+
   test(`${language} hospitality NPC speech uses cached public dialogue without rewording active choices`, async t => {
     let cached = null, notify;
     const requested = [];
@@ -97,7 +124,7 @@ function harness(t, language = "en", findAccommodations, selectAccommodation, na
   globalThis.document = {
     documentElement: { lang: language },
     querySelector: selector => selector === "dialog[open]"
-      ? [...elements.values()].find(e => e.open) ?? null
+      ? [...elements.entries()].find(([key, e]) => key.endsWith("-dialog") && e.open)?.[1] ?? null
       : selector === "#economy-hospitality-feedback"
       ? element("#economy-options").children[0]?.children[1] ?? null : element(selector),
     getElementById: id => element("#economy-options").children

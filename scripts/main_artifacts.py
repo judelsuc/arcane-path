@@ -6,9 +6,11 @@ import re
 import time
 import copy
 import math
+from contextlib import contextmanager
 
 from journeys import JourneyRequest, JourneyConflict, JourneyCapacity
 from lore_playtest import LorePlaytest, MAX_RECEIPTS
+from journey_storage import StoreConnection
 
 WORLD = "main-artifacts-v1"
 COMMANDS = {"inquire", "claim", "cache", "share", "use", "pack", "interpret-clue", "archive"}
@@ -30,7 +32,28 @@ def grid_position(base, latitude, longitude):
 
 class MainArtifacts(LorePlaytest):
     def __init__(self, journeys, abandoned, clock=time.time, **kwargs):
-        super().__init__(journeys, abandoned, clock=clock, database="main-artifacts.sqlite3", **kwargs)
+        self.assets = getattr(journeys, "assets", None)
+        if self.assets is None:
+            super().__init__(journeys, abandoned, clock=clock, database="main-artifacts.sqlite3", **kwargs)
+        else:
+            self.journeys, self.abandoned, self.clock = journeys, abandoned, clock
+            self.paths = kwargs.pop("paths", None)
+            self.chunk_jobs = kwargs.pop("chunk_jobs", None)
+            if kwargs:
+                raise TypeError("Unexpected main artifact options: " + ", ".join(kwargs))
+            self.path = journeys.path.parent / "main-artifacts.sqlite3"
+        self.world_table = "main_artifact_world" if self.assets is not None else "world"
+        self.sessions_table = "main_artifact_sessions" if self.assets is not None else "sessions"
+        self.receipts_table = "main_artifact_receipts" if self.assets is not None else "receipts"
+
+    @contextmanager
+    def connect(self):
+        if self.assets is None:
+            with super().connect() as db:
+                yield db
+        else:
+            with self.assets.catalogue.connection() as db:
+                yield StoreConnection(db, self.assets.catalogue, mapping=True)
 
     def request(self, data, token):
         if (not isinstance(data, dict) or set(data) != {"journey", "requestId", "state", "action"}
@@ -64,14 +87,17 @@ class MainArtifacts(LorePlaytest):
             raise JourneyRequest("Invalid main artifact investigation.")
         digest = hashlib.sha256(json.dumps(data, sort_keys=True, allow_nan=False).encode()).hexdigest()
         with self.connect() as db:
-            db.execute("BEGIN IMMEDIATE")
-            receipt = db.execute("SELECT * FROM receipts WHERE journey=? AND request=?",
+            if self.assets is None:
+                db.execute("BEGIN IMMEDIATE")
+            else:
+                db.begin("main-artifacts")
+            receipt = db.execute(f"SELECT * FROM {self.receipts_table} WHERE journey=? AND request=?",
                                  (journey, data["requestId"])).fetchone()
             if receipt:
                 if receipt["digest"] != digest:
                     raise JourneyConflict("This receipt belongs to a different artifact request.")
                 return json.loads(receipt["payload"])
-            row = db.execute("SELECT * FROM world WHERE id=?", (WORLD,)).fetchone()
+            row = db.execute(f"SELECT * FROM {self.world_table} WHERE id=?", (WORLD,)).fetchone()
             if row is None:
                 world = self.initial_world(self.journeys.chunks.bases[genesis["region"]], genesis["state"])
             else:
@@ -81,7 +107,8 @@ class MainArtifacts(LorePlaytest):
                 if "latitude" not in instance:
                     instance["latitude"], instance["longitude"] = geographic_position(
                         anchor_map, instance["col"], instance["row"])
-            for stale in db.execute("SELECT * FROM sessions WHERE touched<=?", (self.clock() - 30 * 86400,)).fetchall():
+            for stale in db.execute(f"SELECT * FROM {self.sessions_table} WHERE touched<=?",
+                                    (self.clock() - 30 * 86400,)).fetchall():
                 owned = [item for item in world["instances"] if item["owner"] == stale["journey"]]
                 if not owned:
                     continue
@@ -97,7 +124,7 @@ class MainArtifacts(LorePlaytest):
             for instance in local["instances"]:
                 instance["col"], instance["row"] = grid_position(local["map"], instance["latitude"], instance["longitude"])
             original_positions = {item["id"]: (item["col"], item["row"]) for item in local["instances"]}
-            runtime_row = db.execute("SELECT * FROM sessions WHERE journey=?", (journey,)).fetchone()
+            runtime_row = db.execute(f"SELECT * FROM {self.sessions_table} WHERE journey=?", (journey,)).fetchone()
             runtime = self.decode(runtime_row) if runtime_row else None
             if prepare_route:
                 if not runtime or not any(item["owner"] == journey and item["id"] in ("star", "lovers")
@@ -128,7 +155,7 @@ class MainArtifacts(LorePlaytest):
                                           [(visit["col"], visit["row"]) for visit in visits] + prepared)
             if terrain["status"] != "ready":
                 raise JourneyCapacity("Artifact terrain is being prepared; retry the same request.")
-            if db.execute("SELECT count(*) FROM receipts").fetchone()[0] >= MAX_RECEIPTS:
+            if db.execute(f"SELECT count(*) FROM {self.receipts_table}").fetchone()[0] >= MAX_RECEIPTS:
                 raise JourneyCapacity("Artifact receipt capacity reached.")
             context = self.journal_context(genesis, {"state": snapshot}, journey) if snapshot.get("discovery") else None
             result = self.worker("main-artifacts", local, journey, genesis=genesis, runtime=runtime,
@@ -146,10 +173,14 @@ class MainArtifacts(LorePlaytest):
             latitude, longitude = geographic_position(local["map"], last["col"], last["row"])
             result["runtime"]["cacheLocation"] = {"latitude": latitude, "longitude": longitude, "town": last["town"]}
             raw, checksum = self.encode(world)
-            db.execute("INSERT OR REPLACE INTO world VALUES (?,?,?,?)",
+            db.execute(f"INSERT INTO {self.world_table}(id,region,payload,checksum) VALUES (?,?,?,?) "
+                       "ON CONFLICT(id) DO UPDATE SET region=excluded.region,payload=excluded.payload,"
+                       "checksum=excluded.checksum",
                        (WORLD, row["region"] if row is not None else genesis["region"], raw, checksum))
             raw, checksum = self.encode(result["runtime"])
-            db.execute("INSERT OR REPLACE INTO sessions VALUES (?,?,?,?)", (journey, raw, checksum, self.clock()))
-            db.execute("INSERT INTO receipts VALUES (?,?,?,?)",
+            db.execute(f"INSERT INTO {self.sessions_table}(journey,payload,checksum,touched) VALUES (?,?,?,?) "
+                       "ON CONFLICT(journey) DO UPDATE SET payload=excluded.payload,checksum=excluded.checksum,"
+                       "touched=excluded.touched", (journey, raw, checksum, self.clock()))
+            db.execute(f"INSERT INTO {self.receipts_table}(journey,request,digest,payload) VALUES (?,?,?,?)",
                        (journey, data["requestId"], digest, json.dumps(result["view"], allow_nan=False)))
             return result["view"]

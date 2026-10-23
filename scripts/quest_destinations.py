@@ -20,7 +20,11 @@ import threading
 import time
 import urllib.parse
 import urllib.request
+import uuid
 
+from asset_storage import AssetConflict, AssetError
+from content_storage import clock
+from journey_storage import StoreConnection
 from journeys import JourneyRequest, JourneyConflict, JourneyCapacity
 from local_towns import LocalTowns
 from parent_paths import find_path, PathLimit
@@ -169,6 +173,12 @@ class QuestDestinations:
         self.running = False
         self.future = None
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="quest-destinations")
+        self.assets = getattr(authorization.journeys, "assets", None)
+        self.instances_table = "quest_instances" if self.assets is not None else "instances"
+        self.pois_table = "quest_pois" if self.assets is not None else "pois"
+        if self.assets is not None:
+            self.kick()
+            return
         with self.connect() as db:
             if db.execute("PRAGMA user_version").fetchone()[0] not in (0, 1):
                 raise ValueError("Unsupported quest destination database version.")
@@ -189,6 +199,10 @@ class QuestDestinations:
 
     @contextmanager
     def connect(self):
+        if self.assets is not None:
+            with self.assets.catalogue.connection() as db:
+                yield StoreConnection(db, self.assets.catalogue, mapping=True)
+            return
         db = sqlite3.connect(self.path, timeout=10)
         db.row_factory = sqlite3.Row
         try:
@@ -196,6 +210,12 @@ class QuestDestinations:
                 yield db
         finally:
             db.close()
+
+    def begin(self, db):
+        if self.assets is None:
+            db.execute("BEGIN IMMEDIATE")
+        else:
+            db.begin("quest-destinations")
 
     def request(self, data, token):
         expected = {"journey", "template", "origin", "scope", "nonce"}
@@ -211,8 +231,8 @@ class QuestDestinations:
             raise JourneyRequest("Invalid bounded quest destination parameters.")
         canonical = json.dumps(data, sort_keys=True)
         with self.lock, self.connect() as db:
-            db.execute("BEGIN IMMEDIATE")
-            row = db.execute("SELECT * FROM instances WHERE owner=? AND nonce=?",
+            self.begin(db)
+            row = db.execute(f"SELECT * FROM {self.instances_table} WHERE owner=? AND nonce=?",
                              (owner, data["nonce"])).fetchone()
             if row is not None and row["request"] != canonical:
                 raise JourneyConflict("Quest nonce already belongs to another origin, template or scope.")
@@ -220,13 +240,15 @@ class QuestDestinations:
                 authored = template(data["template"])
                 if self.closed:
                     raise JourneyCapacity("Quest discovery is shutting down.")
-                if db.execute("SELECT COUNT(*) FROM instances WHERE status IN ('queued','running')").fetchone()[0] >= 16:
+                if db.execute(f"SELECT COUNT(*) FROM {self.instances_table} WHERE status IN ('queued','running')").fetchone()[0] >= 16:
                     raise JourneyCapacity("Quest discovery queue is full.")
-                if db.execute("SELECT COUNT(*) FROM instances WHERE owner=?", (owner,)).fetchone()[0] >= 1000:
+                if db.execute(f"SELECT COUNT(*) FROM {self.instances_table} WHERE owner=?", (owner,)).fetchone()[0] >= 1000:
                     raise JourneyCapacity("This journal has reached its quest discovery limit.")
-                db.execute("INSERT INTO instances VALUES(?,?,?,?,?,'queued',?,NULL)",
+                db.execute(f"INSERT INTO {self.instances_table}"
+                           "(owner,nonce,request,region,authored,status,created,output) "
+                           "VALUES(?,?,?,?,?,'queued',?,NULL)",
                            (owner, data["nonce"], canonical, record["region"], json.dumps(authored), time.time()))
-                row = db.execute("SELECT * FROM instances WHERE owner=? AND nonce=?",
+                row = db.execute(f"SELECT * FROM {self.instances_table} WHERE owner=? AND nonce=?",
                                  (owner, data["nonce"])).fetchone()
         self.kick()
         return json.loads(row["output"]) if row["output"] else {
@@ -244,12 +266,28 @@ class QuestDestinations:
                 with self.lock, self.connect() as db:
                     if self.closed:
                         return
-                    db.execute("BEGIN IMMEDIATE")
-                    row = db.execute("SELECT * FROM instances WHERE status='queued' ORDER BY created LIMIT 1").fetchone()
+                    self.begin(db)
+                    token = None
+                    if self.assets is not None:
+                        now_sql = clock(self.assets.catalogue)
+                        db.execute(f"UPDATE {self.instances_table} SET status='failed',output=? "
+                                   f"WHERE status='running' AND expires<=({now_sql}) AND attempts>=3",
+                                   (json.dumps({"status": "failed", "error": "Quest discovery attempt limit reached."}),))
+                        row = db.execute(f"SELECT * FROM {self.instances_table} "
+                                         f"WHERE status='queued' OR (status='running' AND expires<=({now_sql}) "
+                                         "AND attempts<3) ORDER BY created,owner,nonce LIMIT 1").fetchone()
+                    else:
+                        row = db.execute("SELECT * FROM instances WHERE status='queued' ORDER BY created LIMIT 1").fetchone()
                     if row is None:
                         return
-                    db.execute("UPDATE instances SET status='running' WHERE owner=? AND nonce=?",
-                               (row["owner"], row["nonce"]))
+                    if self.assets is None:
+                        db.execute("UPDATE instances SET status='running' WHERE owner=? AND nonce=?",
+                                   (row["owner"], row["nonce"]))
+                    else:
+                        token = uuid.uuid4().hex
+                        db.execute(f"UPDATE {self.instances_table} SET status='running',token=?,"
+                                   f"expires=({now_sql})+300,attempts=attempts+1 WHERE owner=? AND nonce=?",
+                                   (token, row["owner"], row["nonce"]))
                 try:
                     result = self.build(json.loads(row["request"]), row["region"], json.loads(row["authored"]))
                 except (QuestUnavailable, PathLimit) as error:
@@ -258,15 +296,25 @@ class QuestDestinations:
                     logging.exception("Bounded quest destination discovery failed")
                     result = {"status": "failed", "error": "Quest discovery failed; no destination was invented."}
                 with self.connect() as db:
-                    db.execute("UPDATE instances SET status=?,output=? WHERE owner=? AND nonce=?",
-                               (result["status"], json.dumps(result), row["owner"], row["nonce"]))
+                    if self.assets is None:
+                        db.execute("UPDATE instances SET status=?,output=? WHERE owner=? AND nonce=?",
+                                   (result["status"], json.dumps(result), row["owner"], row["nonce"]))
+                    else:
+                        done = db.execute(f"UPDATE {self.instances_table} SET status=?,output=? "
+                                          "WHERE owner=? AND nonce=? AND token=? AND status='running' "
+                                          f"AND expires>({clock(self.assets.catalogue)}) RETURNING nonce",
+                                          (result["status"], json.dumps(result), row["owner"], row["nonce"], token)).fetchone()
+                        if done is None:
+                            raise AssetConflict("Quest discovery lease expired or ownership changed.")
+        except (AssetError, OSError, sqlite3.Error):
+            logging.exception("Quest destination worker failed; durable jobs retained for inspection/recovery")
         finally:
             with self.lock:
                 self.running = False
                 # A request can enqueue between the empty read and this finally block.
                 if not self.closed:
                     with self.connect() as db:
-                        pending = db.execute("SELECT 1 FROM instances WHERE status='queued' LIMIT 1").fetchone()
+                        pending = db.execute(f"SELECT 1 FROM {self.instances_table} WHERE status='queued' LIMIT 1").fetchone()
                     if pending:
                         self.running = True
                         self.future = self.pool.submit(self.drain)
@@ -285,7 +333,7 @@ class QuestDestinations:
 
     def pois(self, town, base):
         with self.connect() as db:
-            row = db.execute("SELECT * FROM pois WHERE town=?", (town["id"],)).fetchone()
+            row = db.execute(f"SELECT * FROM {self.pois_table} WHERE town=?", (town["id"],)).fetchone()
         if row is not None and 0 <= time.time() - row["observed"] < TTL:
             elements = json.loads(row["elements"])
         else:
@@ -293,7 +341,8 @@ class QuestDestinations:
             # Validate before persisting public provider data.
             normalize(elements, town, base)
             with self.connect() as db:
-                db.execute("INSERT OR REPLACE INTO pois VALUES(?,?,?)",
+                db.execute(f"INSERT INTO {self.pois_table}(town,observed,elements) VALUES(?,?,?) "
+                           "ON CONFLICT(town) DO UPDATE SET observed=excluded.observed,elements=excluded.elements",
                            (town["id"], time.time(), json.dumps(elements)))
         return normalize(elements, town, base)
 

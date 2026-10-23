@@ -11,7 +11,11 @@ from pathlib import Path
 import sqlite3
 import threading
 import time
+import uuid
 
+from asset_storage import AssetConflict
+from content_storage import clock
+from journey_storage import StoreConnection
 from content_factory import OvhWriter, WorkshopError
 from journeys import JourneyRequest, JourneyCapacity
 from terraform_ovh import private_file
@@ -199,6 +203,12 @@ class LiveNarrative:
         self.closed = False
         self.future = None
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="live-narrative") if writer else None
+        self.assets = getattr(journeys, "assets", None)
+        self.wording_table = "narrative_wording" if self.assets is not None else "wording"
+        self.sequence = "seq" if self.assets is not None else "rowid"
+        if self.assets is not None:
+            self.kick()
+            return
         with self.connect() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
             if version not in (0, 1):
@@ -232,6 +242,10 @@ class LiveNarrative:
 
     @contextmanager
     def connect(self):
+        if self.assets is not None:
+            with self.assets.catalogue.connection() as db:
+                yield StoreConnection(db, self.assets.catalogue, mapping=True)
+            return
         db = sqlite3.connect(self.path, timeout=10)
         db.row_factory = sqlite3.Row
         try:
@@ -239,6 +253,12 @@ class LiveNarrative:
                 yield db
         finally:
             db.close()
+
+    def begin(self, db):
+        if self.assets is None:
+            db.execute("BEGIN IMMEDIATE")
+        else:
+            db.begin("live-narrative")
 
     def request(self, data, token):
         if not isinstance(data, dict):
@@ -283,17 +303,18 @@ class LiveNarrative:
         if "regenerate" in data:
             version += "-regenerate-" + data["regenerate"]
         with self.lock, self.connect() as db:
-            db.execute("BEGIN IMMEDIATE")
+            self.begin(db)
             if quest:
                 original = db.execute(
-                    "SELECT input FROM wording WHERE owner=? AND brief=? AND version LIKE ? LIMIT 1",
+                    f"SELECT input FROM {self.wording_table} WHERE owner=? AND brief=? AND version LIKE ? LIMIT 1",
                     (owner, brief, "%-instance-" + data["quest"]["instance"] + "-%")).fetchone()
                 if original and any(json.loads(original["input"]).get(key) != quest_payload[key]
                                     for key in ("template", "reason")):
                     raise JourneyRequest("Quest instance wording conflicts with its original template or reason.")
-            row = (db.execute("SELECT * FROM wording WHERE owner=? AND brief=? ORDER BY created DESC,rowid DESC LIMIT 1",
+            row = (db.execute(f"SELECT * FROM {self.wording_table} WHERE owner=? AND brief=? "
+                              f"ORDER BY created DESC,{self.sequence} DESC LIMIT 1",
                               (owner, brief)).fetchone() if brief in (BRIEF_ID, CLOSING_BRIEF, COVER_BRIEF) and "regenerate" not in data else
-                   db.execute("SELECT * FROM wording WHERE owner=? AND brief=? AND version=?",
+                   db.execute(f"SELECT * FROM {self.wording_table} WHERE owner=? AND brief=? AND version=?",
                               (owner, brief, version)).fetchone())
             if quest and row is not None and json.loads(row["input"]) != quest_payload:
                 raise JourneyRequest("Quest instance wording conflicts with its original template or reason.")
@@ -303,10 +324,10 @@ class LiveNarrative:
                         or json.loads(row["input"] or "{}").get("adultStory") !=
                         opening_brief(record, self.journeys.chunks).get("adultStory")):
                     version += "-named-1"
-                    row = db.execute("SELECT * FROM wording WHERE owner=? AND brief=? AND version=?",
+                    row = db.execute(f"SELECT * FROM {self.wording_table} WHERE owner=? AND brief=? AND version=?",
                                      (owner, brief, version)).fetchone()
             if row is None and self.writer and not self.closed:
-                queued = db.execute("SELECT COUNT(*) FROM wording WHERE status IN ('queued','running')").fetchone()[0]
+                queued = db.execute(f"SELECT COUNT(*) FROM {self.wording_table} WHERE status IN ('queued','running')").fetchone()[0]
                 if queued >= QUEUE_LIMIT:
                     raise JourneyCapacity("Live wording queue is full; authored text remains available.")
                 payload = opening_brief(record, self.journeys.chunks,
@@ -318,7 +339,8 @@ class LiveNarrative:
                     payload = parent_payload
                 if brief == CLOSING_BRIEF and "regenerate" in data:
                     original = db.execute(
-                        "SELECT input FROM wording WHERE owner=? AND brief=? ORDER BY created,rowid LIMIT 1",
+                        f"SELECT input FROM {self.wording_table} WHERE owner=? AND brief=? "
+                        f"ORDER BY created,{self.sequence} LIMIT 1",
                         (owner, brief)).fetchone()
                     if original:
                         payload = json.loads(original["input"])
@@ -341,16 +363,17 @@ class LiveNarrative:
                         key: value for key, value in context.items() if key != "characterName"}}
                     if "characterName" in context:
                         payload["characterName"] = context["characterName"]
-                db.execute("INSERT INTO wording(owner,brief,version,status,created,input) VALUES(?,?,?,'queued',?,?)",
+                db.execute(f"INSERT INTO {self.wording_table}(owner,brief,version,status,created,input) "
+                           "VALUES(?,?,?,'queued',?,?)",
                            (owner, brief, version, time.time(), json.dumps(payload) if payload else None))
-                row = db.execute("SELECT * FROM wording WHERE owner=? AND brief=? AND version=?",
+                row = db.execute(f"SELECT * FROM {self.wording_table} WHERE owner=? AND brief=? AND version=?",
                                  (owner, brief, version)).fetchone()
             totals = db.execute("SELECT SUM(calls) calls, COUNT(CASE WHEN calls>0 AND usage IS NULL THEN 1 END) unknown "
-                                "FROM wording WHERE owner=?", (owner,)).fetchone()
+                                f"FROM {self.wording_table} WHERE owner=?", (owner,)).fetchone()
             usage = [json.loads(r[0]) for r in db.execute(
-                "SELECT usage FROM wording WHERE owner=? AND usage IS NOT NULL", (owner,))]
-            previous = (db.execute("SELECT output FROM wording WHERE owner=? AND brief=? AND status='ready' "
-                                   "ORDER BY created DESC,rowid DESC LIMIT 1", (owner, brief)).fetchone()
+                f"SELECT usage FROM {self.wording_table} WHERE owner=? AND usage IS NOT NULL", (owner,))]
+            previous = (db.execute(f"SELECT output FROM {self.wording_table} WHERE owner=? AND brief=? AND status='ready' "
+                                   f"ORDER BY created DESC,{self.sequence} DESC LIMIT 1", (owner, brief)).fetchone()
                         if brief in (BRIEF_ID, CLOSING_BRIEF) and row and row["status"] != "ready" else None)
         self.kick()
         enabled = self.writer is not None
@@ -380,8 +403,13 @@ class LiveNarrative:
                     if self.closed:
                         self.running = False
                         return
-                    db.execute("BEGIN IMMEDIATE")
-                    row = db.execute("SELECT rowid,* FROM wording WHERE status='queued' ORDER BY rowid LIMIT 1").fetchone()
+                    self.begin(db)
+                    if self.assets is not None:
+                        db.execute(f"UPDATE {self.wording_table} SET status='failed',error=?,finished=? "
+                                   f"WHERE status='running' AND expires<=({clock(self.assets.catalogue)})",
+                                   ("Interrupted provider attempt; billing unknown. No automatic retry.", time.time()))
+                    row = db.execute(f"SELECT {self.sequence} AS rowid,* FROM {self.wording_table} "
+                                     f"WHERE status='queued' ORDER BY {self.sequence} LIMIT 1").fetchone()
                     if row is None:
                         self.running = False
                         return
@@ -400,11 +428,17 @@ class LiveNarrative:
                     quest_version = quest and re.fullmatch(
                         re.escape(base_version) + r"-instance-[a-f0-9]{32}-(offer|arrival|conclusion)", row["version"])
                     if row["version"] != base_version and not (regeneration or contextual or quest_version or parent_version) or row["brief"] not in CATALOGUE and not (story or closing or cover or quest or parent):
-                        db.execute("UPDATE wording SET status='failed',error=? WHERE rowid=?",
+                        db.execute(f"UPDATE {self.wording_table} SET status='failed',error=? WHERE {self.sequence}=?",
                                    ("Public brief version changed; no call made.", row["rowid"]))
                         continue
                     # Persist dispatch before network I/O: interrupted calls are never resubmitted.
-                    db.execute("UPDATE wording SET status='running',calls=calls+1 WHERE rowid=?", (row["rowid"],))
+                    token = uuid.uuid4().hex if self.assets is not None else None
+                    if self.assets is None:
+                        db.execute("UPDATE wording SET status='running',calls=calls+1 WHERE rowid=?", (row["rowid"],))
+                    else:
+                        db.execute(f"UPDATE {self.wording_table} SET status='running',calls=calls+1,"
+                                   f"token=?,expires=({clock(self.assets.catalogue)})+300 WHERE seq=?",
+                                   (token, row["rowid"]))
                 logging.info("Live narrative provider attempt: brief=%s model=%s", row["brief"], MODEL)
                 output, usage, error = None, None, None
                 try:
@@ -425,10 +459,18 @@ class LiveNarrative:
                     error = "Live narrative worker failed; consult server logs. No automatic retry."
                     logging.exception("Live narrative worker failed")
                 with self.connect() as db:
-                    db.execute("UPDATE wording SET status=?,finished=?,usage=?,output=?,error=? WHERE rowid=?",
-                               ("failed" if error else "ready", time.time(),
-                                json.dumps(usage) if usage else None, json.dumps(output) if output else None,
-                                error, row["rowid"]))
+                    values = ("failed" if error else "ready", time.time(),
+                              json.dumps(usage) if usage else None, json.dumps(output) if output else None,
+                              error, row["rowid"])
+                    if self.assets is None:
+                        db.execute("UPDATE wording SET status=?,finished=?,usage=?,output=?,error=? WHERE rowid=?", values)
+                    else:
+                        done = db.execute(f"UPDATE {self.wording_table} SET status=?,finished=?,usage=?,output=?,error=? "
+                                          f"WHERE seq=? AND token=? AND status='running' "
+                                          f"AND expires>({clock(self.assets.catalogue)}) RETURNING seq",
+                                          (*values, token)).fetchone()
+                        if done is None:
+                            raise AssetConflict("Narrative dispatch expired; late output was not published.")
                 logging.info("Live narrative completed: brief=%s status=%s usage=%s",
                              row["brief"], "failed" if error else "ready", usage or "unknown")
         except Exception:

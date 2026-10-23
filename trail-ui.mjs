@@ -518,6 +518,9 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     const socialActions = document.querySelector("#dialogue-parent");
     if (socialActions) {
       socialActions.replaceChildren();
+      const heading = document.createElement("h3");
+      heading.textContent = t("conversation.parent");
+      socialActions.append(heading);
       socialActions.append(action, actionCost);
     }
     actions.hidden = !currentPage;
@@ -584,6 +587,12 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       actions.append(item);
     }
     const available = clueActions(state);
+    if (socialActions && modern && !available.some(kind => ["discuss", "buy", "directions", "rumor"].includes(kind))) {
+      paragraph(socialActions, t(trail.completed ? "parentTalkCompleted" : "parentTalkNoWitness"));
+      const letter = openingClue(state);
+      if (letter) paragraph(socialActions, openingClueText(state, t));
+      if (!trail.completed) paragraph(socialActions, t(trail.exploration ? "parentTalkExplore" : "clueTravelFirst"));
+    }
     const options = searchClueOptions(state, current.cell, current.info, current.data)
       .filter(kind => !["discuss", "buy"].includes(kind));
     if (options.length) {
@@ -640,6 +649,8 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         document.querySelector("#trail-action-error").textContent = "";
         if (discover(kind)) section = "current";
         localize();
+        const error = document.querySelector("#trail-action-error").textContent;
+        if (error && socialActions) paragraph(socialActions, error, "failure");
       });
       const item = document.createElement("div");
       item.append(button);

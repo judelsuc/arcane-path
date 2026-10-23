@@ -1,5 +1,251 @@
 # Requirements tracked outside the design PDF
 
+## R-186 - Player change requests with screenshot and game snapshot
+
+- Provide a player command to propose a modification: capture the current game
+  view and a versioned snapshot of its state, then collect a comment such as
+  "The buttons are too small on my device." Show a preview and require explicit
+  confirmation before sending; cancellation must not publish a request.
+- Capture the game view and state together before opening the report form, so
+  the evidence describes the same situation rather than the reporting dialog.
+  Do not capture the desktop, other tabs or unrelated applications.
+- Persist the comment, structured snapshot and request metadata in the shared
+  OVH PostgreSQL database, and the screenshot as a private durable S3 asset linked
+  from that record. This storage split was explicitly approved by the user.
+- Include a request ID, timestamp, game/build and snapshot-schema versions,
+  UI language, viewport, device pixel ratio, active tileset/skin and relevant
+  visible game/modal state to help reproduce presentation and gameplay issues.
+  A snapshot is diagnostic evidence, not an executable save import or command.
+- Build an allowlisted diagnostic projection: never upload credentials, access
+  capabilities, arbitrary browser storage, hidden world/quest answers or another
+  player's private state. Show what will be sent and explain that screenshots
+  and comments may contain personal information.
+- Validate and bound comment length, snapshot size and decoded image format,
+  dimensions and size on the server. Authorize requests through the existing
+  server access model, bound submission rate/storage use and restrict report
+  and screenshot retrieval to authorized reviewers.
+- Publish the request only after verified screenshot storage; use an idempotent
+  submission ID so double clicks and network retries cannot duplicate requests.
+  Show an acknowledgement with the request ID only after durable persistence.
+  Preserve the draft and show explicit capture/upload/database errors; never
+  silently omit the screenshot or snapshot.
+- Provide reviewer retrieval of the comment, snapshot and image together, with
+  an initial status and a defined retention/deletion policy before production.
+  Do not automatically publish reports or create external issues.
+- **Status:** Planned only, at the user's request. No command, capture, upload
+  endpoint or reviewer interface is implemented by this requirements update.
+  See [the evolution plan](./PLAN_EVOLUTION_2026-10-23.md).
+
+## R-185 - Town arrival description and documentary gallery
+
+- On entering a mapped town, display its sourced description and a gallery of
+  real associated images in the town window, without blocking local actions.
+  Reuse the existing town welcome rather than creating a competing modal.
+- This changes town arrival only. Preserve the existing descriptions, photographs,
+  source selection and interaction flow for all other cells; do not replace
+  their content with town-level descriptions or galleries.
+- Resolve a stable town identity using OSM identity and, where present,
+  Wikidata/Wikipedia links. Prefer the requested UI language, label a source
+  language fallback, and distinguish the town from nearby places with the same name.
+- Use Wikipedia/Wikimedia Commons for sourced prose and photographs; use
+  available OSM description tags as a factual fallback, not invented history.
+  Do not present an AI illustration as a photograph or documentary evidence.
+- Target 3-5 distinct associated photographs when available, with captions,
+  author, licence and source links. Fewer images or none is valid; clearly
+  distinguish nearby images from images of the town itself.
+- Cache shared content and licence metadata, support partial results and
+  explicit source failures, and avoid repeated arrival/network requests for
+  movement between cells belonging to the same town.
+- **Status:** Planned. Town welcome prose exists; a dedicated arrival gallery
+  and stable town-level arrival deduplication are not yet implemented.
+
+## R-184 - Pluggable map tilesets and UI skins
+
+- Implement R-155/R-156 through two independent choices: map rendering pack
+  (ASCII or tileset) and UI skin (colours, surfaces, typography and controls).
+  Preserve the existing ASCII/default presentation as a working fallback.
+- Use versioned, validated asset manifests, complete terrain coverage and
+  explicit overlays for player, roads/rails where supported by map data,
+  clues, objectives, selected cells, unknown/loading cells and terminal markers.
+  Do not invent underlying map geometry or additional POIs.
+- All rendering modes must share coordinates, cell size, movement, hit targets,
+  keyboard navigation, accessible descriptions and gameplay state. Include the
+  map legend and notebook map export in the rendering decision.
+- Persist visual preferences independently of journey saves. Allow live switching,
+  preserve time-of-day and weather cues, and respect contrast, zoom and reduced motion.
+  Validate packs before activation; failed assets retain the prior working pack
+  and show an explicit error.
+- Initially ship ASCII plus one licensed graphical pack and the default UI plus
+  one alternate skin. Keep a bounded token/manifest API, not arbitrary remote
+  scripts or untrusted CSS execution. Retain required credits.
+- Future content-factory tilesets are coherent, validated candidates, not
+  independently regenerated cell images. Scheduling, automatic publication
+  and spending require a separate decision; this request does not enable them.
+- **Status:** Planned; extends R-155/R-156. Time-of-day colours already exist,
+  but a selectable tileset/skin system does not.
+
+## R-183 - Persistent characters before dialogue
+
+- Replace the anonymous dialogue-first flow with a character-selection window:
+  choose an available persistent character in the current town, or explicitly
+  request a new character for the interaction, then enter Dialogue with that
+  character visibly identified. Opening the selector must not generate a character.
+  A new character is persisted before appearing as ready/selectable.
+- Characters have stable IDs, fictional localized names, town/home identity,
+  current position and availability, role, individual knowledge, needs, portrait
+  reference and revision. Names follow the place's supported naming locale,
+  independently of UI language, without claiming a real person's identity or
+  inferring sensitive traits. Changing UI language does not rename a character.
+- Reuse existing suitable characters; concurrent/retried creation must not
+  duplicate an identity. Bound generation frequency/population without using
+  arbitrary new characters to reroll clues, rewards or outcomes.
+- Persist whom characters met, what was actually exchanged, quests they offered
+  or assigned and their outcomes. Separate shared public character facts from
+  private per-player knowledge, memories and contracts.
+- Supply only knowledge the character is allowed to know to conversation
+  generation. They cannot reveal hidden parent stages, unknown artifact caches
+  or another player's private story, nor invent a past meeting or quest.
+  The game owns facts and actions; the LLM writes bounded presentation.
+- Generate a consistent original graphical portrait per character, persist its
+  provenance/model/version and reuse it. Show a labelled placeholder while
+  pending or failed; portrait generation must not block conversation or reroll
+  on every meeting. Do not send private player memories to the image generator.
+- Preserve existing conversation subjects and eligibility. Provide an explicit
+  route back from Dialogue to character selection; keep Quests as the unified
+  objective window. A character's absence is visible, not a silent empty panel.
+  Outside towns, use the same flow for eligible roadside encounters.
+- Define shared-world availability separately from per-journey simulated time;
+  advancing one player's clock must not move or age every shared character.
+- **Status:** Planned. Existing fictional witness IDs and cached NPC speech
+  are not a persistent character registry or a memory system.
+
+## R-182 - External persistent storage on OVHcloud
+
+- Review current persistence and move authoritative shared state to OVHcloud
+  managed PostgreSQL and durable binary/file assets to S3-compatible Object Storage.
+  Existing data need not be migrated: provision an empty versioned world and
+  regenerate caches/assets as needed. Do not imply that old journeys still
+  reference a compatible world after reset.
+- Inventory magical-object custody, immutable journey genesis, journal custody,
+  quest instances, wording, generation jobs, images, terrain sources/chunks,
+  route caches and browser-local saves separately. Treat paid/generated or
+  pinned assets as durable, not disposable cache.
+- Keep artifact ownership, quest rewards, journal claims, character memories
+  and command receipts transactional and idempotent under concurrent API workers.
+  S3 is not a database, distributed mutex, mutable shared filesystem or place
+  to run SQLite databases.
+- Store large immutable assets in private object storage with checksum, version,
+  media type, size, provenance/licence and lifecycle classification; retain
+  indexed metadata, authorization and publication status in PostgreSQL.
+  Deleting a cache must never delete retained portraits, notebook images or
+  authoritative world state.
+- Remove correctness dependencies on process-local queues/locks and VM-only
+  scheduler state before scaling to multiple API/worker instances. Support
+  durable jobs, leases, deduplication and provider-wide rate/spending limits.
+- All API servers, generation workers and scheduled jobs must share the same
+  OVHcloud managed PostgreSQL service and authoritative database, including daily
+  generation reservations. Do not use a separate authoritative database per VM.
+- Preserve capability-based access until an explicit account system is designed.
+  Browser storage remains local progress/offline cache unless separately expanded
+  to cloud saves; externalizing backend databases alone does not provide cloud sync.
+- Use TLS, least-privilege credentials, private database networking where
+  available, restricted object access, bounded connection pools, observability
+  and tested database/object restore procedures.
+- Prepare a priced regional deployment proposal before provisioning paid services.
+  Do not assume managed services fit the existing VM budget or guarantee automatic
+  application scaling. No creation, data deletion or production cutover is authorized
+  by this requirements/planning request.
+- Budget confirmed: 100 EUR/month including tax for VM, database and storage
+  together. Local implementation may proceed without provisioning OVH services.
+- **Status:** Started locally: immutable local/S3 asset adapters, SQLite/PostgreSQL
+  catalogue, verified publication and administration commands. Title illustrations
+  can opt into the new asset store through private server configuration; defaults
+  retain existing storage. Real PostgreSQL and S3-compatible local integration
+  tests cover concurrent publication, restart and the title-image producer.
+  Configured title-image producers now reserve daily attempts and expose status
+  through the same SQL catalogue, without a VM-local attempts database. Concurrent
+  producers cannot duplicate the provider call; verified publication can be
+  completed after interruption without regeneration. This is a durable
+  dispatch-once registry, not yet a general leased queue.
+  A separate durable worker queue now supports expiring leases, fencing tokens,
+  bounded safe retries and atomic provider call counters/quotas; dispatched calls
+  with unknown outcomes are never automatically retried. The first connected
+  handler recovers already published title images without provider calls.
+  User choice: image call quotas are unlimited while the service is free, with
+  explicit configuration and retained accounting; the infrastructure budget is
+  unchanged. In configured mode, title, journal and encounter image producers now
+  use a shared dispatch/normalization/publication path and the same `images`
+  counters. Immutable image requests reuse verified assets instead of calling the
+  provider again. Configured encounter stock, observations and exclusive image
+  assignments now live in the shared SQL catalogue, with private verified asset
+  reads and no local encounter database. Transactional stock locking and unique
+  assignment prevent duplicate allocation under concurrent APIs; weekly renewal
+  retains the previous image until replacement.
+  Configured journal illustration queues, statuses and capacity limits now also
+  use shared SQL, with fenced leases and private verified asset reads, without a
+  local journal-image database. Another worker can resume queued or expired work;
+  published results are reused, while uncertain provider dispatches are not
+  repeated. Opening another service never fails an active worker's job.
+  Configured immutable journey beginnings, capabilities, keepers and abandoned
+  notebook lifecycle now use the same shared SQL catalogue, without local journey
+  or abandoned-journal databases. Cross-instance retries preserve genesis;
+  capability binding, keeper registration and notebook claims remain exclusive
+  and transactional. Existing private illustration APIs authorize against these
+  shared records. This does not externalize all world/gameplay stores.
+  Configured main-game artifacts now keep world custody, runtime sessions and
+  idempotent command receipts in one shared SQL transaction, with a common lock
+  across API instances. Concurrent claims have one owner; replayed receipts cannot
+  repeat costs/effects; failed receipt publication rolls back custody and session.
+  The isolated lore prototype retains its separate local database.
+  Configured quest destinations, immutable request/template inputs and public POI
+  cache now use shared SQL without a local quest database. Discovery leases allow
+  bounded recovery (three attempts), fence late workers and enforce global queue
+  capacity. This does not synchronize browser-held quest progress or rewards.
+  Configured live narrative inputs, outputs, statuses, queue capacity and
+  call/token accounting also use shared SQL without a local wording database.
+  Queued work can move between services; an active dispatch survives another
+  service starting. Expired dispatched text calls fail visibly with unknown usage
+  retained and no automatic provider retry; late outputs cannot overwrite them.
+  Text accounting is not a provider-wide spending/rate-limit policy.
+  Workers wake on startup or requests, not a new periodic scheduler.
+  The configured OVH PostgreSQL catalogue now uses a lazy process-local pool
+  (zero to four connections, at most sixteen waiting requests, five-second
+  checkout timeout). All stores in one API reuse its single catalogue/pool;
+  background workers are stopped before pool shutdown. Failed transactions roll
+  back before reuse, dead idle connections are checked/replaced and saturation
+  raises the existing sanitized storage-unavailable error, never an unpooled or
+  local fallback. Schema initialization remains explicit. The connection budget
+  must count every API, standalone worker and administrative process together
+  against the same OVH PostgreSQL service's limit.
+  Configured custom starting maps and their original compressed OSM snapshots
+  now have a shared PostgreSQL manifest and private immutable S3 asset. Other
+  API instances resolve the same origin by ID, can retrieve its map through the
+  existing endpoint, and restore its source before building in-origin terrain.
+  A shared expiring lease deduplicates map generation; final publication checks
+  the fencing token. Unpublished local-only origins fail startup explicitly
+  rather than pretending they are shared. Subsequent travel-cache sharing now
+  covers completed grid/elevation chunks; ordinary raw OSM sources, weather,
+  lodging and public-event caches remain local. A journey referencing a missing
+  shared origin fails explicitly rather than returning a partial route. Pinned
+  parent route assignments now also use shared SQL and their route geometries
+  are private immutable S3 assets. One fenced, bounded shared job selects the
+  route for a journey/stage (including the distinct magical-route starting
+  position); other APIs rehydrate that same route rather than rerolling it.
+  Replaying the path request does not expose route coordinates. Existing local
+  JSON route files are only rehydratable working caches in configured mode.
+  Completed travel grid/elevation caches are also shared in configured mode:
+  cache misses use fenced PostgreSQL leases, two global chunk jobs at a time,
+  private immutable S3 assets, and a shared provider cooldown after elevation
+  HTTP 429. Compatible old local grids migrate on first access without
+  rasterization. Ordinary raw OSM chunk sources, weather, lodging and public
+  event caches remain local; the pool alone does not coordinate their downloads.
+  The authoring
+  workshop and lore prototype remain separate local tools.
+  OVH acceptance, provider-wide text/download policies and externalizing these
+  remaining stores still block full multi-instance activation.
+  Inventory and phased plan:
+  [Infrastructure, personnages et habillages](./PLAN_EVOLUTION_2026-10-23.md).
+
 ## R-181 - Intimate parent history throughout the new lore
 
 - Bind each newly generated adult story to one of 22 bilingual intimate profiles:
@@ -10,6 +256,10 @@
   facts: a brief real power, the hidden personal object, a promised short
   absence and the increasingly postponed return. Do not revive the discarded
   gambling-game/empty-chair premise or invent a different motive.
+- Explicitly supply object custody to generated prose: the remembered domestic
+  object is the same missing object hidden by the cartomancer. Neither the child
+  nor the parent has recovered it; the child has the letter, not a carried
+  talisman, duplicate or fragment. Describe use of that object only in past memories.
 - The initial clue is always a letter left by the adult, including the profile's
   intimate words and only an origin-relative direction. Retain it in Quests,
   discovery notebook and PDF, including after the first destination becomes known.
@@ -61,8 +311,18 @@
   its earned response is retained with the relevant clues in Quests.
 - Preserve keyboard/mobile access and notebook/PDF consistency. Distance-based
   service rewards do not replace the rules of parent, journal or artifact quests.
+- The parent conversation topic must never be empty: when no social clue action
+  is available, show the existing opening letter and explain searching in Quests
+  and recognition in directions, without inventing testimony or revealing a town.
+  Show failed social-action feedback inside Dialogue, not only the quest window.
 - Move washing into the town menu only, not the main status/action area or
   duplicated cell actions. Preserve existing availability, price and effects.
+- In the accommodation window, show current-cell actions before nearby POIs.
+  Keep the POI search and list in a native drawer folded on each opening;
+  background updates must not close a drawer the player has expanded.
+- Equipment purchases have a dedicated window opened from the town menu.
+  Keep packing, repairs, discarding and companion care in the inventory window,
+  without duplicate equipment-buy buttons. Preserve prices and action validation.
 - One common objective selector tracks any of the four threads, with a known-only
   schematic overview and a marker on the travel map. A schematic is not a route.
 - Main-game artifacts use a dedicated shared server world, unique custody and

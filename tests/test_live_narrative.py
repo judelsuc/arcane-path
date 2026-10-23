@@ -699,6 +699,17 @@ class LiveNarrativeTests(unittest.TestCase):
             self.assertNotIn(secret, serialized)
         self.assertEqual(json.dumps(record, sort_keys=True), original)
         request = provider_request(brief, MODEL)
+        custody = brief["adultStory"]["objectCustody"]
+        self.assertIn("Hidden by the cartomancer", custody["current"])
+        self.assertIn("has not recovered", custody["parent"])
+        self.assertIn("does not possess", custody["child"])
+        self.assertIn("describes the past", custody["memory"])
+        self.assertIn("letter, not the missing object", custody["departure"])
+        prompt = request["messages"][0]["content"]
+        for constraint in ("THE SAME object", "ONLY as a past memory", "NOT this object",
+                           "pocket, hand, bag", "carried talisman", "duplicate, fragment",
+                           "check BOTH languages"):
+            self.assertIn(constraint, prompt)
         self.assertEqual(request["temperature"], 0.9)
         self.assertEqual(request["max_tokens"], 1400)
         self.assertGreater(request["temperature"], provider_request(CATALOGUE["event.coins"], MODEL)["temperature"])
@@ -726,6 +737,27 @@ class LiveNarrativeTests(unittest.TestCase):
         with patch("live_narrative.VERSION", "future-version"):
             self.assertEqual(reopened.request({"journey": self.owner, "brief": BRIEF_ID}, self.token), result)
         self.writer.assert_called_once()
+
+    def test_opening_story_without_object_custody_is_upgraded_once(self):
+        before = self.journeys.read(self.owner)
+        name = before["state"]["trail"]["parentName"]
+        self.writer.return_value = response(en=(f"Your parent {name} left. " * 30).strip(),
+                                            fr=(f"Votre parent {name} est parti. " * 30).strip())
+        self.request(BRIEF_ID)
+        self.assertEqual(self.settle(BRIEF_ID)["status"], "ready")
+        with self.service.connect() as db:
+            row = db.execute("SELECT rowid,input FROM wording WHERE brief=?", (BRIEF_ID,)).fetchone()
+            legacy = json.loads(row["input"])
+            del legacy["adultStory"]["objectCustody"]
+            db.execute("UPDATE wording SET input=? WHERE rowid=?", (json.dumps(legacy), row["rowid"]))
+        self.request(BRIEF_ID)
+        upgraded = self.settle(BRIEF_ID)
+        self.assertEqual(upgraded["status"], "ready")
+        self.assertIn("objectCustody", self.writer.call_args.args[0]["adultStory"])
+        self.assertEqual(self.writer.call_count, 2)
+        self.assertEqual(self.request(BRIEF_ID), upgraded)
+        self.assertEqual(self.writer.call_count, 2)
+        self.assertEqual(self.journeys.read(self.owner), before)
 
     def test_opening_story_truncated_invalid_and_provider_failures_never_retry(self):
         self.writer.return_value = response()

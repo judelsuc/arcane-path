@@ -1,8 +1,9 @@
 """Private encounter assignments backed by a weekly, free-only illustration batch."""
 
 import argparse
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 import fcntl
+import hashlib
 import json
 import logging
 import os
@@ -17,6 +18,9 @@ from closing_story import EVENT_FACTS
 from content_factory import IMAGE_LICENSE, IMAGE_MODEL, OvhImageWriter, normalize_image
 from journeys import JourneyCapacity, JourneyRequest
 from terraform_ovh import private_file
+from asset_storage import AssetError, configured_storage
+from shared_images import SharedImages
+from encounter_storage import EncounterStorage
 
 WEEK = 7 * 24 * 60 * 60
 MAX_BYTES = 2 * 1024**3
@@ -31,8 +35,12 @@ SCENES.update({
 
 
 class EncounterArt:
-    def __init__(self, path, authorization=None, enabled=False):
+    def __init__(self, path, authorization=None, enabled=False, assets=None):
         self.path, self.authorization, self.enabled = Path(path), authorization, enabled
+        self.assets = assets
+        self.shared = EncounterStorage(assets, week=WEEK) if assets is not None else None
+        if self.shared is not None:
+            return
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
             db.executescript("""
@@ -49,8 +57,16 @@ class EncounterArt:
             """)
         self.path.chmod(0o600)
 
+    @classmethod
+    def configured(cls, path, authorization=None, enabled=False):
+        assets = getattr(authorization, "assets", None)
+        return cls(path, authorization, enabled,
+                   assets=assets if assets is not None else configured_storage())
+
     @contextmanager
     def connect(self):
+        if self.shared is not None:
+            raise AssetError("Configured encounter stock uses the shared catalogue, not a local database.")
         db = sqlite3.connect(self.path, timeout=10)
         db.row_factory = sqlite3.Row
         db.execute("PRAGMA foreign_keys=ON")
@@ -88,6 +104,8 @@ class EncounterArt:
             if (not isinstance(data["occurrence"], str) or not isinstance(data["image"], str)
                     or not re.fullmatch(r"[a-f0-9]{32}", data["image"])):
                 raise JourneyRequest("Invalid encounter image identity.")
+            if self.shared is not None:
+                return self.shared.image(owner, data["occurrence"], data["image"])
             with self.connect() as db:
                 row = db.execute(
                     "SELECT i.image FROM images i JOIN encounters e ON e.image_id=i.id "
@@ -108,6 +126,16 @@ class EncounterArt:
         if len({item["occurrence"] for item in items}) != len(items):
             raise JourneyRequest("Duplicate encounter observations.")
         now = time.time()
+        if self.shared is not None:
+            rows = self.shared.sync(owner, items, now)
+        else:
+            rows = self.sync_local(owner, items, now)
+        return {"enabled": self.enabled, "entries": [
+            {**dict(row), "status": "ready" if row["id"] else "pending",
+             "renewing": bool(row["id"] and row["created"] <= now - WEEK),
+             "model": IMAGE_MODEL, "license": IMAGE_LICENSE} for row in rows]}
+
+    def sync_local(self, owner, items, now):
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             count = db.execute("SELECT COUNT(*) FROM encounters WHERE owner=?", (owner,)).fetchone()[0]
@@ -127,24 +155,39 @@ class EncounterArt:
                 "SELECT e.occurrence,e.scene,i.id,i.created FROM encounters e "
                 "LEFT JOIN images i ON e.image_id=i.id WHERE e.owner=? AND e.occurrence=?",
                 (owner, item["occurrence"])).fetchone() for item in items]
-        return {"enabled": self.enabled, "entries": [
-            {**dict(row), "status": "ready" if row["id"] else "pending",
-             "renewing": bool(row["id"] and row["created"] <= now - WEEK),
-             "model": IMAGE_MODEL, "license": IMAGE_LICENSE} for row in rows]}
+        return rows
 
-    def generate(self, scene, writer, now=None):
+    def generate(self, scene, writer, now=None, *, request=None):
         if scene not in SCENES:
             raise JourneyRequest("Unknown illustration scene.")
         now = time.time() if now is None else now
-        image = normalize_image(writer({"prompt":
+        identity = uuid.uuid4().hex if request is None else request
+        if not isinstance(identity, str) or not re.fullmatch(r"[a-f0-9]{32}", identity):
+            raise JourneyRequest("Invalid encounter generation request.")
+        if self.shared is not None:
+            previous = self.shared.previous(identity)
+        else:
+            with self.connect() as db:
+                row = db.execute("SELECT scene FROM images WHERE id=?", (identity,)).fetchone()
+            previous = row["scene"] if row else None
+        if previous is not None:
+            if previous != scene:
+                raise JourneyRequest("An encounter generation request cannot change its scene.")
+            return identity
+        brief = {"prompt":
             f"An individual travel encounter: {SCENES[scene]} "
             "Express the scene through objects, scenery and atmosphere, without people or readable text. "
             "No exact place, route, documentary evidence, extra event or magical power. "
-            "Make a fresh original composition with a different arrangement and viewpoint."}))
-        identity = uuid.uuid4().hex
+            "Make a fresh original composition with a different arrangement and viewpoint."}
+        image = (normalize_image(writer(brief)) if self.assets is None else
+                 SharedImages(self.assets).generate("encounter-art", identity, brief, writer))
+        if self.shared is not None:
+            self.shared.publish(identity, scene, now, len(image))
+            return identity
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
-            db.execute("INSERT INTO images VALUES(?,?,?,0,?)", (identity, scene, now, image))
+            db.execute("INSERT INTO images VALUES(?,?,?,0,?) ON CONFLICT(id) DO NOTHING",
+                       (identity, scene, now, image))
             pending = db.execute(
                 "SELECT e.owner,e.occurrence FROM encounters e LEFT JOIN images i ON e.image_id=i.id "
                 "WHERE e.scene=? AND (i.id IS NULL OR i.created<=?) ORDER BY e.requested LIMIT 1",
@@ -156,24 +199,32 @@ class EncounterArt:
 
 def run_batch(art, writer, *, hours=7, interval=15, clock=time.monotonic, sleep=time.sleep):
     deadline, generated = clock() + hours * 3600, 0
-    with art.path.with_suffix(".lock").open("a") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    lock_context = nullcontext() if art.shared is not None else art.path.with_suffix(".lock").open("a")
+    with lock_context as lock:
+        if lock is not None:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         while clock() < deadline:
             now = time.time()
-            with art.connect() as db:
-                db.execute("DELETE FROM images WHERE claimed=0 AND created<=?", (now - WEEK,))
-                stored = db.execute("SELECT COALESCE(SUM(length(image)),0) FROM images").fetchone()[0]
-                pending = db.execute(
-                    "SELECT e.scene FROM encounters e LEFT JOIN images i ON e.image_id=i.id "
-                    "WHERE i.id IS NULL OR i.created<=? ORDER BY e.requested LIMIT 1", (now - WEEK,)).fetchone()
-                counts = {row["scene"]: row["n"] for row in db.execute(
-                    "SELECT scene,COUNT(*) n FROM images WHERE claimed=0 AND created>? GROUP BY scene",
-                    (now - WEEK,))}
-            if stored >= MAX_BYTES or shutil.disk_usage(art.path.parent).free < MIN_FREE:
+            if art.shared is not None:
+                stored, pending_scene, counts = art.shared.batch_state(now)
+            else:
+                with art.connect() as db:
+                    db.execute("DELETE FROM images WHERE claimed=0 AND created<=?", (now - WEEK,))
+                    stored = db.execute("SELECT COALESCE(SUM(length(image)),0) FROM images").fetchone()[0]
+                    pending = db.execute(
+                        "SELECT e.scene FROM encounters e LEFT JOIN images i ON e.image_id=i.id "
+                        "WHERE i.id IS NULL OR i.created<=? ORDER BY e.requested LIMIT 1", (now - WEEK,)).fetchone()
+                    counts = {row["scene"]: row["n"] for row in db.execute(
+                        "SELECT scene,COUNT(*) n FROM images WHERE claimed=0 AND created>? GROUP BY scene",
+                        (now - WEEK,))}
+                pending_scene = pending["scene"] if pending else None
+            if stored >= MAX_BYTES or (art.shared is None and shutil.disk_usage(art.path.parent).free < MIN_FREE):
                 logging.warning("Illustration batch stopped: storage safety threshold reached.")
                 break
-            scene = pending["scene"] if pending else min(SCENES, key=lambda key: counts.get(key, 0))
-            art.generate(scene, writer)
+            scene = pending_scene if pending_scene else min(SCENES, key=lambda key: counts.get(key, 0))
+            request = (hashlib.sha256(f"encounter-batch-v1:{interval}:{int(now // interval)}".encode())
+                       .hexdigest()[:32] if art.assets is not None else None)
+            art.generate(scene, writer, request=request)
             generated += 1
             logging.info("Encounter illustration generated: scene=%s total=%d", scene, generated)
             sleep(max(0, min(interval, deadline - clock())))
@@ -192,7 +243,7 @@ def main():
     token = private_file(Path(os.environ["ARCANE_JOURNAL_IMAGES_TOKEN_FILE"])).strip()
     if not token or not token.isascii() or any(char.isspace() for char in token):
         raise ValueError("Invalid private illustration access key.")
-    art = EncounterArt(args.cache / "encounter-art.sqlite3")
+    art = EncounterArt.configured(args.cache / "encounter-art.sqlite3")
     logging.info("Starting free-only illustration batch, duration=%sh, no item-count limit.", args.hours)
     total = run_batch(art, OvhImageWriter(token), hours=args.hours, interval=args.interval)
     logging.info("Illustration batch finished: %d new images.", total)

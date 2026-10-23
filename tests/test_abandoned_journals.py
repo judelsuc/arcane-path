@@ -406,7 +406,7 @@ class JournalsTests(unittest.TestCase):
         chunks = SimpleNamespace(cache=self.directory, root=Path.cwd())
         jobs = ChunkJobs(chunks)
         self.addCleanup(jobs.pool.shutdown)
-        with patch("travel_server.JourneyStore", return_value=self.journeys):
+        with patch("travel_server.JourneyStore.configured", return_value=self.journeys):
             handler = make_handler(chunks, jobs)
         server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
         thread = threading.Thread(target=server.serve_forever)

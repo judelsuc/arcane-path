@@ -16,6 +16,8 @@ import uuid
 from config import load_config
 from town_trail import TownTrailStore
 from parent_story import story_profile, build_parent_story
+from asset_storage import configured_storage
+from journey_storage import StoreConnection
 
 MAX_JOURNEYS = 1000
 GENERATOR_VERSION = "parent-story-cartomancer-v3"
@@ -79,10 +81,13 @@ def initial_state(base, name, started_at, card, survival, economy, trail):
 
 
 class JourneyStore:
-    def __init__(self, chunks, write):
+    def __init__(self, chunks, write, assets=None):
         self.chunks = chunks
         self.trails = TownTrailStore(chunks, write)
         self.path = chunks.cache / "journeys.sqlite3"
+        self.assets = assets
+        if assets is not None:
+            return
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
@@ -93,8 +98,16 @@ class JourneyStore:
                 payload TEXT NOT NULL, checksum TEXT NOT NULL)""")
             db.execute("PRAGMA user_version = 1")
 
+    @classmethod
+    def configured(cls, chunks, write):
+        return cls(chunks, write, assets=configured_storage())
+
     @contextmanager
     def connect(self):
+        if self.assets is not None:
+            with self.assets.catalogue.connection() as db:
+                yield StoreConnection(db, self.assets.catalogue)
+            return
         db = sqlite3.connect(self.path, timeout=5)
         try:
             with db:
@@ -130,7 +143,10 @@ class JourneyStore:
             raise JourneyRequest("Invalid journey request ID or region.")
         name = character_name(request["name"])
         with self.connect() as db:
-            db.execute("BEGIN IMMEDIATE")
+            if self.assets is not None:
+                db.begin("journeys")
+            else:
+                db.execute("BEGIN IMMEDIATE")
             row = db.execute("SELECT payload, checksum FROM journeys WHERE request_id = ?",
                              (request_id,)).fetchone()
             if row:

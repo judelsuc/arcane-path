@@ -26,6 +26,13 @@ def intimate_story(trail):
         "encounter": "The cartomancer presented a card and asked for a personal object it evoked. "
                      "A real power appeared briefly. She hid the object, claiming its recovery must be deserved. "
                      "The adult expected a short absence, but kept postponing the return.",
+        "objectCustody": {
+            "current": "Hidden by the cartomancer and still missing; its location is unknown to the child.",
+            "parent": "The parent left to recover this same object and has not recovered it.",
+            "child": "The child does not possess, carry, wear or use this object, or a copy or fragment of it.",
+            "memory": "The domestic memory describes the past, before the cartomancer hid the object.",
+            "departure": "The child has the parent's letter, not the missing object. The letter is not the object.",
+        },
         "child": "The child seeks the parent, not a magical object. The child's birth card does not "
                  "identify the adult's card or make the adult the original owner of a unique artifact.",
     }

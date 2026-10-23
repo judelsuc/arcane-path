@@ -536,6 +536,7 @@
         <button id="town-refresh" type="button" data-i18n="townRefresh"></button>
         <button id="town-services" type="button" data-i18n="mealTitle"></button>
         <button id="town-accommodation" type="button" data-i18n="accommodationTitle"></button>
+        <button id="town-equipment-shop" type="button" data-i18n="equipmentShopTitle" aria-haspopup="dialog" aria-controls="equipment-shop-dialog" disabled></button>
         <button id="town-earn-money" type="button" data-i18n="earnMoney"></button>
         <button id="town-survival-choices" type="button" data-i18n="survivalChoices"></button>
         <button id="wash-travel" type="button" disabled></button>
@@ -634,15 +635,15 @@
       <p id="economy-dream-help" class="window-help-text" hidden></p>
       <p id="economy-shelter-context"></p>
       <p id="economy-hospitality-result" role="status"></p>
-      <section id="nearby-accommodation" hidden>
-        <h3 data-i18n="accommodationTitle"></h3>
+      <ul id="economy-options"></ul>
+      <p id="economy-action-error" role="alert"></p>
+      <details id="nearby-accommodation" hidden>
+        <summary data-i18n="accommodationTitle"></summary>
         <button id="accommodation-search" type="button" data-i18n="accommodationSearch"></button>
         <p id="accommodation-status" role="status"></p>
         <p id="accommodation-details" class="technical-text"></p>
         <ul id="accommodation-results"></ul>
-      </section>
-      <ul id="economy-options"></ul>
-      <p id="economy-action-error" role="alert"></p>
+      </details>
     </dialog>
     <dialog id="music-dialog" aria-labelledby="music-title">
       <h2 id="music-title" data-i18n="musicOpen"></h2>

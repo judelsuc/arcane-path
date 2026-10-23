@@ -305,6 +305,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
     accommodationResult = undefined;
     accommodationError = "";
     dialog.dataset.activity = mode;
+    document.querySelector("#nearby-accommodation").open = false;
     document.querySelector("#economy-action-error").textContent = "";
     dialog.showModal();
     const request = ++generation;
