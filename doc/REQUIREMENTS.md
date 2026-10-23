@@ -157,8 +157,10 @@
   by this requirements/planning request.
 - Budget confirmed: 100 EUR/month including tax for VM, database and storage
   together. Local implementation may proceed without provisioning OVH services.
-- **Status:** Started locally: immutable local/S3 asset adapters, SQLite/PostgreSQL
-  catalogue, verified publication and administration commands. Title illustrations
+- **Status:** Implemented incrementally and deployed as opt-in runtime code to
+  the OVH preview. Shared PostgreSQL/S3 mode is not active there. The foundation
+  includes immutable local/S3 asset adapters, SQLite/PostgreSQL catalogue,
+  verified publication and administration commands. Title illustrations
   can opt into the new asset store through private server configuration; defaults
   retain existing storage. Real PostgreSQL and S3-compatible local integration
   tests cover concurrent publication, restart and the title-image producer.
