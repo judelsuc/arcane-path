@@ -149,8 +149,9 @@ class HttpsConfigurationTests(unittest.TestCase):
         assets = next(line.strip() for line in config.splitlines()
                       if line.strip().startswith("location ~ ^/(?:index"))
         asset_pattern = re.compile(assets.removeprefix("location ~ ").removesuffix(" {"))
-        for path in ["/styles.css", "/mini-games.css"]:
+        for path in ["/styles.css", "/mini-games.css", "/favicon.svg"]:
             self.assertIsNotNone(asset_pattern.fullmatch(path), path)
+        self.assertIn("location = /favicon.ico {\n        return 301 /favicon.svg;", config)
         for path in ["/content-workshop.css", "/scripts/travel_server.py", "/.env",
                      "/infra/nginx/preview.conf", "/mini-games.css/extra"]:
             self.assertIsNone(asset_pattern.fullmatch(path), path)
