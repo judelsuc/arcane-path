@@ -12,7 +12,37 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
-## R-140 Wikipedia illustration context (local, not deployed)
+## Checkpoint déployé : personnages, galerie, demandes, tilesets et R-140 (27 octobre 2026)
+
+- Commit runtime `965e9445df6f19c66baaadf4ca98a14b1b1e4cef`, tag local
+  `deploy-2026-10-27-characters-tilesets`. Contient R-183 (personnages
+  persistants et mémoire des joueurs rencontrés), R-185 (galerie documentaire
+  des villes), R-186 (demandes de modification, **collecte désactivée**),
+  les tilesets ASCII/Path Pixel avec sites cartographiés, et R-140.
+- Validation avant empaquetage : **1 235 tests JavaScript** réussis ;
+  **614 tests Python**, 579 réussis et 35 ignorés. Trois attentes obsolètes
+  ont été corrigées avant release (métadonnées de localités, 29 fenêtres) et
+  le texte joueur R-140 ne nomme plus le fournisseur.
+- Paquet SHA-256 `ab40d389445fb73efd365e90e85cbb8a8080448ce74fa7fed83be9ebaf248d6a`.
+  Backup de retour code `/home/ubuntu/arcane-path-before-deploy-965e944.tar.gz`
+  (mode `0600`, SHA-256 `b939d94ca8e0583bb0bea1a8b4d6ac9afe8241a6989ef9a786f1dcce4f9085f0`,
+  sans `.cache` ni `.git`) et ancienne configuration Nginx
+  `/home/ubuntu/nginx-arcane-path-before-965e944.conf`. Lien `.cache` préservé.
+- `infra/nginx/preview.conf` installé, `nginx -t` réussi, rechargé.
+- **Incident ~3 min :** le premier redémarrage a échoué
+  (`relation "world_characters" does not exist`) car l'initialisation
+  explicite du catalogue n'avait pas encore été lancée. Corrigé par
+  `scripts/asset_storage.py --configured initialize` (utilisateur `arcane`,
+  environnement du service) puis redémarrage. Toujours lancer cette commande
+  **avant** de redémarrer quand un schéma partagé est ajouté.
+- Contrôles loopback 8766 : `/`, `/api/travel`, `/public/release.json`
+  (commit exact), tileset, renderer vendorisé et nouveaux modules en 200 ;
+  `POST /api/change-requests` répond 503 « désactivé ». HTTPS sans
+  authentification : 401 attendu. Imports serveur OK sous `arcane` ;
+  Wikimedia HTTPS sortant 200. Les unités d'illustration/timers sont
+  inchangées ; le timer de rétention R-186 n'est **ni installé ni activé**.
+
+## R-140 Wikipedia illustration context (deployed 27 October 2026)
 
 New journal cover/day jobs can use bounded public Wikipedia setting motifs
 for their fictional map location. This needs the existing journal-image
@@ -33,7 +63,7 @@ See [the extraction, attribution and recovery rules](./CONTENT_FACTORY.md#wikipe
 Verified locally: 87 Python tests, 46 JavaScript tests and Chromium desktop/mobile
 source/fallback checks; no new live provider call was made.
 
-## Selectable map tiles and mapped sites (local, not deployed)
+## Selectable map tiles and mapped sites (deployed 27 October 2026)
 
 The map selector now offers ASCII and the original **Path Pixel** pack.
 It is a data-only version-1 manifest at
@@ -62,7 +92,7 @@ Source-less old chunks remain usable, with existing exact POI tags as limited
 fallback; this limitation is stated in Options. No blanket cache deletion,
 costly redownload or public-site scraping is enabled.
 
-## R-186 private player change requests (not deployed)
+## R-186 private player change requests (code deployed, collection disabled)
 
 The local implementation stores confirmed comments/allowlisted diagnostic
 snapshots in PostgreSQL and verified private screenshots in S3. Reports are

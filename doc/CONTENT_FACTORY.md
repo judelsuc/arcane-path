@@ -654,7 +654,7 @@ provider or start a paid trial.
 
 ### Wikipedia setting context (R-140)
 
-**27 October: implemented locally, not deployed.** The user confirmed the
+**27 October: deployed (runtime `965e944`).** The user confirmed the
 location is fictional game context, not the player's real location; public
 setting motifs may be sent without an additional consent step. Private data,
 coordinates and hidden clues remain outside the image-provider prompt.

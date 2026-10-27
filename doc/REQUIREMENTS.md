@@ -52,7 +52,7 @@
   is configured and healthy; **operator-only retrieval over SSH/admin CLI**.
   The eventual recipient is the development assistant, through an authorized
   private export, not an automatically contacted external AI service.
-- **Status:** Implemented locally, not deployed. The FR/EN header command and
+- **Status:** Deployed 27 October 2026 (runtime `965e944`); collection stays disabled (503) until private deletion credentials are configured. The FR/EN header command and
   Alt+Shift+F synchronously freeze an allowlisted snapshot and the rendered game
   before the reporting form. DOM, canvas, loaded images, CSS backgrounds and
   open/scrolled dialogs are captured; failed resources and unsupported embedded
@@ -105,7 +105,7 @@
 - Cache shared content and licence metadata, support partial results and
   explicit source failures, and avoid repeated arrival/network requests for
   movement between cells belonging to the same town.
-- **Status:** Implemented locally, not deployed. The existing town window now
+- **Status:** Deployed 27 October 2026 (runtime `965e944`). The existing town window now
   loads a sourced welcome and up to five credited documentary photographs
   progressively, while its local actions remain usable. Arrival follows the
   primary stable OSM settlement ID, not each cell's coordinates; movement
@@ -173,7 +173,7 @@
 - Future content-factory tilesets are coherent, validated candidates, not
   independently regenerated cell images. Scheduling, automatic publication
   and spending require a separate decision; this request does not enable them.
-- **Status:** Map-rendering portion implemented locally, not deployed.
+- **Status:** Map-rendering portion deployed 27 October 2026 (runtime `965e944`).
   Options now offers ASCII and **Path Pixel**, an original locally bundled
   CC0-1.0 pack. Its versioned data-only manifest covers every terrain, all twelve
   selected mapped-site categories and unavailable cells; bounded pixel
@@ -233,8 +233,8 @@
   Outside towns, use the same flow for eligible roadside encounters.
 - Define shared-world availability separately from per-journey simulated time;
   advancing one player's clock must not move or age every shared character.
-- **Status:** End-to-end implementation is complete locally and remains
-  undeployed. The authenticated selector is read-only until explicit creation;
+- **Status:** End-to-end implementation deployed 27 October 2026 (runtime
+  `965e944`). The authenticated selector is read-only until explicit creation;
   stable bounded characters can be reused in towns or eligible roadside cells.
   Names use a validated explicit location naming locale, otherwise the current
   cell's public OSM country-code metadata. Unsupported countries do not inherit
@@ -1076,7 +1076,7 @@
 - **27 October scope confirmed:** recognize/display **all twelve** categories,
   **visual only** for this increment. Existing movement, costs, access rules,
   event selection and available actions must remain unchanged.
-- **Status:** Visual annotations implemented locally, not deployed. Nodes,
+- **Status:** Visual annotations deployed 27 October 2026 (runtime `965e944`). Nodes,
   closed ways and complete multipolygon boundaries (including holes) produce
   source-linked `sites` metadata, separate from authoritative terrain and
   gameplay POIs. Exact OSM tags, not names or generic tourist-attraction tags,
@@ -1172,7 +1172,7 @@
   setting facts in illustration requests without a separate consent step.
   Player identity, private notes, coordinates and hidden clues remain excluded
   from the image-provider prompt.
-- **Status:** Implemented locally, not deployed. The background cover/day worker
+- **Status:** Deployed 27 October 2026 (runtime `965e944`). The background cover/day worker
   resolves an exact EN/FR OSM Wikipedia link or a nearby geolocated Wikipedia
   introduction (within 2 km), using already cached map geometry. A bounded
   English/French vocabulary extracts up to six original landscape/architecture/

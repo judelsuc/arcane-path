@@ -8,7 +8,7 @@ a depuis été provisionné et activé sur la prévisualisation avec autorisatio
 explicite ; voir [le compte rendu d'activation](./INFRASTRUCTURE.md).
 Aucune reprise des données existantes n'a été faite. Les changements des
 fenêtres, de la boutique et du prompt du parent ont été livrés dans le runtime
-`4934a99` ; les nouveaux travaux R-183 restent locaux, non déployés.
+`4934a99` ; R-183, R-185, R-186 (collecte désactivée), les tilesets et R-140 sont déployés dans le runtime `965e944` (27 octobre).
 
 ### Activation OVH autorisée
 
@@ -1280,7 +1280,7 @@ atomique d'une version. Aucun planning ni budget nouveau n'est activé ici.
 
 ## 5. Entrée en ville : réutiliser ce qui existe
 
-### R-185 : implémentation locale, non déployée
+### R-185 : déployé le 27 octobre (runtime `965e944`)
 
 L'accueil existant charge désormais progressivement une description sourcée
 et jusqu'à cinq photographies documentaires créditées, sans bloquer les
@@ -1384,7 +1384,7 @@ développement, via une consultation privée autorisée par l'opérateur.
 
 ### État local
 
-Implémentation réalisée, **non déployée et collecte désactivée par défaut** :
+Implémentation **déployée le 27 octobre (runtime `965e944`), collecte désactivée par défaut** :
 commande FR/EN et Alt+Maj+F, gel synchrone DOM/snapshot avant formulaire,
 aperçu et confirmation, endpoint exact idempotent, PostgreSQL/S3 privés,
 export opérateur et timer de suppression horaire. La capture conserve les
