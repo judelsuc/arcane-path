@@ -36,7 +36,7 @@
   at most 3 moderation attempts; e-mails/phones/links are rejected locally
   without an LLM call. Time, wallet and knife are client-side journey gates;
   the server enforces terrain, length, limits, moderation and reports.
-- **Status:** Implemented locally on 27 October 2026, not deployed
+- **Status:** Deployed 27 October 2026 (runtime `372d3b1`)
   (`scripts/inscriptions.py`, `inscriptions.mjs`, `inscriptions-ui.mjs`,
   `/api/inscriptions`). Tests: JS 1244/1244; Python 628 run, 35 skipped;
   FR/EN browser check of list, carve, poll and precise rejection reason.

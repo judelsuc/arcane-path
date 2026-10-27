@@ -12,6 +12,21 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint déployé : gravures joueurs R-187 (27 octobre 2026, 15 h 40)
+
+Runtime `372d3b1`, tag `deploy-2026-10-27-inscriptions`, archive de 400
+fichiers (SHA-256 `488ab3df…92ea10`). Sauvegarde préalable
+`/home/ubuntu/arcane-path-before-deploy-372d3b1.tar.gz` (0600, SHA-256
+`78ac224f…83bd1`) et nginx `/home/ubuntu/nginx-arcane-path-before-372d3b1.conf`.
+Nouveau `preview.conf` installé, `nginx -t` OK, rechargé. Schéma initialisé
+**avant** le redémarrage (`{"initialized": true}`), sans interruption anormale.
+Contrôles : `index.html`, `inscriptions.mjs`, `inscriptions-ui.mjs` 200 ;
+`/public/release.json` indique `372d3b1` ; `POST /api/inscriptions` invalide 400 ;
+`/api/change-requests` 503 (toujours désactivé) ; HTTPS externe 401 sans
+authentification, GET `/api/inscriptions` 403 (POST seul). Aucune erreur dans
+le journal ; timers d'illustration inchangés. La modération utilise le jeton
+texte déjà configuré.
+
 ## Checkpoint déployé : personnages, galerie, demandes, tilesets et R-140 (27 octobre 2026)
 
 - Commit runtime `965e9445df6f19c66baaadf4ca98a14b1b1e4cef`, tag local
@@ -42,7 +57,7 @@ explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
   Wikimedia HTTPS sortant 200. Les unités d'illustration/timers sont
   inchangées ; le timer de rétention R-186 n'est **ni installé ni activé**.
 
-## R-187 player inscriptions (implemented, not deployed)
+## R-187 player inscriptions (deployed 27 October 2026)
 
 `POST /api/inscriptions` (4 KiB body, POST only) is proxied by
 `infra/nginx/preview.conf` and answers 503 in `bootstrap.conf`. It adds the
