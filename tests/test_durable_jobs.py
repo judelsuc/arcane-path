@@ -45,6 +45,20 @@ class DurableJobsTests(unittest.TestCase):
         with self.assertRaises(AssetConflict):
             self.jobs.renew(job)
 
+    def test_enqueue_can_join_existing_transaction_without_committing_or_opening_another(self):
+        with self.assertRaisesRegex(RuntimeError, "rollback"):
+            with self.storage.catalogue.connection() as db:
+                db.execute("BEGIN IMMEDIATE")
+                self.jobs.enqueue("test", "atomic", {"version": 1}, connection=db)
+                self.assertEqual(db.execute(
+                    "SELECT status FROM worker_jobs WHERE request='atomic'").fetchone()[0], "queued")
+                raise RuntimeError("rollback")
+        self.assertIsNone(self.jobs.inspect("test", "atomic"))
+        with self.storage.catalogue.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            self.jobs.enqueue("test", "atomic", {"version": 1}, connection=db)
+        self.assertEqual(self.jobs.inspect("test", "atomic")["status"], "queued")
+
     def test_expired_safe_work_is_reclaimed_with_fencing_and_attempt_bound(self):
         self.enqueue(max_attempts=2)
         first = self.jobs.acquire("test")

@@ -19,6 +19,7 @@
             <button id="open-journal" type="button" aria-haspopup="dialog" aria-controls="photo-journal-dialog" data-i18n="journalTitle"></button>
             <button id="open-controls" type="button" aria-haspopup="dialog" aria-controls="controls-dialog" data-i18n="controlsTitle"></button>
             <button id="open-options" type="button" aria-haspopup="dialog" aria-controls="options-dialog" data-i18n="optionsTitle"></button>
+            <button id="open-change-request" type="button" disabled aria-haspopup="dialog" aria-controls="change-request-dialog" data-i18n="changeRequest.open"></button>
           </div>
         </div>
       </header>
@@ -369,6 +370,19 @@
           </select>
         </label>
       </section>
+      <section class="option-group" aria-labelledby="options-map-title">
+        <h3 id="options-map-title" data-i18n="appearance.title"></h3>
+        <label class="language-picker" for="map-tileset">
+          <span data-i18n="appearance.label"></span>
+          <select id="map-tileset">
+            <option value="ascii" data-i18n="appearance.ascii"></option>
+            <option value="path-pixel" data-i18n="appearance.path-pixel"></option>
+          </select>
+        </label>
+        <p data-i18n="appearance.note"></p>
+        <p id="map-appearance-status" role="status" aria-live="polite"></p>
+        <p id="map-tileset-credit"></p>
+      </section>
       <section class="option-group" aria-labelledby="options-music-title">
         <h3 id="options-music-title" data-i18n="optionsMusic"></h3>
         <div class="audio-controls">
@@ -525,6 +539,26 @@
       </nav>
       <div id="cell-photo" role="status"></div>
     </dialog>
+    <dialog id="change-request-dialog" aria-labelledby="change-request-title" data-native-controls>
+      <h2 id="change-request-title" data-i18n="changeRequest.title"></h2>
+      <p data-i18n="changeRequest.privacy"></p>
+      <p data-i18n="changeRequest.shortcut"></p>
+      <img id="change-request-image" alt="" data-i18n-alt="changeRequest.preview">
+      <details>
+        <summary data-i18n="changeRequest.snapshot"></summary>
+        <pre id="change-request-snapshot"></pre>
+      </details>
+      <form id="change-request-form">
+        <label for="change-request-comment" data-i18n="changeRequest.comment"></label>
+        <textarea id="change-request-comment" minlength="1" maxlength="2000" rows="4" required></textarea>
+        <p data-i18n="changeRequest.confirmation"></p>
+        <div class="content-actions">
+          <button id="change-request-confirm" type="submit" disabled data-i18n="changeRequest.send"></button>
+          <button id="change-request-cancel" type="button" data-i18n="changeRequest.cancel"></button>
+        </div>
+      </form>
+      <p id="change-request-status" role="status" aria-live="polite"></p>
+    </dialog>
     <dialog id="town-dialog" aria-labelledby="town-title">
       <div class="drawer-heading">
         <h2 id="town-title"></h2>
@@ -542,6 +576,11 @@
         <button id="wash-travel" type="button" disabled></button>
       </div>
       <p id="town-wash-status" role="status"></p>
+      <section id="town-gallery-section" aria-labelledby="town-gallery-title">
+        <h3 id="town-gallery-title" data-i18n="townGalleryTitle"></h3>
+        <p id="town-gallery-status" role="status"></p>
+        <div id="town-gallery"></div>
+      </section>
       <h3 data-i18n="townPlacesTitle"></h3>
       <p id="town-empty" data-i18n="townEmpty"></p>
       <ul id="town-places"></ul>
@@ -549,13 +588,27 @@
       <div id="town-place-detail" role="status"></div>
       <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" data-i18n="attribution"></a>
     </dialog>
+    <dialog id="character-selector-dialog" aria-labelledby="character-selector-title">
+      <header class="journal-header">
+        <h2 id="character-selector-title" data-i18n="character.selectorTitle"></h2>
+        <button id="character-selector-close" type="button" data-i18n="windowHelpClose"></button>
+      </header>
+      <p id="character-selector-context"></p>
+      <p class="window-help-text" data-i18n="character.publicNamesNotice"></p>
+      <p id="character-selector-status" role="status"></p>
+      <ul id="character-choices" class="character-choices"></ul>
+      <p id="character-empty" data-i18n="character.empty" hidden></p>
+      <button id="character-create" type="button" data-i18n="character.create" hidden></button>
+      <p class="window-help-text" data-i18n="character.portraitPolicy"></p>
+    </dialog>
     <dialog id="conversation-dialog" aria-labelledby="conversation-title">
       <header class="journal-header">
         <h2 id="conversation-title" data-i18n="conversation.title"></h2>
+        <button id="conversation-back" type="button" data-i18n="character.backToSelector"></button>
         <button id="conversation-close" type="button" data-i18n="windowHelpClose"></button>
       </header>
       <p id="conversation-context"></p>
-      <p data-i18n="conversation.intro"></p>
+      <p id="conversation-intro"></p>
       <div class="conversation-topics">
         <button id="conversation-parent" type="button" data-i18n="conversation.parent"></button>
         <button id="conversation-clues" type="button" data-i18n="conversation.clues"></button>
@@ -568,6 +621,8 @@
         <button id="conversation-transport" type="button" data-i18n="conversation.transport"></button>
         <button id="conversation-town" type="button" data-i18n="conversation.town"></button>
       </div>
+      <p id="conversation-character-reply" role="status" hidden></p>
+      <p id="conversation-character-status" role="status"></p>
       <p id="conversation-reply" role="status" tabindex="-1" hidden></p>
       <p data-i18n="conversation.rules"></p>
     </dialog>

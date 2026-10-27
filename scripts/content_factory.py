@@ -34,6 +34,10 @@ IMAGE_STYLE = (
     "warm textured paper, deep indigo and ochre, quiet mysterious atmosphere, "
     "simple elegant composition, no lettering, no symbols resembling a map, no people. "
 )
+CHARACTER_IMAGE_STYLE = (
+    "Original fictional character portrait illustration, delicate ink outlines and muted watercolor, "
+    "warm textured paper, deep indigo and ochre, natural and respectful, no lettering, no symbols. "
+)
 BRIEFS = {
     "artifact-town": {
         "title": "Artifact rumour / Rumeur d'objet",
@@ -205,8 +209,8 @@ def normalize_image(raw):
 
 
 class OvhImageWriter:
-    def __init__(self, token):
-        self.token = token
+    def __init__(self, token, *, style=IMAGE_STYLE):
+        self.token, self.style = token, style
         self.opener = urllib.request.build_opener(NoRedirect())
 
     def __call__(self, theme):
@@ -229,7 +233,7 @@ class OvhImageWriter:
             request = urllib.request.Request(
                 IMAGE_ENDPOINT,
                 data=json.dumps({
-                    "prompt": IMAGE_STYLE + theme["prompt"],
+                    "prompt": self.style + theme["prompt"],
                     "negative_prompt": "text, letters, words, watermark, signature, map, diagram, "
                                        "photograph, photorealistic, blood, violence, nudity",
                 }).encode(),

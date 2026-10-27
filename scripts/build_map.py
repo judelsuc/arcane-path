@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 from config import load_config
 from shoreline import CREDIT as SHORELINE_CREDIT, load_shoreline
+from mapped_sites import SITE_VERSION, annotate_sites
 
 EARTH_RADIUS_METERS = 6_371_008.8
 DEFAULT_CELL_SIZE_METERS = 250
@@ -496,6 +497,12 @@ def rasterize(
                     settlements.setdefault((col, row), []).append({
                         "osmId": f"node/{node.attrib['id']}", "name": feature_name,
                         "wikipedia": tags.get("wikipedia"),
+                        "wikidata": tags.get("wikidata"),
+                        "latitude": math.degrees(point[1] / EARTH_RADIUS_METERS),
+                        "longitude": math.degrees(point[0] / EARTH_RADIUS_METERS) / math.cos(math.radians(center_lat)),
+                        "tags": {key: value for key, value in tags.items()
+                                 if key in ("wikimedia_commons", "image", "description")
+                                 or key.startswith("description:")},
                     })
 
     country_cells = {}
@@ -587,6 +594,10 @@ def rasterize(
                 poi["name"] = tags["name"]
             cell_pois.setdefault(position, []).append(poi)
 
+    sites = annotate_sites(root, nodes, ways, min_x=min_x, min_y=min_y, max_x=max_x, max_y=max_y,
+                           cell_size=cell_size_meters,
+                           grid_position=grid_position, point_in_polygon=_point_in_polygon,
+                           join_rings=_join_rings)
     output_cells = []
     for row_index, row in enumerate(cells):
         output_row = []
@@ -621,6 +632,8 @@ def rasterize(
             content = cell_content.get((col_index, row_index))
             if content:
                 output_cell["contentSources"] = sorted(content, key=lambda item: item["osmId"])
+            if (col_index, row_index) in sites:
+                output_cell["sites"] = sites[col_index, row_index]
             output_row.append(output_cell)
         output_cells.append(output_row)
     reference_bounds = {}
@@ -632,6 +645,7 @@ def rasterize(
         }}
     return {
         "name": name,
+        "sitesVersion": SITE_VERSION,
         **({"projectionLatitude": center_lat} if "projection_latitude" in root.attrib else {}),
         **reference_bounds,
         "cellSizeMeters": cell_size_meters,

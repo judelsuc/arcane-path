@@ -17,10 +17,11 @@ from abandoned_journals import capability_hash, JournalForbidden
 from content_factory import (
     IMAGE_LICENSE, IMAGE_MODEL, IMAGE_STYLE, OvhImageWriter, WorkshopError, normalize_image,
 )
-from journeys import JourneyRequest, JourneyCapacity
+from journeys import JourneyRequest, JourneyCapacity, JourneyConflict
 from terraform_ovh import private_file
 from asset_storage import AssetError, configured_storage
 from journal_storage import JournalStorage
+from wikipedia_setting import resolve_setting, setting_lookup
 
 CARDS = {
     "fool": "an open road", "magician": "a hand of possibilities",
@@ -52,8 +53,15 @@ MAX_PER_JOURNEY = 366
 
 
 def validate_brief(brief, started):
-    if not isinstance(brief, dict) or set(brief) != {"key", "birth", "daily", "scenes", "activities", "partial"}:
+    if (not isinstance(brief, dict)
+            or set(brief) - {"key", "birth", "daily", "scenes", "activities", "partial", "location"}
+            or not {"key", "birth", "daily", "scenes", "activities", "partial"} <= set(brief)):
         raise JourneyRequest("Invalid journal illustration fields.")
+    if "location" in brief and (
+            not isinstance(brief["location"], dict) or set(brief["location"]) != {"col", "row"}
+            or any(type(brief["location"][key]) is not int or not -8000 <= brief["location"][key] <= 8007
+                   for key in ("col", "row"))):
+        raise JourneyRequest("Invalid illustration setting location.")
     if not isinstance(brief["key"], str):
         raise JourneyRequest("Invalid journal illustration key.")
     if brief["key"] != "cover":
@@ -83,18 +91,29 @@ def art_prompt(brief):
     return {"prompt": (
         ("A personal notebook cover illustration, with an open central composition. "
          if brief["key"] == "cover" else "A symbolic dream illustration for a traveller's notebook day. ")
-        + f"Combine the motifs of {CARDS[brief['birth']]} and {CARDS[brief['daily']]}. "
-        f"Broad atmosphere: {scenes}. "
+        + (f"Birth tarot motif: {CARDS[brief['birth']]}. " if brief["key"] == "cover"
+           else f"Daily tarot motif: {CARDS[brief['daily']]}. ")
+        + f"Broad atmosphere: {scenes}. "
+        + ("Public Wikipedia setting motifs (decorative, not a reconstruction): "
+           + ", ".join(brief["setting"]["facts"]) + ". "
+           if brief.get("setting", {}).get("status") == "ready" else "")
         + (f"Visual memories of recorded activities: {activities}. " if activities else "")
-        + "No exact place, identifiable person, readable text, maps or clues. "
+        + "No identifiable person, readable text, maps or clues. "
         "This is decorative atmosphere, not a documentary image."
     )}
 
 
+def saved_prompt(brief):
+    if "recipe" in brief:
+        return {"prompt": brief["recipe"]["prompt"].removeprefix(IMAGE_STYLE)}
+    return art_prompt(brief)
+
+
 class JournalArt:
-    def __init__(self, journeys, abandoned, writer=None, assets=None):
+    def __init__(self, journeys, abandoned, writer=None, assets=None, setting_source=None):
         self.journeys, self.abandoned, self.writer = journeys, abandoned, writer
         self.assets = assets
+        self.setting_source = setting_source
         self.shared = JournalStorage(assets) if assets is not None else None
         self.path = journeys.path.parent / "journal-art.sqlite3"
         self.lock = threading.Lock()
@@ -186,6 +205,16 @@ class JournalArt:
             brief = validate_brief(data["brief"], started)
             if brief["birth"] != state["birthCard"]:
                 raise JourneyRequest("The birth-card motif must match the journey.")
+            brief = dict(brief)
+            location = ({"col": state["col"], "row": state["row"]} if brief["key"] == "cover"
+                        else brief.get("location"))
+            try:
+                brief["settingLookup"] = (setting_lookup(self.journeys.chunks, record["region"], location)
+                                          if location is not None else None)
+            except JourneyConflict as error:
+                logging.warning("Illustration setting source is not cached: %s", error)
+                brief["settingLookup"] = None
+                brief["settingUnavailable"] = str(error)
             if self.shared is not None:
                 self.shared.enqueue(owner, {**brief, "recipe": {
                     "version": 1, "model": IMAGE_MODEL, "license": IMAGE_LICENSE,
@@ -245,6 +274,22 @@ class JournalArt:
                 self.running = True
                 self.future = self.pool.submit(self.drain)
 
+    def prepare_setting(self, brief):
+        if "settingLookup" not in brief or "setting" in brief:
+            return brief
+        setting = resolve_setting(brief["settingLookup"], self.setting_source)
+        if brief.get("settingUnavailable"):
+            setting["reason"] = brief["settingUnavailable"] + " Tarot/scenery only."
+        if setting["status"] != "ready":
+            logging.warning("Journal art uses tarot/scenery only: %s", setting["reason"])
+        enriched = {key: value for key, value in brief.items() if key != "settingLookup"}
+        enriched["setting"] = setting
+        enriched["recipe"] = {
+            "version": 2, "model": IMAGE_MODEL, "license": IMAGE_LICENSE,
+            "prompt": IMAGE_STYLE + art_prompt(enriched)["prompt"], "purpose": "decorative-only",
+        }
+        return enriched
+
     def drain(self):
         try:
             self.drain_queue()
@@ -270,8 +315,11 @@ class JournalArt:
                     db.execute("UPDATE art SET status='running' WHERE owner=? AND key=?", (row["owner"], row["key"]))
             started = time.monotonic()
             try:
-                brief = art_prompt(json.loads(row["brief"]))
-                image = normalize_image(self.writer(brief))
+                brief = self.prepare_setting(json.loads(row["brief"]))
+                with self.connect() as db:
+                    db.execute("UPDATE art SET brief=? WHERE owner=? AND key=?",
+                               (json.dumps(brief), row["owner"], row["key"]))
+                image = normalize_image(self.writer(saved_prompt(brief)))
             except (WorkshopError, AssetError, OSError, sqlite3.Error) as error:
                 logging.warning("Journal illustration generation failed: %s", error)
                 with self.connect() as db:
@@ -307,7 +355,10 @@ class JournalArt:
                     return
             started = time.monotonic()
             try:
-                self.shared.generate(job, self.writer, art_prompt(job["brief"]))
+                brief = self.prepare_setting(job["brief"])
+                self.shared.update_brief(job, brief)
+                job["brief"] = brief
+                self.shared.generate(job, self.writer, saved_prompt(job["brief"]))
             except (WorkshopError, AssetError, OSError, sqlite3.Error) as error:
                 logging.warning("Shared journal illustration failed: %s", error)
                 self.shared.finish(job, round(time.monotonic() - started, 2), error=str(error)[:2000])

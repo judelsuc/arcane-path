@@ -17,6 +17,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 from build_map import classify
+from mapped_sites import site_kind
 
 MAX_LANDCOVER_COMPLETIONS = 16
 OVERPASS_URLS = (
@@ -61,9 +62,9 @@ def incomplete_landcover(root):
     incomplete = []
     for relation in root.findall("relation"):
         tags = {tag.attrib["k"]: tag.attrib["v"] for tag in relation.findall("tag")}
-        if tags.get("type") != "multipolygon" or classify(tags) not in {
+        if tags.get("type") != "multipolygon" or (classify(tags) not in {
             "forest", "grass", "field", "vineyard", "park", "water", "mountain", "building",
-        }:
+        } and site_kind(tags) is None):
             continue
         for member in relation.findall("member"):
             if member.attrib.get("type") != "way":

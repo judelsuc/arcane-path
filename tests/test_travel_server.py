@@ -1,4 +1,5 @@
 import gzip
+import hashlib
 import json
 import os
 import sys
@@ -13,7 +14,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from travel_server import (COMPATIBLE_CHUNK_PIPELINE, ChunkJobs, ChunkStore, OriginStore,
+from travel_server import (COMPATIBLE_CHUNK_PIPELINE, PREVIOUS_CHUNK_PIPELINE, ChunkJobs, ChunkStore, OriginStore,
                            CHUNK_SIZE, chunk_geometry, fetch_elevations, make_handler)
 from http.server import ThreadingHTTPServer
 
@@ -172,6 +173,54 @@ class TravelServerTests(unittest.TestCase):
             retry_at = time.time() + 3600
             first.set_elevation_cooldown(retry_at)
             self.assertEqual(second.elevation_cooldown_until(), retry_at)
+
+    def test_pre_gallery_pipeline_keeps_local_and_shared_chunks_without_redownloading(self):
+        from asset_storage import local_storage
+        for shared in (False, True):
+            with self.subTest(shared=shared), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                assets = local_storage(root / "assets") if shared else None
+                first = ChunkStore(cache=root / "cache")
+                first.pipeline = PREVIOUS_CHUNK_PIPELINE
+                if assets:
+                    first.set_shared_assets(assets)
+                try:
+                    with patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}):
+                        expected = first.build("firmi", 1, 1)
+                    second = ChunkStore(cache=root / "empty" if shared else root / "cache")
+                    if assets:
+                        second.set_shared_assets(assets)
+                    with patch("travel_server.fetch_elevations", side_effect=AssertionError("Reuse elevations")), \
+                            patch("travel_server.download_region", side_effect=AssertionError("Reuse source")), \
+                            patch("travel_server.rasterize", side_effect=AssertionError("Reuse raster")):
+                        self.assertEqual(second.read("firmi", 1, 1), expected)
+                    self.assertTrue(second.path("firmi", 1, 1).with_suffix(".json").is_file())
+                finally:
+                    if assets:
+                        assets.catalogue.close()
+
+    def test_pre_site_chunk_is_enriched_from_cached_osm_without_mutating_the_cached_asset(self):
+        from mapped_sites import SITE_VERSION
+        with tempfile.TemporaryDirectory() as directory:
+            store = ChunkStore(cache=Path(directory))
+            with patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}):
+                generated = store.build("firmi", 1, 1)
+            path = store.path("firmi", 1, 1).with_suffix(".json")
+            previous = json.loads(json.dumps(generated))
+            previous.pop("sitesVersion")
+            for row in previous["rows"]:
+                for cell in row:
+                    cell.pop("sites", None)
+            path.write_text(json.dumps({"data": previous, "sha256":
+                hashlib.sha256(json.dumps(previous, sort_keys=True).encode()).hexdigest()}))
+            before = path.read_bytes()
+            with patch("travel_server.rasterize", side_effect=AssertionError("No terrain changes")), \
+                    patch("travel_server.fetch_elevations", side_effect=AssertionError("No height fetch")), \
+                    patch("travel_server.download_region", side_effect=AssertionError("No download")):
+                enriched = store.read("firmi", 1, 1)
+                self.assertEqual(enriched["sitesVersion"], SITE_VERSION)
+                self.assertEqual(enriched, generated)
+            self.assertEqual(path.read_bytes(), before)
 
     def test_elevation_failure_preserves_visible_grid_across_restart_and_retries_after_cooldown(self):
         with tempfile.TemporaryDirectory() as directory:

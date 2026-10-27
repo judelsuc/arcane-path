@@ -2,6 +2,7 @@
 
 import math
 from collections import Counter, defaultdict
+from mapped_sites import SITE_KINDS, site_kind
 
 TERRAINS = {"plain", "water", "road", "major_road", "rail", "cable", "cable_station",
             "mountain", "hill", "forest", "grass", "field", "vineyard", "park",
@@ -16,6 +17,7 @@ def cached_terrain(store, region, bounds):
     left, top, right, bottom = bounds
     stride = max(1, math.ceil((right - left + 1) / 600), math.ceil((bottom - top + 1) / 400))
     bins = defaultdict(Counter)
+    sites = {}
     directory = store.path(region, 0, 0).parent
     positions = []
     for path in directory.glob("*.json"):
@@ -49,10 +51,20 @@ def cached_terrain(store, region, bounds):
                 c, r = x * 8 + col, y * 8 + row
                 if left <= c <= right and top <= r <= bottom:
                     bins[((c - left) // stride, (r - top) // stride)][terrain] += 1
+                    if stride == 1:
+                        kinds = {site["kind"] for site in cell.get("sites", [])
+                                 if site.get("kind") in SITE_KINDS}
+                        kinds.update(kind for poi in cell.get("pois", [])
+                                     if (kind := site_kind(poi.get("tags", {}))) is not None)
+                        if kinds:
+                            sites[c, r] = min(kinds, key=SITE_KINDS.index)
     expected = (right // 8 - left // 8 + 1) * (bottom // 8 - top // 8 + 1)
     return {
         "cells": [{"col": left + x * stride, "row": top + y * stride,
-                   "terrain": counts.most_common(1)[0][0]} for (x, y), counts in sorted(bins.items())],
+                   "terrain": counts.most_common(1)[0][0],
+                   **({"siteKind": sites[left + x, top + y]} if stride == 1 and
+                      (left + x, top + y) in sites else {})}
+                  for (x, y), counts in sorted(bins.items())],
         "stride": stride, "sampled": len(positions) > 4096,
         "missing": loaded < expected, "cachedChunks": loaded,
     }

@@ -69,9 +69,25 @@ class JournalStorageTests(unittest.TestCase):
         self.assertNotEqual(first["token"], second["token"])
         with self.assertRaises(AssetConflict):
             self.queue.finish(first, 1)
+        with self.assertRaises(AssetConflict):
+            self.queue.update_brief(first, {**self.brief, "setting": {"facts": ["stale"]}})
         self.queue.finish(second, 1, error="Known failure")
         self.assertIsNone(self.queue.acquire())
         self.assertEqual(self.queue.entries("owner")[0]["status"], "failed")
+
+    def test_persisted_setting_and_prompt_survive_worker_recovery_without_lookup(self):
+        self.enqueue()
+        job = self.queue.acquire()
+        prompt = "Frozen public landscape with a lake."
+        brief = {**job["brief"], "setting": {"status": "ready", "facts": ["a lakeside landscape"]},
+                 "recipe": {"version": 2, "prompt": prompt}}
+        self.queue.update_brief(job, brief)
+        self.expire()
+        art = self.service("recovered-setting", self.writer)
+        art.future.result(timeout=10)
+        self.assertEqual(self.queue.entries("owner")[0]["status"], "ready")
+        self.assertEqual(self.writer.call_args.args[0]["prompt"], prompt)
+        self.writer.assert_called_once()
 
     def test_worker_drains_other_vm_queue_and_image_is_scoped_without_local_database(self):
         self.enqueue()

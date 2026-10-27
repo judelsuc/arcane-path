@@ -104,6 +104,15 @@ class JournalStorage:
             if row is None:
                 raise AssetConflict("Journal worker lease expired or ownership changed.")
 
+    def update_brief(self, job, brief):
+        with self.catalogue.connection() as db:
+            row = db.execute(self.catalogue.sql(
+                "UPDATE journal_illustrations SET brief=? WHERE owner=? AND key=? AND token=? "
+                "AND status='running' AND expires>(" + self.clock() + ") RETURNING key"),
+                (json.dumps(brief), job["owner"], job["key"], job["token"])).fetchone()
+            if row is None:
+                raise AssetConflict("Journal worker lease expired or ownership changed.")
+
     def generate(self, job, writer, prompt):
         return SharedImages(self.assets).generate(
             "journal-art", self.request_id(job["owner"], job["key"]), prompt, writer)

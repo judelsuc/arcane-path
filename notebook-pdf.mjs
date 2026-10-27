@@ -109,6 +109,7 @@ export async function notebookPdf({ title, photos, groups = [], clues = [], rout
         y += image.naturalHeight * scale + 24;
         await text(`${cover.artwork.attribution} · ${cover.artwork.license}`, 20);
         await text(cover.artwork.licenseUrl, 18);
+        if (cover.artwork.note) await text(cover.artwork.note, 18);
       } catch (reason) {
         throw new Error(t("journalImageError"), { cause: reason });
       } finally { URL.revokeObjectURL(url); }

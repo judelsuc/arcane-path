@@ -36,19 +36,19 @@ class SharedImagesTests(unittest.TestCase):
         return self.images.generate(kind, request, self.brief, self.writer)
 
     def test_all_image_kinds_share_accounting_and_durable_assets(self):
-        for kind in ("title-art", "journal-art", "encounter-art"):
+        for kind in ("title-art", "journal-art", "encounter-art", "character-portrait"):
             image = self.generate(kind)
             with Image.open(io.BytesIO(image)) as decoded:
                 self.assertEqual(decoded.format, "WEBP")
             reopened = SharedImages(local_storage(self.root))
             self.assertEqual(reopened.generate(kind, "one", self.brief, self.writer), image)
             self.assertEqual(reopened.jobs.inspect("image-" + kind, "one")["status"], "ready")
-        self.assertEqual(self.writer.call_count, 3)
+        self.assertEqual(self.writer.call_count, 4)
         with self.assets.catalogue.connection() as db:
-            self.assertEqual([row[0] for row in db.execute("SELECT calls FROM provider_usage")], [3, 3])
+            self.assertEqual([row[0] for row in db.execute("SELECT calls FROM provider_usage")], [4, 4])
         with self.assertRaises(AssetConflict):
             self.images.generate("journal-art", "one", {"prompt": "Changed"}, self.writer)
-        self.assertEqual(self.writer.call_count, 3)
+        self.assertEqual(self.writer.call_count, 4)
 
     def test_competing_workers_never_repeat_an_inflight_provider_call(self):
         entered, release = threading.Event(), threading.Event()

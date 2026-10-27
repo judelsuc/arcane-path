@@ -1,5 +1,21 @@
 # Requirements tracked outside the design PDF
 
+## R-187 - Player inscriptions on forest trees and town walls
+
+- Allow players to carve/write a fictional in-game message on a tree in a
+  forest cell or on a wall in a town cell. These are virtual inscriptions,
+  not instructions or permission to damage real trees or buildings.
+- Check submitted text with an LLM for offensive content before publication.
+  Treat the text as untrusted data, not instructions to the moderation model.
+  Do not publish a message before it has passed moderation.
+- Before implementation, define whether other players can see inscriptions,
+  persistence/lifetime, message length, action costs, submission limits,
+  moderation categories, failure behavior and reporting/removal controls.
+  No new provider, paid usage or automatic publication is enabled by recording
+  this request.
+- **Status:** Recorded on 27 October 2026; not implemented. Separate from
+  R-140's Wikipedia illustration-context implementation.
+
 ## R-186 - Player change requests with screenshot and game snapshot
 
 - Provide a player command to propose a modification: capture the current game
@@ -32,9 +48,42 @@
 - Provide reviewer retrieval of the comment, snapshot and image together, with
   an initial status and a defined retention/deletion policy before production.
   Do not automatically publish reports or create external issues.
-- **Status:** Planned only, at the user's request. No command, capture, upload
-  endpoint or reviewer interface is implemented by this requirements update.
-  See [the evolution plan](./PLAN_EVOLUTION_2026-10-23.md).
+- User decisions: **90 days**, with collection disabled until automatic deletion
+  is configured and healthy; **operator-only retrieval over SSH/admin CLI**.
+  The eventual recipient is the development assistant, through an authorized
+  private export, not an automatically contacted external AI service.
+- **Status:** Implemented locally, not deployed. The FR/EN header command and
+  Alt+Shift+F synchronously freeze an allowlisted snapshot and the rendered game
+  before the reporting form. DOM, canvas, loaded images, CSS backgrounds and
+  open/scrolled dialogs are captured; failed resources and unsupported embedded
+  video/frames fail explicitly. Preview, exact diagnostic JSON, comment, cancel
+  and explicit confirmation are provided. Drafts remain in memory after errors;
+  retries preserve the same ID/comment/attachments and ignore double clicks.
+  The exact POST-only `/api/change-requests` route uses journey capabilities and
+  same-origin checks. Strict validation bounds the comment to 2,000 characters,
+  snapshot to 8 KB and decoded PNG to 3 MB/2,048 pixels; solid blank images and
+  camera metadata are rejected. Limits are one request per five minutes, three
+  per day per journey, 1,000 records and 512 MB reserved screenshots globally.
+  The SQL reservation precedes upload; only verified durable screenshots can
+  produce a `submitted` acknowledgement. Operator list/export commands return
+  the comment, snapshot and checksum-verified screenshot together in a private
+  bundle, explicitly marked as untrusted evidence, not executable instructions.
+  There is no HTTP reviewer/image retrieval or automatic issue/AI submission.
+  Reports expire at 90 days; the hourly retention worker removes expired SQL
+  records, catalogue links, all screenshot versions/delete markers and old
+  orphans, without deleting screenshots still referenced by another report.
+  Missing, failed or more-than-two-hour-old retention health pauses collection.
+  Runtime activation also requires the explicit environment flag and actual
+  PostgreSQL/S3 backends. The timer, route, schema and dedicated deletion rights
+  are not installed/enabled in production; the application S3 key still has no
+  delete permission. See the [operator runbook](./INFRASTRUCTURE.md#r-186-private-player-change-requests-not-deployed)
+  and [evolution plan](./PLAN_EVOLUTION_2026-10-23.md).
+  Validation: **173 Python tests**, **81 JavaScript tests**, four isolated
+  real OVH PostgreSQL/S3 checks and FR/EN desktop/mobile Chromium evidence
+  comparisons passed. Canvas, photo, SVG gradient, CSS/pseudo backgrounds and
+  open/scrolled modal pixels were checked individually, as were explicit
+  failed-resource errors, disabled incomplete submissions and cancel/no-send.
+  Privileged physical deletion on OVH is not yet verified.
 
 ## R-185 - Town arrival description and documentary gallery
 
@@ -56,8 +105,51 @@
 - Cache shared content and licence metadata, support partial results and
   explicit source failures, and avoid repeated arrival/network requests for
   movement between cells belonging to the same town.
-- **Status:** Planned. Town welcome prose exists; a dedicated arrival gallery
-  and stable town-level arrival deduplication are not yet implemented.
+- **Status:** Implemented locally, not deployed. The existing town window now
+  loads a sourced welcome and up to five credited documentary photographs
+  progressively, while its local actions remain usable. Arrival follows the
+  primary stable OSM settlement ID, not each cell's coordinates; movement
+  within that town neither reopens the window nor repeats source requests.
+  Another active dialog is never replaced, and manual town access remains.
+  Only authenticated journey requests for the current server-cached mapped
+  town can populate the cache; client-authored URLs and descriptions are not
+  accepted. New map settlements retain Wikidata/Wikipedia associations,
+  exact coordinates and their own description/Commons tags. Older maps still
+  work with their existing associations and bounded, name-and-coordinate
+  matching; unrelated nearby articles and ambiguous homonyms are rejected.
+  Requested FR/EN Wikipedia sitelinks are preferred, with an explicit
+  source-language fallback and factual OSM descriptions when needed.
+  Town-associated Commons files/categories, Wikidata images and Wikipedia
+  page images precede nearby geotagged Commons photographs within 2 km;
+  nearby photographs are explicitly labelled, never treated as proof of the
+  town itself. Files are deduplicated and require author, reusable licence,
+  source and caption metadata; unsupported/AI-labelled/nonphotographic media
+  are excluded. Fewer than five photographs, including none, is valid.
+  Metadata lives in the shared SQL catalogue and verified licensed thumbnails
+  in the existing private asset store (PostgreSQL/S3 when configured), with
+  an IndexedDB reading cache. No generation model or new paid provider is used.
+  Bounded workers and renewable fenced leases deduplicate concurrent source
+  reads across processes. Successful content lasts seven days; partial source
+  failures are explicit and retryable after a five-minute cache, with manual
+  refresh limited to once per minute and its cooldown explained. Expired
+  worker leases recover without leaving a permanent loading state.
+  Source/image failures retain available prose, other photographs and credits.
+  Leaving/resetting the town or changing UI language cancels browser loading,
+  ignores late responses and releases image object URLs. Non-town cell
+  descriptions, photo providers, source selection and controls are unchanged.
+  The additive town fields do not invalidate compatible existing local or
+  shared chunk caches; validated pre-gallery chunks remain reusable without
+  downloading or rasterizing them again.
+  A future deployment must explicitly initialize the expanded asset catalogue
+  and install the exact POST-only `/api/town-content` nginx route; bootstrap
+  keeps the route unavailable. No runtime or production schema was changed.
+  Validation: **170 Python tests**, **83 JavaScript tests**, and **four
+  isolated real OVH PostgreSQL/S3 acceptance checks** passed. Live Wikimedia
+  verification for Firmi returned its French description and five licensed
+  photographs (four town-associated, one explicitly nearby); a real JPEG
+  thumbnail was downloaded and verified. Browser fixtures checked progressive
+  loading, available services, FR/EN fallback/partial-failure labels, credits,
+  same-town deduplication and a 375px layout without horizontal overflow.
 
 ## R-184 - Pluggable map tilesets and UI skins
 
@@ -81,8 +173,24 @@
 - Future content-factory tilesets are coherent, validated candidates, not
   independently regenerated cell images. Scheduling, automatic publication
   and spending require a separate decision; this request does not enable them.
-- **Status:** Planned; extends R-155/R-156. Time-of-day colours already exist,
-  but a selectable tileset/skin system does not.
+- **Status:** Map-rendering portion implemented locally, not deployed.
+  Options now offers ASCII and **Path Pixel**, an original locally bundled
+  CC0-1.0 pack. Its versioned data-only manifest covers every terrain, all twelve
+  selected mapped-site categories and unavailable cells; bounded pixel
+  rectangles/colours are validated and decoded before activation. Failed packs
+  retain the previous working mode and show an explicit error. No remote
+  scripts, CDN, generation provider or paid call is introduced.
+  The choice switches live and persists separately from journey saves.
+  Main cells, legend, notebook map/image/PDF/video rendering and private
+  feedback diagnostics share the selected pack. Player/death markers,
+  objectives, selection/look/focus, route/lodging marks and loading indicators
+  remain overlays on the same coordinates, hit targets and 250 m scale.
+  Transport and water remain visible where a site overlaps them.
+  Forced-colour mode exposes text symbols, and existing reduced-motion and
+  time/weather presentation are retained.
+  **UI skin selection is still pending**: this increment changes map tiles only;
+  the default UI skin stays active. R-156 factory generation/scheduling remains
+  a separate unimplemented decision.
 
 ## R-183 - Persistent characters before dialogue
 
@@ -102,6 +210,15 @@
 - Persist whom characters met, what was actually exchanged, quests they offered
   or assigned and their outcomes. Separate shared public character facts from
   private per-player knowledge, memories and contracts.
+- Retain every met player character durably in a shared encounter ledger with
+  their stable journey identity and frozen validated fictional name taken only
+  from authorized server genesis. Fictional names and the fact of meeting the
+  NPC are shared automatically, without opt-in; explain this in French and
+  English before selection. NPCs may occasionally mention a real recorded
+  visitor by name, never their private exchanges, quests, clues, location or
+  visit times. Keep all visitors and idempotent encounter events without the
+  private-history limits; bound and paginate public retrieval. Remember a
+  returning player even after their private history reaches its limit.
 - Supply only knowledge the character is allowed to know to conversation
   generation. They cannot reveal hidden parent stages, unknown artifact caches
   or another player's private story, nor invent a past meeting or quest.
@@ -116,8 +233,80 @@
   Outside towns, use the same flow for eligible roadside encounters.
 - Define shared-world availability separately from per-journey simulated time;
   advancing one player's clock must not move or age every shared character.
-- **Status:** Planned. Existing fictional witness IDs and cached NPC speech
-  are not a persistent character registry or a memory system.
+- **Status:** End-to-end implementation is complete locally and remains
+  undeployed. The authenticated selector is read-only until explicit creation;
+  stable bounded characters can be reused in towns or eligible roadside cells.
+  Names use a validated explicit location naming locale, otherwise the current
+  cell's public OSM country-code metadata. Unsupported countries do not inherit
+  the origin's language. A validated base-map locale or built-in locale is only
+  a fallback inside the original map when location country metadata is absent;
+  streamed cells cannot inherit it. UI language does not affect names.
+  Shared identity/availability is independent of each
+  journey's simulated clock. The shared encounter ledger retains all met
+  journeys and their server-clock first/last meeting and idempotent count;
+  fictional names are frozen from authorized server genesis only. Names plus
+  the factual meeting are public automatically; factual exchanges and quest
+  contracts remain private per journey. Public visitor facts are a separate
+  bounded projection (three names per selector entry, pages of at most twenty,
+  deduplicated and excluding the current player/name); IDs, times, counts and
+  other visitors' private information are not published. Bounded deterministic
+  occasional dialogue mentions use only these recorded name/meeting facts,
+  without an LLM or new AI/provider calls. Returning-player familiarity is
+  independent of the last twenty private events and the thousand-event limit;
+  new meetings still succeed and are retained at that limit. Old private
+  memories are never deleted; their meetings can be backfilled idempotently,
+  and only the currently authorized journey can supply its safe genesis name.
+  Exchanges are deterministic and limited to each character's recorded public
+  role facts. Unknown topics receive an honest absence; parent witnesses,
+  hidden stages, artifact caches and another journey's data are never supplied.
+  Existing service quests keep their gameplay rules and unified Quests window;
+  offer, acceptance, progress and outcome events are transactionally linked to
+  the character that offered the quest.
+  Original fictional portraits use the existing opt-in OVH image writer, its
+  free-offer verification, dispatch accounting and durable shared-image store.
+  A portrait job is keyed by character and recipe version, does not include
+  private memories, and cannot block dialogue or reroll on a meeting. A labelled
+  placeholder remains visible when generation is pending, disabled or failed;
+  fetch/decode failures are also labelled and logged, with object URLs released
+  on refresh/close and stale responses ignored. Bounded reconciliation on
+  startup and selector reads respects active durable leases, exposes expired
+  or uncertain work as failed without redispatch, and accepts a verified late
+  published result. No paid fallback or new provider budget is enabled; the
+  existing strict free-offer verification is unchanged for portrait style.
+  The shared catalogue now includes private exchange and quest-contract
+  histories. SQLite registries create these tables on startup; existing local
+  registries retain their identities and gain the tables without rewriting
+  data. Shared fact-version migrations run only during explicit catalogue
+  initialization, never in the character API constructor. Shared catalogues
+  require explicit schema initialization before a
+  future deployment. Only the exact authenticated preview `POST /api/characters`
+  route is allowed; bootstrap denies other methods and returns 503 for POST.
+  That future deployment must install and validate the updated preview nginx
+  configuration and initialize the expanded shared catalogue. Neither this
+  runtime nor its nginx changes have been deployed. Final focused validation
+  for this local increment: **164 Python tests** across the character registry,
+  content/asset storage, shared images, durable jobs, content factory, live
+  narrative/API, journal art/free-offer guards, and HTTPS configuration,
+  plus **44 JavaScript tests** across
+  the character client, conversation selector/dialogue, service-quest lifecycle,
+  actual asynchronous service-contract UI replay/completion, and preview help.
+  Ready portraits keep their persisted reference across recipe/model changes.
+  Portrait reconciliation uses one catalogue checkout, retaining transaction
+  guards without nested pool acquisition. Service-contract synchronization
+  represents the final advance via its completion event, preserving the real
+  gameplay history and server transition invariants across retries/reloads.
+  Six additional acceptance checks passed against the isolated real OVH
+  PostgreSQL database and private S3: concurrent idempotent creation, private
+  memory isolation, factual exchanges/private quest outcomes, cross-origin
+  town identity, shared visitor retention/name facts, and durable portrait
+  publication/reuse. Only the acceptance database schema was initialized;
+  the production runtime/configuration was unchanged. The temporary overlay
+  and synthetic registry rows were removed after validation. Browser checks
+  confirmed the FR/EN automatic-sharing notice, returning-player greeting,
+  factual visitor mention, read-only selector and back navigation, with no
+  horizontal overflow at a 375px viewport. All image/provider tests use
+  fixtures; no new real AI call was made. A regression test distinguishes the
+  first meeting from a returning visitor's greeting.
 
 ## R-182 - External persistent storage on OVHcloud
 
@@ -153,12 +342,24 @@
   and tested database/object restore procedures.
 - Prepare a priced regional deployment proposal before provisioning paid services.
   Do not assume managed services fit the existing VM budget or guarantee automatic
-  application scaling. No creation, data deletion or production cutover is authorized
-  by this requirements/planning request.
-- Budget confirmed: 100 EUR/month including tax for VM, database and storage
-  together. Local implementation may proceed without provisioning OVH services.
+  application scaling. The initial planning request did not authorize creation,
+  data deletion or production cutover. On 23 October the user subsequently
+  authorized managed PostgreSQL/S3 provisioning and preview activation.
+- Budget initially confirmed at 100 EUR/month including tax for VM, database and
+  storage together; explicitly increased to **150 EUR TTC/month total** on
+  23 October after regional offer review. Provisioning used a conservative
+  744-hour estimate of 136.58 EUR TTC including a 10 EUR storage/traffic reserve.
+  Usage-based charges still require monitoring; the estimate is not a hard cap.
 - **Status:** Implemented incrementally and deployed as opt-in runtime code to
-  the OVH preview. Shared PostgreSQL/S3 mode is not active there. The foundation
+  the OVH preview. Shared PostgreSQL/S3 mode is now active: managed PostgreSQL 18
+  Essential db1-4 (one node, 80 GB) and a private versioned S3 bucket in GRA,
+  with the API and image timers configured against the same authoritative
+  database. Seven real OVH acceptance tests and authenticated HTTPS checks pass;
+  a production terrain grid was retrieved by an independent empty-cache store.
+  A scoped SQL/asset fixture restore passed; full managed-service restoration,
+  cost monitoring and retention/reconciliation remain to be completed. See
+  [the activation record](./INFRASTRUCTURE.md).
+  No legacy data was migrated or removed. The foundation
   includes immutable local/S3 asset adapters, SQLite/PostgreSQL catalogue,
   verified publication and administration commands. Title illustrations
   can opt into the new asset store through private server configuration; defaults
@@ -760,6 +961,11 @@
   list Creative Commons CC0. No pack has been selected or installed yet.
 - Persist the choice locally. Both skins share exactly the same grid, terrain, movement,
   player, clues, selection, accessibility and geographic scale.
+- **Status:** Implemented locally through the map portion of R-184. The first
+  graphical pack is original **Path Pixel**, supplied under CC0-1.0 rather than
+  downloading an external pack. Tiles are schematic symbols, not invented
+  geographic geometry, building layouts or access permissions. Credits and the
+  licence ship with the manifest.
 
 ## R-154 - Sea coverage and aggregated urban blocks
 
@@ -867,9 +1073,26 @@
   zoos/theme parks, castles/major historic sites and exhibition/convention centres.
 - The user wants these sites to affect movement or available actions, not just
   decoration. Reuse mapped OSM geometry and provenance.
-- **Status:** pending design confirmation and implementation. Walking/access
-  rules and which existing/new actions to expose remain undecided; do not
-  silently block entire 250 m cells or imply unrestricted real-world access.
+- **27 October scope confirmed:** recognize/display **all twelve** categories,
+  **visual only** for this increment. Existing movement, costs, access rules,
+  event selection and available actions must remain unchanged.
+- **Status:** Visual annotations implemented locally, not deployed. Nodes,
+  closed ways and complete multipolygon boundaries (including holes) produce
+  source-linked `sites` metadata, separate from authoritative terrain and
+  gameplay POIs. Exact OSM tags, not names or generic tourist-attraction tags,
+  determine the category. Abandoned/disused sites are excluded.
+  Site symbols appear in ASCII/Path Pixel, the legend, accessible cell details
+  and cached notebook terrain. Where mapped transport/water occupies the cell,
+  it stays visible with a small site badge instead of being replaced.
+  Incomplete source relations use the existing bounded geometry-completion
+  path; malformed geometry is reported rather than guessed. Existing grids
+  can be additively annotated from already cached OSM without terrain changes,
+  elevation/source downloads or mutation of immutable shared assets.
+  If neither richer metadata nor cached OSM is available, only exact site tags
+  already present in older POIs can be displayed; no site is invented, and
+  Options explains that old source-less caches may omit sites.
+  **Gameplay relevance remains pending a separate design/authorization.**
+  Recognizing a real-world site does not imply public access.
 
 ## R-143 - Visible cleanliness and washing during sheltered stays
 
@@ -944,12 +1167,37 @@
 - Before enabling, review the external-data boundary: place descriptions can
   identify the in-game location even without coordinates. Do not silently
   relax R-137's coarse-location-only policy or send private player data.
-- **Status:** one user-requested live feasibility sample tested successfully
+- **27 October clarification:** these are fictional journey locations, not
+  the player's physical whereabouts. The user authorizes public Wikipedia
+  setting facts in illustration requests without a separate consent step.
+  Player identity, private notes, coordinates and hidden clues remain excluded
+  from the image-provider prompt.
+- **Status:** Implemented locally, not deployed. The background cover/day worker
+  resolves an exact EN/FR OSM Wikipedia link or a nearby geolocated Wikipedia
+  introduction (within 2 km), using already cached map geometry. A bounded
+  English/French vocabulary extracts up to six original landscape/architecture/
+  landmark motifs; no article prose, titles or retrieved instructions enter
+  the image prompt. The cover uses its canonical departure cell and birth card;
+  daily pages use their last observed cell, daily card and recorded activities.
+  Artwork is decorative, never new evidence, an accurate reconstruction or a
+  transformed photograph. Source URL/title, contributors, source licence and
+  retrieval date are frozen with the context and retained in non-editable image
+  credits, the cover, published snapshots and PDF, independently of personal
+  note edits. Missing location/article/facts and lookup errors produce
+  an explicit context-unavailable credit and tarot/scenery-only generation.
+  Extraction runs asynchronously, with at most two bounded Wikimedia queries
+  per new artwork; context and prompt are durable before image dispatch in
+  both local and shared queues. Existing artwork is not regenerated, old queued
+  recipes remain usable, and retries/recovery reuse frozen prompts.
+  The existing per-request zero-price check and no-paid-fallback policy remain.
+  A historical user-requested live feasibility sample tested successfully
   with public Annecy setting facts plus Temperance; location cues and tarot
-  details were only partially followed. Automatic extraction and game
-  integration are not implemented or enabled. Retain the existing per-request
-  zero-price check and no paid fallback. See the trial observations in
-  [the content factory notes](./CONTENT_FACTORY.md#backup-idea-local-wikipedia-context-r-140-not-implemented).
+  details were only partially followed. See
+  [the content factory notes](./CONTENT_FACTORY.md#wikipedia-setting-context-r-140).
+  Validation: **87 Python tests**, **46 JavaScript tests**, and real Chromium
+  EN desktop/FR mobile checks passed for sourced and unavailable-context covers,
+  PDF credits, persisted snapshots and personal-note edits preserving provenance.
+  No new live image-provider request or paid call was made for this increment.
 
 ## R-139 - Choose a local photograph as the illustration reference
 
@@ -999,6 +1247,8 @@
   blisters. Display generation status and reuse the subtitle in PDF exports.
 - **19 October confirmed choices:** personalize illustrations with birth/day
   tarot motifs and broad surroundings, never player identity or exact location.
+  R-140's 27 October clarification permits public Wikipedia setting motifs for
+  the fictional in-game location, without sending coordinates or private data.
 - Generate one permanent cover per journey. Add a separate dated illustrated
   memory for each completed in-game UTC calendar day; do not replace the cover.
 - Generate asynchronously without delaying gameplay. Store results durably;

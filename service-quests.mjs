@@ -94,7 +94,8 @@ function validateContract(quest) {
 }
 
 function validateQuest(quest, offered, now) {
-  if (!keys(quest, questKeys)) fail();
+  if (!(keys(quest, questKeys) || keys(quest, [...questKeys, "characterId"])) ||
+      Object.hasOwn(quest, "characterId") && !instanceId(quest.characterId)) fail();
   validateContract(quest);
   const total = quest.destinations.length;
   if (!integer(quest.step) || quest.step < 0 || quest.step > total ||
@@ -196,7 +197,9 @@ export function createServiceOffer(state, options) {
   ready(state);
   if (!plain(options) || !instanceId(options.id)) fail();
   if (find(state, options.id)) return state;
-  if (!keys(options, ["id", "template", "destinations", "distanceKm", "scope"])) fail();
+  const offerKeys = ["id", "template", "destinations", "distanceKm", "scope"];
+  if (!(keys(options, offerKeys) || keys(options, [...offerKeys, "characterId"])) ||
+      Object.hasOwn(options, "characterId") && !instanceId(options.characterId)) fail();
   const services = data(state);
   if (services.offers.length >= SERVICE_QUEST_LIMITS.offers ||
       services.offers.length + services.quests.length >= SERVICE_QUEST_LIMITS.history ||
@@ -214,6 +217,7 @@ export function createServiceOffer(state, options) {
   }
   const quest = {
     id: options.id, template: options.template,
+    ...(options.characterId ? { characterId: options.characterId } : {}),
     destinations: options.destinations.map(destination => ({ ...destination })),
     distanceKm: options.distanceKm, scope: options.scope, origin,
     rewardCents: serviceQuestReward(options.distanceKm, template.roles.length),

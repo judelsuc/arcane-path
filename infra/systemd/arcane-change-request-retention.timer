@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly private player report retention
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=60
+Unit=arcane-change-request-retention.service
+
+[Install]
+WantedBy=timers.target

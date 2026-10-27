@@ -73,5 +73,5 @@ export function settlementView(map, row, col) {
     return count < (category === "accommodation" ? 20 : 5);
   });
   return { ...info, settlement, settlements, places,
-    identity: settlements.map(item => item.osmId).join(",") };
+    identity: settlement.osmId };
 }

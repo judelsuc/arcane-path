@@ -1022,24 +1022,112 @@ class LiveNarrativeTests(unittest.TestCase):
             handler = make_handler(self.chunks, jobs)
         self.addCleanup(handler.journal_art.close)
         self.addCleanup(handler.quest_destinations.close)
+        self.addCleanup(handler.town_content.close)
+        self.addCleanup(handler.characters.close)
         server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
         thread = threading.Thread(target=server.serve_forever)
         thread.start()
         self.addCleanup(thread.join)
         self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)
-        url = f"http://127.0.0.1:{server.server_port}/api/live-narrative"
-        def post(data, token=self.token, origin=None):
+        url = f"http://127.0.0.1:{server.server_port}"
+        def post(data, token=self.token, origin=None, endpoint="/api/live-narrative"):
             headers = {"Content-Type": "application/json", "X-Journal-Capability": token}
             if origin:
                 headers["Origin"] = origin
             return urllib.request.urlopen(urllib.request.Request(
-                url, data=json.dumps(data).encode(), headers=headers), timeout=5)
+                url + endpoint, data=json.dumps(data).encode(), headers=headers), timeout=5)
         data = {"journey": self.owner, "brief": "event.coins"}
+        self.assertFalse(handler.change_requests.enabled)
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            post({}, endpoint="/api/change-requests")
+        self.assertEqual(error.exception.code, 503)
+        error.exception.close()
+        from asset_storage import local_storage
+        from change_requests import purge
+        from tests.test_change_requests import snapshot, screenshot
+        import base64
+        assets = local_storage(self.journeys.path.parent / "private-feedback-fixture")
+        self.addCleanup(assets.catalogue.close)
+        purge(assets)
+        handler.change_requests.assets = assets
+        handler.change_requests.enabled = True
+        report = {"id": "c" * 32, "journey": self.owner, "comment": "Smaller buttons fixture",
+                  "snapshot": snapshot(), "image": base64.b64encode(screenshot()).decode()}
+        for changed, token, origin, status in [
+                (report, "b" * 64, None, 403),
+                ({**report, "secret": "not allowed"}, self.token, None, 400),
+                (report, self.token, "https://evil.example", 403)]:
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                post(changed, token, origin, endpoint="/api/change-requests")
+            self.assertEqual(error.exception.code, status)
+            error.exception.close()
+        for _ in range(2):
+            with post(report, endpoint="/api/change-requests") as result:
+                self.assertEqual(result.status, 200)
+                self.assertEqual(result.headers["Cache-Control"], "no-store")
+                self.assertEqual(json.loads(result.read()), {"id": report["id"], "status": "submitted"})
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            urllib.request.urlopen(url + "/api/change-requests")
+        self.assertEqual(error.exception.code, 404)
+        error.exception.close()
         with post(data) as result:
             self.assertEqual(result.status, 200)
             self.assertEqual(result.headers["Cache-Control"], "no-store")
         self.settle()
+        base = self.chunks.bases["firmi"]
+        col, row = next((col, row) for row, cells in enumerate(base["rows"])
+                        for col, cell in enumerate(cells)
+                        if cell.get("terrain") == "place" and cell.get("settlements"))
+        character_request = {"action": "list", "journey": self.owner,
+                             "location": {"col": col, "row": row}}
+        with post(character_request, endpoint="/api/characters") as result:
+            self.assertEqual(result.status, 200)
+            self.assertTrue(json.loads(result.read())["canCreate"])
+        create_character = {**character_request, "action": "create",
+                            "requestId": str(uuid.uuid4())}
+        with post(create_character, endpoint="/api/characters") as result:
+            person = json.loads(result.read())
+            self.assertEqual(result.status, 200)
+            self.assertEqual(person["portrait"]["status"], "failed")
+        with post(character_request, endpoint="/api/characters") as result:
+            listed = json.loads(result.read())["characters"]
+            self.assertEqual(listed[0]["id"], person["id"])
+            self.assertEqual(listed[0]["memories"], [])
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            post(character_request, "b" * 64, endpoint="/api/characters")
+        self.assertEqual(error.exception.code, 403)
+        error.exception.close()
+        import time
+        from tests.test_town_content import Sources
+        town_request = {"journey": self.owner, "location": {"col": col, "row": row},
+                        "town": base["rows"][row][col]["settlements"][0]["osmId"], "language": "en"}
+        mapped_town = handler.town_content.town(town_request, self.token)
+        handler.town_content.source = Sources(1, center=mapped_town["coordinates"], name=mapped_town["name"])
+        with post(town_request, endpoint="/api/town-content") as result:
+            self.assertEqual(result.status, 200)
+            self.assertEqual(json.loads(result.read())["identity"], town_request["town"])
+        for _ in range(500):
+            with post(town_request, endpoint="/api/town-content") as result:
+                gallery = json.loads(result.read())
+            if not gallery["loading"]:
+                break
+            time.sleep(.01)
+        self.assertFalse(gallery["loading"])
+        self.assertEqual(len(gallery["photos"]), 1)
+        with post({**town_request, "image": gallery["photos"][0]["imageId"]},
+                  endpoint="/api/town-content") as result:
+            self.assertEqual(result.headers["Content-Type"], "image/jpeg")
+            self.assertTrue(result.read().startswith(b"\xff\xd8"))
+        for changed, token, origin, status in [
+                (town_request, "b" * 64, None, 403),
+                ({**town_request, "url": "https://example.test"}, self.token, None, 400),
+                (town_request, self.token, "https://evil.example", 403),
+                ({**town_request, "town": "node/0"}, self.token, None, 409)]:
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                post(changed, token, origin, endpoint="/api/town-content")
+            self.assertEqual(error.exception.code, status)
+            error.exception.close()
         for changed, token, origin, status in [
             (data, "b" * 64, None, 403),
             ({**data, "prompt": "arbitrary"}, self.token, None, 400),

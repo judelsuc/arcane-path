@@ -22,7 +22,7 @@ class SharedImages:
         return image
 
     def generate(self, kind, request, brief, writer, *, version="1"):
-        if (kind not in {"title-art", "journal-art", "encounter-art"}
+        if (kind not in {"title-art", "journal-art", "encounter-art", "character-portrait"}
                 or not isinstance(brief, dict) or not isinstance(brief.get("prompt"), str)
                 or not brief["prompt"].strip() or not isinstance(version, str)
                 or not 0 < len(version) <= 1000 or any(ord(char) < 32 for char in version)):

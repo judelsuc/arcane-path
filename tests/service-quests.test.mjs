@@ -151,6 +151,19 @@ test("first nonce appearance is immutable, copied from caller, never rerolled ev
   assert.notEqual(again.serviceQuests.offers[0].id, snapshot.id);
 });
 
+test("a service quest can retain its offering character as a private contract owner", () => {
+  const options = offerOptions(QUEST_TEMPLATES[0], 9, { characterId: "c".repeat(32) });
+  let current = createServiceOffer(state(), options);
+  assert.equal(current.serviceQuests.offers[0].characterId, options.characterId);
+  validateServiceQuests(current);
+  current = acceptServiceQuest(current, options.id);
+  assert.equal(current.serviceQuests.quests[0].characterId, options.characterId);
+  current = complete(current);
+  assert.equal(current.serviceQuests.quests[0].characterId, options.characterId);
+  const invalid = offerOptions(QUEST_TEMPLATES[0], 10, { characterId: "../not-an-id" });
+  assert.throws(() => createServiceOffer(state(), invalid));
+});
+
 test("later steps and neighbouring cells cannot satisfy the active dependency", () => {
   const current = accepted(), quest = current.serviceQuests.quests[0];
   const last = quest.destinations[1];

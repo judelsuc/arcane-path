@@ -3,17 +3,33 @@
 Plan du 23 octobre 2026. Exigences : R-182 à R-186 dans
 [REQUIREMENTS](./REQUIREMENTS.md), en complément de R-155/R-156.
 
-Ce document décrit une cible et un ordre de réalisation, pas une infrastructure
-déjà provisionnée. Aucune reprise des données existantes n'est nécessaire.
-Les changements locaux des fenêtres, de la boutique et du prompt du parent
-restent à livrer séparément ; ils ne sont pas annulés par ce plan.
+Ce document conserve la cible et l'historique des incréments. Le stockage géré
+a depuis été provisionné et activé sur la prévisualisation avec autorisation
+explicite ; voir [le compte rendu d'activation](./INFRASTRUCTURE.md).
+Aucune reprise des données existantes n'a été faite. Les changements des
+fenêtres, de la boutique et du prompt du parent ont été livrés dans le runtime
+`4934a99` ; les nouveaux travaux R-183 restent locaux, non déployés.
 
-### Démarrage autorisé et premier socle
+### Activation OVH autorisée
 
-Budget confirmé : **100 EUR TTC/mois au total**, VM + base + stockage.
-L'implémentation locale est autorisée ; aucune ressource payante n'est créée.
-Le devis reste à établir, et la disponibilité d'une offre compatible avec ce
-plafond n'est pas présumée.
+Le plafond initial de 100 EUR TTC/mois a été relevé explicitement à
+**150 EUR TTC/mois au total** après vérification des offres régionales.
+PostgreSQL 18 Essential db1-4, un noeud et 80 Go en GRA, et un bucket S3 privé
+versionné sont actifs ; l'API et les deux services d'illustration utilisent
+la même base `arcane_path`. Estimation conservatrice sur 744 heures :
+**136,58 EUR TTC/mois**, réserve stockage/transferts de 10 EUR incluse ;
+ce n'est pas un plafond automatique des usages facturés.
+Sept tests réels OVH passent, dont une restauration ciblée SQL + asset.
+Une grille de production a été relue depuis un second cache local vide et
+les cinq contrôles HTTPS authentifiés passent. Les sources OSM ordinaires
+et les autres caches explicitement différés restent locaux. La restauration
+complète, la supervision financière et la rétention/réconciliation restent à faire.
+
+### Historique : démarrage autorisé et premier socle
+
+Budget initial confirmé : **100 EUR TTC/mois au total**, VM + base + stockage.
+À ce stade initial, seule l'implémentation locale était autorisée, aucune
+ressource payante n'était créée et le devis restait à établir.
 
 Premier incrément : [asset_storage.py](../scripts/asset_storage.py) fournit :
 
@@ -984,6 +1000,160 @@ du navigateur reste hors de ce premier changement.
 
 ## 3. Personnages : identité, mémoire et nouveau parcours
 
+#### Premier incrément R-183 livré localement
+
+Le parcours UI ouvre d'abord un sélecteur en lecture seule. Il liste les
+identités persistantes présentes dans la localité ou sur la case de route
+éligible ; une commande explicite crée une personne avant d'ouvrir Dialogue.
+Les identités fictionnelles déterministes sont idempotentes, plafonnées par
+lieu/région/monde et nommées selon la locale française des quatre cartes
+prédéfinies, sans dépendre de la langue d'interface. Les voyages autorisés
+partagent profil, rôle, besoins, connaissances publiques et disponibilité
+géographique statique. Rencontres et sujets demandés sont isolés par voyage,
+horodatés par le serveur et plafonnés ; aucune horloge de voyage ne déplace
+les personnages. Une personne sans savoir vérifié répond explicitement qu'elle
+ne sait pas ; le sélecteur ne présente pas les habitants d'une ville voisine.
+Une localité nommée par son identifiant OSM stable conserve les mêmes personnes
+depuis n'importe quelle origine ; seules les rencontres routières incluent
+l'identifiant régional dans leur localisation.
+La position peut être n'importe quelle case du voyage : le serveur consulte
+d'abord la case de base ou le chunk déjà présent dans le cache, y compris les
+coordonnées négatives. Il ne télécharge pas de terrain pour ouvrir le sélecteur.
+Les panneaux de quêtes et d'indices déjà autorisés restent disponibles même si
+le personnage n'en connaît pas le contenu ; une note distingue explicitement
+ces outils et rumeurs du témoignage de l'interlocuteur.
+
+Les tables `world_characters`, `character_creation_requests` et
+`character_private_memories`, ainsi que le verrou `character-registry`, ont été
+ajoutés aux schémas de `content_storage.schemas`. Une base SQLite locale crée
+son schéma au démarrage. Le schéma partagé n'est créé que par l'initialisation
+administrative du catalogue : après déploiement ultérieur du runtime R-183,
+réexécuter explicitement `asset_storage.py --configured initialize` pour créer
+ces tables/verrous. L'activation actuelle du stockage OVH avec l'ancien runtime
+ne contient pas ce schéma et ne doit pas être interprétée comme un déploiement
+de R-183.
+
+L'API est aussi ajoutée à l'allowlist nginx : seul `POST /api/characters` est
+transmis au runtime, sous l'authentification Basic de la prévisualisation,
+la limite de corps existante de 4 Kio, le budget de requêtes API et le transfert
+explicite de `X-Journal-Capability`. La configuration bootstrap refuse les autres
+méthodes et renvoie 503 pour le POST, sans envoyer de trafic au runtime. Lors
+d'un futur déploiement R-183, installer aussi `infra/nginx/preview.conf`,
+vérifier la configuration avec `nginx -t`, puis recharger nginx ; ne pas
+activer l'API avec la configuration bootstrap.
+
+Validation finale : **87 tests Python ciblés** et **17 tests JavaScript ciblés**
+réussis. Trois contrôles supplémentaires sur le vrai PostgreSQL OVH, dans la
+base de recette isolée, vérifient la création concurrente entre deux pools,
+les reprises de mémoire idempotentes et privées, et l'identité d'une même ville
+OSM depuis deux origines. Seule la recette a reçu le schéma R-183 ; le runtime
+et la configuration nginx de production restent inchangés.
+
+#### Suite R-183 livrée localement, sans déploiement
+
+Le portrait est désormais un job original par personnage et version de recette,
+publié via `SharedImages` dans le stockage durable et référencé avec modèle et
+provenance. Il réutilise l'`OvhImageWriter` déjà configuré, son contrôle du tarif
+gratuit et la comptabilisation `DurableJobs` existante ; aucun budget ni repli
+payant nouveau n'est activé. Le prompt ne contient que le rôle public fictionnel,
+jamais le nom, la localité, un souvenir ni une autre donnée du voyage. La
+génération est asynchrone ; le sélecteur expose une silhouette étiquetée si le
+portrait est en attente, désactivé ou en échec, sans bloquer Dialogue ni
+redéclencher le fournisseur à chaque rencontre. Les erreurs de téléchargement
+et de décodage sont étiquetées et journalisées ; fermeture et rafraîchissement
+révoquent les URL locales, et une réponse périmée ne peut en créer une nouvelle.
+La réconciliation bornée au démarrage et à la lecture du sélecteur préserve un
+bail durable actif, expose un bail expiré ou un dispatch incertain comme échec,
+sans jamais redispatcher ce travail ambigu. Une publication tardive vérifiée
+peut encore rétablir le portrait. La création rejouée utilise bien l'identifiant
+du reçu, y compris pendant la génération. Le style de portrait ne modifie aucun
+des contrôles stricts de gratuité du fournisseur existant.
+Un portrait déjà prêt reste attaché à sa référence persistée même si une
+nouvelle version change le modèle ou la recette. La réconciliation conserve
+son verrou SQL et vérifie le catalogue avec cette même connexion ; aucune
+acquisition imbriquée ne peut saturer le pool PostgreSQL.
+
+Les clics sur les sujets de Dialogue produisent et mémorisent un échange réel :
+le serveur ne retourne que les faits publics autorisés par le rôle ; aucun
+témoin du parent ni indice privé n'est ajouté. La réponse est une formulation
+fixe localisée, pas une affirmation improvisée par le modèle. La mémoire
+conserve les identifiants de faits et leur version par voyage.
+
+Les quêtes de service existantes restent la source des objectifs et résultats.
+Lorsqu'une personne sélectionnée offre une telle quête, son ID est conservé
+dans la sauvegarde ; l'UI réconcilie ensuite, dans l'ordre de l'historique de
+jeu, offre, acceptation, étapes et résultat avec des transitions idempotentes.
+Le registre transactionnel privé au voyage garde l'état du contrat et son
+résultat ; ni révélation de parent ni récompense n'est décidée par ce registre.
+La dernière entrée `advance` de l'historique réel est représentée côté contrat
+par l'entrée `complete` qui la suit, sans transition intermédiaire interdite à
+l'étape finale. Les tests UI exécutent réellement le rejeu asynchrone, l'erreur
+visible et sa reprise, l'acceptation pendant une offre en vol et la conclusion
+de quêtes de une, deux et trois étapes, y compris réponse perdue et rechargement.
+
+#### Mémoire partagée de tous les visiteurs — noms automatiques
+
+Chaque PNJ conserve désormais tous les personnages-joueurs rencontrés, sans
+plafond de rétention de vingt ou mille entrées. Les tables
+`character_visitor_identities`, `character_encounters` et
+`character_encounter_events` séparent ce registre partagé des échanges et
+contrats privés. L'identité stable est celle du voyage autorisé ; le nom fictif
+validé est figé depuis son seul genesis serveur, jamais un champ fourni par le
+client. Premier/dernier passage et compteur idempotent suivent l'horloge du
+serveur partagé, pas le temps simulé. Une même requête répétée ou concurrente
+ne compte qu'une fois.
+
+Le nom fictif et le seul fait d'avoir rencontré ce PNJ sont partagés
+automatiquement, sans consentement supplémentaire ; le sélecteur le signale
+explicitement en français et anglais. Le PNJ peut mentionner occasionnellement
+un nom réellement enregistré via une sélection déterministe bornée, sans LLM
+ni nouvel appel IA. Les projections publiques excluent l'identité et le nom du
+joueur courant, dédupliquent les homonymes et ne donnent aucun identifiant de
+voyage, heure, position, indice, contrat ou échange privé d'un autre joueur.
+Le sélecteur reçoit au plus trois faits de visiteurs ; l'action `visitors` de
+la même API autorisée fournit des pages de vingt noms au maximum, sans borner
+la conservation. La familiarité du voyage courant reste disponible même quand
+son ancienne rencontre n'apparaît plus dans les vingt souvenirs récents, et une
+nouvelle rencontre ne peut échouer au plafond de l'historique privé.
+
+Les anciennes rencontres privées sont conservées et peuvent être réconciliées
+idempotemment ; seul le voyage actuellement autorisé fournit alors son nom
+serveur sûr. Les nouvelles tables du catalogue partagé sont créées exclusivement
+par `asset_storage.py --configured initialize`, jamais au constructeur API.
+Les tests de stockage et d'images utilisent uniquement des fixtures, sans nouvel
+appel réel à un fournisseur IA. La recette OVH réelle de ce complément reste
+séparée de cette validation locale.
+
+Une locale explicite et validée du lieu prime pour les noms ; à défaut, les codes
+de pays publics de la cellule OSM actuelle priment sur l'origine du voyage.
+Un pays non pris en charge ne reprend donc pas le français d'une origine
+prédéfinie. La locale validée de la carte de départ ne sert de repli qu'à
+l'intérieur de celle-ci et en l'absence de métadonnée de pays ; les cellules
+streamées ne l'héritent pas. Aucune langue d'interface ni inférence personnelle
+n'est utilisée. Les tables d'échanges et de contrats sont ajoutées au schéma partagé ;
+le démarrage SQLite crée les nouvelles tables et ajoute la version des faits
+aux registres existants sans réécrire les identités ou échanges. Un futur
+déploiement partagé devra réexécuter explicitement
+`asset_storage.py --configured initialize`, installer `infra/nginx/preview.conf`
+et valider/recharger nginx. La migration de version des faits d'un catalogue
+partagé existant est faite par cette initialisation explicite, jamais par le
+constructeur de l'API Personnages. Aucun de ces changements locaux n'a été déployé.
+
+Les tests locaux ciblés vérifient la génération durable réutilisée,
+les échanges et contrats privés/idempotents, la locale publique d'origine et la
+compatibilité du registre SQLite. La validation finale comprend **164 tests
+Python** et **44 tests JavaScript**, tous réussis, ainsi que **six contrôles de
+recette sur PostgreSQL/S3 OVH réels** : création concurrente idempotente,
+isolation des souvenirs privés, échanges factuels et contrats privés, identité
+de ville partagée entre origines, conservation des visiteurs et seuls faits
+publics autorisés, portraits durables réutilisés. Seule la base de recette a
+reçu le schéma étendu ; le runtime et la configuration de production restent
+inchangés. L'overlay temporaire et ses lignes synthétiques de registre ont été
+nettoyés. Le navigateur a vérifié en FR/EN l'information de partage automatique,
+la reconnaissance d'un visiteur de retour, une mention factuelle, le sélecteur
+en lecture seule et le retour depuis le dialogue, sans débordement horizontal
+sur un écran de 375px. Les images sont des fixtures, sans nouvel appel IA réel.
+
 ### Parcours demandé
 
 **Ville / Parler aux habitants → Choisir un personnage → Dialogue.**
@@ -1043,10 +1213,45 @@ Définir quota, coût et politique de création avant activation en production.
 
 ## 4. Tilesets et habillages
 
-Aujourd'hui [app.js](../app.js) construit la grille à partir de glyphes,
+### État local du 27 octobre
+
+Le choix de carte est réalisé : **ASCII / Path Pixel**, commutation à chaud
+dans Options et préférence locale indépendante des voyages.
+[Le manifeste](../public/tilesets/path-pixel.json) est versionné, borné et
+validé avant activation ; les pixels originaux sont dédiés CC0-1.0, sans CDN
+ni fournisseur payant. Le même pack sert la grille, la légende, les cartes
+du carnet et leurs exports ; un export conserve son choix de départ.
+Les retours privés R-186 consignent le vrai tileset sélectionné.
+Marqueurs joueur/décès, objectifs, sélection, trajet, logement et chargement
+restent superposés ; transport et eau ne sont pas effacés par les sites.
+Les tuiles sont des symboles et ne reconstruisent pas une géométrie absente.
+
+L'utilisateur a confirmé les douze catégories R-144, **visuelles uniquement** :
+stades, centres commerciaux, cimetières, aéroports, hôpitaux, universités,
+industrie, ports/marinas, parcs/jardins, zoos/parcs à thème, châteaux/sites
+historiques et expositions/congrès. Métadonnées `sites` séparées des terrains
+et POI de gameplay : **aucun changement de déplacement, coût ou actions**.
+Nœuds, contours fermés et multipolygones complets sont utilisés avec
+provenance OSM ; les trous sont respectés, les sites désaffectés exclus.
+Les anciens chunks sont conservés et peuvent être enrichis depuis leur
+source OSM déjà en cache sans télécharger ni modifier l'asset partagé.
+Sans cette source ni métadonnées suffisantes, aucune présence n'est inventée.
+
+**Non déployé.** La variante de skin UI, la génération quotidienne et les
+règles/actions spécifiques aux sites restent des lots distincts non activés.
+
+Validation locale : 93 tests Python et 85 tests JavaScript ciblés réussis ;
+application réelle contrôlée dans Chromium en anglais sur bureau et en
+français sur mobile (caméra 24 × 24, absence de débordement, douze sites,
+transports, préférence après rechargement, marqueurs joueur/décès, export,
+capture R-186, couleurs forcées et échec explicite du pack).
+
+### Cible complète
+
+Avant cet incrément, [app.js](../app.js) construisait la grille à partir de glyphes,
 [styles.css](../styles.css) définit les couleurs/états et le cycle jour/nuit,
-et [journey-map.mjs](../journey-map.mjs) dessine une carte de carnet séparée.
-R-155/R-156 existent mais aucun pack graphique n'a été choisi.
+et [journey-map.mjs](../journey-map.mjs) dessinait une carte de carnet séparée.
+Le travail local utilise maintenant le même adaptateur graphique.
 
 Séparer :
 
@@ -1074,6 +1279,66 @@ d'un pack entier, validation de couverture/cohérence, aperçu, publication
 atomique d'une version. Aucun planning ni budget nouveau n'est activé ici.
 
 ## 5. Entrée en ville : réutiliser ce qui existe
+
+### R-185 : implémentation locale, non déployée
+
+L'accueil existant charge désormais progressivement une description sourcée
+et jusqu'à cinq photographies documentaires créditées, sans bloquer les
+services. L'entrée est dédupliquée par l'identité OSM principale de la ville :
+se déplacer entre ses cases ne rouvre plus la fenêtre et ne relance pas les
+sources. Un autre dialogue actif reste prioritaire ; l'accès manuel subsiste.
+Les descriptions, photos, fournisseurs et commandes des autres cases restent
+inchangés.
+
+Le serveur résout uniquement la ville cartographiée de la case déjà chargée
+d'un voyage authentifié. Les nouvelles cartes conservent les liens
+Wikidata/Wikipedia, les coordonnées du lieu et ses tags documentaires ; les
+cartes existantes utilisent leurs associations ou une recherche bornée avec
+contrôle du nom et des coordonnées. Les homonymes ambigus sont refusés.
+Les sitelinks demandés FR/EN sont prioritaires, les langues de repli sont
+signalées et les descriptions OSM constituent un repli factuel.
+
+La galerie utilise les associations Commons/OSM/Wikidata/Wikipedia, puis des
+photographies géolocalisées dans les environs, toujours distinguées des
+associations documentaires à la ville. Chaque image doit conserver auteur,
+légende, licence réutilisable et liens source/licence ; aucun remplissage IA.
+Les CDN officiels `upload.wikimedia.org` et `thumb.wikimedia.org` sont admis,
+avec contrôle des redirections, du type, de la taille et des dimensions.
+
+Le catalogue partagé reçoit la table `town_documents` lors de son
+initialisation administrative explicite. Les métadonnées et licences restent
+en SQL, les miniatures vérifiées dans le stockage d'assets existant, et une
+copie de lecture en IndexedDB. Des workers bornés et des baux renouvelés avec
+fencing dédupliquent les lectures entre processus. Cache nominal sept jours,
+cache de panne partielle cinq minutes, actualisation manuelle limitée à une
+minute et expliquée dans la fenêtre. Un bail expiré est récupérable.
+Les pannes gardent le contenu partiel disponible et les crédits. Annulation,
+réponses tardives, changements de langue et libération des URL d'images sont
+couverts. Aucun nouveau fournisseur payant ni appel IA.
+
+Le futur déploiement doit initialiser le catalogue et installer la route
+POST authentifiée exacte `/api/town-content` dans nginx. Aucun runtime ni
+schéma de production n'a été modifié.
+
+Validation finale du 27 octobre : **170 tests Python** et **83 tests
+JavaScript**, tous réussis, y compris les contrôles HTTP authentifiés,
+les sources des autres cases et la réutilisation des chunks locaux/partagés
+de la version précédente. L'ajout de métadonnées de ville est compatible avec
+ces chunks : pas de nouveau téléchargement ou rasterisation imposé.
+**Quatre contrôles de recette PostgreSQL/S3 OVH réels** ont vérifié le bail
+concurrent inter-processus, les métadonnées et cinq licences persistées, la
+réutilisation par un autre joueur/case de la même ville et la lecture des
+miniatures privées. Seule la base de recette a reçu le schéma.
+Les overlays temporaires et lignes SQL synthétiques ont été nettoyés ; les
+petits blobs de recette restent soumis à la rétention du cache S3 existant.
+Une vérification des API Wikimedia réelles a identifié la description FR de
+Firmi et cinq photos CC BY-SA 4.0, dont une explicitement voisine ; un JPEG
+réel a été téléchargé et vérifié. Les fixtures navigateur ont contrôlé le
+chargement progressif, les actions disponibles, les crédits, les replis FR/EN,
+les pannes partielles, l'arrivée dédupliquée et l'absence de débordement à 375px.
+Aucun appel IA, commit, push ni déploiement de ce travail.
+
+### Plan initial conservé
 
 [TownUI](../towns-ui.mjs) ouvre déjà un accueil et charge une description via
 [CellContent](../cell-content.mjs). Il manque une galerie documentaire propre à
@@ -1113,7 +1378,39 @@ Cinquième chantier ajouté le 23 octobre : R-186. À la demande du joueur, une
 commande **« Proposer une modification »** rassemble une capture de la vue du jeu,
 un snapshot de son état au même moment et un commentaire libre, par exemple
 « les boutons sont trop petits chez moi ». L'utilisateur a demandé pour cette
-étape **les exigences et le plan uniquement**, sans démarrage de l'implémentation.
+étape d'abord **les exigences et le plan uniquement**, puis a demandé
+l'implémentation après R-185. Le destinataire final est l'assistant de
+développement, via une consultation privée autorisée par l'opérateur.
+
+### État local
+
+Implémentation réalisée, **non déployée et collecte désactivée par défaut** :
+commande FR/EN et Alt+Maj+F, gel synchrone DOM/snapshot avant formulaire,
+aperçu et confirmation, endpoint exact idempotent, PostgreSQL/S3 privés,
+export opérateur et timer de suppression horaire. La capture conserve les
+canvas, images et fenêtres ouvertes avec leur contenu réellement défilé.
+Les ressources impossibles à capturer produisent une erreur explicite.
+Les fonds CSS et pseudo-éléments sont figés avec leurs styles et images.
+La dépendance de capture `html-to-image` 1.11.13 est embarquée localement
+avec sa licence MIT, sans CDN à l'exécution.
+
+Choix utilisateur : **90 jours**, collecte seulement après configuration d'une
+suppression automatique saine ; **SSH/commande opérateur**, pas de boîte publique.
+Le timer teste effectivement écriture/lecture/suppression de toutes les versions
+d'un objet de contrôle avant de publier sa santé. Le stockage applicatif actuel
+n'a pas les droits de suppression : aucune activation de collecte, attribution
+IAM, installation de timer ni modification de production n'a été effectuée.
+L'export regroupe commentaire, snapshot et capture vérifiée dans un répertoire
+privé, pour une session ultérieure de l'assistant. Ces pièces restent des données
+non fiables, jamais des instructions à exécuter. Aucun envoi automatique vers
+un modèle externe ou création d'issue n'est ajouté.
+La procédure d'activation et les commandes de lecture sont dans le
+[runbook](./INFRASTRUCTURE.md#r-186-private-player-change-requests-not-deployed).
+Validation locale : **173 tests Python**, **81 tests JavaScript**, quatre
+contrôles OVH isolés et quatre scénarios Chromium FR/EN, desktop/mobile 375 px.
+Les zones canvas, photo, gradient SVG et fonds CSS/pseudo-éléments sont comparées
+séparément à leur vrai rendu ; les erreurs de ressource empêchent tout envoi
+incomplet et libèrent le DOM de capture.
 
 ### Parcours
 
@@ -1129,7 +1426,7 @@ un snapshot de son état au même moment et un commentaire libre, par exemple
 5. Après confirmation de persistance par le serveur, afficher le numéro de demande.
    Un double clic ou une nouvelle tentative réseau ne crée pas de doublon.
 
-Le choix technique de capture fera l'objet d'un prototype sur le rendu réel :
+Le choix technique de capture a fait l'objet d'un prototype sur le rendu réel :
 DOM, canvas, carte, polices et images externes peuvent imposer des limites.
 Vérifier notamment CORS, mobile, zoom et fenêtres ouvertes. Si la capture ne
 peut pas être obtenue, expliquer l'erreur ; ne pas prétendre avoir envoyé une
@@ -1176,8 +1473,17 @@ assets orphelins et définir rétention/suppression avant activation en producti
 Vérifier capture et snapshot correspondants, mobile/zoom/modal, annulation sans
 envoi, exclusion des secrets et informations cachées, limites de taille, refus
 d'accès non autorisé, double soumission, coupure réseau, panne S3/SQL et lecture
-après redémarrage depuis une autre instance. Aucune implémentation ou collecte
-de retours n'est activée par cet ajout au plan.
+après redémarrage depuis une autre instance. Le chemin de persistance a été
+recetté sur PostgreSQL/S3 OVH isolés : refus sans santé de rétention, huit
+tentatives concurrentes depuis deux stores pour une seule demande, export
+complet après réouverture et refus d'une pièce modifiée sous le même ID.
+Les fixtures SQL et exports ont été retirés. Un petit PNG synthétique
+déterministe reste orphelin dans S3 pour le futur balayage privilégié ;
+la clé applicative ne permet pas sa suppression. La suppression physique de
+toutes les versions a été testée sur double S3 versionné, pas sur OVH réel.
+Les vues FR/EN, desktop et 375 px, carte/canvas/image et modal défilé sont
+comparées pixel par pixel à une vraie capture Chromium ; le formulaire n'en
+fait pas partie. Aucune collecte de retours n'est activée en production.
 
 ## 7. Ordre de réalisation et critères de sortie
 

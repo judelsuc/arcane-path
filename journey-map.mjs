@@ -1,3 +1,4 @@
+import { mapAppearance, pixelPack, drawPixelTile, SITE_GLYPHS } from "./map-appearance.mjs";
 export const MAX_JOURNEY_POINTS = 8192;
 const TERRAIN = {
   plain: ["#ddd5ac", "."], water: ["#8ebbc4", "~"], road: ["#c9b58f", "+"],
@@ -27,6 +28,7 @@ export function createJourneyTerrainLoader(region, chunks, fetcher = fetch) {
         !Number.isSafeInteger(data.stride) || data.stride < 1 || data.stride > 41 ||
         typeof data.missing !== "boolean" || typeof data.sampled !== "boolean" ||
         data.cells.some(cell => !point(cell) || !Object.hasOwn(TERRAIN, cell.terrain) ||
+          cell.siteKind !== undefined && !Object.hasOwn(SITE_GLYPHS, cell.siteKind) ||
           cell.col < bounds[0] || cell.col > bounds[2] || cell.row < bounds[1] || cell.row > bounds[3])) {
       throw new Error("Invalid cached terrain response.");
     }
@@ -87,6 +89,7 @@ export function journeyMapView(state, cellSizeMeters = 250) {
   }
   stops.push({ col: state.col, row: state.row, kind: "current" });
   return { points: points.map(p => ({ col: p.col, row: p.row })), stops,
+    appearance: mapAppearance(),
     walkedLegs: state.transport?.walkedLegs ?? [], rides: state.transport?.rides ?? [],
     partial: recorded?.partial ?? state.distanceMeters > 0, simplified: recorded?.simplified ?? false,
     cellSizeMeters };
@@ -118,14 +121,24 @@ export function drawJourneyMap(canvas, view, t, progress = 1) {
     const size = view.terrain.stride ?? 1;
     const [x, y] = project({ col: cell.col + (size - 1) / 2, row: cell.row + (size - 1) / 2 });
     if (x < 15 || y < 80 || x > 1185 || y > 690) continue;
-    const [color, glyph] = TERRAIN[cell.terrain];
+    const [color, baseGlyph] = TERRAIN[cell.terrain];
+    const protectedTerrain = ["water", "road", "major_road", "rail", "cable", "cable_station", "station"]
+      .includes(cell.terrain);
+    const kind = !protectedTerrain && cell.siteKind ? cell.siteKind : cell.terrain;
+    const glyph = SITE_GLYPHS[kind] ?? baseGlyph;
     c.fillStyle = color;
     c.fillRect(x - scale * size / 2, y - scale * size / 2, scale * size + 0.5, scale * size + 0.5);
-    if (size === 1 && scale >= 12) {
+    if ((view.appearance ?? mapAppearance()).tileset === "path-pixel" && pixelPack()) {
+      drawPixelTile(c, pixelPack(), kind, x - scale * size / 2, y - scale * size / 2, scale * size + .5);
+      if (cell.siteKind && protectedTerrain && scale >= 12) {
+        drawPixelTile(c, pixelPack(), cell.siteKind, x, y, scale / 2);
+      }
+    } else if (size === 1 && scale >= 12) {
       c.fillStyle = "#635c49";
       c.font = `${Math.min(24, scale * 0.65)}px monospace`;
       c.textAlign = "center";
       c.fillText(glyph, x, y + Math.min(8, scale / 4));
+      if (cell.siteKind && protectedTerrain) c.fillText(SITE_GLYPHS[cell.siteKind], x + scale / 3, y + scale / 3);
     }
   }
   c.strokeStyle = "#c9b78f";

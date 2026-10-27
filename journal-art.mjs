@@ -9,6 +9,18 @@ export const COVER_ART_ID = "journal-art:cover";
 export const IMAGE_LICENSE = "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/LICENSE.md";
 const date = time => new Date(time).toISOString().slice(0, 10);
 
+export function illustrationSettingNote(setting) {
+  if (!setting) return "";
+  if (setting.status !== "ready") {
+    return `Wikipedia context unavailable / Contexte Wikipedia indisponible: ${setting.reason} ` +
+      "Tarot/scenery only / Tarot et paysage seulement.";
+  }
+  return "Public setting motifs, not documentary evidence / Motifs du decor public, pas une preuve documentaire: " +
+    setting.facts.join(", ") + ". " + setting.sources.map(source =>
+      `${source.title} - ${source.attribution} - ${source.sourceUrl} - ${source.license} (${source.licenseUrl})`
+    ).join("; ") + `. Retrieved / Consulte: ${setting.retrieved}.`;
+}
+
 export function illustrationScenes(terrain, condition) {
   const scenes = [];
   if (["mountain", "hill"].includes(terrain)) scenes.push("mountains");
@@ -38,6 +50,9 @@ export function observeIllustrationDay(previous, state, scenes) {
   const counts = counters(state), today = date(now);
   const brief = { key: today, birth: state.birthCard, daily: state.dailyCard,
     scenes: [...new Set(scenes)], activities: [], partial: state.elapsedMinutes > 0 };
+  if (Number.isSafeInteger(state.col) && Number.isSafeInteger(state.row)) {
+    brief.location = { col: state.col, row: state.row };
+  }
   if (previous === null) return {
     version: 1, time: now, counts, current: brief, days: [],
     cover: { ...brief, key: "cover", activities: [] },
@@ -68,6 +83,7 @@ export function observeIllustrationDay(previous, state, scenes) {
   current.activities = [...new Set([...current.activities, ...changed])];
   current.scenes = [...new Set([...current.scenes, ...scenes])];
   current.daily = state.dailyCard;
+  if (brief.location) current.location = brief.location;
   next.current = current;
   next.time = now;
   next.counts = counts;

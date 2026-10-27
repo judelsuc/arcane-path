@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { observeIllustrationDay, illustrationScenes, createJournalIllustrator } from "../journal-art.mjs";
+import { observeIllustrationDay, illustrationScenes, illustrationSettingNote, createJournalIllustrator } from "../journal-art.mjs";
 
 const start = Date.UTC(2026, 9, 19, 23, 30);
 const state = (elapsedMinutes = 0, extra = {}) => ({
@@ -9,15 +9,37 @@ const state = (elapsedMinutes = 0, extra = {}) => ({
 });
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
-test("permanent cover captures initial tarot and coarse scenery, never identity or coordinates", () => {
+test("permanent cover captures fictional map cell and tarot, never player identity", () => {
   const history = observeIllustrationDay(null, state(0, { name: "PRIVATE", col: 100, row: 200 }), ["forest"]);
   assert.deepEqual(history.cover, {
     key: "cover", birth: "hermit", daily: "moon", scenes: ["forest"], activities: [], partial: false,
+    location: { col: 100, row: 200 },
   });
-  assert.doesNotMatch(JSON.stringify(history), /PRIVATE|"col"|"row"/);
+  assert.doesNotMatch(JSON.stringify(history), /PRIVATE/);
   const next = observeIllustrationDay(history, state(20, { dailyCard: "sun" }), ["town"]);
   assert.deepEqual(next.cover, history.cover);
   assert.equal(next.days.length, 0);
+});
+
+test("completed day uses last observed fictional location, not the next day's destination", () => {
+  let history = observeIllustrationDay(null, state(0, { col: 1, row: 2 }), ["town"]);
+  history = observeIllustrationDay(history, state(29, { col: 3, row: 4 }), ["town"]);
+  history = observeIllustrationDay(history, state(30, { col: 5, row: 6 }), ["forest"]);
+  assert.deepEqual(history.cover.location, { col: 1, row: 2 });
+  assert.deepEqual(history.days[0].location, { col: 3, row: 4 });
+  assert.deepEqual(history.current.location, { col: 5, row: 6 });
+});
+
+test("artwork context notes retain attribution and explicitly distinguish unavailable context", () => {
+  assert.match(illustrationSettingNote({ status: "unavailable", reason: "Source timeout" }), /Source timeout/);
+  const note = illustrationSettingNote({ status: "ready", facts: ["a lake"], retrieved: "2026-10-27",
+    sources: [{ title: "Annecy", attribution: "Wikipedia contributors",
+      sourceUrl: "https://en.wikipedia.org/wiki/Annecy", license: "CC BY-SA 4.0",
+      licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/" }] });
+  assert.match(note, /https:\/\/en.wikipedia.org\/wiki\/Annecy/);
+  assert.match(note, /CC BY-SA 4.0/);
+  assert.match(note, /2026-10-27/);
+  assert.equal(illustrationSettingNote(undefined), "");
 });
 
 test("daily memories settle at UTC midnight, not every 24 hours or every sleep", () => {

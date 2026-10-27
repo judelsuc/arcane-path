@@ -8,7 +8,7 @@ import { notebookPdf, downloadNotebookPdf } from "./notebook-pdf.mjs";
 import { journeyMapView, journeyMapDescription, drawJourneyMap } from "./journey-map.mjs";
 import { notebookCover } from "./notebook-cover.mjs";
 import { renderDiscoveryNotebook, discoveryNotebookEntries } from "./discovery-ui.mjs";
-import { createJournalIllustrator, illustrationScenes, COVER_ART_ID } from "./journal-art.mjs";
+import { createJournalIllustrator, illustrationScenes, illustrationSettingNote, COVER_ART_ID } from "./journal-art.mjs";
 import { createLiveNarrative, JOURNAL_SUBTITLE } from "./live-narrative.mjs";
 import { archivedJourneys } from "./journey-save.mjs";
 import { translate } from "./i18n.mjs";
@@ -242,14 +242,19 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       const title = entry.key === "cover" ? "Personal dream cover / Couverture onirique personnelle"
         : `${entry.key} (UTC) · Illustrated day / Journée illustrée`;
       const brief = entry.brief;
+      const tarot = brief.recipe?.version >= 2
+        ? (brief.key === "cover" ? brief.birth : brief.daily)
+        : `${brief.birth} / ${brief.daily}`;
       const note = `Symbolic AI illustration, not evidence / Illustration IA symbolique, pas un indice. ` +
-        `Tarot: ${brief.birth} / ${brief.daily}. ` +
+        `Tarot: ${tarot}. ` +
         `Scenery / Décor: ${brief.scenes.join(", ") || "—"}. ` +
         `Recorded activities / Activités relevées: ${brief.activities.join(", ") || "—"}. ` +
         (brief.partial ? "Partial observation / Observation partielle." : "");
       await target.pin({
         blob, title, sourceUrl: "https://www.ovhcloud.com/en/public-cloud/ai-endpoints/catalog/stable-diffusion-xl/",
-        attribution: "AI-generated / Généré par IA", license: "CreativeML Open RAIL++-M",
+        attribution: "AI-generated / Généré par IA" +
+          (brief.setting ? `\n${illustrationSettingNote(brief.setting)}` : ""),
+        license: "CreativeML Open RAIL++-M",
         licenseUrl: entry.license,
       }, { id, caption: title, note });
       if (scope === notebookScope(owner) && dialog.open && !readOnly) await load();
@@ -394,13 +399,26 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
           image.className = "journal-cover-art";
           image.addEventListener("error", () => failure(new Error(t("journalImageError"))));
           page.append(image);
-          const credit = document.createElement("a");
-          credit.href = artwork.licenseUrl;
+          const credit = document.createElement("p");
           credit.className = "technical-text";
-          credit.textContent = `${artwork.attribution} · ${artwork.license}`;
-          credit.rel = "noopener noreferrer"; credit.target = "_blank";
+          credit.textContent = artwork.attribution;
+          const license = document.createElement("a");
+          license.href = artwork.licenseUrl;
+          license.textContent = artwork.license;
+          license.rel = "noopener noreferrer"; license.target = "_blank";
+          credit.append(license);
           page.append(credit);
+          if (artwork.note) {
+            const setting = document.createElement("p");
+            setting.className = "technical-text";
+            setting.textContent = artwork.note;
+            page.append(setting);
+          }
         }
+        const settingNotice = document.createElement("p");
+        settingNotice.className = "technical-text";
+        settingNotice.textContent = t("journalArtSettingNotice");
+        page.append(settingNotice);
         if (artStatus) {
           const progress = document.createElement("p");
           progress.textContent = t(`journalArt.${artStatus}`, { error: artError });

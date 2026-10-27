@@ -652,9 +652,14 @@ After reviewing these options, the user explicitly postponed photo-based
 generation. Keep R-139 recorded for a later increment; do not provision a
 provider or start a paid trial.
 
-### Backup idea: local Wikipedia context (R-140, not implemented)
+### Wikipedia setting context (R-140)
 
-The local Wikipedia description could supply the setting for the existing
+**27 October: implemented locally, not deployed.** The user confirmed the
+location is fictional game context, not the player's real location; public
+setting motifs may be sent without an additional consent step. Private data,
+coordinates and hidden clues remain outside the image-provider prompt.
+
+The local Wikipedia description supplies the setting for the existing
 text-to-image endpoint without requiring image-to-image support. Extract a
 small, bounded set of visual facts (landscape, architecture, landmarks) into
 an original brief, then combine it with the birth card for the permanent cover
@@ -671,11 +676,32 @@ Retain the article URL and attribution, review licence obligations, and use
 the tarot/events-only option with a visible context-unavailable status when
 no suitable description exists.
 
-This is a recorded proposal, not enabled behavior. A specific article's
-landmarks may identify an in-game location; review and communicate that change
-before relaxing the prototype's coarse-location-only provider boundary.
-No photo upload or additional image provider is needed in principle. Keep
-the existing zero-price check; free availability is not guaranteed.
+The worker uses an exact mapped EN/FR Wikipedia link when available, otherwise
+up to two EN/FR geosearch queries, at most three nearby articles per query.
+Articles must carry coordinates within 2 km of the recorded cell. Introductions
+are bounded and reduced to at most six fixed visual phrases (lake, river,
+mountains, valley, woods, coast, canals, castle, cathedral, medieval architecture,
+bridge, vineyards or harbour). This deliberately limited extractor does not
+copy article prose, names or commands and does not ask another LLM to rewrite it.
+Unsupported descriptions are explicitly unavailable, not guessed.
+
+The departure cell comes from canonical genesis; daily contexts retain the
+last observed cell before midnight. Existing observations without a daily
+location use an explicit tarot/scenery-only fallback. Lookup runs in the image
+worker, not in the HTTP request or the gameplay loop. Source failures are
+logged and retained as unavailable-context reasons with the generated artwork.
+Source URLs, contributors, CC BY-SA source notices and retrieval dates remain
+in non-editable image credits, the cover, published snapshots and PDF, separately
+from the image/model licence and independently of personal note edits. Very
+long article URLs use Wikipedia's stable page-ID link to respect notebook
+metadata bounds without truncating or dropping the source.
+These are factual decorative motifs, not copied article passages.
+
+The setting and recipe are persisted before provider dispatch in SQLite or
+the shared catalogue, with lease fencing in the shared queue. Restarts reuse
+the frozen recipe; existing ready images are not regenerated or re-contextualized.
+No photo upload or additional provider is used. The existing per-image
+zero-price check and no-paid-fallback policy are unchanged.
 
 **Manual feasibility test, 19 October:** one explicitly requested live OVH
 generation succeeded after the existing adapter verified zero catalogue prices.
@@ -692,13 +718,13 @@ also limitations: the model drew a notebook as an object rather than flat cover
 art, the lake/mountains were not clearly expressed, and the requested transfer
 of water between the cups was not apparent. This supports the fallback's basic
 feasibility, not faithful geography or reliable card symbolism. The prompt and
-sample are retained outside the repository as trial evidence; no automatic
-Wikipedia extraction or game integration has been implemented.
+sample are retained outside the repository as historical trial evidence.
+The later bounded integration above does not guarantee geographic fidelity.
 
 The game now has an opt-in, independent background image queue:
 
-- One **permanent cover per journey**, composed from birth/day tarot motifs
-  and coarse surroundings when first observed.
+- One **permanent cover per journey**, composed from the birth tarot motif,
+  coarse surroundings and optional available Wikipedia setting facts.
 - One additional illustrated memory page for each completed **in-game UTC
   calendar day**. These do not replace the cover.
 - Daily observations contain only known activity categories and broad scenery.
@@ -710,7 +736,8 @@ The game now has an opt-in, independent background image queue:
   client-observed decoration, not server-authoritative proof that an event
   happened. Images never grant clues, unlock guidance, change rewards or
   illustrate hidden journal contents.
-- Only fixed symbolic phrases derived from enum-validated tags go to OVH.
+- Only fixed symbolic phrases derived from enum-validated tags and the bounded
+  Wikipedia vocabulary go to OVH.
   Names, capabilities, journey IDs, dates, exact locations, journal notes and
   saves never enter the image prompt.
 - The authenticated server queues immediately and runs one generator in the

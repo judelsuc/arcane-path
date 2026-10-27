@@ -209,8 +209,14 @@ class AssetStorageTests(unittest.TestCase):
             store.catalogue.initialize()
             self.assertIn("statement_timeout=30000", factory.call_args.kwargs["kwargs"]["options"])
             pool.open.assert_called_once()
-            self.assertEqual(db.execute.call_count, 47)
+            self.assertEqual(db.execute.call_count, 68)
             self.assertIn("generation_jobs", db.execute.call_args_list[1].args[0])
+            self.assertTrue(any("world_characters" in call.args[0] for call in db.execute.call_args_list))
+            self.assertTrue(any("town_documents" in call.args[0] for call in db.execute.call_args_list))
+            self.assertTrue(any("change_requests" in call.args[0] for call in db.execute.call_args_list))
+            self.assertTrue(any("character-registry" in str(call.args) for call in db.execute.call_args_list))
+            self.assertTrue(any("ADD COLUMN IF NOT EXISTS fact_version" in call.args[0]
+                                for call in db.execute.call_args_list))
             db.close.assert_not_called()
             db.execute.return_value.fetchone.return_value = None
             store.catalogue.find("world-one", "missing")
@@ -219,6 +225,23 @@ class AssetStorageTests(unittest.TestCase):
             pool.close.assert_called_once()
             with self.assertRaisesRegex(AssetError, "closed"):
                 store.catalogue.find("world-one", "missing")
+
+    def test_explicit_initialize_migrates_existing_character_exchanges_idempotently(self):
+        with self.storage.catalogue.connection() as db:
+            db.execute("DROP TABLE character_private_exchanges")
+            db.execute(
+                "CREATE TABLE character_private_exchanges (journey TEXT NOT NULL, "
+                "event_id TEXT NOT NULL, character_id TEXT NOT NULL, topic TEXT NOT NULL, "
+                "fact_ids TEXT NOT NULL, created_at DOUBLE PRECISION NOT NULL, "
+                "PRIMARY KEY(journey,event_id))")
+            db.execute("INSERT INTO character_private_exchanges VALUES(?,?,?,?,?,?)",
+                       ("journey", "event", "person", "services", '["own_workshop"]', 1.0))
+        self.storage.catalogue.initialize()
+        self.storage.catalogue.initialize()
+        with self.storage.catalogue.connection() as db:
+            row = db.execute(
+                "SELECT character_id,fact_ids,fact_version FROM character_private_exchanges").fetchone()
+        self.assertEqual(tuple(row), ("person", '["own_workshop"]', 1))
 
     def test_pool_exhaustion_and_closed_pool_fail_without_unpooled_fallback(self):
         from psycopg_pool import PoolClosed, PoolTimeout, TooManyRequests

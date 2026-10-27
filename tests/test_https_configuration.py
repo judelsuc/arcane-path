@@ -7,6 +7,41 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class HttpsConfigurationTests(unittest.TestCase):
+    def test_pixel_tileset_is_explicitly_get_only_not_a_directory_or_remote_script_route(self):
+        config = (ROOT / "infra/nginx/preview.conf").read_text()
+        endpoint = config.split(r"location ~ ^/public/tilesets/(?:path-pixel\.json|LICENSE\.txt)$ {", 1)[1].split("\n    }", 1)[0]
+        self.assertIn("limit_except GET { deny all; }", endpoint)
+        self.assertIn("proxy_pass http://127.0.0.1:8766;", endpoint)
+        self.assertNotIn("location /public/tilesets", config)
+
+    def test_change_requests_only_accept_bounded_posts_and_private_review_has_no_web_route(self):
+        config = (ROOT / "infra/nginx/preview.conf").read_text()
+        endpoint = config.split("location = /api/change-requests {", 1)[1].split("\n    }", 1)[0]
+        self.assertIn("limit_except POST { deny all; }", endpoint)
+        self.assertIn("client_max_body_size 4100000;", endpoint)
+        self.assertIn("proxy_pass http://127.0.0.1:8766;", endpoint)
+        self.assertNotIn("location = /api/change-requests/review", config)
+        bootstrap = (ROOT / "infra/nginx/bootstrap.conf").read_text()
+        self.assertIn("location = /api/change-requests {", bootstrap)
+        self.assertIn("vendor/(?:html-to-image-1", config)
+        timer = (ROOT / "infra/systemd/arcane-change-request-retention.timer").read_text()
+        service = (ROOT / "infra/systemd/arcane-change-request-retention.service").read_text()
+        self.assertIn("OnCalendar=hourly", timer)
+        self.assertIn("Persistent=true", timer)
+        self.assertIn("EnvironmentFile=/etc/arcane-path/change-request-retention.env", service)
+        self.assertIn("scripts/change_requests.py purge", service)
+        self.assertIn("UMask=0077", service)
+
+    def test_town_documentary_content_has_an_exact_post_only_route(self):
+        config = (ROOT / "infra/nginx/preview.conf").read_text()
+        endpoint = config.split("location = /api/town-content {", 1)[1].split("\n    }", 1)[0]
+        self.assertIn("limit_except POST { deny all; }", endpoint)
+        self.assertIn("proxy_pass http://127.0.0.1:8766;", endpoint)
+        bootstrap = (ROOT / "infra/nginx/bootstrap.conf").read_text()
+        endpoint = bootstrap.split("location = /api/town-content {", 1)[1].split("\n    }", 1)[0]
+        self.assertIn("limit_except POST { deny all; }", endpoint)
+        self.assertIn("return 503;", endpoint)
+
     def test_main_artifacts_have_a_bounded_post_only_route(self):
         config = (ROOT / "infra/nginx/preview.conf").read_text()
         endpoint = config.split("location = /api/artifacts {", 1)[1].split("\n    }", 1)[0]
@@ -202,3 +237,22 @@ class HttpsConfigurationTests(unittest.TestCase):
         self.assertIn("limit_req zone=arcane_api_requests", endpoint)
         self.assertIn("proxy_pass http://127.0.0.1:8766;", endpoint)
         self.assertIn(r"quest-templates\.json", config)
+
+    def test_character_registry_is_post_only_bounded_capability_proxy_and_bootstrap_closed(self):
+        preview = (ROOT / "infra/nginx/preview.conf").read_text()
+        endpoint = preview.split("location = /api/characters {", 1)[1].split("\n    }", 1)[0]
+        self.assertIn("limit_except POST { deny all; }", endpoint)
+        self.assertIn("limit_req zone=arcane_api_requests burst=100 nodelay;", endpoint)
+        self.assertIn("proxy_pass http://127.0.0.1:8766;", endpoint)
+        self.assertIn("client_max_body_size 4k;", preview)
+        self.assertIn('proxy_set_header X-Journal-Capability $http_x_journal_capability;', preview)
+        self.assertIn('auth_basic "Arcane Path private preview";', preview)
+        self.assertIn('proxy_set_header Authorization "";', preview)
+
+        bootstrap = (ROOT / "infra/nginx/bootstrap.conf").read_text()
+        bootstrap_endpoint = bootstrap.split(
+            "location = /api/characters {", 1)[1].split("\n    }", 1)[0]
+        self.assertIn("client_max_body_size 4k;", bootstrap_endpoint)
+        self.assertIn("limit_except POST { deny all; }", bootstrap_endpoint)
+        self.assertIn("return 503;", bootstrap_endpoint)
+        self.assertNotIn("proxy_pass", bootstrap_endpoint)

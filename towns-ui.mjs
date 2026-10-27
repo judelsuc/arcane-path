@@ -1,17 +1,33 @@
 import { settlementView } from "./towns.mjs";
-import { createContentService } from "./cell-content.mjs";
-import { openContentCache } from "./content-cache.mjs";
+import { createTownContentClient } from "./town-content.mjs";
 import { cellInfo } from "./cell-info.mjs";
 import { washingAvailable } from "./pressures.mjs";
 
-export function setupTowns(t) {
+export function setupTowns(t, { context = () => null, service = createTownContentClient({ context }) } = {}) {
   const dialog = document.querySelector("#town-dialog");
   const open = document.querySelector("#open-town");
   const welcome = document.querySelector("#town-welcome");
   const places = document.querySelector("#town-places");
   const detail = document.querySelector("#town-place-detail");
-  const service = createContentService({ cache: openContentCache() });
-  let view, lastPosition, locale, generation = 0, result, selectedPlace, loading = false;
+  const gallery = document.querySelector("#town-gallery");
+  const gallerySection = document.querySelector("#town-gallery-section");
+  const galleryStatus = document.querySelector("#town-gallery-status");
+  let view, lastTown, locale = document.documentElement?.lang ?? "fr";
+  let generation = 0, result, selectedPlace, loading = false, controller;
+  const photoUrls = new Map();
+
+  function releasePhotos() {
+    for (const url of photoUrls.values()) URL.revokeObjectURL(url);
+    photoUrls.clear();
+  }
+
+  function invalidate() {
+    generation++;
+    controller?.abort();
+    controller = undefined;
+    loading = false;
+    releasePhotos();
+  }
 
   function paragraph(container, text, className = "") {
     const p = document.createElement("p");
@@ -40,10 +56,57 @@ export function setupTowns(t) {
     paragraph(detail, t("townVisitNote"), "window-help-text");
   }
 
+  function renderGallery() {
+    const renderGeneration = generation;
+    gallery.replaceChildren();
+    gallerySection.hidden = Boolean(view.servicesOnly);
+    gallery.hidden = Boolean(view.servicesOnly);
+    galleryStatus.hidden = Boolean(view.servicesOnly);
+    if (view.servicesOnly) return;
+    const photos = result?.photos ?? [];
+    galleryStatus.textContent = t(loading ? "townGalleryLoading"
+      : result?.failed ? "contentError" : photos.length ? "townGalleryCount" : "townGalleryEmpty",
+    { count: photos.length });
+    for (const photo of photos) {
+      const figure = document.createElement("figure");
+      figure.className = "town-photo";
+      if (photo.blob && !photo.failed) {
+        const image = document.createElement("img");
+        if (!photoUrls.has(photo.imageId)) photoUrls.set(photo.imageId, URL.createObjectURL(photo.blob));
+        image.src = photoUrls.get(photo.imageId);
+        image.alt = photo.caption || photo.title;
+        image.loading = "lazy";
+        image.addEventListener("error", () => {
+          if (generation !== renderGeneration || !dialog.open || image.isConnected === false) return;
+          console.error("Town documentary photograph could not be decoded:", photo.sourceUrl);
+          photo.failed = true;
+          const url = photoUrls.get(photo.imageId);
+          if (url) URL.revokeObjectURL(url);
+          photoUrls.delete(photo.imageId);
+          renderGallery();
+        }, { once: true });
+        figure.append(image);
+      } else paragraph(figure, t("townPhotoFailed"));
+      const caption = document.createElement("figcaption");
+      paragraph(caption, photo.caption || photo.title);
+      paragraph(caption, t(photo.association === "nearby" ? "townPhotoNearby" : "townPhotoAssociated"),
+        "window-help-text");
+      link(caption, photo.sourceUrl, t("contentSource", { title: photo.title }));
+      paragraph(caption, t("contentCredit", photo), "technical-text");
+      link(caption, photo.licenseUrl, `${t("contentLicense")} (${photo.license})`);
+      figure.append(caption);
+      gallery.append(figure);
+    }
+  }
+
   function localize(nextLocale = locale) {
     const changed = locale && nextLocale !== locale;
     locale = nextLocale;
     if (!view) return;
+    if (changed) {
+      invalidate();
+      result = undefined;
+    }
     document.querySelector("#town-refresh").disabled = loading || Boolean(view.servicesOnly);
     document.querySelector("#town-title").textContent = view.servicesOnly
       ? t("townLocalServices") : view.settlements.map(item => item.name).join(" · ");
@@ -64,6 +127,7 @@ export function setupTowns(t) {
     document.querySelector("#town-empty").hidden = view.places.length > 0;
     renderDetail();
     welcome.replaceChildren();
+    renderGallery();
     if (view.servicesOnly) {
       paragraph(welcome, t("washHelp"));
       return;
@@ -80,28 +144,43 @@ export function setupTowns(t) {
       const content = result.content;
       paragraph(welcome, content.text);
       paragraph(provenance, t("contentLanguage", { language: content.language }));
+      if (content.language !== locale) paragraph(welcome,
+        t("townLanguageFallback", { language: content.language }), "window-help-text");
       link(provenance, content.sourceUrl, t("contentSource", { title: content.title }));
       paragraph(provenance, t("contentCredit", content));
       link(provenance, content.licenseUrl, t("contentLicense"));
-      paragraph(provenance, t(result.cached ? "contentCached" : "contentStored", {
-        date: new Date(result.retrievedAt).toLocaleString(locale),
-      }));
-    } else paragraph(welcome, t(result.errors.length ? "contentError" : "townNoSummary"));
+      if (result.retrievedAt) paragraph(provenance,
+        t(result.cached ? "townSourcesCached" : "townSourcesRetrieved", {
+          date: new Date(result.retrievedAt).toLocaleString(locale),
+        }));
+    } else paragraph(welcome, t(result.loading ? "contentLoading"
+      : result.errors.length ? "contentError" : "townNoSummary"));
     if (result?.errors?.length) {
-      if (result.content) paragraph(welcome, t("contentPartial"));
+      if (result.content || result.photos?.length) paragraph(welcome, t("contentPartial"));
       paragraph(provenance, t("contentWarnings", { errors: result.errors.join("; ") }));
     }
+    if (result?.refreshAfter > Date.now()) paragraph(provenance, t("townRefreshCooldown", {
+      date: new Date(result.refreshAfter).toLocaleTimeString(locale),
+    }), "window-help-text");
     welcome.append(provenance);
   }
 
   async function loadWelcome(force = false) {
-    if (view?.servicesOnly) return;
+    if (view?.servicesOnly || loading && !force) return;
+    if (!force && result && !result.failed && !result.loading && result.expiresAt > Date.now()) return;
+    invalidate();
     const current = ++generation;
-    result = undefined;
+    controller = new AbortController();
+    const signal = controller.signal;
+    if (force) result = undefined;
     loading = true;
     localize();
     try {
-      const resolved = await service.resolve(view, locale, "settlement", force);
+      const resolved = await service.resolve(view, locale, force, progress => {
+        if (generation !== current) return;
+        result = progress;
+        localize();
+      }, signal);
       if (generation !== current) return;
       result = resolved;
       loading = false;
@@ -109,7 +188,9 @@ export function setupTowns(t) {
     } catch (error) {
       if (generation !== current) return;
       console.error("Unable to load settlement welcome:", error);
-      result = { failed: true };
+      result = { ...result, loading: false, expiresAt: 0,
+        failed: !result?.content && !result?.photos?.length,
+        errors: [...(result?.errors ?? []), error.message] };
       loading = false;
       localize();
     }
@@ -118,6 +199,7 @@ export function setupTowns(t) {
   function enter() {
     if (!view || document.querySelector("dialog[open]")) return;
     dialog.showModal();
+    localize();
     loadWelcome();
   }
   open.addEventListener("click", enter);
@@ -130,8 +212,8 @@ export function setupTowns(t) {
   });
   dialog.addEventListener("close", () => {
     if (dialog.open) return;
-    generation++;
-    loading = false;
+    invalidate();
+    if (result?.loading) result = undefined;
     document.querySelector("#ascii-map").focus({ preventScroll: true });
   });
 
@@ -139,13 +221,12 @@ export function setupTowns(t) {
     const next = settlementView(map, row, col) ?? (washingAvailable(map.rows[row]?.[col])
       ? { ...cellInfo(map, row, col), settlements: [], places: [], servicesOnly: true,
         identity: `washing:${row}:${col}` } : null);
-    const position = next ? `${next.latitude},${next.longitude}` : null;
-    const entered = position !== lastPosition;
-    lastPosition = position;
-    if (view?.identity !== next?.identity || entered) {
-      generation++;
+    const identity = next?.identity ?? null;
+    const entered = identity !== lastTown;
+    lastTown = identity;
+    if (entered) {
+      invalidate();
       result = selectedPlace = undefined;
-      loading = false;
     }
     view = next;
     open.disabled = !view;
@@ -154,12 +235,12 @@ export function setupTowns(t) {
       return;
     }
     localize();
-    if (entered && allowEnter && !view.servicesOnly) enter();
+    if (entered && dialog.open && !view.servicesOnly) loadWelcome();
+    else if (entered && allowEnter && !view.servicesOnly) enter();
   }
   function reset() {
-    generation++;
-    view = lastPosition = result = selectedPlace = undefined;
-    loading = false;
+    invalidate();
+    view = lastTown = result = selectedPlace = undefined;
     open.disabled = true;
     dialog.close();
   }

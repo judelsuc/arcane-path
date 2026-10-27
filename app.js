@@ -12,6 +12,7 @@ import { setupPhotoJournal } from "./photo-journal.mjs";
 import { setupGameHelp } from "./game-help.mjs";
 import { setupStartArt } from "./start-art.mjs";
 import { setupGameRelease } from "./game-release-ui.mjs";
+import { setupMapAppearance, decorateMapTile, mappedSites, visualKind, SITE_GLYPHS } from "./map-appearance.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
 const viewport = document.querySelector("#map-viewport");
@@ -31,6 +32,7 @@ let loadFailed = false;
 let activeRequest;
 let inspectedTile;
 let entered = false;
+let appearance;
 const photoJournal = setupPhotoJournal(t);
 const cellContent = setupCellContent(t, { pinPhoto: photoJournal.pinButton });
 const audio = setupAudio(t);
@@ -139,6 +141,9 @@ function tileDetails(tile, includePois = true) {
     latitude: info.latitude.toFixed(5),
     longitude: info.longitude.toFixed(5),
   });
+  const sites = mappedSites(mapData.rows[Number(tile.dataset.row)][Number(tile.dataset.col)]);
+  if (sites.length) details += `\n${t("cellSites", { sites: sites.map(site =>
+    site.name ? `${site.name} (${t(`site.${site.kind}`)})` : t(`site.${site.kind}`)).join("; ") })}`;
   if (info.waterCoveragePercent > 0) {
     details += `\n${t("cellWaterCoverage", { percent: info.waterCoveragePercent.toFixed(1) })}`;
   }
@@ -208,6 +213,7 @@ const gameRelease = setupGameRelease({
   t,
   language: locale,
 });
+appearance = setupMapAppearance(t, { onChange: () => { if (mapData) localize(); } });
 
 function localize() {
   document.documentElement.lang = locale;
@@ -228,6 +234,7 @@ function localize() {
   windowHelp.localize();
   startArt.localize();
   gameRelease.localize(locale);
+  appearance?.localize();
   document.querySelector("#starting-map-status").textContent = mapData
     ? t("setupSelected", { name: mapData.origin ? mapData.name.split(",")[0] : mapData.name })
     : t(loadFailed ? "loadError" : "loading");
@@ -281,12 +288,24 @@ function localize() {
     const item = document.createElement("li");
     const glyph = document.createElement("span");
     glyph.className = `legend-glyph tile--${entry.terrain}`;
+    glyph.dataset.mapKind = entry.terrain;
     glyph.textContent = entry.glyph;
     const label = document.createElement("span");
     label.textContent = t(`terrain.${entry.terrain}`);
     item.append(glyph, label);
     legend.append(item);
   });
+  const kinds = new Set(mapData.rows.flatMap(row => row.flatMap(cell => mappedSites(cell).map(site => site.kind))));
+  for (const kind of Object.keys(SITE_GLYPHS).filter(kind => kinds.has(kind))) {
+    const item = document.createElement("li"), glyph = document.createElement("span");
+    glyph.className = "legend-glyph";
+    glyph.dataset.mapKind = kind;
+    glyph.textContent = SITE_GLYPHS[kind];
+    const label = document.createElement("span");
+    label.textContent = t(`site.${kind}`);
+    item.append(glyph, label);
+    legend.append(item);
+  }
   document.querySelector("#legend").replaceChildren(legend);
   mapElement.querySelectorAll(".tile").forEach((tile) => {
     const details = tileDetails(tile);
@@ -317,7 +336,8 @@ function renderMap(data) {
     row.forEach((cell, colIndex) => {
       const tile = document.createElement("span");
       tile.className = `tile tile--${cell.terrain}`;
-      tile.textContent = cell.glyph;
+      tile.textContent = SITE_GLYPHS[visualKind(cell)] ?? cell.glyph;
+      decorateMapTile(tile, cell);
       if (cell.downloading) {
         tile.classList.add("tile--downloading");
         tile.title = t("travelChunkLoading");

@@ -194,6 +194,17 @@ class AssetCatalogue:
                            *journey_schemas(self.postgres), *ARTIFACT_SCHEMAS,
                            *content_schemas(self.postgres)):
                 db.execute(schema)
+            if self.postgres:
+                db.execute(
+                    "ALTER TABLE character_private_exchanges "
+                    "ADD COLUMN IF NOT EXISTS fact_version INTEGER NOT NULL DEFAULT 1")
+            else:
+                columns = {row[1] for row in db.execute(
+                    "PRAGMA table_info(character_private_exchanges)").fetchall()}
+                if "fact_version" not in columns:
+                    db.execute(
+                        "ALTER TABLE character_private_exchanges "
+                        "ADD COLUMN fact_version INTEGER NOT NULL DEFAULT 1")
 
     def sql(self, statement):
         return statement.replace("?", "%s") if self.postgres else statement

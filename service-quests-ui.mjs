@@ -42,7 +42,7 @@ const COPY = {
 };
 
 export function setupServiceQuests(t, { context, mutate, narrative, storage = localStorage,
-  destinations = createQuestDestinationClient() }) {
+  destinations = createQuestDestinationClient(), character = () => null, characters = null }) {
   const $ = id => document.getElementById(id);
   const talk = $("dialogue-services"), book = $("quests-services");
   const form = document.createElement("div"), scopeLabel = document.createElement("label");
@@ -60,10 +60,12 @@ export function setupServiceQuests(t, { context, mutate, narrative, storage = lo
   prepare.type = "button";
   form.append(scopeLabel, scope, prepare);
   talk.append(form, status, diagnostics, offers, onSite);
-  let working = false, controller, request, owner, mapQuest, confirming, error = "", feedback = "";
+  let working = false, controller, request, owner, mapQuest, confirming, error = "", contractError = "", feedback = "";
   let consuming = false;
   const pendingWording = new Set();
   const failedWording = new Set();
+  const syncedContractEvents = new Map();
+  const syncingContracts = new Set();
   const language = () => document.documentElement.lang === "en" ? "en" : "fr";
   function button(host, text, action, disabled = false) {
     const node = document.createElement("button");
@@ -82,6 +84,69 @@ export function setupServiceQuests(t, { context, mutate, narrative, storage = lo
   }
   function commit(transform) {
     if (!mutate(transform)) throw new Error(language() === "fr" ? "La quête n'a pas pu être enregistrée." : "Quest could not be saved.");
+  }
+  function syncCharacterContract(state, quest) {
+    if (!characters?.contract || !quest.characterId || !state?.serverJourney?.id ||
+        !state.journalAccess || !Array.isArray(quest.history)) return;
+    const key = `${state.serverJourney.id}:${quest.id}`;
+    if (syncingContracts.has(key)) return;
+    const from = syncedContractEvents.get(key) ?? 0;
+    if (from >= quest.history.length) return;
+    syncingContracts.add(key);
+    void (async () => {
+      let success = false;
+      try {
+        for (let index = from; index < quest.history.length; index++) {
+          const entry = quest.history[index];
+          let event, step = entry.step;
+          if (entry.event === "offer") event = "offered";
+          else if (entry.event === "accept") event = "accepted";
+          else if (entry.event === "decline") event = "declined";
+          else if (entry.event === "abandon") event = "abandoned";
+          else if (entry.event === "advance") {
+            step++;
+            if (step === quest.destinations.length) {
+              const next = quest.history[index + 1];
+              if (next?.event !== "complete" || next.step !== step) {
+                throw new Error("Final service quest advance requires its completion event.");
+              }
+              syncedContractEvents.set(key, index + 1);
+              continue;
+            }
+            event = "advanced";
+          }
+          else if (entry.event === "complete") event = "completed";
+          else throw new Error("Unknown service quest history event.");
+          await characters.contract(state, quest.characterId, {
+            id: quest.id, event, step, totalSteps: quest.destinations.length,
+          }, event === "offered" ? { location: { col: quest.origin.col, row: quest.origin.row } } : {});
+          syncedContractEvents.set(key, index + 1);
+        }
+        success = true;
+        if (context()?.state.serverJourney?.id === state.serverJourney.id) {
+          contractError = "";
+          diagnostics.textContent = error;
+        }
+      } catch (reason) {
+        console.error("Character quest contract synchronization failed:", reason);
+        if (context()?.state.serverJourney?.id === state.serverJourney.id) {
+          contractError = t("character.contractFailed", { error: reason.message });
+          diagnostics.textContent = error || contractError;
+        }
+      } finally {
+        syncingContracts.delete(key);
+        if (success) {
+          const latest = context()?.state;
+          if (latest?.serverJourney?.id === state.serverJourney.id) {
+            const updated = [...(latest.serviceQuests?.offers ?? []),
+              ...(latest.serviceQuests?.quests ?? [])].find(item => item.id === quest.id);
+            if (updated && updated.history.length > quest.history.length) {
+              syncCharacterContract(latest, updated);
+            }
+          }
+        }
+      }
+    })();
   }
   function wording(state, quest, phase, fallback) {
     const saved = quest.wording?.[phase];
@@ -119,7 +184,7 @@ export function setupServiceQuests(t, { context, mutate, narrative, storage = lo
     const nextOwner = state?.serverJourney?.id;
     if (owner !== nextOwner) {
       controller?.abort(); owner = nextOwner; request = undefined; working = false;
-      mapQuest = confirming = undefined; error = feedback = "";
+      mapQuest = confirming = undefined; error = feedback = contractError = "";
     }
     scopeLabel.textContent = c.scope;
     for (const option of scope.options) option.textContent = c[option.value];
@@ -128,7 +193,7 @@ export function setupServiceQuests(t, { context, mutate, narrative, storage = lo
     prepare.disabled = working || !state?.journalAccess || current?.blocked || !town;
     scope.disabled = working;
     status.textContent = working ? c.preparing : feedback ? c[feedback] : !town ? c.noTown : "";
-    diagnostics.textContent = error;
+    diagnostics.textContent = error || contractError;
     offers.replaceChildren(); onSite.replaceChildren(); book.replaceChildren();
     if (!state) return;
     for (const offer of state.serviceQuests?.offers ?? []) {
@@ -193,6 +258,9 @@ export function setupServiceQuests(t, { context, mutate, narrative, storage = lo
         onSite.append(exchange);
       }
     }
+    for (const quest of [...(state.serviceQuests?.offers ?? []), ...quests]) {
+      syncCharacterContract(state, quest);
+    }
     renderKnowledge(state, lang);
   }
   function renderKnowledge(state, lang) {
@@ -211,7 +279,7 @@ export function setupServiceQuests(t, { context, mutate, narrative, storage = lo
   prepare.addEventListener("click", async () => {
     const current = context();
     if (!current || current.blocked || working) return;
-    const started = current.state, lang = language();
+    const started = current.state, lang = language(), speaker = character?.();
     working = true; error = feedback = "";
     try {
       const chosen = request?.template ?? chooseTemplate(started, scope.value).id;
@@ -228,7 +296,8 @@ export function setupServiceQuests(t, { context, mutate, narrative, storage = lo
         throw new Error(lang === "fr" ? "La rencontre a changé ; revenez sur place." : "The encounter changed; return to the meeting place.");
       }
       commit(s => createServiceOffer(s, { id: nonce, template: request.template,
-        destinations: result.destinations, distanceKm: result.distanceKm, scope: request.scope }));
+        destinations: result.destinations, distanceKm: result.distanceKm, scope: request.scope,
+        ...(speaker?.id ? { characterId: speaker.id } : {}) }));
       storage.removeItem(key);
       request = undefined;
     } catch (reason) {

@@ -46,15 +46,23 @@ from journal_art import JournalArt
 from encounter_art import EncounterArt
 from live_narrative import LiveNarrative
 from start_art import StartArt
-from asset_storage import AssetConflict, AssetError
+from asset_storage import AssetConflict, AssetError, S3Blobs
 from content_storage import clock
 from quest_destinations import QuestDestinations
+from characters import Characters
+from town_content import TownContent
+from change_requests import ChangeRequests
+from mapped_sites import enrich_sites
+from content_factory import CHARACTER_IMAGE_STYLE, OvhImageWriter
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_SIZE = 8
 CELL_METERS = 250
 LEGACY_CHUNK_PIPELINE = "7b8785f23301fe9ec1131aa44cb64d4f68781494db3dfb1aefefdc0520122fab"
-COMPATIBLE_CHUNK_PIPELINE = "2f4ee763ae407722a3eaa363372b342e6a8aa5b9ec09cbf345ce069960f04df7"
+PREVIOUS_CHUNK_PIPELINE = "2f4ee763ae407722a3eaa363372b342e6a8aa5b9ec09cbf345ce069960f04df7"
+GALLERY_CHUNK_PIPELINE = "54185da2a022fbe2a46830a78dff168e7da96782aea46e430b586a86c5674763"
+# Optional town/site annotations do not change authoritative terrain or cell geometry.
+COMPATIBLE_CHUNK_PIPELINE = "02af0a22435d41941702ed0ee21db813586f677edde32ea18263f4f3e945ac14"
 RADIUS = 6_371_008.8
 ELEVATION_URL = "https://api.open-meteo.com/v1/elevation"
 ELEVATION_CREDIT = {
@@ -126,6 +134,7 @@ class ChunkStore:
             inspect.getsource(ChunkStore.build_locked).encode() +
             inspect.getsource(ChunkStore.compute_chunk).encode() +
             (ROOT / "scripts/build_map.py").read_bytes() +
+            (ROOT / "scripts/mapped_sites.py").read_bytes() +
             (ROOT / "scripts/shoreline.py").read_bytes() +
             (self.shoreline.sha256.encode() if self.shoreline else b"no-ocean-mask") +
             json.dumps([CHUNK_SIZE, CELL_METERS, load_config()["map"]], sort_keys=True).encode()
@@ -351,9 +360,9 @@ class ChunkStore:
         ).hexdigest()[:20]
         return self.cache / region / identity / f"{x}_{y}"
 
-    def legacy_path(self, region, x, y):
+    def legacy_path(self, region, x, y, pipeline=LEGACY_CHUNK_PIPELINE):
         identity = hashlib.sha256(
-            f"{LEGACY_CHUNK_PIPELINE}:{self.fingerprints[region]}:{CELL_METERS}:{CHUNK_SIZE}".encode()
+            f"{pipeline}:{self.fingerprints[region]}:{CELL_METERS}:{CHUNK_SIZE}".encode()
         ).hexdigest()[:20]
         return self.cache / region / identity / f"{x}_{y}"
 
@@ -365,9 +374,9 @@ class ChunkStore:
         }, sort_keys=True).encode()).hexdigest()[:20]
         return self.cache / region / "sources" / identity / f"{x}_{y}"
 
-    def chunk_id(self, region, x, y):
+    def chunk_id(self, region, x, y, pipeline=None):
         return hashlib.sha256(
-            f"{region}:{self.fingerprints[region]}:{self.pipeline}:{x}:{y}".encode()
+            f"{region}:{self.fingerprints[region]}:{pipeline or self.pipeline}:{x}:{y}".encode()
         ).hexdigest()
 
     def shared_chunk_row(self, region, x, y):
@@ -375,9 +384,16 @@ class ChunkStore:
             return None
         with self.assets.catalogue.connection() as raw:
             db = StoreConnection(raw, self.assets.catalogue, mapping=True)
-            return db.execute(
-                "SELECT * FROM travel_chunk_cache WHERE chunk_id=?",
-                (self.chunk_id(region, x, y),)).fetchone()
+            pipelines = [self.pipeline]
+            if self.pipeline == COMPATIBLE_CHUNK_PIPELINE:
+                pipelines.extend((GALLERY_CHUNK_PIPELINE, PREVIOUS_CHUNK_PIPELINE, LEGACY_CHUNK_PIPELINE))
+            for pipeline in pipelines:
+                row = db.execute(
+                    "SELECT * FROM travel_chunk_cache WHERE chunk_id=?",
+                    (self.chunk_id(region, x, y, pipeline),)).fetchone()
+                if row is not None:
+                    return row
+            return None
 
     def read_shared_chunk(self, region, x, y):
         row = self.shared_chunk_row(region, x, y)
@@ -406,6 +422,22 @@ class ChunkStore:
             atomic_write(path, raw)
         if type(row["created"]) in (int, float) and math.isfinite(row["created"]) and row["created"] > 0:
             os.utime(path, (row["created"], row["created"]))
+        return self.with_sites(region, x, y, data)
+
+    def with_sites(self, region, x, y, data):
+        if data.get("sitesVersion") == 1:
+            return data
+        source = self.source_path(region, x, y).with_suffix(".osm.gz")
+        if source.is_file():
+            return enrich_sites(data, source)
+        bounds, base = data.get("bounds"), self.bases[region]["bounds"]
+        if bounds and (base["minLongitude"] <= bounds["minLongitude"] and
+                       base["minLatitude"] <= bounds["minLatitude"] and
+                       bounds["maxLongitude"] <= base["maxLongitude"] and
+                       bounds["maxLatitude"] <= base["maxLatitude"]):
+            source = self.root / self.regions[region]["snapshot"]
+            if source.is_file():
+                return enrich_sites(data, source)
         return data
 
     def read(self, region, x, y):
@@ -415,8 +447,15 @@ class ChunkStore:
                 return shared
         path = self.path(region, x, y).with_suffix(".json")
         if not path.exists():
-            legacy = self.legacy_path(region, x, y).with_suffix(".json")
-            if self.pipeline != COMPATIBLE_CHUNK_PIPELINE or not legacy.exists():
+            if self.pipeline != COMPATIBLE_CHUNK_PIPELINE:
+                return None
+            legacy = None
+            for pipeline in (GALLERY_CHUNK_PIPELINE, PREVIOUS_CHUNK_PIPELINE, LEGACY_CHUNK_PIPELINE):
+                candidate = self.legacy_path(region, x, y, pipeline).with_suffix(".json")
+                if candidate.exists():
+                    legacy = candidate
+                    break
+            if legacy is None:
                 return None
             envelope = json.loads(legacy.read_text())
             payload = envelope["data"]
@@ -429,13 +468,13 @@ class ChunkStore:
                     any(len(line) != CHUNK_SIZE for line in payload["rows"])):
                 raise ValueError("Legacy travel cache failed compatibility validation.")
             atomic_write(path, legacy.read_bytes())
-            return payload
+            return self.with_sites(region, x, y, payload)
         envelope = json.loads(path.read_text())
         payload = envelope["data"]
         checksum = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
         if checksum != envelope["sha256"]:
             raise ValueError(f"Corrupt travel cache: {path}. Remove this chunk cache to rebuild.")
-        return payload
+        return self.with_sites(region, x, y, payload)
 
     def claim_shared_chunk(self, region, x, y, refresh):
         chunk_id = self.chunk_id(region, x, y)
@@ -802,6 +841,14 @@ def make_handler(store, jobs, path_pool=None):
     quest_destinations = QuestDestinations(store, journal_art, journey_transport)
     parent_paths = ParentPaths(store, journeys, atomic_write, pool=path_pool)
     lore = LorePlaytest(journeys, abandoned, paths=parent_paths, chunk_jobs=jobs)
+    portrait_writer = (OvhImageWriter(journal_art.writer.token, style=CHARACTER_IMAGE_STYLE)
+                       if journal_art.writer else None)
+    characters = Characters(journeys, lore, writer=portrait_writer)
+    town_content = TownContent(journeys, lore)
+    change_requests = ChangeRequests(journeys, lore,
+                                    enabled=os.environ.get("ARCANE_CHANGE_REQUESTS_ENABLED") == "1"
+                                    and assets is not None and assets.catalogue.postgres
+                                    and isinstance(assets.blobs, S3Blobs))
     main_artifacts = MainArtifacts(journeys, abandoned, paths=parent_paths, chunk_jobs=jobs)
     accommodations = ChunkJobs(Accommodations(store, atomic_write), capacity=2, pool=jobs.pool)
     class Handler(SimpleHTTPRequestHandler):
@@ -824,7 +871,7 @@ def make_handler(store, jobs, path_pool=None):
 
         def do_POST(self):
             endpoint = urllib.parse.urlsplit(self.path).path
-            if endpoint not in ("/api/journeys", "/api/abandoned-journals", "/api/lore-playtest", "/api/artifacts", "/api/journal-art", "/api/live-narrative", "/api/encounter-art", "/api/quest-destinations"):
+            if endpoint not in ("/api/journeys", "/api/abandoned-journals", "/api/lore-playtest", "/api/artifacts", "/api/journal-art", "/api/live-narrative", "/api/encounter-art", "/api/quest-destinations", "/api/characters", "/api/town-content", "/api/change-requests"):
                 return self.send_json(404, {"error": "Unknown API endpoint."})
             origin = self.headers.get("Origin")
             try:
@@ -843,6 +890,7 @@ def make_handler(store, jobs, path_pool=None):
             except ValueError:
                 return self.send_json(400, {"error": "Invalid request body length."})
             maximum = (68 * 1024 * 1024 if endpoint == "/api/abandoned-journals"
+                       else 4_100_000 if endpoint == "/api/change-requests"
                        else 2 * 1024 * 1024 if endpoint == "/api/artifacts"
                        else 16384 if endpoint == "/api/live-narrative" else 4096)
             if length < 1 or length > maximum or self.headers.get("Transfer-Encoding"):
@@ -858,10 +906,35 @@ def make_handler(store, jobs, path_pool=None):
                 except (ValueError, UnicodeError) as error:
                     raise JourneyRequest("Invalid journey JSON.") from error
                 capability = self.headers.get("X-Journal-Capability")
+                if endpoint == "/api/change-requests":
+                    return self.send_json(200, change_requests.submit(request, capability))
+                if endpoint == "/api/town-content":
+                    result = town_content.request(request, capability)
+                    if isinstance(result, tuple):
+                        body, media_type = result
+                        self.send_response(200)
+                        self.send_header("Content-Type", media_type)
+                        self.send_header("Content-Length", str(len(body)))
+                        self.send_header("Cache-Control", "private, no-store")
+                        self.end_headers()
+                        self.wfile.write(body)
+                        return
+                    return self.send_json(200, result)
                 if endpoint == "/api/artifacts":
                     return self.send_json(200, main_artifacts.request(request, capability))
                 if endpoint == "/api/quest-destinations":
                     return self.send_json(200, quest_destinations.request(request, capability))
+                if endpoint == "/api/characters":
+                    result = characters.request(request, capability)
+                    if isinstance(result, bytes):
+                        self.send_response(200)
+                        self.send_header("Content-Type", "image/webp")
+                        self.send_header("Content-Length", str(len(result)))
+                        self.send_header("Cache-Control", "private, no-store")
+                        self.end_headers()
+                        self.wfile.write(result)
+                        return
+                    return self.send_json(200, result)
                 if endpoint == "/api/live-narrative":
                     return self.send_json(200, live_narrative.request(request, capability))
                 if endpoint in ("/api/journal-art", "/api/encounter-art"):
@@ -1091,6 +1164,9 @@ def make_handler(store, jobs, path_pool=None):
     Handler.journal_art = journal_art
     Handler.encounter_art = encounter_art
     Handler.live_narrative = live_narrative
+    Handler.characters = characters
+    Handler.town_content = town_content
+    Handler.change_requests = change_requests
     Handler.living_world = living_world
     Handler.quest_destinations = quest_destinations
     return Handler
@@ -1113,6 +1189,8 @@ def main():
     finally:
         server.server_close()
         server.RequestHandlerClass.journal_art.close()
+        server.RequestHandlerClass.characters.close()
+        server.RequestHandlerClass.town_content.close()
         server.RequestHandlerClass.live_narrative.close()
         server.RequestHandlerClass.quest_destinations.close()
         server.RequestHandlerClass.living_world.pool.shutdown(wait=True, cancel_futures=True)

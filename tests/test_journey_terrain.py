@@ -17,6 +17,22 @@ from travel_server import ChunkStore, ChunkJobs, make_handler
 
 
 class JourneyTerrainTests(unittest.TestCase):
+    def test_site_annotations_survive_cached_export_without_changing_terrain(self):
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "0_0.json"
+            path.touch()
+            rows = [[{"terrain": "rail", "sites": [{"osmId": "way/123", "kind": "stadium"}]}
+                     for _ in range(8)] for _ in range(8)]
+            store = SimpleNamespace(bases={"fixture": {}}, path=lambda *args: Path(folder) / "stub",
+                                    read=lambda *args: {"width": 8, "height": 8, "rows": rows})
+            data = cached_terrain(store, "fixture", [0, 0, 7, 7])
+            self.assertTrue(all(cell["terrain"] == "rail" and cell["siteKind"] == "stadium"
+                                for cell in data["cells"]))
+            wide = cached_terrain(store, "fixture", [0, 0, 1000, 7])
+            self.assertGreater(wide["stride"], 1)
+            self.assertTrue(all("siteKind" not in cell for cell in wide["cells"]))
+
     def write(self, store, x, y, terrain):
         data = {"width": 8, "height": 8, "rows": [
             [{"terrain": terrain} for _ in range(8)] for _ in range(8)]}

@@ -3,6 +3,26 @@
 from asset_storage import AssetError
 
 
+def cached_journey_cell(chunks, region, position):
+    from journeys import JourneyConflict, JourneyRequest
+    if (not isinstance(position, dict) or set(position) != {"col", "row"}
+            or any(type(position[key]) is not int or not -8000 <= position[key] <= 8007
+                   for key in ("col", "row"))):
+        raise JourneyRequest("A current map position is required.")
+    chunks.require_origin(region)
+    base = chunks.bases[region]
+    col, row = position["col"], position["row"]
+    x, y = col // 8, row // 8
+    grid = chunks.read(region, x, y)
+    if grid is not None:
+        col, row = col - x * 8, row - y * 8
+    elif 0 <= col < base["width"] and 0 <= row < base["height"]:
+        grid = base
+    else:
+        raise JourneyConflict("This streamed cell is not cached; no source data was downloaded.")
+    return base, grid, grid["rows"][row][col], col, row
+
+
 def schemas(postgres):
     sequence = "BIGSERIAL PRIMARY KEY" if postgres else "INTEGER PRIMARY KEY AUTOINCREMENT"
     return (

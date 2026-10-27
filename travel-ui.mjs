@@ -6,7 +6,9 @@ import {
   walkSurvival, hungerPercent, canEat, normalizeCharacterName,
 } from "./survival.mjs";
 import { setupTowns } from "./towns-ui.mjs";
+import { setupChangeRequests } from "./change-requests-ui.mjs";
 import { setupConversations } from "./conversations-ui.mjs";
+import { createCharactersClient } from "./characters-client.mjs";
 import { setupQuestLayout } from "./quest-layout.mjs";
 import { setupServiceQuests } from "./service-quests-ui.mjs";
 import { questJournalEntries } from "./quest-journal.mjs";
@@ -94,8 +96,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const height = document.querySelector("#travel-elevation");
   const note = document.querySelector("#travel-note");
   const directions = [...document.querySelectorAll("[data-move]")];
-  const towns = setupTowns(t);
   let state, stream, region, base, token = 0, busy = false, error = "", active = false;
+  const towns = setupTowns(t, { context: () => state });
+  const changeRequests = setupChangeRequests(t, { context: () => active ? state : null });
   let artifactsUI;
   let preparingOrigin = false;
   let trailController;
@@ -482,7 +485,11 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       }
     },
   });
-  const conversations = setupConversations(t, { context: () => active ? economyContext() : null });
+  const charactersClient = createCharactersClient();
+  const conversations = setupConversations(t, {
+    context: () => active ? economyContext() : null,
+    characters: charactersClient,
+  });
   function mutateQuest(transform) {
     if (!state || !saveStore || !active) return false;
     try {
@@ -506,6 +513,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     context: () => active ? economyContext() : null,
     narrative: liveNarrative,
     mutate: mutateQuest,
+    character: conversations.currentCharacter,
+    characters: charactersClient,
   });
   const parentNarrativeUI = setupParentNarrative({
     context: () => active && !busy && !artifactsUI?.pending(state) ? state : null,
@@ -780,6 +789,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const reported = new Set();
 
   function localize() {
+    changeRequests.localize();
     abandonedUI.localize();
     saveFeedback.localize();
     localizeBirthCard();

@@ -21,6 +21,7 @@ export function cellInfo(map, row, col) {
     waterways: map.rows[row][col].waterways ?? [],
     names: map.rows[row][col].names ?? [],
     pois: map.rows[row][col].pois ?? [],
+    sites: map.rows[row][col].sites ?? [],
     contentSources: map.rows[row][col].contentSources ?? [],
     bounds: { west, south, east, north },
     row: row + 1,

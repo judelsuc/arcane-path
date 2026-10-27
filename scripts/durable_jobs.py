@@ -2,6 +2,7 @@
 
 import json
 import uuid
+from contextlib import nullcontext
 
 from asset_storage import AssetConflict, AssetError, identifier
 
@@ -54,7 +55,7 @@ class DurableJobs:
                 "ON CONFLICT(provider) DO UPDATE SET daily_limit=excluded.daily_limit,"
                 "monthly_limit=excluded.monthly_limit"), (provider, daily, monthly))
 
-    def enqueue(self, kind, request, payload, *, provider=None, max_attempts=3):
+    def enqueue(self, kind, request, payload, *, provider=None, max_attempts=3, connection=None):
         identifier(kind), identifier(request)
         if provider is not None:
             identifier(provider)
@@ -65,7 +66,7 @@ class DurableJobs:
         encoded = json.dumps(payload, sort_keys=True, allow_nan=False)
         if len(encoded.encode()) > 64_000:
             raise ValueError("Job payload exceeds 64000 bytes.")
-        with self.catalogue.connection() as db:
+        with (self.catalogue.connection() if connection is None else nullcontext(connection)) as db:
             db.execute(self.catalogue.sql(
                 "INSERT INTO worker_jobs(kind,request,payload,provider,status,max_attempts) "
                 "VALUES(?,?,?,?,'queued',?) ON CONFLICT(kind,request) DO NOTHING"),

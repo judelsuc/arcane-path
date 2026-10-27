@@ -2,8 +2,11 @@
 
 
 def schemas(postgres):
+    from character_encounters import SCHEMAS as ENCOUNTER_SCHEMAS
+    from town_content import SCHEMA as TOWN_SCHEMA
+    from change_requests import SCHEMAS as CHANGE_REQUEST_SCHEMAS
     sequence = "BIGSERIAL PRIMARY KEY" if postgres else "INTEGER PRIMARY KEY AUTOINCREMENT"
-    return (
+    return (*ENCOUNTER_SCHEMAS, TOWN_SCHEMA, *CHANGE_REQUEST_SCHEMAS,
         """CREATE TABLE IF NOT EXISTS quest_instances (
             owner TEXT NOT NULL, nonce TEXT NOT NULL, request TEXT NOT NULL,
             region TEXT NOT NULL, authored TEXT NOT NULL, status TEXT NOT NULL,
@@ -46,6 +49,46 @@ def schemas(postgres):
         "CREATE INDEX IF NOT EXISTS narrative_wording_queue ON narrative_wording(status,seq)",
         "INSERT INTO journey_store_locks(name) VALUES('quest-destinations') ON CONFLICT(name) DO NOTHING",
         "INSERT INTO journey_store_locks(name) VALUES('live-narrative') ON CONFLICT(name) DO NOTHING",
+        """CREATE TABLE IF NOT EXISTS world_characters (
+            character_id TEXT PRIMARY KEY, world_id TEXT NOT NULL, region TEXT NOT NULL,
+            location_id TEXT NOT NULL, location_kind TEXT NOT NULL, location_name TEXT NOT NULL,
+            naming_locale TEXT NOT NULL, name TEXT NOT NULL, role TEXT NOT NULL,
+            profile TEXT NOT NULL, knowledge TEXT NOT NULL, needs TEXT NOT NULL,
+            portrait_ref TEXT, portrait_status TEXT NOT NULL, portrait_model TEXT,
+            portrait_provenance TEXT NOT NULL,
+            portrait_revision INTEGER NOT NULL, revision INTEGER NOT NULL, slot INTEGER NOT NULL,
+            created_at DOUBLE PRECISION NOT NULL,
+            UNIQUE(world_id,location_id,slot))""",
+        """CREATE INDEX IF NOT EXISTS world_characters_location
+            ON world_characters(world_id,region,location_id,slot)""",
+        """CREATE TABLE IF NOT EXISTS character_creation_requests (
+            journey TEXT NOT NULL, request_id TEXT NOT NULL, fingerprint TEXT NOT NULL,
+            character_id TEXT NOT NULL, created_at DOUBLE PRECISION NOT NULL,
+            PRIMARY KEY(journey,request_id))""",
+        """CREATE TABLE IF NOT EXISTS character_private_memories (
+            journey TEXT NOT NULL, character_id TEXT NOT NULL, event_id TEXT NOT NULL,
+            event_type TEXT NOT NULL, topic TEXT, created_at DOUBLE PRECISION NOT NULL,
+            PRIMARY KEY(journey,event_id))""",
+        """CREATE INDEX IF NOT EXISTS character_private_memories_history
+            ON character_private_memories(journey,character_id,created_at)""",
+        """CREATE TABLE IF NOT EXISTS character_private_exchanges (
+            journey TEXT NOT NULL, event_id TEXT NOT NULL, character_id TEXT NOT NULL,
+            topic TEXT NOT NULL, fact_ids TEXT NOT NULL, fact_version INTEGER NOT NULL DEFAULT 1,
+            created_at DOUBLE PRECISION NOT NULL,
+            PRIMARY KEY(journey,event_id))""",
+        """CREATE TABLE IF NOT EXISTS character_quest_contracts (
+            journey TEXT NOT NULL, character_id TEXT NOT NULL, contract_id TEXT NOT NULL,
+            status TEXT NOT NULL, step INTEGER NOT NULL, total_steps INTEGER NOT NULL,
+            outcome TEXT, updated_at DOUBLE PRECISION NOT NULL,
+            PRIMARY KEY(journey,contract_id))""",
+        """CREATE TABLE IF NOT EXISTS character_quest_events (
+            journey TEXT NOT NULL, event_id TEXT NOT NULL, character_id TEXT NOT NULL,
+            contract_id TEXT NOT NULL, event TEXT NOT NULL, step INTEGER NOT NULL,
+            total_steps INTEGER NOT NULL, created_at DOUBLE PRECISION NOT NULL,
+            PRIMARY KEY(journey,event_id), UNIQUE(journey,contract_id,event,step))""",
+        "CREATE INDEX IF NOT EXISTS character_quest_contracts_history "
+            "ON character_quest_contracts(journey,character_id,updated_at)",
+        "INSERT INTO journey_store_locks(name) VALUES('character-registry') ON CONFLICT(name) DO NOTHING",
     )
 
 
