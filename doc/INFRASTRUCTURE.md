@@ -12,6 +12,16 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint déployé : favicon (27 octobre 2026, 16 h)
+
+Runtime `385804c`, tag `deploy-2026-10-27-favicon` : `favicon.svg` à la racine,
+lié depuis `index.html` et `lore-playtest.html`, ajouté à la liste blanche
+nginx ; `/favicon.ico` redirige (301) vers `/favicon.svg`. Sauvegarde
+`/home/ubuntu/arcane-path-before-deploy-385804c.tar.gz` (SHA-256
+`d8f66917…8f3cf`), nginx `/home/ubuntu/nginx-arcane-path-before-385804c.conf`.
+`nginx -t` OK, service actif, `/favicon.svg` 200 `image/svg+xml` en local,
+401 en HTTPS sans authentification.
+
 ## Checkpoint déployé : gravures joueurs R-187 (27 octobre 2026, 15 h 40)
 
 Runtime `372d3b1`, tag `deploy-2026-10-27-inscriptions`, archive de 400
