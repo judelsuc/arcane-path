@@ -149,9 +149,13 @@ class HttpsConfigurationTests(unittest.TestCase):
         assets = next(line.strip() for line in config.splitlines()
                       if line.strip().startswith("location ~ ^/(?:index"))
         asset_pattern = re.compile(assets.removeprefix("location ~ ").removesuffix(" {"))
-        for path in ["/styles.css", "/mini-games.css", "/favicon.svg"]:
+        for path in ["/styles.css", "/mini-games.css", "/favicon.svg", "/public/icons/favicon.ico",
+                     "/public/icons/favicon-32.png", "/public/icons/apple-touch-icon.png"]:
             self.assertIsNotNone(asset_pattern.fullmatch(path), path)
-        self.assertIn("location = /favicon.ico {\n        return 301 /favicon.svg;", config)
+        self.assertIsNone(asset_pattern.fullmatch("/public/icons/other.png"))
+        self.assertIn("location = /favicon.ico {\n        limit_except GET { deny all; }\n"
+                      "        proxy_pass http://127.0.0.1:8766/public/icons/favicon.ico;", config)
+        self.assertIn("rewrite ^ /public/icons/apple-touch-icon.png break;", config)
         for path in ["/content-workshop.css", "/scripts/travel_server.py", "/.env",
                      "/infra/nginx/preview.conf", "/mini-games.css/extra"]:
             self.assertIsNone(asset_pattern.fullmatch(path), path)
