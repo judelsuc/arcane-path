@@ -186,3 +186,35 @@ class EncounterArtTests(unittest.TestCase):
             art = EncounterArt.configured(self.art.path, self.auth, True)
         self.assertIs(art.assets, assets)
         self.assertIsNotNone(art.shared)
+
+
+class LegacyStockImportTests(unittest.TestCase):
+    def test_fresh_unclaimed_legacy_images_become_shared_stock_idempotently(self):
+        from import_encounter_stock import import_stock
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            auth = Mock(assets=None)
+            auth.authorize.return_value = ("owner", {})
+            legacy = EncounterArt(root / "legacy.sqlite3", auth, True)
+            writer = Mock(return_value=picture())
+            now = 1_000_000_000
+            fresh = legacy.generate("event.food", writer, now=now - 3600)
+            legacy.generate("event.coins", writer, now=now - WEEK + 60)
+            claimed = legacy.generate("event.stars", writer, now=now - 3600)
+            with legacy.connect() as db:
+                db.execute("UPDATE images SET claimed=1 WHERE id=?", (claimed,))
+            assets = local_storage(root / "assets")
+            self.assertEqual(import_stock(legacy.path, assets, now=now), (1, 0))
+            self.assertEqual(import_stock(legacy.path, assets, now=now), (1, 0))
+            shared = EncounterArt(root / "vm.sqlite3", auth, True, assets=assets)
+            with patch("encounter_art.time.time", return_value=now):
+                result = shared.request({"journey": "j", "operation": "sync", "items": [
+                    {"scene": "event.food", "occurrence": "event:a"},
+                    {"scene": "event.coins", "occurrence": "event:b"}]}, "private")
+            self.assertEqual([e["status"] for e in result["entries"]], ["ready", "pending"])
+            self.assertEqual(result["entries"][0]["id"], fresh)
+            image = shared.request({"journey": "j", "operation": "image",
+                                    "occurrence": "event:a", "image": fresh}, "private")
+            with legacy.connect() as db:
+                self.assertEqual(image, bytes(db.execute("SELECT image FROM images WHERE id=?",
+                                                         (fresh,)).fetchone()[0]))

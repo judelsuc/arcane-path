@@ -12,6 +12,25 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Correctif opérationnel : images d'événements (27 octobre 2026, 16 h 30)
+
+Symptôme : aucun événement n'affichait d'illustration. Depuis l'activation du
+stockage partagé (23 octobre), le serveur lit uniquement `encounter_stock`
+(PostgreSQL), qui était vide. Le dernier lot hebdomadaire (21 octobre) avait
+écrit ses 896 images dans l'ancien SQLite local
+`/var/lib/arcane-path/cache/travel/encounter-art.sqlite3`.
+
+Correctif : `scripts/import_encounter_stock.py` copie les images non attribuées
+encore valides (moins de 7 jours, avec 1 h de marge) vers Object Storage et
+`encounter_stock`, en conservant leur date de création d'origine. Le script est
+idempotent. Il a été lancé une fois en tant qu'`arcane` avec l'environnement du
+service : 839 images importées, 0 rejetée. Les 5 événements en attente ont
+reçu une image. Ces images expirent le 28 octobre vers 4 h UTC. Le lot du
+27 octobre à 22 h UTC est le premier en mode partagé ; le quota `images` est
+configuré sans limite. Vérification le lendemain :
+`journalctl -u arcane-encounter-art` et
+`SELECT count(*) FROM encounter_stock`.
+
 ## Checkpoint déployé : favicons PNG/ICO (27 octobre 2026, 16 h 20)
 
 Safari téléchargeait `favicon.svg` (200) sans l'afficher. Runtime `2ecd2a3`,
