@@ -12,6 +12,18 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint déployé : favicons PNG/ICO (27 octobre 2026, 16 h 20)
+
+Safari téléchargeait `favicon.svg` (200) sans l'afficher. Runtime `2ecd2a3`,
+tag `deploy-2026-10-27-favicon-png` : `public/icons/` (ICO 16/32/48, PNG 32,
+192 et apple-touch 180) rendus depuis le SVG et liés dans les pages ;
+`/favicon.ico` et `/apple-touch-icon(-precomposed).png` sont servis par nginx
+depuis ces fichiers (plus de redirection). Sauvegarde
+`/home/ubuntu/arcane-path-before-deploy-2ecd2a3.tar.gz` (SHA-256
+`74870782…e507ee`), nginx `/home/ubuntu/nginx-arcane-path-before-2ecd2a3.conf`.
+`nginx -t` OK ; icônes 200 avec types corrects en local ; 401 via HTTPS sans
+authentification ; chemin d'icône inconnu 404 ; aucune erreur au journal.
+
 ## Checkpoint déployé : épingler les photos de ville R-188 (27 octobre 2026, 16 h 05)
 
 Runtime `d4aa273`, tag `deploy-2026-10-27-town-pins`, archive de 401 fichiers
