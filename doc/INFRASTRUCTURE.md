@@ -12,6 +12,15 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint déployé : épingler les photos de ville R-188 (27 octobre 2026, 16 h 05)
+
+Runtime `d4aa273`, tag `deploy-2026-10-27-town-pins`, archive de 401 fichiers
+(SHA-256 `d9b053c5…94a01a`). Sauvegarde
+`/home/ubuntu/arcane-path-before-deploy-d4aa273.tar.gz` (SHA-256
+`41db6a35…af13e4`). Changement client uniquement : nginx et schéma inchangés.
+Service actif ; `index.html`, `favicon.svg` 200 ; `release.json` indique
+`d4aa273` ; aucune erreur au journal ; HTTPS externe 401 sans authentification.
+
 ## Checkpoint déployé : favicon (27 octobre 2026, 16 h)
 
 Runtime `385804c`, tag `deploy-2026-10-27-favicon` : `favicon.svg` à la racine,
