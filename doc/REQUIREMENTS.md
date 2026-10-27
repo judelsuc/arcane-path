@@ -1,5 +1,17 @@
 # Requirements tracked outside the design PDF
 
+## R-188 - Pin town documentary photographs to the journal
+
+- Each successfully loaded photograph in the town gallery offers the same
+  "Pin to my notebook" action as the cell photo viewer. The pinned entry keeps
+  the photograph, its caption, author credit, source link and licence, accepts
+  a personal note and is exported with the notebook PDF.
+- Entries are keyed by source URL, so a photo already pinned (from the town
+  or from the cell photo viewer) is not duplicated; failed photographs offer
+  no pin action.
+- **Status:** Implemented locally on 27 October 2026 (`towns-ui.mjs`), not
+  deployed. Unit test and FR/EN browser check of gallery → journal.
+
 ## R-187 - Player inscriptions on forest trees and town walls
 
 - Allow players to carve/write a fictional in-game message on a tree in a

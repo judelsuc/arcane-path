@@ -99,7 +99,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const note = document.querySelector("#travel-note");
   const directions = [...document.querySelectorAll("[data-move]")];
   let state, stream, region, base, token = 0, busy = false, error = "", active = false;
-  const towns = setupTowns(t, { context: () => state });
+  const towns = setupTowns(t, { context: () => state, pinPhoto });
   const changeRequests = setupChangeRequests(t, { context: () => active ? state : null });
   let artifactsUI;
   let preparingOrigin = false;

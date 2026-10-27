@@ -95,7 +95,7 @@ class Element {
   close() { this.open = false; this.events.close?.(); }
   focus() {}
 }
-function fixture(t, resolve) {
+function fixture(t, resolve, pinPhoto) {
   const nodes = new Map(), revoked = [];
   const previous = globalThis.document;
   const node = selector => {
@@ -112,7 +112,7 @@ function fixture(t, resolve) {
   t.mock.method(URL, "createObjectURL", () => `blob:town-${++urls}`);
   t.mock.method(URL, "revokeObjectURL", url => revoked.push(url));
   let language = "fr";
-  const ui = setupTowns((key, args) => translate(language, key, args), { service: { resolve } });
+  const ui = setupTowns((key, args) => translate(language, key, args), { service: { resolve }, pinPhoto });
   const cell = { terrain: "place", settlements: [{ osmId: "node/10", name: "Firmi" }] };
   const map = { width: 3, height: 1, cellSizeMeters: 250,
     bounds: { minLatitude: 44.543, maxLatitude: 44.547, minLongitude: 2.303, maxLongitude: 2.32 },
@@ -253,5 +253,23 @@ test("photo decoding failure is visible and stale errors after closing cannot re
   f.node("#town-dialog").close();
   image.events.error();
   assert.equal(f.revoked.length, 1);
+  f.ui.reset();
+});
+
+test("loaded town photographs can be pinned to the journal with source and licence; failed ones cannot", async t => {
+  const pins = [];
+  const blob = new Blob(["photo"], { type: "image/jpeg" });
+  const f = fixture(t, async () => result([{ ...photo(0), blob }, { ...photo(1), failed: true }]),
+    (container, picture, options) => pins.push({ container, picture, options }));
+  f.ui.update(f.map, 0, 0);
+  await settle();
+  assert.equal(pins.length, 1);
+  assert.equal(pins[0].picture.blob, blob);
+  assert.equal(pins[0].picture.sourceUrl, photo(0).sourceUrl);
+  assert.equal(pins[0].picture.licenseUrl, photo(0).licenseUrl);
+  assert.equal(pins[0].picture.attribution, "Photo Author");
+  assert.deepEqual(pins[0].options, { caption: "Town view 0" });
+  const caption = f.node("#town-gallery").children[0].children[1];
+  assert.ok(caption.children.includes(pins[0].container));
   f.ui.reset();
 });

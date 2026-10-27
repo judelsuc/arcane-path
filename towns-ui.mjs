@@ -3,7 +3,7 @@ import { createTownContentClient } from "./town-content.mjs";
 import { cellInfo } from "./cell-info.mjs";
 import { washingAvailable } from "./pressures.mjs";
 
-export function setupTowns(t, { context = () => null, service = createTownContentClient({ context }) } = {}) {
+export function setupTowns(t, { context = () => null, service = createTownContentClient({ context }), pinPhoto } = {}) {
   const dialog = document.querySelector("#town-dialog");
   const open = document.querySelector("#open-town");
   const welcome = document.querySelector("#town-welcome");
@@ -94,6 +94,12 @@ export function setupTowns(t, { context = () => null, service = createTownConten
       link(caption, photo.sourceUrl, t("contentSource", { title: photo.title }));
       paragraph(caption, t("contentCredit", photo), "technical-text");
       link(caption, photo.licenseUrl, `${t("contentLicense")} (${photo.license})`);
+      if (photo.blob && !photo.failed && pinPhoto) {
+        const pin = document.createElement("p");
+        pin.className = "town-photo-pin";
+        pinPhoto(pin, photo, { caption: photo.caption || photo.title });
+        caption.append(pin);
+      }
       figure.append(caption);
       gallery.append(figure);
     }
