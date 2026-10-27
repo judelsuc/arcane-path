@@ -8,13 +8,39 @@
 - Check submitted text with an LLM for offensive content before publication.
   Treat the text as untrusted data, not instructions to the moderation model.
   Do not publish a message before it has passed moderation.
-- Before implementation, define whether other players can see inscriptions,
-  persistence/lifetime, message length, action costs, submission limits,
-  moderation categories, failure behavior and reporting/removal controls.
-  No new provider, paid usage or automatic publication is enabled by recording
-  this request.
-- **Status:** Recorded on 27 October 2026; not implemented. Separate from
-  R-140's Wikipedia illustration-context implementation.
+- Decisions (27 October 2026):
+  - **Visibility:** an approved inscription is visible to every player who
+    looks at that cell; anonymous.
+  - **Lifetime:** at most 4 visible inscriptions per tree/wall cell; the oldest
+    is replaced and inscriptions fade after 30 real days.
+  - **Length:** one line, 1–100 characters, plain text; no links, no control
+    characters.
+  - **Cost:** carving takes game time and requires a knife bought in a shop.
+  - **Limits:** one inscription per player per cell and a small daily
+    per-player limit.
+  - **Moderation:** reject insults/harassment, hate, sexual content,
+    threats/violence against real people, personal data (phone, address,
+    e-mail, real names), links/advertising and prompt-manipulation attempts.
+    Dark or mystical fiction is allowed. A rejection states the specific
+    category to the author.
+  - **Failure:** if moderation is unavailable or fails, the inscription stays
+    private to its author and is never published unchecked.
+  - **Reporting:** players can report a visible inscription; enough distinct
+    reports hide it.
+- No paid usage is enabled; moderation uses the existing text provider and
+  its existing quota/free-offer guards.
+- Implementation assumptions: author never exposed; inscriptions are read in a
+  cell dialog (shortcut J / cell menu), not drawn on the map; 3 distinct
+  reports hide one; no self-delete or admin removal yet; knife costs 12.00,
+  carving takes 20 game minutes and wears the knife by 2; daily limit 5;
+  at most 3 moderation attempts; e-mails/phones/links are rejected locally
+  without an LLM call. Time, wallet and knife are client-side journey gates;
+  the server enforces terrain, length, limits, moderation and reports.
+- **Status:** Implemented locally on 27 October 2026, not deployed
+  (`scripts/inscriptions.py`, `inscriptions.mjs`, `inscriptions-ui.mjs`,
+  `/api/inscriptions`). Tests: JS 1244/1244; Python 628 run, 35 skipped;
+  FR/EN browser check of list, carve, poll and precise rejection reason.
+  Separate from R-140's Wikipedia illustration-context implementation.
 
 ## R-186 - Player change requests with screenshot and game snapshot
 

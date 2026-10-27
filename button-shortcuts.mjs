@@ -11,6 +11,7 @@ const KEYS = {
   "eat-travel": "E", "open-town": "T", "open-music": "B",
   "save-travel": "S", "look-travel": "L",
   "open-journey-world": "6",
+  "open-inscriptions": "J", "cell-inscriptions": "J", "inscriptions-close": "Escape",
   "open-conversation": "G", "town-conversation": "G", "cell-conversation": "G",
   "open-quests": "2",
   "conversation-close": "Escape",

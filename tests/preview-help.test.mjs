@@ -388,7 +388,7 @@ test("all shipped game windows have bilingual contextual help; consequential con
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const ids = ["title-screen", "journey-setup", "game-content",
     ...[...html.matchAll(/<dialog id="([^"]+)"/g)].map(match => match[1])];
-  assert.equal(ids.length, 29);
+  assert.equal(ids.length, 30);
   for (const id of ["release-deployment", "release-status"]) {
     assert.ok(GAME_TECHNICAL_SOURCES.includes(`#${id}`), `${id} stays in closed technical details`);
   }

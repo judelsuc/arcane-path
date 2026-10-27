@@ -5,6 +5,7 @@ const paths = {
   sleepingBag: '<rect x="29" y="8" width="42" height="76" rx="19" fill="#ad6955"/><ellipse cx="50" cy="25" rx="13" ry="10" fill="#e7ca9a"/><path d="M35 44h30M34 57h32M37 70h26M63 36v37" stroke="#724c43" stroke-width="3"/>',
   tent: '<path d="M9 77L49 16l43 61z" fill="#bc9457"/><path d="M49 16l8 61H19z" fill="#d9b56c"/><path d="M49 33l-1 44H27z" fill="#344b48"/><path d="M4 79h92M49 16V9" stroke="#eee0b4" stroke-width="3"/>',
   camera: '<path d="M29 31l7-11h28l7 11" fill="#b6b8a9"/><rect x="12" y="31" width="76" height="46" rx="8" fill="#526563"/><circle cx="50" cy="54" r="20" fill="#c1c5af"/><circle cx="50" cy="54" r="14" fill="#263e48"/><circle cx="46" cy="50" r="5" fill="#8eb4bd"/><rect x="72" y="38" width="10" height="7" fill="#edd9a8"/>',
+  knife: '<path d="M18 70L64 22q14-8 18 2L36 74z" fill="#c9cdc4"/><path d="M64 22q14-8 18 2" fill="none" stroke="#7b8580" stroke-width="3"/><rect x="8" y="66" width="26" height="12" rx="4" transform="rotate(-45 21 72)" fill="#7a5034"/><circle cx="18" cy="76" r="2" fill="#e5cc8d"/>',
 };
 
 export function itemArt(doc, id) {

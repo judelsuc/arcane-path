@@ -11,7 +11,7 @@ const copy = {
   fr: {
     title: "Sac et compagnon", close: "Fermer", load: "Charge", wallet: "Argent", condition: "État",
     boots: "Chaussures", backpack: "Sac à dos", raincoat: "Imperméable",
-    sleepingBag: "Sac de couchage", tent: "Tente", camera: "Appareil photo",
+    sleepingBag: "Sac de couchage", tent: "Tente", camera: "Appareil photo", knife: "Couteau",
     buy: "Acheter", repair: "Réparer", discard: "Abandonner sans remboursement", minutes: "min",
     shop: "Achats, réparations et provisions disponibles dans cette localité. Prix de jeu fixes.",
     noShop: "Rejoignez une localité pour acheter, réparer ou obtenir des provisions pour le chien.",
@@ -22,6 +22,7 @@ const copy = {
     sleepingBagEffect: "Réduit de 20 % la fatigue nocturne ajoutée pendant le sommeil à la belle étoile.",
     tentEffect: "Permet de dormir sous tente dans un camping cartographié, pas de camper partout. Pas de repas inclus.",
     cameraEffect: "Bonus de qualité photo prévu : +10 %. Pas encore actif sur les photos du carnet.",
+    knifeEffect: "Permet de graver un message sur un arbre en forêt ou un mur en ville (20 min). Gravures fictives, vérifiées avant d'être visibles.",
     rules: "Chaque kg ralentit de 2,5 %, augmente l'énergie de marche de 4 % et la fatigue de 6 %. Les objets s'usent en marchant ; cassés, ils restent lourds mais ne donnent plus de bonus. Réorganiser est gratuit ; abandonner est définitif.",
     dog: "Compagnon", noDog: "Pas de compagnon. Une rencontre sur le chemin peut vous proposer d'accueillir un chien.",
     dogWell: "En forme", dogAttention: "Besoin d'attention", dogUrgent: "Besoin de soins maintenant",
@@ -37,7 +38,7 @@ const copy = {
   en: {
     title: "Bag and companion", close: "Close", load: "Load", wallet: "Money", condition: "Condition",
     boots: "Boots", backpack: "Backpack", raincoat: "Raincoat",
-    sleepingBag: "Sleeping bag", tent: "Tent", camera: "Camera",
+    sleepingBag: "Sleeping bag", tent: "Tent", camera: "Camera", knife: "Knife",
     buy: "Buy", repair: "Repair", discard: "Discard without refund", minutes: "min",
     shop: "Purchases, repairs and supplies available in this settlement. Fixed game prices.",
     noShop: "Reach a settlement to buy equipment, repair it or obtain dog supplies.",
@@ -48,6 +49,7 @@ const copy = {
     sleepingBagEffect: "Reduces added night fatigue during outdoor sleep by 20%.",
     tentEffect: "Allows tent sleep at a mapped campsite, not camping anywhere. No meals included.",
     cameraEffect: "Planned photo quality bonus: +10%. Not yet active on notebook photos.",
+    knifeEffect: "Lets you carve a message on a forest tree or a town wall (20 min). Fictional carvings, checked before they become visible.",
     rules: "Each kg slows walking by 2.5%, increases walking energy by 4% and fatigue by 6%. Walking wears items; broken items stay heavy but lose their benefits. Rearranging is free; discarding is permanent.",
     dog: "Companion", noDog: "No companion. An encounter along the path may offer the chance to welcome a dog.",
     dogWell: "Feeling well", dogAttention: "Needs attention", dogUrgent: "Needs care now",

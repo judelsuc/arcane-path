@@ -773,6 +773,11 @@ dialog p { margin: 12px 0; }
 #change-request-image:not([src]) { display: none; }
 #change-request-snapshot { max-height: 25vh; overflow: auto; font-size: 0.75rem; white-space: pre-wrap; }
 #change-request-comment { display: block; width: 100%; box-sizing: border-box; margin-block: 8px; }
+#inscriptions-dialog { width: min(620px, 94vw); max-height: 90dvh; overflow: auto; overflow-wrap: anywhere; }
+.inscriptions-list { list-style: none; padding: 0; margin: 8px 0; }
+.inscriptions-list li { padding: 6px 0; border-bottom: 1px dashed currentColor; font-style: italic; }
+.inscriptions-list li button { font-style: normal; margin-inline-start: 6px; }
+#inscriptions-text { display: block; width: 100%; box-sizing: border-box; margin-block: 6px; }
 #town-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 16px; }
 .town-photo { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .town-photo img { display: block; width: 100%; max-height: 280px; object-fit: contain; background: var(--surface); }

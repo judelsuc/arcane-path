@@ -42,6 +42,16 @@ class HttpsConfigurationTests(unittest.TestCase):
         self.assertIn("limit_except POST { deny all; }", endpoint)
         self.assertIn("return 503;", endpoint)
 
+    def test_inscriptions_have_an_exact_bounded_post_only_route(self):
+        config = (ROOT / "infra/nginx/preview.conf").read_text()
+        endpoint = config.split("location = /api/inscriptions {", 1)[1].split("\n    }", 1)[0]
+        self.assertIn("client_max_body_size 4k;", endpoint)
+        self.assertIn("limit_except POST { deny all; }", endpoint)
+        self.assertIn("proxy_pass http://127.0.0.1:8766;", endpoint)
+        bootstrap = (ROOT / "infra/nginx/bootstrap.conf").read_text()
+        endpoint = bootstrap.split("location = /api/inscriptions {", 1)[1].split("\n    }", 1)[0]
+        self.assertIn("return 503;", endpoint)
+
     def test_main_artifacts_have_a_bounded_post_only_route(self):
         config = (ROOT / "infra/nginx/preview.conf").read_text()
         endpoint = config.split("location = /api/artifacts {", 1)[1].split("\n    }", 1)[0]

@@ -22,9 +22,9 @@ const freeze = value => {
 };
 
 test("catalogue is finite, immutable, integer cents and a bounded starter load", () => {
-  assert.equal(ITEMS.length, 6);
+  assert.equal(ITEMS.length, 7);
   assert.ok(Object.isFrozen(ITEMS) && ITEMS.every(Object.isFrozen));
-  assert.equal(new Set(ITEMS.map(item => item.id)).size, 6);
+  assert.equal(new Set(ITEMS.map(item => item.id)).size, 7);
   for (const item of ITEMS) {
     assert.ok(Number.isSafeInteger(item.priceCents) && item.priceCents > 0);
     assert.ok(Number.isSafeInteger(item.repairCents) && item.repairCents > 0);

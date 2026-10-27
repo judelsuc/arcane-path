@@ -70,6 +70,8 @@ import { followedQuest, objectiveCell } from "./quest-objectives.mjs";
 import { IncompatibleJourneySaveError } from "./journey-save.mjs";
 import { beginEquipment } from "./equipment.mjs";
 import { journeyEquipmentAction } from "./equipment-journey.mjs";
+import { journeyCarve } from "./inscriptions.mjs";
+import { setupInscriptions } from "./inscriptions-ui.mjs";
 import { setupEquipment } from "./equipment-ui.mjs";
 import { setupJourneyMiniGames } from "./journey-mini-games-ui.mjs";
 import { beginJourneyMiniGame, settleJourneyMiniGame } from "./journey-mini-games.mjs";
@@ -418,6 +420,19 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       const current = economyContext();
       if (!current) throw new Error("Current cell is not loaded.");
       state = journeyEquipmentAction(state, action, current.cell, current.info, survivalConfig, economyData);
+      autosave();
+      draw();
+    },
+  });
+  const inscriptionsUI = setupInscriptions(t, {
+    context() {
+      const current = economyContext();
+      return current && active ? current : null;
+    },
+    carve() {
+      const current = economyContext();
+      if (!current) throw new Error("Current cell is not loaded.");
+      state = journeyCarve(state, current.cell, current.info, survivalConfig, economyData);
       autosave();
       draw();
     },
@@ -834,6 +849,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       document.querySelector("#journey-play-save")]) {
       setFeedback(element, saveError ? "failure" : savedAt ? "success" : "");
     }
+    inscriptionsUI.localize();
     choicesUI.localize();
     conversations.localize();
     earnMoneyUI.localize();
@@ -1437,6 +1453,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     towns.reset();
     economyUI.reset();
     choicesUI.reset();
+    inscriptionsUI.reset();
     stream?.stop();
     backgroundDownloads?.stop();
     backgroundDownloads = undefined;

@@ -44,7 +44,7 @@ from lore_playtest import LorePlaytest
 from main_artifacts import MainArtifacts
 from journal_art import JournalArt
 from encounter_art import EncounterArt
-from live_narrative import LiveNarrative
+from live_narrative import LiveNarrative, MODEL as LIVE_TEXT_MODEL
 from start_art import StartArt
 from asset_storage import AssetConflict, AssetError, S3Blobs
 from content_storage import clock
@@ -52,8 +52,9 @@ from quest_destinations import QuestDestinations
 from characters import Characters
 from town_content import TownContent
 from change_requests import ChangeRequests
+from inscriptions import Inscriptions, moderation_request
 from mapped_sites import enrich_sites
-from content_factory import CHARACTER_IMAGE_STYLE, OvhImageWriter
+from content_factory import CHARACTER_IMAGE_STYLE, OvhImageWriter, OvhWriter
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_SIZE = 8
@@ -845,6 +846,9 @@ def make_handler(store, jobs, path_pool=None):
                        if journal_art.writer else None)
     characters = Characters(journeys, lore, writer=portrait_writer)
     town_content = TownContent(journeys, lore)
+    inscriptions = Inscriptions(journeys, lore, writer=(
+        OvhWriter(live_narrative.writer.token, LIVE_TEXT_MODEL, moderation_request)
+        if live_narrative.writer else None))
     change_requests = ChangeRequests(journeys, lore,
                                     enabled=os.environ.get("ARCANE_CHANGE_REQUESTS_ENABLED") == "1"
                                     and assets is not None and assets.catalogue.postgres
@@ -871,7 +875,7 @@ def make_handler(store, jobs, path_pool=None):
 
         def do_POST(self):
             endpoint = urllib.parse.urlsplit(self.path).path
-            if endpoint not in ("/api/journeys", "/api/abandoned-journals", "/api/lore-playtest", "/api/artifacts", "/api/journal-art", "/api/live-narrative", "/api/encounter-art", "/api/quest-destinations", "/api/characters", "/api/town-content", "/api/change-requests"):
+            if endpoint not in ("/api/journeys", "/api/abandoned-journals", "/api/lore-playtest", "/api/artifacts", "/api/journal-art", "/api/live-narrative", "/api/encounter-art", "/api/quest-destinations", "/api/characters", "/api/town-content", "/api/change-requests", "/api/inscriptions"):
                 return self.send_json(404, {"error": "Unknown API endpoint."})
             origin = self.headers.get("Origin")
             try:
@@ -908,6 +912,8 @@ def make_handler(store, jobs, path_pool=None):
                 capability = self.headers.get("X-Journal-Capability")
                 if endpoint == "/api/change-requests":
                     return self.send_json(200, change_requests.submit(request, capability))
+                if endpoint == "/api/inscriptions":
+                    return self.send_json(200, inscriptions.request(request, capability))
                 if endpoint == "/api/town-content":
                     result = town_content.request(request, capability)
                     if isinstance(result, tuple):
@@ -1166,6 +1172,7 @@ def make_handler(store, jobs, path_pool=None):
     Handler.live_narrative = live_narrative
     Handler.characters = characters
     Handler.town_content = town_content
+    Handler.inscriptions = inscriptions
     Handler.change_requests = change_requests
     Handler.living_world = living_world
     Handler.quest_destinations = quest_destinations
@@ -1191,6 +1198,7 @@ def main():
         server.RequestHandlerClass.journal_art.close()
         server.RequestHandlerClass.characters.close()
         server.RequestHandlerClass.town_content.close()
+        server.RequestHandlerClass.inscriptions.close()
         server.RequestHandlerClass.live_narrative.close()
         server.RequestHandlerClass.quest_destinations.close()
         server.RequestHandlerClass.living_world.pool.shutdown(wait=True, cancel_futures=True)

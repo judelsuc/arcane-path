@@ -209,7 +209,7 @@ class AssetStorageTests(unittest.TestCase):
             store.catalogue.initialize()
             self.assertIn("statement_timeout=30000", factory.call_args.kwargs["kwargs"]["options"])
             pool.open.assert_called_once()
-            self.assertEqual(db.execute.call_count, 68)
+            self.assertEqual(db.execute.call_count, 73)
             self.assertIn("generation_jobs", db.execute.call_args_list[1].args[0])
             self.assertTrue(any("world_characters" in call.args[0] for call in db.execute.call_args_list))
             self.assertTrue(any("town_documents" in call.args[0] for call in db.execute.call_args_list))

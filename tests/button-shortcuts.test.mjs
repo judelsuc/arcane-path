@@ -214,7 +214,7 @@ test("conversation topics and expanded cell actions retain unique shortcuts with
   for (const ids of [
     ["cell-buy", "cell-rest", "cell-sleep", "cell-earn-money", "cell-clues", "cell-town",
       "cell-conversation", "cell-transport", "cell-hint", "cell-equipment", "cell-wash", "cell-dog",
-      "cell-journal", "cell-notebooks", "cell-photo", "cell-save", "choice-forage"],
+      "cell-journal", "cell-notebooks", "cell-inscriptions", "cell-photo", "cell-save", "choice-forage"],
     ["conversation-close", "conversation-parent", "conversation-clues", "conversation-notebooks",
       "conversation-artifacts", "conversation-shelter", "conversation-food", "conversation-work",
       "conversation-transport", "conversation-town"],

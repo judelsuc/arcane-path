@@ -12,6 +12,7 @@ const catalogue = [
   { id: "sleepingBag", footprint: [1, 3], grams: 1100, priceCents: 4000, repairCents: 800, wearPerKm: 0.2 },
   { id: "tent", footprint: [3, 3], grams: 2600, priceCents: 6500, repairCents: 1300, wearPerKm: 0.3 },
   { id: "camera", footprint: [2, 1], grams: 450, priceCents: 5000, repairCents: 1000, wearPerKm: 0.35 },
+  { id: "knife", footprint: [1, 1], grams: 150, priceCents: 1200, repairCents: 300, wearPerKm: 0.02 },
 ];
 export const ITEMS = Object.freeze(catalogue.map(item => Object.freeze({ ...item, footprint: Object.freeze(item.footprint) })));
 const byId = new Map(ITEMS.map(item => [item.id, item]));

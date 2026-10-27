@@ -42,6 +42,16 @@ explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
   Wikimedia HTTPS sortant 200. Les unités d'illustration/timers sont
   inchangées ; le timer de rétention R-186 n'est **ni installé ni activé**.
 
+## R-187 player inscriptions (implemented, not deployed)
+
+`POST /api/inscriptions` (4 KiB body, POST only) is proxied by
+`infra/nginx/preview.conf` and answers 503 in `bootstrap.conf`. It adds the
+`inscriptions`, `inscription_carvings` and `inscription_reports` tables:
+run `scripts/asset_storage.py --configured initialize` as `arcane` with the
+service environment **before** restarting. Moderation reuses the existing
+live-text token and model (`ARCANE_LIVE_TEXT_TOKEN_FILE`); without it,
+carvings stay private as "unchecked" and nothing is published unchecked.
+
 ## R-140 Wikipedia illustration context (deployed 27 October 2026)
 
 New journal cover/day jobs can use bounded public Wikipedia setting motifs

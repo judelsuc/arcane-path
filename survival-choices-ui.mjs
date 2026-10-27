@@ -11,6 +11,7 @@ export function setupSurvivalChoices(t, { context, act }) {
     "cell-equipment": "equipment-travel", "cell-dog": "dog-travel",
     "cell-journal": "open-journal",
     "cell-conversation": "open-conversation",
+    "cell-inscriptions": "open-inscriptions",
     "cell-photo": "show-photo", "cell-save": "save-travel",
   };
   function localize() {

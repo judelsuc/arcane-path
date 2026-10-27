@@ -111,6 +111,7 @@ test("full-word cell actions forward to existing controls only after closing, re
   assert.equal(h.get("#cell-dog").hidden, true);
   for (const [id, target] of [["cell-town", "open-town"], ["cell-equipment", "equipment-travel"],
     ["cell-journal", "open-journal"],
+    ["cell-inscriptions", "open-inscriptions"],
     ["cell-photo", "show-photo"], ["cell-save", "save-travel"]]) {
     let invoked = false;
     h.get(`#${target}`).events.click = () => { invoked = true; };
