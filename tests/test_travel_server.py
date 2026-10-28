@@ -174,6 +174,27 @@ class TravelServerTests(unittest.TestCase):
             first.set_elevation_cooldown(retry_at)
             self.assertEqual(second.elevation_cooldown_until(), retry_at)
 
+    def test_abandoned_queued_chunk_does_not_block_the_shared_queue(self):
+        from asset_storage import local_storage
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            assets = local_storage(root / "assets")
+            store = ChunkStore(cache=root / "cache")
+            store.set_shared_assets(assets)
+            with assets.catalogue.connection() as db:
+                db.execute(
+                    "INSERT INTO travel_chunk_cache(chunk_id,region,pipeline,snapshot,x,y,status,created,attempts) "
+                    "VALUES(?,?,?,?,?,?,'queued',?,1)",
+                    (store.chunk_id("firmi", 2, 2), "firmi", store.pipeline, store.fingerprints["firmi"],
+                     2, 2, time.time() - 3600))
+            with patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}), \
+                    patch("travel_server.time.sleep", side_effect=AssertionError("Queue blocked")):
+                self.assertEqual(store.build("firmi", 1, 1)["chunk"]["x"], 1)
+            with patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}):
+                self.assertEqual(store.build("firmi", 2, 2)["chunk"]["x"], 2)
+            assets.catalogue.close()
+
     def test_pre_gallery_pipeline_keeps_local_and_shared_chunks_without_redownloading(self):
         from asset_storage import local_storage
         for shared in (False, True):

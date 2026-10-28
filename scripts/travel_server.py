@@ -510,11 +510,15 @@ class ChunkStore:
                            "WHERE chunk_id=?", (chunk_id,))
             if row["status"] in {"queued", "running"} and row["asset_request"]:
                 return "ready"
+            # A queued row only holds its place while a waiter keeps renewing it, so
+            # requests abandoned by a restart cannot block the shared queue.
+            db.execute(f"UPDATE travel_chunk_cache SET expires=({now_sql})+30 "
+                       "WHERE chunk_id=? AND status='queued'", (chunk_id,))
             active = db.execute(
                 f"SELECT COUNT(*) FROM travel_chunk_cache WHERE status='running' AND expires>({now_sql})"
             ).fetchone()[0]
             queued = db.execute(
-                "SELECT chunk_id FROM travel_chunk_cache WHERE status='queued' "
+                f"SELECT chunk_id FROM travel_chunk_cache WHERE status='queued' AND expires>({now_sql}) "
                 "ORDER BY created,chunk_id LIMIT 2").fetchall()
             if active >= 2 or not queued or queued[0]["chunk_id"] != chunk_id:
                 return None

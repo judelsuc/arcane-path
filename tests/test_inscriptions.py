@@ -105,10 +105,12 @@ class InscriptionServiceTests(unittest.TestCase):
         self.fail("Moderation did not settle.")
 
     def test_approved_inscription_is_visible_to_other_players_anonymously(self):
+        self.writer.gate = threading.Event()
         view = self.call(action="carve", text="  Ici dort un loup d'argent.  ")
         self.assertEqual(view["surface"], "tree")
         self.assertEqual(view["own"]["status"], "pending")
         self.assertEqual(view["inscriptions"], [])
+        self.writer.gate.set()
         self.assertEqual(self.settle()["own"]["status"], "approved")
         other = self.call(2)
         self.assertEqual([i["text"] for i in other["inscriptions"]], ["Ici dort un loup d'argent."])
