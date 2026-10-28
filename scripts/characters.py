@@ -481,7 +481,7 @@ class Characters:
         seed = hashlib.sha256(f"presence:{journey}:{location['id']}:{presence['hour']}".encode()).hexdigest()
         if int(seed[:8], 16) / 2 ** 32 >= self._presence_chance(location, presence["phase"]):
             result = self._list(journey, region, location)
-            return {**result, "characters": [], "canCreate": False, "absent": True}
+            return {**result, "characters": [], "absent": True}
         result = self._list(journey, region, location)
         if result["characters"] or not location["canCreate"]:
             return result

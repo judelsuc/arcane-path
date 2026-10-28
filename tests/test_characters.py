@@ -269,6 +269,23 @@ class CharactersTests(unittest.TestCase):
             "list", journey=journey, location=(2, 0), presence={"phase": "night", "hour": h}).get("absent"))
         hidden = self.request("list", journey=journey, location=(2, 0), presence={"phase": "night", "hour": absent})
         self.assertEqual((hidden["characters"], hidden["canCreate"]), ([], False))
+
+        self.journeys.chunks.cache_cell(2, 0, {
+            "terrain": "place",
+            "settlements": [{"osmId": "node/999", "name": "Newtown"}],
+            "countryCodes": ["FR"],
+        })
+        absent_journey = "f" * 32
+        absent_hour = next(h for h in range(500) if self.request(
+            "list", journey=absent_journey, location=(2, 0),
+            presence={"phase": "night", "hour": h}).get("absent"))
+        unavailable = self.request("list", journey=absent_journey, location=(2, 0),
+                                   presence={"phase": "night", "hour": absent_hour})
+        self.assertTrue(unavailable["canCreate"])
+        created = self.create("00000000-0000-4000-8000-000000000022",
+                              location=(2, 0), journey=absent_journey)
+        listed = self.request("list", journey=absent_journey, location=(2, 0))["characters"]
+        self.assertIn(created["id"], [character["id"] for character in listed])
         for presence in ({"phase": "noon", "hour": 1}, {"phase": "day", "hour": -1},
                          {"phase": "day", "hour": True}, {"phase": "day"}):
             with self.assertRaises(JourneyRequest):

@@ -339,13 +339,13 @@ test("selector sends journey presence and explains absence or a newly met charac
       startedAt, elapsedMinutes: 0 }, blocked: false };
   const person = { id: "b".repeat(32), name: "Camille Aubry", role: "artisan", portrait: { status: "failed" } };
   const presences = [];
-  let reply = { characters: [], canCreate: false, absent: true, location: { kind: "countryside" } };
+  let reply = { characters: [], canCreate: true, absent: true, location: { kind: "countryside" } };
   const characters = { async list(state, presence) { presences.push(presence); return reply; } };
   const ui = setupConversations((key, args) => translate("en", key, args), { context: () => current, characters });
   await ui.open();
   assert.deepEqual(presences[0], { phase: "day", hour: Math.floor(startedAt / 3_600_000) });
   assert.equal(get("character-selector-status").textContent, translate("en", "character.absent"));
-  assert.equal(get("character-create").hidden, true);
+  assert.equal(get("character-create").hidden, false);
   get("character-selector-dialog").close();
   current.state.elapsedMinutes = 12 * 60;
   reply = { characters: [person], canCreate: false, arrived: person.id, limit: 1,
