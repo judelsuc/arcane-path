@@ -56,7 +56,7 @@ export function setupConversations(t, { context, characters }) {
   function locationText(current) {
     const town = current && hospitalityTown(current.cell);
     if (current && !town && current.cell.terrain !== "major_road") return t("conversation.countryside");
-    return t(town ? "conversation.welcome" : "conversation.onRoad", { town: town?.name ?? "" });
+    return t(town ? "conversation.inTown" : "conversation.onRoad", { town: town?.name ?? "" });
   }
 
   function releasePortraits() {
@@ -206,9 +206,12 @@ export function setupConversations(t, { context, characters }) {
       if (Number.isInteger(result.limit)) limit = result.limit;
       loaded = true;
       const arrived = available.find(character => character.id === result.arrived);
-      $("character-selector-status").textContent = result.absent ? t("character.absent")
+      $("character-selector-status").textContent = !available.length &&
+        result.unavailableReason === "naming-locale-unavailable" ? t("character.namingUnavailable")
+        : result.absent ? t(canCreate ? "character.absentCanCreate" : "character.absent")
         : arrived ? t("character.arrived", { name: arrived.name })
-          : result.location?.kind === "town" ? t("character.available") : t("character.roadside");
+          : !available.length ? t("character.empty")
+            : result.location?.kind === "town" ? t("character.available") : t("character.roadside");
     } catch (error) {
       if (!sameJourney(requestContext)) return;
       $("character-selector-status").textContent = t("character.loadFailed", { error: error.message });

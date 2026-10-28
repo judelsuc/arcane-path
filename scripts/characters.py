@@ -17,6 +17,7 @@ from character_encounters import SCHEMAS as ENCOUNTER_SCHEMAS
 from shared_images import SharedImages
 from journey_storage import StoreConnection, cached_journey_cell
 from journeys import JourneyConflict, JourneyRequest, character_name
+from main_artifacts import geographic_position
 
 WORLD = "roadside-characters-v1"
 PORTRAIT_VERSION = "character-portrait-v1"
@@ -262,7 +263,8 @@ class Characters:
 
     def _authorized_location(self, request, token):
         journey, genesis, region, base = self._authorized_journey(request, token)
-        _, _, cell, _, _ = cached_journey_cell(self.journeys.chunks, region, request.get("location"))
+        chunks = self.journeys.chunks
+        _, _, cell, _, _ = cached_journey_cell(chunks, region, request.get("location"))
         col, row = request["location"]["col"], request["location"]["row"]
         if cell.get("unavailable") or cell.get("terrain") == "water":
             raise JourneyConflict("No character encounter is available in this cell.")
@@ -299,6 +301,16 @@ class Characters:
             explicit = base.get("namingLocale")
             naming_locale = (explicit if isinstance(explicit, str) and explicit in NAMES
                              else NAMING_LOCALES.get(region) if explicit is None else None)
+        if (naming_locale is None and "namingLocale" not in cell and not country_codes
+                and request.get("action") in {"list", "create"}
+                and getattr(chunks, "places", None) is not None):
+            try:
+                country = chunks.places.country(*geographic_position(base, col, row))
+            except (OSError, ValueError) as error:
+                logging.warning("Character location country lookup failed: %s", error)
+                raise JourneyConflict(
+                    "The current location's country could not be verified; please try again.") from error
+            naming_locale = COUNTRY_NAMING_LOCALES.get(country["countryCode"])
         if naming_locale not in NAMES:
             location["canCreate"] = False
         else:
@@ -460,6 +472,7 @@ class Characters:
         location = {key: value for key, value in location.items() if key not in ("namingLocale", "terrain")}
         return {"location": location, "characters": characters,
                 "canCreate": bool(location.get("canCreate") and len(characters) < limit),
+                "unavailableReason": None if location.get("canCreate") else "naming-locale-unavailable",
                 "limit": limit}
 
     @staticmethod

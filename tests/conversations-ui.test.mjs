@@ -344,7 +344,7 @@ test("selector sends journey presence and explains absence or a newly met charac
   const ui = setupConversations((key, args) => translate("en", key, args), { context: () => current, characters });
   await ui.open();
   assert.deepEqual(presences[0], { phase: "day", hour: Math.floor(startedAt / 3_600_000) });
-  assert.equal(get("character-selector-status").textContent, translate("en", "character.absent"));
+  assert.equal(get("character-selector-status").textContent, translate("en", "character.absentCanCreate"));
   assert.equal(get("character-create").hidden, false);
   get("character-selector-dialog").close();
   current.state.elapsedMinutes = 12 * 60;
@@ -356,4 +356,43 @@ test("selector sends journey presence and explains absence or a newly met charac
   assert.equal(get("character-selector-status").textContent,
     translate("en", "character.arrived", { name: "Camille Aubry" }));
   assert.equal(get("character-choices").children.length, 1);
+});
+
+test("empty towns never claim someone is available and explain blocked creation", async t => {
+  const previous = globalThis.document, nodes = new Map();
+  const get = id => {
+    if (!nodes.has(id)) nodes.set(id, new Element());
+    return nodes.get(id);
+  };
+  globalThis.document = { getElementById: get, createElement: () => new Element(),
+    querySelector: () => null };
+  t.after(() => { globalThis.document = previous; });
+  const current = { cell: { terrain: "place", settlements: [{ osmId: "node/123", name: "Schengen" }] },
+    state: { serverJourney: { id: "a".repeat(32) }, journalAccess: "capability", col: 24, row: -9 },
+    blocked: false };
+  let reply = { characters: [], canCreate: false, location: { kind: "town" },
+    unavailableReason: "naming-locale-unavailable" };
+  for (const language of ["fr", "en"]) {
+    const ui = setupConversations((key, args) => translate(language, key, args), {
+      context: () => current, characters: { async list() { return reply; } },
+    });
+    await ui.open();
+    assert.equal(get("character-selector-context").textContent,
+      translate(language, "conversation.inTown", { town: "Schengen" }));
+    assert.equal(get("character-selector-status").textContent, translate(language, "character.namingUnavailable"));
+    assert.equal(get("character-create").hidden, true);
+    ui.reset();
+  }
+  reply = { characters: [], canCreate: false, absent: true, location: { kind: "town" } };
+  const ui = setupConversations((key, args) => translate("en", key, args), {
+    context: () => current, characters: { async list() { return reply; } },
+  });
+  await ui.open();
+  assert.equal(get("character-selector-status").textContent, translate("en", "character.absent"));
+  assert.equal(get("character-create").hidden, true);
+  get("character-selector-dialog").close();
+  reply = { characters: [], canCreate: true, location: { kind: "town" } };
+  await ui.open();
+  assert.equal(get("character-selector-status").textContent, translate("en", "character.empty"));
+  assert.equal(get("character-create").hidden, false);
 });

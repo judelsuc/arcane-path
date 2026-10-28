@@ -297,7 +297,12 @@
   cell's public OSM country-code metadata. Unsupported countries do not inherit
   the origin's language. A validated base-map locale or built-in locale is only
   a fallback inside the original map when location country metadata is absent;
-  streamed cells cannot inherit it. UI language does not affect names.
+  streamed cells cannot inherit it. If current-cell country metadata is missing
+  and no base-map fallback applies, the existing cached country lookup resolves
+  the current cell's coordinates (not the departure point). Lookup failures are
+  explicit; unsupported countries still cannot create names. Empty selectors
+  never announce available people and explain unsupported naming locales.
+  UI language does not affect names.
   Shared identity/availability is independent of each
   journey's simulated clock. The shared encounter ledger retains all met
   journeys and their server-clock first/last meeting and idempotent count;

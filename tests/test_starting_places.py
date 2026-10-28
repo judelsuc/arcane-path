@@ -59,6 +59,7 @@ class StartingPlaceTests(unittest.TestCase):
         with patch.object(lookup, "request", return_value={"address": {"country_code": "it"}}) as request:
             self.assertEqual(lookup.country(42, 12)["countryCode"], "IT")
             self.assertEqual(request.call_args.args, ("reverse", {"lat": 42.0, "lon": 12.0, "zoom": 3}))
+            self.assertEqual(request.call_args.kwargs, {"timeout": 5})
         for response in [{}, {"address": {"country_code": "unknown"}}, []]:
             with patch.object(lookup, "request", return_value=response):
                 with self.assertRaisesRegex(ValueError, "no usable country"):

@@ -18,6 +18,7 @@ from characters import Characters
 import characters as character_module
 from durable_jobs import DurableJobs
 from journeys import JourneyConflict, JourneyRequest
+from main_artifacts import geographic_position
 from content_factory import CHARACTER_IMAGE_STYLE, IMAGE_ENDPOINT, IMAGE_MODEL, OvhImageWriter, WorkshopError
 
 
@@ -458,6 +459,53 @@ class CharactersTests(unittest.TestCase):
         self.assertEqual(character["namingLocale"], "it-IT")
         self.journeys.chunks.cache_cell(25, -9, {"terrain": "major_road", "settlements": []})
         self.assertFalse(self.request("list", location=(25, -9))["canCreate"])
+
+    def test_streamed_towns_resolve_their_current_country_when_osm_metadata_is_missing(self):
+        base = self.journeys.chunks.bases["firmi"]
+        base.update({"cellSizeMeters": 200, "bounds": {
+            "minLatitude": 49.46, "maxLatitude": 49.48,
+            "minLongitude": 6.35, "maxLongitude": 6.38,
+        }})
+        lookup = self.journeys.chunks.places = Mock()
+        for index, (country, locale) in enumerate((("LU", "fr-FR"), ("DE", "de-DE"), ("FR", "fr-FR"))):
+            position = (24 + index, -9)
+            self.journeys.chunks.cache_cell(*position, {
+                "terrain": "place",
+                "settlements": [{"osmId": f"node/{900 + index}", "name": f"Town {index}"}],
+            })
+            lookup.country.return_value = {"countryCode": country}
+            with patch.object(self.service, "_presence_chance", return_value=1):
+                result = self.request("list", location=position, presence={"phase": "day", "hour": 1})
+            lookup.country.assert_called_with(*geographic_position(base, *position))
+            self.assertEqual(len(result["characters"]), 1)
+            self.assertEqual(result["characters"][0]["namingLocale"], locale)
+            self.assertIsNone(result["unavailableReason"])
+
+        lookup.country.side_effect = AssertionError("Explicit country metadata must not be overridden")
+        self.journeys.chunks.cache_cell(28, -9, {
+            "terrain": "major_road", "settlements": [], "countryCodes": ["ZZ"]})
+        result = self.request("list", location=(28, -9))
+        self.assertFalse(result["canCreate"])
+        self.assertEqual(result["unavailableReason"], "naming-locale-unavailable")
+
+    def test_country_lookup_failure_is_explicit_and_never_uses_the_origin_locale(self):
+        base = self.journeys.chunks.bases["firmi"]
+        base.update({"cellSizeMeters": 200, "bounds": {
+            "minLatitude": 49.46, "maxLatitude": 49.48,
+            "minLongitude": 6.35, "maxLongitude": 6.38,
+        }})
+        self.journeys.chunks.cache_cell(24, -9, {"terrain": "major_road", "settlements": []})
+        self.journeys.chunks.places = Mock()
+        for error in (TimeoutError("Country service timed out"), ValueError("Invalid country response")):
+            self.journeys.chunks.places.country.side_effect = error
+            with self.assertLogs(level="WARNING"), self.assertRaisesRegex(JourneyConflict, "could not be verified"):
+                self.request("list", location=(24, -9))
+        self.journeys.chunks.places.country.side_effect = None
+        self.journeys.chunks.places.country.return_value = {"countryCode": "ZZ"}
+        result = self.request("list", location=(24, -9))
+        self.assertFalse(result["canCreate"])
+        self.assertEqual(result["characters"], [])
+        self.assertEqual(result["unavailableReason"], "naming-locale-unavailable")
 
     def test_exchange_is_real_factual_memory_after_meeting_only(self):
         character = self.create()
