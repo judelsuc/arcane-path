@@ -12,6 +12,28 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: explicit character meetings (28 October 2026)
+
+Runtime `b251308a26639a18050be4f987515a6fa48abed7`, local tag
+`deploy-2026-10-28-character-meeting-fix`. Includes R-189 place/time encounters
+and keeps **Meet someone new** available after an absent draw when the location
+has capacity and a supported naming locale. Unrelated uncommitted changes
+were excluded using a clean detached worktree.
+
+The 406-file package SHA-256 is
+`fe291542e56b5dda6c1a99bc69bef40c143a5425090fc4b582ae4a26cc484886`.
+Rollback archive `/home/ubuntu/arcane-path-before-deploy-b251308.tar.gz`
+(0600), SHA-256
+`e687aed7349ad1243c249f7497ebef926c7db68e16cff19efe4d84a03b6a1884`.
+The cache symlink and runtime virtual environment were preserved; no database,
+nginx or timer configuration changed.
+
+Validation: 37 Python and 32 JavaScript tests passed against the committed
+snapshot. All deployed files match the package; deployed absence behavior
+preserves explicit meeting availability. Service active, release commit exact,
+game/API/client endpoints 200 over loopback, public HTTPS 401 without
+authentication, and no service error entries after restart.
+
 ## Correctif opérationnel : images d'événements (27 octobre 2026, 16 h 30)
 
 Symptôme : aucun événement n'affichait d'illustration. Depuis l'activation du
