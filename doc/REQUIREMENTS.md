@@ -1,5 +1,25 @@
 # Requirements tracked outside the design PDF
 
+## R-189 - Characters met on the fly, depending on place and time of day
+
+- Playtest feedback: players never found anyone to talk to. Opening the
+  character selector now rolls whether someone is around, from the place and
+  the journey's time of day (sun position at the player's cell).
+- Chances that someone is around: towns 95 % by day, 80 % at dawn/dusk, 45 % at
+  night; roads 75/50/20 %; countryside 50/30/10 %. The roll is deterministic per
+  journey, place and journey hour, so reopening never rerolls; waiting an hour
+  of journey time gives a new chance.
+- When someone is around and nobody lives there yet, a persistent character is
+  created automatically (this supersedes R-183's "opening the selector must not
+  generate a character"). Towns still allow meeting more people, up to 4.
+- Conversations are available on any land cell. Towns and major roads keep their
+  locations; minor roads and countryside share one wandering character per
+  2 km map chunk to bound the population. Population caps raised to 1,000 per
+  region and 5,000 overall; when a cap is reached, nobody new appears.
+- When nobody is around, the selector says so and explains that towns and
+  daytime are busier, in French and English.
+- **Status:** Implemented 28 October 2026; not yet deployed.
+
 ## R-188 - Pin town documentary photographs to the journal
 
 - Each successfully loaded photograph in the town gallery offers the same

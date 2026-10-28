@@ -259,6 +259,11 @@ for (const language of ["fr", "en"]) {
     ui.reset();
     current.cell = { terrain: "forest" };
     ui.localize();
+    assert.equal(get("open-conversation").disabled, false);
+    assert.equal(get("character-selector-context").textContent,
+      translate(language, "conversation.countryside"));
+    current.cell = { terrain: "water" };
+    ui.localize();
     assert.equal(get("open-conversation").disabled, true);
     assert.equal(get("town-conversation").disabled, true);
     await get("open-conversation").click();
@@ -317,4 +322,38 @@ test("unknown character knowledge does not remove player-authorized dialogue too
   assert.match(get("conversation-character-reply").textContent, /don’t know a verified fact/);
   assert.match(get("conversation-reply").textContent, /world rumour, not attributed/);
   ui.reset();
+});
+
+test("selector sends journey presence and explains absence or a newly met character", async t => {
+  const previous = globalThis.document, nodes = new Map();
+  const get = id => {
+    if (!nodes.has(id)) nodes.set(id, new Element());
+    return nodes.get(id);
+  };
+  globalThis.document = { getElementById: get, createElement: () => new Element(),
+    querySelector: () => null };
+  t.after(() => { globalThis.document = previous; });
+  const startedAt = Date.UTC(2026, 5, 21, 12, 0);
+  const current = { cell: { terrain: "grass" }, info: { latitude: 44.5, longitude: 2.2 },
+    state: { serverJourney: { id: "a".repeat(32) }, journalAccess: "capability", col: 0, row: 0,
+      startedAt, elapsedMinutes: 0 }, blocked: false };
+  const person = { id: "b".repeat(32), name: "Camille Aubry", role: "artisan", portrait: { status: "failed" } };
+  const presences = [];
+  let reply = { characters: [], canCreate: false, absent: true, location: { kind: "countryside" } };
+  const characters = { async list(state, presence) { presences.push(presence); return reply; } };
+  const ui = setupConversations((key, args) => translate("en", key, args), { context: () => current, characters });
+  await ui.open();
+  assert.deepEqual(presences[0], { phase: "day", hour: Math.floor(startedAt / 3_600_000) });
+  assert.equal(get("character-selector-status").textContent, translate("en", "character.absent"));
+  assert.equal(get("character-create").hidden, true);
+  get("character-selector-dialog").close();
+  current.state.elapsedMinutes = 12 * 60;
+  reply = { characters: [person], canCreate: false, arrived: person.id, limit: 1,
+    location: { kind: "countryside" } };
+  await ui.open();
+  assert.equal(presences[1].phase, "night");
+  assert.equal(presences[1].hour, presences[0].hour + 12);
+  assert.equal(get("character-selector-status").textContent,
+    translate("en", "character.arrived", { name: "Camille Aubry" }));
+  assert.equal(get("character-choices").children.length, 1);
 });

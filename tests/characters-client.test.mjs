@@ -13,7 +13,7 @@ test("character client uses the private capability for exchanges, contracts and 
     },
   });
   const state = { serverJourney: { id: "a".repeat(32) }, journalAccess: "b".repeat(64), col: 8, row: 9 };
-  await client.list(state);
+  await client.list(state, { phase: "dusk", hour: 7 });
   await client.create(state);
   await client.meet(state, "c".repeat(32));
   await client.exchange(state, "c".repeat(32), "parent");
@@ -35,6 +35,7 @@ test("character client uses the private capability for exchanges, contracts and 
     assert.equal(request.body.journey, state.serverJourney.id);
   }
   assert.equal(requests[0].body.action, "list");
+  assert.deepEqual(requests[0].body.presence, { phase: "dusk", hour: 7 });
   assert.equal(requests[1].body.action, "create");
   assert.equal(requests[1].body.requestId, "00000000-0000-4000-8000-000000000001");
   assert.equal(requests[2].body.action, "meet");

@@ -33,7 +33,7 @@ export function createCharactersClient({ fetcher = fetch, newRequestId = request
   }
   return {
     newRequestId,
-    list: state => send(state, "list"),
+    list: (state, presence) => send(state, "list", presence ? { presence } : {}),
     create: (state, request = newRequestId()) => send(state, "create", { requestId: request }),
     meet: (state, characterId, request = newRequestId()) =>
       send(state, "meet", { characterId, requestId: request }),

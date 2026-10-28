@@ -30,8 +30,16 @@ TOPICS = {"parent", "clues", "notebooks", "artifacts", "services",
 CONTRACT_EVENTS = {"offered", "accepted", "declined", "advanced", "completed", "abandoned"}
 MAX_TOWN_CHARACTERS = 4
 MAX_ROADSIDE_CHARACTERS = 1
-MAX_REGION_CHARACTERS = 200
-MAX_WORLD_CHARACTERS = 500
+MAX_REGION_CHARACTERS = 1000
+MAX_WORLD_CHARACTERS = 5000
+COUNTRYSIDE_CHUNK = 8
+PRESENCE_PHASES = ("day", "dawn", "dusk", "night")
+# Chance that someone is around, by place and journey time of day.
+PRESENCE_CHANCES = {
+    "town": {"day": .95, "dawn": .8, "dusk": .8, "night": .45},
+    "road": {"day": .75, "dawn": .5, "dusk": .5, "night": .2},
+    "countryside": {"day": .5, "dawn": .3, "dusk": .3, "night": .1},
+}
 MAX_PRIVATE_MEMORIES_PER_JOURNEY = 1000
 MAX_PENDING_PORTRAITS = 16
 PORTRAIT_PENDING_SECONDS = 1800
@@ -272,7 +280,10 @@ class Characters:
             location = {"id": f"road:{region}:{col}:{row}", "kind": "roadside",
                         "name": base.get("name", region), "col": col, "row": row}
         else:
-            raise JourneyConflict("No town or eligible roadside encounter is available here.")
+            # One wandering character per map chunk keeps the countryside population bounded.
+            location = {"id": f"wild:{region}:{col // COUNTRYSIDE_CHUNK}:{row // COUNTRYSIDE_CHUNK}",
+                        "kind": "countryside", "name": base.get("name", region), "col": col, "row": row}
+        location["terrain"] = cell.get("terrain")
         country_codes = cell.get("countryCodes", [])
         if not isinstance(country_codes, list):
             country_codes = []
@@ -446,10 +457,41 @@ class Characters:
                 character["visitorFacts"] = self._visitors(db, journey, row["character_id"])["facts"]
                 characters.append(character)
         limit = MAX_TOWN_CHARACTERS if location["kind"] == "town" else MAX_ROADSIDE_CHARACTERS
-        location = {key: value for key, value in location.items() if key != "namingLocale"}
+        location = {key: value for key, value in location.items() if key not in ("namingLocale", "terrain")}
         return {"location": location, "characters": characters,
                 "canCreate": bool(location.get("canCreate") and len(characters) < limit),
                 "limit": limit}
+
+    @staticmethod
+    def _presence_chance(location, phase):
+        if location["kind"] == "town":
+            group = "town"
+        elif location["kind"] == "roadside" or location.get("terrain") == "road":
+            group = "road"
+        else:
+            group = "countryside"
+        return PRESENCE_CHANCES[group][phase]
+
+    def _encounter(self, journey, region, location, presence):
+        if (not isinstance(presence, dict) or set(presence) != {"phase", "hour"}
+                or presence["phase"] not in PRESENCE_PHASES
+                or type(presence["hour"]) is not int or not 0 <= presence["hour"] < 2 ** 40):
+            raise JourneyRequest("Invalid character presence request.")
+        # Deterministic per journey, place and journey hour: reopening never rerolls.
+        seed = hashlib.sha256(f"presence:{journey}:{location['id']}:{presence['hour']}".encode()).hexdigest()
+        if int(seed[:8], 16) / 2 ** 32 >= self._presence_chance(location, presence["phase"]):
+            result = self._list(journey, region, location)
+            return {**result, "characters": [], "canCreate": False, "absent": True}
+        result = self._list(journey, region, location)
+        if result["characters"] or not location["canCreate"]:
+            return result
+        request_id = "-".join((seed[8:16], seed[16:20], seed[20:24], seed[24:28], seed[28:40]))
+        try:
+            arrived = self._create(journey, region, location, request_id)
+        except JourneyConflict:
+            result = self._list(journey, region, location)
+            return result if result["characters"] else {**result, "canCreate": False, "absent": True}
+        return {**self._list(journey, region, location), "arrived": arrived["id"]}
 
     def _create(self, journey, region, location, request_id):
         if not location["canCreate"]:
@@ -919,6 +961,8 @@ class Characters:
         expected = {"action", "journey", "location"}
         if action == "create":
             expected |= {"requestId"}
+        elif action == "list" and "presence" in data:
+            expected.add("presence")
         elif action in {"meet", "exchange", "portrait", "visitors"}:
             expected |= {"characterId"}
             if action == "visitors":
@@ -939,6 +983,8 @@ class Characters:
         journey, genesis, region, location = self._authorized_location(data, token)
         self._backfill_encounters(journey, genesis)
         if action == "list":
+            if "presence" in data:
+                return self._encounter(journey, region, location, data["presence"])
             return self._list(journey, region, location)
         if action in {"portrait", "visitors"}:
             character_id = data["characterId"]

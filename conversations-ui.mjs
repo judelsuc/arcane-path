@@ -1,4 +1,6 @@
 import { hospitalityTown } from "./hospitality.mjs";
+import { skyState } from "./sky.mjs";
+import { journeyDate } from "./travel.mjs";
 
 const TOPICS = {
   shelter: "sleep-travel", food: "eat-travel", work: "open-earn-money",
@@ -19,6 +21,7 @@ export function setupConversations(t, { context, characters }) {
   let currentCharacter;
   let available = [];
   let canCreate = false;
+  let limit = 4;
   let loaded = false;
   let busy = false;
   let returningToSelector = false;
@@ -32,12 +35,27 @@ export function setupConversations(t, { context, characters }) {
     const current = context();
     return current && current.state?.serverJourney?.id && current.state?.journalAccess &&
       !current.blocked && !current.state.ended && current.cell && !current.cell.unavailable &&
-      (Boolean(hospitalityTown(current.cell)) || current.cell.terrain === "major_road")
+      current.cell.terrain !== "water"
       ? current : null;
+  }
+
+  function presence(current) {
+    const date = journeyDate(current.state);
+    if (!Number.isFinite(date.getTime())) return undefined;
+    const { latitude, longitude } = current.info ?? {};
+    let phase;
+    try {
+      phase = skyState(date, latitude, longitude).background;
+    } catch {
+      const hour = date.getUTCHours();
+      phase = hour >= 7 && hour < 20 ? "day" : "night";
+    }
+    return { phase, hour: Math.floor(date.getTime() / 3_600_000) };
   }
 
   function locationText(current) {
     const town = current && hospitalityTown(current.cell);
+    if (current && !town && current.cell.terrain !== "major_road") return t("conversation.countryside");
     return t(town ? "conversation.welcome" : "conversation.onRoad", { town: town?.name ?? "" });
   }
 
@@ -178,16 +196,19 @@ export function setupConversations(t, { context, characters }) {
     if (!current) return;
     const requestContext = current;
     try {
-      const result = await characters.list(current.state);
+      const result = await characters.list(current.state, presence(current));
       if (!sameJourney(requestContext)) return;
       if (!Array.isArray(result.characters) || typeof result.canCreate !== "boolean") {
         throw new Error("Invalid character registry response.");
       }
       available = result.characters;
       canCreate = result.canCreate;
+      if (Number.isInteger(result.limit)) limit = result.limit;
       loaded = true;
-      $("character-selector-status").textContent = result.location?.kind === "roadside"
-        ? t("character.roadside") : t("character.available");
+      const arrived = available.find(character => character.id === result.arrived);
+      $("character-selector-status").textContent = result.absent ? t("character.absent")
+        : arrived ? t("character.arrived", { name: arrived.name })
+          : result.location?.kind === "town" ? t("character.available") : t("character.roadside");
     } catch (error) {
       if (!sameJourney(requestContext)) return;
       $("character-selector-status").textContent = t("character.loadFailed", { error: error.message });
@@ -260,7 +281,7 @@ export function setupConversations(t, { context, characters }) {
       if (!sameJourney(current)) return;
       pendingCreate = undefined;
       available = [...available.filter(item => item.id !== character.id), character];
-      canCreate = available.length < (character.location?.kind === "roadside" ? 1 : 4);
+      canCreate = available.length < limit;
       loaded = true;
       renderCharacters();
       busy = false;

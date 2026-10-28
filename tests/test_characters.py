@@ -242,6 +242,50 @@ class CharactersTests(unittest.TestCase):
         with self.assertRaises(JourneyConflict):
             self.request("exchange", characterId=second["id"], topic="parent", requestId=event_id)
 
+    def test_presence_depends_on_place_and_time_and_generates_someone_on_the_fly(self):
+        def presence_rate(location, phase):
+            found = 0
+            for hour in range(200):
+                result = self.request("list", journey=f"{hour:032x}", location=location,
+                                      presence={"phase": phase, "hour": hour})
+                found += not result.get("absent")
+            return found / 200
+
+        town_day, town_night = presence_rate((0, 0), "day"), presence_rate((0, 0), "night")
+        field_day, field_night = presence_rate((2, 0), "day"), presence_rate((2, 0), "night")
+        self.assertGreater(town_day, .85)
+        self.assertGreater(town_day, town_night)
+        self.assertGreater(town_night, field_night)
+        self.assertGreater(field_day, field_night)
+        self.assertLess(field_night, .25)
+
+        journey = "e" * 32
+        hour = next(h for h in range(500) if not self.request(
+            "list", journey=journey, location=(2, 0), presence={"phase": "night", "hour": h}).get("absent"))
+        met = self.request("list", journey=journey, location=(2, 0), presence={"phase": "night", "hour": hour})
+        self.assertEqual(len(met["characters"]), 1)
+        self.assertNotIn("arrived", met)
+        absent = next(h for h in range(500) if self.request(
+            "list", journey=journey, location=(2, 0), presence={"phase": "night", "hour": h}).get("absent"))
+        hidden = self.request("list", journey=journey, location=(2, 0), presence={"phase": "night", "hour": absent})
+        self.assertEqual((hidden["characters"], hidden["canCreate"]), ([], False))
+        for presence in ({"phase": "noon", "hour": 1}, {"phase": "day", "hour": -1},
+                         {"phase": "day", "hour": True}, {"phase": "day"}):
+            with self.assertRaises(JourneyRequest):
+                self.request("list", presence=presence)
+
+    def test_first_presence_creates_one_persisted_character_idempotently(self):
+        first = self.request("list", location=(1, 0), presence={"phase": "day", "hour": 7})
+        if first.get("absent"):
+            first = next(result for hour in range(8, 100) for result in [self.request(
+                "list", location=(1, 0), presence={"phase": "day", "hour": hour})] if not result.get("absent"))
+        self.assertEqual(len(first["characters"]), 1)
+        self.assertEqual(first["arrived"], first["characters"][0]["id"])
+        again = self.request("list", location=(1, 0), presence={"phase": "day", "hour": 7})
+        self.assertLessEqual(len(again["characters"]), 1)
+        with closing(sqlite3.connect(self.service.path)) as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM world_characters").fetchone()[0], 1)
+
     def test_only_valid_town_or_roadside_position_is_eligible(self):
         road = self.request("list", location=(1, 0))
         self.assertEqual(road["location"]["kind"], "roadside")
@@ -249,8 +293,10 @@ class CharactersTests(unittest.TestCase):
         created = self.create("00000000-0000-4000-8000-000000000002", location=(1, 0))
         self.assertEqual(created["location"]["kind"], "roadside")
         self.assertFalse(self.request("list", location=(1, 0))["canCreate"])
-        with self.assertRaises(JourneyConflict):
-            self.request("list", location=(2, 0))
+        countryside = self.request("list", location=(2, 0))
+        self.assertEqual((countryside["location"]["kind"], countryside["location"]["id"]),
+                         ("countryside", "wild:firmi:0:0"))
+        self.assertNotIn("terrain", countryside["location"])
         for location in ((3, 0), (-1, 0)):
             with self.assertRaises(JourneyConflict):
                 self.request("list", location=location)
