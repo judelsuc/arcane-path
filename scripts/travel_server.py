@@ -848,7 +848,7 @@ def make_handler(store, jobs, path_pool=None):
     lore = LorePlaytest(journeys, abandoned, paths=parent_paths, chunk_jobs=jobs)
     portrait_writer = (OvhImageWriter(journal_art.writer.token, style=CHARACTER_IMAGE_STYLE)
                        if journal_art.writer else None)
-    characters = Characters(journeys, lore, writer=portrait_writer)
+    characters = Characters(journeys, lore, writer=portrait_writer, quests=quest_destinations)
     town_content = TownContent(journeys, lore)
     inscriptions = Inscriptions(journeys, lore, writer=(
         OvhWriter(live_narrative.writer.token, LIVE_TEXT_MODEL, moderation_request)

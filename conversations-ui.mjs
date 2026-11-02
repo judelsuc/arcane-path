@@ -12,7 +12,7 @@ const PANE_TOPICS = {
   services: ["services", "dialogue-services"],
 };
 
-export function setupConversations(t, { context, characters }) {
+export function setupConversations(t, { context, characters, onCharacter = () => {} }) {
   const $ = id => document.getElementById(id);
   const dialog = $("conversation-dialog");
   const selector = $("character-selector-dialog");
@@ -255,12 +255,14 @@ export function setupConversations(t, { context, characters }) {
       const meeting = await characters.meet(current.state, character.id);
       if (!sameJourney(current)) return;
       currentCharacter = { ...character, familiarity: meeting?.familiarity ?? character.familiarity };
+      if (character.profile?.quest) selected = "services";
       exchangeReply = undefined;
       $("conversation-character-status").textContent = "";
       selector.close();
       dialog.showModal();
+      onCharacter(currentCharacter);
       localize();
-      $("conversation-parent").focus();
+      $(`conversation-${selected}`).focus();
     } catch (error) {
       $("character-selector-status").textContent = t("character.openFailed", { error: error.message });
     } finally {

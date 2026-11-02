@@ -12,6 +12,43 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: audio byte ranges (2 November 2026)
+
+Runtime `026d152ac1960867f7f7ad1655f4adf731e670c7`, tag
+`deploy-2026-11-02-audio-ranges`, game version 0.21.1; packaged at
+`2026-11-02T07:11:54.436567+00:00`. A small runtime delta and nginx audio
+location were deployed without retransferring music or restarting the game
+service. Nginx serves the approved WAV/MP3/OGG paths directly with the correct
+MIME types and byte-range support, retaining authentication and private headers.
+
+Delta SHA-256:
+`185cf7fb5464d7bac4c305faf22b894484750e2040a03f84aeb293a9238e2ce5`.
+Rollback runtime archive `/home/ubuntu/runtime-before-audio-026d152.tar.gz`,
+SHA-256 `fb4ca858efb2ed6939444390859ca5ea7ec528df43d48842e66faca1a209908d`;
+nginx backup `/home/ubuntu/nginx-before-audio-026d152.conf`,
+SHA-256 `87ea54c4db38fa2d88c2e3c2ba86e975dd3d1b42a02702bb3e3adf87dcc369fb`.
+Keep both backups; preserve the cache symlink and shared virtual environment
+on rollback.
+
+Validation: candidate nginx returned exact byte fragments (206 and
+Content-Range), rejected unauthenticated access (401), writes (403), invalid
+ranges (416), and hidden or unapproved paths (404). Twenty HTTPS configuration
+and 29 JavaScript audio/localization/release tests passed. Live nginx
+configuration matched the checkpoint, nginx and the game service were active,
+and protected audio returned 401 without authentication. Browser playback was
+not verified.
+
+## Checkpoint deployed: streamed-town encounters (29 October 2026)
+
+Runtime `691f809`, tag `deploy-2026-10-29-streamed-town-encounters`, packaged at
+`2026-10-29T08:03:05.148642+00:00`. Deployment was confirmed by inspecting the
+live release and runtime after a slow transfer; the audio checkpoint above
+includes this fix. Missing country metadata in streamed towns now triggers a
+coordinate-specific country lookup rather than inheriting the departure
+locale. Unsupported countries and lookup failures are explicit; empty lists
+no longer promise available people. Sixty-six Python and 34 JavaScript tests
+passed before deployment.
+
 ## Checkpoint deployed: explicit character meetings (28 October 2026)
 
 Runtime `b251308a26639a18050be4f987515a6fa48abed7`, local tag

@@ -1,6 +1,11 @@
 {
-  "version": "0.21.1",
+  "version": "0.21.2",
   "entries": [
+    {
+      "version": "0.21.2",
+      "fr": "Les personnages proposent leur propre mission dès la rencontre : plus de rayon à choisir ni de quête à demander. Leur demande reste la même après un rechargement ; les pannes de recherche peuvent être réessayées sans inventer de destination. Après douze heures de voyage sans progrès sur la piste du parent, une indication revient même loin du chemin et sans dormir. Une ville déjà confirmée garde la priorité ; sinon une intuition donne une direction approximative depuis votre position actuelle pour retrouver la piste, sans révéler la ville cachée ni ses coordonnées. L'aide est conservée dans la sauvegarde, sans inventer de témoignage. Les rêves de secours restent inchangés.",
+      "en": "Characters offer their own quest when you meet: no radius to choose or quest to request. Their offer remains the same after reloading; discovery failures can be retried without inventing destinations. After twelve journey hours without progress on the parent's trail, guidance arrives even off the path and without sleeping. An already confirmed town takes priority; otherwise an intuition gives an approximate direction from your current position to reconnect with the trail, without revealing the hidden town or its coordinates. This help is saved without inventing testimony. Rescue dreams remain unchanged."
+    },
     {
       "version": "0.21.1",
       "fr": "La diffusion audio prend en charge les fragments nécessaires à Safari pour lire les musiques WAV sans télécharger le fichier entier. Un échec de chargement invite à vérifier la connexion et à réessayer, plutôt qu’à télécharger des pistes déjà présentes.",

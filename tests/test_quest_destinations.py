@@ -118,6 +118,39 @@ class QuestDestinationsTests(unittest.TestCase):
         self.assertEqual(self.settle(), result)
         self.fetcher.assert_called_once()
 
+    def test_failed_discovery_can_retry_the_same_identity_without_rerolling(self):
+        self.fetcher.side_effect = TimeoutError("Provider timed out")
+        with self.assertLogs(level="ERROR"):
+            failed = self.settle()
+        self.assertEqual(failed["status"], "failed")
+        self.assertTrue(failed["retryable"])
+        self.fetcher.side_effect = None
+        ready = self.settle({**self.data, "retry": True})
+        self.assertEqual(ready["status"], "ready")
+        self.assertEqual(self.settle(), ready)
+        with self.service.connect() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM instances").fetchone()[0], 1)
+
+    def test_character_offer_is_fixed_across_meetings_and_keeps_original_origin(self):
+        character = {"id": "b" * 32, "profile": {"quest": {
+            "version": 1, "template": "fool.first-address", "scope": "local"}}}
+        first = self.service.character_offer(self.owner, "test", {"col": 0, "row": 0}, character)
+        self.service.future.result(timeout=5)
+        ready = self.service.character_offer(self.owner, "test", {"col": 1, "row": 0}, character)
+        self.assertEqual(ready["status"], "ready")
+        self.assertEqual(first["nonce"], ready["nonce"])
+        self.assertEqual(ready["origin"], {"col": 0, "row": 0})
+        self.assertEqual(ready["characterId"], character["id"])
+        self.assertEqual(ready["template"], character["profile"]["quest"]["template"])
+        self.assertEqual(self.service.character_offer(
+            self.owner, "test", {"col": 0, "row": 0}, character, retry=True), ready)
+        self.fetcher.assert_called_once()
+        self.service.close()
+        reopened = QuestDestinations(self.chunks, self.auth, self.transport, fetcher=self.fetcher, towns=self.towns)
+        self.addCleanup(reopened.close)
+        self.assertEqual(reopened.character_offer(
+            self.owner, "test", {"col": 2, "row": 0}, character), ready)
+
     def test_same_nonce_in_flight_deduplicates(self):
         entered, release = threading.Event(), threading.Event()
         values = self.fetcher.return_value
@@ -277,6 +310,19 @@ class QuestDestinationsTests(unittest.TestCase):
         self.assertIn("around%3A2000", request.data.decode())
         response.read.assert_called_once_with(2_000_001)
 
+    def test_acquisition_uses_existing_backup_provider_after_timeout(self):
+        response = Mock()
+        response.__enter__ = Mock(return_value=response)
+        response.__exit__ = Mock(return_value=False)
+        response.read.return_value = b'{"elements":[]}'
+        with self.assertLogs(level="WARNING"), patch("quest_destinations.urllib.request.urlopen",
+                side_effect=[TimeoutError("primary timed out"), response]) as network:
+            self.assertEqual(acquire({"latitude": 48, "longitude": 2}), [])
+        self.assertEqual(network.call_count, 2)
+        self.assertNotEqual(network.call_args_list[0].args[0].full_url,
+                            network.call_args_list[1].args[0].full_url)
+        self.assertEqual(network.call_args_list[0].args[0].data, network.call_args_list[1].args[0].data)
+
 
 class QuestEndpointTests(unittest.TestCase):
     def test_real_http_capability_conflicts_private_cache_and_origin_protection(self):
@@ -307,12 +353,12 @@ class QuestEndpointTests(unittest.TestCase):
             url = f"http://127.0.0.1:{server.server_port}/api/quest-destinations"
             data = {"journey": owner, "template": "fool.first-address", "nonce": "d" * 32,
                     "origin": {"col": 12, "row": 12}, "scope": "regional"}
-            def post(value, key=token, origin=None):
+            def post(value, key=token, origin=None, endpoint=url):
                 headers = {"Content-Type": "application/json", "X-Journal-Capability": key}
                 if origin:
                     headers["Origin"] = origin
                 return urllib.request.urlopen(urllib.request.Request(
-                    url, data=json.dumps(value).encode(), headers=headers), timeout=5)
+                    endpoint, data=json.dumps(value).encode(), headers=headers), timeout=5)
             try:
                 with post(data) as response:
                     self.assertEqual(response.status, 200)
@@ -331,6 +377,40 @@ class QuestEndpointTests(unittest.TestCase):
                     self.assertEqual(error.exception.code, status)
                     error.exception.close()
                 handler.quest_destinations.build.assert_called_once()
+
+                def character_result(request, region, authored):
+                    return {**ready, "destinations": [
+                        {**ready["destinations"][0], "id": f"osm:node/{index + 10}",
+                         "col": 13 + index, "kind": role["kind"],
+                         "sourceUrl": f"https://www.openstreetmap.org/node/{index + 10}"}
+                        for index, role in enumerate(authored["roles"])]}
+                handler.quest_destinations.build.side_effect = character_result
+                character_url = url.replace("/quest-destinations", "/characters")
+                character_request = {"journey": owner, "location": {"col": 12, "row": 12}}
+                with post({**character_request, "action": "create", "requestId": str(uuid.uuid4())},
+                          endpoint=character_url) as response:
+                    character = json.load(response)
+                self.assertIn("quest", character["profile"])
+                handler.quest_destinations.future.result(timeout=5)
+                offer_request = {**character_request, "action": "quest",
+                                 "characterId": character["id"], "retry": False}
+                with self.assertRaises(urllib.error.HTTPError) as error:
+                    post(offer_request, endpoint=character_url)
+                self.assertEqual(error.exception.code, 409)
+                error.exception.close()
+                with post({**character_request, "action": "meet", "characterId": character["id"],
+                           "requestId": str(uuid.uuid4())}, endpoint=character_url) as response:
+                    self.assertEqual(response.status, 200)
+                with post(offer_request, endpoint=character_url) as response:
+                    offer = json.load(response)
+                    self.assertEqual(response.headers["Cache-Control"], "no-store")
+                self.assertEqual(offer["status"], "ready")
+                self.assertEqual(offer["characterId"], character["id"])
+                self.assertEqual(offer["template"], character["profile"]["quest"]["template"])
+                self.assertEqual(offer["origin"], character_request["location"])
+                with post({**offer_request, "retry": True}, endpoint=character_url) as response:
+                    self.assertEqual(json.load(response), offer)
+                self.assertEqual(handler.quest_destinations.build.call_count, 2)
             finally:
                 server.shutdown()
                 server.server_close()

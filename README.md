@@ -1,5 +1,45 @@
 # Les Arcanes du Chemin
 
+## Character-owned service quests
+
+Characters are created with a stable service-quest assignment suited to their
+role. Destination verification starts in the background at creation; existing
+characters receive an assignment when first consulted. Meeting the character
+opens their proposal automatically: accept or decline, without choosing a
+distance or requesting a random quest. Only that person's offer appears in
+Dialogue; pending offers from earlier meetings remain in Quests.
+
+The same character keeps the same quest, route origin and destinations for
+that journey, including after reload or refusal. New characters provide new
+instances. Required real POIs and traversable routes are still verified before
+an offer can be accepted. A temporary map-provider failure tries the existing
+backup and permits retrying the same durable request, never inventing a place
+or rerolling the contract. Existing accepted quests, rewards and progress remain
+valid.
+
+## Keeping the parent present while travelling
+
+After 12 in-game hours without new parent-trail progress, a nonblocking notice
+on the game screen recalls the parent's existing letter, a memory of home or
+their known wish, alongside the current earned lead. It works anywhere,
+including far from the parent's path, without searching or sleeping. Its button
+opens the parent trail. New evidence restarts the delay; saving, reopening a
+window and reloading do not reroll it. A long action produces only one reminder.
+For an already earned current-stage town, the notice also gives the existing
+public bearing/distance/coordinates from the player's current position;
+unconfirmed suggestions stay labelled as such. Otherwise it explains how to
+search with J or ask about collected letters/photos with I, without revealing
+an unknown destination. At the stop it prompts the next investigation.
+If no confirmed town is known, the same 12-hour notice also earns an approximate
+eight-way intuition toward the current trail stop, calculated from the player's
+position when it appears—even far off-path with only the opening letter.
+It is explicitly not testimony or a known destination: no hidden name,
+coordinates, distance or route is displayed. The latest intuition is saved with
+its origin and remains anchored there until a later notice replaces it; moving
+or reloading does not recalculate it. Confirmed earned-town guidance takes priority.
+Only one bounded help receipt is kept. No cost, stage advancement or provider
+call is added. Existing rescue dreams remain unchanged.
+
 ## Game version and notebook rumours
 
 Options includes the game version and a French/English changelog, with the

@@ -15,7 +15,7 @@ function requestId() {
 }
 
 export function createCharactersClient({ fetcher = fetch, newRequestId = requestId } = {}) {
-  async function send(state, action, details = {}) {
+  async function send(state, action, details = {}, signal) {
     if (!state?.serverJourney?.id || !state.journalAccess) {
       throw new Error("A server journey and private capability are required.");
     }
@@ -24,7 +24,7 @@ export function createCharactersClient({ fetcher = fetch, newRequestId = request
       headers: { "Content-Type": "application/json", "X-Journal-Capability": state.journalAccess },
       body: JSON.stringify({ action, journey: state.serverJourney.id,
         location: { col: state.col, row: state.row }, ...details }),
-      signal: AbortSignal.timeout(10_000),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10_000)]) : AbortSignal.timeout(10_000),
     });
     const result = action === "portrait" && response.ok
       ? await response.blob() : await response.json();
@@ -37,6 +37,7 @@ export function createCharactersClient({ fetcher = fetch, newRequestId = request
     create: (state, request = newRequestId()) => send(state, "create", { requestId: request }),
     meet: (state, characterId, request = newRequestId()) =>
       send(state, "meet", { characterId, requestId: request }),
+    quest: (state, characterId, { retry = false, signal } = {}) => send(state, "quest", { characterId, retry }, signal),
     exchange: (state, characterId, topic, request = newRequestId()) => {
       if (!TOPICS.has(topic)) throw new Error("Unknown character conversation topic.");
       return send(state, "exchange", { characterId, topic, requestId: request });

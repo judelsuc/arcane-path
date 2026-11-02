@@ -58,3 +58,18 @@ test("character client rejects missing authorization and unknown topics", async 
     serverJourney: { id: "a".repeat(32) }, journalAccess: "b".repeat(64), col: 0, row: 0,
   }, "c".repeat(32), "hidden-stage"), /Unknown character conversation topic/);
 });
+
+test("character quest requests contain the speaker, not a player-chosen template or radius", async () => {
+  const calls = [];
+  const client = createCharactersClient({ fetcher: async (_, options) => {
+    calls.push(JSON.parse(options.body));
+    return { ok: true, json: async () => ({ status: "queued" }) };
+  } });
+  const state = { serverJourney: { id: "a".repeat(32) }, journalAccess: "private", col: 8, row: 9 };
+  await client.quest(state, "b".repeat(32));
+  await client.quest(state, "b".repeat(32), { retry: true });
+  assert.deepEqual(calls, [false, true].map(retry => ({
+    action: "quest", journey: state.serverJourney.id, location: { col: 8, row: 9 },
+    characterId: "b".repeat(32), retry,
+  })));
+});

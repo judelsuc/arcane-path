@@ -120,6 +120,40 @@ class ContentStorageChecks:
             self.assertEqual(second.request(data, "capability"), {"status": "ready", "winner": "new-worker"})
         self.assertEqual(second.build.call_count, 1)
 
+    def test_shared_character_retry_resets_lease_without_rerolling_origin_or_identity(self):
+        first = self.quests("one", Mock(side_effect=TimeoutError("Provider timed out")))
+        character = {"id": "b" * 32, "profile": {"quest": {
+            "version": 1, "template": "fool.first-address", "scope": "local"}}}
+        with self.assertLogs(level="ERROR"):
+            initial = first.character_offer("a" * 32, "test", {"col": 0, "row": 0}, character)
+            first.future.result(timeout=10)
+        failed = first.character_offer("a" * 32, "test", {"col": 1, "row": 0}, character)
+        self.assertEqual(failed["status"], "failed")
+        self.assertTrue(failed["retryable"])
+        second = self.quests("two")
+        with patch.object(second, "kick"):
+            queued = second.character_offer("a" * 32, "test", {"col": 2, "row": 0},
+                                            character, retry=True)
+        self.assertEqual(queued["status"], "queued")
+        self.assertEqual(queued["nonce"], initial["nonce"])
+        self.assertEqual(queued["origin"], {"col": 0, "row": 0})
+        with second.connect() as db:
+            row = db.execute("SELECT token,expires,attempts,output FROM quest_instances").fetchone()
+            self.assertIsNone(row["token"])
+            self.assertIsNone(row["expires"])
+            self.assertIsNone(row["output"])
+            self.assertEqual(row["attempts"], 0)
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM quest_instances").fetchone()[0], 1)
+        second.kick()
+        second.future.result(timeout=10)
+        ready = second.character_offer("a" * 32, "test", {"col": 3, "row": 0}, character)
+        self.assertEqual(ready["status"], "ready")
+        self.assertEqual(ready["nonce"], initial["nonce"])
+        self.assertEqual(ready["origin"], {"col": 0, "row": 0})
+        second.build.assert_called_once()
+        self.assertEqual(first.character_offer(
+            "a" * 32, "test", {"col": 4, "row": 0}, character), ready)
+
     def test_shared_quest_limits_and_poi_cache_are_global(self):
         first, second = self.quests("one"), self.quests("two")
         with patch.object(first, "kick"):

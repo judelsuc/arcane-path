@@ -21,7 +21,7 @@ class Element {
   replaceChildren(...children) { this.children = children; }
 }
 
-function portraitFixture(t, fetchPortrait) {
+function portraitFixture(t, fetchPortrait, { profile, onCharacter } = {}) {
   const previous = globalThis.document, nodes = new Map(), revoked = [], errors = [];
   const get = id => {
     if (!nodes.has(id)) nodes.set(id, new Element());
@@ -38,18 +38,31 @@ function portraitFixture(t, fetchPortrait) {
     state: { serverJourney: { id: "a".repeat(32) }, journalAccess: "capability", col: 0, row: 0 },
     blocked: false };
   const character = { id: "b".repeat(32), name: "Camille Aubry", role: "artisan",
-    portrait: { status: "ready", ref: "portrait" } };
+    portrait: { status: "ready", ref: "portrait" }, ...(profile ? { profile } : {}) };
   const characters = {
     async list() { return { characters: [character], canCreate: false }; },
     portrait: fetchPortrait, async meet() {},
   };
   const ui = setupConversations((key, args) => translate("en", key, args),
-    { context: () => current, characters });
+    { context: () => current, characters, onCharacter });
   return { ui, get, characters, revoked, errors, created: () => created,
     portrait: () => get("character-choices").children[0].children[0].children[0],
     status: () => get("character-choices").children[0].children[0].children[1].children[2] };
 }
 
+test("meeting a character with a quest opens their proposal and notifies the quest UI", async t => {
+  const speakers = [];
+  const fixture = portraitFixture(t, async () => new Blob(["portrait"]), {
+    profile: { quest: { version: 1, template: "magician.workshop-trial", scope: "local" } },
+    onCharacter: character => speakers.push(character.id),
+  });
+  await fixture.ui.open();
+  await fixture.get("character-choices").children[0].children[0].click();
+  assert.deepEqual(speakers, ["b".repeat(32)]);
+  assert.equal(fixture.get("dialogue-services").hidden, false);
+  assert.equal(fixture.get("conversation-services").focused, true);
+  assert.equal(fixture.get("conversation-dialog").open, true);
+});
 test("portrait fetch failure is labelled visibly and reported without blocking dialogue", async t => {
   const fixture = portraitFixture(t, async () => { throw new Error("storage unavailable"); });
   await fixture.ui.open();

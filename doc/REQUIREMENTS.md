@@ -1,5 +1,41 @@
 # Requirements tracked outside the design PDF
 
+## Periodic parent recollections, including away from the trail
+
+- Playtest feedback (2 November 2026): the parent disappears from play when the
+  traveller is not on the parent's path.
+- After 720 journey minutes without parent-trail progress, show a nonblocking
+  FR/EN game-screen notice with the current earned clue and a rotating existing
+  letter, shared memory or known desire from the parent's biography. Older
+  journeys without an intimate profile receive an honest recorded-clue reminder.
+- Reuse the rescue-dream check interval (12 hours), without requiring sleep,
+  a successful search, path proximity, another witness or network generation.
+  New trail progress restarts the delay. Persist the latest notice/cadence across
+  saves; one long action must not create a burst of missed notices.
+- Offer a direct button to reread the parent's trail. Do not mark remembered
+  facts as newly earned, advance the stage, reveal hidden towns or reinterpret
+  old clue directions as bearings from the player's current position.
+- Include actionable recovery: reuse `citedTowns` and `citedTownDirections` for
+  current-stage earned towns only, preferring confirmed knowledge to suggestions
+  and preserving uncertainty and straight-line disclaimers. With no earned town,
+  explain J field searches or I recognition of collected letters/photos. At the
+  stop, prompt investigation. Never derive navigation from hidden trail stages.
+- Confirmed follow-up choice (2 November): after the same 720-minute quiet
+  interval, also grant approximate current-position direction toward the current
+  active trail stop when no confirmed town is known. Reuse the rescue dream's
+  eight-way bearing helper and active trail target selection, without sleep,
+  route-provider calls or invented witnesses. Label this as intuition, not fact.
+  Never show the unknown town name, coordinates, distance or next-stage target.
+- Save the latest intuition's origin/bearing inside the bounded latest help
+  receipt; validate it against its recorded stage. Moving/reloading must not
+  reroll or reinterpret the saved bearing as coming from the new position.
+  The next due notice can refresh it from the then-current position. Keep one
+  notice per long action and existing progress resets; old receipt-only saves
+  remain readable. Confirmed earned-town navigation takes precedence.
+- Existing 48-hour sleep rescue remains unchanged. This intuition is new earned
+  rescue help, not a fictional search result or new off-path testimony.
+- **Status:** Implemented locally; not deployed.
+
 ## R-189 - Characters met on the fly, depending on place and time of day
 
 - Playtest feedback: players never found anyone to talk to. Opening the
@@ -550,6 +586,19 @@
 
 ## R-180 - Repeatable arcana quests anchored to geographic POIs
 
+- Character-owned proposal flow: generate a stable role-specific quest plan
+  with each character, prepare its real destinations in the background, and
+  present it automatically on meeting. Remove the player's distance selector
+  and quest-generation button. Accept/refuse remain explicit. Older characters
+  acquire a pinned assignment without changing identity.
+- Each character's per-journey quest ID, initial origin and verified
+  destinations survive retries, later meetings and reloads. A refused or
+  completed offer is not rerolled; another character can offer another instance.
+  Dialogue shows only the current speaker's offer; previous pending offers
+  remain accessible in Quests.
+- Temporary provider failures use the existing Overpass backup, bounded
+  automatic retries and an explicit retry of the same durable job.
+  No compatible verified destination means no offer, not an invented place.
 - Replace abstract secondary encounters with repeatable quest templates that
   require travel to identified POIs, potentially very far away and through
   several ordered steps. Arcana inspire concrete human needs, not mandatory

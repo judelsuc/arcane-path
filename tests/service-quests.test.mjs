@@ -117,6 +117,22 @@ test("all 44 complete every ordered role at its exact cell, with no prerequisite
   }
 });
 
+test("a character proposal retains its original route origin when met elsewhere in the same town", () => {
+  const initial = { ...state(), col: 1, row: 1 };
+  const options = offerOptions(QUEST_TEMPLATES[0], 1, {
+    characterId: "b".repeat(32), origin: { col: 0, row: 0 },
+  });
+  const current = createServiceOffer(initial, options);
+  const quest = current.serviceQuests.offers[0];
+  assert.deepEqual(quest.origin, { col: 0, row: 0 });
+  assert.deepEqual([quest.history[0].col, quest.history[0].row], [0, 0]);
+  assert.deepEqual([current.col, current.row], [1, 1]);
+  validateServiceQuests(current);
+  const completed = complete(acceptServiceQuest(current, quest.id), quest.id);
+  assert.equal(completed.serviceQuests.quests[0].status, "completed");
+  assert.throws(() => createServiceOffer(initial, { ...options, origin: { col: "bad", row: 0 } }));
+});
+
 test("reward uses the frozen uncapped formula, exact ceil precision and safe finite values", () => {
   for (const [distance, steps, result] of [[20, 1, 900], [100, 2, 2800],
     [500, 2, 10800], [1000, 3, 21100], [10000, 3, 201100],

@@ -175,6 +175,54 @@ class CharactersTests(unittest.TestCase):
         with self.assertRaises(JourneyConflict):
             self.create("00000000-0000-4000-8000-000000000001", location=(1, 0))
 
+    def test_character_is_generated_with_a_stable_role_specific_quest(self):
+        created = self.create()
+        plan = created["profile"]["quest"]
+        self.assertEqual(plan, character_module.character_quest(created["id"], created["role"]))
+        self.assertEqual(plan["scope"], "local")
+        with closing(sqlite3.connect(self.service.path)) as db:
+            profile = json.loads(db.execute("SELECT profile FROM world_characters WHERE character_id=?",
+                                            (created["id"],)).fetchone()[0])
+        self.assertEqual(profile["quest"], plan)
+        self.assertEqual(self.create()["profile"]["quest"], plan)
+        self.assertEqual(self.request("list", journey="b" * 32)["characters"][0]["profile"]["quest"], plan)
+
+    def test_character_quest_prepares_on_creation_and_requires_a_real_meeting(self):
+        quests = self.service.quests = Mock()
+        quests.character_offer.return_value = {"status": "queued"}
+        created = self.create()
+        self.assertEqual(created["quest"]["status"], "queued")
+        quests.character_offer.assert_called_once()
+        with self.assertRaisesRegex(JourneyConflict, "Meet this character"):
+            self.request("quest", characterId=created["id"], retry=False)
+        self.request("meet", characterId=created["id"],
+                     requestId="00000000-0000-4000-8000-000000000099")
+        result = self.request("quest", characterId=created["id"], retry=True)
+        self.assertEqual(result["status"], "queued")
+        self.assertEqual(quests.character_offer.call_args.kwargs, {"retry": True})
+        with self.assertRaisesRegex(JourneyConflict, "not available"):
+            self.request("quest", characterId=created["id"], retry=False, location=(1, 0))
+        with self.assertRaises(JourneyRequest):
+            self.request("quest", characterId=created["id"], retry="yes")
+        with self.assertRaises(JournalForbidden):
+            self.request("quest", characterId=created["id"], retry=False, token="wrong")
+
+    def test_legacy_character_gets_a_pinned_quest_without_changing_identity(self):
+        created = self.create()
+        with closing(sqlite3.connect(self.service.path)) as db, db:
+            db.execute("UPDATE world_characters SET profile=? WHERE character_id=?",
+                       (json.dumps({"version": 1, "trait": "patient"}), created["id"]))
+        self.service.quests = Mock()
+        self.service.quests.character_offer.return_value = {"status": "queued"}
+        self.request("meet", characterId=created["id"],
+                     requestId="00000000-0000-4000-8000-000000000098")
+        self.request("quest", characterId=created["id"], retry=False)
+        with closing(sqlite3.connect(self.service.path)) as db:
+            profile = json.loads(db.execute("SELECT profile FROM world_characters WHERE character_id=?",
+                                            (created["id"],)).fetchone()[0])
+        self.assertEqual(profile["quest"], created["profile"]["quest"])
+        self.assertEqual(self.request("list")["characters"][0]["id"], created["id"])
+
     def test_concurrent_creation_has_unique_bounded_identities(self):
         ids = [f"00000000-0000-4000-8000-{index:012x}" for index in range(2, 10)]
         def create(request_id):

@@ -78,3 +78,48 @@ test("destination polling reuses the frozen request and explicitly surfaces fail
     new Response(JSON.stringify({ status: "failed", error: "Route provider unavailable" })) });
   await assert.rejects(failed.prepare(state, request), /Route provider unavailable/);
 });
+
+test("character offers retry temporary discovery failures with the same speaker and no distance selector", async t => {
+  t.mock.method(console, "warn", () => {});
+  const bodies = [], waits = [];
+  const responses = [
+    { status: "running" }, { status: "failed", retryable: true, error: "Provider timeout" },
+    { status: "queued" }, { status: "ready", nonce: "c".repeat(32) },
+  ];
+  const client = createQuestDestinationClient({ wait: async ms => { waits.push(ms); },
+    fetcher: async (url, options) => {
+      assert.equal(url, "/api/characters");
+      assert.equal(options.headers["X-Journal-Capability"], "private");
+      bodies.push(JSON.parse(options.body));
+      return new Response(JSON.stringify(responses.shift()));
+    } });
+  const state = { col: 1, row: 2, serverJourney: { id: "a".repeat(32) }, journalAccess: "private" };
+  const result = await client.characterOffer(state, "b".repeat(32));
+  assert.equal(result.status, "ready");
+  assert.deepEqual(bodies.map(body => body.retry), [false, false, true, false]);
+  assert.deepEqual(waits, [2000, 5000, 2000]);
+  for (const body of bodies) assert.deepEqual(Object.keys(body).sort(),
+    ["action", "characterId", "journey", "location", "retry"]);
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(client.characterOffer(state, "b".repeat(32), { signal: controller.signal }), /abort/i);
+});
+
+test("unavailable character quests stay unavailable and repeated failures are bounded", async t => {
+  t.mock.method(console, "warn", () => {});
+  const state = { col: 1, row: 2, serverJourney: { id: "a".repeat(32) }, journalAccess: "private" };
+  let calls = 0;
+  const unavailable = createQuestDestinationClient({ fetcher: async () => {
+    calls++;
+    return new Response(JSON.stringify({ status: "unavailable", reason: "No compatible POIs" }));
+  } });
+  assert.equal((await unavailable.characterOffer(state, "b".repeat(32))).status, "unavailable");
+  assert.equal(calls, 1);
+  calls = 0;
+  const failed = createQuestDestinationClient({ wait: async () => {}, fetcher: async () => {
+    calls++;
+    return new Response(JSON.stringify({ status: "failed", retryable: true, error: "Provider offline" }));
+  } });
+  await assert.rejects(failed.characterOffer(state, "b".repeat(32)), /Provider offline/);
+  assert.equal(calls, 3);
+});

@@ -23,6 +23,7 @@ import urllib.request
 import uuid
 
 from asset_storage import AssetConflict, AssetError
+from fetch_osm import OVERPASS_URLS
 from content_storage import clock
 from journey_storage import StoreConnection
 from journeys import JourneyRequest, JourneyConflict, JourneyCapacity
@@ -86,12 +87,18 @@ def acquire(town):
     area = f'(around:2000,{town["latitude"]:.6f},{town["longitude"]:.6f})'
     query = "[out:json][timeout:20][maxsize:4000000];(" + "".join(
         f"nwr{area}{tags};" for tags in filters) + f");out center tags {MAX_ELEMENTS};"
-    request = urllib.request.Request(
-        "https://overpass-api.de/api/interpreter",
-        data=urllib.parse.urlencode({"data": query}).encode("ascii"),
-        headers={"User-Agent": "ArcanePath/0.3 (bounded quest POIs)", "Accept-Encoding": "identity"})
-    with urllib.request.urlopen(request, timeout=25) as response:
-        raw = response.read(MAX_BYTES + 1)
+    for index, endpoint in enumerate(OVERPASS_URLS):
+        request = urllib.request.Request(
+            endpoint, data=urllib.parse.urlencode({"data": query}).encode("ascii"),
+            headers={"User-Agent": "ArcanePath/0.3 (bounded quest POIs)", "Accept-Encoding": "identity"})
+        try:
+            with urllib.request.urlopen(request, timeout=25) as response:
+                raw = response.read(MAX_BYTES + 1)
+            break
+        except OSError as error:
+            logging.warning("Quest POI provider unavailable (%s): %s", endpoint, error)
+            if index == len(OVERPASS_URLS) - 1:
+                raise
     if len(raw) > MAX_BYTES:
         raise ValueError("Quest OSM response exceeds its byte limit.")
     payload = json.loads(raw)
@@ -221,38 +228,67 @@ class QuestDestinations:
         expected = {"journey", "template", "origin", "scope", "nonce"}
         if isinstance(data, dict) and "keeper" in data:
             expected.add("keeper")
+        if isinstance(data, dict) and "retry" in data:
+            expected.add("retry")
         if not isinstance(data, dict) or set(data) != expected:
             raise JourneyRequest("Invalid quest destination request fields.")
         owner, record = self.authorization.authorize(data, token)
+        if type(data.get("retry", False)) is not bool:
+            raise JourneyRequest("Invalid quest destination retry.")
         if (not isinstance(data["nonce"], str) or not re.fullmatch(r"[a-f0-9]{32}", data["nonce"]) or
                 not isinstance(data["scope"], str) or data["scope"] not in SCOPES or
                 not isinstance(data["origin"], dict) or set(data["origin"]) != {"col", "row"} or
                 any(type(v) is not int or abs(v // 8) > 1000 for v in data["origin"].values())):
             raise JourneyRequest("Invalid bounded quest destination parameters.")
+        return self.enqueue(owner, record["region"],
+                            {key: value for key, value in data.items() if key != "retry"},
+                            retry=data.get("retry", False))
+
+    def character_offer(self, journey, region, location, character, *, retry=False):
+        plan = character["profile"]["quest"]
+        nonce = hashlib.sha256(f"character-quest-v1:{journey}:{character['id']}".encode()).hexdigest()[:32]
+        data = {"journey": journey, "characterId": character["id"], "nonce": nonce,
+                "origin": {key: location[key] for key in ("col", "row")},
+                "template": plan["template"], "scope": plan["scope"]}
+        result = self.enqueue(journey, region, data, retry=retry, character=True)
+        return {**result, "nonce": nonce, "template": plan["template"], "scope": plan["scope"],
+                "characterId": character["id"]}
+
+    def enqueue(self, owner, region, data, *, retry=False, character=False):
         canonical = json.dumps(data, sort_keys=True)
         with self.lock, self.connect() as db:
             self.begin(db)
             row = db.execute(f"SELECT * FROM {self.instances_table} WHERE owner=? AND nonce=?",
                              (owner, data["nonce"])).fetchone()
             if row is not None and row["request"] != canonical:
-                raise JourneyConflict("Quest nonce already belongs to another origin, template or scope.")
-            if row is None:
+                previous = json.loads(row["request"])
+                if (not character or row["region"] != region or
+                        any(previous.get(key) != data.get(key)
+                            for key in ("journey", "characterId", "nonce", "template", "scope"))):
+                    raise JourneyConflict("Quest nonce already belongs to another origin, template or scope.")
+            if row is None or retry and row["status"] == "failed":
                 authored = template(data["template"])
                 if self.closed:
                     raise JourneyCapacity("Quest discovery is shutting down.")
                 if db.execute(f"SELECT COUNT(*) FROM {self.instances_table} WHERE status IN ('queued','running')").fetchone()[0] >= 16:
                     raise JourneyCapacity("Quest discovery queue is full.")
-                if db.execute(f"SELECT COUNT(*) FROM {self.instances_table} WHERE owner=?", (owner,)).fetchone()[0] >= 1000:
+                if row is None and db.execute(f"SELECT COUNT(*) FROM {self.instances_table} WHERE owner=?", (owner,)).fetchone()[0] >= 1000:
                     raise JourneyCapacity("This journal has reached its quest discovery limit.")
-                db.execute(f"INSERT INTO {self.instances_table}"
-                           "(owner,nonce,request,region,authored,status,created,output) "
-                           "VALUES(?,?,?,?,?,'queued',?,NULL)",
-                           (owner, data["nonce"], canonical, record["region"], json.dumps(authored), time.time()))
+                if row is None:
+                    db.execute(f"INSERT INTO {self.instances_table}"
+                               "(owner,nonce,request,region,authored,status,created,output) "
+                               "VALUES(?,?,?,?,?,'queued',?,NULL)",
+                               (owner, data["nonce"], canonical, region, json.dumps(authored), time.time()))
+                else:
+                    lease_reset = ",token=NULL,expires=NULL,attempts=0" if self.assets is not None else ""
+                    db.execute(f"UPDATE {self.instances_table} SET status='queued',output=NULL{lease_reset} "
+                               "WHERE owner=? AND nonce=?", (owner, data["nonce"]))
                 row = db.execute(f"SELECT * FROM {self.instances_table} WHERE owner=? AND nonce=?",
                                  (owner, data["nonce"])).fetchone()
         self.kick()
-        return json.loads(row["output"]) if row["output"] else {
+        result = json.loads(row["output"]) if row["output"] else {
             "status": row["status"], "nonce": data["nonce"], "retryAfter": 2}
+        return {**result, "origin": json.loads(row["request"])["origin"]} if character else result
 
     def kick(self):
         with self.lock:
@@ -292,6 +328,10 @@ class QuestDestinations:
                     result = self.build(json.loads(row["request"]), row["region"], json.loads(row["authored"]))
                 except (QuestUnavailable, PathLimit) as error:
                     result = {"status": "unavailable", "reason": str(error)}
+                except (OSError, ValueError) as error:
+                    logging.exception("Bounded quest destination discovery failed")
+                    result = {"status": "failed", "errorCode": "discovery-failed", "retryable": True,
+                              "error": "Quest information could not be verified; retry this character's request."}
                 except Exception:
                     logging.exception("Bounded quest destination discovery failed")
                     result = {"status": "failed", "error": "Quest discovery failed; no destination was invented."}
@@ -348,6 +388,8 @@ class QuestDestinations:
 
     def build(self, request, region, authored):
         started = time.monotonic()
+        if hasattr(self.chunks, "require_origin"):
+            self.chunks.require_origin(region)
         base = self.chunks.bases[region]
         origin = request["origin"]
         projection = base.get("projectionLatitude",

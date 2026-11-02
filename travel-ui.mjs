@@ -14,6 +14,8 @@ import { setupServiceQuests } from "./service-quests-ui.mjs";
 import { questJournalEntries } from "./quest-journal.mjs";
 import { recordQuestDirections } from "./quest-knowledge.mjs";
 import { setupParentNarrative } from "./parent-narrative-ui.mjs";
+import { recordParentRecollection } from "./parent-recollection.mjs";
+import { setupParentRecollection } from "./parent-recollection-ui.mjs";
 import { citedTownDirections } from "./trail-ui.mjs";
 import { nearestSettlement } from "./towns.mjs";
 import { distanceMeters } from "./cell-content.mjs";
@@ -305,7 +307,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     if (state) state = recordJourneyPosition(recordTrailArrival(state));
     try {
       if (!saveStore) throw new Error(t("saveStorageUnavailable"));
-      state = synchronizeParentDiscovery(state);
+      state = recordParentRecollection(synchronizeParentDiscovery(state));
       const saved = saveStore.write({ region, map: base, state,
         survival: survivalConfig, economy: economyData });
       savedJourney = saved;
@@ -504,11 +506,12 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const conversations = setupConversations(t, {
     context: () => active ? economyContext() : null,
     characters: charactersClient,
+    onCharacter: () => serviceQuestsUI.characterChanged(),
   });
   function mutateQuest(transform) {
     if (!state || !saveStore || !active) return false;
     try {
-      const next = synchronizeParentDiscovery(transform(state));
+      const next = recordParentRecollection(synchronizeParentDiscovery(transform(state)));
       const saved = saveStore.write({ region, map: base, state: next,
         survival: survivalConfig, economy: economyData });
       state = saved.state;
@@ -535,6 +538,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     context: () => active && !busy && !artifactsUI?.pending(state) ? state : null,
     narrative: liveNarrative, mutate: mutateQuest,
     t, status: document.querySelector("#parent-narrative-status"),
+  });
+  const parentRecollectionUI = setupParentRecollection(t, {
+    context: () => active && !busy ? economyContext() : null,
+    openTrail: () => trailUI.open(),
   });
   artifactsUI = setupArtifactQuests(t, {
     context: () => active ? economyContext() : null,
@@ -818,6 +825,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     serviceQuestsUI.localize();
     artifactsUI.localize();
     parentNarrativeUI.update();
+    parentRecollectionUI.update();
     questTrackingUI.localize();
     journeyWorldUI.update();
     openingStory.localize();

@@ -1,16 +1,18 @@
 import { QUEST_TEMPLATES, createServiceOffer, acceptServiceQuest, declineServiceQuest,
-  advanceServiceQuest, abandonServiceQuest, setServiceQuestWording, chooseTemplate } from "./service-quests.mjs";
+  advanceServiceQuest, abandonServiceQuest, setServiceQuestWording, SERVICE_QUEST_LIMITS } from "./service-quests.mjs";
 import { createQuestDestinationClient } from "./service-quest-client.mjs";
 import { followQuest, followedQuest } from "./quest-objectives.mjs";
 import { renderQuestMap } from "./quest-map.mjs";
 
 const COPY = {
   fr: {
-    scope: "Distance de la mission", template: "Service proposé", prepare: "Écouter une demande",
-    local: "Proche · 5–30 km", regional: "Régional · 30–150 km", far: "Lointain · 150–500 km",
-    europe: "Très lointain · plus de 500 km", accept: "Accepter", decline: "Pas cette fois",
+    accept: "Accepter", decline: "Pas cette fois",
     empty: "Aucun engagement pour le moment. Les demandes se trouvent dans Dialogue.",
-    preparing: "Recherche de lieux compatibles et vérification du trajet…",
+    preparing: "{name} prépare sa proposition…",
+    proposal: "{name} vous propose un service.",
+    unavailable: "« Je n’ai pas de mission à vous proposer pour le moment. »",
+    failed: "La demande de cette personne n’a pas pu être préparée. Vous pouvez réessayer sans changer de mission.",
+    limit: "Consultez vos missions en attente avant d’en écouter une autre.",
     retry: "Réessayer la même demande", active: "En cours", completed: "Terminée", abandoned: "Abandonnée", declined: "Refusée",
     follow: "Suivre", unfollow: "Ne plus suivre", destination: "Voir la destination",
     return: "Revenir au détail", abandon: "Abandonner", confirm: "Abandonner sans récompense finale ?",
@@ -23,11 +25,13 @@ const COPY = {
     knowledge: "Indications obtenues", noArtifacts: "Aucune piste d'objet acquise dans ce voyage.",
   },
   en: {
-    scope: "Quest distance", template: "Proposed service", prepare: "Listen to a request",
-    local: "Nearby · 5–30 km", regional: "Regional · 30–150 km", far: "Distant · 150–500 km",
-    europe: "Very distant · over 500 km", accept: "Accept", decline: "Not this time",
+    accept: "Accept", decline: "Not this time",
     empty: "No commitments yet. Requests are available in Dialogue.",
-    preparing: "Finding compatible places and verifying the journey…",
+    preparing: "{name} is preparing their offer…",
+    proposal: "{name} offers you a service quest.",
+    unavailable: "“I have no quest to offer you at the moment.”",
+    failed: "This person's request could not be prepared. You can retry without changing their quest.",
+    limit: "Review your pending offers before listening to another one.",
     retry: "Retry this request", active: "Active", completed: "Completed", abandoned: "Abandoned", declined: "Declined",
     follow: "Track", unfollow: "Stop tracking", destination: "View destination",
     return: "Back to details", abandon: "Abandon", confirm: "Abandon without the final reward?",
@@ -41,26 +45,17 @@ const COPY = {
   },
 };
 
-export function setupServiceQuests(t, { context, mutate, narrative, storage = localStorage,
+export function setupServiceQuests(t, { context, mutate, narrative,
   destinations = createQuestDestinationClient(), character = () => null, characters = null }) {
   const $ = id => document.getElementById(id);
   const talk = $("dialogue-services"), book = $("quests-services");
-  const form = document.createElement("div"), scopeLabel = document.createElement("label");
-  const scope = document.createElement("select"), prepare = document.createElement("button");
+  const form = document.createElement("div");
   const offers = document.createElement("div"), onSite = document.createElement("section");
   const status = document.createElement("p"), diagnostics = document.createElement("p");
-  scope.id = "quest-scope";
-  scopeLabel.htmlFor = scope.id;
-  for (const name of ["local", "regional", "far", "europe"]) {
-    const option = document.createElement("option");
-    option.value = name;
-    scope.append(option);
-  }
   status.role = "status"; diagnostics.role = "alert";
-  prepare.type = "button";
-  form.append(scopeLabel, scope, prepare);
   talk.append(form, status, diagnostics, offers, onSite);
   let working = false, controller, request, owner, mapQuest, confirming, error = "", contractError = "", feedback = "";
+  let preparationKey, unavailable = false;
   let consuming = false;
   const pendingWording = new Set();
   const failedWording = new Set();
@@ -184,16 +179,33 @@ export function setupServiceQuests(t, { context, mutate, narrative, storage = lo
     const nextOwner = state?.serverJourney?.id;
     if (owner !== nextOwner) {
       controller?.abort(); owner = nextOwner; request = undefined; working = false;
+      preparationKey = undefined; unavailable = false;
       mapQuest = confirming = undefined; error = feedback = contractError = "";
     }
-    scopeLabel.textContent = c.scope;
-    for (const option of scope.options) option.textContent = c[option.value];
-    prepare.textContent = working ? c.preparing : request ? c.retry : c.prepare;
-    const town = current?.cell?.settlements?.some(place => place.name) || current?.cell?.pois?.length;
-    prepare.disabled = working || !state?.journalAccess || current?.blocked || !town;
-    scope.disabled = working;
-    status.textContent = working ? c.preparing : feedback ? c[feedback] : !town ? c.noTown : "";
-    diagnostics.textContent = error || contractError;
+    const speaker = character();
+    const key = speaker && state ? `${nextOwner}:${speaker.id}:${state.col}:${state.row}` : undefined;
+    if (preparationKey !== key) {
+      controller?.abort(); controller = undefined; working = false; request = undefined;
+      preparationKey = key; unavailable = false; error = "";
+    }
+    const knownQuest = speaker && [...(state?.serviceQuests?.offers ?? []),
+      ...(state?.serviceQuests?.quests ?? [])].find(quest => quest.characterId === speaker.id);
+    const full = (state?.serviceQuests?.offers?.length ?? 0) >= SERVICE_QUEST_LIMITS.offers ||
+      [...(state?.serviceQuests?.offers ?? []), ...(state?.serviceQuests?.quests ?? [])]
+        .some(quest => quest.template === speaker?.profile?.quest?.template &&
+          ["offered", "active"].includes(quest.status));
+    if (speaker?.profile?.quest && !knownQuest && !request && !full &&
+        state?.journalAccess && !current.blocked) {
+      request = { characterId: speaker.id };
+      queueMicrotask(() => { if (preparationKey === key) void prepareOffer(); });
+    }
+    status.textContent = working ? c.preparing.replace("{name}", speaker?.name ?? "")
+      : feedback ? c[feedback] : !speaker ? c.noTown : full && !knownQuest ? c.limit
+        : unavailable ? c.unavailable : knownQuest?.status === "offered"
+          ? c.proposal.replace("{name}", speaker.name) : "";
+    diagnostics.textContent = error ? c.failed : contractError;
+    form.replaceChildren();
+    if (error) button(form, c.retry, () => { void prepareOffer(true); }, current?.blocked || working);
     offers.replaceChildren(); onSite.replaceChildren(); book.replaceChildren();
     if (!state) return;
     for (const offer of state.serviceQuests?.offers ?? []) {
@@ -204,12 +216,13 @@ export function setupServiceQuests(t, { context, mutate, narrative, storage = lo
       paragraph(section, `${c.route} : ${offer.distanceKm.toFixed(1)} km · ${c.reward} : €${(offer.rewardCents / 100).toFixed(2)}`);
       for (const poi of offer.destinations) paragraph(section, `${poi.town} — ${poi.name}`);
       paragraph(section, narrative.questStatus(state, offer.id, "offer", lang));
-      button(section, c.accept, () => { commit(s => acceptServiceQuest(s, offer.id)); feedback = ""; localize(); }, current.blocked || working);
-      button(section, c.decline, () => { commit(s => declineServiceQuest(s, offer.id)); localize(); }, current.blocked || working);
-      offers.append(section);
+      button(section, c.accept, () => { commit(s => acceptServiceQuest(s, offer.id)); feedback = ""; localize(); }, current.blocked);
+      button(section, c.decline, () => { commit(s => declineServiceQuest(s, offer.id)); localize(); }, current.blocked);
+      if (offer.characterId === speaker?.id) offers.append(section);
+      else book.append(section);
     }
     const quests = state.serviceQuests?.quests ?? [];
-    if (!quests.length) paragraph(book, c.empty);
+    if (!quests.length && !book.children.length) paragraph(book, c.empty);
     for (const quest of quests) {
       const item = QUEST_TEMPLATES.find(item => item.id === quest.template);
       const section = document.createElement("section"), heading = document.createElement("h3");
@@ -241,7 +254,7 @@ export function setupServiceQuests(t, { context, mutate, narrative, storage = lo
         () => { commit(s => followQuest(s, followedQuest(s)?.id === `service:${quest.id}` ? null : `service:${quest.id}`)); localize(); });
       button(controls, c.destination, () => { mapQuest = quest.id; localize(); });
       if (!role.social) button(controls, `${c.here} : ${c.actions[role.action]}`, () => act(quest, false),
-        !here || current.blocked || working);
+        !here || current.blocked);
       paragraph(controls, role.social ? c.talk : here ? "" : c.go);
       if (confirming === quest.id) {
         paragraph(controls, c.confirm);
@@ -254,7 +267,7 @@ export function setupServiceQuests(t, { context, mutate, narrative, storage = lo
         const exchange = document.createElement("section");
         paragraph(exchange, `${item.title[lang]} — ${poi.name}`);
         paragraph(exchange, wording(state, quest, "arrival", item.request[lang]));
-        button(exchange, c.actions[role.action], () => act(quest, true), current.blocked || working);
+        button(exchange, c.actions[role.action], () => act(quest, true), current.blocked);
         onSite.append(exchange);
       }
     }
@@ -276,37 +289,48 @@ export function setupServiceQuests(t, { context, mutate, narrative, storage = lo
       for (const entry of state.questDirections) paragraph(directions, `${entry.name} — ${entry.text}`);
     }
   }
-  prepare.addEventListener("click", async () => {
+  async function prepareOffer(retry = false) {
     const current = context();
-    if (!current || current.blocked || working) return;
-    const started = current.state, lang = language(), speaker = character?.();
+    const speaker = character();
+    if (!current || current.blocked || working || !speaker) return;
+    const started = current.state;
+    const activeController = new AbortController();
+    controller = activeController;
+    const stillCurrent = () => controller === activeController &&
+      context()?.state.serverJourney?.id === started.serverJourney.id &&
+      context()?.state.col === started.col && context()?.state.row === started.row &&
+      character()?.id === speaker.id && !context()?.blocked;
     working = true; error = feedback = "";
     try {
-      const chosen = request?.template ?? chooseTemplate(started, scope.value).id;
-      const key = `arcane-quest-request-v1:${started.serverJourney.id}:${started.col}:${started.row}:${chosen}:${scope.value}`;
-      const nonce = storage.getItem(key) ?? crypto.randomUUID().replaceAll("-", "");
-      storage.setItem(key, nonce);
-      request = { nonce, template: chosen, scope: scope.value };
-      controller = new AbortController();
       localize();
-      const result = await destinations.prepare(started, request, controller.signal);
-      const latest = context();
-      if (!latest || latest.state.serverJourney?.id !== started.serverJourney.id ||
-          latest.state.col !== started.col || latest.state.row !== started.row || latest.blocked) {
-        throw new Error(lang === "fr" ? "La rencontre a changé ; revenez sur place." : "The encounter changed; return to the meeting place.");
+      const result = await destinations.characterOffer(started, speaker.id, { signal: activeController.signal, retry });
+      if (!stillCurrent()) return;
+      if (result.status === "unavailable") {
+        unavailable = true;
+        return;
       }
-      commit(s => createServiceOffer(s, { id: nonce, template: request.template,
-        destinations: result.destinations, distanceKm: result.distanceKm, scope: request.scope,
-        ...(speaker?.id ? { characterId: speaker.id } : {}) }));
-      storage.removeItem(key);
-      request = undefined;
+      if (result.characterId !== speaker.id || result.template !== speaker.profile.quest.template ||
+          result.scope !== speaker.profile.quest.scope) throw new Error("Invalid character quest assignment.");
+      commit(s => createServiceOffer(s, { id: result.nonce, template: result.template,
+        destinations: result.destinations, distanceKm: result.distanceKm, scope: result.scope,
+        origin: result.origin, characterId: speaker.id }));
     } catch (reason) {
-      if (!controller?.signal.aborted) { console.error("Quest preparation failed:", reason); error = reason.message; }
+      if (stillCurrent() && !activeController.signal.aborted) {
+        console.error("Character quest preparation failed:", reason);
+        error = reason.message;
+      }
     } finally {
-      working = false; localize();
+      if (controller === activeController) {
+        working = false;
+        if (!stillCurrent()) request = undefined;
+        localize();
+      }
     }
-  });
-  scope.addEventListener("change", () => { if (!working) request = undefined; });
+  }
   narrative.subscribe(() => { if (!consuming) localize(); });
-  return { localize, reset() { controller?.abort(); request = undefined; owner = undefined; failedWording.clear(); } };
+  return { localize, characterChanged: localize,
+    reset() {
+      controller?.abort(); controller = undefined; request = undefined; owner = undefined;
+      preparationKey = undefined; unavailable = false; failedWording.clear();
+    } };
 }

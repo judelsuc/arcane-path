@@ -56,6 +56,19 @@ def template(identity):
     return value
 
 
+def character_quest(character_id, role):
+    cards = {
+        "artisan": {"magician", "emperor", "justice", "devil", "judgement"},
+        "gardener": {"empress", "strength", "temperance", "star"},
+        "bookseller": {"priestess", "hanged", "tower", "sun", "world"},
+        "traveller": {"fool", "hierophant", "lovers", "chariot", "hermit", "wheel", "nameless", "moon"},
+    }
+    choices = sorted(value["id"] for value in catalogue().values()
+                     if value["id"].split(".", 1)[0] in cards[role])
+    seed = hashlib.sha256(f"character-quest-v1:{character_id}".encode()).hexdigest()
+    return {"version": 1, "template": choices[int(seed[:8], 16) % len(choices)], "scope": "local"}
+
+
 def version():
     return hashlib.sha256(json.dumps(catalogue(), sort_keys=True).encode()).hexdigest()[:16] + "-quest-1"
 

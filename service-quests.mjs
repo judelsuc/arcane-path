@@ -198,7 +198,9 @@ export function createServiceOffer(state, options) {
   if (!plain(options) || !instanceId(options.id)) fail();
   if (find(state, options.id)) return state;
   const offerKeys = ["id", "template", "destinations", "distanceKm", "scope"];
-  if (!(keys(options, offerKeys) || keys(options, [...offerKeys, "characterId"])) ||
+  if (!offerKeys.every(key => Object.hasOwn(options, key)) ||
+      Object.keys(options).some(key => ![...offerKeys, "characterId", "origin"].includes(key)) ||
+      Object.hasOwn(options, "origin") && (!keys(options.origin, ["col", "row"]) || !cell(options.origin)) ||
       Object.hasOwn(options, "characterId") && !instanceId(options.characterId)) fail();
   const services = data(state);
   if (services.offers.length >= SERVICE_QUEST_LIMITS.offers ||
@@ -209,8 +211,8 @@ export function createServiceOffer(state, options) {
   }
   const template = templates.get(options.template);
   if (!template || !Array.isArray(options.destinations)) fail();
-  const origin = { col: state.col, row: state.row };
-  if (Object.hasOwn(state, "latitude") || Object.hasOwn(state, "longitude")) {
+  const origin = options.origin ? { ...options.origin } : { col: state.col, row: state.row };
+  if (!options.origin && (Object.hasOwn(state, "latitude") || Object.hasOwn(state, "longitude"))) {
     if (!coordinates(state)) fail();
     origin.latitude = state.latitude;
     origin.longitude = state.longitude;
@@ -223,7 +225,7 @@ export function createServiceOffer(state, options) {
     rewardCents: serviceQuestReward(options.distanceKm, template.roles.length),
     step: 0, status: "offered", createdMinutes: state.elapsedMinutes,
     acceptedMinutes: null, completedMinutes: null, closedMinutes: null,
-    history: [event(state, "offer")], wording: {},
+    history: [{ ...event(state, "offer"), col: origin.col, row: origin.row }], wording: {},
   };
   validateQuest(quest, true, state.elapsedMinutes);
   return { ...state, serviceQuests: { ...services, offers: [...services.offers, quest] } };

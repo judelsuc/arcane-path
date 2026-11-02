@@ -16,8 +16,9 @@ from content_storage import clock as database_clock
 from character_encounters import SCHEMAS as ENCOUNTER_SCHEMAS
 from shared_images import SharedImages
 from journey_storage import StoreConnection, cached_journey_cell
-from journeys import JourneyConflict, JourneyRequest, character_name
+from journeys import JourneyCapacity, JourneyConflict, JourneyRequest, character_name
 from main_artifacts import geographic_position
+from quest_wording import character_quest
 
 WORLD = "roadside-characters-v1"
 PORTRAIT_VERSION = "character-portrait-v1"
@@ -159,8 +160,9 @@ def portrait_prompt(role):
 
 
 class Characters:
-    def __init__(self, journeys, authorization, *, clock=time.time, writer=None):
+    def __init__(self, journeys, authorization, *, clock=time.time, writer=None, quests=None):
         self.journeys, self.authorization, self.clock = journeys, authorization, clock
+        self.quests = quests
         self.assets = getattr(journeys, "assets", None)
         self.writer = writer if self.assets is not None else None
         self.portrait_pool = (ThreadPoolExecutor(max_workers=1, thread_name_prefix="character-portrait")
@@ -326,13 +328,16 @@ class Characters:
         if position:
             current.update({key: position[key] for key in ("col", "row")})
             current["region"] = position.get("region", row["region"])
+        profile = json.loads(row["profile"])
+        if "quest" not in profile:
+            profile["quest"] = character_quest(row["character_id"], row["role"])
         return {
             "id": row["character_id"], "name": row["name"], "role": row["role"],
             "location": location, "home": location, "current": current,
             "availability": "present",
             "availabilityClock": "shared-world-static-v1",
             "namingLocale": row["naming_locale"],
-            "profile": json.loads(row["profile"]), "knowledge": json.loads(row["knowledge"]),
+            "profile": profile, "knowledge": json.loads(row["knowledge"]),
             "needs": json.loads(row["needs"]),
             "portrait": {"ref": row["portrait_ref"], "status": row["portrait_status"],
                          "model": row["portrait_model"],
@@ -550,7 +555,8 @@ class Characters:
                 first = name_index % len(names["given"])
                 last = name_index // len(names["given"])
                 role, trait, need = ROLES[int(seed[16:24], 16) % len(ROLES)]
-                profile = {"trait": trait, "version": 1}
+                profile = {"trait": trait, "version": 1,
+                           "quest": character_quest(character_id, role)}
                 topics, facts = ROLE_KNOWLEDGE[role]
                 knowledge = {
                     "topics": topics, "facts": [{"id": item, "scope": "public"} for item in facts],
@@ -586,7 +592,21 @@ class Characters:
                 schedule_portrait = pending
         if schedule_portrait:
             self._schedule_portrait(character_id)
+        if self.quests is not None:
+            result["quest"] = self._quest_offer(journey, region, location, result)
         return result
+
+    def _quest_offer(self, journey, region, location, character, *, retry=False):
+        if self.quests is None:
+            raise JourneyCapacity("Character quests are unavailable.")
+        with self.connect() as db:
+            db.execute(self._sql("UPDATE world_characters SET profile=? WHERE character_id=?"),
+                       (json.dumps(character["profile"]), character["id"]))
+        try:
+            return self.quests.character_offer(journey, region, location, character, retry=retry)
+        except JourneyCapacity as error:
+            logging.warning("Character quest preparation deferred: %s", error)
+            return {"status": "busy", "retryAfter": 2, "error": str(error)}
 
     def _resume_portraits(self):
         with self.connect() as db:
@@ -968,7 +988,7 @@ class Characters:
 
     def request(self, data, token):
         if not isinstance(data, dict) or data.get("action") not in {
-                "list", "create", "meet", "exchange", "contract", "portrait", "visitors"}:
+                "list", "create", "meet", "exchange", "contract", "portrait", "visitors", "quest"}:
             raise JourneyRequest("Invalid character registry request.")
         action = data["action"]
         expected = {"action", "journey", "location"}
@@ -976,8 +996,10 @@ class Characters:
             expected |= {"requestId"}
         elif action == "list" and "presence" in data:
             expected.add("presence")
-        elif action in {"meet", "exchange", "portrait", "visitors"}:
+        elif action in {"meet", "exchange", "portrait", "visitors", "quest"}:
             expected |= {"characterId"}
+            if action == "quest":
+                expected.add("retry")
             if action == "visitors":
                 expected |= {"cursor", "limit"}
             if action in {"meet", "exchange"}:
@@ -999,12 +1021,25 @@ class Characters:
             if "presence" in data:
                 return self._encounter(journey, region, location, data["presence"])
             return self._list(journey, region, location)
-        if action in {"portrait", "visitors"}:
+        if action in {"portrait", "visitors", "quest"}:
             character_id = data["characterId"]
             if not isinstance(character_id, str) or not CHARACTER_ID.fullmatch(character_id):
                 raise JourneyRequest("Invalid character identity.")
             if action == "portrait":
                 return self._portrait_image(location, character_id)
+            if action == "quest":
+                if type(data["retry"]) is not bool:
+                    raise JourneyRequest("Invalid character quest retry.")
+                with self.connect() as db:
+                    row = db.execute(self._sql(
+                        "SELECT * FROM world_characters WHERE character_id=? AND world_id=? AND location_id=?"),
+                        (character_id, WORLD, location["id"])).fetchone()
+                    if row is None:
+                        raise JourneyConflict("That character is not available at this location.")
+                    if not self._familiarity(db, journey, character_id)["known"]:
+                        raise JourneyConflict("Meet this character before hearing their request.")
+                    character = self._character(row)
+                return self._quest_offer(journey, region, location, character, retry=data["retry"])
             return self._visitor_page(journey, location, character_id, data["cursor"], data["limit"])
         if not isinstance(data["requestId"], str) or not REQUEST_ID.fullmatch(data["requestId"]):
             raise JourneyRequest("Invalid character request id.")
