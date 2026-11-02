@@ -1,6 +1,11 @@
 {
-  "version": "0.21.0",
+  "version": "0.21.1",
   "entries": [
+    {
+      "version": "0.21.1",
+      "fr": "La diffusion audio prend en charge les fragments nécessaires à Safari pour lire les musiques WAV sans télécharger le fichier entier. Un échec de chargement invite à vérifier la connexion et à réessayer, plutôt qu’à télécharger des pistes déjà présentes.",
+      "en": "Audio delivery supports the byte ranges Safari needs to play WAV music without downloading the entire file. Loading failures now suggest checking the connection and retrying, rather than downloading tracks that are already present."
+    },
     {
       "version": "0.21.0",
       "fr": "Dialogue rassemble les échanges avec les habitants ; Quêtes réunit la piste du parent, les services, les carnets perdus et les objets magiques. Quarante-quatre canevas de quêtes répétables conduisent vers des lieux réels, parfois en plusieurs étapes, avec une récompense liée à la distance. Les destinations connues figurent dans les demandes de chemin. La biographie, la lettre de départ et les témoignages suivent désormais l’histoire intime du parent et de la Cartomancienne. Les textes générés enrichissent les indices sans remplacer leurs indications utiles. La toilette se trouve dans le menu de la ville. Si personne n’est présent, vous pouvez choisir de faire une nouvelle rencontre. Les villes éloignées sans code pays sur la carte vérifient désormais leur pays pour permettre les rencontres ; une liste vide n’annonce plus de personnes disponibles. Cette version nécessite une nouvelle partie ; les anciennes sauvegardes ne sont pas converties.",

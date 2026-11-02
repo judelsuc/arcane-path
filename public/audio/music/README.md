@@ -32,6 +32,11 @@ Music pauses in hidden tabs and throughout the rhythm-game dialog; generated
 practice audio is not used as a timing source. New context tracks restart
 from the beginning, with no crossfade or custom loop-point editing yet.
 
+Production nginx serves audio files directly with HTTP byte-range support
+(206 responses), including numbered filenames containing spaces. This lets
+browsers such as Safari start WAV playback without fetching the entire file.
+Audio retains the same authentication and private response headers as the game.
+
 The optional English vocal title song uses `music-title-song.wav` (or MP3/
 OGG), also accepted as `16 - music-title-song.wav`. Generate it from the
 [original lyrics and prompt](../../../audio-prompts/title-song.md).

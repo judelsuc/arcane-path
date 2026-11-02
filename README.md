@@ -1960,6 +1960,10 @@ solaire, menus de ville/sommeil/journal et issue du voyage. Un curseur Look
 ne change pas la musique selon la case inspectee. Une piste absente ou
 illisible utilise `music-road-day`, puis `music-title`, puis le silence.
 Le statut indique ce remplacement et les erreurs sont journalisees.
+En production, nginx sert directement les fichiers audio avec les requetes
+par plages d'octets (HTTP 206), necessaires notamment a Safari pour lire les
+WAV sans attendre leur telechargement complet. La protection HTTPS reste
+identique a celle du jeu.
 Couper/reactiver apres un nouveau telechargement pour reessayer les fichiers
 manquants. Le jeu et les sauvegardes fonctionnent meme sans aucun fichier.
 

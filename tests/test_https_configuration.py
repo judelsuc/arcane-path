@@ -7,6 +7,34 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class HttpsConfigurationTests(unittest.TestCase):
+    def test_audio_is_served_directly_for_byte_ranges_without_exposing_other_files(self):
+        config = (ROOT / "infra/nginx/preview.conf").read_text()
+        route = next(line.strip() for line in config.splitlines()
+                     if line.strip().startswith('location ~ "^/public/audio/'))
+        pattern = re.compile(route.removeprefix('location ~ "').removesuffix('" {'))
+        for path in [
+            "/public/audio/music/08 - music-night.wav",
+            "/public/audio/music/01-music-title.mp3",
+            "/public/audio/music/music-title-song.ogg",
+            "/public/audio/sfx/sfx-step-road.wav",
+        ]:
+            self.assertIsNotNone(pattern.fullmatch(path), path)
+        for path in [
+            "/public/audio/music/.private.wav", "/public/audio/music/README.md",
+            "/public/audio/music/nested/song.wav", "/public/audio/music/../song.wav",
+            "/public/audio/private/song.wav", "/scripts/travel_server.py",
+        ]:
+            self.assertIsNone(pattern.fullmatch(path), path)
+        endpoint = config.split(route, 1)[1].split("\n    }", 1)[0]
+        self.assertIn("limit_except GET { deny all; }", endpoint)
+        self.assertIn("root /opt/arcane-path;", endpoint)
+        self.assertIn("types { audio/wav wav; audio/mpeg mp3; audio/ogg ogg; }", endpoint)
+        self.assertIn("try_files $uri =404;", endpoint)
+        self.assertNotIn("proxy_pass", endpoint)
+        self.assertNotIn("auth_basic off", endpoint)
+        self.assertNotIn("add_header", endpoint)
+        self.assertNotIn("audio/(?:music|sfx)/[^/]+", config)
+
     def test_pixel_tileset_is_explicitly_get_only_not_a_directory_or_remote_script_route(self):
         config = (ROOT / "infra/nginx/preview.conf").read_text()
         endpoint = config.split(r"location ~ ^/public/tilesets/(?:path-pixel\.json|LICENSE\.txt)$ {", 1)[1].split("\n    }", 1)[0]
@@ -188,7 +216,10 @@ class HttpsConfigurationTests(unittest.TestCase):
         self.assertIn('return 429 \'{"error":', config)
         self.assertIn("add_header Retry-After 10 always;", config)
         self.assertIn("ssl_reject_handshake on;", config)
-        self.assertNotIn("root /opt/arcane-path", config)
+        audio_route = next(line.strip() for line in config.splitlines()
+                           if line.strip().startswith('location ~ "^/public/audio/'))
+        audio_body = config.split(audio_route, 1)[1].split("\n    }", 1)[0]
+        self.assertNotIn("root /opt/arcane-path", config.replace(audio_body, ""))
 
     def test_bootstrap_exposes_only_acme_and_renewal_reload_is_checked(self):
         config = (ROOT / "infra/nginx/bootstrap.conf").read_text()
