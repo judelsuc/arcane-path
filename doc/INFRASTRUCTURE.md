@@ -12,6 +12,38 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: character quests and parent guidance (2 November 2026)
+
+Runtime `0100f5d659c727bf74c7f35a72656280f8c71913`, tag
+`deploy-2026-11-02-character-quests-parent-guidance`, game version 0.21.2;
+packaged at `2026-11-02T07:41:09.090407+00:00`. Characters now own stable
+quest assignments and automatically present proposals without a distance
+selector. Temporary discovery failures can retry the same durable job.
+After 720 game minutes without parent-trail progress, saved guidance includes
+an approximate current-position intuition when no confirmed town is known,
+without requiring sleep or revealing the hidden town.
+
+The 17-file delta was 176,450 bytes, SHA-256
+`22b2d548daf17e41a58e6b5b9f2edbf67adc4ecf31922da6bea04445cc6dcee5`.
+Before replacement, affected existing files were saved to
+`/home/ubuntu/runtime-before-quests-0100f5d.tar.gz` (0600), SHA-256
+`c26789a0b055938d932833059e6497f336a7e6eff2cd4f1a78b2d2cc0521d05a`.
+Rollback: stop the game service, restore this archive under `/opt/arcane-path`,
+remove only the two newly introduced files `parent-recollection.mjs` and
+`parent-recollection-ui.mjs`, then restart. Preserve the cache symlink,
+databases and shared virtual environment. No schema or nginx changes were
+needed. Unrelated local dialog/keyboard edits were excluded from the clean
+committed deployment.
+
+Validation: 126 JavaScript and 157 Python tests passed against the committed
+snapshot. The clean checkout required the existing Python environment and
+shoreline fixture for its cross-language/cache-compatibility tests.
+All delta file hashes matched after extraction; deployed Python modules
+compiled successfully. Release/changelog and the new/changed browser modules
+returned 200 with matching contents over loopback. Invalid character-quest
+capability returned 403; public HTTPS and protected audio remained 401 without
+authentication. Both services were active. Browser gameplay was not verified.
+
 ## Checkpoint deployed: audio byte ranges (2 November 2026)
 
 Runtime `026d152ac1960867f7f7ad1655f4adf731e670c7`, tag
