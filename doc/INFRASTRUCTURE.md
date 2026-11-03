@@ -12,6 +12,39 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: known destinations and artifact recovery (3 November 2026)
+
+Runtime `b4c97319b770dd70b824768e17a0ad2eb0d1e8e2`, tag
+`deploy-2026-11-03-directions-artifact-recovery`, game version **0.21.6**,
+packaged at `2026-11-03T18:17:50.017788+00:00`. Conversation directions now
+open and focus the shared known-destination chooser, including non-parent
+quests. Empty choices have an explicit explanation; opening remains free.
+
+Production logs traced the misleading journey-creation error to
+`/api/artifacts`: the Node worker called `process.exit(0)` before flushing
+its response. A synthetic saved journey reproduced invalid JSON truncated at
+65,536 bytes on the previous deployed worker. The fixed worker returned the
+complete 211,245-byte response three times after deployment, with journal
+quests and elapsed time preserved. Pending receipts remain retryable without
+duplicate payment; artifact failures now have their own error message.
+
+The eleven-file delta was 149,492 bytes, SHA-256
+`a4f35c8c9339b816bec1ee58013646dca0b51cfc8e4ad7641175c8837ac07c1b`.
+Rollback archive `/home/ubuntu/runtime-before-0216-b4c9731.tar.gz` (0600),
+SHA-256 `39a92031990f96bf87c98b98495c7f0fb0244fd0d979161524fdd56845785869`.
+The game service was briefly restarted; no database, migration, nginx or
+dependency changes were needed. Rollback restores those eleven files under
+`/opt/arcane-path` and restarts `arcane-path`, leaving saved journeys intact.
+
+Validation of the clean committed release: **1,311 JavaScript tests and 42
+focused Python tests passed**. All deployed file hashes matched; release,
+changelog, homepage and changed browser modules returned 200 over loopback.
+Both services were active and there were no recent error-priority service
+entries. Public HTTPS remained authenticated (401 without credentials).
+Interactive authenticated gameplay was not verified. Temporary packages,
+release worktree, uploaded checksum list and synthetic probe were removed;
+the rollback archive was retained. Unrelated local changes were not deployed.
+
 ## Checkpoint deployed: unified investigation hub (3 November 2026)
 
 Runtime `81a2e09a30afa091ab9d59506b125513a288acb0`, tag
