@@ -516,8 +516,8 @@ for (const locale of ["fr", "en"]) {
     assert.match(element("#trail-target").textContent, /Se/);
     assert.ok(element("#trail-history").children[0].children.every(b => !b.events.click));
     element("#trail-dialog").close();
-    element("#conversation-dialog").showModal();
-    assert.equal(element("#conversation-dialog").open, true);
+    element("#investigation-dialog").showModal();
+    assert.equal(element("#investigation-dialog").open, true);
     const ask = element("#hint-clues").children[0].children.find(b => b.events.click);
     await ask.events.click();
     assert.equal(state.elapsedMinutes, 40);

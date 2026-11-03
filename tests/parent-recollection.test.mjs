@@ -177,7 +177,7 @@ for (const language of ["fr", "en"]) {
     assert.ok(parentRecollectionText(state, t, "EARNED CLUE").includes(t("parentRecollection.fallback")));
   });
 
-  test(`${language}: map notice is nonblocking, localized, opens the trail and never invents an off-path witness`, tTest => {
+  test(`${language}: journal reminder is nonblocking, localized, opens the trail and never invents an off-path witness`, tTest => {
     const original = globalThis.document;
     tTest.after(() => { globalThis.document = original; });
     const nodes = new Map(), node = id => {
@@ -190,9 +190,12 @@ for (const language of ["fr", "en"]) {
       origin: { col: 14, row: 10 } } });
     state = recordParentRecollection({ ...state, col: 1000, row: -1000, elapsedMinutes: 720 });
     const before = structuredClone(state);
+    const journal = node("#photo-journal-dialog");
+    journal.open = true;
+    journal.close = () => { journal.open = false; };
     let opened = 0;
     const ui = setupParentRecollection(t, { context: () => state ? { state } : null,
-      openTrail: () => { opened++; } });
+      openTrail: () => { assert.equal(journal.open, false); opened++; } });
     ui.update();
     assert.equal(node("#parent-recollection").hidden, false);
     assert.ok(node("#parent-recollection-text").textContent.includes(openingClueText(state, t)));
@@ -202,6 +205,7 @@ for (const language of ["fr", "en"]) {
     assert.equal(node("#parent-recollection-open").textContent, t("parentRecollection.open"));
     node("#parent-recollection-open").click();
     assert.equal(opened, 1);
+    assert.equal(journal.open, false);
     assert.deepEqual(state, before);
     state = { ...state, trail: { ...state.trail, index: 1 } };
     ui.update();
@@ -248,9 +252,15 @@ test("ordinary saves, persistent quest mutations and localization wire the remin
   assert.match(source, /const next = recordParentRecollection\(synchronizeParentDiscovery\(transform\(state\)\)\)/);
   assert.match(source, /parentRecollectionUI\.update\(\)/);
   assert.match(source, /setupParentRecollection\(t, \{[\s\S]*?openTrail: \(\) => trailUI\.open\(\)/);
-  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(html, /id="parent-recollection" aria-labelledby="parent-recollection-title" hidden/);
-  assert.match(html, /id="parent-recollection-guidance" role="status" aria-atomic="true"/);
-  const mapSection = html.slice(html.indexOf('<div class="map-comparison">'));
-  assert.ok(mapSection.indexOf('id="parent-recollection"') < mapSection.indexOf('id="map-viewport"'));
+});
+
+test("parent reminder is in the journal rather than above the map", () => {
+  const source = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const journal = source.indexOf('<dialog id="photo-journal-dialog"');
+  const journalEnd = source.indexOf("</dialog>", journal);
+  const reminder = source.indexOf('id="parent-recollection"');
+  const map = source.indexOf('<div class="map-comparison">');
+  assert.ok(map >= 0 && journal > map && reminder > journal && reminder < journalEnd);
+  assert.match(source, /id="parent-recollection" aria-labelledby="parent-recollection-title" hidden/);
+  assert.match(source, /id="parent-recollection-guidance" role="status" aria-atomic="true"/);
 });

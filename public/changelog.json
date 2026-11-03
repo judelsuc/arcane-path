@@ -1,6 +1,11 @@
 {
-  "version": "0.21.4",
+  "version": "0.21.5",
   "entries": [
+    {
+      "version": "0.21.5",
+      "fr": "L'action « Enquêter ici » rassemble depuis la carte les recherches du parent, les indices, les missions de service, les carnets et les objets magiques. Les actions sur les objets sont centralisées ; Quêtes conserve le relevé des découvertes. Les échanges avec les personnages restent naturels.",
+      "en": "The map's “Investigate here” action brings together parent-trail searches, clues, service quests, journals and magical objects. Artifact actions now have one home, while Quests keeps their discovery record. Conversations with characters remain natural."
+    },
     {
       "version": "0.21.4",
       "fr": "La carte ne clignote plus à chaque pas : les indications au-dessus de la carte restent stables pendant les déplacements et les synchronisations en arrière-plan.",

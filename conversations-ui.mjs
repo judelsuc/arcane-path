@@ -68,6 +68,7 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
 
   function localize() {
     const current = validContext();
+    const investigating = $("investigation-dialog").open;
     trigger.disabled = !current;
     $("town-conversation").disabled = !current;
     $("character-selector-context").textContent = locationText(current);
@@ -92,7 +93,7 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
       button.disabled = !current;
       button.setAttribute("aria-pressed", String(selected === topic));
       const isVisible = selected === topic;
-      $(pane).hidden = !isVisible;
+      if (!investigating) $(pane).hidden = !isVisible;
     }
     if (currentCharacter) {
       const exchange = exchangeReply?.characterId === currentCharacter.id &&

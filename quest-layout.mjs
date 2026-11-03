@@ -1,8 +1,12 @@
 export function setupQuestLayout(t) {
   const $ = id => document.getElementById(id);
   const quests = $("trail-dialog"), dialogue = $("conversation-dialog");
+  const investigation = $("investigation-dialog"), investigationContent = $("investigation-content");
+  const investigationTrigger = $("open-investigation");
+  const investigationClose = $("investigation-close");
   quests.setAttribute("data-native-controls", "");
   dialogue.setAttribute("data-native-controls", "");
+  investigation.setAttribute("data-native-controls", "");
   const parent = document.createElement("section");
   parent.id = "quests-parent";
   while (quests.firstChild) parent.append(quests.firstChild);
@@ -32,9 +36,6 @@ export function setupQuestLayout(t) {
   quests.append(services, journalPane, artifacts);
   $("abandoned-journals-dialog").remove();
 
-  const dialogueBody = document.createElement("section");
-  dialogueBody.id = "dialogue-body";
-  dialogue.append(dialogueBody);
   const directionPanel = document.createElement("section");
   directionPanel.id = "dialogue-directions";
   const hints = $("hint-dialog");
@@ -50,7 +51,22 @@ export function setupQuestLayout(t) {
   journalTalk.id = "dialogue-journals";
   const artifactTalk = document.createElement("section");
   artifactTalk.id = "dialogue-artifacts";
-  dialogueBody.append(parentTalk, directionPanel, serviceTalk, journalTalk, artifactTalk);
+  const parentActions = $("trail-investigation-page");
+  const groups = [
+    ["investigation.parent", [parentActions, parentTalk]],
+    ["investigation.clues", [directionPanel]],
+    ["investigation.services", [serviceTalk]],
+    ["investigation.journals", [journalTalk]],
+    ["investigation.artifacts", [artifactTalk]],
+  ].map(([titleKey, panels]) => {
+    const section = document.createElement("section");
+    const heading = document.createElement("h3");
+    section.className = "investigation-group";
+    heading.dataset.i18n = titleKey;
+    section.append(heading, ...panels);
+    investigationContent.append(section);
+    return { titleKey, heading, section };
+  });
   let selected = "parent";
   const panes = { parent, services, journals: journalPane, artifacts };
   const buttons = {};
@@ -75,6 +91,19 @@ export function setupQuestLayout(t) {
     quests.showModal();
     buttons[selected].focus();
   }
+  function openInvestigation() {
+    if (investigation.open || investigationTrigger.disabled || document.querySelector("dialog[open]")) return;
+    const hasParentTrail = !$("open-quests").disabled;
+    groups[0].section.hidden = !hasParentTrail;
+    parentActions.hidden = !hasParentTrail;
+    parentTalk.hidden = !hasParentTrail;
+    for (const panel of [directionPanel, serviceTalk, journalTalk, artifactTalk]) panel.hidden = false;
+    investigation.showModal();
+    investigationClose.focus();
+  }
+  investigationTrigger.addEventListener("click", openInvestigation);
+  investigationClose.addEventListener("click", () => investigation.close());
+  investigation.addEventListener("close", () => investigationTrigger.focus());
   $("open-quests").addEventListener("click", open);
   quests.addEventListener("close", () => $("open-quests").focus());
   select(selected);
@@ -83,6 +112,11 @@ export function setupQuestLayout(t) {
     localize() {
       title.textContent = t("quests.title");
       close.textContent = t("windowHelpClose");
+      investigation.querySelector("#investigation-title").textContent = t("investigation.title");
+      investigationTrigger.textContent = t("investigation.open");
+      investigationClose.textContent = t("windowHelpClose");
+      investigation.querySelector("[data-i18n='investigation.intro']").textContent = t("investigation.intro");
+      for (const { titleKey, heading } of groups) heading.textContent = t(titleKey);
       for (const [name, button] of Object.entries(buttons)) button.textContent = t(`quests.${name}`);
     },
   };

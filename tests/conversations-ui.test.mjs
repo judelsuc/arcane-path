@@ -78,6 +78,16 @@ test("conversation replies contain only the character's in-world response", asyn
     /tools below|game rules|not testimony/i);
 });
 
+test("conversation localization does not hide investigation groups while the hub is open", t => {
+  const f = portraitFixture(t, async () => new Blob(["portrait"]));
+  const panels = ["dialogue-parent", "dialogue-directions", "dialogue-services",
+    "dialogue-journals", "dialogue-artifacts"].map(id => f.get(id));
+  for (const panel of panels) panel.hidden = false;
+  f.get("investigation-dialog").showModal();
+  f.ui.localize();
+  assert.ok(panels.every(panel => panel.hidden === false));
+});
+
 test("spontaneous artifact speech is forwarded on meetings and ordinary topics, without asking for an object", async t => {
   const heard = [], rumour = { characterId: "b".repeat(32),
     eventId: "00000000-0000-4000-8000-000000000001", artifactId: "hermit" };

@@ -191,8 +191,8 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
     const blocked = working || current.blocked || pending;
     const fresh = snapshot?.state.col === state.col && snapshot?.state.row === state.row &&
       snapshot?.state.elapsedMinutes === state.elapsedMinutes && snapshot?.revision === state.artifactRevision;
+    button(talk, pending ? c.retry : c.refresh, () => void request(), working || current.blocked && !pending);
     for (const host of [talk, book]) {
-      button(host, pending ? c.retry : c.refresh, () => void request(), working || current.blocked && !pending);
       const status = text(host, error || (working ? c.loading : feedback ? c[feedback] : "")); status.setAttribute("role", error ? "alert" : "status");
     }
     button(talk, c.archive, () => void request({ type: "archive" }), blocked);
@@ -200,6 +200,7 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
     if (!entries.length) text(book, c.empty);
     for (const entry of entries) text(book, entry.text);
     if (!fresh) {
+      text(talk, c.stale);
       text(book, c.stale);
       for (const owned of state.lore?.inventory ?? []) text(book, loreItem(owned.id)[lang], "h3");
       return;
@@ -212,15 +213,19 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
       const section = document.createElement("section"); book.append(section);
       text(section, loreItem(offer.id)[lang], "h3");
       if (offer.blocked) text(section, blockedCopy(offer.blocked, lang));
-      button(section, c.claim, () => void request({ type: "claim", id: offer.id }), blocked || Boolean(offer.blocked));
+      button(talk, `${c.claim} · ${loreItem(offer.id)[lang]}`,
+        () => void request({ type: "claim", id: offer.id }), blocked || Boolean(offer.blocked));
     }
     if (snapshot.route) text(book, `${c.routeKnown} · ${(snapshot.route.distanceMeters / 1000).toFixed(2)} km · ${
       Math.ceil(snapshot.route.walkingMinutes)} min`);
     for (const owned of snapshot.owned) {
-      const item = loreItem(owned.id), section = document.createElement("section"); book.append(section);
-      text(section, item[lang], "h3"); text(section, item.inscription[lang]);
+      const item = loreItem(owned.id);
+      const record = document.createElement("section"); book.append(record);
+      text(record, item[lang], "h3"); text(record, item.inscription[lang]);
       const description = extraPower(item.id) ? powerCopy(item.id, lang).description : c.basics[item.id];
-      text(section, `${description} · ${item.grams} g · ${item.footprint.join(" × ")}`);
+      text(record, `${description} · ${item.grams} g · ${item.footprint.join(" × ")}`);
+      const section = document.createElement("section"); talk.append(section);
+      text(section, item[lang], "h3");
       if (owned.blocked) text(section, blockedCopy(owned.blocked, lang));
       if (["star", "lovers"].includes(item.id)) button(section, c.route,
         () => void request({ type: "prepare-route" }), blocked);

@@ -176,7 +176,7 @@ test("directions dialog hides guidance until a paid successful attempt, permits 
     },
   });
   ui.localize();
-  element("#conversation-dialog").showModal();
+  element("#investigation-dialog").showModal();
   assert.equal(attempts, 0);
   assert.equal(state.elapsedMinutes, 0);
   assert.equal(element("#hint-guidance").textContent, translate("en", "hintBeforeAsk"));
@@ -190,7 +190,7 @@ test("directions dialog hides guidance until a paid successful attempt, permits 
   assert.ok(element("#hint-guidance").textContent.includes(state.trail.stages[0].name));
   ui.reset();
   ui.localize();
-  element("#conversation-dialog").showModal();
+  element("#investigation-dialog").showModal();
   assert.equal(element("#hint-guidance").textContent, translate("en", "hintBeforeAsk"));
   assert.equal(attempts, 2);
   state = { ...state, elapsedMinutes: 60, trail: { ...state.trail, version: 2, index: 1,

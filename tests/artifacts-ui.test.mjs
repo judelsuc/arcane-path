@@ -21,6 +21,7 @@ function fixture(t, respond, { pending = false, storesRequest = false } = {}) {
     return nodes.get(id);
   };
   globalThis.document = { getElementById: get, createElement: () => new Element(),
+    createTextNode: textContent => Object.assign(new Element(), { textContent }),
     documentElement: { lang: "en" } };
   t.after(() => { globalThis.document = previous; });
   t.mock.method(console, "error", () => {});
@@ -125,6 +126,29 @@ test("artifact knowledge appears spontaneously outside its topic, is saved, and 
   f.speaker({ id: "d".repeat(32), name: "Another person" });
   f.ui.localize();
   assert.equal(f.get("conversation-artifact-rumour").hidden, true);
+});
+
+test("artifact actions live in the investigation panel while Quests keeps an action-free record", async t => {
+  const f = fixture(t, result => ({
+    ...result,
+    state: { ...result.state, lore: { inventory: [
+      { id: "temperance", placement: { x: 0, y: 0, rotated: false } },
+    ], shared: [] } },
+    offers: [{ id: "hermit" }],
+    owned: [{ id: "temperance", cooldownUntil: 0 }],
+    worldMinutes: 0,
+  }));
+  f.ui.localize();
+  f.get("dialogue-artifacts").children.find(node => node.textContent === "Refresh artifacts").events.click();
+  await settle();
+  const treeText = node => [node.textContent, ...node.children.map(treeText)].join(" ");
+  const investigation = treeText(f.get("dialogue-artifacts"));
+  const journal = treeText(f.get("quests-artifacts"));
+  assert.match(investigation, /Search and collect/);
+  assert.match(investigation, /Use power/);
+  assert.doesNotMatch(journal, /Search and collect|Use power|Leave in a cache|Pack artifact/);
+  assert.match(journal, /The pierced thimble/);
+  assert.match(journal, /The pierced stopper/);
 });
 
 test("temporarily blocked conversation speech waits without losing its fixed event", async t => {

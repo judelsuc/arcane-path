@@ -286,15 +286,6 @@
         </section>
         <div class="map-comparison">
           <section id="artifact-recovery" role="region" aria-label="Objets magiques" hidden></section>
-          <section id="parent-recollection" aria-labelledby="parent-recollection-title" hidden>
-            <h3 id="parent-recollection-title"></h3>
-            <p id="parent-recollection-guidance" role="status" aria-atomic="true"></p>
-            <details>
-              <summary data-i18n="parentRecollection.memoryTitle"></summary>
-              <p id="parent-recollection-text"></p>
-            </details>
-            <button id="parent-recollection-open" type="button"></button>
-          </section>
           <section class="comparison-panel" aria-labelledby="ascii-title">
             <h3 id="ascii-title"></h3>
             <div class="map-viewport" id="map-viewport" aria-live="polite">
@@ -307,6 +298,7 @@
               <button data-move="1,0" type="button" data-i18n="travelEast"></button>
               <button id="open-survival-choices" type="button" disabled data-i18n="survivalChoices" aria-haspopup="dialog" aria-controls="survival-choices-dialog"></button>
               <button id="open-conversation" type="button" disabled data-i18n="conversation.title" aria-haspopup="dialog" aria-controls="conversation-dialog"></button>
+              <button id="open-investigation" type="button" data-i18n="investigation.open" aria-haspopup="dialog" aria-controls="investigation-dialog"></button>
               <button id="open-quests" type="button" disabled data-i18n="quests.title" aria-haspopup="dialog" aria-controls="trail-dialog"></button>
               <button id="rest-travel" type="button" data-i18n="travelRest"></button>
               <button id="save-travel" type="button" disabled data-i18n="saveNow"></button>
@@ -520,6 +512,15 @@
         <form method="dialog"><button data-i18n="closePhoto"></button></form>
       </header>
       <p class="journal-storage-note" data-i18n="journalStorage"></p>
+      <section id="parent-recollection" aria-labelledby="parent-recollection-title" hidden>
+        <h3 id="parent-recollection-title"></h3>
+        <p id="parent-recollection-guidance" role="status" aria-atomic="true"></p>
+        <details>
+          <summary data-i18n="parentRecollection.memoryTitle"></summary>
+          <p id="parent-recollection-text"></p>
+        </details>
+        <button id="parent-recollection-open" type="button"></button>
+      </section>
       <details id="journal-discovery" hidden></details>
       <nav class="content-actions" aria-label="Carnet">
         <button id="journal-cover-page" type="button" data-i18n="journalCoverPage" disabled></button>
@@ -641,6 +642,14 @@
       <p id="conversation-character-status" role="status"></p>
       <p id="conversation-reply" role="status" tabindex="-1" hidden></p>
       <p data-i18n="conversation.rules"></p>
+    </dialog>
+    <dialog id="investigation-dialog" aria-labelledby="investigation-title">
+      <header class="journal-header">
+        <h2 id="investigation-title" data-i18n="investigation.title"></h2>
+        <button id="investigation-close" type="button" data-i18n="windowHelpClose"></button>
+      </header>
+      <p data-i18n="investigation.intro"></p>
+      <div id="investigation-content"></div>
     </dialog>
     <dialog id="survival-choices-dialog" aria-labelledby="survival-choices-title">
       <h2 id="survival-choices-title" data-i18n="survivalChoices"></h2>

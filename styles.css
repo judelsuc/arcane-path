@@ -845,6 +845,10 @@ dialog p { margin: 12px 0; }
 #music-tap { touch-action: none; user-select: none; }
 #music-progress { width: 100%; }
 #trail-dialog { width: min(1120px, 94vw); max-height: 90dvh; overflow: auto; overflow-wrap: anywhere; }
+#investigation-dialog { width: min(1120px, 94vw); max-height: 90dvh; overflow: auto; overflow-wrap: anywhere; }
+#investigation-content { display: grid; gap: 20px; }
+.investigation-group { padding: 16px; border: 1px solid var(--line); border-radius: 6px; }
+.investigation-group > h3 { margin-top: 0; }
 #hint-dialog { overflow-wrap: anywhere; }
 #hint-towns { margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--line); }
 #hint-town { display: block; width: 100%; min-width: 0; max-width: 100%; margin-top: 8px; padding: 8px; font: inherit; background: #121a14; color: #e5e7d9; border: 1px solid var(--line); }

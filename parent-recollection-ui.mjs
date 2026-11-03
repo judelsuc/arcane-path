@@ -25,7 +25,11 @@ export function setupParentRecollection(t, { context, openTrail }) {
   const guidance = document.querySelector("#parent-recollection-guidance");
   const text = document.querySelector("#parent-recollection-text");
   const button = document.querySelector("#parent-recollection-open");
-  button.addEventListener("click", openTrail);
+  const journal = document.querySelector("#photo-journal-dialog");
+  button.addEventListener("click", () => {
+    if (journal.open) journal.close();
+    openTrail();
+  });
   return {
     update() {
       const current = context(), state = current?.state;

@@ -173,6 +173,11 @@ for (const locale of ["fr", "en"]) {
     ui.localize();
     assert.ok(conversationText().includes(generated[locale]));
     ui.reset();
+    state = { ...state };
+    delete state.trail;
+    ui.localize();
+    assert.equal(element("#open-quests").disabled, true);
+    assert.equal(element("#open-investigation").disabled, false);
   });
 }
 

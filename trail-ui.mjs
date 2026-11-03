@@ -137,7 +137,7 @@ export function trailEntryDate(state, minutes, language, t) {
 
 export function setupTrail(t, { context, interview, discover, askDirections, searchField, recognizeField, pinPhoto, narrative }) {
   const dialog = document.querySelector("#trail-dialog");
-  const hintDialog = document.querySelector("#conversation-dialog");
+  const investigationDialog = document.querySelector("#investigation-dialog");
   const action = document.querySelector("#trail-interview");
   const actionCost = action.nextElementSibling;
   const photo = document.querySelector("#trail-clue-photo");
@@ -376,6 +376,8 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         Boolean(current.state.ended) || searching;
     }
     document.querySelector("#open-quests").disabled = !current?.state.trail;
+    document.querySelector("#open-investigation").disabled = !current ||
+      Boolean(current.blocked) || Boolean(current.state.ended);
     if (!current?.state.trail) return;
     const { state, blocked } = current;
     const trail = state.trail;
@@ -765,8 +767,8 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       searching = false;
     }
   });
-  hintDialog.addEventListener("close", () => {
-    if (hintDialog.open) return;
+  investigationDialog.addEventListener("close", () => {
+    if (investigationDialog.open) return;
     if (searching) {
       searchController?.abort();
       searchGeneration++;
@@ -791,7 +793,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     fieldPhotoUnavailable = false;
     photoUnavailable = false;
     dialog.close();
-    hintDialog.close();
+    investigationDialog.close();
     directionsOutcome = directionsTown = selectedTownKey = undefined;
     clearPhoto();
   } };
