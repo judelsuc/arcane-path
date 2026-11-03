@@ -14,7 +14,7 @@ class Element {
   addEventListener(type, fn) { this.events[type] = fn; }
 }
 const settle = () => new Promise(resolve => setImmediate(resolve));
-function fixture(t, respond, { pending = false } = {}) {
+function fixture(t, respond, { pending = false, storesRequest = false } = {}) {
   const previous = globalThis.document, nodes = new Map(), calls = [];
   const get = id => {
     if (!nodes.has(id)) nodes.set(id, new Element());
@@ -38,7 +38,11 @@ function fixture(t, respond, { pending = false } = {}) {
     context: () => ({ state, blocked }), mutate: transform => { state = transform(state); return true; },
     lock() {}, character: () => speaker, client: { pending: () => pending,
       acknowledge() { acknowledged++; pending = false; },
-      async request(_state, action) { calls.push(action); return respond ? respond(result()) : result(); } },
+      async request(_state, action) {
+        calls.push(action);
+        if (storesRequest) pending = true;
+        return respond ? respond(result()) : result();
+      } },
   });
   return { ui, get, calls, state: () => state, acknowledged: () => acknowledged,
     speaker(value) { speaker = value; }, blocked(value) { blocked = value; },
@@ -63,6 +67,24 @@ test("pending artifact commands can recover from the map while Dialogue and Ques
   assert.equal(f.acknowledged(), 1);
   assert.equal(f.ui.pending(f.state()), false);
   assert.equal(recovery.hidden, true);
+});
+
+test("routine artifact syncs keep the map recovery banner hidden while in flight", async t => {
+  let release, observedHidden;
+  const f = fixture(t, async result => {
+    observedHidden = f.get("artifact-recovery").hidden;
+    await new Promise(resolve => { release = resolve; });
+    return result;
+  }, { storesRequest: true });
+  f.ui.hear(rumour, speaker);
+  await settle();
+  f.ui.localize();
+  assert.equal(f.ui.pending(f.state()), true, "the in-flight command is stored for crash recovery");
+  assert.equal(f.get("artifact-recovery").hidden, true);
+  assert.equal(observedHidden, true);
+  release();
+  await settle();
+  assert.equal(f.get("artifact-recovery").hidden, true);
 });
 
 test("failed recovery stays visible and retryable without discarding the pending transaction", async t => {

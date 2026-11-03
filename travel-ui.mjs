@@ -549,7 +549,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     t, status: document.querySelector("#parent-narrative-status"),
   });
   const parentRecollectionUI = setupParentRecollection(t, {
-    context: () => active && !busy ? economyContext() : null,
+    context: () => active ? economyContext() : null,
     openTrail: () => trailUI.open(),
   });
   artifactsUI = setupArtifactQuests(t, {

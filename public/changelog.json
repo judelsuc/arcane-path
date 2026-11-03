@@ -1,6 +1,11 @@
 {
-  "version": "0.21.3",
+  "version": "0.21.4",
   "entries": [
+    {
+      "version": "0.21.4",
+      "fr": "La carte ne clignote plus à chaque pas : les indications au-dessus de la carte restent stables pendant les déplacements et les synchronisations en arrière-plan.",
+      "en": "The map no longer flickers with each step: guidance above the map stays stable during movement and background syncs."
+    },
     {
       "version": "0.21.3",
       "fr": "Les personnages parlent spontanément des légendes et anciennes pistes approximatives d'objets magiques qu'ils connaissent, conservées dans Quêtes sans révéler la position privée d'un autre joueur. Les nouveaux noms utilisent quarante prénoms et quarante noms par langue, en évitant les doublons. Les nouveaux portraits alternent explicitement femmes et hommes ; les portraits existants sont conservés. Une indication sur le parent apparaît après une heure de jeu, puis toutes les trois heures sans progrès, bien visible au-dessus de la carte. Les scènes d'événement reçoivent une illustration générée en arrière-plan, conservée pour tous les joueurs : elle remplace l'ASCII dès son chargement. À l'arrivée, les gravures approuvées et visibles apparaissent dans la description de la case. Les dialogues abandonnent les avertissements hors récit et les explications de leurs mécanismes. La carte du carnet affiche une barre de progression pendant son chargement, distincte des erreurs réelles.",
