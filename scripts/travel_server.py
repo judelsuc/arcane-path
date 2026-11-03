@@ -988,6 +988,9 @@ def make_handler(store, jobs, path_pool=None):
                 logging.exception("Asset storage unavailable")
                 return self.send_json(503, {"error": "Asset storage unavailable; check server logs."})
             except (OSError, ValueError, KeyError, sqlite3.Error):
+                if endpoint == "/api/artifacts":
+                    logging.exception("Main artifact synchronization failed")
+                    return self.send_json(500, {"error": "Artifact synchronization failed; retry the pending command."})
                 logging.exception("Server journey creation failed")
                 return self.send_json(500, {"error": "Server journey creation failed; check the server logs."})
             finally:

@@ -13,7 +13,8 @@ const PANE_TOPICS = {
 };
 
 export function setupConversations(t, { context, characters, onCharacter = () => {},
-  onArtifactRumour = () => {} }) {
+  onArtifactRumour = () => {},
+  onDirections = () => document.getElementById("open-investigation").click() }) {
   const $ = id => document.getElementById(id);
   const dialog = $("conversation-dialog");
   const selector = $("character-selector-dialog");
@@ -90,7 +91,7 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
     }
     for (const [topic, pane] of Object.entries(panes)) {
       const button = $(`conversation-${topic}`);
-      button.disabled = !current;
+      button.disabled = !current || topic === "clues" && $("open-investigation").disabled;
       button.setAttribute("aria-pressed", String(selected === topic));
       const isVisible = selected === topic;
       if (!investigating) $(pane).hidden = !isVisible;
@@ -339,6 +340,13 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
   }
   for (const topic of Object.keys(panes)) {
     $(`conversation-${topic}`).addEventListener("click", () => {
+      if (topic === "clues") {
+        localize();
+        if ($(`conversation-${topic}`).disabled) return;
+        dialog.close();
+        onDirections();
+        return;
+      }
       if ($(`conversation-${topic}`).disabled) return;
       selected = topic;
       void recordTopic(topic);

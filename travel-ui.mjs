@@ -516,6 +516,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       artifactsUI.localize();
     },
     onArtifactRumour: (rumour, character) => artifactsUI.hear(rumour, character),
+    onDirections: () => {
+      trailUI.localize();
+      questLayout.openDirections();
+    },
   });
   function mutateQuest(transform) {
     if (!state || !saveStore || !active) return false;

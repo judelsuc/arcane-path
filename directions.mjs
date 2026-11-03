@@ -54,7 +54,7 @@ export function citedTowns(state) {
 }
 
 export function askDirections(state, cell, info, survival, economy, random = Math.random, destination = null) {
-  if (state.ended || !state.trail || state.trail.completed && !destination) {
+  if (state.ended || !destination && (!state.trail || state.trail.completed)) {
     throw new Error("No active journey destination to ask about.");
   }
   const chance = directionsChance(cell, state), roll = random();

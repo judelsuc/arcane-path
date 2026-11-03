@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { spawn } from "node:child_process";
 import { mainArtifactRequest } from "../main-artifacts.mjs";
 import { startSurvival, walkSurvival } from "../survival.mjs";
 import { startEconomy, finishAction, sleepEconomy } from "../economy.mjs";
@@ -27,6 +28,35 @@ function input() {
     instances: LORE_ITEMS.map(item => ({ id: item.id, col: 14, row: 10, town: "Firmi",
       marker: `virtual:${item.id}`, generation: 1, owner: null, placement: null, cooldownUntil: 0 })) };
 }
+
+test("artifact worker flushes large journey responses completely before exiting", async () => {
+  const request = input();
+  request.operation = "main-artifacts";
+  request.seed = "worker-output-regression";
+  request.snapshot.sidequests = Array.from({ length: 100 }, (_, index) => ({
+    id: index.toString(16).padStart(32, "0"), parent: `Journal parent ${index}`,
+    history: [], step: 0, delivered: false,
+    stages: Array.from({ length: 10 }, (_, stage) => ({
+      name: `Known journal destination ${index}, stage ${stage}`, latitude: 44.5, longitude: 2.3,
+    })),
+  }));
+  const expected = await mainArtifactRequest(request);
+  const worker = spawn(process.execPath, [new URL("../scripts/lore_worker.mjs", import.meta.url).pathname],
+    { stdio: ["pipe", "pipe", "pipe"] });
+  worker.stdout.setEncoding("utf8");
+  worker.stderr.setEncoding("utf8");
+  let stdout = "", stderr = "";
+  worker.stdout.on("data", data => { stdout += data; });
+  worker.stderr.on("data", data => { stderr += data; });
+  const exited = new Promise((resolve, reject) => {
+    worker.on("error", reject);
+    worker.on("close", code => resolve(code));
+  });
+  worker.stdin.end(JSON.stringify(request));
+  assert.equal(await exited, 0, stderr);
+  assert.ok(Buffer.byteLength(JSON.stringify(expected)) > 65536);
+  assert.deepEqual(JSON.parse(stdout), expected);
+});
 
 test("every artifact has a bilingual authored legend, not a fabricated location or inscription", () => {
   assert.deepEqual(Object.keys(ARTIFACT_RUMOURS).sort(), LORE_ITEMS.map(item => item.id).sort());

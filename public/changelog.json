@@ -1,6 +1,11 @@
 {
-  "version": "0.21.5",
+  "version": "0.21.6",
   "entries": [
+    {
+      "version": "0.21.6",
+      "fr": "Demander son chemin ouvre directement les destinations connues dans le panneau d'enquête, y compris celles des missions et des carnets sans piste du parent. Une liste vide est expliquée sans lancer d'action payante. La synchronisation des objets magiques transmet désormais les grosses sauvegardes en entier, au lieu de bloquer les déplacements avec une erreur de création de partie. Une commande en attente peut être réessayée sans perdre la sauvegarde ni payer deux fois.",
+      "en": "Ask for directions opens known destinations directly in the investigation hub, including quest and journal destinations without a parent trail. An empty list is explained without starting a paid action. Magical-object synchronization now sends large saved journeys completely instead of blocking movement with a misleading journey-creation error. Pending commands can be retried without losing the save or paying twice."
+    },
     {
       "version": "0.21.5",
       "fr": "L'action « Enquêter ici » rassemble depuis la carte les recherches du parent, les indices, les missions de service, les carnets et les objets magiques. Les actions sur les objets sont centralisées ; Quêtes conserve le relevé des découvertes. Les échanges avec les personnages restent naturels.",

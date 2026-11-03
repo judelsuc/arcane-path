@@ -103,7 +103,8 @@ export function suggestedTownPosition(town, info, t) {
 
 export function citedTownDirections(town, info, t) {
   return t("hintTownDirections", { place: town.name, ...townPosition(town, info, t) }) +
-    (town.status === "suggested" ? ` ${t("hintTownUnconfirmed")}` : "");
+    (town.status === "suggested" && (!town.references || town.references.includes("parent"))
+      ? ` ${t("hintTownUnconfirmed")}` : "");
 }
 
 export function trailPageRecords(state, stage) {
@@ -325,28 +326,30 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
   }
   function localize() {
     const current = context();
-    if (current?.state.trail) {
-      ask.disabled = current.blocked || Boolean(current.state.ended) || searching;
+    document.querySelector("#hint-town-empty").textContent = t("hintTownEmpty");
+    ask.disabled = !current?.state.trail || Boolean(current?.state.trail?.completed) ||
+      Boolean(current?.blocked) || Boolean(current?.state.ended) || searching;
+    if (current) {
       document.querySelector("#hint-cost").textContent = t("hintCost", {
         minutes: DIRECTIONS_RULES.minutes, fatigue: DIRECTIONS_RULES.fatigue,
         chance: Math.round(directionsChance(current.cell, current.state) * 100),
       });
-      const report = current.state.trail.exploration?.lastReport;
+      const report = current.state.trail?.exploration?.lastReport;
       setFeedback(document.querySelector("#hint-guidance"), directionsTown && directionsOutcome
         ? directionsOutcome === "helped" ? "success" : "failure"
-        : report?.stage === current.state.trail.index
+        : report && report.stage === current.state.trail?.index
         ? report.outcome === "suggestion" ? "" : "failure"
         : directionsOutcome ? directionsOutcome === "helped" ? "success" : "failure" : "");
       document.querySelector("#hint-guidance").textContent = directionsTown && directionsOutcome
         ? directionsOutcome === "helped" ? citedTownDirections(directionsTown, current.info, t)
           : t(`hintOutcome.${directionsOutcome}`)
-        : report?.stage === current.state.trail.index
+        : report && report.stage === current.state.trail?.index
         ? reportText(report)
-        : directionsOutcome === "helped" ? playerHint(current.state, current.info, t)
+        : directionsOutcome === "helped" && current.state.trail ? playerHint(current.state, current.info, t)
           : t(directionsOutcome ? `hintOutcome.${directionsOutcome}` : "hintBeforeAsk");
       const clues = document.querySelector("#hint-clues");
       clues.replaceChildren();
-      for (const hint of current.state.trail.exploration?.hints ?? []) {
+      for (const hint of current.state.trail?.exploration?.hints ?? []) {
         if (hint.stage !== current.state.trail.index || !["prefix", "photo"].includes(hint.kind)) continue;
         const item = document.createElement("li"), button = document.createElement("button");
         paragraph(item, fieldClueText(current.state, hint, t));
@@ -358,7 +361,9 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         clues.append(item);
       }
       const towns = questDirectionTargets(current.state), select = document.querySelector("#hint-town");
-      document.querySelector("#hint-towns").hidden = towns.length === 0;
+      document.querySelector("#hint-towns").hidden = false;
+      document.querySelector("#hint-town-empty").hidden = towns.length > 0;
+      select.disabled = towns.length === 0;
       select.replaceChildren();
       for (const town of towns) {
         const option = document.createElement("option");
@@ -367,13 +372,21 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
           town.references.map(reference => reference.startsWith("service:") ? t("quests.services")
             : reference.startsWith("journal:") || reference.startsWith("abandoned-journal:")
               ? t("quests.journals") : reference.startsWith("artifact:")
-                ? t("quests.artifacts") : t("quests.parent")).join(", ")}`;
+                ? t("quests.artifacts") : t("quests.parent")).join(", ")}${
+          town.status === "suggested" && town.references.includes("parent")
+            ? ` — ${t("hintTownStatus.suggested")}` : ""}`;
         select.append(option);
       }
       selectedTownKey = towns.some(town => town.key === selectedTownKey) ? selectedTownKey : towns[0]?.key;
       select.value = selectedTownKey ?? "";
       document.querySelector("#hint-town-ask").disabled = !towns.length || current.blocked ||
         Boolean(current.state.ended) || searching;
+    } else {
+      document.querySelector("#hint-towns").hidden = true;
+      document.querySelector("#hint-town").replaceChildren();
+      document.querySelector("#hint-town").disabled = true;
+      document.querySelector("#hint-town-ask").disabled = true;
+      selectedTownKey = undefined;
     }
     document.querySelector("#open-quests").disabled = !current?.state.trail;
     document.querySelector("#open-investigation").disabled = !current ||

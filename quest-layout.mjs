@@ -101,6 +101,14 @@ export function setupQuestLayout(t) {
     investigation.showModal();
     investigationClose.focus();
   }
+  function openDirections() {
+    openInvestigation();
+    if (!investigation.open) return;
+    const destination = $("hint-town");
+    const target = destination.disabled ? $("hint-town-empty") : destination;
+    target.scrollIntoView({ block: "center" });
+    target.focus();
+  }
   investigationTrigger.addEventListener("click", openInvestigation);
   investigationClose.addEventListener("click", () => investigation.close());
   investigation.addEventListener("close", () => investigationTrigger.focus());
@@ -108,7 +116,7 @@ export function setupQuestLayout(t) {
   quests.addEventListener("close", () => $("open-quests").focus());
   select(selected);
   return {
-    open, select,
+    open, select, openDirections,
     localize() {
       title.textContent = t("quests.title");
       close.textContent = t("windowHelpClose");

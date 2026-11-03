@@ -27,6 +27,12 @@ Known leads are not replaced with more precise or newly moved locations.
 An obsolete lead is labelled as such; carried objects never supply a private
 holder's location. Existing artifact custody, search and power rules remain.
 
+Artifact synchronization writes its complete worker response before exiting,
+including for large saved journeys. A failed response leaves the command
+pending and movement blocked until its receipt is acknowledged; retrying
+reuses that receipt without repeating a paid action. The server reports
+artifact synchronization failures distinctly from new-journey creation.
+
 ## Character-owned service quests
 
 New character names draw from 40 given names and 40 surnames per supported
@@ -1922,7 +1928,14 @@ autres dialogues pour ne pas interrompre une action en cours.
 Un arret pour faim, fatigue ou manque de sommeil ouvre egalement une explication.
 Ces changements n'ajoutent ni provisions ni reanimation d'une partie terminee.
 
-**Demander son chemin (I)** permet de chercher un passant
+Dans Dialogue, **Demander son chemin** ouvre directement le selecteur des
+**destinations connues** dans le panneau commun **Enqueter ici**. Il propose
+les lieux obtenus dans les indices du parent, les destinations annoncees des
+missions de service, l'etape actuelle des carnets et les lieux d'objets connus.
+Les suggestions non confirmees restent signalees ; les destinations cachees
+ne sont pas ajoutees. La liste fonctionne aussi sans piste du parent et
+explique son absence de destinations sans lancer une recherche payante.
+Une tentative permet de demander a un passant
 imaginaire comment rejoindre l'objectif deja connu : direction generale parmi
 huit points cardinaux et distance vague (« encore assez loin »), sans nombre de
 cases, kilometres exacts ni itineraire garanti. Disponible sans chercher un PNJ

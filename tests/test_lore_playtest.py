@@ -753,3 +753,14 @@ class LorePlaytestTests(unittest.TestCase):
                 post(body, token, **headers)
             self.assertEqual(context.exception.code, status)
             context.exception.close()
+        with patch("travel_server.MainArtifacts.request", side_effect=ValueError("Invalid worker JSON")):
+            with self.assertLogs(level="ERROR") as logs:
+                with self.assertRaises(urllib.error.HTTPError) as context:
+                    urllib.request.urlopen(urllib.request.Request(
+                        url.replace("/api/lore-playtest", "/api/artifacts"), data=b"{}",
+                        headers={"Content-Type": "application/json"}), timeout=20)
+            self.assertEqual(context.exception.code, 500)
+            self.assertEqual(json.load(context.exception)["error"],
+                             "Artifact synchronization failed; retry the pending command.")
+            context.exception.close()
+            self.assertIn("Main artifact synchronization failed", logs.output[0])

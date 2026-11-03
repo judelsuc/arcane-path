@@ -28,6 +28,22 @@ test("directions to another quest remain available when the parent trail is comp
   assert.equal(result.state.trail.completed, true);
   assert.ok(result.state.elapsedMinutes > state.elapsedMinutes);
 });
+
+test("directions to a known destination work without a parent trail and still pay the usual cost", () => {
+  const state = start();
+  delete state.trail;
+  const destination = { name: "Quest destination", latitude: 44.6, longitude: 2.4 };
+  const before = structuredClone(state);
+  const result = askDirections(state, { terrain: "place" }, info, survival, economy, () => 0, destination);
+  assert.equal(result.outcome, "helped");
+  assert.equal(result.state.elapsedMinutes, state.elapsedMinutes + 10);
+  assert.equal(result.state.fatigue, state.fatigue + 2);
+  assert.equal(result.state.walletCents, state.walletCents);
+  assert.deepEqual(state, before);
+  assert.throws(() => ask(state), /active journey/);
+  assert.throws(() => askDirections({ ...state, ended: "health" }, { terrain: "place" },
+    info, survival, economy, () => 0, destination), /active journey/);
+});
 test("town choices retain old witness suggestions without exposing uncollected future destinations", () => {
   const stages = ["Visited", "CURRENT SECRET", "FUTURE SECRET"].map((name, i) => ({
     name, latitude: 44 + i, longitude: 2,
@@ -143,7 +159,7 @@ test("water entry adds forty fatigue independent of endurance and uses existing 
   assert.equal(exiting.fatigueGain, exiting.minutes * 0.08 * exiting.terrainCost);
 });
 
-test("directions dialog hides guidance until a paid successful attempt, permits paid retries and resets", t => {
+function directionsFixture(t) {
   const original = globalThis.document;
   t.after(() => { globalThis.document = original; });
   class Element {
@@ -166,6 +182,11 @@ test("directions dialog hides guidance until a paid successful attempt, permits 
     querySelector: selector => selector === "dialog[open]"
       ? [...elements.values()].find(e => e.open) ?? null : element(selector),
   };
+  return { element };
+}
+
+test("directions dialog hides guidance until a paid successful attempt, permits paid retries and resets", t => {
+  const { element } = directionsFixture(t);
   let state = start(), attempts = 0;
   const ui = setupTrail((key, args) => translate("en", key, args), {
     context: () => ({ state, cell: { terrain: "place" }, info, data: economy, blocked: false }),
@@ -216,5 +237,67 @@ test("directions dialog hides guidance until a paid successful attempt, permits 
   assert.doesNotMatch(element("#hint-guidance").textContent, /SECRET/);
   assert.equal(state.elapsedMinutes, minutesBefore + 20);
   assert.deepEqual(state.trail, trailBefore);
+  ui.reset();
+});
+
+test("known destinations populate without a parent trail, retain selection and clear with the context", t => {
+  const { element } = directionsFixture(t);
+  const point = name => ({ id: name, name, latitude: 44.6, longitude: 2.4 });
+  const state = start();
+  delete state.trail;
+  state.serviceQuests = { quests: [{ id: "service", status: "active", step: 0,
+    destinations: [point("Workshop"), point("Delivery")] }] };
+  state.sidequests = [{ id: "journal", parent: "Journal parent", step: 0, delivered: false,
+    stages: [point("Journal destination"), point("SECRET journal")] }];
+  let current = { state, cell: { terrain: "place" }, info, data: economy, blocked: false };
+  let attempts = 0;
+  const ui = setupTrail((key, args) => translate("en", key, args), {
+    context: () => current,
+    askDirections: destination => {
+      attempts++;
+      const result = askDirections(current.state, current.cell, info, survival, economy, () => 0, destination);
+      current.state = result.state;
+      return result.outcome;
+    },
+  });
+  ui.localize();
+  assert.deepEqual(element("#hint-town").children.map(option => option.textContent.split(" · ")[0]),
+    ["Workshop", "Delivery", "Journal destination"]);
+  assert.equal(element("#hint-ask").disabled, true);
+  assert.equal(element("#hint-town-ask").disabled, false);
+  assert.equal(element("#hint-town-empty").hidden, true);
+  assert.equal(attempts, 0);
+  assert.equal(state.elapsedMinutes, 0);
+  element("#hint-town").events.change({ target: { value: "poi:Delivery" } });
+  ui.localize();
+  assert.equal(element("#hint-town").value, "poi:Delivery");
+  element("#hint-town-ask").events.click();
+  assert.equal(attempts, 1);
+  assert.equal(current.state.elapsedMinutes, 10);
+  assert.match(element("#hint-guidance").textContent, /Delivery/);
+  for (const field of ["blocked", "ended"]) {
+    if (field === "blocked") current.blocked = true;
+    else current.state.ended = "health";
+    ui.localize();
+    assert.equal(element("#hint-town-ask").disabled, true);
+    element("#hint-town-ask").events.click();
+    assert.equal(attempts, 1);
+    current.blocked = false;
+    delete current.state.ended;
+  }
+  current.state.serviceQuests.quests = [];
+  current.state.sidequests = [];
+  ui.localize();
+  assert.equal(element("#hint-towns").hidden, false);
+  assert.equal(element("#hint-town-empty").hidden, false);
+  assert.equal(element("#hint-town-empty").textContent, translate("en", "hintTownEmpty"));
+  assert.equal(element("#hint-town").disabled, true);
+  assert.equal(element("#hint-town").value, "");
+  assert.equal(element("#hint-town-ask").disabled, true);
+  current = null;
+  ui.localize();
+  assert.equal(element("#hint-towns").hidden, true);
+  assert.equal(element("#hint-town").children.length, 0);
+  assert.equal(element("#hint-town-ask").disabled, true);
   ui.reset();
 });

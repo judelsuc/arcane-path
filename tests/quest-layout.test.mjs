@@ -14,6 +14,7 @@ class Element {
   addEventListener(type, callback) { this.events[type] = callback; }
   close() { this.open = false; this.events.close?.(); }
   focus() { this.focused = true; }
+  scrollIntoView(options) { this.scrolled = options; }
   querySelector() { return null; }
   remove() { this.removed = true; }
   setAttribute(name, value) { this[name] = value; }
@@ -78,4 +79,33 @@ test("map investigation does not open over another modal", t => {
   f.get("trail-dialog").showModal();
   f.get("open-investigation").events.click();
   assert.equal(f.get("investigation-dialog").open, false);
+});
+
+test("directions shortcut opens the shared chooser without requiring a parent trail", t => {
+  const f = fixture(t, false);
+  f.layout.openDirections();
+  assert.equal(f.get("investigation-dialog").open, true);
+  assert.equal(f.get("hint-town").focused, true);
+  assert.deepEqual(f.get("hint-town").scrolled, { block: "center" });
+});
+
+test("directions shortcut focuses the empty-state explanation when no destination is known", t => {
+  const f = fixture(t, false);
+  f.get("hint-town").disabled = true;
+  f.layout.openDirections();
+  assert.equal(f.get("investigation-dialog").open, true);
+  assert.equal(f.get("hint-town-empty").focused, true);
+  assert.equal(f.get("hint-town").focused, false);
+});
+
+test("directions shortcut respects disabled actions and other modals", t => {
+  const f = fixture(t, true);
+  f.get("open-investigation").disabled = true;
+  f.layout.openDirections();
+  assert.equal(f.get("investigation-dialog").open, false);
+  f.get("open-investigation").disabled = false;
+  f.get("conversation-dialog").showModal();
+  f.layout.openDirections();
+  assert.equal(f.get("investigation-dialog").open, false);
+  assert.equal(f.get("hint-town").focused, false);
 });

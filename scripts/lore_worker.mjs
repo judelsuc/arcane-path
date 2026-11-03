@@ -13,20 +13,20 @@ Math.random = () => {
 try {
   if (input.operation === "main-artifacts") {
     process.stdout.write(JSON.stringify(await mainArtifactRequest(input)));
-    process.exit(0);
+  } else {
+    let runtime = input.runtime, instances = input.instances;
+    if (input.operation === "start") {
+      runtime = { state: createLoreState(input.genesis.state, input.map, input.genesis.economy),
+        survival: input.genesis.survival, economy: input.genesis.economy,
+        revision: 1, worldMinutes: input.worldMinutes };
+    } else if (input.operation === "action") {
+      ({ runtime, instances } = await applyLoreAction(runtime, instances, input.journey, input.map, input.action,
+        { journalContext: input.journalContext, nowMillis: input.nowMillis }));
+    } else if (input.operation !== "view") throw new Error("Unknown lore worker operation.");
+    const view = loreView(runtime, instances, input.journey, input.map,
+      { nowMillis: input.nowMillis, journalContext: input.journalContext });
+    process.stdout.write(JSON.stringify({ runtime, instances, view }));
   }
-  let runtime = input.runtime, instances = input.instances;
-  if (input.operation === "start") {
-    runtime = { state: createLoreState(input.genesis.state, input.map, input.genesis.economy),
-      survival: input.genesis.survival, economy: input.genesis.economy,
-      revision: 1, worldMinutes: input.worldMinutes };
-  } else if (input.operation === "action") {
-    ({ runtime, instances } = await applyLoreAction(runtime, instances, input.journey, input.map, input.action,
-      { journalContext: input.journalContext, nowMillis: input.nowMillis }));
-  } else if (input.operation !== "view") throw new Error("Unknown lore worker operation.");
-  const view = loreView(runtime, instances, input.journey, input.map,
-    { nowMillis: input.nowMillis, journalContext: input.journalContext });
-  process.stdout.write(JSON.stringify({ runtime, instances, view }));
 } catch (error) {
   if (error instanceof Error && error.constructor === Error) {
     process.stdout.write(JSON.stringify({ error: error.message }));

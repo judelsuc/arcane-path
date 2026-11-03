@@ -49,6 +49,25 @@ class MainArtifactTests(unittest.TestCase):
         with self.assertRaises(JourneyConflict):
             self.api.request({**body, "action": None}, self.token)
 
+    def test_large_snapshot_response_is_complete_and_replays_without_a_second_revision(self):
+        self.state["sidequests"] = [
+            {"id": f"{index:032x}", "parent": f"Journal parent {index}",
+             "history": [], "step": 0, "delivered": False,
+             "stages": [{"name": f"Known journal destination {index}, stage {stage}",
+                         "latitude": 44.5, "longitude": 2.3} for stage in range(10)]}
+            for index in range(100)]
+        before = copy.deepcopy(self.state)
+        result, body = self.request()
+        self.assertGreater(len(json.dumps(result).encode()), 65536)
+        self.assertEqual(result["state"]["sidequests"], before["sidequests"])
+        self.assertEqual(result["state"]["elapsedMinutes"], before["elapsedMinutes"])
+        self.assertEqual(result["state"]["artifactRevision"], 1)
+        self.assertEqual(self.api.request(body, self.token), result)
+        with self.api.connect() as db:
+            runtime = self.api.decode(db.execute("SELECT * FROM sessions WHERE journey=?",
+                                                (self.journey,)).fetchone())
+        self.assertEqual(runtime["revision"], 1)
+
     def test_character_leads_are_frozen_public_and_shared_without_time_or_a_selected_object(self):
         characters = Characters(self.fixture.journeys, self.fixture.lore, artifacts=self.api)
         self.api.characters = characters

@@ -100,11 +100,11 @@ test("spontaneous artifact speech is forwarded on meetings and ordinary topics, 
   await f.ui.open();
   await f.get("character-choices").children[0].children[0].click();
   assert.deepEqual(heard, [[rumour, rumour.characterId]]);
-  f.get("conversation-clues").click();
+  f.get("conversation-notebooks").click();
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(heard.length, 2);
   assert.equal(heard[1][0].eventId, "00000000-0000-4000-8000-000000000002");
-  assert.equal(f.get("dialogue-directions").hidden, false);
+  assert.equal(f.get("dialogue-journals").hidden, false);
 });
 test("portrait fetch failure is labelled visibly and reported without blocking dialogue", async t => {
   const fixture = portraitFixture(t, async () => { throw new Error("storage unavailable"); });
@@ -277,7 +277,7 @@ for (const language of ["fr", "en"]) {
     assert.equal(get("conversation-reply").hidden, true);
     assert.equal(get("conversation-reply").textContent, "");
     assert.deepEqual(current, before);
-    for (const [topic, pane] of Object.entries({ parent: "dialogue-parent", clues: "dialogue-directions",
+    for (const [topic, pane] of Object.entries({ parent: "dialogue-parent",
       notebooks: "dialogue-journals", artifacts: "dialogue-artifacts", services: "dialogue-services" })) {
       get(`conversation-${topic}`).click();
       assert.equal(get("conversation-dialog").open, true);
@@ -291,7 +291,7 @@ for (const language of ["fr", "en"]) {
 
     for (const [topic, target] of Object.entries({
       shelter: "sleep-travel", food: "eat-travel", work: "open-earn-money",
-      transport: "open-journey-world", town: "open-town",
+      transport: "open-journey-world", town: "open-town", clues: "open-investigation",
     })) {
       let invoked = false;
       get(target).events.click = () => {
@@ -357,16 +357,25 @@ test("unknown character knowledge does not remove player-authorized dialogue too
       return { factIds: [] };
     },
   };
+  let directionsOpened = 0;
   const ui = setupConversations((key, args) => translate("en", key, args),
-    { context: () => current, characters });
+    { context: () => current, characters, onDirections: () => {
+      assert.equal(get("conversation-dialog").open, false);
+      directionsOpened++;
+      get("investigation-dialog").showModal();
+      get("dialogue-directions").hidden = false;
+    } });
   await ui.open();
   await get("character-choices").children[0].children[0].click();
   get("conversation-clues").click();
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(get("dialogue-directions").hidden, false);
   assert.equal(get("dialogue-directions").children[0], existingQuestTool);
-  assert.match(get("conversation-character-reply").textContent, /don't know enough about that/);
-  assert.deepEqual(calls, [{ characterId: character.id, topic: "clues" }]);
+  assert.equal(directionsOpened, 1);
+  assert.deepEqual(calls, []);
+  get("investigation-dialog").close();
+  await ui.open();
+  await get("character-choices").children[0].children[0].click();
   get("conversation-parent").click();
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(get("dialogue-parent").hidden, false);
