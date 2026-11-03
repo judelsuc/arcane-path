@@ -12,6 +12,29 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: unified investigation hub (3 November 2026)
+
+Runtime `81a2e09a30afa091ab9d59506b125513a288acb0`, tag
+`deploy-2026-11-03-investigation-hub`, game version **0.21.5**, packaged at
+`2026-11-03T17:52:47.298754+00:00`. The map toolbar now opens a single
+investigation hub for parent clues, directions, service quests, journals and
+magical objects. Artifact actions live in the hub while Quests retains their
+record; natural character conversations remain separate. Parent guidance is
+now in the photo journal.
+
+The ten-file runtime delta was 132,790 bytes, SHA-256
+`8665f20de597f0043855d2847eee008fa06e47c08c418d70570fa04c6abf06e3`.
+Rollback archive `/home/ubuntu/runtime-before-0215-81a2e09.tar.gz` (0600),
+SHA-256 `50cac233af616cd4e1b551366efc5f10686a06a51f8d8c214257aad4901ba00b`.
+No backend code, database, nginx configuration or service restart was needed.
+
+Validation: **1,306 JavaScript tests passed**. All ten deployed file hashes
+matched the package. The release manifest announced the exact runtime commit;
+the homepage, changelog and changed modules returned 200 over loopback.
+Unauthenticated public HTTPS remained protected (401). Both services were
+active after deployment. Authenticated HTTPS and interactive browser gameplay
+were not verified.
+
 ## Checkpoint deployed: walking map flicker (3 November 2026)
 
 Runtime `bb58e9a65978267d866a0cdf5aeb15c9948ff3cc`, tag
