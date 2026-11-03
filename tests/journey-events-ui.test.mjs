@@ -21,6 +21,7 @@ for (const language of ["fr", "en"]) {
       showModal() { this.open = true; }
       close() { this.open = false; }
       focus() {}
+      before() {}
     }
     const nodes = new Map(), el = id => {
       if (!nodes.has(id)) nodes.set(id, new Element());
@@ -39,8 +40,10 @@ for (const language of ["fr", "en"]) {
     const current = { state: { ended: null, tarotDay: "2026-10-18", dailyTarotSeenDay: "2026-10-17",
       walletCents: 150, events: { pending: 1, history: [event] } }, economy, busy: false, saveStatus: "Saved" };
     let acknowledgements = 0;
+    let imageReady = false, paint;
     const ui = setupJourneyEvents((key, args) => translate(language, key, args), {
       context: () => current,
+      illustrations: { render: () => imageReady, subscribe: listener => { paint = listener; } },
       acknowledge() { acknowledgements++; current.state = acknowledgeJourneyEvent(current.state); },
     });
     ui.update();
@@ -61,6 +64,13 @@ for (const language of ["fr", "en"]) {
     assert.equal(el("#journey-event-text").children.find(c => c.textContent === "+1.50").dataset.feedback, "success");
     assert.equal(el("#journey-event-text").children.find(c => c.textContent === "0").dataset.feedback, undefined);
     assert.equal(el("#journey-event-art").textContent, journeyEventArt("coins"));
+    assert.equal(el("#journey-event-art").hidden, false);
+    imageReady = true;
+    paint();
+    assert.equal(el("#journey-event-art").hidden, true, "decoded image replaces ASCII without reopening");
+    imageReady = false;
+    paint();
+    assert.equal(el("#journey-event-art").hidden, false, "failed image leaves the ASCII fallback visible");
     const cards = el("#journey-event-cards").textContent;
     assert.ok(cards.includes(economy.tarot.find(c => c.id === "star")[language]));
     assert.ok(cards.includes(economy.tarot.find(c => c.id === "moon")[language]));

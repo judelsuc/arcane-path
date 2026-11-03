@@ -4,6 +4,7 @@ from contextlib import contextmanager
 import hashlib
 import json
 import logging
+import math
 import re
 import sqlite3
 import threading
@@ -19,6 +20,7 @@ from journey_storage import StoreConnection, cached_journey_cell
 from journeys import JourneyCapacity, JourneyConflict, JourneyRequest, character_name
 from main_artifacts import geographic_position
 from quest_wording import character_quest
+from lore_playtest import ARTIFACTS
 
 WORLD = "roadside-characters-v1"
 PORTRAIT_VERSION = "character-portrait-v1"
@@ -56,51 +58,131 @@ COUNTRY_NAMING_LOCALES = {
 NAMES = {
     "fr-FR": {
         "given": ("Anaïs", "Camille", "Émile", "Inès", "Jules", "Lucie",
-                  "Maëlle", "Noémie", "Raphaël", "Zoé"),
+                  "Maëlle", "Noémie", "Raphaël", "Zoé", "Adrien", "Agathe",
+                  "Alice", "Amélie", "Antoine", "Baptiste", "Basile", "Céleste",
+                  "Charlotte", "Clément", "Diane", "Élise", "Estelle", "Étienne",
+                  "Gabriel", "Hugo", "Jeanne", "Léonie", "Louis", "Louise",
+                  "Marion", "Mathilde", "Nadia", "Nicolas", "Paul", "Salomé",
+                  "Samuel", "Sarah", "Simon", "Yasmine"),
         "family": ("Aubry", "Bazin", "Collet", "Delaunay", "Fabre",
-                   "Leroux", "Mercier", "Perrin", "Roussel", "Vidal"),
+                   "Leroux", "Mercier", "Perrin", "Roussel", "Vidal", "Arnaud",
+                   "Barbier", "Bertrand", "Bonnet", "Boucher", "Brun", "Caron",
+                   "Chevalier", "Clerc", "Colin", "David", "Delmas", "Dubois",
+                   "Dufour", "Dupont", "Faure", "Fontaine", "Garnier", "Gauthier",
+                   "Girard", "Guérin", "Lambert", "Laurent", "Legrand", "Marchand",
+                   "Moreau", "Petit", "Renard", "Roche", "Vincent"),
     },
     "en-GB": {
         "given": ("Ada", "Arthur", "Beatrice", "Elliot", "Florence", "Iris",
-                  "Oliver", "Rowan", "Thomas", "Violet"),
+                  "Oliver", "Rowan", "Thomas", "Violet", "Agnes", "Alistair",
+                  "Amelia", "Archie", "Beth", "Callum", "Cecily", "Daisy",
+                  "Edith", "Edward", "Elsie", "Felix", "Fraser", "Freya",
+                  "George", "Harriet", "Hazel", "Henry", "Imogen", "Isla",
+                  "Jasper", "Leo", "Lewis", "Mabel", "Maisie", "Nathan",
+                  "Phoebe", "Reuben", "Ruth", "Zachary"),
         "family": ("Ainsworth", "Bennett", "Clarke", "Ellis", "Fletcher",
-                   "Hughes", "Marlow", "Parker", "Turner", "Wells"),
+                   "Hughes", "Marlow", "Parker", "Turner", "Wells", "Abbott",
+                   "Barker", "Bell", "Blackwood", "Brown", "Campbell", "Chapman",
+                   "Collins", "Davies", "Edwards", "Evans", "Foster", "Graham",
+                   "Green", "Hall", "Harris", "Hill", "Jones", "Lawson",
+                   "Mitchell", "Morris", "Palmer", "Reid", "Robinson", "Scott",
+                   "Shaw", "Spencer", "Walker", "Ward", "Wood"),
     },
     "en-US": {
         "given": ("Avery", "Casey", "Eleanor", "Emmett", "Harper", "Jordan",
-                  "Morgan", "Quinn", "Riley", "Sage"),
+                  "Morgan", "Quinn", "Riley", "Sage", "Abigail", "Adrian",
+                  "Amara", "Audrey", "Benjamin", "Blake", "Cameron", "Cora",
+                  "Daniel", "Delilah", "Drew", "Elijah", "Evelyn", "Gabriel",
+                  "Grace", "Isaac", "Jade", "Julian", "Leah", "Logan",
+                  "Maya", "Micah", "Naomi", "Noah", "Peyton", "Ruby",
+                  "Savannah", "Theo", "Vivian", "Wesley"),
         "family": ("Brooks", "Carter", "Ellis", "Hayes", "Morgan",
-                   "Parker", "Reed", "Rivera", "Taylor", "Woods"),
+                   "Parker", "Reed", "Rivera", "Taylor", "Woods", "Adams",
+                   "Allen", "Anderson", "Bailey", "Baker", "Bell", "Bennett",
+                   "Campbell", "Coleman", "Cooper", "Davis", "Diaz", "Foster",
+                   "Garcia", "Gray", "Griffin", "Harris", "Jackson", "Kelly",
+                   "Lee", "Lewis", "Martinez", "Miller", "Mitchell", "Nguyen",
+                   "Price", "Ramirez", "Richardson", "Sullivan", "Washington"),
     },
     "es-ES": {
         "given": ("Alba", "Clara", "Diego", "Elena", "Inés", "Lucía",
-                  "Mateo", "Nicolás", "Pablo", "Vega"),
+                  "Mateo", "Nicolás", "Pablo", "Vega", "Adrián", "Aitana",
+                  "Alejandro", "Ana", "Andrés", "Beatriz", "Carmen", "Daniel",
+                  "Eva", "Gabriel", "Hugo", "Irene", "Jaime", "Javier",
+                  "Jimena", "Jorge", "Julia", "Laura", "Leire", "Luis",
+                  "Manuel", "Marina", "Martín", "Nerea", "Paula", "Raquel",
+                  "Rubén", "Sara", "Sergio", "Teresa"),
         "family": ("Alonso", "Blanco", "Castro", "García", "López",
-                   "Martín", "Navarro", "Ortega", "Ruiz", "Santos"),
+                   "Martín", "Navarro", "Ortega", "Ruiz", "Santos", "Aguilar",
+                   "Álvarez", "Cabrera", "Calvo", "Cano", "Cortés", "Delgado",
+                   "Díaz", "Domínguez", "Ferrer", "Flores", "Gil", "Gómez",
+                   "Guerrero", "Herrera", "Iglesias", "León", "Lozano", "Marín",
+                   "Medina", "Molina", "Montero", "Morales", "Muñoz", "Pascual",
+                   "Prieto", "Ramos", "Romero", "Serrano", "Vega"),
     },
     "it-IT": {
         "given": ("Alessia", "Andrea", "Carlo", "Elena", "Giorgio", "Luca",
-                  "Marta", "Nadia", "Paolo", "Sofia"),
+                  "Marta", "Nadia", "Paolo", "Sofia", "Alberto", "Anna",
+                  "Beatrice", "Bianca", "Chiara", "Claudio", "Davide", "Elisa",
+                  "Enrico", "Federica", "Filippo", "Francesca", "Gabriele", "Giada",
+                  "Giovanni", "Giulia", "Ilaria", "Leonardo", "Lorenzo", "Lucia",
+                  "Marco", "Matteo", "Michele", "Pietro", "Rebecca", "Riccardo",
+                  "Sara", "Simone", "Valentina", "Viola"),
         "family": ("Bianchi", "Conti", "Costa", "Esposito", "Ferrari",
-                   "Gallo", "Greco", "Marino", "Romano", "Rossi"),
+                   "Gallo", "Greco", "Marino", "Romano", "Rossi", "Barbieri",
+                   "Bellini", "Benedetti", "Bernardi", "Bruno", "Colombo", "De Luca",
+                   "Fabbri", "Farina", "Ferrara", "Fontana", "Galli", "Gentile",
+                   "Giordano", "Leone", "Lombardi", "Longo", "Mancini", "Marchetti",
+                   "Martini", "Moretti", "Neri", "Pellegrini", "Ricci", "Rinaldi",
+                   "Rizzo", "Rossetti", "Santoro", "Serra", "Vitale"),
     },
     "de-DE": {
         "given": ("Amalia", "Anton", "Emil", "Greta", "Hanna", "Jonas",
-                  "Lena", "Mila", "Theo", "Yara"),
+                  "Lena", "Mila", "Theo", "Yara", "Adrian", "Anja",
+                  "Ben", "Clara", "David", "Elisa", "Erik", "Felix",
+                  "Frieda", "Hannes", "Ida", "Jakob", "Johanna", "Julius",
+                  "Karl", "Klara", "Lea", "Leonie", "Lukas", "Marlene",
+                  "Matteo", "Nele", "Nils", "Oskar", "Paula", "Philipp",
+                  "Romy", "Simon", "Sophie", "Tobias"),
         "family": ("Bauer", "Becker", "Fischer", "Hoffmann", "Keller",
-                   "Koch", "Meyer", "Schneider", "Schulz", "Weber"),
+                   "Koch", "Meyer", "Schneider", "Schulz", "Weber", "Beck",
+                   "Berger", "Braun", "Busch", "Fuchs", "Graf", "Hahn",
+                   "Hartmann", "Herrmann", "Jung", "Kaiser", "Klein", "Krause",
+                   "Krüger", "Lang", "Lange", "Lehmann", "Lorenz", "Ludwig",
+                   "Meier", "Neumann", "Peters", "Richter", "Roth", "Schmidt",
+                   "Schmitt", "Schröder", "Schubert", "Vogel", "Wolf"),
     },
     "pl-PL": {
         "given": ("Adam", "Agnieszka", "Ania", "Jan", "Kasia", "Marek",
-                  "Marta", "Piotr", "Tomasz", "Zofia"),
+                  "Marta", "Piotr", "Tomasz", "Zofia", "Aleksandra", "Alicja",
+                  "Andrzej", "Antoni", "Barbara", "Bartosz", "Celina", "Damian",
+                  "Dorota", "Elżbieta", "Ewa", "Filip", "Gabriela", "Grzegorz",
+                  "Hanna", "Helena", "Iga", "Jakub", "Joanna", "Julia",
+                  "Karol", "Klara", "Lena", "Łukasz", "Magdalena", "Natalia",
+                  "Oskar", "Paweł", "Wiktor", "Zuzanna"),
         "family": ("Dąbrowski", "Kowalski", "Kozłowski", "Lewandowski", "Mazur",
-                   "Nowak", "Szymański", "Woźniak", "Zieliński", "Żuk"),
+                   "Nowak", "Szymański", "Woźniak", "Zieliński", "Żuk", "Baran",
+                   "Bąk", "Cebula", "Czajka", "Duda", "Gajda", "Jabłoński",
+                   "Kaczmarek", "Kalinowski", "Kamiński", "Kowalczyk", "Król", "Kubiak",
+                   "Lis", "Maj", "Malinowski", "Michalak", "Nowakowski", "Olszewski",
+                   "Pawlak", "Piątek", "Rutkowski", "Sikora", "Sobczak", "Stępień",
+                   "Szulc", "Witkowski", "Wójcik", "Zając", "Zawadzki"),
     },
     "fi-FI": {
         "given": ("Aino", "Eero", "Helmi", "Ilmari", "Kaisa", "Lauri",
-                  "Matti", "Noora", "Sanni", "Veikko"),
+                  "Matti", "Noora", "Sanni", "Veikko", "Aada", "Aleksi",
+                  "Anni", "Antti", "Eeva", "Elias", "Emilia", "Hanna",
+                  "Henrik", "Iida", "Jaakko", "Johanna", "Juho", "Kerttu",
+                  "Kuutti", "Laura", "Leevi", "Liisa", "Lotta", "Maija",
+                  "Mika", "Oona", "Oskari", "Paavo", "Petri", "Riikka",
+                  "Saara", "Tapio", "Tuomas", "Venla"),
         "family": ("Aalto", "Heikkinen", "Hämäläinen", "Järvinen", "Korhonen",
-                   "Laine", "Nieminen", "Virtanen", "Vuori", "Äijälä"),
+                   "Laine", "Nieminen", "Virtanen", "Vuori", "Äijälä", "Aaltonen",
+                   "Ahonen", "Anttila", "Hakala", "Heikkilä", "Hiltunen", "Hirvonen",
+                   "Jokinen", "Kallio", "Karjalainen", "Kinnunen", "Koivisto", "Koskinen",
+                   "Laakso", "Laaksonen", "Lehtinen", "Lehto", "Lehtonen", "Mäkinen",
+                   "Mattila", "Niemi", "Ojala", "Rantanen", "Räsänen", "Saarinen",
+                   "Salminen", "Salonen", "Toivonen", "Tuominen", "Vainio"),
     },
 }
 ROLES = (
@@ -147,11 +229,19 @@ def portrait_request(character_id):
     ).hexdigest()
 
 
-def portrait_prompt(role):
+def portrait_gender(location_id, slot):
+    offset = int(hashlib.sha256(f"portrait-gender:{location_id}".encode()).hexdigest()[:8], 16)
+    return ("woman", "man")[(offset + slot) % 2]
+
+
+def portrait_prompt(role, gender=None):
     if role not in PORTRAIT_ROLE_PROMPTS:
         raise ValueError("Unknown portrait role.")
+    if gender is not None and gender not in {"woman", "man"}:
+        raise ValueError("Unknown portrait gender.")
     return {"prompt": (
         f"An original illustrated bust portrait of {PORTRAIT_ROLE_PROMPTS[role]}, "
+        + (f"depicted as an adult {gender}, " if gender else "") +
         "with generic non-identifiable features, gentle expression, simple role-appropriate clothing, "
         "soft watercolor and ink on warm paper, restrained indigo and ochre palette. "
         "One fictional adult only; no name, place, readable text, symbols, maps, realism, "
@@ -160,9 +250,10 @@ def portrait_prompt(role):
 
 
 class Characters:
-    def __init__(self, journeys, authorization, *, clock=time.time, writer=None, quests=None):
+    def __init__(self, journeys, authorization, *, clock=time.time, writer=None, quests=None, artifacts=None):
         self.journeys, self.authorization, self.clock = journeys, authorization, clock
         self.quests = quests
+        self.artifacts = artifacts
         self.assets = getattr(journeys, "assets", None)
         self.writer = writer if self.assets is not None else None
         self.portrait_pool = (ThreadPoolExecutor(max_workers=1, thread_name_prefix="character-portrait")
@@ -331,13 +422,15 @@ class Characters:
         profile = json.loads(row["profile"])
         if "quest" not in profile:
             profile["quest"] = character_quest(row["character_id"], row["role"])
+        knowledge = json.loads(row["knowledge"])
+        knowledge.pop("artifacts", None)
         return {
             "id": row["character_id"], "name": row["name"], "role": row["role"],
             "location": location, "home": location, "current": current,
             "availability": "present",
             "availabilityClock": "shared-world-static-v1",
             "namingLocale": row["naming_locale"],
-            "profile": profile, "knowledge": json.loads(row["knowledge"]),
+            "profile": profile, "knowledge": knowledge,
             "needs": json.loads(row["needs"]),
             "portrait": {"ref": row["portrait_ref"], "status": row["portrait_status"],
                          "model": row["portrait_model"],
@@ -511,11 +604,107 @@ class Characters:
             return result if result["characters"] else {**result, "canCreate": False, "absent": True}
         return {**self._list(journey, region, location), "arrived": arrived["id"]}
 
+    @staticmethod
+    def _artifact_knowledge(character_id, clues):
+        seed = hashlib.sha256(f"character-artifacts-v1:{character_id}".encode()).hexdigest()
+        ordered = sorted(ARTIFACTS, key=lambda identity: hashlib.sha256(
+            f"{seed}:{identity}".encode()).hexdigest())
+        return [{"id": identity, "clue": clues.get(identity)}
+                for identity in ordered[:1 + int(seed[:8], 16) % 3]]
+
+    @staticmethod
+    def _spontaneous_rumour(knowledge, character_id, journey, event_id):
+        known = knowledge.get("artifacts", ())
+        if not known:
+            return None
+        seed = hashlib.sha256(
+            f"character-conversation-v1:{character_id}:{journey}:{event_id}".encode()).hexdigest()
+        if int(seed[:8], 16) % 100 >= 35:
+            return None
+        return {"characterId": character_id, "eventId": event_id,
+                "artifactId": known[int(seed[8:16], 16) % len(known)]["id"]}
+
+    def _ensure_artifact_knowledge(self, journey, region, location, character_id):
+        if self.artifacts is None:
+            return
+        with self.connect() as db:
+            row = db.execute(self._sql(
+                "SELECT knowledge FROM world_characters WHERE character_id=? AND world_id=? AND location_id=?"),
+                (character_id, WORLD, location["id"])).fetchone()
+        if row is None or "artifacts" in json.loads(row["knowledge"]):
+            return
+        clues = self.artifacts.character_knowledge(journey, region, location)
+        with self.connect() as db:
+            self._begin(db)
+            row = db.execute(self._sql(
+                "SELECT knowledge FROM world_characters WHERE character_id=?"),
+                (character_id,)).fetchone()
+            knowledge = json.loads(row["knowledge"])
+            if "artifacts" not in knowledge:
+                knowledge["artifacts"] = self._artifact_knowledge(character_id, clues)
+                db.execute(self._sql("UPDATE world_characters SET knowledge=? WHERE character_id=?"),
+                           (json.dumps(knowledge), character_id))
+
+    def artifact_rumour(self, journey, character_id, event_id, position, token):
+        _, _, _, location = self._authorized_location(
+            {"journey": journey, "location": position}, token)
+        with self.connect() as db:
+            row = db.execute(self._sql(
+                "SELECT knowledge FROM world_characters WHERE character_id=? AND world_id=? AND location_id=?"),
+                (character_id, WORLD, location["id"])).fetchone()
+            event = db.execute(self._sql(
+                "SELECT character_id FROM character_encounter_events WHERE journey=? AND event_id=?"),
+                (journey, event_id)).fetchone()
+            if event is None:
+                event = db.execute(self._sql(
+                    "SELECT character_id FROM character_private_exchanges WHERE journey=? AND event_id=?"),
+                    (journey, event_id)).fetchone()
+            if row is None or event is None or event["character_id"] != character_id:
+                raise JourneyConflict("This character has not shared an artifact rumour in this conversation.")
+            knowledge = json.loads(row["knowledge"])
+        selected = self._spontaneous_rumour(knowledge, character_id, journey, event_id)
+        if selected is None:
+            raise JourneyConflict("No artifact rumour was shared in this conversation.")
+        return next(item for item in knowledge["artifacts"] if item["id"] == selected["artifactId"])
+
+    def _new_name(self, db, region, location, seed):
+        names = NAMES[location["namingLocale"]]
+        rows = db.execute(self._sql(
+            "SELECT name,location_id FROM world_characters WHERE world_id=? AND (region=? OR location_id=?)"),
+            (WORLD, region, location["id"])).fetchall()
+        used = {row["name"] for row in rows}
+        nearby = {row["name"] for row in rows if row["location_id"] == location["id"]}
+        given_here = {given for given in names["given"]
+                      if any(name.startswith(given + " ") for name in nearby)}
+        family_here = {family for family in names["family"]
+                       if any(name.endswith(" " + family) for name in nearby)}
+        total = len(names["given"]) * len(names["family"])
+        start = int(seed[:16], 16) % total
+        step = int(seed[16:32], 16) % total or 1
+        while math.gcd(step, total) != 1:
+            step += 1
+        fallback = None
+        for offset in range(total):
+            index = (start + offset * step) % total
+            given = names["given"][index % len(names["given"])]
+            family = names["family"][index // len(names["given"])]
+            name = given + " " + family
+            if name in used:
+                continue
+            if given not in given_here and family not in family_here:
+                return name
+            if fallback is None:
+                fallback = name
+        if fallback is not None:
+            return fallback
+        raise JourneyCapacity("This region has exhausted its available character names.")
+
     def _create(self, journey, region, location, request_id):
         if not location["canCreate"]:
             raise JourneyConflict("Character creation is unavailable until this place has a supported naming locale.")
         fingerprint = hashlib.sha256(json.dumps(
             [WORLD, location["id"]], separators=(",", ":")).encode()).hexdigest()
+        artifact_clues = self.artifacts.character_knowledge(journey, region, location) if self.artifacts else {}
         schedule_portrait = False
         with self.connect() as db:
             self._begin(db)
@@ -550,17 +739,16 @@ class Characters:
                 slot = next(slot for slot in range(limit) if slot not in occupied)
                 seed = hashlib.sha256(f"{WORLD}:{region}:{location['id']}:{slot}".encode()).hexdigest()
                 character_id = seed[:32]
-                names = NAMES[location["namingLocale"]]
-                name_index = (int(seed[:8], 16) + slot) % (len(names["given"]) * len(names["family"]))
-                first = name_index % len(names["given"])
-                last = name_index // len(names["given"])
+                name = self._new_name(db, region, location, seed)
                 role, trait, need = ROLES[int(seed[16:24], 16) % len(ROLES)]
                 profile = {"trait": trait, "version": 1,
+                           "portraitGender": portrait_gender(location["id"], slot),
                            "quest": character_quest(character_id, role)}
                 topics, facts = ROLE_KNOWLEDGE[role]
                 knowledge = {
                     "topics": topics, "facts": [{"id": item, "scope": "public"} for item in facts],
                     "parentWitnesses": [],
+                    "artifacts": self._artifact_knowledge(character_id, artifact_clues),
                 }
                 needs = {"description": need, "version": 1}
                 pending = bool(self.writer and db.execute(self._sql(
@@ -580,7 +768,7 @@ class Characters:
                     "portrait_model,portrait_provenance,portrait_revision,revision,slot,created_at) "
                     "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NULL,?,NULL,?,1,1,?,?)"),
                     (character_id, WORLD, region, location["id"], location["kind"], location["name"],
-                     location["namingLocale"], names["given"][first] + " " + names["family"][last],
+                     location["namingLocale"], name,
                      role, json.dumps(profile), json.dumps(knowledge), json.dumps(needs), portrait_status,
                      json.dumps(provenance), slot, self.clock()))
                 db.execute(self._sql(
@@ -713,11 +901,11 @@ class Characters:
             with self.connect() as db:
                 self._begin(db)
                 row = db.execute(self._sql(
-                    "SELECT role,portrait_status FROM world_characters WHERE character_id=?"),
+                    "SELECT role,profile,portrait_status FROM world_characters WHERE character_id=?"),
                     (character_id,)).fetchone()
                 if row is None or row["portrait_status"] != "pending":
                     return
-                brief = portrait_prompt(row["role"])
+                brief = portrait_prompt(row["role"], json.loads(row["profile"]).get("portraitGender"))
                 images.jobs.enqueue("image-character-portrait", request,
                                     {"brief": brief, "model": IMAGE_MODEL, "version": PORTRAIT_VERSION},
                                     provider="images", connection=db.db)
@@ -798,7 +986,9 @@ class Characters:
                         "VALUES(?,?,?,?,?,?)"), (journey, character_id, request_id, event_type, topic,
                                                  self._encounter_clock(db)))
             return {"recorded": True, "type": event_type, "characterId": character_id,
-                    "familiarity": self._familiarity(db, journey, character_id)}
+                    "familiarity": self._familiarity(db, journey, character_id),
+                    "artifactRumour": self._spontaneous_rumour(
+                        json.loads(row["knowledge"]), character_id, journey, request_id)}
 
     def _exchange(self, journey, location, request_id, character_id, topic):
         with self.connect() as db:
@@ -858,7 +1048,8 @@ class Characters:
             seed = int(hashlib.sha256(f"{character_id}:{journey}:{topic}".encode()).hexdigest()[:8], 16)
             mention = self._visitor_mention(db, journey, character_id, seed)
         return {"recorded": True, "type": "exchanged", "characterId": character_id,
-                "topic": topic, "factIds": facts, "factVersion": fact_version, "visitorFacts": mention}
+                "topic": topic, "factIds": facts, "factVersion": fact_version, "visitorFacts": mention,
+                "artifactRumour": self._spontaneous_rumour(knowledge, character_id, journey, request_id)}
 
     @staticmethod
     def _contract_status(event):
@@ -1049,9 +1240,11 @@ class Characters:
         if not isinstance(character_id, str) or not CHARACTER_ID.fullmatch(character_id):
             raise JourneyRequest("Invalid character identity.")
         if action == "meet":
+            self._ensure_artifact_knowledge(journey, region, location, character_id)
             return self._record(journey, region, location, data["requestId"],
                                 character_id, "met")
         topic = data["topic"]
         if not isinstance(topic, str) or topic not in TOPICS:
             raise JourneyRequest("Unknown character conversation topic.")
+        self._ensure_artifact_knowledge(journey, region, location, character_id)
         return self._exchange(journey, location, data["requestId"], character_id, topic)

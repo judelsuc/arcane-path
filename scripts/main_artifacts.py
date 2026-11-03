@@ -45,6 +45,46 @@ class MainArtifacts(LorePlaytest):
         self.world_table = "main_artifact_world" if self.assets is not None else "world"
         self.sessions_table = "main_artifact_sessions" if self.assets is not None else "sessions"
         self.receipts_table = "main_artifact_receipts" if self.assets is not None else "receipts"
+        self.characters = None
+
+    def character_knowledge(self, journey, region, location):
+        genesis = self.journeys.read(journey)
+        if genesis is None:
+            raise JourneyConflict("Unknown character knowledge journey.")
+        with self.connect() as db:
+            if self.assets is None:
+                db.execute("BEGIN IMMEDIATE")
+            else:
+                db.begin("main-artifacts")
+            row = db.execute(f"SELECT * FROM {self.world_table} WHERE id=?", (WORLD,)).fetchone()
+            world = self.decode(row) if row else self.initial_world(
+                self.journeys.chunks.bases[genesis["region"]], genesis["state"])
+            if row is None:
+                raw, checksum = self.encode(world)
+                db.execute(f"INSERT INTO {self.world_table}(id,region,payload,checksum) VALUES(?,?,?,?)",
+                           (WORLD, genesis["region"], raw, checksum))
+        base = self.journeys.chunks.bases[region]
+        result = {}
+        for instance in world["instances"]:
+            if instance["owner"] is not None:
+                continue
+            latitude, longitude = ((instance["latitude"], instance["longitude"]) if "latitude" in instance
+                                   else geographic_position(world["map"], instance["col"], instance["row"]))
+            col, row = grid_position(base, latitude, longitude)
+            meters = math.hypot(location["col"] - col, location["row"] - row) * base["cellSizeMeters"]
+            if meters > 300000:
+                continue
+            facts = {"artifact": instance["id"], "region": world["map"]["name"]}
+            if meters <= 30000:
+                facts["place"] = instance["town"]
+            result[instance["id"]] = {
+                "targetType": "artifact", "targetId": instance["id"],
+                "targetRevision": str(instance["generation"]), "evidenceKey": "location",
+                "kind": "location", "precision": "town" if "place" in facts else "region",
+                "facts": facts, "channels": ["npc"], "source": "character-artifact-rumour",
+                "availability": "current", "contentVersion": "template-v1",
+            }
+        return result
 
     @contextmanager
     def connect(self):
@@ -64,7 +104,8 @@ class MainArtifacts(LorePlaytest):
         journey, action, snapshot = data["journey"], data["action"], data["state"]
         genesis = self.authorize(journey, token)
         prepare_route = action == {"type": "prepare-route"}
-        if action is not None and not prepare_route:
+        character_rumour = isinstance(action, dict) and action.get("type") == "character-rumour"
+        if action is not None and not prepare_route and not character_rumour:
             self.validate_action(action)
             if action["type"] not in COMMANDS:
                 raise JourneyRequest("Use the main journey controls for ordinary travel.")
@@ -73,6 +114,20 @@ class MainArtifacts(LorePlaytest):
                 or type(snapshot.get("col")) is not int or type(snapshot.get("row")) is not int
                 or max(abs(snapshot["col"]), abs(snapshot["row"])) > 8000):
             raise JourneyRequest("Invalid main artifact journey position.")
+        rumour = None
+        if character_rumour:
+            if (set(action) != {"type", "characterId", "eventId"} or
+                    not isinstance(action["characterId"], str) or
+                    not re.fullmatch(r"[a-f0-9]{32}", action["characterId"]) or
+                    not isinstance(action["eventId"], str) or
+                    not re.fullmatch(r"[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}", action["eventId"])):
+                raise JourneyRequest("Invalid character artifact conversation.")
+            if self.characters is None:
+                raise JourneyCapacity("Character artifact conversations are unavailable.")
+            rumour = self.characters.artifact_rumour(
+                journey, action["characterId"], action["eventId"],
+                {"col": snapshot["col"], "row": snapshot["row"]}, token)
+            rumour = {**rumour, "characterId": action["characterId"]}
         if (not isinstance(snapshot.get("trail"), dict)
                 or type(snapshot["trail"].get("index")) is not int
                 or snapshot["trail"]["index"] < 0
@@ -159,7 +214,8 @@ class MainArtifacts(LorePlaytest):
                 raise JourneyCapacity("Artifact receipt capacity reached.")
             context = self.journal_context(genesis, {"state": snapshot}, journey) if snapshot.get("discovery") else None
             result = self.worker("main-artifacts", local, journey, genesis=genesis, runtime=runtime,
-                                 snapshot=snapshot, action=None if prepare_route else action, journalContext=context)
+                                 snapshot=snapshot, action=None if prepare_route or character_rumour else action,
+                                 characterRumour=rumour, journalContext=context)
             for instance in result["instances"]:
                 moved = (instance["col"], instance["row"]) != original_positions[instance["id"]]
                 recached = action is not None and action.get("type") == "cache" and action.get("id") == instance["id"]

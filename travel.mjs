@@ -26,11 +26,12 @@ export function journeyDate(state) {
   return new Date(state.startedAt + state.elapsedMinutes * 60_000);
 }
 
-export function journeyActionBlocker(state, { busy = false, cell } = {}) {
+export function journeyActionBlocker(state, { busy = false, cell, artifactPending = false } = {}) {
   if (!state) return null;
   if (busy) return "loading";
   if (!cell) return "terrain";
   if (state.ended) return "ended";
+  if (artifactPending) return "artifact";
   if (state.transport?.booking?.status === "active") return "transport";
   if (state.events?.pending) return "event";
   if (state.equipment?.dogEncounter === "pending") return "dog";

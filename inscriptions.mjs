@@ -62,7 +62,10 @@ export function createInscriptionsClient({ fetcher = fetch } = {}) {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error ?? `Inscriptions HTTP ${response.status}`);
     if (!["tree", "wall"].includes(result.surface) || !Array.isArray(result.inscriptions) ||
-        result.inscriptions.length > 4 || !Number.isSafeInteger(result.remainingToday)) {
+        result.inscriptions.length > 4 || !result.inscriptions.every(item =>
+          item && typeof item.id === "string" && typeof item.text === "string" &&
+          typeof item.own === "boolean" && typeof item.reported === "boolean") ||
+        !Number.isSafeInteger(result.remainingToday)) {
       throw new Error("Invalid inscriptions response.");
     }
     return result;

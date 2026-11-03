@@ -1,4 +1,5 @@
 import copy
+from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from http.server import ThreadingHTTPServer
@@ -19,6 +20,7 @@ from asset_storage import AssetError, local_storage
 from journeys import JourneyCapacity, JourneyConflict, JourneyRequest, JourneyStore
 from lore_playtest import LorePlaytest
 from main_artifacts import MainArtifacts, WORLD
+from characters import Characters
 from travel_server import ChunkJobs, ChunkStore, atomic_write, make_handler
 
 
@@ -61,6 +63,43 @@ class ArtifactStorageTests(unittest.TestCase):
     def world(self):
         with self.other.connect() as db:
             return self.other.decode(db.execute("SELECT * FROM main_artifact_world WHERE id=?", (WORLD,)).fetchone())
+
+    def test_shared_character_speech_uses_no_nested_pool_checkout_and_survives_another_server(self):
+        authorization = type("Authorization", (), {"authorize": lambda _, journey, token:
+                             self.api.authorize(journey, token)})()
+        characters = Characters(self.first, authorization, artifacts=self.api)
+        self.api.characters = characters
+        self.other.characters = characters
+        original_connection = self.assets.catalogue.connection
+        depth = 0
+
+        @contextmanager
+        def single_checkout():
+            nonlocal depth
+            self.assertEqual(depth, 0, "Character lore must not nest shared pool checkouts.")
+            depth += 1
+            try:
+                with original_connection() as db:
+                    yield db
+            finally:
+                depth -= 1
+
+        base = {"journey": self.journey, "location": {key: self.state[key] for key in ("col", "row")}}
+        with patch.object(self.assets.catalogue, "connection", single_checkout):
+            character = characters.request({**base, "action": "create", "requestId": str(uuid.uuid4())}, self.token)
+            with characters.connect() as db:
+                knowledge = json.loads(db.execute("SELECT knowledge FROM world_characters WHERE character_id=?",
+                                                  (character["id"],)).fetchone()["knowledge"])
+            event = next(str(uuid.UUID(int=index)) for index in range(1, 100)
+                         if characters._spontaneous_rumour(knowledge, character["id"], self.journey,
+                                                           str(uuid.UUID(int=index))))
+            characters.request({**base, "action": "meet", "characterId": character["id"],
+                                "requestId": event}, self.token)
+            body = self.body({"type": "character-rumour", "characterId": character["id"], "eventId": event})
+            result = self.api.request(body, self.token)
+        self.assertEqual(self.other.request(body, self.token), result)
+        self.assertTrue(any(entry["kind"] == "legend" for entry in result["state"]["discovery"]["entries"]))
+        self.assertFalse(characters.path.exists())
 
     def test_cross_vm_receipt_replay_cannot_double_cost_or_conflict(self):
         result, body = self.act({"type": "inquire", "id": "hermit"})

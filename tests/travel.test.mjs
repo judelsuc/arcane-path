@@ -12,6 +12,7 @@ test("action-lock reasons distinguish loading and saved activities without blami
   assert.equal(journeyActionBlocker(state, { cell: road, busy: true }), "loading");
   assert.equal(journeyActionBlocker(state), "terrain");
   assert.equal(journeyActionBlocker(null), null);
+  assert.equal(journeyActionBlocker(state, { cell: road, artifactPending: true }), "artifact");
   for (const [reason, pending] of [
     ["ended", { ended: "hunger" }], ["transport", { transport: { booking: { status: "active" } } }],
     ["event", { events: { pending: 1 } }], ["dog", { equipment: { dogEncounter: "pending" } }],
@@ -21,7 +22,7 @@ test("action-lock reasons distinguish loading and saved activities without blami
     assert.equal(journeyActionBlocker({ ...state, ...pending }, { cell: road }), reason);
   }
   for (const language of ["fr", "en"]) {
-    for (const reason of ["loading", "terrain", "ended", "transport", "event", "dog", "music", "cafe", "theft", "minigame"]) {
+    for (const reason of ["loading", "terrain", "ended", "artifact", "transport", "event", "dog", "music", "cafe", "theft", "minigame"]) {
       assert.notEqual(translate(language, `travelBlocked.${reason}`), `travelBlocked.${reason}`);
     }
   }

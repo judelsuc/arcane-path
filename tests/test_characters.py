@@ -1,4 +1,5 @@
 from contextlib import closing, contextmanager
+import hashlib
 import io
 import json
 import sqlite3
@@ -186,6 +187,128 @@ class CharactersTests(unittest.TestCase):
         self.assertEqual(profile["quest"], plan)
         self.assertEqual(self.create()["profile"]["quest"], plan)
         self.assertEqual(self.request("list", journey="b" * 32)["characters"][0]["profile"]["quest"], plan)
+
+    def test_name_catalogues_cover_regional_capacity_and_stay_locale_specific(self):
+        for locale, names in character_module.NAMES.items():
+            with self.subTest(locale=locale):
+                self.assertGreaterEqual(len(names["given"]), 40)
+                self.assertGreaterEqual(len(names["family"]), 40)
+                for values in names.values():
+                    self.assertEqual(len(values), len(set(values)))
+                    self.assertTrue(all(value.strip() == value and value for value in values))
+                self.assertGreater(len(names["given"]) * len(names["family"]),
+                                   character_module.MAX_REGION_CHARACTERS)
+
+    def test_names_are_diverse_at_full_regional_capacity_for_every_locale(self):
+        for locale in character_module.NAMES:
+            with self.subTest(locale=locale):
+                rows = []
+                db = Mock()
+                db.execute.return_value.fetchall.return_value = rows
+                first_names, surnames = set(), set()
+                local_given, local_family = set(), set()
+                for index in range(character_module.MAX_REGION_CHARACTERS):
+                    if index % character_module.MAX_TOWN_CHARACTERS == 0:
+                        local_given, local_family = set(), set()
+                    location = {"id": f"town:node/{index // 4}", "namingLocale": locale}
+                    seed = hashlib.sha256(f"name-diversity:{index}".encode()).hexdigest()
+                    name = self.service._new_name(db, "firmi", location, seed)
+                    self.assertNotIn(name, {row["name"] for row in rows})
+                    given, family = name.split(" ", 1)
+                    self.assertNotIn(given, local_given)
+                    self.assertNotIn(family, local_family)
+                    local_given.add(given)
+                    local_family.add(family)
+                    first_names.add(given)
+                    surnames.add(family)
+                    rows.append({"name": name, "location_id": location["id"]})
+                self.assertEqual(len(first_names), len(character_module.NAMES[locale]["given"]))
+                self.assertEqual(len(surnames), len(character_module.NAMES[locale]["family"]))
+
+    def test_new_names_avoid_collisions_without_renaming_existing_characters(self):
+        first = self.create()
+        original_seed = hashlib.sha256(
+            f"{character_module.WORLD}:firmi:town:node/123:0".encode()).hexdigest()
+        with self.service.connect() as db:
+            candidate = self.service._new_name(
+                db, "firmi", {"id": "town:node/other", "namingLocale": "fr-FR"}, original_seed)
+        self.assertNotEqual(candidate, first["name"])
+        for index in range(2, 5):
+            self.create(f"00000000-0000-4000-8000-{index:012x}")
+        listed = self.request("list")["characters"]
+        self.assertEqual(len({item["name"].split(" ", 1)[0] for item in listed}), 4)
+        self.assertEqual(len({item["name"].split(" ", 1)[1] for item in listed}), 4)
+        with closing(sqlite3.connect(self.service.path)) as db, db:
+            db.execute("UPDATE world_characters SET name=? WHERE character_id=?",
+                       ("Camille Aubry", first["id"]))
+        reopened = Characters(self.journeys, self.auth)
+        names = {item["id"]: item["name"] for item in reopened.request(
+            {"action": "list", "journey": self.journey, "location": {"col": 0, "row": 0}},
+            self.token)["characters"]}
+        self.assertEqual(names[first["id"]], "Camille Aubry")
+        self.assertEqual(self.create()["name"], "Camille Aubry")
+
+    def test_artifact_knowledge_is_frozen_on_creation_and_never_listed_before_it_is_spoken(self):
+        clues = {identity: {"targetId": identity, "precision": "town", "facts": {"place": "Old town"}}
+                 for identity in character_module.ARTIFACTS}
+        self.service.artifacts = Mock()
+        self.service.artifacts.character_knowledge.return_value = clues
+        character = self.create()
+        self.assertNotIn("artifacts", character["knowledge"])
+        with self.service.connect() as db:
+            knowledge = json.loads(db.execute("SELECT knowledge FROM world_characters WHERE character_id=?",
+                                              (character["id"],)).fetchone()["knowledge"])
+        self.assertIn(len(knowledge["artifacts"]), (1, 2, 3))
+        self.assertTrue(all(item["clue"]["facts"]["place"] == "Old town" for item in knowledge["artifacts"]))
+        self.service.artifacts.character_knowledge.return_value = {}
+        self.assertEqual(self.create()["id"], character["id"])
+        event = next(f"00000000-0000-4000-8000-{index:012x}" for index in range(2, 100)
+                     if self.service._spontaneous_rumour(knowledge, character["id"], self.journey,
+                                                        f"00000000-0000-4000-8000-{index:012x}"))
+        meeting = self.request("meet", characterId=character["id"], requestId=event)
+        self.assertEqual(self.request("meet", characterId=character["id"], requestId=event), meeting)
+        rumour = self.service.artifact_rumour(
+            self.journey, character["id"], event, {"col": 0, "row": 0}, self.token)
+        self.assertEqual(rumour["id"], meeting["artifactRumour"]["artifactId"])
+        self.assertEqual(rumour["clue"]["facts"]["place"], "Old town")
+        self.assertNotIn("artifacts", self.request("list")["characters"][0]["knowledge"])
+        with self.assertRaises(JourneyConflict):
+            self.service.artifact_rumour(self.journey, character["id"],
+                "ffffffff-ffff-4fff-8fff-ffffffffffff", {"col": 0, "row": 0}, self.token)
+        with self.assertRaises(JournalForbidden):
+            self.service.artifact_rumour(
+                self.journey, character["id"], event, {"col": 0, "row": 0}, "wrong")
+
+    def test_spontaneous_artifact_speech_is_bounded_random_and_stable_per_event(self):
+        knowledge = {"artifacts": [{"id": identity, "clue": None}
+                                   for identity in ("hermit", "moon", "star")]}
+        replies = [self.service._spontaneous_rumour(knowledge, "b" * 32, self.journey,
+                   f"00000000-0000-4000-8000-{index:012x}") for index in range(1000)]
+        spoken = [reply for reply in replies if reply]
+        self.assertGreater(len(spoken), 300)
+        self.assertLess(len(spoken), 400)
+        self.assertEqual({reply["artifactId"] for reply in spoken}, {"hermit", "moon", "star"})
+        self.assertIsNone(self.service._spontaneous_rumour({}, "b" * 32, self.journey, "no-knowledge"))
+        for reply in spoken[:20]:
+            self.assertEqual(self.service._spontaneous_rumour(
+                knowledge, "b" * 32, self.journey, reply["eventId"]), reply)
+
+    def test_legacy_character_gets_artifact_knowledge_once_without_identity_changes(self):
+        character = self.create()
+        with self.service.connect() as db:
+            row = db.execute("SELECT knowledge FROM world_characters WHERE character_id=?",
+                             (character["id"],)).fetchone()
+            knowledge = json.loads(row["knowledge"])
+            del knowledge["artifacts"]
+            db.execute("UPDATE world_characters SET knowledge=? WHERE character_id=?",
+                       (json.dumps(knowledge), character["id"]))
+        self.service.artifacts = Mock()
+        self.service.artifacts.character_knowledge.return_value = {}
+        for index in (2, 3):
+            self.request("meet", characterId=character["id"],
+                         requestId=f"00000000-0000-4000-8000-{index:012x}")
+        self.service.artifacts.character_knowledge.assert_called_once()
+        self.assertEqual(self.request("list")["characters"][0]["name"], character["name"])
 
     def test_character_quest_prepares_on_creation_and_requires_a_real_meeting(self):
         quests = self.service.quests = Mock()
@@ -481,7 +604,9 @@ class CharactersTests(unittest.TestCase):
         journey = "c" * 32
         character = self.create(journey=journey)
         self.assertEqual(character["namingLocale"], "pl-PL")
-        self.assertTrue(any(ord(char) > 127 for char in character["name"]))
+        given, family = character["name"].split(" ", 1)
+        self.assertIn(given, character_module.NAMES["pl-PL"]["given"])
+        self.assertIn(family, character_module.NAMES["pl-PL"]["family"])
 
     def test_country_and_explicit_cell_locale_override_origin_and_unsupported_country_blocks_creation(self):
         cell = self.journeys.chunks.bases["firmi"]["rows"][0][0]
@@ -650,6 +775,7 @@ class CharactersTests(unittest.TestCase):
                 self.assertEqual(writer.call_count, 1)
         self.assertEqual(writer.call_count, 1)
         prompt = writer.call_args.args[0]["prompt"]
+        self.assertIn(f"depicted as an adult {created['profile']['portraitGender']}", prompt)
         self.assertNotIn(created["name"], prompt)
         self.assertNotIn("memories", prompt)
         with assets.catalogue.connection() as db:
@@ -675,6 +801,64 @@ class CharactersTests(unittest.TestCase):
         finally:
             character_module.IMAGE_MODEL, character_module.PORTRAIT_VERSION = (
                 original_model, original_version)
+
+    def test_new_portraits_include_women_and_men_stably_without_role_bias(self):
+        created = [self.create(
+            request_id=f"00000000-0000-4000-8000-{index:012d}") for index in range(1, 5)]
+        genders = [character["profile"]["portraitGender"] for character in created]
+        self.assertEqual(genders.count("woman"), 2)
+        self.assertEqual(genders.count("man"), 2)
+        self.assertNotEqual(genders[0], genders[1])
+        reopened = Characters(self.journeys, self.auth)
+        listed = reopened.request({"action": "list", "journey": self.journey,
+                                   "location": {"col": 0, "row": 0}}, self.token)["characters"]
+        self.assertEqual({character["id"]: character["profile"]["portraitGender"] for character in listed},
+                         {character["id"]: character["profile"]["portraitGender"] for character in created})
+        samples = [character_module.portrait_gender(f"town:node/{index}", 0) for index in range(1000)]
+        self.assertTrue(450 <= samples.count("woman") <= 550)
+        for role in character_module.PORTRAIT_ROLE_PROMPTS:
+            for gender in ("woman", "man"):
+                prompt = character_module.portrait_prompt(role, gender)["prompt"]
+                self.assertIn(f"depicted as an adult {gender}", prompt)
+                self.assertIn(character_module.PORTRAIT_ROLE_PROMPTS[role], prompt)
+        with self.assertRaisesRegex(ValueError, "gender"):
+            character_module.portrait_prompt("artisan", "invalid")
+
+    def test_existing_characters_keep_their_profile_and_original_portrait_recipe(self):
+        created = self.create()
+        profile = {key: value for key, value in created["profile"].items() if key != "portraitGender"}
+        with self.service.connect() as db:
+            db.execute("UPDATE world_characters SET profile=? WHERE character_id=?",
+                       (json.dumps(profile), created["id"]))
+        listed = self.request("list")["characters"][0]
+        self.assertEqual(listed["profile"], profile)
+        self.assertNotIn("depicted as", character_module.portrait_prompt(listed["role"])["prompt"])
+        self.assertEqual(self.create()["id"], created["id"])
+        self.assertEqual(self.create()["profile"], profile)
+
+    def test_existing_portrait_jobs_and_ready_images_are_not_regenerated(self):
+        assets, journeys, service, _, created = self.pending_portrait()
+        profile = {key: value for key, value in created["profile"].items() if key != "portraitGender"}
+        with service.connect() as db:
+            db.execute("UPDATE world_characters SET profile=? WHERE character_id=?",
+                       (json.dumps(profile), created["id"]))
+        DurableJobs(assets.catalogue).enqueue(
+            "image-character-portrait", character_module.portrait_request(created["id"]),
+            {"brief": character_module.portrait_prompt(created["role"]),
+             "model": IMAGE_MODEL, "version": character_module.PORTRAIT_VERSION}, provider="images")
+        output = io.BytesIO()
+        Image.new("RGB", (1024, 1024), "navy").save(output, "PNG")
+        service.writer = Mock(return_value=output.getvalue())
+        service._generate_portrait(created["id"])
+        portrait = self.listed_portrait(service)
+        self.assertEqual(portrait["status"], "ready")
+        self.assertNotIn("depicted as", service.writer.call_args.args[0]["prompt"])
+        writer = Mock()
+        reopened = Characters(journeys, self.auth, writer=writer)
+        self.addCleanup(reopened.close)
+        self.assertEqual(self.listed_portrait(reopened)["ref"], portrait["ref"])
+        self.assertEqual(self.listed_portrait(reopened)["status"], "ready")
+        writer.assert_not_called()
 
     def pending_portrait(self):
         assets = local_storage(self.root / "shared-assets")
@@ -702,7 +886,7 @@ class CharactersTests(unittest.TestCase):
         jobs = DurableJobs(assets.catalogue)
         request = character_module.portrait_request(character["id"])
         jobs.enqueue("image-character-portrait", request, {
-            "brief": character_module.portrait_prompt(character["role"]),
+            "brief": character_module.portrait_prompt(character["role"], character["profile"].get("portraitGender")),
             "model": IMAGE_MODEL, "version": character_module.PORTRAIT_VERSION}, provider="images")
         job = jobs.acquire("image-character-portrait", request=request, seconds=900)
         if dispatched:

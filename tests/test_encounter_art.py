@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import sys
 import tempfile
+import threading
 import unittest
 from unittest.mock import Mock, patch
 
@@ -38,14 +39,14 @@ class EncounterArtTests(unittest.TestCase):
         return self.art.request({"journey": "journey", "operation": "sync",
                                  "items": list(items or [self.item])}, "private")
 
-    def test_each_occurrence_and_owner_gets_a_unique_private_image(self):
+    def test_occurrences_and_owners_reuse_scene_images_with_private_observations(self):
         self.assertEqual(self.sync()["entries"][0]["status"], "pending")
         first = self.art.generate("event.food", self.writer)
         entry = self.sync()["entries"][0]
         self.assertEqual(entry["id"], first)
         self.assertEqual(self.sync()["entries"][0], entry)
         second_item = {**self.item, "occurrence": "event:two"}
-        self.assertEqual(self.sync(second_item)["entries"][0]["status"], "pending")
+        self.assertEqual(self.sync(second_item)["entries"][0]["id"], first)
         second = self.art.generate("event.food", self.writer)
         self.assertNotEqual(first, second)
         raw = self.art.request({"journey": "journey", "operation": "image",
@@ -56,13 +57,13 @@ class EncounterArtTests(unittest.TestCase):
         with self.assertRaises(JourneyRequest):
             self.art.request({"journey": "other", "operation": "image",
                               "occurrence": "event:one", "image": first}, "other-private")
-        self.assertEqual(self.sync()["entries"][0]["status"], "pending")
+        self.assertEqual(self.sync()["entries"][0]["id"], first)
         self.assertEqual(self.art.path.stat().st_mode & 0o777, 0o600)
         for call in self.writer.call_args_list:
             self.assertNotIn("private", json.dumps(call.args[0]))
             self.assertNotIn("journey", json.dumps(call.args[0]))
 
-    def test_seven_real_day_boundary_retains_old_image_while_waiting_then_renews(self):
+    def test_cached_scene_remains_available_after_seven_days(self):
         with patch("encounter_art.time.time", return_value=100):
             self.sync()
             original = self.art.generate("event.food", self.writer)
@@ -71,14 +72,14 @@ class EncounterArtTests(unittest.TestCase):
         with patch("encounter_art.time.time", return_value=100 + WEEK):
             entry = self.sync()["entries"][0]
             self.assertEqual(entry["id"], original)
-            self.assertTrue(entry["renewing"])
+            self.assertFalse(entry["renewing"])
             renewed = self.art.generate("event.food", self.writer)
             entry = self.sync()["entries"][0]
-            self.assertEqual(entry["id"], renewed)
+            self.assertEqual(entry["id"], original)
             self.assertFalse(entry["renewing"])
             self.assertNotEqual(renewed, original)
         with self.art.connect() as db:
-            self.assertEqual(db.execute("SELECT COUNT(*) FROM images WHERE claimed=1").fetchone()[0], 2)
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM images").fetchone()[0], 2)
 
     def test_bad_auth_prompts_duplicate_observations_and_scene_changes_are_rejected(self):
         self.auth.authorize.side_effect = JournalForbidden("private")
@@ -118,13 +119,14 @@ class EncounterArtTests(unittest.TestCase):
         with self.art.connect() as db:
             self.assertEqual(db.execute("SELECT COUNT(DISTINCT scene) FROM images").fetchone()[0], 2)
 
-    def test_batch_storage_uses_live_blobs_not_unshrunk_sqlite_file_and_prunes_first(self):
+    def test_batch_retains_cached_images_and_honours_storage_limit(self):
         self.art.generate("event.food", self.writer, now=0)
         clock = [0]
         with patch("encounter_art.MAX_BYTES", 1):
             generated = run_batch(self.art, self.writer, hours=1 / 3600, interval=1,
                                   clock=lambda: clock[0], sleep=lambda seconds: clock.__setitem__(0, 1))
-        self.assertEqual(generated, 1, "expired unclaimed blobs are pruned before the logical size check")
+        self.assertEqual(generated, 0)
+        self.assertIsNotNone(self.art.cached("event.food"))
 
     def test_batch_stops_on_provider_failure_or_disk_limit_without_retry(self):
         self.writer.side_effect = WorkshopError("No free offer", 503)
@@ -142,6 +144,55 @@ class EncounterArtTests(unittest.TestCase):
         self.assertIn("npc.hospitality.hosted", SCENES)
         self.assertIn("npc.hospitality.refused", SCENES)
         self.assertNotIn("death", SCENES)
+        import subprocess
+        kinds = json.loads(subprocess.check_output(
+            ["node", "--input-type=module", "-e",
+             "import { EVENT_CATALOGUE } from './journey-events.mjs';"
+             "console.log(JSON.stringify(Object.keys(EVENT_CATALOGUE)))"],
+            cwd=Path(__file__).resolve().parents[1], text=True))
+        self.assertEqual({scene for scene in SCENES if scene.startswith("event.")},
+                         {f"event.{kind}" for kind in kinds})
+
+    def test_missing_scene_starts_one_nonblocking_job_and_is_reused_by_other_players(self):
+        entered, release = threading.Event(), threading.Event()
+        def writer(brief):
+            entered.set()
+            if not release.wait(5):
+                raise TimeoutError("Test did not release image writer.")
+            return self.writer(brief)
+        self.art.writer = writer
+        self.addCleanup(self.art.close)
+        self.addCleanup(release.set)
+        self.assertEqual(self.sync()["entries"][0]["status"], "pending")
+        self.assertTrue(entered.wait(5))
+        self.sync({**self.item, "occurrence": "event:two"})
+        self.assertEqual(len(self.art.generation), 1)
+        release.set()
+        self.art.close()
+        identity = self.sync()["entries"][0]["id"]
+        self.assertIsNotNone(identity)
+        self.auth.authorize.return_value = ("other", {})
+        self.assertEqual(self.sync()["entries"][0]["id"], identity)
+        self.writer.assert_called_once()
+
+    def test_generation_failure_is_reported_without_repeated_provider_calls(self):
+        self.art.writer = Mock(side_effect=WorkshopError("No free image offer"))
+        self.addCleanup(self.art.close)
+        with self.assertLogs(level="ERROR"):
+            self.sync()
+            self.art.close()
+        for _ in range(3):
+            result = self.sync()["entries"][0]
+            self.assertEqual(result["status"], "failed")
+            self.assertIn("could not be generated", result["error"])
+        self.art.writer.assert_called_once()
+
+    def test_batch_stops_after_every_scene_is_cached(self):
+        for scene in SCENES:
+            self.art.generate(scene, self.writer)
+        self.writer.reset_mock()
+        self.assertEqual(run_batch(self.art, self.writer, hours=1 / 3600), 0)
+        self.writer.assert_not_called()
 
     def test_batch_cannot_overlap_another_batch(self):
         with self.art.path.with_suffix(".lock").open("a") as lock:

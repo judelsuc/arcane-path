@@ -192,7 +192,7 @@ function motifs(episode, copy) {
 }
 export function authoredHint(entry, state, t, plain, order) {
   const copy = authoredCopy(t("discovery.inscriptionLanguage"));
-  if (entry.kind === "inscription") return null;
+  if (["inscription", "legend"].includes(entry.kind)) return null;
   const family = entry.targetType === "artifact" ? "artifact" :
     entry.targetType === "parent-trail" ? "parent" : "journal";
   let guidance = plain;

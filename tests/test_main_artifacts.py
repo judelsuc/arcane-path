@@ -1,4 +1,5 @@
 import copy
+import json
 import sys
 import unittest
 import uuid
@@ -10,6 +11,7 @@ from main_artifacts import MainArtifacts, WORLD
 from journeys import JourneyRequest, JourneyConflict
 from abandoned_journals import JournalForbidden
 import test_lore_playtest as fixtures
+from characters import Characters
 
 
 class MainArtifactTests(unittest.TestCase):
@@ -46,6 +48,50 @@ class MainArtifactTests(unittest.TestCase):
         self.assertEqual(self.api.request(body, self.token), result)
         with self.assertRaises(JourneyConflict):
             self.api.request({**body, "action": None}, self.token)
+
+    def test_character_leads_are_frozen_public_and_shared_without_time_or_a_selected_object(self):
+        characters = Characters(self.fixture.journeys, self.fixture.lore, artifacts=self.api)
+        self.api.characters = characters
+        location = {"col": self.state["col"], "row": self.state["row"]}
+        base = {"journey": self.journey, "location": location}
+        character = characters.request({**base, "action": "create", "requestId": str(uuid.uuid4())}, self.token)
+        with characters.connect() as db:
+            knowledge = json.loads(db.execute("SELECT knowledge FROM world_characters WHERE character_id=?",
+                                              (character["id"],)).fetchone()["knowledge"])
+        self.assertTrue(any(item["clue"] for item in knowledge["artifacts"]))
+        for item in knowledge["artifacts"]:
+            if item["clue"]:
+                self.assertIn(item["clue"]["precision"], ("region", "town"))
+                self.assertLessEqual(set(item["clue"]["facts"]), {"artifact", "region", "place"})
+        event = next(str(uuid.UUID(int=index)) for index in range(1, 100)
+                     if characters._spontaneous_rumour(knowledge, character["id"], self.journey,
+                                                       str(uuid.UUID(int=index))))
+        characters.request({**base, "action": "meet", "characterId": character["id"],
+                            "requestId": event}, self.token)
+        before = copy.deepcopy(self.state)
+        result, body = self.request({"type": "character-rumour", "characterId": character["id"], "eventId": event})
+        self.assertEqual(self.api.request(body, self.token), result)
+        self.assertEqual(result["state"]["elapsedMinutes"], before["elapsedMinutes"])
+        self.assertEqual(result["state"]["walletCents"], before["walletCents"])
+        entries = [entry for entry in result["state"]["discovery"]["entries"] if entry["targetType"] == "artifact"]
+        self.assertTrue(any(entry["kind"] == "legend" for entry in entries))
+        self.assertTrue(any(entry["kind"] == "location" for entry in entries))
+        self.assertFalse(any("col" in entry["facts"] or "latitude" in entry["facts"] for entry in entries))
+        self.assertEqual(result["conversationRumour"]["characterId"], character["id"])
+        with self.assertRaises(JourneyRequest):
+            self.request({**body["action"], "id": "hermit"})
+        with self.assertRaises(JourneyConflict):
+            self.request({**body["action"], "eventId": str(uuid.uuid4())})
+
+    def test_new_character_knowledge_never_includes_a_carried_objects_location(self):
+        self.request({"type": "inquire", "id": "hermit"})
+        self.request({"type": "claim", "id": "hermit"})
+        clues = self.api.character_knowledge(self.journey, "firmi",
+            {"col": self.state["col"], "row": self.state["row"]})
+        self.assertNotIn("hermit", clues)
+        self.assertTrue(clues)
+        self.assertFalse(any("owner" in json.dumps(clue) or "latitude" in json.dumps(clue)
+                             for clue in clues.values()))
 
     def test_stale_revision_and_fabricated_facts_do_not_grant_custody(self):
         old = copy.deepcopy(self.state)

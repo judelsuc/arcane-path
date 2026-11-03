@@ -64,19 +64,45 @@ class EncounterStorageTests(unittest.TestCase):
         self.assertFalse(self.other.path.parent.exists())
         self.writer.assert_called_once()
 
-    def test_racing_observers_cannot_claim_same_image_and_replays_are_stable(self):
+    def test_racing_observers_share_the_same_image_and_replays_are_stable(self):
         identity = self.art.generate("event.food", self.writer)
         with ThreadPoolExecutor(max_workers=2) as pool:
             results = list(pool.map(lambda owner: self.sync(self.other, owner), ("one", "two")))
-        self.assertEqual(sum(result["entries"][0]["id"] == identity for result in results), 1)
+        self.assertEqual(sum(result["entries"][0]["id"] == identity for result in results), 2)
         with ThreadPoolExecutor(max_workers=4) as pool:
             replays = list(pool.map(lambda _: self.sync(self.art, "one"), range(8)))
         self.assertTrue(all(result == replays[0] for result in replays))
         with self.assets.catalogue.connection() as db:
             self.assertEqual(db.execute("SELECT COUNT(*) FROM encounter_assignments").fetchone()[0], 2)
-            self.assertEqual(db.execute("SELECT COUNT(*) FROM encounter_stock WHERE claimed=1").fetchone()[0], 1)
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM encounter_stock").fetchone()[0], 1)
 
-    def test_expiration_retains_previous_until_shared_renewal(self):
+    def test_on_demand_generation_across_servers_dispatches_only_once(self):
+        entered, release = threading.Event(), threading.Event()
+        def writer(brief):
+            entered.set()
+            if not release.wait(5):
+                raise TimeoutError("Test did not release image writer.")
+            return self.writer(brief)
+        for art in (self.art, self.other):
+            art.writer = writer
+            self.addCleanup(art.close)
+        self.addCleanup(release.set)
+        self.assertEqual(self.sync()["entries"][0]["status"], "pending")
+        self.assertTrue(entered.wait(5))
+        self.assertEqual(self.sync(self.other, "second")["entries"][0]["status"], "pending")
+        self.other.close()
+        self.assertEqual(self.sync(self.other, "second")["entries"][0]["status"], "pending")
+        release.set()
+        self.art.close()
+        first = self.sync()["entries"][0]
+        second = self.sync(self.other, "second")["entries"][0]
+        self.assertEqual(first["status"], "ready")
+        self.assertEqual(first["id"], second["id"])
+        self.assertEqual(self.image(self.art, first["id"]),
+                         self.image(self.other, first["id"], "second"))
+        self.writer.assert_called_once()
+
+    def test_shared_cache_does_not_expire_or_replace_existing_notebook_images(self):
         with patch("encounter_art.time.time", return_value=100):
             self.sync()
             original = self.art.generate("event.food", self.writer)
@@ -85,13 +111,12 @@ class EncounterStorageTests(unittest.TestCase):
         with patch("encounter_art.time.time", return_value=100 + WEEK):
             entry = self.sync(self.other)["entries"][0]
             self.assertEqual(entry["id"], original)
-            self.assertTrue(entry["renewing"])
+            self.assertFalse(entry["renewing"])
             self.assertTrue(self.image(self.other, original))
             renewed = self.other.generate("event.food", self.writer)
             self.assertNotEqual(original, renewed)
-            self.assertEqual(self.sync()["entries"][0]["id"], renewed)
-            with self.assertRaises(JourneyRequest):
-                self.image(self.art, original)
+            self.assertEqual(self.sync()["entries"][0]["id"], original)
+            self.assertTrue(self.image(self.art, original))
 
     def test_scene_change_and_partial_batch_roll_back(self):
         self.sync()
@@ -140,16 +165,16 @@ class EncounterStorageTests(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertFalse(self.art.path.parent.exists())
 
-    def test_batch_prunes_metadata_not_durable_assets_and_preserves_claimed_stock(self):
+    def test_batch_retains_cached_scene_metadata_and_durable_assets(self):
         unclaimed = self.art.generate("event.food", self.writer, now=0)
         self.art.shared.sync("owner", [self.item], 1)
         unused = self.art.generate("event.coins", self.writer, now=0)
         stored, scene, counts = self.art.shared.batch_state(WEEK + 1)
         self.assertGreater(stored, 0)
-        self.assertEqual(scene, "event.food")
-        self.assertEqual(counts, {})
+        self.assertIsNone(scene)
+        self.assertEqual(counts, {"event.food": 1, "event.coins": 1})
         self.assertEqual(self.art.shared.previous(unclaimed), "event.food")
-        self.assertIsNone(self.art.shared.previous(unused))
+        self.assertEqual(self.art.shared.previous(unused), "event.coins")
         self.assertTrue(self.assets.read("encounter-art", unused)[1])
 
     def test_http_shared_image_is_private_and_storage_errors_are_sanitized(self):

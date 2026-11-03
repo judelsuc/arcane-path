@@ -1,10 +1,10 @@
-import { TRAIL_DREAMS } from "./trail-dreams.mjs";
 import { parentIntimacy } from "./parent-intimacy.mjs";
 import { clueDirection } from "./trail-search.mjs";
 import { trailTarget, atTrailTarget } from "./trail.mjs";
 import { citedTowns } from "./directions.mjs";
 
-export const PARENT_RECOLLECTION_INTERVAL = TRAIL_DREAMS.interval;
+export const PARENT_RECOLLECTION_FIRST_DELAY = 60;
+export const PARENT_RECOLLECTION_INTERVAL = 180;
 
 function lastParentProgress(state) {
   const { trail } = state, stage = trail.index;
@@ -26,7 +26,7 @@ export function validateParentRecollection(state) {
       .includes(Object.keys(record).sort().join()) ||
       !state.trail || !Number.isInteger(record.stage) || record.stage < 0 ||
       record.stage >= state.trail.stages.length || record.stage > state.trail.index ||
-      !Number.isFinite(record.elapsedMinutes) || record.elapsedMinutes < PARENT_RECOLLECTION_INTERVAL ||
+      !Number.isFinite(record.elapsedMinutes) || record.elapsedMinutes < PARENT_RECOLLECTION_FIRST_DELAY ||
       record.elapsedMinutes > state.elapsedMinutes ||
       !Number.isInteger(record.variant) || record.variant < 0 || record.variant > 2) {
     throw new Error("Invalid parent recollection.");
@@ -45,7 +45,8 @@ export function recordParentRecollection(state) {
   validateParentRecollection(state);
   const previous = state.parentRecollection;
   const since = Math.max(lastParentProgress(state), previous?.elapsedMinutes ?? 0);
-  if (state.elapsedMinutes - since < PARENT_RECOLLECTION_INTERVAL) return state;
+  const delay = previous ? PARENT_RECOLLECTION_INTERVAL : PARENT_RECOLLECTION_FIRST_DELAY;
+  if (state.elapsedMinutes - since < delay) return state;
   const knownTown = citedTowns(state).some(town =>
     town.stage === state.trail.index && town.status === "known");
   const intuition = !knownTown && !atTrailTarget(state) ? {
@@ -64,9 +65,12 @@ export function parentIntuitionText(state, t) {
   const help = state.parentRecollection?.intuition;
   if (!help || !parentRecollectionVisible(state)) return "";
   const direction = t(`hintCompass.${help.direction}`);
+  const moved = state.col !== help.col || state.row !== help.row;
   return t("languageCode") === "en"
-    ? `An intuition, not a witness account: to reconnect with your parent's current trail, try broadly ${direction} from where this intuition came to you. This is approximate guidance, not a known destination or a guaranteed route.`
-    : `Une intuition, pas un témoignage : pour renouer avec la piste actuelle de votre parent, essayez globalement vers ${direction} depuis l'endroit où cette intuition vous est venue. C'est une direction approximative, pas une destination connue ni un itinéraire garanti.`;
+    ? `A hunch draws you back to your parent's trail, somewhere towards ${direction} ${
+      moved ? "from where this feeling came to you" : "from here"}.`
+    : `Une intuition vous ramène vers la piste de votre parent, du côté ${direction}, ${
+      moved ? "depuis l'endroit où ce pressentiment vous est venu" : "depuis cet endroit"}.`;
 }
 
 export function parentRecollectionVisible(state) {

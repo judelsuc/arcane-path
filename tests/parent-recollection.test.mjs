@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { recordParentRecollection, parentRecollectionVisible, parentRecollectionText,
-  validateParentRecollection, PARENT_RECOLLECTION_INTERVAL, parentIntuitionText } from "../parent-recollection.mjs";
+  validateParentRecollection, PARENT_RECOLLECTION_INTERVAL,
+  PARENT_RECOLLECTION_FIRST_DELAY, parentIntuitionText } from "../parent-recollection.mjs";
 import { setupParentRecollection, parentRecollectionGuidance } from "../parent-recollection-ui.mjs";
 import { citedTownDirections } from "../trail-ui.mjs";
 import { beginExploration, openingClueText, clueDirection } from "../trail-search.mjs";
@@ -25,38 +26,39 @@ const after = (state, minutes) => ({ ...state, elapsedMinutes: state.elapsedMinu
 
 test("periodic recollections work far off the parent's path, without search, sleep or cost", () => {
   const initial = { ...start(), col: 1000, row: -1000 };
-  assert.equal(PARENT_RECOLLECTION_INTERVAL, 720);
-  assert.equal(recordParentRecollection(after(initial, 719.999)).parentRecollection, undefined);
-  const due = after(initial, 720), result = recordParentRecollection(due);
-  assert.deepEqual(result, { ...due, parentRecollection: { stage: 0, elapsedMinutes: 720, variant: 0,
+  assert.equal(PARENT_RECOLLECTION_FIRST_DELAY, 60);
+  assert.equal(PARENT_RECOLLECTION_INTERVAL, 180);
+  assert.equal(recordParentRecollection(after(initial, 59.999)).parentRecollection, undefined);
+  const due = after(initial, 60), result = recordParentRecollection(due);
+  assert.deepEqual(result, { ...due, parentRecollection: { stage: 0, elapsedMinutes: 60, variant: 0,
     intuition: { col: due.col, row: due.row, direction: clueDirection(due, due.trail.stages[0]) } } });
   assert.equal(parentRecollectionVisible(result), true);
   assert.equal(recordParentRecollection(result), result, "rerender/save cannot reroll");
-  assert.equal(recordParentRecollection(after(result, 719)).parentRecollection, result.parentRecollection);
-  const next = recordParentRecollection(after(result, 720));
+  assert.equal(recordParentRecollection(after(result, 179.999)).parentRecollection, result.parentRecollection);
+  const next = recordParentRecollection(after(result, 180));
   assert.equal(next.parentRecollection.variant, 1);
   const longAction = recordParentRecollection(after(next, 10000));
   assert.equal(longAction.parentRecollection.variant, 2, "one notice, not a backlog");
-  assert.equal(recordParentRecollection(after(longAction, 720)).parentRecollection.variant, 0);
+  assert.equal(recordParentRecollection(after(longAction, 180)).parentRecollection.variant, 0);
 });
 
-test("zero-clue rescue begins at exactly 720 minutes and persists the current-position bearing without rerolls", () => {
+test("zero-clue rescue begins at exactly 60 minutes and persists the current-position bearing without rerolls", () => {
   const initial = start();
   const stages = initial.trail.stages.map((town, index) => ({ ...town,
     name: `Hidden town ${index}`, col: 100 + index * 100, row: 0 }));
   const state = beginExploration({ ...initial, col: 1000, row: 1000,
     trail: { ...initial.trail, version: 2, stages, origin: { col: 0, row: 0 } } });
-  const due = recordParentRecollection(after(state, 720));
-  assert.equal(recordParentRecollection(after(state, 719.999)).parentRecollection, undefined);
+  const due = recordParentRecollection(after(state, 60));
+  assert.equal(recordParentRecollection(after(state, 59.999)).parentRecollection, undefined);
   assert.equal(due.parentRecollection.intuition.direction, "northwest");
   assert.notEqual(due.parentRecollection.intuition.direction, clueDirection(state.trail.origin, stages[0]));
   assert.deepEqual(due.trail.exploration.hints, [], "help does not masquerade as witness/search evidence");
   const restored = JSON.parse(JSON.stringify(due));
   validateParentRecollection(restored);
   assert.equal(recordParentRecollection(restored), restored);
-  const moved = { ...restored, col: -1000, row: -1000, elapsedMinutes: 721 };
+  const moved = { ...restored, col: -1000, row: -1000, elapsedMinutes: 61 };
   assert.equal(recordParentRecollection(moved).parentRecollection.intuition.direction, "northwest");
-  const later = recordParentRecollection({ ...moved, elapsedMinutes: 1440 });
+  const later = recordParentRecollection({ ...moved, elapsedMinutes: 240 });
   assert.equal(later.parentRecollection.intuition.direction, "southeast");
   assert.equal(later.parentRecollection.variant, 1);
   assert.equal(later.parentRecollection.intuition.col, -1000);
@@ -64,10 +66,13 @@ test("zero-clue rescue begins at exactly 720 minutes and persists the current-po
     const t = (key, args) => translate(language, key, args);
     const text = parentRecollectionGuidance(due, null, t);
     assert.ok(text.includes(t("hintCompass.northwest")));
-    assert.match(text, /intuition/i);
+    assert.match(text, /intuition|hunch/i);
     assert.doesNotMatch(text, /Hidden town|1000|latitude|longitude|node\/|fictional-traveler/);
-    assert.equal(parentIntuitionText(moved, t), parentIntuitionText(due, t),
-      "saved direction stays anchored to the position where it was earned");
+    assert.doesNotMatch(text, /not a witness|pas un témoignage|not a new witness|nouveau témoignage/i);
+    const movedText = parentIntuitionText(moved, t);
+    assert.ok(movedText.includes(t("hintCompass.northwest")));
+    assert.match(movedText, /from where this feeling|depuis l'endroit/);
+    assert.doesNotMatch(movedText, /from here|depuis cet endroit/);
   }
   const changedStage = { ...later, trail: { ...later.trail, index: 1 } };
   assert.equal(parentIntuitionText(changedStage, (key, args) => translate("en", key, args)), "");
@@ -84,8 +89,8 @@ test("earned progress restarts the delay, hides stale notices and never revives 
     const updated = { ...first, elapsedMinutes: 730, trail: { ...first.trail,
       exploration: { hints: [], [channel]: [{ stage: 0, elapsedMinutes: 730 }] } } };
     assert.equal(parentRecollectionVisible(updated), false, channel);
-    assert.equal(recordParentRecollection(after(updated, 719)).parentRecollection, first.parentRecollection);
-    assert.equal(recordParentRecollection(after(updated, 720)).parentRecollection.elapsedMinutes, 1450);
+    assert.equal(recordParentRecollection(after(updated, 179.999)).parentRecollection, first.parentRecollection);
+    assert.equal(recordParentRecollection(after(updated, 180)).parentRecollection.elapsedMinutes, 910);
   }
   for (const progress of [
     { arrivals: [{ stage: 0, elapsedMinutes: 730 }] },
@@ -95,7 +100,7 @@ test("earned progress restarts the delay, hides stale notices and never revives 
   ]) {
     const updated = { ...first, elapsedMinutes: 730, trail: { ...first.trail, ...progress } };
     assert.equal(parentRecollectionVisible(updated), false);
-    assert.equal(recordParentRecollection(after(updated, 719)).parentRecollection, first.parentRecollection);
+    assert.equal(recordParentRecollection(after(updated, 179.999)).parentRecollection, first.parentRecollection);
   }
   for (const state of [null, { elapsedMinutes: 720 }, { ...first, ended: "health" },
     { ...first, trail: { ...first.trail, completed: true } }]) {
@@ -128,6 +133,30 @@ test("the latest recollection survives exact save/resume, with validation and no
   const corrupted = structuredClone(save);
   corrupted.state.parentRecollection.intuition.direction = "invalid";
   assert.throws(() => validateSave(corrupted), /intuition/);
+});
+
+test("one-hour help validates through saves and old twelve-hour receipts adopt the three-hour cadence", () => {
+  const initial = start();
+  const state = { ...initial, trail: { ...initial.trail,
+    stages: initial.trail.stages.map(town => ({ ...town, latitude: undefined, longitude: undefined })) } };
+  const early = recordParentRecollection(after(state, 60));
+  const restored = validateSave(JSON.parse(JSON.stringify(
+    createSave({ region: "firmi", map, state: early, survival, economy }, 1)))).state;
+  assert.equal(restored.parentRecollection.elapsedMinutes, 60);
+  const notYet = after(restored, 179.999);
+  assert.equal(recordParentRecollection(notYet), notYet);
+  assert.equal(recordParentRecollection(after(restored, 180)).parentRecollection.elapsedMinutes, 240);
+  const old = recordParentRecollection(after(state, 720));
+  const saved = validateSave(JSON.parse(JSON.stringify(
+    createSave({ region: "firmi", map, state: old, survival, economy }, 1)))).state;
+  assert.equal(recordParentRecollection(after(saved, 179.999)).parentRecollection.elapsedMinutes, 720);
+  assert.equal(recordParentRecollection(after(saved, 180)).parentRecollection.elapsedMinutes, 900);
+  assert.throws(() => validateParentRecollection({ ...restored,
+    parentRecollection: { ...restored.parentRecollection, elapsedMinutes: 59.999 } }), /recollection/);
+  const progress = { ...state, elapsedMinutes: 30,
+    trail: { ...state.trail, arrivals: [{ stage: 0, elapsedMinutes: 30 }] } };
+  assert.equal(recordParentRecollection(after(progress, 59.999)).parentRecollection, undefined);
+  assert.equal(recordParentRecollection(after(progress, 60)).parentRecollection.elapsedMinutes, 90);
 });
 
 for (const language of ["fr", "en"]) {
@@ -167,7 +196,9 @@ for (const language of ["fr", "en"]) {
     ui.update();
     assert.equal(node("#parent-recollection").hidden, false);
     assert.ok(node("#parent-recollection-text").textContent.includes(openingClueText(state, t)));
-    assert.ok(node("#parent-recollection-text").textContent.includes(t("parentRecollection.search")));
+    assert.ok(node("#parent-recollection-guidance").textContent.includes(t("parentRecollection.search")));
+    assert.equal(node("#parent-recollection-title").textContent,
+      t("parentRecollection.title", { parent: state.trail.parentName }));
     assert.equal(node("#parent-recollection-open").textContent, t("parentRecollection.open"));
     node("#parent-recollection-open").click();
     assert.equal(opened, 1);
@@ -218,6 +249,8 @@ test("ordinary saves, persistent quest mutations and localization wire the remin
   assert.match(source, /parentRecollectionUI\.update\(\)/);
   assert.match(source, /setupParentRecollection\(t, \{[\s\S]*?openTrail: \(\) => trailUI\.open\(\)/);
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(html, /id="parent-recollection" hidden/);
-  assert.match(html, /id="parent-recollection-text" role="status" aria-atomic="true"/);
+  assert.match(html, /id="parent-recollection" aria-labelledby="parent-recollection-title" hidden/);
+  assert.match(html, /id="parent-recollection-guidance" role="status" aria-atomic="true"/);
+  const mapSection = html.slice(html.indexOf('<div class="map-comparison">'));
+  assert.ok(mapSection.indexOf('id="parent-recollection"') < mapSection.indexOf('id="map-viewport"'));
 });

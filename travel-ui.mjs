@@ -431,6 +431,11 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       const current = economyContext();
       return current && active ? current : null;
     },
+    onUpdate() {
+      if (!cursor && active) queueMicrotask(() => {
+        if (!cursor && active) inspectPosition();
+      });
+    },
     carve() {
       const current = economyContext();
       if (!current) throw new Error("Current cell is not loaded.");
@@ -506,7 +511,11 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const conversations = setupConversations(t, {
     context: () => active ? economyContext() : null,
     characters: charactersClient,
-    onCharacter: () => serviceQuestsUI.characterChanged(),
+    onCharacter: () => {
+      serviceQuestsUI.characterChanged();
+      artifactsUI.localize();
+    },
+    onArtifactRumour: (rumour, character) => artifactsUI.hear(rumour, character),
   });
   function mutateQuest(transform) {
     if (!state || !saveStore || !active) return false;
@@ -544,6 +553,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     openTrail: () => trailUI.open(),
   });
   artifactsUI = setupArtifactQuests(t, {
+    character: () => conversations.currentCharacter(),
     context: () => active ? economyContext() : null,
     beforeRequest: () => abandonedUI.whenIdle(),
     mutate: mutateQuest,
@@ -1036,7 +1046,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         ? t("weatherError", { error: weatherError }) : active ? t("weatherLoading") : "";
     }
     for (const button of directions) button.disabled = busy || !cell || (ended && !cursor) || activityPending;
-    const blocker = active ? journeyActionBlocker(state, { busy, cell }) : null;
+    const blocker = active ? journeyActionBlocker(state, {
+      busy, cell, artifactPending: artifactsUI.pending(state),
+    }) : null;
     const blockerStatus = document.querySelector("#travel-blocker");
     blockerStatus.hidden = !blocker;
     blockerStatus.textContent = blocker ? t(`travelBlocked.${blocker}`) : "";
@@ -1192,6 +1204,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const tile = document.querySelector(`.tile[data-row="${position.row + 8}"][data-col="${position.col + 8}"]`);
     tile.classList.add("tile--player");
     renderJourneyMarker(tile, state, t);
+    inscriptionsUI.enter(state, center.rows[position.row][position.col]);
     inspectPosition();
     localize();
     towns.update(data, position.row + 8, position.col + 8, !state.ended);
@@ -1205,7 +1218,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     document.querySelector(".tile--selected")?.classList.remove("tile--selected");
     const tile = document.querySelector(`.tile[data-row="${position.row}"][data-col="${position.col}"]`);
     if (cursor) tile.classList.add("tile--look");
-    selectPlayer(cameraData, tile);
+    selectPlayer(cameraData, tile, cursor ? null : inscriptionsUI.current());
   }
 
   function toggleLook() {

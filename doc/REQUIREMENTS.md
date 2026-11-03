@@ -1,14 +1,36 @@
 # Requirements tracked outside the design PDF
 
+## Journal journey-map loading progress
+
+- Show a localized preparation message and native progress bar while the journal
+  retrieves cached journey terrain. Use indeterminate progress because this
+  request has no measurable completion total; never invent a percentage.
+- Mark the map region busy until rendering finishes. Remove progress on success
+  or failure; retain real errors and the existing notebook retry action.
+- Closing the notebook or changing pages must ignore late map responses.
+- **Status:** Implemented and tested locally; not deployed.
+
+## Arrival engravings and diegetic conversations
+
+- On entering a cell, show approved, visible knife engravings directly in its
+  description, using local knowledge and authenticated shared-service results.
+  Keep pending/rejected moderation records private and ignore responses for a
+  cell or journey the player has already left.
+- Remove out-of-world disclaimers and artifact-mechanism explanations from
+  ordinary conversations. Use natural FR/EN wording for parent recollections
+  and character requests, while preserving useful costs, controls, errors,
+  accessibility and separate help/settings.
+- **Status:** Implemented and tested locally; not deployed.
+
 ## Periodic parent recollections, including away from the trail
 
 - Playtest feedback (2 November 2026): the parent disappears from play when the
   traveller is not on the parent's path.
-- After 720 journey minutes without parent-trail progress, show a nonblocking
+- After 60 journey minutes without parent-trail progress, show a nonblocking
   FR/EN game-screen notice with the current earned clue and a rotating existing
   letter, shared memory or known desire from the parent's biography. Older
   journeys without an intimate profile receive an honest recorded-clue reminder.
-- Reuse the rescue-dream check interval (12 hours), without requiring sleep,
+- Repeat after 180 journey minutes without progress, without requiring sleep,
   a successful search, path proximity, another witness or network generation.
   New trail progress restarts the delay. Persist the latest notice/cadence across
   saves; one long action must not create a burst of missed notices.
@@ -20,7 +42,7 @@
   and preserving uncertainty and straight-line disclaimers. With no earned town,
   explain J field searches or I recognition of collected letters/photos. At the
   stop, prompt investigation. Never derive navigation from hidden trail stages.
-- Confirmed follow-up choice (2 November): after the same 720-minute quiet
+- Confirmed follow-up choice (2 November): after the same quiet
   interval, also grant approximate current-position direction toward the current
   active trail stop when no confirmed town is known. Reuse the rescue dream's
   eight-way bearing helper and active trail target selection, without sleep,
@@ -34,7 +56,28 @@
   remain readable. Confirmed earned-town navigation takes precedence.
 - Existing 48-hour sleep rescue remains unchanged. This intuition is new earned
   rescue help, not a fictional search result or new off-path testimony.
+- Follow-up playtest: the deployed 12-hour delay and low sidebar placement made
+  guidance too easy to miss. User selected the first notice after one game hour,
+  then every three hours without progress. Put guidance first in an accented
+  banner immediately above the map, including on mobile; fold memory details.
+  Keep old twelve-hour save receipts valid. When the player has moved, explicitly
+  anchor a saved intuition to the place where it arose, not the current cell.
+- Screenshot follow-up: the parent conversation repeated the opening letter
+  and no-witness message even when periodic guidance had been earned. Show the
+  saved intuition before those messages and on the current Quests page too.
+  Do not attribute this player intuition to a witness or reveal hidden towns.
 - **Status:** Implemented locally; not deployed.
+
+## Balanced new character portraits
+
+- Explicitly generate women as well as men for every character role, rather
+  than leaving gender unspecified in the provider prompt.
+- Persist the portrait choice at creation, alternating town slots with a
+  deterministic starting choice per location; do not reroll on reload.
+- User selected preserving existing portraits. Keep existing characters'
+  original profiles, queued generation recipes and published images unchanged;
+  apply the balanced choice only to new characters.
+- **Status:** Implemented and tested locally; not deployed.
 
 ## R-189 - Characters met on the fly, depending on place and time of day
 
@@ -477,11 +520,11 @@
   unchanged. In configured mode, title, journal and encounter image producers now
   use a shared dispatch/normalization/publication path and the same `images`
   counters. Immutable image requests reuse verified assets instead of calling the
-  provider again. Configured encounter stock, observations and exclusive image
-  assignments now live in the shared SQL catalogue, with private verified asset
-  reads and no local encounter database. Transactional stock locking and unique
-  assignment prevent duplicate allocation under concurrent APIs; weekly renewal
-  retains the previous image until replacement.
+  provider again. Configured encounter stock, observations and legacy image
+  assignments live in the shared SQL catalogue, with private verified asset
+  reads and no local encounter database. New observations reuse persistent
+  scene-wide images; immutable generation jobs prevent duplicate provider calls
+  under concurrent APIs. Existing notebook assignments are retained.
   Configured journal illustration queues, statuses and capacity limits now also
   use shared SQL, with fenced leases and private verified asset reads, without a
   local journal-image database. Another worker can resume queued or expired work;
@@ -586,6 +629,25 @@
 
 ## R-180 - Repeatable arcana quests anchored to geographic POIs
 
+- Natural artifact conversations: assign each character stable server-side
+  knowledge of one to three objects when generated (backfill older characters
+  once). Include an authored legend and, where available within 300 km, a
+  frozen public town/region lead; never a carried object's or player's private
+  location. Do not send unspoken knowledge in the character list.
+- A meeting or ordinary topic exchange has a 35% chance of spontaneously
+  sharing one assigned object. Freeze the draw per actual recorded event;
+  reject invented events or client-selected objects. Present it with the
+  speaker, without selecting the artifact topic or requesting a clue.
+- Save heard legends and eligible coarse leads through the authoritative
+  artifact/discovery ledger, without spending game time or replacing custody
+  rules. Preserve old generations as historical/unavailable rather than
+  following a new owner or rerolling knowledge. Retain notebook/PDF visibility.
+  Remove the artifact search selector/button and generic all-character legend.
+- Character naming: maintain at least 40 distinct given names and surnames per
+  supported naming locale. New regional characters must not reuse a full name;
+  prefer distinct given names and surnames at the same location. Keep existing
+  stored identities and idempotent creation receipts unchanged.
+
 - Character-owned proposal flow: generate a stable role-specific quest plan
   with each character, prepare its real destinations in the background, and
   present it automatically on meeting. Remove the player's distance selector
@@ -674,16 +736,18 @@
   the narrative direction has been explored. See
   [La Cartomancienne](./LA_CARTOMANCIENNE.md).
 
-## R-177 - Individual encounter illustrations and overnight preparation
+## R-177 - Shared encounter illustrations and background preparation
 
-- Use the configured image generator for journey encounters, dreams and
-  hospitality scenes, with a different illustration for each individual
-  encounter rather than one shared image per event type.
-- Renew available illustrations every seven real-time days, not game days;
-  preserve illustrations already retained in a notebook.
-- Prepare a new illustration batch tonight at 23:00 local time. User requests
-  no item-count maximum; keep generation sequential, respect provider limits
-  and stop on errors rather than retrying indefinitely or using paid fallback.
+- **Updated request:** every journey event gets a generated illustration;
+  replace ASCII automatically when that image loads, retaining the fallback
+  during preparation or failure.
+- Cache published scene illustrations for all players without weekly expiry,
+  retaining existing notebook images and private per-occurrence authorization.
+- Start sequential, non-blocking preparation on a scene cache miss. Shared
+  immutable jobs prevent duplicate provider dispatch across players/servers.
+- The scheduled overnight batch fills only missing scenes, then stops. Retain
+  storage limits and zero-price verification; never silently retry failed or
+  uncertain provider calls or use a paid fallback.
 
 ## R-178 - Faithful, non-blocking closing chronicle details
 

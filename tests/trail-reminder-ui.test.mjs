@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { setupTrail, parentClueText } from "../trail-ui.mjs";
 import { translate } from "../i18n.mjs";
 import { PARENT_PROFILES } from "../parent-intimacy.mjs";
+import { recordParentRecollection, parentIntuitionText } from "../parent-recollection.mjs";
 
 const data = JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url)));
 
@@ -66,6 +67,23 @@ for (const locale of ["fr", "en"]) {
     assert.match(parentText(), locale === "fr" ? /lettre/i : /letter/i);
     assert.doesNotMatch(parentText(), /Known stop|Known destination|SECRET FUTURE/);
     assert.deepEqual(state, fresh);
+    state = recordParentRecollection({ ...state, elapsedMinutes: 3 * 1440 });
+    const earned = structuredClone(state);
+    ui.localize();
+    assert.ok(parentText().includes(parentIntuitionText(state, tr)),
+      "parent conversation shows the saved direction after days off-path");
+    assert.ok(element("#trail-target").textContent.includes(parentIntuitionText(state, tr)),
+      "the current Quests page shows the same earned guidance");
+    assert.equal(element("#dialogue-parent").children[0].textContent, parentIntuitionText(state, tr),
+      "useful guidance precedes the no-witness message and opening letter");
+    assert.doesNotMatch(parentText(), /Known stop|Known destination|SECRET FUTURE/);
+    assert.deepEqual(state, earned, "reading guidance does not reroll or invent witness evidence");
+    state = { ...state, col: 200, row: -300 };
+    ui.localize();
+    assert.match(parentText(), locale === "fr" ? /depuis l'endroit/ : /from where this feeling/);
+    state = { ...state, trail: { ...state.trail, index: 1 } };
+    ui.localize();
+    assert.doesNotMatch(parentText(), /Une intuition|A hunch/);
     state = originalState;
     ui.localize();
     assert.equal(element("#trail-target").textContent,

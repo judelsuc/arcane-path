@@ -86,6 +86,13 @@ test("catalogue is the shared JSON array: exactly two bilingual authored templat
   assert.throws(() => { QUEST_TEMPLATES.push({}); }, TypeError);
 });
 
+test("quest dialogue stays in-world in both languages", () => {
+  const dialogue = QUEST_TEMPLATES.flatMap(template => ["request", "conclusion"]
+    .flatMap(field => Object.values(template[field]))).join("\n");
+  assert.doesNotMatch(dialogue, /\b(?:fictional|in-game|real-world|game data|within the game|in the story|quest)\b/i);
+  assert.doesNotMatch(dialogue, /\b(?:fictif|fictive|du jeu|dans le jeu|dans la fiction|données du jeu|dans le récit|quête)\b/i);
+});
+
 test("all 44 complete every ordered role at its exact cell, with no prerequisite possessions", () => {
   for (const [i, template] of QUEST_TEMPLATES.entries()) {
     const initial = freeze(state()), options = freeze(offerOptions(template, i + 1));

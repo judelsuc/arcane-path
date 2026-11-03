@@ -1,4 +1,4 @@
-"""Private encounter assignments backed by a weekly, free-only illustration batch."""
+"""Private encounter observations with reusable, free-only scene illustrations."""
 
 import argparse
 from contextlib import contextmanager, nullcontext
@@ -12,7 +12,9 @@ import re
 import shutil
 import sqlite3
 import time
+import threading
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 
 from closing_story import EVENT_FACTS
 from content_factory import IMAGE_LICENSE, IMAGE_MODEL, OvhImageWriter, normalize_image
@@ -21,6 +23,7 @@ from terraform_ovh import private_file
 from asset_storage import AssetError, configured_storage
 from shared_images import SharedImages
 from encounter_storage import EncounterStorage
+from durable_jobs import DurableJobs
 
 WEEK = 7 * 24 * 60 * 60
 MAX_BYTES = 2 * 1024**3
@@ -35,9 +38,13 @@ SCENES.update({
 
 
 class EncounterArt:
-    def __init__(self, path, authorization=None, enabled=False, assets=None):
+    def __init__(self, path, authorization=None, enabled=False, assets=None, writer=None):
         self.path, self.authorization, self.enabled = Path(path), authorization, enabled
         self.assets = assets
+        self.writer = writer
+        self.generation_lock = threading.Lock()
+        self.generation = {}
+        self.pool = None
         self.shared = EncounterStorage(assets, week=WEEK) if assets is not None else None
         if self.shared is not None:
             return
@@ -60,8 +67,9 @@ class EncounterArt:
     @classmethod
     def configured(cls, path, authorization=None, enabled=False):
         assets = getattr(authorization, "assets", None)
+        writer = getattr(authorization, "writer", None) if enabled else None
         return cls(path, authorization, enabled,
-                   assets=assets if assets is not None else configured_storage())
+                   assets=assets if assets is not None else configured_storage(), writer=writer)
 
     @contextmanager
     def connect(self):
@@ -77,19 +85,79 @@ class EncounterArt:
             db.close()
 
     @staticmethod
-    def assign(db, owner, occurrence, scene, now):
-        row = db.execute(
-            "SELECT i.id,i.created FROM encounters e LEFT JOIN images i ON e.image_id=i.id "
-            "WHERE e.owner=? AND e.occurrence=?", (owner, occurrence)).fetchone()
-        if row and row["id"] and row["created"] > now - WEEK:
+    def scene_request(scene):
+        return hashlib.sha256(f"encounter-scene-v1:{scene}".encode()).hexdigest()[:32]
+
+    def cached(self, scene):
+        if self.shared is not None:
+            with self.assets.catalogue.connection() as db:
+                row = db.execute(self.assets.catalogue.sql(
+                    "SELECT id FROM encounter_stock WHERE scene=? ORDER BY created,id LIMIT 1"),
+                    (scene,)).fetchone()
+        else:
+            with self.connect() as db:
+                row = db.execute("SELECT id FROM images WHERE scene=? ORDER BY created,id LIMIT 1",
+                                 (scene,)).fetchone()
+        return row[0] if row else None
+
+    def prepare(self, scene):
+        if not self.enabled or self.writer is None:
             return
-        available = db.execute(
-            "SELECT id FROM images WHERE scene=? AND claimed=0 AND created>? ORDER BY created,id LIMIT 1",
-            (scene, now - WEEK)).fetchone()
-        if available:
-            db.execute("UPDATE images SET claimed=1 WHERE id=?", (available["id"],))
-            db.execute("UPDATE encounters SET image_id=? WHERE owner=? AND occurrence=?",
-                       (available["id"], owner, occurrence))
+        with self.generation_lock:
+            if scene in self.generation:
+                return
+            if self.pool is None:
+                self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="encounter-art")
+            self.generation[scene] = self.pool.submit(self._prepare, scene)
+
+    def _prepare(self, scene):
+        try:
+            if self.cached(scene):
+                return
+            if self.shared is not None:
+                stored, _, _ = self.shared.batch_state(time.time())
+                if stored >= MAX_BYTES:
+                    raise JourneyCapacity("Encounter illustration storage is full.")
+                self.generate(scene, self.writer, request=self.scene_request(scene))
+            else:
+                with self.path.with_suffix(".lock").open("a") as lock:
+                    fcntl.flock(lock, fcntl.LOCK_EX)
+                    if not self.cached(scene):
+                        with self.connect() as db:
+                            stored = db.execute("SELECT COALESCE(SUM(length(image)),0) FROM images").fetchone()[0]
+                        if stored >= MAX_BYTES or shutil.disk_usage(self.path.parent).free < MIN_FREE:
+                            raise JourneyCapacity("Encounter illustration storage is full.")
+                        self.generate(scene, self.writer, request=self.scene_request(scene))
+        except Exception as error:
+            if isinstance(error, AssetError) and self.assets is not None:
+                job = DurableJobs(self.assets.catalogue).inspect("image-encounter-art", self.scene_request(scene))
+                if job and job["status"] in {"queued", "leased", "dispatched"}:
+                    logging.info("Encounter illustration is being prepared by another worker: %s", scene)
+                    return
+            logging.exception("Encounter scene illustration failed: %s", scene)
+            raise
+
+    def generation_failed(self, scene):
+        with self.generation_lock:
+            future = self.generation.get(scene)
+        if future is None or not future.done():
+            return False
+        if self.assets is not None:
+            with self.assets.catalogue.connection() as db:
+                job = db.execute(self.assets.catalogue.sql(
+                    "SELECT status,expires FROM worker_jobs WHERE kind=? AND request=?"),
+                    ("image-encounter-art", self.scene_request(scene))).fetchone()
+            if job and (job[0] == "queued" or
+                        job[0] in {"leased", "dispatched"} and job[1] > time.time()):
+                return False
+            if job and (job[0] in {"failed", "uncertain"} or
+                        job[0] in {"leased", "dispatched"} and job[1] <= time.time()):
+                return True
+        return future.exception() is not None
+
+    def close(self):
+        if self.pool is not None:
+            self.pool.shutdown(wait=True)
 
     def request(self, data, token):
         if not isinstance(data, dict):
@@ -108,7 +176,7 @@ class EncounterArt:
                 return self.shared.image(owner, data["occurrence"], data["image"])
             with self.connect() as db:
                 row = db.execute(
-                    "SELECT i.image FROM images i JOIN encounters e ON e.image_id=i.id "
+                    "SELECT i.image FROM images i JOIN encounters e ON e.scene=i.scene "
                     "WHERE e.owner=? AND e.occurrence=? AND i.id=?",
                     (owner, data["occurrence"], data["image"])).fetchone()
             if row is None:
@@ -130,10 +198,17 @@ class EncounterArt:
             rows = self.shared.sync(owner, items, now)
         else:
             rows = self.sync_local(owner, items, now)
-        return {"enabled": self.enabled, "entries": [
-            {**dict(row), "status": "ready" if row["id"] else "pending",
-             "renewing": bool(row["id"] and row["created"] <= now - WEEK),
-             "model": IMAGE_MODEL, "license": IMAGE_LICENSE} for row in rows]}
+        entries = []
+        for row in rows:
+            status, error = ("ready" if row["id"] else "pending"), None
+            if not row["id"]:
+                self.prepare(row["scene"])
+                if self.generation_failed(row["scene"]):
+                    status, error = "failed", "The scene illustration could not be generated."
+            entries.append({**dict(row), "status": status, "renewing": False,
+                            "model": IMAGE_MODEL, "license": IMAGE_LICENSE,
+                            **({"error": error} if error else {})})
+        return {"enabled": self.enabled, "entries": entries}
 
     def sync_local(self, owner, items, now):
         with self.connect() as db:
@@ -150,10 +225,11 @@ class EncounterArt:
                     db.execute("INSERT INTO encounters VALUES(?,?,?,?,NULL)",
                                (owner, item["occurrence"], item["scene"], now))
                     count += 1
-                self.assign(db, owner, item["occurrence"], item["scene"], now)
             rows = [db.execute(
                 "SELECT e.occurrence,e.scene,i.id,i.created FROM encounters e "
-                "LEFT JOIN images i ON e.image_id=i.id WHERE e.owner=? AND e.occurrence=?",
+                "LEFT JOIN images i ON i.id=COALESCE(e.image_id,"
+                "(SELECT id FROM images WHERE scene=e.scene ORDER BY created,id LIMIT 1)) "
+                "WHERE e.owner=? AND e.occurrence=?",
                 (owner, item["occurrence"])).fetchone() for item in items]
         return rows
 
@@ -188,12 +264,6 @@ class EncounterArt:
             db.execute("BEGIN IMMEDIATE")
             db.execute("INSERT INTO images VALUES(?,?,?,0,?) ON CONFLICT(id) DO NOTHING",
                        (identity, scene, now, image))
-            pending = db.execute(
-                "SELECT e.owner,e.occurrence FROM encounters e LEFT JOIN images i ON e.image_id=i.id "
-                "WHERE e.scene=? AND (i.id IS NULL OR i.created<=?) ORDER BY e.requested LIMIT 1",
-                (scene, now - WEEK)).fetchone()
-            if pending:
-                self.assign(db, pending["owner"], pending["occurrence"], scene, now)
         return identity
 
 
@@ -209,21 +279,22 @@ def run_batch(art, writer, *, hours=7, interval=15, clock=time.monotonic, sleep=
                 stored, pending_scene, counts = art.shared.batch_state(now)
             else:
                 with art.connect() as db:
-                    db.execute("DELETE FROM images WHERE claimed=0 AND created<=?", (now - WEEK,))
                     stored = db.execute("SELECT COALESCE(SUM(length(image)),0) FROM images").fetchone()[0]
                     pending = db.execute(
                         "SELECT e.scene FROM encounters e LEFT JOIN images i ON e.image_id=i.id "
-                        "WHERE i.id IS NULL OR i.created<=? ORDER BY e.requested LIMIT 1", (now - WEEK,)).fetchone()
+                        "WHERE NOT EXISTS (SELECT 1 FROM images s WHERE s.scene=e.scene) "
+                        "ORDER BY e.requested LIMIT 1").fetchone()
                     counts = {row["scene"]: row["n"] for row in db.execute(
-                        "SELECT scene,COUNT(*) n FROM images WHERE claimed=0 AND created>? GROUP BY scene",
-                        (now - WEEK,))}
+                        "SELECT scene,COUNT(*) n FROM images GROUP BY scene")}
                 pending_scene = pending["scene"] if pending else None
             if stored >= MAX_BYTES or (art.shared is None and shutil.disk_usage(art.path.parent).free < MIN_FREE):
                 logging.warning("Illustration batch stopped: storage safety threshold reached.")
                 break
-            scene = pending_scene if pending_scene else min(SCENES, key=lambda key: counts.get(key, 0))
-            request = (hashlib.sha256(f"encounter-batch-v1:{interval}:{int(now // interval)}".encode())
-                       .hexdigest()[:32] if art.assets is not None else None)
+            missing = [scene for scene in SCENES if not counts.get(scene)]
+            if not missing:
+                break
+            scene = pending_scene if pending_scene else missing[0]
+            request = art.scene_request(scene)
             art.generate(scene, writer, request=request)
             generated += 1
             logging.info("Encounter illustration generated: scene=%s total=%d", scene, generated)

@@ -334,6 +334,13 @@ h1 {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.journal-map-loading progress {
+  display: block;
+  width: 100%;
+  height: 18px;
+  accent-color: #695139;
+}
+
 .journey-setup {
   padding: clamp(18px, 4vw, 40px);
   font-size: 1rem;
@@ -1038,6 +1045,17 @@ dialog p { margin: 12px 0; }
 }
 
 .travel-actions { display: grid; gap: 8px; }
+#parent-recollection, #artifact-recovery {
+  margin-bottom: 12px;
+  padding: 14px;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: #101711;
+}
+#parent-recollection h3 { margin: 0 0 8px; }
+#parent-recollection-guidance { white-space: pre-line; font-weight: 600; }
+#parent-recollection-text { white-space: pre-line; }
+#parent-recollection details { margin-block: 10px; }
 .travel-directions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .travel-toolbar:not([hidden]) { display: flex; flex-wrap: wrap; gap: 5px; margin-block: 8px; }
 .travel-toolbar button {

@@ -33,6 +33,11 @@ export function discoveryClueText(entry, state, t) {
   if (entry.targetType === "parent-trail" && entry.source === "parent-sleep-dream") {
     return t("trailDreamText", { direction: t(`hintCompass.${entry.facts.direction}`) });
   }
+  if (entry.targetType === "artifact" && entry.kind === "legend") {
+    const text = entry.facts[t("discovery.inscriptionLanguage")];
+    if (typeof text !== "string" || !text) throw new Error("Missing artifact legend translation.");
+    return text;
+  }
   const templates = Object.hasOwn(TEXT_KEYS, entry.targetType) ? TEXT_KEYS[entry.targetType] : null;
   const key = templates && Object.hasOwn(templates, entry.kind) ? templates[entry.kind] : null;
   if (!key) throw new Error("Unsupported discovery presentation.");
@@ -41,7 +46,7 @@ export function discoveryClueText(entry, state, t) {
   }
   if (entry.targetType === "artifact" && entry.kind === "inscription") {
     const text = entry.facts[t("discovery.inscriptionLanguage")];
-    if (typeof text !== "string" || !text) throw new Error("Missing artifact inscription translation.");
+    if (typeof text !== "string" || !text) throw new Error("Missing artifact text translation.");
     return t(key, { text });
   }
   const artifact = entry.targetType === "artifact" && entry.kind === "location"

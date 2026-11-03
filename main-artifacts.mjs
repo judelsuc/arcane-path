@@ -3,7 +3,9 @@ import { mapIdentity, SAVE_VERSION, validateSave } from "./journey-save.mjs";
 import { beginEquipment } from "./equipment.mjs";
 import { beginPressures } from "./pressures.mjs";
 import { synchronizeParentDiscovery } from "./discovery-targets.mjs";
-import { reconcileDiscoveryAvailability } from "./discovery.mjs";
+import { learnDiscovery, reconcileDiscoveryAvailability } from "./discovery.mjs";
+import { discoveryKnown } from "./discovery-policy.mjs";
+import ARTIFACT_RUMOURS from "./public/artifact-rumours.json" with { type: "json" };
 import { MAIN_ARTIFACT_WORLD } from "./lore-catalogue.mjs";
 import { loreCell } from "./lore-map.mjs";
 import { parentPath } from "./lore-knowledge.mjs";
@@ -89,6 +91,34 @@ export async function mainArtifactRequest(input) {
   const runtime = { state, economy: genesis.economy, survival: genesis.survival,
     revision: previous?.revision ?? 0, worldMinutes: input.worldMinutes + elapsed };
   let result = { runtime, instances: input.instances };
+  let conversationClue;
+  if (input.characterRumour) {
+    const rumour = input.characterRumour, legend = ARTIFACT_RUMOURS[rumour.id];
+    if (!legend) throw new Error("Unknown character artifact knowledge.");
+    const clues = [{
+      targetType: "artifact", targetId: rumour.id, targetRevision: "legend:1",
+      evidenceKey: "legend", kind: "legend", precision: "text",
+      facts: { artifact: rumour.id, fr: legend.fr, en: legend.en },
+      source: "character-artifact-legend", observedMinutes: state.elapsedMinutes,
+      channels: ["npc"], availability: "current", contentVersion: "template-v1",
+    }];
+    if (rumour.clue) {
+      const instance = input.instances.find(item => item.id === rumour.id);
+      if (!instance || rumour.clue.targetId !== rumour.id ||
+          !["region", "town"].includes(rumour.clue.precision) ||
+          Object.keys(rumour.clue.facts).some(key => !["artifact", "region", "place"].includes(key))) {
+        throw new Error("Invalid character artifact lead.");
+      }
+      const current = instance.owner === null && String(instance.generation) === rumour.clue.targetRevision;
+      if (!discoveryKnown(state, rumour.clue)) {
+        conversationClue = { ...rumour.clue, observedMinutes: state.elapsedMinutes,
+          availability: current ? "current" : "historical" };
+        clues.push(conversationClue);
+      }
+    }
+    state = learnDiscovery(state, clues);
+    runtime.state = state;
+  }
   if (action) {
     result = await applyLoreAction(runtime, input.instances, journey, map, action,
       { nowMillis: input.nowMillis, journalContext });
@@ -121,5 +151,9 @@ export async function mainArtifactRequest(input) {
   validateSave({ version: SAVE_VERSION, region: genesis.region, mapIdentity: mapIdentity(map),
     revision: 1, savedAt: new Date(input.nowMillis).toISOString(), state,
     survival: genesis.survival, economy: genesis.economy });
-  return { ...result, view: { ...view, world: MAIN_ARTIFACT_WORLD, revision: result.runtime.revision, state } };
+  return { ...result, view: { ...view, world: MAIN_ARTIFACT_WORLD, revision: result.runtime.revision, state,
+    conversationRumour: input.characterRumour ? { artifactId: input.characterRumour.id,
+      characterId: input.characterRumour.characterId,
+      clueRevision: conversationClue?.targetRevision ?? null,
+      cluePrecision: conversationClue?.precision ?? null } : null } };
 }

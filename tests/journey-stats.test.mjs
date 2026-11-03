@@ -114,4 +114,86 @@ for (const locale of ["fr", "en"]) {
     assert.doesNotMatch(text(element("#journal-pages")), /98\.76|12\.34 km/);
     assert.equal(writes, 0);
   });
+
+  test(`${locale} journal map shows progress while terrain loads, retains real errors and ignores stale completions`, async test => {
+    const original = globalThis.document;
+    test.after(() => { globalThis.document = original; });
+    test.mock.method(console, "error", () => {});
+    class Element {
+      dataset = {}; children = []; events = {}; open = false; textContent = "";
+      append(...children) { this.children.push(...children); }
+      replaceChildren(...children) { this.children = children; }
+      addEventListener(event, callback) { this.events[event] = callback; }
+      setAttribute(name, value) { this[name] = value; }
+      showModal() { this.open = true; }
+      close() { this.open = false; this.events.close?.(); }
+      getContext() {
+        return { fillRect() {}, setLineDash() {}, beginPath() {}, moveTo() {}, lineTo() {},
+          stroke() {}, fillText() {}, arc() {}, fill() {} };
+      }
+    }
+    const elements = new Map(), element = selector => {
+      if (!elements.has(selector)) elements.set(selector, new Element());
+      return elements.get(selector);
+    };
+    globalThis.document = { documentElement: { lang: locale },
+      createElement: tag => Object.assign(new Element(), { tag }),
+      querySelector: selector => selector === "dialog[open]"
+        ? [...elements.values()].find(e => e.open) ?? null : element(selector) };
+    const t = (key, args) => translate(locale, key, args);
+    const ui = setupPhotoJournal(t, { store: {
+      list: async () => [], get: async () => null, scope: async function() { return this; },
+    } });
+    const current = context(), pending = [];
+    current.mapTerrain = () => new Promise((resolve, reject) => pending.push({ resolve, reject }));
+    await ui.useJourney(current.state);
+    ui.updateStats(current);
+    element("#open-journal").events.click();
+    const tick = () => new Promise(resolve => setImmediate(resolve));
+    await tick();
+    element("#journal-map-page").events.click();
+    const pages = element("#journal-pages"), status = element("#journal-status");
+    const progress = pages.children[0].children.find(node => node.tag === "progress");
+    assert.ok(progress, "a native progress bar is visible during the terrain request");
+    assert.equal(progress.value, undefined, "unknown network duration is indeterminate, not a fake percentage");
+    assert.equal(progress.ariaLabel, t("journalMapLoading"));
+    assert.equal(pages.ariaBusy, "true");
+    assert.equal(status.textContent, t("journalMapLoading"));
+    assert.equal(status.dataset.feedback, "");
+    pending.shift().resolve({ cells: [], missing: true, sampled: false, stride: 1 });
+    await tick();
+    assert.equal(pages.ariaBusy, "false");
+    assert.equal(pages.children[0].className, "notebook-page journal-map");
+    assert.equal(status.textContent, "");
+
+    element("#journal-map-page").events.click();
+    pending.shift().reject(new Error("Terrain HTTP 503"));
+    await tick();
+    assert.equal(pages.ariaBusy, "false");
+    assert.equal(pages.children.length, 0, "failed loads do not leave a perpetual progress bar");
+    assert.equal(status.dataset.feedback, "failure");
+    assert.match(status.textContent, /Terrain HTTP 503/);
+    element("#journal-retry").events.click();
+    await tick();
+    assert.equal(status.dataset.feedback, "");
+    assert.equal(status.textContent, t("journalMapLoading"));
+    assert.equal(pages.ariaBusy, "true");
+    const retry = pending.shift();
+    element("#journal-photos-page").events.click();
+    await tick();
+    retry.resolve({ cells: [], missing: true, sampled: false, stride: 1 });
+    await tick();
+    assert.equal(pages.dataset.mapping, "false");
+    assert.equal(pages.ariaBusy, "false");
+    assert.notEqual(pages.children[0].className, "notebook-page journal-map");
+
+    element("#journal-map-page").events.click();
+    const closing = pending.shift();
+    element("#photo-journal-dialog").close();
+    closing.reject(new Error("Late map error"));
+    await tick();
+    assert.equal(pages.children.length, 0);
+    assert.equal(pages.ariaBusy, "false");
+    assert.doesNotMatch(status.textContent, /Late map error/);
+  });
 }

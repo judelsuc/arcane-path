@@ -1,4 +1,4 @@
-"""Transactional shared encounter stock; image bytes remain in private assets."""
+"""Shared scene cache and private observations; bytes remain in verified assets."""
 
 from asset_storage import AssetConflict, AssetError
 from journeys import JourneyCapacity, JourneyRequest
@@ -32,22 +32,6 @@ class EncounterStorage:
         else:
             db.execute("BEGIN IMMEDIATE")
 
-    def assign(self, db, owner, occurrence, scene, now):
-        row = db.execute(self.catalogue.sql(
-            "SELECT i.id,i.created FROM encounter_assignments e "
-            "LEFT JOIN encounter_stock i ON e.image_id=i.id "
-            "WHERE e.owner=? AND e.occurrence=?"), (owner, occurrence)).fetchone()
-        if row and row[0] and row[1] > now - self.week:
-            return
-        available = db.execute(self.catalogue.sql(
-            "SELECT id FROM encounter_stock WHERE scene=? AND claimed=0 AND created>? "
-            "ORDER BY created,id LIMIT 1"), (scene, now - self.week)).fetchone()
-        if available:
-            db.execute(self.catalogue.sql("UPDATE encounter_stock SET claimed=1 WHERE id=?"), (available[0],))
-            db.execute(self.catalogue.sql(
-                "UPDATE encounter_assignments SET image_id=? WHERE owner=? AND occurrence=?"),
-                (available[0], owner, occurrence))
-
     def sync(self, owner, items, now):
         with self.catalogue.connection() as db:
             self.lock(db)
@@ -66,18 +50,20 @@ class EncounterStorage:
                         "INSERT INTO encounter_assignments(owner,occurrence,scene,requested) VALUES(?,?,?,?)"),
                         (owner, item["occurrence"], item["scene"], now))
                     count += 1
-                self.assign(db, owner, item["occurrence"], item["scene"], now)
             rows = [db.execute(self.catalogue.sql(
-                "SELECT e.occurrence,e.scene,i.id,i.created FROM encounter_assignments e "
-                "LEFT JOIN encounter_stock i ON e.image_id=i.id WHERE e.owner=? AND e.occurrence=?"),
+                    "SELECT e.occurrence,e.scene,i.id,i.created FROM encounter_assignments e "
+                    "LEFT JOIN encounter_stock i ON i.id=COALESCE(e.image_id,"
+                    "(SELECT id FROM encounter_stock WHERE scene=e.scene ORDER BY created,id LIMIT 1)) "
+                    "WHERE e.owner=? AND e.occurrence=?"),
                 (owner, item["occurrence"])).fetchone() for item in items]
         return [dict(zip(("occurrence", "scene", "id", "created"), row)) for row in rows]
 
     def image(self, owner, occurrence, identity):
         with self.catalogue.connection() as db:
             row = db.execute(self.catalogue.sql(
-                "SELECT image_id FROM encounter_assignments "
-                "WHERE owner=? AND occurrence=? AND image_id=?"), (owner, occurrence, identity)).fetchone()
+                "SELECT i.id FROM encounter_assignments e JOIN encounter_stock i ON i.scene=e.scene "
+                "WHERE e.owner=? AND e.occurrence=? AND i.id=?"),
+                (owner, occurrence, identity)).fetchone()
         if row is None:
             raise JourneyRequest("This encounter illustration is unavailable.")
         return self.assets.read("encounter-art", identity)[1]
@@ -98,25 +84,15 @@ class EncounterStorage:
                 "SELECT scene FROM encounter_stock WHERE id=?"), (identity,)).fetchone()
             if previous[0] != scene:
                 raise AssetConflict("An encounter image cannot change its scene.")
-            pending = db.execute(self.catalogue.sql(
-                "SELECT e.owner,e.occurrence FROM encounter_assignments e "
-                "LEFT JOIN encounter_stock i ON e.image_id=i.id "
-                "WHERE e.scene=? AND (i.id IS NULL OR i.created<=?) "
-                "ORDER BY e.requested,e.owner,e.occurrence LIMIT 1"), (scene, now - self.week)).fetchone()
-            if pending:
-                self.assign(db, pending[0], pending[1], scene, now)
 
     def batch_state(self, now):
         with self.catalogue.connection() as db:
             self.lock(db)
-            db.execute(self.catalogue.sql(
-                "DELETE FROM encounter_stock WHERE claimed=0 AND created<=?"), (now - self.week,))
             stored = db.execute("SELECT COALESCE(SUM(size),0) FROM encounter_stock").fetchone()[0]
             pending = db.execute(self.catalogue.sql(
                 "SELECT e.scene FROM encounter_assignments e LEFT JOIN encounter_stock i ON e.image_id=i.id "
-                "WHERE i.id IS NULL OR i.created<=? ORDER BY e.requested,e.owner,e.occurrence LIMIT 1"),
-                (now - self.week,)).fetchone()
+                "WHERE NOT EXISTS (SELECT 1 FROM encounter_stock s WHERE s.scene=e.scene) "
+                "ORDER BY e.requested,e.owner,e.occurrence LIMIT 1")).fetchone()
             counts = dict(db.execute(self.catalogue.sql(
-                "SELECT scene,COUNT(*) FROM encounter_stock WHERE claimed=0 AND created>? GROUP BY scene"),
-                (now - self.week,)).fetchall())
+                "SELECT scene,COUNT(*) FROM encounter_stock GROUP BY scene")).fetchall())
         return stored, pending[0] if pending else None, counts

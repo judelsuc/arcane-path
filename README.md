@@ -1,6 +1,43 @@
 # Les Arcanes du Chemin
 
+## Arrival engravings and immersive dialogue
+
+Approved, visible knife engravings appear directly in the cell description on
+arrival, including inscriptions retrieved from the shared service. Pending or
+rejected inscriptions stay private. Late responses cannot overwrite the
+description of a different cell.
+
+Conversations no longer show game-rules disclaimers or explain their underlying
+artifact-knowledge mechanism. Recollections and service requests use in-world
+wording in French and English; practical costs, controls and errors remain.
+
+## Spontaneous artifact stories
+
+Characters receive fixed knowledge of one to three magical objects at creation:
+an authored legend, and sometimes an approximate town/region lead captured from
+the public, unowned artifact world. Their unspoken knowledge stays server-side.
+Older characters receive this knowledge once on their next conversation.
+
+Each meeting or topic exchange has a 35% chance of bringing up one of those
+objects spontaneously, even outside the artifact topic. The draw is frozen per
+conversation event; replaying a request cannot reroll it. Stories appear with
+the speaker's name and are saved in Quests and the notebook without advancing
+game time. There is no object selector or button to request a new clue.
+Known leads are not replaced with more precise or newly moved locations.
+An obsolete lead is labelled as such; carried objects never supply a private
+holder's location. Existing artifact custody, search and power rules remain.
+
 ## Character-owned service quests
+
+New character names draw from 40 given names and 40 surnames per supported
+naming locale (1,600 combinations rather than 100). Creation avoids full-name
+duplicates within a region and prefers different given names and surnames
+among people in the same location. Existing character names never change.
+New characters also receive a fixed portrait gender, explicitly included in
+the image prompt for every role. Town slots alternate women and men, with a
+stable varying starting gender per place; single roadside characters use that
+same place-based choice. Existing characters, portrait jobs and cached images
+keep their original profile and artwork; no regeneration is triggered.
 
 Characters are created with a stable service-quest assignment suited to their
 role. Destination verification starts in the background at creation; existing
@@ -19,8 +56,9 @@ valid.
 
 ## Keeping the parent present while travelling
 
-After 12 in-game hours without new parent-trail progress, a nonblocking notice
-on the game screen recalls the parent's existing letter, a memory of home or
+After one in-game hour without parent-trail progress, then every three hours
+without progress, a prominent nonblocking notice immediately above the map
+gives actionable guidance. A folded section recalls the parent's existing letter, a memory of home or
 their known wish, alongside the current earned lead. It works anywhere,
 including far from the parent's path, without searching or sleeping. Its button
 opens the parent trail. New evidence restarts the delay; saving, reopening a
@@ -30,7 +68,7 @@ public bearing/distance/coordinates from the player's current position;
 unconfirmed suggestions stay labelled as such. Otherwise it explains how to
 search with J or ask about collected letters/photos with I, without revealing
 an unknown destination. At the stop it prompts the next investigation.
-If no confirmed town is known, the same 12-hour notice also earns an approximate
+If no confirmed town is known, the same notice also earns an approximate
 eight-way intuition toward the current trail stop, calculated from the player's
 position when it appears—even far off-path with only the opening letter.
 It is explicitly not testimony or a known destination: no hidden name,
@@ -39,6 +77,9 @@ its origin and remains anchored there until a later notice replaces it; moving
 or reloading does not recalculate it. Confirmed earned-town guidance takes priority.
 Only one bounded help receipt is kept. No cost, stage advancement or provider
 call is added. Existing rescue dreams remain unchanged.
+The same earned intuition appears first in the parent conversation and on the
+current Quests page, not just in the map banner. It remains the traveller's own
+feeling rather than a claim that the selected character witnessed the parent.
 
 ## Game version and notebook rumours
 
@@ -152,6 +193,9 @@ action/map load, missing current terrain, a pending encounter/game, an active
 transport booking, or journey end. The explanation does not dismiss an encounter,
 change the save, or bypass the action lock. Recovery after waiting alone does not
 establish which blocker caused a particular incident.
+An interrupted magical-object command also shows its lock reason and a retry
+button above the map, outside Dialogue. Retrying preserves the saved transaction
+until its authoritative result is saved; reloading cannot silently discard it.
 
 Prototype jouable des **couches 1 a 8** : carte OSM, voyage, temps, besoins,
 localites, economie, musique de rue et piste minimale du parent.
@@ -465,6 +509,14 @@ une scene ASCII originale, en plus du texte localise. La notification montre
 les effets reels, les cartes ayant declenche l'evenement et l'etat de sauvegarde.
 Les couts de temps et de fatigue conservent les regles de faim, meteo, nuit,
 evanouissement et placement. Aucun evenement ne ranime une partie terminee.
+
+Chaque scene dispose aussi d'une illustration generee : si elle manque, sa
+preparation commence en arriere-plan lors de la rencontre. L'image remplace
+automatiquement l'ASCII des qu'elle est chargee ; l'ASCII reste visible en cas
+d'echec. Les illustrations sont conservees dans un cache partage entre joueurs,
+sans renouvellement hebdomadaire ni nouvel appel pour chaque rencontre.
+Le carnet garde ses images deja epinglees. La generation reste gratuite,
+sequentielle et dedupliquee entre serveurs.
 
 Les effets sont appliques une seule fois avant la notification ; confirmer ne
 relance pas le hasard. Les tirages deterministes, occasions sans evenement et
@@ -1690,6 +1742,11 @@ en cache dans le rectangle, au lieu de deviner des coordonnees a sonder.
 Jusqu'a 4096 chunks sont lus avec verification ; les grandes vues regroupent
 les cellules par terrain dominant. Les limites sont signalees, sans affecter
 le trace du voyage.
+Une barre de progression accompagne le chargement du terrain en cache, avec
+un message de preparation distinct des erreurs. Sa duree etant inconnue,
+la barre reste indeterminee plutot que d'afficher un pourcentage invente.
+Elle disparait quand la carte est prete ; un echec reel reste visible avec
+la possibilite de recharger le carnet.
 
 **Exporter en PDF** telecharge le carnet complet, pas seulement les deux pages
 visibles : photos, cartes de tarot, notes et credits avec leurs liens sources,

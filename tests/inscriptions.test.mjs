@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { CARVE_MINUTES, KNIFE_WEAR, carvingBlocker, createInscriptionsClient, inscriptionSurface,
   inscriptionText, journeyCarve, usableKnife } from "../inscriptions.mjs";
 import { setupInscriptions } from "../inscriptions-ui.mjs";
+import { setupCellContent } from "../cell-content-ui.mjs";
 import { beginEquipment } from "../equipment.mjs";
 import { journeyEquipmentAction } from "../equipment-journey.mjs";
 import { startSurvival } from "../survival.mjs";
@@ -84,9 +85,14 @@ test("server client sends the capability and validates the response shape", asyn
   const failing = createInscriptionsClient({ fetcher: async () => ({ ok: false, status: 409,
     json: async () => ({ error: "Your inscription is still being checked." }) }) });
   await assert.rejects(failing(s, "carve", { text: "x" }), /still being checked/);
-  const invalid = createInscriptionsClient({ fetcher: async () => ({ ok: true, status: 200,
-    json: async () => ({ surface: "rock", inscriptions: [], remainingToday: 1 }) }) });
-  await assert.rejects(invalid(s, "list"), /Invalid/);
+  for (const invalidView of [
+    { surface: "rock", inscriptions: [], remainingToday: 1 },
+    { surface: "tree", inscriptions: [{ id: "x", own: false, reported: false }], remainingToday: 1 },
+  ]) {
+    const invalid = createInscriptionsClient({ fetcher: async () => ({ ok: true, status: 200,
+      json: async () => invalidView }) });
+    await assert.rejects(invalid(s, "list"), /Invalid/);
+  }
 });
 
 class Element {
@@ -107,7 +113,7 @@ class Element {
 }
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
-function harness(t, language, responses) {
+function harness(t, language, responses, { request: customRequest, onUpdate = () => {} } = {}) {
   const previous = globalThis.document, elements = new Map();
   const get = key => {
     if (!elements.has(key)) elements.set(key, new Element());
@@ -122,12 +128,13 @@ function harness(t, language, responses) {
   const ui = setupInscriptions((key, args) => translate(language, key, args), {
     context: () => current,
     carve: () => { carved++; },
-    request: async (state, action, details = {}) => {
+    request: customRequest ?? (async (state, action, details = {}) => {
       sent.push({ action, ...details });
       const next = responses.shift();
       if (next instanceof Error) throw next;
       return next;
-    },
+    }),
+    onUpdate,
     wait: 40,
   });
   ui.localize();
@@ -212,4 +219,85 @@ test("the dialog refuses to open off-surface and blocks carving without a knife"
   await flush();
   assert.equal(h.sent.length, 1);
   assert.equal(h.carved(), 0);
+});
+
+test("cell entry caches only server-visible carvings and reuses them on revisit", async t => {
+  const h = harness(t, "en", [listView(), listView({ inscriptions: [
+    { id: "y", text: "Fresh mark", carvedAt: 2, own: false, reported: false }],
+  })]);
+  const state = { ...armed(), col: 14, row: 9 };
+  h.ui.enter(state, forest);
+  h.ui.enter(state, forest);
+  assert.equal(h.ui.current(), null);
+  await flush();
+  assert.deepEqual(h.sent, [{ action: "list" }]);
+  assert.deepEqual(h.ui.current(), { surface: "tree", inscriptions: [{ text: "Bonjour voyageur" }] });
+  assert.equal(h.ui.current().inscriptions[0].own, undefined);
+  h.ui.enter({ ...state, col: 15 }, forest);
+  await flush();
+  assert.deepEqual(h.ui.current(), { surface: "tree", inscriptions: [{ text: "Fresh mark" }] });
+  h.ui.enter(state, forest);
+  assert.deepEqual(h.sent, [{ action: "list" }, { action: "list" }]);
+});
+
+test("a late arrival response cannot replace the description for the new cell", async t => {
+  const pending = [];
+  const updated = [];
+  const h = harness(t, "en", [], {
+    request: () => new Promise(resolve => pending.push(resolve)),
+    onUpdate: () => updated.push(h.ui.current()),
+  });
+  const state = { ...armed(), col: 2, row: 3 };
+  h.ui.enter(state, forest);
+  h.ui.enter({ ...state, col: 3 }, forest);
+  await flush();
+  pending[0](listView());
+  await flush();
+  assert.equal(h.ui.current(), null);
+  pending[1](listView({ inscriptions: [
+    { id: "new", text: "This tree", carvedAt: 3, own: false, reported: false }],
+  }));
+  await flush();
+  assert.deepEqual(h.ui.current(), { surface: "tree", inscriptions: [{ text: "This tree" }] });
+  assert.deepEqual(updated, [h.ui.current()]);
+  h.ui.enter({ ...state, journalAccess: null }, forest);
+  assert.equal(h.ui.current(), null);
+});
+
+test("cell description renders only visible engraving text without rebuilding unchanged content", t => {
+  const previous = globalThis.document;
+  const elements = new Map();
+  class MockElement {
+    children = [];
+    events = {};
+    hidden = false;
+    textContent = "";
+    addEventListener(type, handler) { this.events[type] = handler; }
+    append(...nodes) { this.children.push(...nodes); }
+    replaceChildren(...nodes) { this.children = nodes; }
+    after(node) { this.afterElement = node; }
+  }
+  globalThis.document = {
+    querySelector(selector) {
+      if (!elements.has(selector)) elements.set(selector, new MockElement());
+      return elements.get(selector);
+    },
+    createElement: () => new MockElement(),
+    addEventListener() {},
+  };
+  t.after(() => { globalThis.document = previous; });
+  const ui = setupCellContent(key => key);
+  const description = elements.get("#cell-description");
+  ui.setInscriptions({ surface: "tree", inscriptions: [{ text: "Gravure approuvée" }] });
+  const section = description.afterElement;
+  assert.equal(section.hidden, false);
+  assert.equal(section.children[0].textContent, "inscriptions.surface.tree");
+  assert.equal(section.children[1].children[0].children[0].textContent, "Gravure approuvée");
+  const originalChildren = section.children;
+  ui.setInscriptions({ surface: "tree", inscriptions: [{ text: "Gravure approuvée" }] });
+  assert.equal(section.children, originalChildren);
+  ui.setInscriptions({ surface: "wall", inscriptions: [{ text: "<script>non exécuté</script>" }] });
+  assert.equal(section.children[1].children[0].children[0].textContent, "<script>non exécuté</script>");
+  ui.setInscriptions(null);
+  assert.equal(section.hidden, true);
 });

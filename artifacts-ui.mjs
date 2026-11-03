@@ -1,12 +1,12 @@
 import { createArtifactsClient } from "./artifacts-client.mjs";
-import { loreItem, LORE_ITEMS } from "./lore-catalogue.mjs";
+import { loreItem } from "./lore-catalogue.mjs";
 import { extraPower, powerCopy, blockedCopy, CARD_NAMES } from "./lore-copy.mjs";
 import { TAROT_CARDS } from "./tarot-cards.mjs";
-import { discoveryNotebookEntries } from "./discovery-ui.mjs";
+import { discoveryClueText, discoveryNotebookEntries } from "./discovery-ui.mjs";
 
 const WORDS = {
   fr: { refresh: "Actualiser les objets", retry: "Réessayer la commande en attente",
-    inquire: "Demander des nouvelles d'un objet", claim: "Chercher et recueillir",
+    claim: "Chercher et recueillir",
     use: "Utiliser le pouvoir", cache: "Déposer dans une cache", share: "Partager l'inscription",
     archive: "Consulter les archives du collectionneur", empty: "Aucune piste d'objet acquise.",
     loading: "Échange avec le monde des objets…", saved: "Action enregistrée.",
@@ -24,7 +24,7 @@ const WORDS = {
       sun: "1 min, 500 kcal : restaurer entièrement santé et fatigue.",
     } },
   en: { refresh: "Refresh artifacts", retry: "Retry pending command",
-    inquire: "Ask for news of an artifact", claim: "Search and collect",
+    claim: "Search and collect",
     use: "Use power", cache: "Leave in a cache", share: "Share inscription",
     archive: "Consult the collector's archives", empty: "No artifact leads earned.",
     loading: "Contacting the artifact world…", saved: "Action saved.",
@@ -43,10 +43,14 @@ const WORDS = {
     } },
 };
 
-export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, client = createArtifactsClient() }) {
+export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, character = () => null,
+  client = createArtifactsClient() }) {
   const talk = document.getElementById("dialogue-artifacts"), book = document.getElementById("quests-artifacts");
+  const recovery = document.getElementById("artifact-recovery");
   let snapshot, working = false, error = "", feedback = "", owner, endingAttempt;
   let automaticAttempt, observedDistance, observedSleeps;
+  let queuedRumours = [], scheduledRumour, speech, rumourError;
+  const spoken = document.getElementById("conversation-artifact-rumour");
   const language = () => document.documentElement.lang === "en" ? "en" : "fr";
   function text(host, content, tag = "p") {
     const element = document.createElement(tag); element.textContent = content; host.append(element); return element;
@@ -68,6 +72,20 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
       current = latest;
       const result = await client.request(current.state, action);
       if (context()?.state.serverJourney?.id !== current.state.serverJourney.id) throw new Error("The journey changed.");
+      let nextSpeech;
+      if (result.conversationRumour) {
+        const { artifactId, characterId, clueRevision, cluePrecision } = result.conversationRumour;
+        const entries = result.state.discovery?.entries ?? [];
+        const legend = entries.find(entry => entry.targetType === "artifact" &&
+          entry.targetId === artifactId && entry.kind === "legend");
+        const clue = entries.find(entry => entry.targetType === "artifact" &&
+          entry.targetId === artifactId && entry.kind === "location" &&
+          entry.targetRevision === clueRevision && entry.precision === cluePrecision);
+        if (!legend || typeof characterId !== "string" || clueRevision !== null && !clue) {
+          throw new Error("Missing earned character artifact knowledge.");
+        }
+        nextSpeech = { characterId, legend, clue };
+      }
       if (!mutate(latest => ({ ...result.state,
         serviceQuests: latest.serviceQuests, questTracking: latest.questTracking,
         questDirections: latest.questDirections,
@@ -75,11 +93,18 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
       }))) throw new Error("Artifact action could not be saved; retry the pending command.");
       client.acknowledge(result.state);
       snapshot = result;
+      if (nextSpeech) {
+        speech = nextSpeech;
+        rumourError = undefined;
+      }
       observedDistance = result.state.distanceMeters;
       observedSleeps = result.state.sleeps;
       feedback = "saved";
     } catch (reason) {
       console.error("Main artifact action failed:", reason); error = reason.message;
+      if (action?.type === "character-rumour" || rumourError) {
+        rumourError = { characterId: action?.characterId ?? rumourError.characterId, message: reason.message };
+      }
     } finally { working = false; lock(false); localize(); }
   }
   function targets(id, lang) {
@@ -97,13 +122,57 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
   }
   function localize() {
     const current = context(), state = current?.state, lang = language(), c = WORDS[lang];
+    recovery.replaceChildren();
+    const pending = client.pending(state);
+    recovery.hidden = !state || !pending && !working;
+    recovery.setAttribute("aria-label", t("quests.artifacts"));
+    if (!recovery.hidden) {
+      const status = text(recovery, error || (working ? c.loading : t("travelBlocked.artifact")));
+      status.setAttribute("role", error ? "alert" : "status");
+      button(recovery, c.retry, () => void request(), working);
+    }
     if (owner !== state?.serverJourney?.id) {
       snapshot = undefined; owner = state?.serverJourney?.id; endingAttempt = automaticAttempt = undefined;
       observedDistance = state?.distanceMeters; error = feedback = "";
       observedSleeps = state?.sleeps;
+      queuedRumours = []; scheduledRumour = undefined; speech = undefined; rumourError = undefined;
     }
     talk.replaceChildren(); book.replaceChildren();
+    spoken.replaceChildren();
+    const speaker = character();
+    const speechError = rumourError?.characterId === speaker?.id ? rumourError?.message : "";
+    spoken.hidden = !speaker || (!speechError && speech?.characterId !== speaker.id);
+    if (!spoken.hidden) {
+      if (speechError) {
+        text(spoken, speechError);
+        button(spoken, c.retry, () => void request(), working || current?.blocked);
+      } else {
+        text(spoken, discoveryClueText(speech.legend, state, t));
+        const clue = speech.clue && state?.discovery?.entries.find(entry =>
+          entry.targetType === "artifact" && entry.targetId === speech.clue.targetId &&
+          entry.targetRevision === speech.clue.targetRevision && entry.precision === speech.clue.precision &&
+          entry.evidenceKey === speech.clue.evidenceKey);
+        if (clue) text(spoken,
+          `${t(clue.availability === "current" ? "character.artifactLead" : "character.artifactOldLead")} ${
+            discoveryClueText(clue, state, t)}`);
+      }
+    }
     if (!state) return;
+    if (queuedRumours.length && !scheduledRumour && !working && !current.blocked && !client.pending(state)) {
+      const queued = queuedRumours[0];
+      scheduledRumour = queued;
+      queueMicrotask(() => {
+        if (scheduledRumour !== queued) return;
+        scheduledRumour = undefined;
+        const latest = context();
+        if (working || latest?.blocked) return;
+        queuedRumours.shift();
+        if (latest?.state.serverJourney?.id === queued.journey && character()?.id === queued.characterId &&
+            latest.state.col === queued.col && latest.state.row === queued.row) {
+          void request({ type: "character-rumour", characterId: queued.characterId, eventId: queued.eventId });
+        } else localize();
+      });
+    }
     if ((state.lore?.compass && observedDistance < state.distanceMeters ||
          state.lore?.moon && observedSleeps < state.sleeps) &&
         !working && !current.blocked && automaticAttempt !== `${state.col},${state.row}:${state.elapsedMinutes}`) {
@@ -114,19 +183,13 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
       endingAttempt = state.artifactRevision;
       queueMicrotask(() => void request(null, true));
     }
-    const pending = client.pending(state), blocked = working || current.blocked || pending;
+    const blocked = working || current.blocked || pending;
     const fresh = snapshot?.state.col === state.col && snapshot?.state.row === state.row &&
       snapshot?.state.elapsedMinutes === state.elapsedMinutes && snapshot?.revision === state.artifactRevision;
     for (const host of [talk, book]) {
       button(host, pending ? c.retry : c.refresh, () => void request(), working || current.blocked && !pending);
       const status = text(host, error || (working ? c.loading : feedback ? c[feedback] : "")); status.setAttribute("role", error ? "alert" : "status");
     }
-    const selection = document.createElement("select"); selection.setAttribute("aria-label", c.target);
-    for (const item of LORE_ITEMS) {
-      const option = text(selection, item[lang], "option"); option.value = item.id;
-    }
-    talk.append(selection);
-    button(talk, c.inquire, () => void request({ type: "inquire", id: selection.value }), blocked);
     button(talk, c.archive, () => void request({ type: "archive" }), blocked);
     const entries = discoveryNotebookEntries(state, t).filter(entry => entry.id.includes('"artifact"'));
     if (!entries.length) text(book, c.empty);
@@ -207,5 +270,16 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
     }
   }
   return { localize, pending: state => client.pending(state),
-    reset() { snapshot = undefined; owner = undefined; error = feedback = ""; } };
+    hear(rumour, speaker) {
+      localize();
+      const state = context()?.state;
+      if (!state || rumour.characterId !== speaker.id || character()?.id !== speaker.id) return;
+      queuedRumours.push({ ...rumour, journey: state.serverJourney.id, col: state.col, row: state.row });
+      localize();
+    },
+    reset() {
+      snapshot = undefined; owner = undefined; error = feedback = "";
+      queuedRumours = []; speech = undefined; rumourError = undefined;
+      scheduledRumour = undefined;
+    } };
 }

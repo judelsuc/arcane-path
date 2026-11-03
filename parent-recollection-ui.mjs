@@ -21,6 +21,8 @@ export function parentRecollectionGuidance(state, info, t) {
 
 export function setupParentRecollection(t, { context, openTrail }) {
   const notice = document.querySelector("#parent-recollection");
+  const title = document.querySelector("#parent-recollection-title");
+  const guidance = document.querySelector("#parent-recollection-guidance");
   const text = document.querySelector("#parent-recollection-text");
   const button = document.querySelector("#parent-recollection-open");
   button.addEventListener("click", openTrail);
@@ -29,8 +31,9 @@ export function setupParentRecollection(t, { context, openTrail }) {
       const current = context(), state = current?.state;
       notice.hidden = !parentRecollectionVisible(state);
       if (notice.hidden) return;
-      text.textContent = `${parentRecollectionText(state, t, trailReminder(state, t))}\n${
-        parentRecollectionGuidance(state, current.info, t)}`;
+      title.textContent = t("parentRecollection.title", { parent: state.trail.parentName });
+      guidance.textContent = parentRecollectionGuidance(state, current.info, t);
+      text.textContent = parentRecollectionText(state, t, trailReminder(state, t));
       button.textContent = t("parentRecollection.open");
     },
   };

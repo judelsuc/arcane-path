@@ -23,6 +23,10 @@ export function setupCellContent(t, { pinPhoto } = {}) {
     return servicePromise;
   }
   const description = document.querySelector("#cell-description");
+  const inscriptionDescription = document.createElement("section");
+  inscriptionDescription.className = "cell-inscriptions-description";
+  inscriptionDescription.hidden = true;
+  description.after(inscriptionDescription);
   const photo = document.querySelector("#cell-photo");
   const dialog = document.querySelector("#photo-dialog");
   const show = document.querySelector("#show-photo");
@@ -35,7 +39,7 @@ export function setupCellContent(t, { pinPhoto } = {}) {
   const next = document.querySelector("#next-photo");
   let photoIndex = 0;
   let selected, locale, generation = 0, objectUrl, displayedBlob;
-  let descriptionResult, photoResult;
+  let descriptionResult, photoResult, visibleInscriptions = null;
   let photoNeedsRefresh = false;
   const pending = new Set();
 
@@ -164,6 +168,34 @@ export function setupCellContent(t, { pinPhoto } = {}) {
     container.append(provenance);
   }
 
+  function renderInscriptions() {
+    inscriptionDescription.replaceChildren();
+    const inscriptions = visibleInscriptions?.inscriptions ?? [];
+    inscriptionDescription.hidden = inscriptions.length === 0;
+    if (!inscriptions.length) return;
+    const heading = document.createElement("h3");
+    heading.textContent = t(`inscriptions.surface.${visibleInscriptions.surface}`);
+    const list = document.createElement("ul");
+    for (const inscription of inscriptions) {
+      const item = document.createElement("li");
+      const text = document.createElement("q");
+      text.textContent = inscription.text;
+      item.append(text);
+      list.append(item);
+    }
+    inscriptionDescription.append(heading, list);
+  }
+
+  function setInscriptions(value) {
+    const next = value && ["tree", "wall"].includes(value.surface) &&
+      Array.isArray(value.inscriptions) && value.inscriptions.every(item =>
+        item && typeof item.text === "string")
+      ? { surface: value.surface, inscriptions: value.inscriptions.map(item => ({ text: item.text })) } : null;
+    if (JSON.stringify(visibleInscriptions) === JSON.stringify(next)) return;
+    visibleInscriptions = next;
+    renderInscriptions();
+  }
+
   async function load(kind, force = false) {
     if (!selected) return;
     const current = generation;
@@ -211,6 +243,8 @@ export function setupCellContent(t, { pinPhoto } = {}) {
     dialog.close();
     generation++;
     selected = undefined;
+    visibleInscriptions = null;
+    renderInscriptions();
     document.querySelector("#content-hint").hidden = false;
     pois.open = false;
     renderPois();
@@ -245,6 +279,7 @@ export function setupCellContent(t, { pinPhoto } = {}) {
       if (descriptionResult) render(description, descriptionResult);
       if (photoResult && dialog.open) renderPhoto();
     }
+    renderInscriptions();
   }
 
   function select(map, tile) {
@@ -308,5 +343,5 @@ export function setupCellContent(t, { pinPhoto } = {}) {
       setFeedback(status, "failure");
     }
   });
-  return { select, reset, localize };
+  return { select, reset, localize, setInscriptions };
 }

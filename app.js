@@ -62,12 +62,13 @@ const travel = setupTravel({
     document.querySelector("#journey-setup").hidden = !entered || active;
     document.querySelector("#game-content").hidden = !entered || !active;
   },
-  selectPlayer(data, tile) {
+  selectPlayer(data, tile, inscriptions) {
     inspectTile(tile);
     if (data.rows[Number(tile.dataset.row)][Number(tile.dataset.col)].unavailable) {
       cellContent.reset();
     } else {
       cellContent.select(data, tile);
+      cellContent.setInscriptions(inscriptions);
     }
   },
   resetContent: () => cellContent.reset(),

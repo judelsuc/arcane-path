@@ -12,7 +12,8 @@ const PANE_TOPICS = {
   services: ["services", "dialogue-services"],
 };
 
-export function setupConversations(t, { context, characters, onCharacter = () => {} }) {
+export function setupConversations(t, { context, characters, onCharacter = () => {},
+  onArtifactRumour = () => {} }) {
   const $ = id => document.getElementById(id);
   const dialog = $("conversation-dialog");
   const selector = $("character-selector-dialog");
@@ -80,8 +81,8 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
           ? t("character.familiar") : ""].filter(Boolean).join(" ")
       : "";
     $("conversation-character-reply").hidden = !currentCharacter;
-    $("conversation-reply").hidden = selected !== "artifacts";
-    $("conversation-reply").textContent = selected === "artifacts" ? t("conversation.legend") : "";
+    $("conversation-reply").hidden = true;
+    $("conversation-reply").textContent = "";
     for (const [topic, target] of Object.entries(TOPICS)) {
       const source = $(target);
       $(`conversation-${topic}`).disabled = !current || !source || source.disabled || source.hidden;
@@ -104,8 +105,7 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
             : selected === "parent" ? t("character.noParentKnowledge") : t("character.noKnowledge");
       const mention = exchange?.status === "ready" && exchange.visitorFacts?.[0]?.type === "met"
         ? t("character.visitorMention", { name: exchange.visitorFacts[0].name }) : "";
-      $("conversation-character-reply").textContent = [response, mention,
-        selected === "services" ? "" : t("character.toolsNotTestimony")].filter(Boolean).join(" ");
+      $("conversation-character-reply").textContent = [response, mention].filter(Boolean).join(" ");
     }
     $("character-create").disabled = !current || !loaded || !canCreate || busy;
     $("character-selector-close").disabled = busy;
@@ -236,6 +236,7 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
       exchangeReply = { characterId: character.id, topic, status: "ready", facts: result.factIds,
         visitorFacts: Array.isArray(result.visitorFacts) ? result.visitorFacts.slice(0, 1)
           .filter(fact => fact?.type === "met" && typeof fact.name === "string") : [] };
+      if (result.artifactRumour) onArtifactRumour(result.artifactRumour, character);
       localize();
     } catch (error) {
       if (currentCharacter?.id === character.id) {
@@ -261,6 +262,7 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
       selector.close();
       dialog.showModal();
       onCharacter(currentCharacter);
+      if (meeting?.artifactRumour) onArtifactRumour(meeting.artifactRumour, currentCharacter);
       localize();
       $(`conversation-${selected}`).focus();
     } catch (error) {

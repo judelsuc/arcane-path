@@ -21,7 +21,7 @@ class Element {
   replaceChildren(...children) { this.children = children; }
 }
 
-function portraitFixture(t, fetchPortrait, { profile, onCharacter } = {}) {
+function portraitFixture(t, fetchPortrait, { profile, onCharacter, onArtifactRumour } = {}) {
   const previous = globalThis.document, nodes = new Map(), revoked = [], errors = [];
   const get = id => {
     if (!nodes.has(id)) nodes.set(id, new Element());
@@ -44,7 +44,7 @@ function portraitFixture(t, fetchPortrait, { profile, onCharacter } = {}) {
     portrait: fetchPortrait, async meet() {},
   };
   const ui = setupConversations((key, args) => translate("en", key, args),
-    { context: () => current, characters, onCharacter });
+    { context: () => current, characters, onCharacter, onArtifactRumour });
   return { ui, get, characters, revoked, errors, created: () => created,
     portrait: () => get("character-choices").children[0].children[0].children[0],
     status: () => get("character-choices").children[0].children[0].children[1].children[2] };
@@ -56,12 +56,45 @@ test("meeting a character with a quest opens their proposal and notifies the que
     profile: { quest: { version: 1, template: "magician.workshop-trial", scope: "local" } },
     onCharacter: character => speakers.push(character.id),
   });
+
   await fixture.ui.open();
   await fixture.get("character-choices").children[0].children[0].click();
   assert.deepEqual(speakers, ["b".repeat(32)]);
   assert.equal(fixture.get("dialogue-services").hidden, false);
   assert.equal(fixture.get("conversation-services").focused, true);
   assert.equal(fixture.get("conversation-dialog").open, true);
+});
+
+test("conversation replies contain only the character's in-world response", async t => {
+  const fixture = portraitFixture(t, async () => new Blob(["portrait"]));
+  fixture.characters.exchange = async () => ({ factIds: ["own_workshop"] });
+  await fixture.ui.open();
+  await fixture.get("character-choices").children[0].children[0].click();
+  fixture.get("conversation-parent").click();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(fixture.get("conversation-character-reply").textContent,
+    translate("en", "character.fact.own_workshop"));
+  assert.doesNotMatch(fixture.get("conversation-character-reply").textContent,
+    /tools below|game rules|not testimony/i);
+});
+
+test("spontaneous artifact speech is forwarded on meetings and ordinary topics, without asking for an object", async t => {
+  const heard = [], rumour = { characterId: "b".repeat(32),
+    eventId: "00000000-0000-4000-8000-000000000001", artifactId: "hermit" };
+  const f = portraitFixture(t, async () => new Blob(["portrait"]), {
+    onArtifactRumour: (message, character) => heard.push([message, character.id]),
+  });
+  f.characters.meet = async () => ({ artifactRumour: rumour });
+  f.characters.exchange = async () => ({ factIds: [], artifactRumour: { ...rumour,
+    eventId: "00000000-0000-4000-8000-000000000002" } });
+  await f.ui.open();
+  await f.get("character-choices").children[0].children[0].click();
+  assert.deepEqual(heard, [[rumour, rumour.characterId]]);
+  f.get("conversation-clues").click();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(heard.length, 2);
+  assert.equal(heard[1][0].eventId, "00000000-0000-4000-8000-000000000002");
+  assert.equal(f.get("dialogue-directions").hidden, false);
 });
 test("portrait fetch failure is labelled visibly and reported without blocking dialogue", async t => {
   const fixture = portraitFixture(t, async () => { throw new Error("storage unavailable"); });
@@ -231,8 +264,8 @@ for (const language of ["fr", "en"]) {
     await get("conversation-back").click();
     await get("character-choices").children[0].children[0].click();
     get("conversation-artifacts").click();
-    assert.equal(get("conversation-reply").hidden, false);
-    assert.match(get("conversation-reply").textContent, language === "fr" ? /ami d’un ami.*très loin/ : /friend of a friend.*long way/);
+    assert.equal(get("conversation-reply").hidden, true);
+    assert.equal(get("conversation-reply").textContent, "");
     assert.deepEqual(current, before);
     for (const [topic, pane] of Object.entries({ parent: "dialogue-parent", clues: "dialogue-directions",
       notebooks: "dialogue-journals", artifacts: "dialogue-artifacts", services: "dialogue-services" })) {
@@ -322,18 +355,18 @@ test("unknown character knowledge does not remove player-authorized dialogue too
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(get("dialogue-directions").hidden, false);
   assert.equal(get("dialogue-directions").children[0], existingQuestTool);
-  assert.match(get("conversation-character-reply").textContent, /don’t know a verified fact/);
+  assert.match(get("conversation-character-reply").textContent, /don't know enough about that/);
   assert.deepEqual(calls, [{ characterId: character.id, topic: "clues" }]);
   get("conversation-parent").click();
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(get("dialogue-parent").hidden, false);
-  assert.match(get("conversation-character-reply").textContent, /won’t pretend that I have met them/);
+  assert.match(get("conversation-character-reply").textContent, /don't know your parent well enough/);
   get("conversation-artifacts").click();
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(get("dialogue-artifacts").hidden, false);
-  assert.equal(get("conversation-reply").hidden, false);
-  assert.match(get("conversation-character-reply").textContent, /don’t know a verified fact/);
-  assert.match(get("conversation-reply").textContent, /world rumour, not attributed/);
+  assert.equal(get("conversation-reply").hidden, true);
+  assert.match(get("conversation-character-reply").textContent, /don't know enough about that/);
+  assert.equal(get("conversation-reply").textContent, "");
   ui.reset();
 });
 

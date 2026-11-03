@@ -12,6 +12,7 @@ import { witnessCooling } from "./pressures.mjs";
 import { trailDreamText, trailDreamVariant } from "./trail-dreams.mjs";
 import { LOST_PLAYER_DREAM } from "./live-narrative.mjs";
 import { intimateWitness, parentIntimacy } from "./parent-intimacy.mjs";
+import { parentIntuitionText } from "./parent-recollection.mjs";
 import { fieldSearchAvailable, fieldSearchRules, prepareFieldSearch, fieldClueText, vagueLead,
   recognitionHint, prepareRecognition, openingClue, openingClueText } from "./trail-search.mjs";
 
@@ -426,7 +427,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     document.querySelector("#trail-catalogue-credit").hidden = !local;
     document.querySelector("#trail-target").textContent = currentPage
       ? awaitingLead ? t("trailPageAwaiting", { page: viewedStage + 1, place: trail.stages[trail.index].name })
-        : trailReminder(state, t)
+        : [parentIntuitionText(state, t), trailReminder(state, t)].filter(Boolean).join("\n")
       : t("trailPageReached", { page: viewedStage + 1, place: trail.stages[viewedStage].name });
     action.disabled = blocked || !atTrailTarget(state);
     action.hidden = modern;
@@ -518,6 +519,8 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     const socialActions = document.querySelector("#dialogue-parent");
     if (socialActions) {
       socialActions.replaceChildren();
+      const intuition = parentIntuitionText(state, t);
+      if (intuition) paragraph(socialActions, intuition);
       const heading = document.createElement("h3");
       heading.textContent = t("conversation.parent");
       socialActions.append(heading);

@@ -268,10 +268,6 @@
             <p id="travel-blocker" role="status" hidden></p>
               <p id="rest-effect"></p>
               <p id="journey-world-notice" role="status"></p>
-            <section id="parent-recollection" hidden>
-              <p id="parent-recollection-text" role="status" aria-atomic="true"></p>
-              <button id="parent-recollection-open" type="button"></button>
-            </section>
             <p id="look-status" role="status"></p>
             <p id="lodging-target-status" role="status" hidden></p>
             <button id="lodging-target-clear" type="button" data-i18n="lodgingTargetClear" hidden></button>
@@ -289,6 +285,16 @@
           <button id="journey-path-retry" type="button" data-i18n="journeyPath.retry" hidden></button>
         </section>
         <div class="map-comparison">
+          <section id="artifact-recovery" role="region" aria-label="Objets magiques" hidden></section>
+          <section id="parent-recollection" aria-labelledby="parent-recollection-title" hidden>
+            <h3 id="parent-recollection-title"></h3>
+            <p id="parent-recollection-guidance" role="status" aria-atomic="true"></p>
+            <details>
+              <summary data-i18n="parentRecollection.memoryTitle"></summary>
+              <p id="parent-recollection-text"></p>
+            </details>
+            <button id="parent-recollection-open" type="button"></button>
+          </section>
           <section class="comparison-panel" aria-labelledby="ascii-title">
             <h3 id="ascii-title"></h3>
             <div class="map-viewport" id="map-viewport" aria-live="polite">
@@ -631,6 +637,7 @@
         <button id="conversation-town" type="button" data-i18n="conversation.town"></button>
       </div>
       <p id="conversation-character-reply" role="status" hidden></p>
+      <div id="conversation-artifact-rumour" role="status" hidden></div>
       <p id="conversation-character-status" role="status"></p>
       <p id="conversation-reply" role="status" tabindex="-1" hidden></p>
       <p data-i18n="conversation.rules"></p>

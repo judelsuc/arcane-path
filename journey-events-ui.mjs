@@ -38,7 +38,8 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
     if (!dialog.open || !event) return;
     const language = document.documentElement.lang === "en" ? "en" : "fr";
     const brief = `event.${event.kind}`;
-    if (illustration) illustrations.render(illustration, current.state, brief, `event:${event.id}`, t);
+    const imageReady = illustration &&
+      illustrations.render(illustration, current.state, brief, `event:${event.id}`, t);
     if (wordingId !== event.id) {
       wordingId = event.id;
       wording = Object.hasOwn(event, "wording") ? event.wording
@@ -64,7 +65,9 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
       }
       return number;
     }));
-    document.querySelector("#journey-event-art").textContent = journeyEventArt(event.kind);
+    const ascii = document.querySelector("#journey-event-art");
+    ascii.textContent = journeyEventArt(event.kind);
+    ascii.hidden = Boolean(imageReady);
     document.querySelector("#journey-event-cards").textContent = t("journeyEventCards", {
       birth: card(event.birthCard), daily: card(event.dailyCard),
       chance: Math.round(event.occurrence * 100), positive: Math.round(event.positive * 100),

@@ -3,13 +3,72 @@ import { CARVE_MINUTES, MAX_INSCRIPTION, carvingBlocker, createInscriptionsClien
 
 const POLL_MS = 2000;
 const MAX_POLLS = 60;
+const CELL_CACHE_MS = 60_000;
 
-export function setupInscriptions(t, { context, carve, request = createInscriptionsClient(), wait = POLL_MS } = {}) {
+export function setupInscriptions(t, { context, carve, request = createInscriptionsClient(), onUpdate = () => {},
+  wait = POLL_MS } = {}) {
   const $ = id => document.getElementById(id);
   const dialog = $("inscriptions-dialog");
   const trigger = $("open-inscriptions");
   const input = $("inscriptions-text");
   let view = null, generation = 0, timer = null, busy = false;
+  const cellCache = new Map(), cellRequests = new Map();
+  let cellKey = null, cellGeneration = 0, cellEpoch = 0, cellView = null;
+
+  function keyFor(state, cell) {
+    if (!state?.serverJourney?.id || !state.journalAccess || !Number.isSafeInteger(state.col) ||
+        !Number.isSafeInteger(state.row) || state.ended ||
+        !inscriptionSurface(cell)) return null;
+    return `${state.serverJourney.id}:${state.col}:${state.row}`;
+  }
+
+  function publicView(result) {
+    return { surface: result.surface,
+      inscriptions: result.inscriptions.map(item => ({ text: item.text })) };
+  }
+
+  function updateCellView(key, result) {
+    const next = publicView(result);
+    const previous = cellCache.get(key);
+    const changed = !previous || JSON.stringify(previous.view) !== JSON.stringify(next);
+    cellCache.set(key, { view: next, cachedAt: Date.now() });
+    if (cellKey === key) {
+      const displayedChanged = JSON.stringify(cellView) !== JSON.stringify(next);
+      cellView = next;
+      if (changed || displayedChanged) onUpdate();
+    }
+  }
+
+  function enterCell(state, cell) {
+    const key = keyFor(state, cell);
+    if (key === cellKey) return;
+    cellKey = key;
+    const token = ++cellGeneration;
+    const cached = key && cellCache.get(key);
+    cellView = cached?.view ?? null;
+    if (!key || (cached && Date.now() - cached.cachedAt < CELL_CACHE_MS)) return;
+    if (cellRequests.has(key)) {
+      cellRequests.get(key).then(result => {
+        if (token === cellGeneration && cellKey === key) updateCellView(key, result);
+      }).catch(() => {});
+      return;
+    }
+    const epoch = cellEpoch;
+    const pending = Promise.resolve().then(() => request(state, "list"));
+    cellRequests.set(key, pending);
+    pending.then(result => {
+      if (cellRequests.get(key) === pending) cellRequests.delete(key);
+      if (epoch !== cellEpoch) return;
+      if (token === cellGeneration && cellKey === key) updateCellView(key, result);
+      else cellCache.set(key, { view: publicView(result), cachedAt: Date.now() });
+    }).catch(() => {
+      if (cellRequests.get(key) === pending) cellRequests.delete(key);
+    });
+  }
+
+  function currentCellView() {
+    return cellView;
+  }
 
   function status(message, failure = false) {
     $("inscriptions-error").textContent = failure ? message : "";
@@ -77,6 +136,9 @@ export function setupInscriptions(t, { context, carve, request = createInscripti
         view = await request(context().state, "list");
         if (token !== generation) return;
         render();
+        const current = context();
+        const currentKey = current && keyFor(current.state, current.cell);
+        if (currentKey) updateCellView(currentKey, view);
         schedule(token, polls + 1);
       } catch (error) {
         if (token === generation) status(error.message, true);
@@ -95,6 +157,8 @@ export function setupInscriptions(t, { context, carve, request = createInscripti
       const result = await request(current.state, action, details);
       if (token !== generation) return;
       view = result;
+      const currentKey = keyFor(current.state, current.cell);
+      if (currentKey) updateCellView(currentKey, result);
       before?.();
       status(success ? t(success) : "");
       schedule(token, 0);
@@ -160,5 +224,15 @@ export function setupInscriptions(t, { context, carve, request = createInscripti
       !current.state?.serverJourney?.id;
     if (dialog.open) render();
   }
-  return { localize, open, reset: close };
+  function reset() {
+    close();
+    cellEpoch++;
+    cellGeneration++;
+    cellKey = null;
+    cellView = null;
+    cellCache.clear();
+    cellRequests.clear();
+    onUpdate();
+  }
+  return { localize, open, enter: enterCell, current: currentCellView, reset };
 }

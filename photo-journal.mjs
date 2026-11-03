@@ -185,7 +185,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   let statsContext = null, statistics = false, backing = false, archiveState = null;
   const backButton = document.querySelector("#journal-back-cover-page");
   const rewriteButton = document.querySelector("#journal-closing-rewrite");
-  let mapping = false, animation;
+  let mapping = false, animation, mapLoading;
   function stopAnimation() {
     if (animation !== undefined) cancelAnimationFrame(animation);
     animation = undefined;
@@ -354,12 +354,18 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       backing ? t("journalBackCoverPage") : covering ? t("journalCoverPage") : mapping ? t("journalMapPage") : statistics ? t("journalStatsPage") :
         t("journalCount", { spread: spread + 1, total: Math.max(1, Math.ceil(entries.length / 2)) });
     status.textContent = error ? t("journalError", { error }) : exporting ? t("journalPdfPreparing") :
-      loading ? t("journalLoading") : exported ? t("journalPdfReady") : "";
+      loading ? t(mapping ? "journalMapLoading" : "journalLoading") : exported ? t("journalPdfReady") : "";
     setFeedback(status, error ? "failure" : exported ? "success" : "");
+    if (mapLoading) {
+      mapLoading.label.textContent = t("journalMapLoading");
+      mapLoading.progress.ariaLabel = t("journalMapLoading");
+    }
   }
   async function render() {
     const current = ++generation;
     stopAnimation();
+    mapLoading = undefined;
+    pages.ariaBusy = "false";
     loading = true;
     error = "";
     localize();
@@ -436,7 +442,17 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       }
       if (mapping && statsContext && !readOnly) {
         revoke();
-        pages.replaceChildren();
+        const placeholder = document.createElement("section");
+        placeholder.className = "notebook-page journal-map-loading";
+        const label = document.createElement("p");
+        label.textContent = t("journalMapLoading");
+        label.role = "status";
+        const progress = document.createElement("progress");
+        progress.ariaLabel = t("journalMapLoading");
+        mapLoading = { label, progress };
+        placeholder.append(label, progress);
+        pages.replaceChildren(placeholder);
+        pages.ariaBusy = "true";
         const view = journeyMapView(statsContext.state, statsContext.cellSizeMeters);
         if (statsContext.mapTerrain) view.terrain = await statsContext.mapTerrain(view);
         if (current !== generation || !dialog.open) return;
@@ -477,7 +493,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
           animation = requestAnimationFrame(frame);
         });
         page.append(title, canvas, note, legend, replay);
-        pages.append(page);
+        pages.replaceChildren(page);
         return;
       }
       if (statistics && statsContext && !readOnly) {
@@ -619,9 +635,17 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         pages.append(page);
       }
     } catch (reason) {
-      if (current === generation) failure(reason);
+      if (current === generation) {
+        if (mapLoading) pages.replaceChildren();
+        failure(reason);
+      }
     } finally {
-      if (current === generation) { loading = false; localize(); }
+      if (current === generation) {
+        mapLoading = undefined;
+        pages.ariaBusy = "false";
+        loading = false;
+        localize();
+      }
     }
   }
   async function load() {
@@ -766,7 +790,9 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
   dialog.addEventListener("close", () => {
     exportEpoch++;
     stopAnimation();
-    generation++; loading = false; revoke(); pages.replaceChildren();
+    generation++; loading = false; mapLoading = undefined;
+    pages.ariaBusy = "false";
+    revoke(); pages.replaceChildren();
     store = liveStore;
     readOnly = false;
     statistics = false;

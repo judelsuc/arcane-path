@@ -1,33 +1,39 @@
 # Content workshop and optional live wording
 
-## Individual encounter illustrations (R-177)
+## Shared encounter illustrations (R-177)
 
 `/api/encounter-art` uses the notebook capability and keeper scope. It observes
 only allowlisted event, guidance-dream and hospitality scene keys with bounded
 per-occurrence IDs; private identities, notes, coordinates and event prose never
-enter the image prompt. Each ready image is assigned once, to one occurrence
-and owner. Repeated observations reuse that assignment, not a type-wide image.
-The client polls pending observations, explicitly surfaces failures and offers
+enter the image prompt. A missing scene starts one sequential background job;
+its immutable scene request is deduplicated across servers by the shared image
+job ledger. All players reuse the published scene image, including images from
+the previous stock. Existing notebook assignments are retained.
+The client polls pending observations every two seconds, explicitly surfaces failures and offers
 the notebook's Retry action. Local journeys continue without online artwork.
 Generated pictures are labelled as illustrations, not photographs or clues;
 credits and preparation diagnostics are folded with the other technical text.
 Historical tarot/death-card images remain untouched.
 
-Images expire after exactly 604800 real seconds. An expired assignment remains
-visible until a new, individually generated image is available. Renewed artwork
-may update the encounter view, but the first image pinned into the notebook
-is preserved, including its licence and provenance. Existing archives gain newly
+Images remain cached rather than expiring after seven days. The event window
+keeps its ASCII fallback until the generated image has actually loaded; it swaps
+automatically, without reopening the window, and keeps ASCII if decoding fails.
+Shared image bytes are fetched once per notebook session, while every occurrence
+is pinned separately with its licence and provenance. Existing archives gain newly
 pinned pictures when reopened; prose, outcomes and gameplay are unaffected.
 
 The separate `arcane-encounter-art.timer` schedules Tuesday 23:00 Europe/Paris,
 weekly, with no missed-run catch-up. Its sequential batch runs for at most seven
-hours with at least 15 seconds between completed calls, without an item-count
-maximum. It serves waiting occurrences first, then balances unused stock across
-the finite scene catalogue. An exclusive lock prevents overlap. Expired unclaimed
-stock is pruned before checking the 2 GiB live-image limit; at least 2 GiB free
-disk is required. A provider/free-offer failure stops the batch, without retry or
+hours with at least 15 seconds between completed calls. It serves missing scenes
+with waiting observations first, then fills the finite scene catalogue and stops
+once every scene is cached. An exclusive local lock and immutable shared jobs
+prevent duplicate dispatch. The 2 GiB live-image limit remains enforced; at least
+2 GiB free disk is required for local storage. A provider/free-offer failure stops
+generation, without retry or
 paid fallback. The existing image writer verifies zero USD pricing before every
-generation call. No browser request dispatches image generation.
+generation call. Observation requests enqueue background preparation without
+waiting for the provider. A failed or uncertain provider dispatch is never
+automatically repeated, even after restarting the server.
 
 ## Travellers' notebook window and witness gate (R-117)
 

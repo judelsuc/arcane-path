@@ -848,7 +848,10 @@ def make_handler(store, jobs, path_pool=None):
     lore = LorePlaytest(journeys, abandoned, paths=parent_paths, chunk_jobs=jobs)
     portrait_writer = (OvhImageWriter(journal_art.writer.token, style=CHARACTER_IMAGE_STYLE)
                        if journal_art.writer else None)
-    characters = Characters(journeys, lore, writer=portrait_writer, quests=quest_destinations)
+    main_artifacts = MainArtifacts(journeys, abandoned, paths=parent_paths, chunk_jobs=jobs)
+    characters = Characters(journeys, lore, writer=portrait_writer, quests=quest_destinations,
+                            artifacts=main_artifacts)
+    main_artifacts.characters = characters
     town_content = TownContent(journeys, lore)
     inscriptions = Inscriptions(journeys, lore, writer=(
         OvhWriter(live_narrative.writer.token, LIVE_TEXT_MODEL, moderation_request)
@@ -857,7 +860,6 @@ def make_handler(store, jobs, path_pool=None):
                                     enabled=os.environ.get("ARCANE_CHANGE_REQUESTS_ENABLED") == "1"
                                     and assets is not None and assets.catalogue.postgres
                                     and isinstance(assets.blobs, S3Blobs))
-    main_artifacts = MainArtifacts(journeys, abandoned, paths=parent_paths, chunk_jobs=jobs)
     accommodations = ChunkJobs(Accommodations(store, atomic_write), capacity=2, pool=jobs.pool)
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
@@ -1200,6 +1202,7 @@ def main():
     finally:
         server.server_close()
         server.RequestHandlerClass.journal_art.close()
+        server.RequestHandlerClass.encounter_art.close()
         server.RequestHandlerClass.characters.close()
         server.RequestHandlerClass.town_content.close()
         server.RequestHandlerClass.inscriptions.close()

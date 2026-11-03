@@ -24,7 +24,7 @@ test("encounters have per-occurrence identities without private narrative or coo
   assert.doesNotMatch(JSON.stringify(records), /PRIVATE|123/);
 });
 
-test("ready images are private, pinned once per occurrence, and weekly renewal does not replace notebook images", async () => {
+test("ready images are pinned once per occurrence and cached without repeated syncs", async () => {
   let identity = "c".repeat(32);
   const calls = [], assets = [];
   const client = createEncounterIllustrator({ cancel() {}, schedule: () => 1,
@@ -46,7 +46,7 @@ test("ready images are private, pinned once per occurrence, and weekly renewal d
   client.refresh();
   await tick();
   assert.equal(assets.length, 1);
-  assert.equal(calls.filter(call => call.operation === "image").length, 2);
+  assert.equal(calls.filter(call => call.operation === "image").length, 1);
   assert.deepEqual(owner, before);
   assert.doesNotMatch(JSON.stringify(calls), /PRIVATE|"col"/);
   client.stop();
@@ -56,7 +56,7 @@ test("pending and expired-but-ready entries are polled, with no model calls from
   const jobs = [], assets = [];
   let available = false;
   const client = createEncounterIllustrator({ onAsset: async entry => assets.push(entry),
-    schedule: callback => { jobs.push(callback); return jobs.length; }, cancel() {},
+    schedule: (callback, delay) => { assert.equal(delay, 2000); jobs.push(callback); return jobs.length; }, cancel() {},
     fetcher: async (_, options) => {
       const body = JSON.parse(options.body);
       return body.operation === "image" ? image() : {
@@ -162,7 +162,98 @@ test("images render in both languages and release object URLs even when a window
     assert.equal(container.hidden, false);
     assert.equal(container.querySelector("img").alt, t("encounterIllustration"));
     assert.equal(container.querySelector("a").textContent, t("encounterIllustrationCredit"));
+    if (language === "fr") {
+      assert.equal(client.render(container, owner, "event.food", "event:one", t), false);
+      container.querySelector("img").events.load();
+    }
+    assert.equal(client.render(container, owner, "event.food", "event:one", t), true);
   }
   client.stop();
   assert.deepEqual(revoked, ["blob:encounter"]);
+});
+
+test("shared scene bytes are fetched once but retained separately for each event", async () => {
+  const calls = [], pins = [], jobs = [];
+  const client = createEncounterIllustrator({
+    schedule: fn => jobs.push(fn), cancel() {},
+    onAsset: async entry => pins.push(entry.occurrence),
+    fetcher: async (_, options) => {
+      const body = JSON.parse(options.body);
+      calls.push(body.operation);
+      return body.operation === "image" ? image() : {
+        ok: true, json: async () => ({ enabled: true, entries: body.items.map(item => ready(item)) }),
+      };
+    },
+  });
+  client.observe({ ...owner, events: { history: [{ id: "one", kind: "food" }, { id: "two", kind: "food" }] } });
+  await tick();
+  assert.equal(calls.filter(operation => operation === "image").length, 1);
+  assert.deepEqual(pins, ["event:one", "event:two"]);
+  assert.equal(jobs.length, 0, "completed shared images do not poll forever");
+  client.stop();
+});
+
+test("explicit retry saves a downloaded image after notebook pinning initially fails", async () => {
+  let attempts = 0, downloads = 0;
+  const client = createEncounterIllustrator({
+    schedule: () => 1, cancel() {},
+    onAsset: async () => { if (++attempts === 1) throw new Error("Notebook unavailable"); },
+    fetcher: async (_, options) => {
+      const body = JSON.parse(options.body);
+      if (body.operation === "image") { downloads++; return image(); }
+      return { ok: true, json: async () => ({ enabled: true, entries: body.items.map(item => ready(item)) }) };
+    },
+  });
+  client.observe(owner);
+  await tick();
+  client.refresh();
+  await tick();
+  assert.equal(attempts, 2);
+  assert.equal(downloads, 1);
+  client.stop();
+});
+
+test("cached artwork remains readable when new image generation is disabled", async () => {
+  const pins = [], jobs = [];
+  const client = createEncounterIllustrator({
+    schedule: fn => jobs.push(fn), cancel() {},
+    onAsset: async entry => pins.push(entry.occurrence),
+    fetcher: async (_, options) => {
+      const body = JSON.parse(options.body);
+      return body.operation === "image" ? image() : {
+        ok: true, json: async () => ({ enabled: false, entries: body.items.map(item => ready(item)) }),
+      };
+    },
+  });
+  client.observe(owner);
+  await tick();
+  assert.deepEqual(pins, ["event:one"]);
+  assert.equal(jobs.length, 0);
+  client.observe({ ...owner, events: { history: [{ id: "one", kind: "food" }, { id: "two", kind: "coins" }] } });
+  await tick();
+  assert.deepEqual(pins, ["event:one", "event:two"]);
+  assert.equal(jobs.length, 0);
+  client.stop();
+});
+
+test("a failed scene does not block ready illustrations for other event kinds", async () => {
+  const pins = [], errors = [], jobs = [];
+  const client = createEncounterIllustrator({
+    schedule: fn => jobs.push(fn), cancel() {},
+    onError: reason => errors.push(reason.message),
+    onAsset: async entry => pins.push(entry.occurrence),
+    fetcher: async (_, options) => {
+      const body = JSON.parse(options.body);
+      return body.operation === "image" ? image() : {
+        ok: true, json: async () => ({ enabled: true, entries: body.items.map(item =>
+          item.scene === "event.food" ? { ...item, status: "failed", error: "No free offer" } : ready(item)) }),
+      };
+    },
+  });
+  client.observe({ ...owner, events: { history: [{ id: "one", kind: "food" }, { id: "two", kind: "coins" }] } });
+  await tick();
+  assert.deepEqual(errors, ["No free offer"]);
+  assert.deepEqual(pins, ["event:two"]);
+  assert.equal(jobs.length, 0);
+  client.stop();
 });
