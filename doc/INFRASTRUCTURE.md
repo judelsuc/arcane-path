@@ -12,6 +12,35 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: natural encounters and journal progress (3 November 2026)
+
+Runtime `7f0f2ab319385f147ad72f206d9f0f0356036bc0`, tag
+`deploy-2026-11-03-natural-encounters`, game version **0.21.3**, packaged at
+`2026-11-03T09:15:36.462848+00:00`. Includes spontaneous character-owned artifact
+knowledge, diverse names, balanced new portraits (existing portraits preserved),
+parent guidance after one game hour and every three quiet hours thereafter,
+guidance in Dialogue/Quests and above the map, shared event illustrations with
+ASCII replacement, arrival engravings, diegetic conversation copy, map-accessible
+pending artifact recovery, and the journal-map loading progress bar.
+
+The clean committed snapshot passed **259 JavaScript and 155 Python tests**.
+Unrelated local dialog, keyboard and desktop-file edits were excluded.
+The 29-file runtime delta was 235,883 bytes, SHA-256
+`dadf52425b463403ce63f6798e4530a3ac283e34d53fb787f650d165105b74f1`.
+All deployed hashes matched; changed Python modules compiled successfully.
+Loopback release/changelog and changed browser/data assets returned 200;
+invalid character capability returned 403; public HTTPS remained protected
+(401). Both services were active, with zero post-start error matches.
+Interactive browser gameplay was not verified.
+
+Rollback archive `/home/ubuntu/runtime-before-0213-7f0f2ab.tar.gz` (0600),
+SHA-256 `774edb3ffcb65ce8bc784adb8121a429a96fcab3e2757204dde34625ad801810`.
+Stop the service, restore its existing files, remove the newly added runtime
+file `public/artifact-rumours.json`, then restart. The exact new-file list is
+also retained at `/home/ubuntu/runtime-before-0213-7f0f2ab-new-files.json` (0600).
+Preserve the cache symlink, databases and shared virtual environment.
+No database migration, nginx change or portrait regeneration was performed.
+
 ## Checkpoint deployed: character quests and parent guidance (2 November 2026)
 
 Runtime `0100f5d659c727bf74c7f35a72656280f8c71913`, tag
