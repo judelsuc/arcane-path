@@ -12,6 +12,38 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: quest places from cached map data (3 November 2026)
+
+Runtime `127f5be353c945176a6d9130994ca1a349eeb09e`, tag
+`deploy-2026-11-03-cached-quest-places`, game version **0.21.7**, packaged at
+`2026-11-03T19:10:44.333527+00:00`.
+
+The shared catalogue showed that no character quest had ever been verified in
+production: 39 `quest_instances` had failed and `quest_pois` was empty. Every
+bounded Overpass query to `overpass-api.de` and `overpass.kumi.systems` timed out
+or returned 502. Manual probes from the VM also got 504 errors from
+`maps.mail.ru` and 503 errors from `api.openstreetmap.org`. Quest discovery now
+reads real POIs first from the `source.osm.gz` chunk snapshots already cached
+for the region. Overpass is used only when those snapshots do not cover the
+town's 2-km area. When providers fail, partial cached data can still produce
+an offer, but it is never persisted. An absence in partial data stays retryable.
+
+Before deployment, the 115 cached Alps chunk sources gave eligible POIs for
+Chamonix (191), Saint-Gervais (59), Les Houches (47), Beaufort (32) and
+Combloux (21). After deployment, the five most recent retryable failures were
+requeued (same nonce and contract, as a client retry would do). Three became
+`ready`, with real destinations (Marché de Beaufort, Église
+Saint-Maxime-de-Riez, Auberge Viallet). Two remain retryable because their
+towns have no cached chunks yet.
+
+The three-file delta was 19,323 bytes, SHA-256
+`6cd48be29012cd582e75057413948dd260f765d4821d7cfb4b7b9969d9f3a2a8`.
+Rollback archive `/home/ubuntu/runtime-before-0217-127f5be.tar.gz` (0600),
+SHA-256 `a98b0c35af3ec06c6f052608dfd33c78ab07b011234833f303f700583582193b`.
+The game service was restarted; no migration, nginx or dependency change was
+needed. Validation: **663 Python tests passed** (36 skipped). The release test
+was updated; all three deployed hashes matched.
+
 ## Checkpoint deployed: known destinations and artifact recovery (3 November 2026)
 
 Runtime `b4c97319b770dd70b824768e17a0ad2eb0d1e8e2`, tag
