@@ -12,6 +12,28 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: walking map flicker (3 November 2026)
+
+Runtime `bb58e9a65978267d866a0cdf5aeb15c9948ff3cc`, tag
+`deploy-2026-11-03-walking-flicker`, game version **0.21.4**. Parent guidance
+no longer disappears during ordinary movement, and the map recovery banner
+stays hidden during routine in-flight artifact synchronization while preserving
+recovery for commands that remain pending.
+
+The four-file runtime delta was 29 KB, SHA-256
+`11d51bf086efd22f5750a6fba40f9bd953c6d5d588a5fe768ea3b707bdedfdda`.
+Rollback archive `/home/ubuntu/runtime-before-0214-bb58e9a.tar.gz` (0600),
+SHA-256 `b8895682dd6d0f2ec9b262aa336429593799e11edb71d54c8d53f560b44770e1`.
+Restore its four files under `/opt/arcane-path` and restart `arcane-path`;
+the shared cache symlink, databases, and virtual environment were not changed.
+No database migration or nginx change was needed.
+
+Validation: **1,299 JavaScript and 659 Python tests passed** (36 Python tests
+skipped). Deployed hashes matched. Release/changelog and changed browser assets
+returned 200 over loopback; unauthenticated public HTTPS remained protected
+(401). Both services were active with no post-deployment error entries.
+Interactive browser gameplay was not verified.
+
 ## Checkpoint deployed: natural encounters and journal progress (3 November 2026)
 
 Runtime `7f0f2ab319385f147ad72f206d9f0f0356036bc0`, tag
