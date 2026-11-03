@@ -1,6 +1,8 @@
+import gzip
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+import shutil
 import sys
 import tempfile
 import threading
@@ -116,6 +118,50 @@ class QuestDestinationsTests(unittest.TestCase):
             result = self.settle()
         self.assertEqual(result["status"], "failed")
         self.assertEqual(self.settle(), result)
+        self.fetcher.assert_called_once()
+
+    def cache_sources(self, xml, coordinates=None):
+        root = Path(tempfile.mkdtemp(dir=ROOT / ".cache", prefix="quest-sources-"))
+        self.addCleanup(shutil.rmtree, root, True)
+        self.chunks.source_path = lambda region, x, y: root / region / f"{x}_{y}"
+        (root / "test").mkdir()
+        for x, y in coordinates or [(x, y) for x in (-1, 0, 1) for y in (-1, 0, 1)]:
+            with gzip.open(root / "test" / f"{x}_{y}.osm.gz", "wt", encoding="utf-8") as stream:
+                stream.write(xml)
+
+    MAPPED = """<osm version="0.6">
+      <node id="11" lat="47.99887585" lon="2.0050"><tag k="tourism" v="hotel"/><tag k="name" v="Cached hotel"/></node>
+      <node id="90" lat="47.9989" lon="2.0068"/><node id="91" lat="47.9991" lon="2.0072"/>
+      <way id="12"><nd ref="90"/><nd ref="91"/><tag k="amenity" v="post_office"/><tag k="name" v="Cached post"/></way>
+      <node id="13" lat="47.9989" lon="2.0040"><tag k="amenity" v="cafe"/></node>
+    </osm>"""
+
+    def test_cached_chunk_sources_supply_quest_pois_without_the_provider(self):
+        self.cache_sources(self.MAPPED)
+        result = self.settle()
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual([value["id"] for value in result["destinations"]], ["osm:node/11", "osm:way/12"])
+        self.assertEqual(result["destinations"][1]["name"], "Cached post")
+        self.fetcher.assert_not_called()
+        with self.service.connect() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM pois").fetchone()[0], 1)
+
+    def test_partial_cache_is_used_when_providers_fail_but_never_persisted(self):
+        self.cache_sources(self.MAPPED, [(0, 0)])
+        self.fetcher.side_effect = TimeoutError("Provider timed out")
+        result = self.settle()
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual([value["kind"] for value in result["destinations"]], ["hotel", "post_office"])
+        with self.service.connect() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM pois").fetchone()[0], 0)
+
+    def test_missing_category_in_partial_cache_stays_retryable(self):
+        self.cache_sources(self.MAPPED.replace('v="post_office"', 'v="bench"'), [(0, 0)])
+        self.fetcher.side_effect = TimeoutError("Provider timed out")
+        with self.assertLogs(level="ERROR"):
+            failed = self.settle()
+        self.assertEqual(failed["status"], "failed")
+        self.assertTrue(failed["retryable"])
         self.fetcher.assert_called_once()
 
     def test_failed_discovery_can_retry_the_same_identity_without_rerolling(self):

@@ -9,6 +9,8 @@ This is not a real-world routing engine or proof of private player progress.
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
+import gzip
 import hashlib
 import heapq
 import json
@@ -21,6 +23,7 @@ import time
 import urllib.parse
 import urllib.request
 import uuid
+import xml.etree.ElementTree as ET
 
 from asset_storage import AssetConflict, AssetError
 from fetch_osm import OVERPASS_URLS
@@ -106,6 +109,70 @@ def acquire(town):
             not isinstance(payload.get("elements"), list) or len(payload["elements"]) > MAX_ELEMENTS):
         raise ValueError("Incomplete or invalid quest OSM response.")
     return payload["elements"]
+
+
+@lru_cache(maxsize=64)
+def cached_osm_elements(path, modified):
+    """Overpass-shaped tagged records from an already downloaded OSM XML file; never fetches."""
+    try:
+        with (gzip.open if path.endswith(".gz") else open)(path, "rb") as stream:
+            root = ET.parse(stream).getroot()
+    except (OSError, EOFError, ET.ParseError) as error:
+        raise ValueError("Invalid cached OSM quest source.") from error
+    if root.tag != "osm":
+        raise ValueError("Invalid cached OSM quest source.")
+    keys = {key for key, _ in TAGS.values()}
+    nodes, result = {}, []
+    for node in root.iter("node"):
+        try:
+            nodes[node.attrib["id"]] = (float(node.attrib["lat"]), float(node.attrib["lon"]))
+        except (KeyError, ValueError):
+            continue
+    for element in root:
+        if element.tag not in {"node", "way"}:
+            continue
+        tags = {tag.attrib.get("k"): tag.attrib.get("v") for tag in element.findall("tag")}
+        if not keys & tags.keys():
+            continue
+        try:
+            identity = int(element.attrib["id"])
+        except (KeyError, ValueError):
+            continue
+        if element.tag == "node":
+            point = nodes.get(element.attrib["id"])
+            if point is None:
+                continue
+            result.append({"type": "node", "id": identity, "lat": point[0], "lon": point[1], "tags": tags})
+            continue
+        points = [nodes[ref.attrib["ref"]] for ref in element.findall("nd") if ref.attrib.get("ref") in nodes]
+        if not points:
+            continue
+        latitudes, longitudes = [p[0] for p in points], [p[1] for p in points]
+        result.append({"type": "way", "id": identity, "tags": tags, "center": {
+            "lat": (min(latitudes) + max(latitudes)) / 2, "lon": (min(longitudes) + max(longitudes)) / 2}})
+    return tuple(json.dumps(value, sort_keys=True) for value in result)
+
+
+def bounded_candidates(elements, town):
+    """Deduplicate and keep at most MAX_ELEMENTS records, balanced across quest categories."""
+    by_kind, seen = {}, set()
+    for element in elements:
+        key = (element["type"], element["id"])
+        point = element if element["type"] == "node" else element["center"]
+        if key in seen or distance(town, {"latitude": point["lat"], "longitude": point["lon"]}) > 2000:
+            continue
+        seen.add(key)
+        tags = element["tags"]
+        kind = next((kind for kind, (tag, values) in TAGS.items() if tags.get(tag) in values), None)
+        if kind is not None:
+            by_kind.setdefault(kind, []).append(element)
+    queues = [sorted(values, key=lambda value: (value["type"], value["id"])) for _, values in sorted(by_kind.items())]
+    result = []
+    while len(result) < MAX_ELEMENTS and any(queues):
+        for queue in queues:
+            if queue and len(result) < MAX_ELEMENTS:
+                result.append(queue.pop(0))
+    return result
 
 
 def normalize(elements, town, base):
@@ -371,13 +438,57 @@ class QuestDestinations:
                                    "longitude": lon, "country": country, **position})
         return result
 
-    def pois(self, town, base):
+    def cached_elements(self, town, base, region):
+        """Records from chunk OSM sources already on disk, and whether they cover the 2-km area."""
+        source_path = getattr(self.chunks, "source_path", None)
+        if source_path is None or region is None:
+            return [], False
+        latitude_step = 2000 / 6371008.8 * 180 / math.pi
+        longitude_step = latitude_step / max(.01, math.cos(math.radians(town["latitude"])))
+        corners = [grid_position(base, town["latitude"] + dy, town["longitude"] + dx)
+                   for dy in (-latitude_step, latitude_step) for dx in (-longitude_step, longitude_step)]
+        xs = range(min(c["col"] for c in corners) // 8, max(c["col"] for c in corners) // 8 + 1)
+        ys = range(min(c["row"] for c in corners) // 8, max(c["row"] for c in corners) // 8 + 1)
+        elements, complete = [], True
+        for x in xs:
+            for y in ys:
+                try:
+                    path = source_path(region, x, y).with_suffix(".osm.gz")
+                    if not path.is_file():
+                        complete = False
+                        continue
+                    records = cached_osm_elements(str(path), path.stat().st_mtime_ns)
+                except (OSError, ValueError):
+                    complete = False
+                    continue
+                elements.extend(json.loads(value) for value in records)
+        return bounded_candidates(elements, town), complete
+
+    def pois(self, town, base, region=None, fallback=None):
         with self.connect() as db:
             row = db.execute(f"SELECT * FROM {self.pois_table} WHERE town=?", (town["id"],)).fetchone()
         if row is not None and 0 <= time.time() - row["observed"] < TTL:
             elements = json.loads(row["elements"])
         else:
-            elements = self.fetcher(town)
+            local, covered = self.cached_elements(town, base, region)
+            if covered:
+                elements = local
+            else:
+                try:
+                    if fallback is not None and fallback["offline"]:
+                        raise ConnectionError("Quest POI providers already failed during this discovery.")
+                    elements = self.fetcher(town)
+                except (OSError, ValueError):
+                    if fallback is not None:
+                        fallback["offline"] = True
+                    if not local:
+                        raise
+                    # Real but incomplete map data: usable, never cached as the town's full catalogue.
+                    logging.warning("Quest POI providers unavailable; using %d cached OSM records near %s",
+                                    len(local), town["id"])
+                    if fallback is not None:
+                        fallback["incomplete"].add(town["id"])
+                    return normalize(local, town, base)
             # Validate before persisting public provider data.
             normalize(elements, town, base)
             with self.connect() as db:
@@ -439,7 +550,7 @@ class QuestDestinations:
             return {"mode": "walk", **result}
 
         day = datetime.now(timezone.utc).date().isoformat()
-        public_pois = {}
+        public_pois, fallback = {}, {"offline": False, "incomplete": set()}
         groups = TOWN_GROUPS.get(authored["id"], (0,) * len(authored["roles"]))
         for anchor in targets[:3]:
             check()
@@ -456,7 +567,13 @@ class QuestDestinations:
                     if town["id"] not in public_pois:
                         if len(public_pois) >= MAX_TOWNS:
                             break
-                        public_pois[town["id"]] = self.pois(town, base)
+                        try:
+                            public_pois[town["id"]] = self.pois(town, base, region, fallback)
+                        except (OSError, ValueError):
+                            # Try other towns; an unverified town keeps the final outcome retryable.
+                            logging.warning("Quest POIs unavailable for %s", town["id"], exc_info=True)
+                            fallback["incomplete"].add(town["id"])
+                            public_pois[town["id"]] = []
                     trial, trial_ids, trial_cells = {}, set(used_ids), set(used_cells)
                     for index, role in enumerate(authored["roles"]):
                         if groups[index] != group:
@@ -544,6 +661,9 @@ class QuestDestinations:
                               "Distance combines grid walking and transport estimates/lower bounds. "
                               "The player's current time, money, fatigue, access/opening hours and progress are not certified; "
                               "check current transport offers before booking."}}
+        if fallback["incomplete"]:
+            # An absence seen only in incomplete or unavailable map data stays retryable, not a final refusal.
+            raise ConnectionError("Quest POI providers unavailable and cached map data is incomplete.")
         raise QuestUnavailable("No compatible real POIs with a verified supported game route in the bounded search.")
 
     def connections(self, region, starts, goal, day, check):

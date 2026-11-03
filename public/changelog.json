@@ -1,6 +1,11 @@
 {
-  "version": "0.21.6",
+  "version": "0.21.7",
   "entries": [
+    {
+      "version": "0.21.7",
+      "fr": "Les personnages proposent de nouveau leurs missions de service. Les lieux réels d'une mission sont d'abord lus dans les données de carte OpenStreetMap déjà téléchargées pour le monde du jeu, puis auprès du service en ligne seulement si nécessaire. Quand ce service est saturé et que la carte locale est incomplète, la demande reste réessayable au lieu d'être refusée définitivement. Aucun lieu n'est inventé.",
+      "en": "Characters offer their service quests again. A quest's real places are first read from the OpenStreetMap data already downloaded for the game world, and from the online provider only when needed. When that provider is overloaded and local map data is incomplete, the request remains retryable instead of being permanently refused. No place is invented."
+    },
     {
       "version": "0.21.6",
       "fr": "Demander son chemin ouvre directement les destinations connues dans le panneau d'enquête, y compris celles des missions et des carnets sans piste du parent. Une liste vide est expliquée sans lancer d'action payante. La synchronisation des objets magiques transmet désormais les grosses sauvegardes en entier, au lieu de bloquer les déplacements avec une erreur de création de partie. Une commande en attente peut être réessayée sans perdre la sauvegarde ni payer deux fois.",

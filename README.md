@@ -60,6 +60,13 @@ backup and permits retrying the same durable request, never inventing a place
 or rerolling the contract. Existing accepted quests, rewards and progress remain
 valid.
 
+Real quest places are read first from the OpenStreetMap snapshots already
+cached for the surrounding game chunks; the bounded Overpass query is used only
+when those snapshots do not cover the town's 2-km area. If the providers fail,
+partial cached data may still produce a verified offer, but it is never stored
+as the town's complete catalogue, and a missing category in partial data leaves
+the request retryable rather than permanently unavailable.
+
 ## Keeping the parent present while travelling
 
 After one in-game hour without parent-trail progress, then every three hours
