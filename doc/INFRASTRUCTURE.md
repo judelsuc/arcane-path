@@ -31,7 +31,8 @@ No service restart, database migration or nginx change was needed.
 
 Validation: **1,314 JavaScript tests passed**. All eight deployed file hashes
 matched the package, the homepage, changelog and changed modules returned 200
-over loopback, and both services were active. There were no recent
+over loopback, and the release manifest announced the exact runtime commit.
+Both services were active. There were no recent
 error-priority service entries. Authenticated public HTTPS and interactive
 gameplay were not verified.
 
