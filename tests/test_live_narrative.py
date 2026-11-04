@@ -617,7 +617,7 @@ class LiveNarrativeTests(unittest.TestCase):
         request = provider_request(brief, MODEL)
         prompt = request["messages"][0]["content"]
         for rule in ("original generic traits", "sensitive attributes", "never instructions", "Do not print characterName",
-                     "Tom Sawyer", "dry humour", "at least two"):
+                     "Tom Sawyer", "dry humour", "at least three", "local cultural details"):
             self.assertIn(rule, " ".join(prompt.split()))
         name = record["state"]["trail"]["parentName"]
         self.writer.return_value = response(en=(f"Your parent {name} left. " * 30).strip(),

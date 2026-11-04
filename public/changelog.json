@@ -1,6 +1,11 @@
 {
-  "version": "0.21.8",
+  "version": "0.21.9",
   "entries": [
+    {
+      "version": "0.21.9",
+      "fr": "Le récit d'ouverture s'ancre davantage dans la ville de départ : plats, marchés, fêtes et traditions locales colorent les souvenirs de famille. Un nom de personnage célèbre façonne nettement la personnalité de l'enfant et ses petites habitudes. Les illustrations des événements du voyage représentent désormais la scène décrite. Les fenêtres de discussion se ferment quand vous quittez la ville, et les flèches déplacent de nouveau le personnage lorsqu'une fenêtre ouverte n'a pas le focus.",
+      "en": "The opening story is more rooted in the starting town: local dishes, markets, festivals and traditions colour family memories. A famous character name now clearly shapes the child's personality and little habits. Journey event illustrations now depict the scene described. Conversation windows close when you leave the town, and arrow keys move the character again when an open window does not have focus."
+    },
     {
       "version": "0.21.8",
       "fr": "La photo reçue en arrivant dans une ville peut toujours être montrée à quelqu'un, même lorsque le témoin n'a donné qu'une direction. Sous la photo, dans Quêtes, « Interroger quelqu'un sur cette photo… » ouvre directement les indices du panneau « Enquêter ici ». Les réponses restent non confirmées.",

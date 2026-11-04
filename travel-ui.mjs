@@ -1625,9 +1625,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     button.addEventListener("click", () => step(...button.dataset.move.split(",").map(Number)));
   }
   document.addEventListener("keydown", event => {
+    const activeModal = document.querySelector("dialog[open]") &&
+      document.activeElement?.closest?.("dialog[open]");
     if (!active || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey ||
-        document.querySelector("dialog[open]") ||
-        event.target.closest("input,select,textarea,[contenteditable]")) return;
+        activeModal || event.target.closest("input,select,textarea,[contenteditable]")) return;
     const delta = { ArrowUp: [0, -1], ArrowRight: [1, 0], ArrowDown: [0, 1], ArrowLeft: [-1, 0] }[event.key];
     if (event.key.toLowerCase() === "l" || (event.key === "Escape" && cursor)) {
       event.preventDefault();

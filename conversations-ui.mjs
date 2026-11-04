@@ -70,6 +70,10 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
   function localize() {
     const current = validContext();
     const investigating = $("investigation-dialog").open;
+    if (!current && (selector.open || dialog.open)) {
+      selector.close();
+      dialog.close();
+    }
     trigger.disabled = !current;
     $("town-conversation").disabled = !current;
     $("character-selector-context").textContent = locationText(current);

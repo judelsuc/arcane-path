@@ -246,7 +246,11 @@ sans bouton de regeneration. Une ancienne biographie sans cette inspiration est
 remplacee une seule fois ; les relectures reutilisent ensuite le recit conserve.
 Un message visible « Veuillez patienter » et un indicateur accompagnent l'ecriture ;
 le voyage ne peut pas commencer avant son terme. En cas d'echec explicite, le recit
-d'origine permet de continuer. La case de personnalisation concerne les evenements
+d'origine permet de continuer. Le recit integre au moins trois details culturels
+connus de la ville ou de sa region (plats, marches, fetes, traditions), comme
+simple atmosphere, jamais comme indice. Un nom celebre reconnu (personnage ou
+figure historique) faconne nettement la personnalite et les habitudes de l'enfant,
+sans le nommer ni changer l'intrigue. La case de personnalisation concerne les evenements
 uniquement. Les nouveaux textes d'evenements evoluent par jour de jeu,
 sans modifier leurs effets ni remplacer une introduction deja affichee.
 Un indicateur visible signale les textes en cours de generation (sans animation

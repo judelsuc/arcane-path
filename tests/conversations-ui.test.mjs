@@ -141,6 +141,31 @@ test("portrait URLs are revoked on refresh and close", async t => {
   assert.deepEqual(fixture.revoked, ["blob:portrait-1", "blob:portrait-2"]);
 });
 
+test("stale selector or conversation dialogs are closed if the travel context disappears", async t => {
+  const previous = globalThis.document, nodes = new Map();
+  const get = id => {
+    if (!nodes.has(id)) nodes.set(id, new Element());
+    return nodes.get(id);
+  };
+  globalThis.document = { getElementById: get, createElement: () => new Element(),
+    querySelector: () => [...nodes.values()].find(node => node.open) ?? null };
+  t.after(() => { globalThis.document = previous; });
+  let current = { cell: { terrain: "major_road" },
+    state: { serverJourney: { id: "a".repeat(32) }, journalAccess: "capability", col: 0, row: 0 },
+    blocked: false };
+  const ui = setupConversations((key, args) => translate("en", key, args), {
+    context: () => current,
+    characters: { async list() { return { characters: [], canCreate: false }; } },
+  });
+  await ui.open();
+  get("character-selector-dialog").showModal();
+  get("conversation-dialog").showModal();
+  current = null;
+  ui.localize();
+  assert.equal(get("character-selector-dialog").open, false);
+  assert.equal(get("conversation-dialog").open, false);
+});
+
 test("portrait responses arriving after close or refresh cannot leak object URLs", async t => {
   const pending = [];
   const fixture = portraitFixture(t, () => new Promise(resolve => pending.push(resolve)));
