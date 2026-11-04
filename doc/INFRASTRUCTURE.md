@@ -12,6 +12,26 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: gpt-oss opening story (4 November 2026)
+
+Runtime `d080dd335ac3e0b50e43836d1f31bab771b8ebf0`, tag
+`deploy-2026-11-04-opening-gpt-oss`, game version **0.21.10**, packaged at
+`2026-11-04T16:34:08.626192+00:00`. Only the opening story now uses OVH
+`gpt-oss-120b` (`reasoning_effort` low, 3000 max tokens, 150 s timeout); other
+narration stays on Mistral Small. Planning notes are validated and discarded;
+truncated text, a printed character name or French slash forms (`il/elle`)
+keep the authored story. No automatic retry.
+
+The five-file delta was 28,178 bytes, SHA-256
+`3560fec50e960af3993d9c3224854f92510741bd62b2aafc6f2fc28affb0d1bb`.
+Rollback archive `/home/ubuntu/runtime-before-0.21.10-d080dd3.tar.gz` (0600),
+SHA-256 `4b58bda8a63a677fc8633943e33cc126e3c062df53a5c96c790ff68ddedc0d19`.
+Before restart, all three local `origin-*` directories were confirmed in shared
+`custom_origins`. The service restarted once; loopback `/`, `release.json` and
+`changelog.json` returned 200 and public HTTPS returned 401. A post-deploy
+Dracula/Firmi trial took 77 s and was rejected (slash form, truncated ending),
+so production would have kept the authored story.
+
 ## Checkpoint deployed: local-culture opening and event art (4 November 2026)
 
 Runtime `aa1ffaeb50a152a2aa22395666e7019540d2ccfe`, tag
