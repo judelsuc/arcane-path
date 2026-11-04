@@ -12,6 +12,36 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: local-culture opening and event art (4 November 2026)
+
+Runtime `aa1ffaeb50a152a2aa22395666e7019540d2ccfe`, tag
+`deploy-2026-11-04-opening-culture-event-art`, game version **0.21.9**,
+packaged at `2026-11-04T15:44:55.118431+00:00`. The opening-story prompt asks
+for known local food, markets and traditions and a stronger famous-name
+personality; journey event ASCII art now depicts each event. Conversation
+dialogs close outside towns; arrow keys work when an open dialog is unfocused.
+
+The six-file delta was 35,429 bytes, SHA-256
+`d5ae99bfb075022c6208f3d43eb9c1dce64d82120d672eae61094aaa56a9f36a`.
+Rollback archive `/home/ubuntu/runtime-before-0219-aa1ffae.tar.gz` (0600),
+SHA-256 `589ef4c08e3ed96e5991f7b007982229216613a2f241eda8bb863f7240120eca`.
+
+**Incident (~2 minutes, 15:44-15:47 UTC).** The required restart crash-looped:
+`set_shared_assets` refuses local custom origins absent from shared storage.
+`origin-9e71f0a3ce5dd60ad23d` (14:48 UTC) existed only locally; its shared
+publication had not completed, which the running process tolerated. It was
+moved (not deleted) to `/var/lib/arcane-path/quarantine/`; no saved journey
+(0 of 6) referenced it, and it is rebuilt on demand. Before future restarts,
+compare `.cache/travel/origins/` with the shared `custom_origins` table.
+
+Validation: **1,314 JavaScript and 663 Python tests passed** (36 skipped).
+All six deployed hashes matched; homepage, changelog, changed modules and
+`/api/origins` returned 200 over loopback; both services active, no
+error-priority entries after recovery; public HTTPS 401 without credentials.
+Production generations with the new prompt validated for "Dracula" (Paris)
+but "Toulouse-Lautrec" (Firmi) failed the parent check ("grand-mère"). Both were judged weak: local details are generic or invented by the model and
+famous-name traits remain faint. Interactive gameplay was not verified.
+
 ## Checkpoint deployed: arrival photo questions (4 November 2026)
 
 Runtime `c45d3af9b4d16d8626bbafc1a12306c2e1a36a44`, tag
