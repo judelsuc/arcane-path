@@ -87,8 +87,8 @@ test("both cards change risk, and no reward can revive a journey exhausted durin
   assert.equal(act(state, "steal", shop, 0.3).lastSurvivalChoice.outcome, "detained");
   assert.equal(act({ ...state, birthCard: "star" }, "steal", shop, 0.3).lastSurvivalChoice.outcome, "food");
   assert.equal(act({ ...state, dailyCard: "star" }, "steal", shop, 0.3).lastSurvivalChoice.outcome, "food");
-  const exhausted = act({ ...state, reserveKcal: 1 }, "forage", forest, 0.99);
-  assert.equal(exhausted.ended, "hunger");
+  const exhausted = act({ ...state, reserveKcal: 1, health: 0.01 }, "forage", forest, 0.99);
+  assert.equal(exhausted.ended, "health");
   assert.equal(exhausted.lastSurvivalChoice.outcome, "exhausted");
   assert.equal(exhausted.lastSurvivalChoice.foodKcal, 0);
   for (const roll of [-1, 1, NaN]) assert.throws(() => act(state, "forage", forest, roll));

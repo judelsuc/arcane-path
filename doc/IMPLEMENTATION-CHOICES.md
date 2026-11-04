@@ -6,6 +6,260 @@ All survival numbers below are gameplay approximations, not medical advice.
 Sections are chronological checkpoint records: later layers supersede earlier
 shortcuts, especially free meals and unrestricted outdoor sleep.
 
+## Exact-cell aerial photo fallback
+
+- R-101: IGN's public WMS `ORTHOIMAGERY.ORTHOPHOTOS` is a final photo
+  fallback only when Commons/Wikipedia/nature providers and retained photos
+  produce nothing. The request uses actual cell bounds with WMS 1.3.0
+  EPSG:4326 latitude/longitude axis order and a bounded 512-pixel JPEG.
+- French coverage must be confirmed by mapped country codes or the existing
+  country endpoint; a geographic rectangle alone is not treated as France.
+  Mainland France/Corsica bounds restrict this initial provider. Other
+  countries retain existing providers and the strict 2 km photo search limit.
+- Empty photo-cache records are retried, while actual images remain available
+  offline. Failed sources remain explicit and are not cached as empty success.
+  Aerial images carry the IGN source/license, an aerial-not-ground-view label,
+  and are excluded from parent-photo clues. Description lookup is unchanged.
+- Both reported coordinates, 43.992579/2.397766 and 43.778990/2.407230,
+  returned JPEG imagery from the actual provider. The latter returned 33,422
+  bytes. Targeted isolated validation: 63 tests, including both coordinate
+  bounds, cached absence retry, provider failure and clue compatibility.
+
+## Clue reassurance follow-up
+
+- R-102 uses a gentler full-clue probability plus a separate small-sign outcome
+  within 6 km of the actual stored parent route. These signs never enter
+  recognition hints and cannot advance or identify a destination.
+- Optional exploration `signs` and stage-specific `searchStreak` fields retain
+  up to four signs per stage and three distinct empty-search positions. Save
+  validation bounds/validates positions, stage, time, counts and duplicates.
+  Legacy saves remain accepted without these fields. A fourth new nearby
+  search guarantees a sign; repeated cells and earlier stages do not qualify.
+- UI labels distinguish evidence, signs and opinions, with discovery-cell/
+  elapsed-time anchors. Twenty stable narrative variants replace direction
+  boilerplate in FR/EN. Empty searches give honest next-step suggestions,
+  not a fabricated corrective compass heading.
+- Targeted tests cover probability thresholds, signs versus clues, strict
+  6 km guarantee boundary, repeated cells, stage resets, save/resume, bounded
+  storage, malformed saves, all 40 localized narratives and no destination leak.
+
+## Nearby accommodation discovery
+
+- R-099: `/api/accommodations` uses the existing bounded asynchronous job
+  queue, validates region/coordinates globally (not Europe-only start rules),
+  and caches complete results for seven days. The 5 km OSM query includes
+  nodes, ways and relations; the browser receives at most 40 nearest places,
+  with grid position, distance, source and license.
+- Base-map and nearby cached-chunk POIs supplement live data without starting
+  map downloads. Provider outages remain visible, incomplete results are not
+  cached as complete, and optional French DATAtourisme catalogue imports are
+  administrator-only and transactional. Mountain resorts are not huts.
+- Opening sleep automatically searches; the town dialog offers the same
+  entry. The client cancels on close/reset, bounds polling to four minutes,
+  validates data/links, and retains only the latest 40 discoveries. Discovered
+  lodging is merged into economy context only at matching global col/row,
+  without mutating maps or journey saves. Existing sleep validation remains
+  the final exact-cell gate. Search does not spend game time or money.
+- Targeted tests cover global API validation, relation geometry, distance
+  filtering, result limits, expiry, source failure, offline map fallback,
+  French import rollback/credits, polling/cancellation/deadline, FR/EN menus,
+  retry and exact-cell sleep with unchanged price/recovery semantics.
+- Browser validation used a real local HTTP lookup: nine actual OSM lodgings
+  near Firmi appeared, including places beyond the base map. No remote sleep
+  action appeared. On entering Les Carillons' cell it became selectable;
+  sleeping charged 1,987 game cents and advanced the normal eight hours.
+- DATAtourisme import support is present but no production catalogue is
+  claimed imported. Provider availability and OSM completeness still vary.
+
+## Photo notebook
+
+- R-098: one shared browser-local album uses its own IndexedDB database
+  (`arcane-photo-journal`), independent of server data, disposable content
+  cache, and localStorage journey records. The same pin helper is wired to
+  map/nature and clue-photo viewers. Source URLs deduplicate photos; license,
+  attribution and the actual image blob are retained.
+- Two-page spreads read/decode only the currently displayed photos and release
+  object URLs when turning pages or closing. White paper prints contain an
+  editable handwritten-style caption. Notes save on change or explicit save;
+  in-memory drafts survive rerenders. Errors are visible, not successful pins.
+- Field clue images were nested under a hidden town-discovery section.
+  Move their figure outside that section so first-stage/field photos and
+  their pin buttons are visible. Vague photos do not expose geographic titles.
+- Browser verification used the isolated exact live base, actual licensed
+  Commons photos, real IndexedDB and the complete application's shortcut/
+  modal observers. FR/EN pinning, note editing, reload persistence, source
+  credits, duplicate protection, clue-photo pinning, cache-clear isolation and
+  desktop/narrow layouts were checked. Five-photo navigation and the notebook
+  remained responsive; no observer loop was detected.
+- The reported whole-tab photo freeze remains unconfirmed. Server health
+  checks passed; this release does not claim a proven freeze root-cause fix.
+
+## Lightweight Layer 9 completion
+
+- R-096/R-083: activate the deterministic parent-story generator for new server
+  journeys only. Genesis stores its story and code/content fingerprint with the
+  existing idempotent request identity. Pre-story records are returned intact;
+  no migrations, cache invalidation, or replacement of a player's local save.
+- Six motives, four travel modes, a past ten-town chronology and optional
+  false leads/lore share fixed facts with the browser. A mobile parent advances
+  after 7/14/21 game days into up to three extra real sourced towns, then waits.
+  Early pursuit can reunite at town ten. Progress and chronology survive reload.
+- Narrative validation guarantees an unpaid, provider-independent main clue at
+  each stage and finite pursuit. It does not certify terrain feasibility,
+  resources, lodging or survival budgets; these remain explicitly deferred.
+- Reference A* work now starts automatically at setup/resume, then for each
+  newly known current leg, rather than eagerly downloading every future leg.
+  This intentionally replaces the unshipped first-leg blocking/all-legs
+  background draft: reference provider failure must not prevent opening a save.
+  Main journey status shows preparation/error/retry without revealing route
+  distances, cells or future destinations in the parent journal.
+- Abort previous-leg requests on progression/reset/stop/end. Client waiting is
+  bounded to five minutes. A cached 422 gets one retry to reuse prepared terrain;
+  persistent or malformed/transport failures are visible, never a fake route.
+- Only discovered stays enter history; a current stay shows arrival without
+  leaking its planned departure or future provision purchases.
+- Validation includes actual offline Python genesis through browser validation,
+  optional false leads and every save/reload transition through stationary,
+  early mobile and slow thirteen-town reunion. Arrival/resource fixtures isolate
+  narrative logic; they are not a whole-route walking/survival simulation.
+- Full isolated JavaScript suite: 290 tests pass. Full Python suite passes
+  133/135; its two photo-config assertions also fail on the unchanged live
+  baseline (YAML limit 10 versus exported/expected 5). The pre-story
+  record-preservation test passes. User config.yml is unchanged; neither this
+  pre-existing photo-setting mismatch nor the development YAML typo is repaired.
+- Browser lifecycle uses actual local server genesis and explicitly stubbed
+  terrain/reference responses: a failed reference provider leaves the new game
+  playable with a saved mobile story and visible retry. Resuming the exact
+  story, obtaining a clue, saving it, switching to English and resuming again
+  preserves all facts and the newly discovered visit. Reference-ready status
+  updates automatically for the current leg. No real player's save is used.
+- A random-rhythm test now correctly treats rest slots after the last note's
+  end time as inactive, avoiding an intermittent test-only failure. No change
+  to musical scoring, timing, charisma or audio.
+- Released as isolated runtime 49ba8c7 (deploy-2026-10-17-layer-nine).
+  Authenticated HTTPS assets and backend hashes match the package. A real
+  production-generated story passes browser genesis/save validation and
+  idempotent replay. All thirteen pre-release server records remain exactly
+  identical; consistent SQLite backup taken first. Services/API are healthy.
+  This completes the lightweight milestone, not the deferred full simulation.
+
+## Parent-trail clue reminders, without exact navigation
+
+- R-095: replace trailDirections and the combined target/distance formatter
+  with trailReminder. It only names the known lead, repeats a pending venue
+  reminder without its undisclosed next town, or shows the completed reunion.
+  Moving the player cannot change this text.
+- Show every obtained clue's actual text in history, not just discussion
+  clues; remove internal witness fact sheets. Keep the existing valid inquiry
+  actions, paid I directions, photo credits/licenses and catalogue attribution.
+- Remove target map links and reference-route preparation/estimate controls.
+  The separate automatic preparation and accommodation work are not shipped.
+- Regression fixture reproduces step 7, Berchem, 138 east/13 south and a 57 km
+  leg, and verifies that none of those navigation numbers/arrows are rendered
+  in French or English. Pending venue clues cannot leak the next town.
+- Validation: all 277 isolated live-base JavaScript tests pass. Browser checks
+  of the actual dialog in French and English show only the known Berchem lead
+  and obtained letter text, with no route controls or exact-navigation links.
+
+## Street-performance mistakes and starting-card charisma
+
+- R-094: rhythm state keeps an immutable per-performance mistake limit and a
+  cumulative wrong-tap count. A wrong tap never scores; reaching the limit
+  freezes scoring and immediately settles for zero. Settlement independently
+  checks the starting-card threshold, so prior hits cannot produce earnings
+  after failure. Successful taps never erase mistakes.
+- Charisma is a music-specific 1-6 rating, derived from the saved birthCard;
+  threshold = charisma + 2. It is not a new physical attribute or save field.
+  No daily-card effect, random tolerance draw or change to the existing timing.
+
+| Charisma | Failure at | Starting cards |
+| --- | --- | --- |
+| 1 | 3 mistakes | Hermit, Nameless Arcana, Tower |
+| 2 | 4 mistakes | High Priestess, Hanged Man, Moon |
+| 3 | 5 mistakes | Justice, Wheel of Fortune |
+| 4 | 6 mistakes | Fool, Emperor, Hierophant, Chariot, Temperance, Judgement |
+| 5 | 7 mistakes | Empress, Strength, Star, World |
+| 6 | 8 mistakes | Magician, Lovers, Devil, Sun |
+
+- FR/EN instructions and the card-effect line explain the threshold before
+  starting; live score includes mistakes/limit and the failure message explains
+  zero earnings and retained costs. Rest, early/late, duplicate and repeated-key
+  behavior are covered; all 22 cards and 484 birth/daily combinations are checked.
+- Validation: 22 focused music/audio/localization tests pass, including both
+  endpoint limits, immediate stop, one settlement only, zero payout after prior
+  hits and unchanged below-limit reward. All 274 isolated live-base JavaScript
+  tests pass. Browser checks in French and English verified Hermit (3) and
+  Magician (8): one successful note followed by wrong rest presses immediately
+  ended with zero earnings, an unchanged wallet, 30 minutes and four fatigue
+  spent, and the expected visible error count and card-effect explanation.
+
+## Daily meal offers and price-proportional hunger recovery
+
+- R-093: shared mealOffers wraps the existing meal catalogue/venue filtering.
+  A deterministic per-journey/cell/day/meal draw with avalanche mixing gives
+  70-150% pricing over the existing country/fallback baseline. No stored offer
+  history or save migration is needed; reopening/reloading cannot reroll.
+- Calories derive from the actual quoted cents relative to the local unit
+  price, so a more expensive offer in one menu restores more reserve. Existing
+  capacity limits, metabolism and action finalization remain authoritative.
+- Meal UI and purchase both use mealOffers, including affordability. Other
+  marketPrice callers (lodging, clue costs and music income) remain unchanged.
+  FR/EN UI explains daily variation and capacity limits before buying.
+- Focused validation includes 30 days of bounded price draws, monotonic
+  recovery, location/day changes, save/resume stability, purchase/quote equality,
+  capacity/metabolism, exact affordability and FR/EN menu consistency.
+- Validation: 49 focused tests and all 272 isolated live-base JavaScript tests
+  pass. Browser menu showed 3.92/4.00/7.23 game euros for 630/643/1162 kcal;
+  rerender preserved offers and purchase charged exactly 392 cents with normal
+  meal metabolism. No real player save or config.yml was changed.
+
+## Random street-performance rhythms
+
+- R-092: Fisher-Yates shuffle draws eight notes/four rests into twelve slots
+  once per performance. The frozen pattern travels with the rhythm state and
+  repeats three times; no timing, scoring or reward rebalance.
+- UI tiles, tap matching and native PCM backing all use the same pattern.
+  Generate new backing PCM each start rather than caching a fixed melody.
+- Deterministic injected draws test different phrases, exact note/rest counts,
+  full-score timing, silence in rest slots, immutable phrase reuse, changed UI
+  layouts between starts and different PCM output. Existing cancellation and
+  audio error checks remain in place.
+- Validation: 20 focused tests and all 267 isolated live-base JavaScript tests
+  passed. Four deployed modules matched authenticated HTTPS byte for byte;
+  release manifest and travel API verified. No config.yml changes.
+
+## Weather, random clues, sleep pressure and native street audio
+
+- R-087/R-088: shared outdoor finalization samples altitude-adjusted historical
+  temperature every ten minutes, charges actual consumed calories for cold,
+  and adds heat/rain fatigue. Rain/storm walking uses temporary speed factors.
+  Shelter is exempt; outdoor unconsciousness remains exposed. Missing weather
+  is explicitly reported rather than replaced with invented observations.
+- R-089: one F search selects an available, affordable existing clue and its
+  normal cost. A photo is prepared and decoded before state mutation; failure
+  substitutes a non-photo result with explicit feedback. Generation/state
+  guards prevent cancelled or duplicate searches committing. ImageBitmap
+  preflight also completes in hidden tabs, unlike the observed Image.decode
+  stall. Actual cached Commons Eiffel Tower photo displayed with credit/license
+  in the browser and charged exactly 30 minutes, advancing one stage.
+- R-090: integrate equivalent waking hours across UTC 22:00/02:00/06:00
+  boundaries at 2x/4x/1x. Cap the sleep bar at its configured maximum.
+  Reaching it uses existing collapse finalization, not a fatal sleep ending
+  or an unconditional 02:00 event. Optional lastFaint.reason distinguishes
+  sleep from exertion; legacy saves remain valid. Hunger keeps precedence.
+- R-091: background music worked while the independent oscillator path was
+  reported silent. Replace that path with locally generated PCM WAV played by
+  native Audio, matching the working background mechanism. Melody/bass use
+  the exact beat timestamps; hit/miss cues differ. Loading seeks to the visual
+  clock; mute/volume apply to every voice. Stop/error/ended release media and
+  object URLs; stale loading cannot restart cancelled playback. Errors remain
+  explicit. Browser verified native decoding and playback start, plus UI start
+  and stop. Device-level audible output still needs confirmation by the player.
+- Validation: 35 focused tests passed; the isolated live-base release passes
+  all 265 JavaScript tests. Development's server-journey test remains blocked
+  by its pre-existing malformed local config.yml; no configuration repair or
+  unfinished parent-story generator is included in this static release.
+
 ## Testing checkpoints independently
 
 - Existing Layer 3 baseline: commit `6bbe4c4`.
@@ -1047,3 +1301,444 @@ on the server. The first chunk must still load before replacing a local save.
 Full cloud resume, user accounts, parent motives/timetable/mobility, actual
 walking routes, three accessible clues per leg and the solvability simulator
 remain pending. Existing 30-60 km legs are straight-line distances only.
+
+## Protected-preview gameplay recovery
+
+- Locals' fictional hospitality uses existing need/time/sleep actions, not
+  mapped lodging. One deterministic attempt per OSM settlement and UTC day,
+  saved locally; birth/daily tarot affect risk, outfit/reputation deferred.
+- Night rest now recovers half the normal fatigue before outdoor exposure.
+  Resume migrates only this approved coefficient via restRuleVersion, not
+  the rest of a journey's pinned economy. Forecast and action share a helper.
+- Existing original terrain footsteps play once on successful movement through
+  the shared audio controls. Calendar and clock follow simulated UTC only.
+- Copy coordinates uses the selected cell center, like inspected cell content;
+  clipboard failures are visible rather than a success-shaped fallback.
+- Idle prefetch now covers all eight neighbors with the existing bounded
+  stream and transient-error cooldown. This does not fill unmapped land.
+- Engins investigation used the live cached OSM snapshot, not the map's
+  background color. Seven incomplete multipolygons were skipped. Fetching
+  their full public relation geometry changed its five plain cells to forest.
+  Primary downloads now complete missing land-cover members (bounded at 16;
+  otherwise recursive fallback). Reject incomplete fallback geometry and repair
+  old external sources. Fingerprint fetch logic as well as rasterizer code.
+  Prepared starting snapshots retain offline behavior; unmatched coverage may
+  still exist. No grass/field inference or unlimited area prefetch is added.
+- Packaging now requires committed runtime and embeds its commit in
+  public/release.json. Tag and verify every deployment before announcing it.
+- Validation: 193 JavaScript and 109 Python tests. Browser check: hosted night
+  took 510 minutes, advanced the UTC agenda, and disabled another town/day
+  request. The 375px layout fits; clipboard denial is visibly reported in the
+  automated browser (which cannot grant focus/clipboard permissions).
+
+## Settlement meals and audible street music
+
+Meal catalogue coverage is not food availability. A paid fictional 900-kcal
+basic meal is now available on every loaded settlement cell, including Engins,
+using the existing price/time/need rules. Specialty selection remains sourced.
+Mapped public active food venues add named options with OSM links, without
+claiming real menu or service availability. UI and purchase validation share
+mealOptions, so stale venue IDs cannot buy a remote meal. Legacy economies
+need no catalogue migration and still offer basic food.
+
+The rhythm minigame previously deliberately silenced background music but
+had no audio implementation. It now owns an original synthesized melody,
+bass and offbeat accompaniment through Web Audio, timed on beatTime rather
+than an unsynchronized downloaded music track or render interval. Tap
+feedback distinguishes hits/misses. Shared mute/volume do not affect scoring.
+Session tokens prevent cancelled asynchronous unlocks from restarting sound;
+all scheduled oscillators stop on exit/finish/hidden tab. Explicit audio errors
+leave visual play possible. Browser validation observed a running real audio
+context and all 24 scheduled melody/accompaniment voices; basic meal purchase
+updated wallet, reserves and game time. Automated checks cover exact beat
+times, latency, cancellation, silence controls and food/venue validation.
+
+## Simple controls popup
+
+User chose a shortcut/usage popup instead of guided onboarding. Controls
+opens at the first preparation in each page visit; the header button or ?
+reopens it. Native modal semantics provide focus and Escape/close behavior;
+20 rows remain scrollable at mobile width. Keys come from buttonBindings,
+not a second hardcoded key map. Explanations distinguish rest from sleep,
+Look from walking, and contextual actions. Dialogs keep their own printed
+shortcuts; typing does not trigger controls. No game time, save migration,
+persisted preference or larger tutorial system is added.
+
+## Fatigue collapse and next-layer priority
+
+Reaching 100 fatigue is no longer a terminal outcome for active journeys.
+All gameplay action finalizers resolve the collapse before saving: eight
+game hours in the same cell, exactly 40 fatigue afterwards, ordinary sleeping
+metabolism and sleep-pressure recovery, no meal or ordinary sleep count.
+Night exposure minutes remain counted; recovery to 40 includes that exposure
+fatigue. The game has no separate cold-death model. Hunger remains fatal,
+including during unconsciousness. Existing ended fatigue saves stay ended.
+
+Location and the existing birth/daily tarot risk multiplier determine
+fictional money theft (base 30% in settlements, 15% elsewhere, 5% sheltered).
+A deterministic draw keyed by journey, action time, position and collapse
+count prevents replaying a pre-action save to reroll theft. Loss is 25--50%
+of carried money, rounded to cents and capped at half. Save the latest event
+and count; validate duration, coordinates, probabilities and monetary bounds.
+No inventory theft or free resources. Collapse interrupts rewards, clue
+progression, performances and hospitality rather than finishing them after
+waking. FR/EN needs notices explain collapse and the resolved loss.
+
+The agreed Layer 9 routing direction is bounded A* on the existing game
+grid, preserving town selection and free exploration, with persistent hidden
+paths for later hints. This remains queued, not deployed or marked complete.
+After Layer 9 the user explicitly prioritizes Layer 15 (photos and journal),
+not sequential implementation of Layers 10--14.
+
+Validation: 212 JavaScript tests, including deterministic replay, monetary
+bounds, hunger during unconsciousness, night exposure, interrupted actions,
+legacy ended saves, strict saved-event validation and notices. Browser
+movement triggered a real collapse: 491 total minutes (11 walking + 480
+unconscious), fatigue 40, one persisted event and a displayed 10.32 EUR loss
+at 30% risk; no terminal state or movement-finalizer error. The notice waits
+for existing modals to close. The browser test's prior local save was restored.
+
+## Keep food-search feedback visible
+
+The user reported that food-search outcomes were hidden at the bottom of the
+cell-actions modal. Result and error messages now sit below its heading and
+close button, above the action list. After an action, focus and scroll the
+new result (or explicit error) into view without closing the modal. Keep
+status/alert semantics, hide empty messages and preserve action costs/rewards.
+
+Four regression tests cover FR/EN results, error priority and actual markup
+order. Browser validation in a 320px-high scrolling modal started at the
+bottom, performed a real food search, and confirmed the result was visible
+and focused. No saved journey was changed by this UI-only test.
+
+## Stable grid caches, save confirmation and bounded parent paths
+
+Live investigation confirmed both unfinished Paris downloads (OSM quota and
+Overpass failures) and excessive invalidation: the old grid identity hashed
+the entire travel server and downloader. A fetch/API-only release could make
+every completed grid look missing. The new identity hashes geometry, elevation
+processing, source naming, chunk building, rasterizer and map rules, not
+unrelated handlers or transport code. Rasterizer changes still invalidate.
+The explicit migrate_chunk_grids script accepts an exact operator-approved
+compatible old hash, verifies checksums/bounds/chunk dimensions and copies
+completed grids into the new identity with no provider calls or rasterization.
+Do not use it across real geometry/raster-rule changes.
+
+Manual Save now shows an accessible fixed confirmation with actual saved
+time, explicitly browser-local. Errors use an alert instead. The same button
+handler covers S; repeated saves reannounce, gameplay autosave/reset clears
+the old manual message. Three unit tests and browser success/error/viewport
+checks verify the behavior without replacing an actual journey save.
+
+Parent paths use bounded four-neighbor A* and the same reference-walker
+terrain/slope costs as travel.mjs (1,944 cross-language cost cases). Search
+stays in 8/16/32-cell widening corridors, at most 50,000 expansions, 256
+loaded chunks and 96 preparations, with a 180-second inter-request budget.
+One independent worker, at most two jobs; immutable genesis and SQLite write
+transactions remain untouched. Completed point sequences and source identity
+are checksummed on disk by journey/stage, with shared reuse for equal
+source/endpoints. Retries keep prepared terrain; errors never become invented
+straight lines. Missing elevation is explicit, using normal no-slope rules.
+
+To avoid competing with map downloads during the user's Paris tests, path
+preparation is opt-in from the journal. It reports real counters, a reference
+distance/time and errors/retry; no geometry is sent to the browser. Browser
+UI validation used a mocked completed response; Python tests exercise actual
+A*, corridor widening, Dijkstra optimality within a corridor, real prepared
+Firmi terrain, persistence/restarts, limits, HTTP and cache reuse. No distant
+30--60 km live path is claimed validated yet. Full Layer 9 parent narrative,
+chronology, false branches and solvability remain unfinished.
+
+Combined validation: 224 JavaScript and 126 Python tests pass. Repeated live
+Louis Blanc API checks served all nine cached chunks in 0.44 seconds total,
+without new terrain requests. The deployment must migrate the exact current
+pipeline before restarting, then recheck those cells; preserving the cache
+directory alone is not sufficient when changing its lookup identity.
+
+### Cached neighbors must bypass slow preparations
+
+The next screenshot exposed a separate client queue issue. Live requests were
+for Paris chunks x=4..6, y=-3..-1, not the Louis Blanc x=0..2 area checked earlier.
+Several had no historical grid/source at all; OSM HTTP 509 delays were real.
+However, cached neighbors also waited behind two uncached chunk polls in the
+browser's two-slot queue. Direct cache API latency alone did not verify the
+player's complete loading experience.
+
+A bounded, cache-only batch endpoint now reads at most nine specified chunks
+without scheduling jobs or contacting providers. The browser restores available
+neighbors before queuing missing chunks, and can repeat this lookup while both
+download slots are occupied. Existing checksums, 25-chunk browser limit,
+two-preparation concurrency, errors and retry behavior remain in place.
+Responses are validated before any partial restoration; restored elevation
+warnings use the existing notification path. Missing cells still need providers:
+this is not a guarantee of instant first-time terrain.
+
+Regression tests hold both downloads unresolved and assert that cached
+neighbors render, including a new neighbor after a viewport update. HTTP tests
+assert cache misses neither build terrain nor enqueue jobs, and reject oversized
+or invalid coordinate batches. This handler-only change does not change grid
+identity or require cache migration.
+
+### Rotating live OSM sources while respecting provider limits
+
+Map requests now start after the last selected provider, rotating through the
+OSM map API and the two existing Overpass instances. Town/venue catalogues rotate
+through their two Overpass providers too. Rotation is serialized under the
+existing shared provider lock, attempts each source at most once per request,
+and skips cooling providers without HTTP calls. Map and catalogue requests
+share the same per-provider cooldowns. Catalogue HTTP failures now honor the
+existing Retry-After parser instead of always applying 60 seconds.
+
+Tests cover repeated healthy rotations and wraparound, fallback cursor
+advancement, skipping until cooldown expiry, catalogue/map shared cooldowns
+and zero network requests when every provider is cooling down. Existing
+snapshot provenance, completeness checks and terrain identities are unchanged.
+This distributes requests; it does not make public APIs reliable or permit
+quota evasion. Geofabrik regional extracts and BBBike custom extracts are
+better candidates for a future local-data importer, not live API replacements.
+No regional download, import dependency or new service is added here.
+
+### Hospitality outcome beside the action
+
+Safari save inspection found an actual refused request in the current Paris
+journey, not shared history from another journey. Its recorded UTC day was
+19 October, while the later saved time was 20 October: those exact values do
+not block another request. The user then confirmed the warning appeared after
+pressing 1 or clicking hospitality once in a new town. That immediately performs
+the 30-minute request; the UI replaced the explanatory note with the daily lock,
+while its separate outcome could be out of view.
+
+The current town/day outcome now appears directly beneath the hospitality
+button, before the daily-limit explanation, with status semantics. After a
+request it receives focus and scrolls into view. The separate historical result
+remains for other towns/days without duplicating the current outcome. No history
+is deleted, no new confirmation or gameplay rule is introduced. Tests cover
+visible refusal, read-only menu opening, another town and the user's exact
+previous-day timestamps in both languages.
+
+The user's subsequent new-town test confirmed the request worked but the
+daily-lock wording remained ambiguous. Refusal now explicitly says the attempt
+failed and no sleep occurred. The lock explains that even a refusal consumes
+the single town/day attempt, and offers the next UTC game day or another town.
+French and English assertions cover these explanations; probabilities and
+hospitality history are unchanged.
+
+### Parent-story milestone under validation (not deployed)
+
+The user chose to finish Layer 9 before Layer 15, and explicitly allowed
+extra towns for a moving parent. New genesis records can now carry deterministic
+fictional facts: an arcane-weighted motive, orientation, travel mode, coherent
+backward chronology, September harvest season, town nights/provisions, four
+alternative clue methods per stop, one to three optional resemblance leads
+yielding a contact, and one or two optional lore crossovers.
+
+Moving stories preserve the original ten waypoints and append three sourced
+30--60 km towns. Continuations are generated at genesis, not during play.
+The parent leaves town ten after seven game days, then advances again at
+fourteen and twenty-one days, and waits at town thirteen. The child may finish
+at any of those four towns if it catches up. Zero-cost alternative clue methods
+avoid skill, photo-provider and unique-object dependencies; false leads do not
+consume the main clue. Fictional visit facts are revealed with discoveries,
+not as a full GPS trace. The journal explicitly labels narrative purchases
+and nights as fiction rather than real venue transactions.
+
+Generation retries use up to three derived seeds, preserving the immutable,
+idempotent SQLite transaction and checksums. Story data and generator code enter
+the content fingerprint. Existing records without stories are neither upgraded
+nor rerolled. Save validation covers chronology, ownership, mobile timing,
+optional-lead progress and early reunions with unused continuation towns.
+
+This is not full Layer 9 completion: narrative validation deliberately reports
+`terrainValidated: false`. Long-leg terrain validation, a true survival-budget
+simulation, route-positioned parent nights/purchases, motive-guided destination
+selection, aging witness precision and richer witness/biography templates remain
+open. Existing manual path preparation remains opt-in to avoid competing with
+the player's live map downloads.
+
+Validation of the narrative checkpoint: 236 JavaScript tests passed, including
+Python-to-JavaScript genesis for all birth cards and exact save roundtrips.
+Python ran 134 tests: 132 passed, two existing photo-configuration assertions
+failed after the concurrent user commit changing max_per_cell to 10 while the
+exported browser config and assertions still expect 5. That configuration is
+not changed here. Browser validation created a real local mobile genesis
+with thirteen sourced towns and displayed the first three discovered visits
+in French and English, without downloading terrain. The narrative checkpoint
+remains undeployed and is not a full Layer 9 completion.
+
+### One-cell town arrival tolerance
+
+The Cuise-la-Motte screenshot showed one cell south remaining and 0.2 km to
+the geographic point, while the player was already in town. This was a strict
+cell-equality gate, not demonstrated numeric rounding corruption. Modern
+town trails now accept the target's 3 x 3 neighborhood (up to 250 m per axis).
+All clue access, free guidance and journal arrival messages use that same
+helper. Two-cell offsets remain outside; legacy local trails remain exact.
+No target or save coordinate is rewritten. Regression tests exercise every
+offset in a 5 x 5 square, successful clue save/resume at each accepted offset,
+both hint languages and the old exact-cell rule.
+
+### European dishes and fictional shelter at places of worship
+
+The curated meal catalogue grows from four to nineteen entries, with additions
+in fifteen European countries. New regional and national entries require one
+confirmed country plus geographic bounds. National dishes are labelled as
+country traditions, not a particular town's specialty. Source links include
+national tourism sites and Wikipedia; descriptions are short original summaries.
+There is no live web discovery or claim that a real restaurant serves the dish.
+On resume, an explicit catalogue refresh adds missing IDs without replacing
+pinned meals or changing survival rules, tarot, balances or progress.
+
+Mapped active current-cell places of worship now offer fictional hospitality,
+across religions and outside named settlement cells too. The user chose the
+existing 30-minute request and tarot-adjusted chance, immediate free sheltered
+sleep if welcomed, no food, and one request per place per UTC game day.
+Private/inaccessible, abandoned and disused POIs are excluded. An OSM building
+tag alone is not evidence of a place of worship or accommodation. Relations
+are accepted by the action/save validator if supplied as POIs, but the existing
+map extractor currently supplies nodes and ways only. No cache regeneration
+or new provider request is needed for already mapped eligible POIs.
+
+Worship outcomes are stored in existing hospitality history with an optional
+place-kind marker; legacy town records remain valid. They appear immediately
+under the disabled action with focused, visible FR/EN feedback. Text clearly
+separates fictional shelter from actual religious communities or real lodging.
+Layer 15's future journal requirements include these events.
+
+Validation: 42 focused tests pass; the isolated release based on live town-arrival
+code passes all 242 JavaScript tests using the existing Python environment.
+Browser checks at 320 px verify focused, fully visible refusal feedback with
+no sleep/time ambiguity, plus regional and national meal scope/source labels.
+The development worktree's wider tests remain blocked by the user's unrelated
+uncommitted configuration lacking its map section; it is left untouched.
+No unfinished Layer 9 narrative code is included in this isolated release.
+The twelve existing map-pipeline Python tests also pass with the clean release
+configuration. Static-only runtime `5f9e70a` is deployed and verified by exact
+HTTPS asset comparison; no server restart or map-cache invalidation was needed.
+
+### Lightweight Layer 9 narrative polish; advanced simulation deferred
+
+R-083 supersedes the earlier requirement to finish all advanced Layer 9
+simulation before moving on. Whole-route terrain validation, survival-budget
+simulation, route-positioned provisions/nights and motive-guided destinations
+are retained for later, not claimed complete or made current release gates.
+
+Discussion clues now use three deterministic witness voices based on journey
+start and witness identity. With existing story dates, memories become less
+precise at seven and thirty elapsed days since departure. This affects wording
+only: the known destination or pending venue is always explicit. Pending clues
+still hide the next town. Written/photo clues, costs, route facts and saves
+are unchanged. Legacy journeys receive voice variety but no invented dates,
+motives or visit history. Memory wording reflects the current game time when
+reading the trail; it is not presented as a verbatim timestamped transcript.
+
+Discussion results and their journal history share the same formatter. Story
+summaries explain why the parent left, and discovered visits clearly separate
+historical arrival/departure and provisions from a current parent location.
+Exact fictional story dates are not attributed to uncertain witness memories.
+Only discovered visits are shown; no future itinerary is exposed.
+
+Validation: all 26 focused story/trail/action tests pass, including exact aging
+thresholds, stable voices after reload, all three voices, FR/EN clues, legacy
+compatibility, document clues and pending-venue information gates. Browser
+checks exercised FR/EN testimony, discovered-only records, legacy section
+hiding and no premature next-town disclosure. The isolated release passes
+all 243 JavaScript tests with the clean live configuration.
+The development full run before the final portable regression test passes
+244 tests but its genesis file fails because
+the unrelated user configuration does not load; it is not modified here.
+
+The small release updates presentation only. It does not activate the pending
+server story generator or rewrite old beginnings: existing live journeys show
+varied discussion dialogue; dated memories and motive/visit presentation are
+available when a journey already carries story facts.
+Presentation runtime `7832ea9` is deployed, with exact HTTPS comparisons of
+all four changed assets and the manifest. The travel API and both services
+remain healthy without restart. The server generator remains unchanged.
+
+### I asks a fictional passerby for approximate directions
+
+R-084 keeps the I binding but renames the action to Ask for directions.
+Travel answers name only the known objective, a general eight-sector compass
+heading and qualitative distance: nearby, a stretch, quite a way, a long way.
+Internal distance thresholds are 2, 10 and 30 km; no numeric distance, cell
+count or turn-by-turn directions appear in the answer. Compass sectors use
+the same grid axes as movement. The separate trail journal is unchanged.
+
+Free, read-only availability is preserved everywhere, without a real NPC or
+provider request. Arrival and pending-venue answers retain actionable journal
+instructions without revealing the unknown destination. Both languages state
+that the passerby and conversation are fictional and that the direction is
+not a verified walkable route. Shortcut help describes this behavior.
+
+Validation: 244 JavaScript tests pass on the isolated live-base release,
+including all eight headings, near-axis rounding, exact distance-band
+boundaries, legacy trails, arrival-radius regressions, undiscovered-clue
+privacy, translations and I binding. Browser checks open the actual hint
+dialog in French and English for Bapaume, verify no numeric guidance or
+future-town disclosure, and confirm the unchanged I shortcut.
+
+### Paid terrain-based directions encounters and high water fatigue
+
+R-085 supersedes the earlier free guidance action. I opens a cost/chance
+dialog but gives no answer until an explicit request. Each attempt rerolls,
+costs ten minutes plus two fatigue, consumes normal metabolism and nighttime
+exposure, and grants no ordinary rest recovery. Money is not charged.
+Success rates are exactly 90% in settlement cells, 75% at stations, 50% on
+roads/buildings/places of worship, 25% on open land/parks, 15% in forest/hills,
+5% on mountains/rail/cable lines and 0% on water. These are independent game
+encounters, not tarot-adjusted or real-population assertions.
+
+The existing survival finalizer runs before an answer: fainting and fatal
+needs prevent successful guidance. Failed searches explicitly retain their
+cost; retries pay again. Costs use the ordinary autosave path; answer text
+is transient and resets on reopening, so reopening never grants a free hint.
+No save-schema change, old-history invention or provider request is needed.
+Successful answers still use R-084's vague heading and distance and retain
+pending venue privacy.
+
+R-086 adds forty fatigue per 250 m entry into a water cell, on top of ordinary
+terrain/slope fatigue, independent of endurance. Land exits have no second
+surcharge; mapped road bridges remain ordinary roads. Existing fatigue caps,
+collapse, hunger and sleep logic stay in force. The reference route solver
+still estimates time at zero fatigue, not survival feasibility; this change
+does not turn its output into a survival guarantee.
+
+Validation: all 249 JavaScript tests pass on the isolated live-base release.
+Tests enumerate every terrain probability using 100 evenly spaced rolls each,
+check ten-minute/two-fatigue costs on failure and retry, metabolism/night
+exposure, no money/position/clue changes, save roundtrip, invalid input,
+fatal needs and collapse. Water tests measure exactly forty extra fatigue
+across endurance profiles, unchanged road bridges, land exits and fainting.
+The actual browser dialog in FR/EN verifies upfront 90%/cost disclosure,
+no free answer on opening/reopening, failed paid attempt followed by success,
+twenty minutes/four fatigue total and no future-town disclosure.
+
+## Progressive field clues and fallible recognition
+
+- R-097: optional versioned exploration state is
+  initialized on new/resumed v2 games; older saves stay readable. A resumed
+  pre-feature lead keeps its known town. New leads expose only obtained hints.
+  Search success uses server-side proximity to points on the persisted
+  current reference leg; no path geometry reaches the browser. Missing
+  reference paths surface a retryable preparation error, not a fake route.
+  Costs and precision use destination proximity, independently of route
+  proximity. Search results are prepared before charging, guarded against
+  cancellation and stale state, then settled through normal survival rules.
+  Photo providers are never required: an unavailable image becomes a fragment.
+  Witness recognition uses nearest real prefix matches or nearby photo
+  candidates from GeoNames; guesses remain unconfirmed and cannot advance
+  progress. Versioned hint/report history is validated on every save.
+- Verification: 310 JavaScript tests pass, including real offline genesis to
+  stationary/early-mobile/slow-mobile reunion in both old and progressive
+  modes, exact FR/EN journal event handlers, costs, chance/precision boundaries,
+  stale/cancelled requests, fallible recognition and save corruption checks.
+  Python: 135/137 pass; the same two baseline photo-setting mismatches remain.
+  All 14 targeted hidden-route/proximity/recognition tests pass.
+  Real-browser journal checks used explicit proximity/town fixtures: a vague
+  fragment, a wrong unconfirmed suggestion, lower-cost precise nearby clue,
+  and save/reload of both evidence and guesses. No external route download
+  or player save was used for that UI check.
+- Live runtime 8962aa0 (deploy-2026-10-17-progressive-clues) matches the
+  validated isolated code. HTTPS module bytes, backend hashes, live GeoNames
+  recognition, service readiness and all fourteen existing genesis records
+  were verified after deployment. No shared cache or player data was removed.

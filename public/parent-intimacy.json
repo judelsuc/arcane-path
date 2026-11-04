@@ -1,0 +1,244 @@
+{
+  "fool": {
+    "object": {"fr": "l'ourlet sans fin", "en": "the endless hem"},
+    "desire": {"fr": "pouvoir partir sans perdre le retour", "en": "to leave without losing the way home"},
+    "memory": {"fr": "une veste de marche rangée après votre naissance, dont l'ourlet avait été repris plusieurs fois", "en": "a walking jacket put away after your birth, its hem mended many times"},
+    "letter": {"fr": "Je voudrais pouvoir partir sans perdre le retour. Je pense à cette vieille veste que j'avais rangée. Ce ne sera que quelques jours, je me le promets.", "en": "I want to leave without losing the way home. I keep thinking of that old jacket I put away. Only a few days, I promise myself."},
+    "witness": [
+      {"fr": "« Cette personne voulait voyager sans que partir signifie perdre sa maison. Le retour semblait déjà promis. »", "en": "“They wanted to travel without leaving meaning the loss of home. Returning already seemed assured.”"},
+      {"fr": "« Il était question d'une vieille veste, rangée après votre naissance, et d'un ourlet repris plusieurs fois. Ce souvenir comptait beaucoup. »", "en": "“They spoke of an old jacket put away after your birth, with a repeatedly mended hem. That memory mattered deeply.”"},
+      {"fr": "« Rentrer restait possible. Mais chaque retour était remis au jour où l'objet permettrait de rentrer sans effort. »", "en": "“Going home was still possible. But each return was postponed until the object would make it effortless.”"}
+    ]
+  },
+  "magician": {
+    "object": {"fr": "le dé à sept points", "en": "the seven-dot die"},
+    "desire": {"fr": "ne plus dépendre de la chance pour faire vivre les siens", "en": "to stop depending on luck to provide for the family"},
+    "memory": {"fr": "un dé repeint avec sept points sur une face, celle où personne ne devait perdre dans vos jeux", "en": "a repainted die with seven dots on one face, the face where nobody could lose in your games"},
+    "letter": {"fr": "Je voudrais que nos journées ne dépendent plus de la chance. Tu te souviens du dé où personne ne perdait ? Je pars chercher quelque chose qui pourrait nous aider.", "en": "I want our days to stop depending on luck. Do you remember the die where nobody lost? I am looking for something that might help us."},
+    "witness": [
+      {"fr": "« Ce n'était pas la fortune pour elle-même. Il fallait que le travail suffise enfin à faire vivre la famille. »", "en": "“It was not wealth for its own sake. Work had to become enough to support the family at last.”"},
+      {"fr": "« Un dé avait sept points sur une face. Dans vos jeux, c'était la face où personne ne perdait. »", "en": "“One face of a die had seven dots. In your games, that was the face where nobody lost.”"},
+      {"fr": "« Chaque retard devenait un investissement. Revenir sans la réussite promise paraissait désormais impossible. »", "en": "“Every delay became an investment. Returning without the promised success now seemed impossible.”"}
+    ]
+  },
+  "priestess": {
+    "object": {"fr": "le buvard bleu", "en": "the blue blotter"},
+    "desire": {"fr": "ne plus craindre ce que les autres taisent", "en": "to stop fearing what other people leave unsaid"},
+    "memory": {"fr": "un buvard taché par la première lettre que vous aviez écrite sans aide", "en": "a blotter stained by the first letter you wrote without help"},
+    "letter": {"fr": "Je voudrais retrouver un peu de confiance. Ton premier courrier a laissé des traces sur le buvard bleu ; je les connais encore. Je pars chercher une réponse, pas t'oublier.", "en": "I want to find some trust again. Your first letter left marks on the blue blotter; I still know them. I am searching for an answer, not forgetting you."},
+    "witness": [
+      {"fr": "« Ne plus être trompé : c'était ce qui revenait. Le doute avait pris beaucoup de place. »", "en": "“Not being deceived again: that kept coming up. Doubt had taken up a great deal of space.”"},
+      {"fr": "« Votre première lettre avait taché un buvard bleu. La confiance avec laquelle vous l'aviez tendue semblait un souvenir précieux. »", "en": "“Your first letter had stained a blue blotter. The trust with which you offered it seemed a precious memory.”"},
+      {"fr": "« Une parole rassurante ne suffisait plus. Il fallait une preuve, puis une autre, avant même d'oser écrire à la maison. »", "en": "“Reassuring words no longer sufficed. There had to be proof, then more proof, before even writing home.”"}
+    ]
+  },
+  "empress": {
+    "object": {"fr": "la cuillère de bois", "en": "the wooden spoon"},
+    "desire": {"fr": "que personne à la maison ne manque du nécessaire", "en": "for nobody at home to lack the necessities"},
+    "memory": {"fr": "une cuillère usée contre le fond de la casserole lors des repas partagés", "en": "a spoon worn against the bottom of the pan at shared meals"},
+    "letter": {"fr": "Je voudrais que nous ne comptions plus chaque repas. Je pense à notre cuillère de bois, à la table. Si cette promesse est vraie, nous pourrons souffler. Je dois aller voir.", "en": "I want us to stop counting every meal. I think of our wooden spoon, of the table. If this promise is true, we might breathe more easily. I have to find out."},
+    "witness": [
+      {"fr": "« Le manque, les repas partagés : voilà pourquoi partir semblait nécessaire. Pas pour accumuler des richesses. »", "en": "“Shortages, shared meals: that was why leaving seemed necessary. Not to accumulate riches.”"},
+      {"fr": "« Une cuillère de bois usée rappelait les repas à la maison. Ce n'était pas un trésor, mais elle comptait comme tel. »", "en": "“A worn wooden spoon recalled meals at home. It was not treasure, but it mattered like treasure.”"},
+      {"fr": "« Revenir sans solution faisait honte. Pendant ce temps, la famille s'organisait et l'absence se prolongeait. »", "en": "“Returning without a solution felt shameful. Meanwhile the family adapted, and the absence grew longer.”"}
+    ]
+  },
+  "emperor": {
+    "object": {"fr": "le bouton de cuivre", "en": "the copper button"},
+    "desire": {"fr": "pouvoir offrir un abri quand toutes les portes se ferment", "en": "to offer shelter when every door closes"},
+    "memory": {"fr": "un bouton du manteau dans lequel vous étiez enveloppé les soirs de froid", "en": "a button from the coat wrapped around you on cold evenings"},
+    "letter": {"fr": "Je voudrais savoir que nous trouverons toujours un abri. Le bouton du vieux manteau me rappelle ce que je pouvais déjà faire pour toi. Il existe peut-être davantage. Je pars le chercher.", "en": "I want to know we will always find shelter. The old coat button reminds me of what I could already do for you. Perhaps there is more. I am going to look for it."},
+    "witness": [
+      {"fr": "« Le souhait était simple : ne plus être impuissant devant une porte fermée quand quelqu'un a besoin d'un abri. »", "en": "“The wish was simple: no longer to be helpless before a closed door when someone needs shelter.”"},
+      {"fr": "« Un bouton de cuivre venait du manteau qui vous protégeait du froid. C'est ce geste-là qui revenait dans le récit. »", "en": "“A copper button came from the coat that sheltered you from the cold. That gesture kept returning in the story.”"},
+      {"fr": "« Chaque personne à protéger devenait une raison de continuer. La personne déjà laissée à la maison devait encore attendre. »", "en": "“Each person needing protection became a reason to continue. The person already left at home had to wait again.”"}
+    ]
+  },
+  "hierophant": {
+    "object": {"fr": "le cahier quadrillé", "en": "the squared notebook"},
+    "desire": {"fr": "comprendre assez pour ne plus donner de mauvais conseils", "en": "to understand enough to stop giving harmful advice"},
+    "memory": {"fr": "un cahier où un conseil donné avec trop d'assurance avait été soigneusement écrit", "en": "a notebook where advice given too confidently had been carefully written down"},
+    "letter": {"fr": "Je voudrais savoir dire autre chose qu'une réponse trop sûre. Tu m'as souvent posé des questions. Il faut que je comprenne ce que je croyais savoir. Je pars avec cette question.", "en": "I want to offer something other than an overconfident answer. You have asked me so many questions. I need to understand what I thought I knew. I leave with that question."},
+    "witness": [
+      {"fr": "« Un conseil donné avec trop de certitude avait fait du mal. Comprendre semblait la seule façon de réparer. »", "en": "“Advice given too confidently had hurt someone. Understanding seemed the only way to make amends.”"},
+      {"fr": "« Le conseil avait été écrit dans un cahier quadrillé. À la maison, vos questions recevaient toujours une réponse. »", "en": "“The advice was written in a squared notebook. At home, your questions always received an answer.”"},
+      {"fr": "« Les histoires des autres étaient étudiées avec soin. La lettre personnelle à écrire à son enfant attendait encore. »", "en": "“Other people's stories were studied carefully. The personal letter to their child still waited.”"}
+    ]
+  },
+  "lovers": {
+    "object": {"fr": "la pince à linge fendue", "en": "the split clothes peg"},
+    "desire": {"fr": "savoir quelle direction prendre pour rejoindre quelqu'un qu'on aime", "en": "to know which way to go to reach someone loved"},
+    "memory": {"fr": "une pince fendue avec laquelle vous attachiez vos dessins à un fil", "en": "a split clothes peg you used to attach drawings to a line"},
+    "letter": {"fr": "Je voudrais cesser d'hésiter à chaque chemin. La pince de tes dessins tenait encore malgré sa fente. Je pense à elle en partant. Peut-être trouverai-je comment nous rapprocher.", "en": "I want to stop hesitating at every road. The peg for your drawings still held despite its split. I think of it as I leave. Perhaps I will find how to bring us closer."},
+    "witness": [
+      {"fr": "« Rester, repartir, parler, attendre : chaque choix paraissait risquer la mauvaise séparation. »", "en": "“Stay, leave, speak, wait: every choice seemed to risk the wrong separation.”"},
+      {"fr": "« Vos dessins tenaient à un fil grâce à une pince fendue. Personne ne se résolvait à la remplacer. »", "en": "“Your drawings hung from a line with a split peg. Nobody could bring themselves to replace it.”"},
+      {"fr": "« Les décisions affectives attendaient l'objet. Comme si une direction pouvait décider ce qu'on devait se dire. »", "en": "“Emotional decisions waited for the object. As though a direction could decide what people needed to say.”"}
+    ]
+  },
+  "chariot": {
+    "object": {"fr": "le lacet rouge", "en": "the red shoelace"},
+    "desire": {"fr": "ne plus arriver trop tard auprès des siens", "en": "to stop arriving too late for loved ones"},
+    "memory": {"fr": "un lacet rouge sur lequel vous aviez appris à faire vos nœuds ensemble", "en": "a red shoelace on which you learned to tie knots together"},
+    "letter": {"fr": "Je voudrais ne plus courir après les heures. Je revois tes mains sur le lacet rouge quand nous faisions les nœuds. Quelques jours, et peut-être aurons-nous davantage de temps ensemble.", "en": "I want to stop chasing the hours. I remember your hands on the red lace as we tied knots. A few days, and perhaps we will have more time together."},
+    "witness": [
+      {"fr": "« Il fallait toujours gagner quelques minutes. Le souhait était d'arriver à temps auprès de vous. »", "en": "“There were always a few minutes to gain. The wish was to arrive in time to be with you.”"},
+      {"fr": "« Vous aviez appris les nœuds ensemble sur un lacet rouge. Ce souvenir revenait entre deux calculs de trajet. »", "en": "“You learned knots together on a red shoelace. That memory returned between calculations of journeys.”"},
+      {"fr": "« Les haltes étaient refusées pour rentrer plus vite. Pourtant, les détours continuaient de s'ajouter. »", "en": "“Stops were refused in order to return sooner. Yet the detours kept adding up.”"}
+    ]
+  },
+  "justice": {
+    "object": {"fr": "la règle ébréchée", "en": "the chipped ruler"},
+    "desire": {"fr": "récupérer ce qui n'a jamais été payé à sa juste valeur", "en": "to recover what was never fairly paid"},
+    "memory": {"fr": "une règle ébréchée dont vous saviez qu'il fallait commencer au deuxième trait", "en": "a chipped ruler you knew had to be measured from its second mark"},
+    "letter": {"fr": "Je voudrais que les comptes cessent de nous donner tort. Tu sais comment mesurer avec notre règle abîmée. Il y a peut-être aussi une façon de reprendre ce qu'on nous doit. Je vais essayer.", "en": "I want the accounts to stop proving us wrong. You know how to measure with our damaged ruler. Perhaps there is a way to recover what we are owed too. I will try."},
+    "witness": [
+      {"fr": "« Un travail trop peu payé, des comptes toujours défavorables : il était question de réparation, pas seulement d'argent. »", "en": "“Underpaid work, accounts always falling short: it was about making things right, not just money.”"},
+      {"fr": "« Vous saviez mesurer avec la règle ébréchée, en partant du deuxième trait. Ce détail faisait presque sourire. »", "en": "“You knew how to measure with the chipped ruler, starting at the second mark. That detail almost brought a smile.”"},
+      {"fr": "« Chaque dépense devait justifier la précédente. Rentrer sans rien semblait rendre toutes les étapes inutiles. »", "en": "“Each expense had to justify the previous one. Returning empty-handed seemed to make every stage pointless.”"}
+    ]
+  },
+  "hermit": {
+    "object": {"fr": "le dé à coudre ajouré", "en": "the pierced thimble"},
+    "desire": {"fr": "ne plus chercher à l'aveugle", "en": "to stop searching blindly"},
+    "memory": {"fr": "un dé à coudre dont vous regardiez le petit trou comme une étoile devant la lampe", "en": "a thimble whose little hole you watched like a star against the lamp"},
+    "letter": {"fr": "Je voudrais y voir assez clair pour ne plus courir après des rumeurs. Tu regardais la lampe à travers mon dé à coudre. Je pense à cette petite lumière. Je te raconterai ce que j'aurai compris.", "en": "I want to see clearly enough to stop chasing rumours. You watched the lamp through my thimble. I think of that little light. I will tell you what I understand."},
+    "witness": [
+      {"fr": "« Chercher sans savoir usait cette personne. Une seule certitude lui semblait valoir le voyage. »", "en": "“Searching without knowing wore them down. A single certainty seemed worth the journey.”"},
+      {"fr": "« Le trou d'un dé à coudre devenait une étoile quand vous regardiez la lampe au travers. C'était un souvenir de vous. »", "en": "“A thimble's hole became a star when you looked through it at the lamp. It was a memory of you.”"},
+      {"fr": "« Comprendre devait permettre d'aider, puis de rentrer. Mais l'enquête avait fini par justifier qu'on ne rentre plus. »", "en": "“Understanding was meant to help, then allow a return. But the investigation had begun justifying never returning.”"}
+    ]
+  },
+  "wheel": {
+    "object": {"fr": "la bobine vide", "en": "the empty spool"},
+    "desire": {"fr": "retrouver quelque chose qui semblait définitivement perdu", "en": "to recover something that seemed lost for good"},
+    "memory": {"fr": "une bobine dont vous aviez déroulé ensemble le dernier tour pour une réparation", "en": "a spool whose last turn you unwound together for a repair"},
+    "letter": {"fr": "Je voudrais croire que tout ne nous échappe pas pour toujours. La bobine est vide depuis notre dernière réparation. Je pars chercher ce qui pourrait revenir. Ne crois pas que je t'oublie.", "en": "I want to believe not everything escapes us forever. The spool has been empty since our last repair. I am looking for what might return. Do not think I forget you."},
+    "witness": [
+      {"fr": "« Après plusieurs pertes, l'idée de pouvoir récupérer quelque chose était devenue essentielle. »", "en": "“After several losses, the idea of recovering something had become essential.”"},
+      {"fr": "« Une bobine vide venait d'une réparation faite avec vous. Vous en aviez déroulé le dernier tour ensemble. »", "en": "“An empty spool came from a repair made with you. You had unwound its last turn together.”"},
+      {"fr": "« Toute séparation paraissait provisoire. Comme si les personnes laissées derrière devaient forcément attendre. »", "en": "“Every separation seemed temporary. As if the people left behind were bound to wait.”"}
+    ]
+  },
+  "strength": {
+    "object": {"fr": "la brosse douce", "en": "the soft brush"},
+    "desire": {"fr": "tenir bon quand les autres comptent sur soi", "en": "to keep going when others depend on you"},
+    "memory": {"fr": "une brosse avec laquelle vos cheveux étaient démêlés patiemment", "en": "a brush used to patiently untangle your hair"},
+    "letter": {"fr": "Je voudrais ne plus te cacher ma fatigue. Je repense aux cheveux qu'il fallait démêler doucement. Il existe peut-être une force qui ne s'épuise pas aussi vite. Je vais la chercher.", "en": "I want to stop hiding my tiredness from you. I think of hair that needed gentle untangling. Perhaps there is a strength that does not run out so quickly. I am going to seek it."},
+    "witness": [
+      {"fr": "« Il ne fallait jamais s'effondrer quand quelqu'un comptait sur vous. Demander de l'aide paraissait plus difficile que partir. »", "en": "“You must never collapse when someone depends on you. Asking for help seemed harder than leaving.”"},
+      {"fr": "« La brosse rappelait vos cheveux démêlés avec patience. La force recherchée venait d'abord d'un geste doux. »", "en": "“The brush recalled your hair patiently untangled. The strength being sought began with a gentle gesture.”"},
+      {"fr": "« Tout était accepté, aucune fatigue avouée. La famille attendait une personne, pas un géant infatigable. »", "en": "“Everything was accepted, no exhaustion admitted. The family was waiting for a person, not a tireless giant.”"}
+    ]
+  },
+  "hanged": {
+    "object": {"fr": "la chaussette retournée", "en": "the inside-out sock"},
+    "desire": {"fr": "avoir un répit avant de devoir choisir", "en": "to have a respite before having to choose"},
+    "memory": {"fr": "une chaussette retournée que vous appeliez une poche où la journée ne pouvait plus entrer", "en": "an inside-out sock you called a pocket the day could no longer enter"},
+    "letter": {"fr": "Je voudrais un peu de temps pour réfléchir. Tu avais fait d'une chaussette retournée une poche à l'abri de la journée. Je cherche quelque chose de cet ordre. Je ne veux pas que ce soit un adieu.", "en": "I want a little time to think. You made an inside-out sock into a pocket safe from the day. I am looking for something like that. I do not want this to be goodbye."},
+    "witness": [
+      {"fr": "« Les obligations se contredisaient. Le souhait n'était pas de tout quitter, mais de pouvoir enfin réfléchir. »", "en": "“The obligations contradicted each other. The wish was not to leave everything, but to finally have time to think.”"},
+      {"fr": "« Vous appeliez une chaussette retournée une poche où la journée ne pouvait pas entrer. Cette plaisanterie était restée. »", "en": "“You called an inside-out sock a pocket the day could not enter. That joke had stayed with them.”"},
+      {"fr": "« Le retour n'était jamais refusé, seulement différé. Pendant ce délai, les autres devaient choisir sans aide. »", "en": "“Returning was never refused, only deferred. During that delay, others had to choose without help.”"}
+    ]
+  },
+  "nameless": {
+    "object": {"fr": "le taille-crayon émoussé", "en": "the blunt sharpener"},
+    "desire": {"fr": "pouvoir intervenir avant qu'il ne soit trop tard", "en": "to act before it is too late"},
+    "memory": {"fr": "un taille-crayon avec lequel vous cherchiez le dernier trait possible de vos crayons raccourcis", "en": "a sharpener with which you sought the last possible line from shortened pencils"},
+    "letter": {"fr": "Je voudrais pouvoir agir quand tout semble déjà fermé. Nous cherchions toujours un dernier trait dans tes petits crayons. Je pense à cela en partant. Je veux préserver ce qui peut encore l'être.", "en": "I want to act when everything already seems closed. We always sought one last line in your little pencils. I think of that as I leave. I want to preserve what can still be preserved."},
+    "witness": [
+      {"fr": "« Depuis un accident dont cette personne avait été témoin, ne pas pouvoir intervenir était une peur tenace. »", "en": "“Since witnessing an accident, being unable to intervene had become a persistent fear.”"},
+      {"fr": "« Avec vous, chaque crayon trop court avait encore un dernier trait à donner. Un vieux taille-crayon rappelait cela. »", "en": "“With you, every shortened pencil still had one last line to give. An old sharpener recalled that.”"},
+      {"fr": "« Préparer le sauvetage de demain prenait la place des journées qu'il s'agissait justement de préserver. »", "en": "“Preparing tomorrow's rescue was taking the place of the very days it was meant to preserve.”"}
+    ]
+  },
+  "temperance": {
+    "object": {"fr": "le bouchon percé", "en": "the pierced stopper"},
+    "desire": {"fr": "aider sans finir par ne plus rien avoir à donner", "en": "to help without ending up with nothing left to give"},
+    "memory": {"fr": "un bouchon percé pour arroser les semis avec vous sans les noyer", "en": "a pierced stopper used to water seedlings with you without drowning them"},
+    "letter": {"fr": "Je voudrais apprendre à donner sans tout verser d'un coup. Je repense à nos semis, au petit trou dans le bouchon. Si je trouve ce que je cherche, peut-être pourrai-je enfin reprendre souffle.", "en": "I want to learn to give without pouring everything out at once. I think of our seedlings, of the little hole in the stopper. If I find what I seek, perhaps I can breathe again."},
+    "witness": [
+      {"fr": "« Aider tout le monde avait laissé trop peu de place pour recevoir de l'aide. Il fallait reprendre souffle. »", "en": "“Helping everyone had left too little room to receive help. They needed to breathe again.”"},
+      {"fr": "« Vous arrosiez des semis à travers un bouchon percé : un peu à la fois, sans tout noyer. »", "en": "“You watered seedlings through a pierced stopper: a little at a time, without drowning everything.”"},
+      {"fr": "« À chaque halte, quelqu'un avait besoin d'aide. Les proches pouvaient bien attendre puisqu'ils comprendraient. »", "en": "“At every stop, someone needed help. Loved ones could wait, since surely they would understand.”"}
+    ]
+  },
+  "devil": {
+    "object": {"fr": "l'élastique noir", "en": "the black elastic"},
+    "desire": {"fr": "ne plus choisir ce qu'il faut laisser derrière soi", "en": "to stop having to choose what to leave behind"},
+    "memory": {"fr": "un élastique qui tenait ensemble dessins, reçus, billets périmés et photographie pliée", "en": "an elastic holding together drawings, receipts, expired tickets and a folded photograph"},
+    "letter": {"fr": "Je voudrais ne plus laisser de morceaux de nous derrière moi. Les papiers tiennent encore dans leur élastique noir. Je pars chercher comment garder davantage, pas comment me défaire de toi.", "en": "I want to stop leaving pieces of us behind. The papers still hold in their black elastic. I am looking for how to keep more, not how to leave you."},
+    "witness": [
+      {"fr": "« Après plusieurs départs forcés, laisser encore des affaires derrière était devenu insupportable. »", "en": "“After several forced departures, leaving belongings behind again had become unbearable.”"},
+      {"fr": "« Un élastique noir retenait des dessins et des papiers usés. Rien ne paraissait assez insignifiant pour être jeté. »", "en": "“A black elastic held drawings and worn papers. Nothing seemed insignificant enough to discard.”"},
+      {"fr": "« Tout ce qui serait rapporté servait à expliquer l'absence. Pourtant, aucun paquet ne pouvait remplacer cette présence. »", "en": "“Everything to be brought back served to explain the absence. Yet no parcel could replace that presence.”"}
+    ]
+  },
+  "tower": {
+    "object": {"fr": "la craie cassée", "en": "the broken chalk"},
+    "desire": {"fr": "pouvoir rester quelque part sans toujours se justifier", "en": "to stay somewhere without always having to justify it"},
+    "memory": {"fr": "une craie cassée au milieu d'une porte dessinée avec vous sur les dalles", "en": "chalk broken halfway through a doorway drawn with you on paving stones"},
+    "letter": {"fr": "Je voudrais cesser de me faire petite place sous les regards. Nous dessinions des maisons avec la craie cassée. Je cherche une porte qui ne se referme pas. Ce n'est pas contre toi.", "en": "I want to stop making myself small under other people's gaze. We drew houses with the broken chalk. I am looking for a door that will not close. This is not against you."},
+    "witness": [
+      {"fr": "« Les soupçons, les regards, les raisons à donner pour rester : cette fatigue-là pesait lourd. »", "en": "“Suspicion, stares, reasons demanded for staying: that kind of weariness weighed heavily.”"},
+      {"fr": "« La craie s'était cassée pendant que vous dessiniez une porte. Le petit morceau était resté comme un souvenir de vos maisons. »", "en": "“The chalk broke while you drew a door. The little piece remained as a memory of your houses.”"},
+      {"fr": "« Même les appels de la maison ressemblaient désormais à des ordres. Mais demander une présence n'est pas toujours vouloir enfermer. »", "en": "“Even calls from home now sounded like orders. But asking for someone's presence is not always seeking to imprison them.”"}
+    ]
+  },
+  "star": {
+    "object": {"fr": "le tamis de poche", "en": "the pocket sieve"},
+    "desire": {"fr": "distinguer une vraie piste des promesses sans lendemain", "en": "to distinguish a true lead from empty promises"},
+    "memory": {"fr": "un tamis qui retenait les pierres ordinaires que vous trouviez belles au bord des chemins", "en": "a sieve retaining ordinary stones you found beautiful beside the paths"},
+    "letter": {"fr": "Je voudrais suivre une piste qui mène réellement quelque part. Tu trouvais belles les pierres ordinaires dans le tamis. Je pense à ta patience. Je pars vérifier cette promesse.", "en": "I want to follow a lead that really goes somewhere. You found the ordinary stones in the sieve beautiful. I think of your patience. I am going to test this promise."},
+    "witness": [
+      {"fr": "« Trop de promesses avaient donné des pistes sans issue. Cette fois, il fallait une direction vraie. »", "en": "“Too many promises had led nowhere. This time, there had to be a true direction.”"},
+      {"fr": "« Vous cherchiez des pierres avec un petit tamis. Elles n'avaient pas besoin d'être précieuses pour vous paraître belles. »", "en": "“You searched for stones with a little sieve. They did not need to be precious for you to find them beautiful.”"},
+      {"fr": "« Une route exacte paraissait forcément être la bonne décision. Les raisons de rester devenaient difficiles à entendre. »", "en": "“An accurate route seemed bound to be the right decision. Reasons to stay became difficult to hear.”"}
+    ]
+  },
+  "moon": {
+    "object": {"fr": "le miroir de poche mat", "en": "the clouded pocket mirror"},
+    "desire": {"fr": "retenir ce que les rêves semblent faire comprendre", "en": "to retain what dreams seem to reveal"},
+    "memory": {"fr": "un miroir terni sur lequel vous déposiez de la buée avec votre souffle", "en": "a clouded mirror you covered with mist from your breath"},
+    "letter": {"fr": "Je voudrais retenir ce que j'entrevois en rêve. Tu soufflais sur le petit miroir pour y laisser une trace. Je pense à cela : quelque chose paraît, puis s'efface. Je pars chercher comment comprendre.", "en": "I want to retain what I glimpse in dreams. You breathed on the little mirror to leave a trace. I think of that: something appears, then fades. I am looking for understanding."},
+    "witness": [
+      {"fr": "« Au réveil restait l'impression d'une réponse perdue. Il fallait comprendre ce qui échappait au jour. »", "en": "“On waking there remained the feeling of a lost answer. They needed to understand what escaped daylight.”"},
+      {"fr": "« Votre souffle faisait de la buée sur un petit miroir terni. Cette image semblait accompagner le voyage. »", "en": "“Your breath misted a little clouded mirror. That image seemed to accompany the journey.”"},
+      {"fr": "« Les conversations difficiles attendaient le prochain rêve. Les paroles prononcées le jour passaient après les signes de la nuit. »", "en": "“Difficult conversations waited for the next dream. Words spoken by day came after the signs of the night.”"}
+    ]
+  },
+  "sun": {
+    "object": {"fr": "le mouchoir jaune", "en": "the yellow handkerchief"},
+    "desire": {"fr": "retrouver assez de vitalité pour être vraiment présent", "en": "to recover enough vitality to be truly present"},
+    "memory": {"fr": "un mouchoir jaune à la fenêtre pour que vous reconnaissiez la maison de loin", "en": "a yellow handkerchief at the window so you could recognise home from afar"},
+    "letter": {"fr": "Je voudrais retrouver mes forces. Tu reconnaissais notre fenêtre au mouchoir jaune. Je garde cette image. Je pars parce que je veux revenir avec davantage à partager qu'une fatigue.", "en": "I want my strength back. You recognised our window by its yellow handkerchief. I keep that image. I leave because I want to return with more to share than tiredness."},
+    "witness": [
+      {"fr": "« Une longue fatigue avait fini par occuper les journées. Retrouver de la vitalité paraissait rendre le reste possible. »", "en": "“A long weariness had come to occupy the days. Recovering vitality seemed to make everything else possible.”"},
+      {"fr": "« Un mouchoir jaune à la fenêtre vous permettait de reconnaître la maison. Le soleil en avait pâli le tissu. »", "en": "“A yellow handkerchief at the window let you recognise home. Sunlight had faded its cloth.”"},
+      {"fr": "« Le retour devait être parfait, sans fatigue ni incertitude. Les années passaient en attendant ce nouveau commencement. »", "en": "“The return had to be perfect, without weariness or doubt. Years passed while that new beginning was awaited.”"}
+    ]
+  },
+  "judgement": {
+    "object": {"fr": "le réveil sans aiguilles", "en": "the handless alarm clock"},
+    "desire": {"fr": "avoir une autre occasion d'être différent", "en": "to have another chance to be different"},
+    "memory": {"fr": "un réveil démonté avec lequel vous annonciez des heures inventées pour les histoires ou le repos", "en": "a dismantled clock with which you announced invented hours for stories or rest"},
+    "letter": {"fr": "Je voudrais ne plus me résumer à mes échecs. Avec le vieux réveil, tu inventais l'heure des histoires. Peut-être existe-t-il une autre manière d'aborder nos journées. Je vais essayer de la trouver.", "en": "I want to stop defining myself by my failures. With the old clock, you invented the hour for stories. Perhaps there is another way to approach our days. I will try to find it."},
+    "witness": [
+      {"fr": "« Les échecs étaient devenus une identité. Il fallait une autre occasion de se présenter au monde. »", "en": "“Failures had become an identity. They needed another chance to face the world.”"},
+      {"fr": "« Vous annonciez l'heure des histoires avec un réveil sans aiguilles. Ces heures inventées semblaient plus douces que les vraies. »", "en": "“You announced story time with a handless clock. Those invented hours seemed gentler than real ones.”"},
+      {"fr": "« Le retour devait révéler une personne nouvelle. À force de le préparer, une simple rencontre devenait impossible. »", "en": "“Returning was to reveal a new person. Preparing for that made a simple meeting impossible.”"}
+    ]
+  },
+  "world": {
+    "object": {"fr": "l'enveloppe ronde", "en": "the round envelope"},
+    "desire": {"fr": "abolir la distance entre les personnes aimées", "en": "to abolish the distance between loved ones"},
+    "memory": {"fr": "une enveloppe ronde dont vous disiez qu'elle pouvait aller partout puisqu'elle n'avait pas de coin", "en": "a round envelope you said could go anywhere because it had no corners"},
+    "letter": {"fr": "Je voudrais être là sans toujours manquer à quelqu'un ailleurs. Tu disais que notre enveloppe ronde pouvait aller partout. Je pars chercher ce que cette idée promet. Je ne veux pas choisir de t'oublier.", "en": "I want to be present without always being missed somewhere else. You said our round envelope could go anywhere. I seek what that idea promises. I do not choose to forget you."},
+    "witness": [
+      {"fr": "« La famille était dispersée. Chaque lieu aimé semblait condamner à manquer quelqu'un ailleurs. »", "en": "“The family was scattered. Each loved place seemed to mean missing someone elsewhere.”"},
+      {"fr": "« Vous disiez qu'une enveloppe sans coins pouvait aller partout. Elle avait été faite pour une lettre sans adresse. »", "en": "“You said an envelope without corners could go anywhere. It was made for a letter with no address.”"},
+      {"fr": "« Pouvoir arriver partout devait rendre toute absence sans importance. Mais arriver et être présent n'étaient pas la même chose. »", "en": "“Being able to arrive anywhere was to make every absence unimportant. But arriving and being present were not the same.”"}
+    ]
+  }
+}

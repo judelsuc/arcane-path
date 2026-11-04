@@ -1,0 +1,35 @@
+Tarot de Marseille by Jean Dodal, Lyon, ca. 1701
+
+Historical public-domain artwork. Faithful scans of two-dimensional works
+whose copyright has expired; individual Commons records declare public domain.
+These files are served locally and are not generated illustrations.
+
+Source collection:
+https://commons.wikimedia.org/wiki/Category:Tarot_de_Marseille_-_Jean_Dodal
+Public-domain explanation:
+https://commons.wikimedia.org/wiki/Commons:Public_domain
+
+File mapping (individual source pages use underscores for spaces):
+fool.jpg: File:Jean Dodal Tarot trump Fool.jpg
+magician.jpg: File:Jean Dodal Tarot trump 01.jpg
+priestess.jpg: File:Jean Dodal Tarot trump 02.jpg
+empress.jpg: File:Jean Dodal Tarot trump 03.jpg
+emperor.jpg: File:Jean Dodal Tarot trump 04.jpg
+hierophant.jpg: File:Jean Dodal Tarot trump 05.jpg
+lovers.jpg: File:Jean Dodal Tarot trump 06.jpg
+chariot.jpg: File:Jean Dodal Tarot trump 07.jpg
+justice.jpg: File:Jean Dodal Tarot trump 08.jpg
+hermit.jpg: File:Jean Dodal Tarot trump 09.jpg
+wheel.jpg: File:Jean Dodal Tarot trump 10.jpg
+strength.jpg: File:Jean Dodal Tarot trump 11.jpg
+hanged.jpg: File:Jean Dodal Tarot trump 12.jpg
+nameless.jpg: File:Jean Dodal Tarot trump 13.jpg
+temperance.jpg: File:Jean Dodal Tarot trump 14.jpg
+devil.jpg: File:Jean Dodal Tarot trump 15.jpg
+tower.jpg: File:Jean Dodal Tarot trump 16.jpg
+star.jpg: File:Jean Dodal Tarot trump 17.jpg
+moon.jpg: File:Jean Dodal Tarot trump 18.jpg
+sun.jpg: File:Jean Dodal Tarot trump 19.jpg
+judgement.jpg: File:Jean Dodal Tarot trump 20.jpg
+world.jpg: File:Jean Dodal Tarot trump 21.jpg
+back.jpg: File:Jean Dodal Tarot reverse.jpg

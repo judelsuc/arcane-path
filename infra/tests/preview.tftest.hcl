@@ -35,17 +35,28 @@ run "approved_private_preview" {
   }
 }
 
-run "reject_missing_firewall_source" {
+run "key_only_ssh_without_source_restriction" {
   command = plan
   variables {
     create_server   = true
     ssh_public_key  = "ssh-ed25519 TEST_PUBLIC_KEY"
     admin_ipv4_cidr = ""
   }
-  expect_failures = [openstack_compute_instance_v2.preview[0]]
+  assert {
+    condition     = strcontains(openstack_compute_instance_v2.preview[0].user_data, "tcp dport 22 ct state new accept")
+    error_message = "SSH must remain reachable after changing networks."
+  }
+  assert {
+    condition     = !strcontains(openstack_compute_instance_v2.preview[0].user_data, "ip saddr")
+    error_message = "SSH must not depend on the legacy administrator IP."
+  }
+  assert {
+    condition     = strcontains(openstack_compute_instance_v2.preview[0].user_data, "AuthenticationMethods publickey")
+    error_message = "SSH must require public-key authentication."
+  }
 }
 
-run "reject_unrestricted_ssh" {
+run "reject_invalid_legacy_source" {
   command = plan
   variables {
     create_server   = false

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monde vivant · Living world</title>
+<style>
+  :root { color-scheme: dark; font: 18px/1.5 system-ui; background: #17251f; color: #f3efdf; }
+  body { max-width: 850px; margin: 2rem auto; padding: 0 1rem; }
+  button, input, select { font: inherit; margin: .3rem; max-width: 100%; }
+  button, select { padding: .4rem .7rem; }
+  section, article { border: 1px solid #9baf98; border-radius: .6rem; padding: 1rem; margin: 1rem 0; }
+  a { color: #b5e6ce; overflow-wrap: anywhere; }
+  .badge { font-weight: bold; color: #ffe08b; }
+  time { font-variant-numeric: tabular-nums; }
+  small { display: block; }
+  img { display: block; width: min(100%, 600px); height: auto; margin-top: 1rem; }
+</style>
+<header>
+  <label id="language-label" for="language">Langue / Language</label>
+  <select id="language"><option value="fr">Français</option><option value="en">English</option></select>
+  <h1 id="heading"></h1><p id="intro"></p>
+</header>
+<main>
+  <section aria-labelledby="clock-heading">
+    <h2 id="clock-heading"></h2>
+    <time id="clock"></time><p id="position"></p>
+    <button id="advance"></button><button id="away"></button>
+  </section>
+  <section aria-labelledby="data-heading">
+    <h2 id="data-heading"></h2><p id="mode" class="badge"></p>
+    <p id="connected-note"></p>
+    <form id="connected-form">
+      <label><span id="latitude-label"></span> <input id="latitude" type="number" min="-85" max="85" step="any" value="45.19" required></label>
+      <label><span id="longitude-label"></span> <input id="longitude" type="number" min="-180" max="180" step="any" value="5.72" required></label>
+      <button id="connect" type="submit"></button>
+    </form>
+    <p id="coverage"></p>
+    <p><a id="transport-link" href="../transport/routes.html"></a></p>
+    <label id="import-label" for="import"></label><input id="import" type="file" accept=".json,application/json">
+    <div><button id="demo"></button><button id="empty"></button></div>
+    <p id="status" role="status"></p>
+  </section>
+  <h2 id="agenda-heading"></h2><div id="events" aria-live="polite"></div>
+  <p id="boundary"></p>
+</main>
+<script type="module" src="./preview.mjs"></script>
+</html>

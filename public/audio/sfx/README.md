@@ -24,4 +24,8 @@ Reproduce from the repository root:
 
 Existing WAVs are protected: use `--overwrite` explicitly to regenerate them,
 or `--output /path/to/new-directory` for an independent variation set.
-No sound-effect playback is wired into the game yet.
+The five `sfx-step-*` cues now play once on a successful walking move, chosen
+from the destination terrain. They share music mute/volume, stop when the tab
+is hidden, and do not play for Look mode, map loading or failed moves.
+Playback failures are logged and shown in Options. Other cues remain assets
+for later wiring; their presence does not imply they already play in-game.

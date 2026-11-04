@@ -18,6 +18,26 @@ class BuildMapTests(unittest.TestCase):
     def write_osm(self, content):
         self.source.write_text(content, encoding="utf-8")
 
+    def test_town_documentary_identity_preserves_exact_source_tags_and_coordinates(self):
+        self.write_osm("""<osm version="0.6">
+            <bounds minlat="44.54" minlon="2.30" maxlat="44.55" maxlon="2.31"/>
+            <node id="10" lat="44.545" lon="2.305">
+              <tag k="place" v="town"/><tag k="name" v="Firmi"/>
+              <tag k="wikidata" v="Q123"/><tag k="wikipedia" v="fr:Firmi"/>
+              <tag k="description:en" v="Town description"/>
+              <tag k="wikimedia_commons" v="Category:Firmi"/>
+            </node></osm>""")
+        result = rasterize(self.source, "Test", cell_size_meters=250)
+        settlement = next(cell["settlements"][0] for row in result["rows"] for cell in row
+                          if cell.get("settlements"))
+        self.assertEqual(settlement["osmId"], "node/10")
+        self.assertEqual(settlement["wikidata"], "Q123")
+        self.assertEqual(settlement["wikipedia"], "fr:Firmi")
+        self.assertAlmostEqual(settlement["latitude"], 44.545)
+        self.assertAlmostEqual(settlement["longitude"], 2.305)
+        self.assertEqual(settlement["tags"]["description:en"], "Town description")
+        self.assertEqual(settlement["tags"]["wikimedia_commons"], "Category:Firmi")
+
     def test_rasterizes_osm_features_and_respects_water_priority(self):
         self.write_osm(
             """<?xml version="1.0"?>
@@ -53,9 +73,9 @@ class BuildMapTests(unittest.TestCase):
         self.assertGreater(result["rows"][2][2]["waterCoveragePercent"], 0)
         self.assertLess(result["rows"][2][2]["waterCoveragePercent"], 50)
         self.assertEqual(result["rows"][2][0]["terrain"], "rail")
-        self.assertEqual(result["rows"][1][0]["terrain"], "plain")
-        self.assertNotIn("building", terrains)
-        self.assertNotIn("building", {entry["terrain"] for entry in result["legend"]})
+        self.assertEqual(result["rows"][1][0]["terrain"], "building")
+        self.assertIn("building", terrains)
+        self.assertIn("building", {entry["terrain"] for entry in result["legend"]})
         detail = rasterize(self.source, "Test", cell_size_meters=50)
         self.assertIn("water", {cell["terrain"] for row in detail["rows"] for cell in row})
         self.assertIn("building", {cell["terrain"] for row in detail["rows"] for cell in row})

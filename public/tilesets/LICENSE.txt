@@ -1,0 +1,10 @@
+Path Pixel 1 - original Arcane Path pixel artwork
+
+To the extent possible under law, the contributors to Arcane Path have waived
+all copyright and related or neighboring rights to the pixel-art tile designs
+in path-pixel.json under CC0 1.0 Universal.
+
+https://creativecommons.org/publicdomain/zero/1.0/
+
+This dedication applies only to the original tile artwork, not to the game
+code, OpenStreetMap data, third-party photographs or other bundled assets.

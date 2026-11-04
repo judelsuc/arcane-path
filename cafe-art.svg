@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="80" viewBox="0 0 400 80">
+  <view id="coffee" viewBox="0 0 80 80"/>
+  <view id="tea" viewBox="80 0 80 80"/>
+  <view id="water" viewBox="160 0 80 80"/>
+  <view id="bread" viewBox="240 0 80 80"/>
+  <view id="cake" viewBox="320 0 80 80"/>
+  <g stroke="#62442e" stroke-width="3" stroke-linejoin="round">
+    <g>
+      <ellipse cx="39" cy="66" rx="31" ry="7" fill="#ddd1b9"/>
+      <path d="M57 31h8c15 0 11 23-7 21" fill="none"/>
+      <path d="M16 29h43l-3 25q-2 14-18 14T20 54Z" fill="#fff2d6"/>
+      <ellipse cx="38" cy="30" rx="21" ry="7" fill="#71442d"/>
+      <path d="M29 21q-8-6 0-14M43 20q8-6 0-14" fill="none" stroke="#a48e75"/>
+    </g>
+    <g transform="translate(80)">
+      <ellipse cx="39" cy="66" rx="31" ry="7" fill="#d2ddc5"/>
+      <path d="M57 31h8c15 0 11 23-7 21" fill="none"/>
+      <path d="M16 29h43l-3 25q-2 14-18 14T20 54Z" fill="#e6efce"/>
+      <ellipse cx="38" cy="30" rx="21" ry="7" fill="#bb8c37"/>
+      <path d="M44 31v18l8 4v10h-13V53l5-4" fill="#fff7de"/>
+      <path d="M28 21q-8-6 0-14M40 20q8-6 0-14" fill="none" stroke="#a48e75"/>
+    </g>
+    <g transform="translate(160)">
+      <path d="m20 13 5 54q15 10 30 0l5-54Z" fill="#e3f4f6"/>
+      <path d="m23 34 4 31q13 7 26 0l4-31q-17 6-34 0Z" fill="#80cbdc"/>
+      <ellipse cx="40" cy="13" rx="20" ry="5" fill="#f4fcff"/>
+      <path d="m30 23 2 27" stroke="#fff"/>
+    </g>
+    <g transform="translate(240)">
+      <ellipse cx="40" cy="65" rx="33" ry="7" fill="#ddd1b9"/>
+      <path d="M11 52Q7 28 28 23q12-15 29-2 19 2 15 24L59 61l-36 4Z" fill="#d69a4b"/>
+      <path d="m27 30 8 14m7-20 8 14m7-13 7 10" fill="none" stroke="#f9d990" stroke-width="5"/>
+    </g>
+    <g transform="translate(320)">
+      <ellipse cx="40" cy="67" rx="33" ry="6" fill="#ddd1b9"/>
+      <path d="M14 39 54 19l14 22v22H14Z" fill="#e4b46e"/>
+      <path d="M14 47h54v8H14" fill="#b34f56"/>
+      <path d="M14 39 54 19l14 22-54 2Z" fill="#fff0dc"/>
+      <path d="M44 22q-5-10 6-12" fill="none" stroke="#5b7948"/>
+      <circle cx="43" cy="25" r="6" fill="#bf4551"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,29 @@
+[
+  {
+    "id": "StopPoint:OCETrain TER-87747006",
+    "name": "Grenoble",
+    "latitude": 45.191491,
+    "longitude": 5.714548,
+    "country": "FR",
+    "source": "SNCF Voyageurs / https://transport.data.gouv.fr/datasets/horaires-sncf",
+    "licenseUrl": "https://opendatacommons.org/licenses/odbl/1.0/"
+  },
+  {
+    "id": "StopPoint:OCETrain TER-87723197",
+    "name": "Lyon Part Dieu",
+    "latitude": 45.760596,
+    "longitude": 4.859409,
+    "country": "FR",
+    "source": "SNCF Voyageurs / https://transport.data.gouv.fr/datasets/horaires-sncf",
+    "licenseUrl": "https://opendatacommons.org/licenses/odbl/1.0/"
+  },
+  {
+    "id": "StopArea:OCE87741009",
+    "name": "Chambéry - Challes-les-Eaux",
+    "latitude": 45.571302,
+    "longitude": 5.919547,
+    "country": "FR",
+    "source": "SNCF Voyageurs / https://transport.data.gouv.fr/datasets/horaires-sncf",
+    "licenseUrl": "https://opendatacommons.org/licenses/odbl/1.0/"
+  }
+]

@@ -1,0 +1,20 @@
+[Unit]
+Description=Delete expired private player change requests and screenshot versions
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/arcane-path/change-request-retention.env
+
+[Service]
+Type=oneshot
+User=arcane
+Group=arcane
+WorkingDirectory=/opt/arcane-path
+EnvironmentFile=/etc/arcane-path/change-request-retention.env
+Environment=AWS_EC2_METADATA_DISABLED=true
+ExecStart=/opt/arcane-path/.venv-shared-storage/bin/python scripts/change_requests.py purge
+TimeoutStartSec=30min
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict

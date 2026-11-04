@@ -1,0 +1,923 @@
+{
+  "version": 1,
+  "id": "fictional:grenoble-lyon-example-v1:2026-10-19",
+  "kind": "fictional-service",
+  "gridId": "grenoble-lyon-example-v1",
+  "timeZone": "Europe/Paris",
+  "validFrom": "2026-10-19",
+  "validThrough": "2026-10-19",
+  "source": {
+    "name": "Arcane Path fictional coaches",
+    "reference": "abstract-coach-v1"
+  },
+  "geographyKind": "abstract-town-link",
+  "fictionalNotice": "Fictional game coach, not an actual operator or service. Real mapped places; abstract town-to-town connection, not a verified road itinerary. Distance, duration, timetable and EUR fare are game estimates. No railway link is implied.",
+  "fareNotice": "Fictional game coach, not an actual operator or service. Real mapped places; abstract town-to-town connection, not a verified road itinerary. Distance, duration, timetable and EUR fare are game estimates. No railway link is implied.",
+  "stops": [
+    {
+      "id": "StopArea:OCE87741009",
+      "name": "Chambéry - Challes-les-Eaux",
+      "latitude": 45.571302,
+      "longitude": 5.919547,
+      "country": "FR",
+      "source": "SNCF Voyageurs / https://transport.data.gouv.fr/datasets/horaires-sncf",
+      "licenseUrl": "https://opendatacommons.org/licenses/odbl/1.0/",
+      "col": 380,
+      "row": 146
+    },
+    {
+      "id": "StopPoint:OCETrain TER-87723197",
+      "name": "Lyon Part Dieu",
+      "latitude": 45.760596,
+      "longitude": 4.859409,
+      "country": "FR",
+      "source": "SNCF Voyageurs / https://transport.data.gouv.fr/datasets/horaires-sncf",
+      "licenseUrl": "https://opendatacommons.org/licenses/odbl/1.0/",
+      "col": 49,
+      "row": 62
+    },
+    {
+      "id": "StopPoint:OCETrain TER-87747006",
+      "name": "Grenoble",
+      "latitude": 45.191491,
+      "longitude": 5.714548,
+      "country": "FR",
+      "source": "SNCF Voyageurs / https://transport.data.gouv.fr/datasets/horaires-sncf",
+      "licenseUrl": "https://opendatacommons.org/licenses/odbl/1.0/",
+      "col": 316,
+      "row": 315
+    }
+  ],
+  "trips": [
+    {
+      "id": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87747006:2026-10-19:6",
+      "routeId": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87747006",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1150,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1150
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 60975,
+      "calls": [
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T06:25:00+02:00",
+          "departure": "2026-10-19T06:25:00+02:00",
+          "arrivalServiceSeconds": 23100,
+          "departureServiceSeconds": 23100,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T07:54:00+02:00",
+          "departure": "2026-10-19T07:54:00+02:00",
+          "arrivalServiceSeconds": 28440,
+          "departureServiceSeconds": 28440,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87747006:2026-10-19:10",
+      "routeId": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87747006",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1150,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1150
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 60975,
+      "calls": [
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T10:25:00+02:00",
+          "departure": "2026-10-19T10:25:00+02:00",
+          "arrivalServiceSeconds": 37500,
+          "departureServiceSeconds": 37500,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T11:54:00+02:00",
+          "departure": "2026-10-19T11:54:00+02:00",
+          "arrivalServiceSeconds": 42840,
+          "departureServiceSeconds": 42840,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87747006:2026-10-19:14",
+      "routeId": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87747006",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1150,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1150
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 60975,
+      "calls": [
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T14:25:00+02:00",
+          "departure": "2026-10-19T14:25:00+02:00",
+          "arrivalServiceSeconds": 51900,
+          "departureServiceSeconds": 51900,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T15:54:00+02:00",
+          "departure": "2026-10-19T15:54:00+02:00",
+          "arrivalServiceSeconds": 57240,
+          "departureServiceSeconds": 57240,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87747006:2026-10-19:18",
+      "routeId": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87747006",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1150,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1150
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 60975,
+      "calls": [
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T18:25:00+02:00",
+          "departure": "2026-10-19T18:25:00+02:00",
+          "arrivalServiceSeconds": 66300,
+          "departureServiceSeconds": 66300,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T19:54:00+02:00",
+          "departure": "2026-10-19T19:54:00+02:00",
+          "arrivalServiceSeconds": 71640,
+          "departureServiceSeconds": 71640,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87723197:2026-10-19:6",
+      "routeId": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87723197",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1950,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1950
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 114786,
+      "calls": [
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T06:15:00+02:00",
+          "departure": "2026-10-19T06:15:00+02:00",
+          "arrivalServiceSeconds": 22500,
+          "departureServiceSeconds": 22500,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T08:48:00+02:00",
+          "departure": "2026-10-19T08:48:00+02:00",
+          "arrivalServiceSeconds": 31680,
+          "departureServiceSeconds": 31680,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87723197:2026-10-19:10",
+      "routeId": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87723197",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1950,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1950
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 114786,
+      "calls": [
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T10:15:00+02:00",
+          "departure": "2026-10-19T10:15:00+02:00",
+          "arrivalServiceSeconds": 36900,
+          "departureServiceSeconds": 36900,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T12:48:00+02:00",
+          "departure": "2026-10-19T12:48:00+02:00",
+          "arrivalServiceSeconds": 46080,
+          "departureServiceSeconds": 46080,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87723197:2026-10-19:14",
+      "routeId": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87723197",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1950,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1950
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 114786,
+      "calls": [
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T14:15:00+02:00",
+          "departure": "2026-10-19T14:15:00+02:00",
+          "arrivalServiceSeconds": 51300,
+          "departureServiceSeconds": 51300,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T16:48:00+02:00",
+          "departure": "2026-10-19T16:48:00+02:00",
+          "arrivalServiceSeconds": 60480,
+          "departureServiceSeconds": 60480,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87723197:2026-10-19:18",
+      "routeId": "abstract-coach-v1:StopArea:OCE87741009:StopPoint:OCETrain TER-87723197",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1950,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1950
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 114786,
+      "calls": [
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T18:15:00+02:00",
+          "departure": "2026-10-19T18:15:00+02:00",
+          "arrivalServiceSeconds": 65700,
+          "departureServiceSeconds": 65700,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T20:48:00+02:00",
+          "departure": "2026-10-19T20:48:00+02:00",
+          "arrivalServiceSeconds": 74880,
+          "departureServiceSeconds": 74880,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopArea:OCE87741009:2026-10-19:6",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopArea:OCE87741009",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1950,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1950
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 114786,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T06:13:00+02:00",
+          "departure": "2026-10-19T06:13:00+02:00",
+          "arrivalServiceSeconds": 22380,
+          "departureServiceSeconds": 22380,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T08:46:00+02:00",
+          "departure": "2026-10-19T08:46:00+02:00",
+          "arrivalServiceSeconds": 31560,
+          "departureServiceSeconds": 31560,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopArea:OCE87741009:2026-10-19:10",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopArea:OCE87741009",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1950,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1950
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 114786,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T10:13:00+02:00",
+          "departure": "2026-10-19T10:13:00+02:00",
+          "arrivalServiceSeconds": 36780,
+          "departureServiceSeconds": 36780,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T12:46:00+02:00",
+          "departure": "2026-10-19T12:46:00+02:00",
+          "arrivalServiceSeconds": 45960,
+          "departureServiceSeconds": 45960,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopArea:OCE87741009:2026-10-19:14",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopArea:OCE87741009",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1950,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1950
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 114786,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T14:13:00+02:00",
+          "departure": "2026-10-19T14:13:00+02:00",
+          "arrivalServiceSeconds": 51180,
+          "departureServiceSeconds": 51180,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T16:46:00+02:00",
+          "departure": "2026-10-19T16:46:00+02:00",
+          "arrivalServiceSeconds": 60360,
+          "departureServiceSeconds": 60360,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopArea:OCE87741009:2026-10-19:18",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopArea:OCE87741009",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1950,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1950
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 114786,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T18:13:00+02:00",
+          "departure": "2026-10-19T18:13:00+02:00",
+          "arrivalServiceSeconds": 65580,
+          "departureServiceSeconds": 65580,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T20:46:00+02:00",
+          "departure": "2026-10-19T20:46:00+02:00",
+          "arrivalServiceSeconds": 74760,
+          "departureServiceSeconds": 74760,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopPoint:OCETrain TER-87747006:2026-10-19:6",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopPoint:OCETrain TER-87747006",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 2100,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 2100
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 124098,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T06:17:00+02:00",
+          "departure": "2026-10-19T06:17:00+02:00",
+          "arrivalServiceSeconds": 22620,
+          "departureServiceSeconds": 22620,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T09:01:00+02:00",
+          "departure": "2026-10-19T09:01:00+02:00",
+          "arrivalServiceSeconds": 32460,
+          "departureServiceSeconds": 32460,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopPoint:OCETrain TER-87747006:2026-10-19:10",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopPoint:OCETrain TER-87747006",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 2100,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 2100
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 124098,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T10:17:00+02:00",
+          "departure": "2026-10-19T10:17:00+02:00",
+          "arrivalServiceSeconds": 37020,
+          "departureServiceSeconds": 37020,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T13:01:00+02:00",
+          "departure": "2026-10-19T13:01:00+02:00",
+          "arrivalServiceSeconds": 46860,
+          "departureServiceSeconds": 46860,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopPoint:OCETrain TER-87747006:2026-10-19:14",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopPoint:OCETrain TER-87747006",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 2100,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 2100
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 124098,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T14:17:00+02:00",
+          "departure": "2026-10-19T14:17:00+02:00",
+          "arrivalServiceSeconds": 51420,
+          "departureServiceSeconds": 51420,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T17:01:00+02:00",
+          "departure": "2026-10-19T17:01:00+02:00",
+          "arrivalServiceSeconds": 61260,
+          "departureServiceSeconds": 61260,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopPoint:OCETrain TER-87747006:2026-10-19:18",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87723197:StopPoint:OCETrain TER-87747006",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 2100,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 2100
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 124098,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T18:17:00+02:00",
+          "departure": "2026-10-19T18:17:00+02:00",
+          "arrivalServiceSeconds": 65820,
+          "departureServiceSeconds": 65820,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T21:01:00+02:00",
+          "departure": "2026-10-19T21:01:00+02:00",
+          "arrivalServiceSeconds": 75660,
+          "departureServiceSeconds": 75660,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopArea:OCE87741009:2026-10-19:6",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopArea:OCE87741009",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1150,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1150
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 60975,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T06:12:00+02:00",
+          "departure": "2026-10-19T06:12:00+02:00",
+          "arrivalServiceSeconds": 22320,
+          "departureServiceSeconds": 22320,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T07:41:00+02:00",
+          "departure": "2026-10-19T07:41:00+02:00",
+          "arrivalServiceSeconds": 27660,
+          "departureServiceSeconds": 27660,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopArea:OCE87741009:2026-10-19:10",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopArea:OCE87741009",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1150,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1150
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 60975,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T10:12:00+02:00",
+          "departure": "2026-10-19T10:12:00+02:00",
+          "arrivalServiceSeconds": 36720,
+          "departureServiceSeconds": 36720,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T11:41:00+02:00",
+          "departure": "2026-10-19T11:41:00+02:00",
+          "arrivalServiceSeconds": 42060,
+          "departureServiceSeconds": 42060,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopArea:OCE87741009:2026-10-19:14",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopArea:OCE87741009",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1150,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1150
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 60975,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T14:12:00+02:00",
+          "departure": "2026-10-19T14:12:00+02:00",
+          "arrivalServiceSeconds": 51120,
+          "departureServiceSeconds": 51120,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T15:41:00+02:00",
+          "departure": "2026-10-19T15:41:00+02:00",
+          "arrivalServiceSeconds": 56460,
+          "departureServiceSeconds": 56460,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopArea:OCE87741009:2026-10-19:18",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopArea:OCE87741009",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 1150,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 1150
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 60975,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T18:12:00+02:00",
+          "departure": "2026-10-19T18:12:00+02:00",
+          "arrivalServiceSeconds": 65520,
+          "departureServiceSeconds": 65520,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopArea:OCE87741009",
+          "arrival": "2026-10-19T19:41:00+02:00",
+          "departure": "2026-10-19T19:41:00+02:00",
+          "arrivalServiceSeconds": 70860,
+          "departureServiceSeconds": 70860,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopPoint:OCETrain TER-87723197:2026-10-19:6",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopPoint:OCETrain TER-87723197",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 2100,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 2100
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 124098,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T06:24:00+02:00",
+          "departure": "2026-10-19T06:24:00+02:00",
+          "arrivalServiceSeconds": 23040,
+          "departureServiceSeconds": 23040,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T09:08:00+02:00",
+          "departure": "2026-10-19T09:08:00+02:00",
+          "arrivalServiceSeconds": 32880,
+          "departureServiceSeconds": 32880,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopPoint:OCETrain TER-87723197:2026-10-19:10",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopPoint:OCETrain TER-87723197",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 2100,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 2100
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 124098,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T10:24:00+02:00",
+          "departure": "2026-10-19T10:24:00+02:00",
+          "arrivalServiceSeconds": 37440,
+          "departureServiceSeconds": 37440,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T13:08:00+02:00",
+          "departure": "2026-10-19T13:08:00+02:00",
+          "arrivalServiceSeconds": 47280,
+          "departureServiceSeconds": 47280,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopPoint:OCETrain TER-87723197:2026-10-19:14",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopPoint:OCETrain TER-87723197",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 2100,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 2100
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 124098,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T14:24:00+02:00",
+          "departure": "2026-10-19T14:24:00+02:00",
+          "arrivalServiceSeconds": 51840,
+          "departureServiceSeconds": 51840,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T17:08:00+02:00",
+          "departure": "2026-10-19T17:08:00+02:00",
+          "arrivalServiceSeconds": 61680,
+          "departureServiceSeconds": 61680,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    },
+    {
+      "id": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopPoint:OCETrain TER-87723197:2026-10-19:18",
+      "routeId": "abstract-coach-v1:StopPoint:OCETrain TER-87747006:StopPoint:OCETrain TER-87723197",
+      "mode": "bus",
+      "serviceDate": "2026-10-19",
+      "currency": "EUR",
+      "fareCents": 2100,
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "abstract-coach-v1",
+        "currency": "EUR",
+        "cents": 2100
+      },
+      "timingQuality": "fictional-estimate",
+      "estimatedDistanceMeters": 124098,
+      "calls": [
+        {
+          "stopId": "StopPoint:OCETrain TER-87747006",
+          "arrival": "2026-10-19T18:24:00+02:00",
+          "departure": "2026-10-19T18:24:00+02:00",
+          "arrivalServiceSeconds": 66240,
+          "departureServiceSeconds": 66240,
+          "pickupType": 0,
+          "dropOffType": 0
+        },
+        {
+          "stopId": "StopPoint:OCETrain TER-87723197",
+          "arrival": "2026-10-19T21:08:00+02:00",
+          "departure": "2026-10-19T21:08:00+02:00",
+          "arrivalServiceSeconds": 76080,
+          "departureServiceSeconds": 76080,
+          "pickupType": 0,
+          "dropOffType": 0
+        }
+      ]
+    }
+  ],
+  "generation": {
+    "policy": "abstract-coach-v1",
+    "unconnectedTownIds": [],
+    "notice": "At most three nearest eligible destinations per origin; finite supplied towns/day, not guaranteed all-pairs coverage."
+  },
+  "revision": "9a10a5708c2f0f25084a91dfd1091a03a3abfe27667e2621c503be0b92bbc913"
+}

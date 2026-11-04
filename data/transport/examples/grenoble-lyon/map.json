@@ -1,0 +1,9 @@
+{
+  "cellSizeMeters": 250,
+  "projectionLatitude": 45.5,
+  "bounds": {
+    "minLongitude": 4.7,
+    "minLatitude": 45.0,
+    "maxLatitude": 45.9
+  }
+}

@@ -72,3 +72,21 @@ test("invalid dates and coordinates fail explicitly", () => {
     assert.throws(() => skyState(...args), /Invalid sky/);
   }
 });
+
+test("journey background distinguishes solar dawn, day, dusk and night at exact boundaries", () => {
+  const latitude = 44.54, longitude = 2.3;
+  const noon = skyState(new Date("2026-10-19T12:00:00Z"), latitude, longitude);
+  const at = timestamp => skyState(new Date(timestamp), latitude, longitude);
+  const twilight = 45 * 60_000;
+  for (const [time, expected] of [
+    [noon.sunrise - twilight - 1, "night"], [noon.sunrise - twilight + 1, "dawn"],
+    [noon.sunrise, "dawn"], [noon.sunrise + twilight - 1, "dawn"],
+    [noon.sunrise + twilight, "day"], [noon.sunset - twilight - 1, "day"],
+    [noon.sunset - twilight + 1, "dusk"], [noon.sunset, "dusk"],
+    [noon.sunset + twilight - 1, "dusk"], [noon.sunset + twilight, "night"],
+  ]) assert.equal(at(time).background, expected);
+  assert.equal(skyState(new Date("2026-06-21T12:00:00Z"), 89, 0).background, "day");
+  assert.equal(skyState(new Date("2026-12-21T12:00:00Z"), 89, 0).background, "night");
+  assert.notEqual(skyState(new Date(noon.sunrise), latitude, longitude).background,
+    skyState(new Date(noon.sunrise), latitude, -150).background);
+});

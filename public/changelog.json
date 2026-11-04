@@ -1,0 +1,135 @@
+{
+  "version": "0.21.11",
+  "entries": [
+    {
+      "version": "0.21.11",
+      "fr": "Le récit d'ouverture dispose de plus de place pour se terminer. Certaines formes neutres, comparaisons au nom et fins incomplètes peuvent être corrigées sans nouvel appel ; le récit d'origine reste disponible si la vérification échoue. Le carnet et son partage conservent les biographies plus longues.",
+      "en": "The opening story has more room to finish. Some neutral forms, comparisons to the name and incomplete endings can be repaired without another call; the authored story remains available if validation fails. The journal and notebook sharing preserve longer biographies."
+    },
+    {
+      "version": "0.21.10",
+      "fr": "Le récit d'ouverture est écrit par un modèle plus grand : davantage de spécialités et de traditions locales, et un nom célèbre transparaît davantage dans le caractère de l'enfant. L'écriture peut prendre environ une minute. Le modèle reçoit la consigne de vouvoyer le joueur, et un texte tronqué ou qui cite le nom du personnage est écarté au profit du récit d'origine.",
+      "en": "The opening story is written by a larger model: more local specialities and traditions, and a famous name shows more clearly in the child's character. Writing can take about a minute. A story that is cut off or prints the character's name is discarded in favour of the authored story."
+    },
+    {
+      "version": "0.21.9",
+      "fr": "Le récit d'ouverture s'ancre davantage dans la ville de départ : plats, marchés, fêtes et traditions locales colorent les souvenirs de famille. Un nom de personnage célèbre façonne nettement la personnalité de l'enfant et ses petites habitudes. Les illustrations des événements du voyage représentent désormais la scène décrite. Les fenêtres de discussion se ferment quand vous quittez la ville, et les flèches déplacent de nouveau le personnage lorsqu'une fenêtre ouverte n'a pas le focus.",
+      "en": "The opening story is more rooted in the starting town: local dishes, markets, festivals and traditions colour family memories. A famous character name now clearly shapes the child's personality and little habits. Journey event illustrations now depict the scene described. Conversation windows close when you leave the town, and arrow keys move the character again when an open window does not have focus."
+    },
+    {
+      "version": "0.21.8",
+      "fr": "La photo reçue en arrivant dans une ville peut toujours être montrée à quelqu'un, même lorsque le témoin n'a donné qu'une direction. Sous la photo, dans Quêtes, « Interroger quelqu'un sur cette photo… » ouvre directement les indices du panneau « Enquêter ici ». Les réponses restent non confirmées.",
+      "en": "The photo received on arriving in a town can always be shown to someone, even when the witness only gave a direction. Below the photo in Quests, “Ask someone about this photo…” opens the clues in the “Investigate here” panel directly. Answers remain unconfirmed."
+    },
+    {
+      "version": "0.21.7",
+      "fr": "Les personnages proposent de nouveau leurs missions de service. Les lieux réels d'une mission sont d'abord lus dans les données de carte OpenStreetMap déjà téléchargées pour le monde du jeu, puis auprès du service en ligne seulement si nécessaire. Quand ce service est saturé et que la carte locale est incomplète, la demande reste réessayable au lieu d'être refusée définitivement. Aucun lieu n'est inventé.",
+      "en": "Characters offer their service quests again. A quest's real places are first read from the OpenStreetMap data already downloaded for the game world, and from the online provider only when needed. When that provider is overloaded and local map data is incomplete, the request remains retryable instead of being permanently refused. No place is invented."
+    },
+    {
+      "version": "0.21.6",
+      "fr": "Demander son chemin ouvre directement les destinations connues dans le panneau d'enquête, y compris celles des missions et des carnets sans piste du parent. Une liste vide est expliquée sans lancer d'action payante. La synchronisation des objets magiques transmet désormais les grosses sauvegardes en entier, au lieu de bloquer les déplacements avec une erreur de création de partie. Une commande en attente peut être réessayée sans perdre la sauvegarde ni payer deux fois.",
+      "en": "Ask for directions opens known destinations directly in the investigation hub, including quest and journal destinations without a parent trail. An empty list is explained without starting a paid action. Magical-object synchronization now sends large saved journeys completely instead of blocking movement with a misleading journey-creation error. Pending commands can be retried without losing the save or paying twice."
+    },
+    {
+      "version": "0.21.5",
+      "fr": "L'action « Enquêter ici » rassemble depuis la carte les recherches du parent, les indices, les missions de service, les carnets et les objets magiques. Les actions sur les objets sont centralisées ; Quêtes conserve le relevé des découvertes. Les échanges avec les personnages restent naturels.",
+      "en": "The map's “Investigate here” action brings together parent-trail searches, clues, service quests, journals and magical objects. Artifact actions now have one home, while Quests keeps their discovery record. Conversations with characters remain natural."
+    },
+    {
+      "version": "0.21.4",
+      "fr": "La carte ne clignote plus à chaque pas : les indications au-dessus de la carte restent stables pendant les déplacements et les synchronisations en arrière-plan.",
+      "en": "The map no longer flickers with each step: guidance above the map stays stable during movement and background syncs."
+    },
+    {
+      "version": "0.21.3",
+      "fr": "Les personnages parlent spontanément des légendes et anciennes pistes approximatives d'objets magiques qu'ils connaissent, conservées dans Quêtes sans révéler la position privée d'un autre joueur. Les nouveaux noms utilisent quarante prénoms et quarante noms par langue, en évitant les doublons. Les nouveaux portraits alternent explicitement femmes et hommes ; les portraits existants sont conservés. Une indication sur le parent apparaît après une heure de jeu, puis toutes les trois heures sans progrès, bien visible au-dessus de la carte. Les scènes d'événement reçoivent une illustration générée en arrière-plan, conservée pour tous les joueurs : elle remplace l'ASCII dès son chargement. À l'arrivée, les gravures approuvées et visibles apparaissent dans la description de la case. Les dialogues abandonnent les avertissements hors récit et les explications de leurs mécanismes. La carte du carnet affiche une barre de progression pendant son chargement, distincte des erreurs réelles.",
+      "en": "Characters spontaneously share legends and approximate old leads about magical objects they know, retained in Quests without revealing another player's private position. New names draw from forty given names and forty surnames per locale, avoiding duplicates. New portraits explicitly alternate women and men; existing portraits are preserved. Parent guidance appears after one game hour, then every three hours without progress, prominently above the map. Event scenes receive a background-generated illustration cached for all players, replacing ASCII as soon as it loads. On arrival, approved, visible engravings appear in the cell description. Conversations no longer show out-of-world disclaimers or explain their underlying mechanisms. The journal journey map shows a loading progress bar, with real errors kept separate."
+    },
+    {
+      "version": "0.21.2",
+      "fr": "Les personnages proposent leur propre mission dès la rencontre : plus de rayon à choisir ni de quête à demander. Leur demande reste la même après un rechargement ; les pannes de recherche peuvent être réessayées sans inventer de destination. Après douze heures de voyage sans progrès sur la piste du parent, une indication revient même loin du chemin et sans dormir. Une ville déjà confirmée garde la priorité ; sinon une intuition donne une direction approximative depuis votre position actuelle pour retrouver la piste, sans révéler la ville cachée ni ses coordonnées. L'aide est conservée dans la sauvegarde, sans inventer de témoignage. Les rêves de secours restent inchangés.",
+      "en": "Characters offer their own quest when you meet: no radius to choose or quest to request. Their offer remains the same after reloading; discovery failures can be retried without inventing destinations. After twelve journey hours without progress on the parent's trail, guidance arrives even off the path and without sleeping. An already confirmed town takes priority; otherwise an intuition gives an approximate direction from your current position to reconnect with the trail, without revealing the hidden town or its coordinates. This help is saved without inventing testimony. Rescue dreams remain unchanged."
+    },
+    {
+      "version": "0.21.1",
+      "fr": "La diffusion audio prend en charge les fragments nécessaires à Safari pour lire les musiques WAV sans télécharger le fichier entier. Un échec de chargement invite à vérifier la connexion et à réessayer, plutôt qu’à télécharger des pistes déjà présentes.",
+      "en": "Audio delivery supports the byte ranges Safari needs to play WAV music without downloading the entire file. Loading failures now suggest checking the connection and retrying, rather than downloading tracks that are already present."
+    },
+    {
+      "version": "0.21.0",
+      "fr": "Dialogue rassemble les échanges avec les habitants ; Quêtes réunit la piste du parent, les services, les carnets perdus et les objets magiques. Quarante-quatre canevas de quêtes répétables conduisent vers des lieux réels, parfois en plusieurs étapes, avec une récompense liée à la distance. Les destinations connues figurent dans les demandes de chemin. La biographie, la lettre de départ et les témoignages suivent désormais l’histoire intime du parent et de la Cartomancienne. Les textes générés enrichissent les indices sans remplacer leurs indications utiles. La toilette se trouve dans le menu de la ville. Si personne n’est présent, vous pouvez choisir de faire une nouvelle rencontre. Les villes éloignées sans code pays sur la carte vérifient désormais leur pays pour permettre les rencontres ; une liste vide n’annonce plus de personnes disponibles. Cette version nécessite une nouvelle partie ; les anciennes sauvegardes ne sont pas converties.",
+      "en": "Dialogue brings together conversations with inhabitants; Quests groups the parent trail, errands, lost notebooks and magical objects. Forty-four repeatable quest templates lead to real places, sometimes in several stages, with distance-based rewards. Known destinations appear when asking for directions. The biography, opening letter and testimony now follow the intimate story of the parent and the Cartomancer. Generated prose enriches clues without replacing their useful guidance. Washing is in the town menu. If no one is around, you can choose to meet someone new. Distant towns without mapped country codes now verify their current country to enable encounters; empty lists no longer announce available people. This version requires a new journey; old saves are not converted."
+    },
+    {
+      "version": "0.20.12",
+      "fr": "La chronique est aussi écrite après une troisième mise en foyer, sans la confondre avec une mort. Elle peut évoquer les lieux conservés dans vos souvenirs et votre chien, si vous en avez un ; ces détails ne bloquent pas le récit. Le carnet n’accumule plus les textes d’événements en guise d’épopée. Des illustrations distinctes accompagnent rencontres, rêves et accueil, préparées la nuit et renouvelées chaque semaine sans remplacer les images déjà gardées dans le carnet.",
+      "en": "A chronicle is also written after a third placement in care, without treating it as death. It can recall recorded places and your dog, if you have one; these details never block the story. The notebook no longer substitutes a concatenated event list for an epic. Individual illustrations accompany encounters, dreams and hospitality, prepared overnight and renewed weekly without replacing pictures already kept in the notebook."
+    },
+    {
+      "version": "0.20.11",
+      "fr": "L’épopée de votre voyage occupe la quatrième de couverture du carnet et termine le PDF. La chronique peut être réécrite après confirmation, sans changer les faits du voyage ni perdre le texte précédent en cas d’échec. La carte XIII apparaît désormais à la mort même si une fenêtre d’action est restée ouverte.",
+      "en": "Your journey’s epic occupies the notebook’s back cover and closes the PDF. You can request a rewrite after confirmation without changing journey facts or losing the previous text on failure. At death, card XIII now appears even if an action window was left open."
+    },
+    {
+      "version": "0.20.10",
+      "fr": "Le récit de fin de voyage apparaît désormais dans votre carnet et son export PDF. Les voyages déjà terminés et les carnets archivés retrouvent un bilan à partir des faits sauvegardés, sans recommencer. Le récit reste lisible pendant l’écriture de la chronique.",
+      "en": "The closing journey account now appears in your notebook and its PDF export. Already-ended journeys and archived notebooks recover an account from saved facts, without restarting. The account remains readable while the chronicle is being written."
+    },
+    {
+      "version": "0.20.9",
+      "fr": "La barre sous la carte est allégée : les sujets accessibles dans « Parler aux habitants » n’y sont plus répétés, y compris J, 9, I et E. Les actions restent disponibles dans leurs fenêtres et leurs raccourcis clavier sont conservés.",
+      "en": "The toolbar below the map is simpler: topics available in Talk to inhabitants are no longer repeated there, including J, 9, I and E. Actions remain available in their windows and their keyboard shortcuts are preserved."
+    },
+    {
+      "version": "0.20.8",
+      "fr": "Une interface recentrée sur le jeu : carte, état du voyageur et petite barre de touches carrées. F ouvre les actions en toutes lettres ; G, les sujets de conversation avec les habitants ; 6, les transports. Les règles détaillées passent dans l’aide, les informations techniques et crédits dans des volets fermés. Les récits et messages sont raccourcis ; les attentes et échecs restent signalés. Sur mobile, la carte et ses commandes viennent en premier. Les coûts et sauvegardes sont inchangés.",
+      "en": "A game-first interface: map, traveller status and a compact square-key toolbar. F opens full-word actions; G, inhabitant conversation topics; 6, transport. Detailed rules move into Help, technical information and credits into closed details. Stories and messages are shorter; waiting and failures remain noticeable. On mobile, the map and its controls come first. Costs and saves are unchanged."
+    },
+    {
+      "version": "0.20.7",
+      "fr": "Le statut du chien apparaît juste sous la jauge Propreté, avant le bouton de toilette et son explication.",
+      "en": "The dog's status now appears immediately below the Cleanliness meter, before the washing button and its explanation."
+    },
+    {
+      "version": "0.20.6",
+      "fr": "La recherche d’hébergements inclut désormais les lieux de culte publics, comme les églises, avec une explication pour chaque hôtel ou lieu de culte : rejoignez sa case à pied, puis ouvrez le sommeil (H) pour dormir ou demander un abri. Choisir une destination ne déplace pas le personnage et ne garantit pas l’accueil. Les lieux déjà cartographiés ne disparaissent plus lorsqu’une réponse en ligne en contient moins. Le statut du chien se trouve directement sous le panneau d’état du joueur.",
+      "en": "Nearby hosting searches now include public places of worship such as churches. Each hotel or place of worship explains the next step: walk to its cell, then open sleep (H) to stay or ask for shelter. Selecting a destination does not move the character or guarantee a welcome. Already mapped places no longer disappear when an online response contains fewer results. The dog's status now sits directly below the player-status panel."
+    },
+    {
+      "version": "0.20.5",
+      "fr": "Les carnets des autres voyageurs ont désormais leur propre fenêtre, comme la piste du parent : une introduction raconte leur histoire, des icônes accompagnent les actions et chaque témoignage se déplie séparément. Une seule entrée récente est affichée par carnet, sans minutes techniques ni coordonnées. Aucun emplacement, indice de proximité ou carnet à recueillir n'est révélé avant qu'un habitant en parle. Les anciennes observations automatiques restent conservées mais ne dévoilent plus de piste.",
+      "en": "Other travellers’ notebooks now have their own window, like the parent trail: an introduction tells their story, icons accompany actions and each witness account unfolds separately. One recent entry is shown per notebook, without technical minute counters or coordinates. No whereabouts, proximity hint or pickup listing is revealed until a local person mentions that notebook. Older automatic observations remain stored but no longer reveal a lead."
+    },
+    {
+      "version": "0.20.4",
+      "fr": "Le récit du départ est écrit automatiquement avec le nom fictif du personnage. Un ancien récit sans cette inspiration est remplacé une seule fois, sans bouton à presser. Un indicateur bien visible demande de patienter avant de commencer ; en cas d'échec, le récit d'origine permet de continuer. Le récit est conservé dans le carnet, qu'il soit généré ou non. Les messages destinés au joueur n'affichent plus le prestataire technique ni de jargon de cache.",
+      "en": "The opening story is written automatically using the character's fictional name. An older story without that inspiration is replaced once, with no button to press. A prominent indicator asks you to wait before beginning; if writing fails, the original story lets you continue. The story is kept in the journal whether generated or not. Player messages no longer name the technical provider or use cache jargon."
+    },
+    {
+      "version": "0.20.3",
+      "fr": "La personnalisation par nom fictif est cochée par défaut pour les nouveaux personnages et reste désactivable. La biographie peut être régénérée après confirmation, sans changer le parent ni la progression ; le texte précédent reste conservé en cas d'échec. Les événements disposent de trois nouvelles formulations par type et jour de jeu, inspirées du contexte enregistré et du nom autorisé. Les références littéraires reconnues peuvent inspirer une voix originale, sans reprendre de passages ni de faits d'autres récits. Un indicateur animé signale les textes en cours de génération, avec respect de la préférence de mouvement réduit. Les biographies générées et les introductions d'événements effectivement affichées sont conservées dans le carnet, le PDF et le carnet partagé.",
+      "en": "Fictional-name personalization is checked by default for new characters and can be disabled. The biography can be regenerated after confirmation without changing the parent or progress; the previous text is preserved if generation fails. Events receive three fresh wordings per type and game day, inspired by bounded recorded context and the permitted name. Recognized literary references may inspire an original voice without copying passages or importing another story's plot. An animated indicator marks text generation in progress and respects reduced-motion preferences. Generated biographies and the event wording actually displayed are retained in the journal, PDF and shared notebook."
+    },
+    {
+      "version": "0.20.2",
+      "fr": "Après une perte des données serveur, un nouveau voyage peut être créé en conservant l'ancienne sauvegarde et son carnet dans ce navigateur. Les carnets archivés restent consultables depuis le carnet. Une ancienne publication devenue impossible ne bloque plus les nouveaux carnets ; les autres erreurs restent signalées.",
+      "en": "After server data loss, a new journey can be created while preserving the old save and notebook in this browser. Archived notebooks remain accessible from the notebook. An old publication whose server journey is missing no longer blocks new notebooks; other failures remain explicit."
+    },
+    {
+      "version": "0.20.1",
+      "fr": "La couverture du carnet reçoit sa propre illustration onirique, distincte de l'image d'accueil. Son sous-titre bilingue est généré à partir du départ, du tarot et de l'histoire enregistrée du parent, sans dévoiler les étapes futures. L'image et le sous-titre sont conservés pour ce voyage et repris dans le PDF.",
+      "en": "The notebook cover receives its own dream illustration, separate from the title-screen image. Its bilingual subtitle is generated from the saved departure setting, tarot and parent backstory, without revealing future stops. The image and subtitle are retained for the journey and included in the PDF."
+    },
+    {
+      "version": "0.20.0",
+      "fr": "Les Options affichent la version du jeu et l'historique des nouveautés. Dans les lieux habités cartographiés, les conversations peuvent révéler des rumeurs de carnets abandonnés ; un signalement apparaît à moins d'un kilomètre et le ramassage reste limité à 200 mètres. Le carnet réunit les indices des pistes du parent et des carnets abandonnés. L'icône du chien adopté, son nom et son état sont visibles dans l'interface.",
+      "en": "Options now show the game version and changelog. Conversations in mapped settlements can reveal rumours about abandoned journals; nearby indications appear within one kilometre and pickup remains limited to 200 metres. The notebook brings together clues from parent trails and abandoned journals. The adopted dog's icon, name and condition are visible in the interface."
+    },
+    {
+      "version": "0.19.0",
+      "fr": "Les histoires de clôture retracent la fin du voyage. Des rêves de secours aident à retrouver la piste du parent. Les événements et transports du monde vivant sont accessibles pendant le voyage.",
+      "en": "Closing stories recount the end of the journey. Rescue dreams help recover the parent's trail. Living-world events and transport are accessible during the journey."
+    }
+  ]
+}

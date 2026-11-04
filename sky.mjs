@@ -52,8 +52,12 @@ export function skyState(date, latitude, longitude) {
       : ((now - events.noon + DAY_MS / 2) % DAY_MS + DAY_MS) % DAY_MS / DAY_MS;
   }
   progress = Math.max(0, Math.min(1, progress));
+  const dawnDistance = events.sunrise === null ? Infinity : Math.abs(now - events.sunrise);
+  const duskDistance = events.sunset === null ? Infinity : Math.abs(now - events.sunset);
+  const background = Math.min(dawnDistance, duskDistance) < 45 * 60_000
+    ? dawnDistance <= duskDistance ? "dawn" : "dusk" : phase;
   const angle = Math.PI * (1 - progress);
-  return { ...events, phase, progress,
+  return { ...events, phase, background, progress,
     x: 100 + 76 * Math.cos(angle), y: 100 - 76 * Math.sin(angle) };
 }
 

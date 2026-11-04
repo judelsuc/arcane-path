@@ -36,7 +36,7 @@ class PlaceLookup:
         self.cache = {}
         self.next_request = 0
 
-    def request(self, endpoint, parameters):
+    def request(self, endpoint, parameters, *, timeout=20):
         query = urllib.parse.urlencode({**parameters, "format": "jsonv2",
                                         "addressdetails": 1, "accept-language": "en"})
         url = f"https://nominatim.openstreetmap.org/{endpoint}?{query}"
@@ -48,7 +48,7 @@ class PlaceLookup:
                 "User-Agent": "ArcanePath/0.3 (https://github.com/judelsuc/arcane-path)",
             })
             try:
-                with urllib.request.urlopen(request, timeout=20) as response:
+                with urllib.request.urlopen(request, timeout=timeout) as response:
                     data = json.load(response)
             finally:
                 self.next_request = time.monotonic() + 1.1
@@ -94,7 +94,7 @@ class PlaceLookup:
 
     def country(self, latitude, longitude):
         latitude, longitude = coordinates(latitude, longitude)
-        data = self.request("reverse", {"lat": latitude, "lon": longitude, "zoom": 3})
+        data = self.request("reverse", {"lat": latitude, "lon": longitude, "zoom": 3}, timeout=5)
         code = data.get("address", {}).get("country_code") if isinstance(data, dict) else None
         if not isinstance(code, str) or len(code) != 2 or not code.isascii() or not code.isalpha():
             raise ValueError("The country service returned no usable country code.")

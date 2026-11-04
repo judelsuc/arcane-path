@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from contextlib import contextmanager
 import hashlib
 import json
+import logging
 import math
 import random
 import re
@@ -14,9 +15,12 @@ import uuid
 
 from config import load_config
 from town_trail import TownTrailStore
+from parent_story import story_profile, build_parent_story
+from asset_storage import configured_storage
+from journey_storage import StoreConnection
 
 MAX_JOURNEYS = 1000
-GENERATOR_VERSION = "local-towns-genesis-v1"
+GENERATOR_VERSION = "parent-story-cartomancer-v3"
 
 
 class JourneyConflict(ValueError):
@@ -68,7 +72,7 @@ def initial_state(base, name, started_at, card, survival, economy, trail):
             "effortFactor": 1 + (pace - 3) * 0.08,
             "enduranceFactor": 1 + (endurance - 3) * 0.12,
         },
-        "reserveKcal": survival["reserve_kcal"], "awakeHours": 0, "ended": None,
+        "reserveKcal": survival["reserve_kcal"], "health": 100, "awakeHours": 0, "ended": None,
         "meals": 0, "sleeps": 0, "birthCard": card["id"], "dailyCard": card["id"],
         "tarotDay": day, "dailyTarotSeenDay": day,
         "walletCents": card["mealUnits"] * economy["pricing"]["referenceCents"],
@@ -77,10 +81,13 @@ def initial_state(base, name, started_at, card, survival, economy, trail):
 
 
 class JourneyStore:
-    def __init__(self, chunks, write):
+    def __init__(self, chunks, write, assets=None):
         self.chunks = chunks
         self.trails = TownTrailStore(chunks, write)
         self.path = chunks.cache / "journeys.sqlite3"
+        self.assets = assets
+        if assets is not None:
+            return
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
@@ -91,8 +98,16 @@ class JourneyStore:
                 payload TEXT NOT NULL, checksum TEXT NOT NULL)""")
             db.execute("PRAGMA user_version = 1")
 
+    @classmethod
+    def configured(cls, chunks, write):
+        return cls(chunks, write, assets=configured_storage())
+
     @contextmanager
     def connect(self):
+        if self.assets is not None:
+            with self.assets.catalogue.connection() as db:
+                yield StoreConnection(db, self.assets.catalogue)
+            return
         db = sqlite3.connect(self.path, timeout=5)
         try:
             with db:
@@ -128,7 +143,10 @@ class JourneyStore:
             raise JourneyRequest("Invalid journey request ID or region.")
         name = character_name(request["name"])
         with self.connect() as db:
-            db.execute("BEGIN IMMEDIATE")
+            if self.assets is not None:
+                db.begin("journeys")
+            else:
+                db.execute("BEGIN IMMEDIATE")
             row = db.execute("SELECT payload, checksum FROM journeys WHERE request_id = ?",
                              (request_id,)).fetchone()
             if row:
@@ -146,19 +164,31 @@ class JourneyStore:
             if (len(cards) != 22 or len({card["id"] for card in cards}) != 22
                     or type(reference) is not int or reference <= 0):
                 raise ValueError("Invalid server economy configuration.")
-            seed = secrets.token_hex(4)
-            try:
-                trail = self.trails.build(region, seed)
-            except ValueError as error:
-                raise JourneyGeneration(str(error)) from error
-            card = random.Random("birth:" + seed).choice(cards)
+            root_seed = secrets.token_hex(4)
             started_at = math.floor(datetime.now(timezone.utc).timestamp() * 1000)
+            for attempt in range(3):
+                seed = root_seed if attempt == 0 else hashlib.sha256(
+                    f"parent-retry:{root_seed}:{attempt}".encode()).hexdigest()[:8]
+                card = random.Random("birth:" + seed).choice(cards)
+                profile = story_profile(seed, card["id"])
+                try:
+                    trail = self.trails.build(region, seed)
+                    if profile["finalState"] == "mobile":
+                        trail = self.trails.extend(region, seed, trail)
+                    trail["story"] = build_parent_story(trail, seed, card["id"], started_at, profile)
+                    break
+                except ValueError as error:
+                    logging.warning("Parent story generation attempt %s/3 failed: %s", attempt + 1, error)
+                    if attempt == 2:
+                        raise JourneyGeneration(str(error)) from error
             journey_id = uuid.uuid4().hex
             content = {"generator": GENERATOR_VERSION, "survival": survival, "economy": economy,
+                       "parentIntimacy": hashlib.sha256(
+                           (self.chunks.root / "public/parent-intimacy.json").read_bytes()).hexdigest(),
                        "mapIdentity": json.loads(map_identity(base)),
                        "mapSource": self.chunks.fingerprints[region],
                        "code": {name: hashlib.sha256((self.chunks.root / "scripts" / name).read_bytes()).hexdigest()
-                                for name in ("journeys.py", "town_trail.py", "local_towns.py")},
+                                for name in ("journeys.py", "town_trail.py", "local_towns.py", "parent_story.py")},
                        "towns": hashlib.sha256(
                            (self.chunks.root / "data/europe-towns.json.gz").read_bytes()).hexdigest()}
             content_version = hashlib.sha256(json.dumps(content, sort_keys=True).encode()).hexdigest()

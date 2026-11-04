@@ -1,0 +1,10 @@
+[Unit]
+Description=Generate Arcane Path start-page art at 05:00 Paris time
+
+[Timer]
+OnCalendar=*-*-* 05:00:00 Europe/Paris
+Persistent=true
+Unit=arcane-start-art.service
+
+[Install]
+WantedBy=timers.target

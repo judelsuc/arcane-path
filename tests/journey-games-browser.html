@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Journey games host integration check</title><base href="/"><link rel="stylesheet" href="../styles.css"><link rel="stylesheet" href="../mini-games.css"></head>
+<body>
+<main><h1>Journey games host check (fictional test cells, no journey storage)</h1>
+<div id="choices"></div><output id="snapshot"></output><p id="error" role="alert"></p></main>
+<script type="module">
+  import { startSurvival } from "../survival.mjs";
+  import { startEconomy } from "../economy.mjs";
+  import { createTrail } from "../trail.mjs";
+  import { beginEquipment } from "../equipment.mjs";
+  import { createSave, validateSave } from "../journey-save.mjs";
+  import { JOURNEY_MINI_GAMES, beginJourneyMiniGame, settleJourneyMiniGame } from "../journey-mini-games.mjs";
+  import { setupJourneyMiniGames } from "../journey-mini-games-ui.mjs";
+  import { setupButtonShortcuts } from "../button-shortcuts.mjs";
+  import { setupGameHelp } from "../game-help.mjs";
+  import { translate } from "../i18n.mjs";
+  const [config, data, map] = await Promise.all(["config", "economy", "map"].map(async name =>
+    (await fetch(`../public/${name}.json`)).json()));
+  const survival = config.survival, info = { terrain: "place", latitude: 44.54, longitude: 2.3 };
+  const poi = tags => ({ osmId: "node/123", name: "Test fixture only", tags,
+    category: tags.amenity ? "amenity" : tags.shop ? "shop" : "tourism" });
+  const town = { terrain: "place", countryCodes: ["FR"], settlements: [poi({})] };
+  const cells = {
+    harvest: { terrain: "vineyard", countryCodes: ["FR"] },
+    workshop: { ...town, pois: [poi({ shop: "bicycle" })] },
+    sketch: { ...town, pois: [poi({ tourism: "viewpoint" })] },
+    market: { ...town, pois: [poi({ shop: "supermarket" })] },
+    bookshop: { ...town, pois: [poi({ shop: "books" })] },
+    deliveries: { ...town, pois: [poi({ amenity: "post_office" })] },
+    petanque: { ...town, pois: [poi({ leisure: "pitch", sport: "boules" })] },
+    lanterns: { ...town, pois: [poi({ amenity: "community_centre" })] },
+    "lost-found": town,
+  };
+  let state, game;
+  const fresh = () => beginEquipment({ ...startEconomy(startSurvival(14, 10,
+    Date.UTC(2026, 9, 18, 12), "balanced", survival), data, () => 0),
+    elapsedMinutes: .125, walletCents: 20000, trail: createTrail(map, 14, 10, () => 0) });
+  const t = (key, args) => translate(document.documentElement.lang, key, args);
+  const ui = setupJourneyMiniGames(t, {
+    context: () => ({ state, cell: cells[game], info, survival, data, blocked: Boolean(state?.miniGamePending) }),
+    act(action) {
+      state = action.type === "begin" ? beginJourneyMiniGame(state, action.game, action.context)
+        : settleJourneyMiniGame(state, action.game, action.result);
+      const saved = validateSave(JSON.parse(JSON.stringify(createSave({
+        region: "firmi", map, state, survival, economy: data }, 1))));
+      document.querySelector("#snapshot").textContent = JSON.stringify({
+        elapsedMinutes: state.elapsedMinutes, walletCents: state.walletCents,
+        pending: state.miniGamePending, savedPending: saved.state.miniGamePending,
+        last: state.lastJourneyMiniGame, gearClock: state.equipment.elapsedMinutes });
+      return state;
+    },
+  });
+  for (const id of JOURNEY_MINI_GAMES) {
+    const button = document.createElement("button");
+    button.id = `game-${id}`;
+    button.textContent = id;
+    button.onclick = () => {
+      try { game = id; state = fresh(); ui.open(id); }
+      catch (error) { document.querySelector("#error").textContent = error.message; throw error; }
+    };
+    document.querySelector("#choices").append(button);
+  }
+  setupButtonShortcuts(t);
+  setupGameHelp(t);
+</script>
+</body></html>

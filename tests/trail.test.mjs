@@ -5,25 +5,28 @@ import { createTrail, trailTarget, atTrailTarget, witnessFacts, interviewTrail,
   validateTownTrail, loadTownTrail } from "../trail.mjs";
 import { startEconomy } from "../economy.mjs";
 import { startSurvival } from "../survival.mjs";
-import { trailDirections, playerHint } from "../trail-ui.mjs";
+import { trailReminder, playerHint, parentClueText } from "../trail-ui.mjs";
+import { parentSighting } from "../parent-story.mjs";
 import { translate } from "../i18n.mjs";
 
-test("trail directions name the correct compass direction without negative or zero offsets", () => {
-  const state = { col: 14, row: 10 };
+test("trail reminders retain only the known lead, never live directions, distances or future clues", () => {
   for (const locale of ["fr", "en"]) {
     const t = (key, params) => translate(locale, key, params);
-    for (const east of [-2, 0, 2]) for (const south of [-1, 0, 1]) {
-      const text = trailDirections(state, { col: 14 + east, row: 10 + south }, t);
-      const expected = [];
-      if (east) expected.push(t(east > 0 ? "trailEast" : "trailWest", { count: Math.abs(east) }));
-      if (south) expected.push(t(south > 0 ? "trailSouth" : "trailNorth", { count: Math.abs(south) }));
-      assert.equal(text, expected.length ? expected.join(t("trailDirectionJoin")) : t("trailAlreadyHere"));
-      assert.doesNotMatch(text, /-\d|\b0\b/);
-    }
+    const trail = townTrailFixture(), state = { col: 14, row: 10, trail };
+    const before = structuredClone(state);
+    assert.equal(trailReminder(state, t), t("trailKnownDestination", { place: "Town 1" }));
+    assert.equal(trailReminder({ ...state, col: -166 }, t), trailReminder(state, t));
+    assert.doesNotMatch(trailReminder(state, t).replace("Town 1", ""), /\d|km|→|↑|https:/);
+    assert.equal(trailReminder({ ...state, trail: { ...trail, discovery: {
+      pending: true, venue: "Known library", nextName: "SECRET CITY",
+    } } }, t), t("clueAskDirections", { venue: "Known library" }));
+    assert.equal(trailReminder({ ...state, trail: { ...trail, completed: true, index: 10 } }, t),
+      t("trailReunion", { parent: trail.parentName }));
+    const legacy = start();
+    assert.equal(trailReminder(legacy, t),
+      t("trailKnownDestination", { place: legacy.trail.stages[0].name }));
+    assert.deepEqual(state, before);
   }
-  assert.equal(trailDirections(state, { col: 15, row: 9 },
-    (key, params) => translate("fr", key, params)),
-  "1 case(s) vers l'est (→) et 1 case(s) vers le nord (↑)");
 });
 
 const survival = JSON.parse(readFileSync(new URL("../public/config.json", import.meta.url))).survival;
@@ -37,6 +40,30 @@ const start = () => {
     "balanced", survival), economy, () => 0);
   return { ...state, trail: createTrail(maps[0], state.col, state.row, () => 0) };
 };
+
+test("discussion presentation preserves legacy clues and uses dated memories only with story facts", () => {
+  const state = { ...start(), trail: townTrailFixture() };
+  const discovery = { kind: "discuss", step: 0, pending: false, nextName: "Next town" };
+  const before = structuredClone(state);
+  for (const locale of ["fr", "en"]) {
+    const t = (key, args) => translate(locale, key, args);
+    const legacy = parentClueText(state, discovery, t);
+    assert.equal(parentSighting(state, 0).precision, null);
+    assert.ok(legacy.includes("Next town"));
+    const dated = { ...state, trail: { ...state.trail, story: {
+      motive: "family", visits: [{ departure: state.startedAt - 30 * 86_400_000 }],
+    } } };
+    const text = parentClueText(dated, discovery, t);
+    assert.ok(text.includes(t("parentWitness.old")));
+    assert.ok(text.includes(t("parentStory.motive.family")));
+    assert.ok(text.includes("Next town"));
+    assert.equal(parentClueText(structuredClone(dated), discovery, t), text);
+    const pending = parentClueText(dated, { ...discovery, pending: true, venue: "Known venue" }, t);
+    assert.ok(pending.includes("Known venue"));
+    assert.ok(!pending.includes("Next town"));
+  }
+  assert.deepEqual(state, before);
+});
 
 export function townTrailFixture() {
   const latitude = 44.54, longitude = 2.3;
@@ -72,7 +99,9 @@ test("free hints guide known objectives without revealing future towns or changi
     const before = structuredClone(state);
     const travel = playerHint(state, info, t);
     assert.ok(travel.includes("Town 1"));
-    assert.ok(travel.includes("45.0"));
+    assert.ok(travel.includes(t("hintCompass.west")));
+    assert.ok(travel.includes(t("hintDistance.distant")));
+    assert.doesNotMatch(travel.replace("Town 1", ""), /\d|km|case\(s\)|cell\(s\)/);
     assert.ok(!travel.includes("Town 2"));
     const arrived = { ...state, col: trail.stages[0].col, row: trail.stages[0].row };
     assert.equal(playerHint(arrived, info, t), t("hintInvestigate", { place: "Town 1" }));
@@ -104,6 +133,33 @@ test("offline GeoNames stages retain real source identity without inventing OSM 
   const duplicate = structuredClone(route);
   duplicate.stages[1].geonameId = duplicate.stages[0].geonameId;
   assert.throws(() => validateTownTrail(duplicate), /Invalid town/);
+});
+
+test("asking directions uses eight vague compass sectors and distance bands without cell counts", () => {
+  for (const locale of ["fr", "en"]) {
+    const t = (key, args) => translate(locale, key, args);
+    for (const [col, row, direction] of [
+      [0, -20, "north"], [20, -20, "northeast"], [20, 0, "east"],
+      [20, 20, "southeast"], [0, 20, "south"], [-20, 20, "southwest"],
+      [-20, 0, "west"], [-20, -20, "northwest"], [1, -20, "north"],
+    ]) {
+      const state = { col: 0, row: 0, ended: null, trail: {
+        version: 1, index: 0, completed: false, stages: [{ col, row, name: "Bapaume" }],
+      } };
+      const text = playerHint(state, info, t);
+      assert.ok(text.includes(t(`hintCompass.${direction}`)), `${col},${row}: ${text}`);
+      assert.ok(text.includes("Bapaume"));
+      assert.doesNotMatch(text, /\d|km|→|←|↑|↓/);
+    }
+    for (const [cells, band] of [[7, "near"], [8, "short"], [39, "short"],
+      [40, "far"], [119, "far"], [120, "distant"]]) {
+      const state = { col: 0, row: 0, ended: null, trail: {
+        version: 1, index: 0, completed: false,
+        stages: [{ col: cells, row: 0, name: "Bapaume" }],
+      } };
+      assert.ok(playerHint(state, info, t).includes(t(`hintDistance.${band}`)));
+    }
+  }
 });
 
 test("town route loading validates new routes, propagates failures and requests one origin", async () => {
@@ -213,9 +269,9 @@ test("revisiting a witness cannot advance twice and survival failure takes prior
   const next = interviewTrail({ ...state, col: first.col, row: first.row }, info, survival, economy);
   assert.throws(() => interviewTrail(next, info, survival, economy), /No new/);
   const last = state.trail.stages[2];
-  const hungry = interviewTrail({ ...state, col: last.col, row: last.row, reserveKcal: 1,
+  const hungry = interviewTrail({ ...state, col: last.col, row: last.row, reserveKcal: 1, health: 0.01,
     trail: { ...state.trail, index: 2 } }, info, survival, economy);
-  assert.equal(hungry.ended, "hunger");
+  assert.equal(hungry.ended, "health");
   assert.equal(hungry.trail.completed, false);
   assert.equal(hungry.trail.index, 2);
 });

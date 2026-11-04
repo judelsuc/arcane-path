@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="grape" viewBox="0 0 100 100">
+    <path d="M50 22q-4-14 5-20" fill="none" stroke="#6b4824" stroke-width="6" stroke-linecap="round"/>
+    <path d="M52 19Q68-4 87 10 79 35 52 25Z" fill="#81b44e" stroke="#375b2d" stroke-width="3"/>
+    <g fill="currentColor" stroke="#30213c" stroke-width="2.5">
+      <circle cx="34" cy="33" r="15"/><circle cx="62" cy="33" r="15"/>
+      <circle cx="23" cy="52" r="14"/><circle cx="49" cy="52" r="15"/><circle cx="75" cy="52" r="14"/>
+      <circle cx="36" cy="72" r="14"/><circle cx="62" cy="72" r="14"/><circle cx="49" cy="87" r="11"/>
+    </g>
+    <g fill="#fff" opacity=".43">
+      <ellipse cx="29" cy="28" rx="5" ry="3"/><ellipse cx="57" cy="28" rx="5" ry="3"/>
+      <ellipse cx="18" cy="47" rx="4" ry="3"/><ellipse cx="44" cy="47" rx="5" ry="3"/>
+      <ellipse cx="70" cy="47" rx="4" ry="3"/><ellipse cx="31" cy="67" rx="4" ry="3"/>
+      <ellipse cx="57" cy="67" rx="4" ry="3"/><ellipse cx="46" cy="83" rx="3" ry="2"/>
+    </g>
+  </symbol>
+  <symbol id="rotten-grape" viewBox="0 0 100 100">
+    <path d="M50 22q-4-14 5-20" fill="none" stroke="#6b4824" stroke-width="6" stroke-linecap="round"/>
+    <path d="M52 19Q68-4 87 10 79 35 52 25Z" fill="#817541" stroke="#4d4929" stroke-width="3"/>
+    <g fill="#716348" stroke="#302b20" stroke-width="2.5">
+      <circle cx="34" cy="33" r="15"/><circle cx="62" cy="33" r="15"/>
+      <circle cx="23" cy="52" r="14"/><circle cx="49" cy="52" r="15"/><circle cx="75" cy="52" r="14"/>
+      <circle cx="36" cy="72" r="14"/><circle cx="62" cy="72" r="14"/><circle cx="49" cy="87" r="11"/>
+    </g>
+    <g fill="#282719" stroke="#b1ae83" stroke-width="2">
+      <circle cx="33" cy="34" r="9"/><circle cx="66" cy="49" r="11"/>
+      <circle cx="38" cy="71" r="8"/><circle cx="52" cy="85" r="6"/>
+    </g>
+    <path d="m35 43 30 30m0-30L35 73" stroke="#f4e5c2" stroke-width="8"/>
+  </symbol>
+  <symbol id="basket" viewBox="0 0 100 100">
+    <path d="M22 44C22-1 78-1 78 44" fill="none" stroke="#6e4527" stroke-width="8"/>
+    <path d="M22 44C22-1 78-1 78 44" fill="none" stroke="#c29357" stroke-width="3"/>
+    <ellipse cx="50" cy="44" rx="44" ry="15" fill="#3b281a" stroke="#d0a46c" stroke-width="4"/>
+    <path d="M9 44h82l-9 43Q50 99 18 87Z" fill="#ba864c" stroke="#654524" stroke-width="3"/>
+    <g fill="none" stroke="#815a32" stroke-width="3">
+      <path d="m23 48 6 42m12-40 2 43m16-43-2 43m20-45-6 42M13 61h74M16 74h68M19 86h63"/>
+    </g>
+    <path d="M8 43Q50 56 92 43l-3 14Q50 69 11 57Z" fill="currentColor" stroke="#4a3827" stroke-width="2"/>
+    <path d="M15 46q34 10 70 0" fill="none" stroke="#fff" opacity=".45" stroke-width="3"/>
+  </symbol>
+</svg>

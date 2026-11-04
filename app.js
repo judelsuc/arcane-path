@@ -6,6 +6,13 @@ import { setupTravel } from "./travel-ui.mjs";
 import { setupAudio } from "./audio-ui.mjs";
 import { setupButtonShortcuts } from "./button-shortcuts.mjs";
 import { setupStartingPoint, validateStartingMap } from "./starting-point-ui.mjs";
+import { setupCopyCoordinates } from "./copy-coordinates.mjs";
+import { setupShortcutHelp } from "./shortcut-help.mjs";
+import { setupPhotoJournal } from "./photo-journal.mjs";
+import { setupGameHelp } from "./game-help.mjs";
+import { setupStartArt } from "./start-art.mjs";
+import { setupGameRelease } from "./game-release-ui.mjs";
+import { setupMapAppearance, decorateMapTile, mappedSites, visualKind, SITE_GLYPHS } from "./map-appearance.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
 const viewport = document.querySelector("#map-viewport");
@@ -25,21 +32,43 @@ let loadFailed = false;
 let activeRequest;
 let inspectedTile;
 let entered = false;
-const cellContent = setupCellContent(t);
+let appearance;
+const photoJournal = setupPhotoJournal(t);
+const cellContent = setupCellContent(t, { pinPhoto: photoJournal.pinButton });
 const audio = setupAudio(t);
+const coordinates = setupCopyCoordinates(t, () => mapData && inspectedTile
+  ? cellInfo(mapData, Number(inspectedTile.dataset.row), Number(inspectedTile.dataset.col)) : null);
+const controls = setupShortcutHelp(t);
+const windowHelp = setupGameHelp(t);
+const startArt = setupStartArt(t);
+void startArt.load();
 const travel = setupTravel({
   t, renderMap,
+  pinPhoto: photoJournal.pinButton,
+  pinTarot: photoJournal.pinTarot,
+  pinBiography: photoJournal.pinBiography,
+  useNotebook: photoJournal.useJourney,
+  snapshotNotebook: photoJournal.snapshot,
+  showNotebook: photoJournal.showAbandoned,
+  updateNotebookStats: photoJournal.updateStats,
+  encounterIllustrations: photoJournal.illustrations,
+  musicAudio: audio.busking,
+  cafeAudio: audio.cafe,
+  theftAudio: audio.theft,
+  miniGameAudio: audio.journeyGames,
   onAudioContext: context => audio.update(context),
+  onStep: terrain => audio.step(terrain),
   onActiveChange(active) {
     document.querySelector("#journey-setup").hidden = !entered || active;
     document.querySelector("#game-content").hidden = !entered || !active;
   },
-  selectPlayer(data, tile) {
+  selectPlayer(data, tile, inscriptions) {
     inspectTile(tile);
     if (data.rows[Number(tile.dataset.row)][Number(tile.dataset.col)].unavailable) {
       cellContent.reset();
     } else {
       cellContent.select(data, tile);
+      cellContent.setInscriptions(inscriptions);
     }
   },
   resetContent: () => cellContent.reset(),
@@ -70,6 +99,7 @@ document.querySelector("#enter-world").addEventListener("click", () => {
   document.body.classList.remove("is-title");
   document.querySelector("#region").focus({ preventScroll: true });
   window.scrollTo({ top: 0, behavior: "instant" });
+  controls.welcome();
 });
 document.querySelector("#back-title").addEventListener("click", () => {
   startingPoint.reset();
@@ -78,6 +108,7 @@ document.querySelector("#back-title").addEventListener("click", () => {
   document.querySelector("#journey-setup").hidden = true;
   document.querySelector("#title-screen").hidden = false;
   document.body.classList.add("is-title");
+  void startArt.load();
   document.querySelector("#enter-world").focus({ preventScroll: true });
   window.scrollTo({ top: 0, behavior: "instant" });
 });
@@ -111,8 +142,14 @@ function tileDetails(tile, includePois = true) {
     latitude: info.latitude.toFixed(5),
     longitude: info.longitude.toFixed(5),
   });
+  const sites = mappedSites(mapData.rows[Number(tile.dataset.row)][Number(tile.dataset.col)]);
+  if (sites.length) details += `\n${t("cellSites", { sites: sites.map(site =>
+    site.name ? `${site.name} (${t(`site.${site.kind}`)})` : t(`site.${site.kind}`)).join("; ") })}`;
   if (info.waterCoveragePercent > 0) {
     details += `\n${t("cellWaterCoverage", { percent: info.waterCoveragePercent.toFixed(1) })}`;
+  }
+  if (info.buildingCoveragePercent > 0) {
+    details += `\n${t("cellBuildingCoverage", { percent: info.buildingCoveragePercent.toFixed(1) })}`;
   }
   if (info.waterways.length) {
     details += `\n${t("cellWaterways")}`;
@@ -136,6 +173,7 @@ function inspectTile(tile) {
   tile.classList.add("tile--inspected");
   document.querySelector("#cell-info").textContent = tileDetails(tile, false);
   updateCellHeading(tile);
+  coordinates.update();
 }
 
 function updateCellHeading(tile) {
@@ -168,6 +206,16 @@ function t(key, parameters) {
   return translate(locale, key, parameters);
 }
 
+const gameRelease = setupGameRelease({
+  versionElement: document.querySelector("#release-version"),
+  deploymentElement: document.querySelector("#release-deployment"),
+  entriesElement: document.querySelector("#release-entries"),
+  statusElement: document.querySelector("#release-status"),
+  t,
+  language: locale,
+});
+appearance = setupMapAppearance(t, { onChange: () => { if (mapData) localize(); } });
+
 function localize() {
   document.documentElement.lang = locale;
   document.title = t("pageTitle");
@@ -178,9 +226,16 @@ function localize() {
   languageSelect.value = locale;
   updateCountry([]);
   cellContent.localize(locale);
+  photoJournal.localize();
   audio.localize();
   travel.localize();
   startingPoint.localize();
+  coordinates.update();
+  controls.localize();
+  windowHelp.localize();
+  startArt.localize();
+  gameRelease.localize(locale);
+  appearance?.localize();
   document.querySelector("#starting-map-status").textContent = mapData
     ? t("setupSelected", { name: mapData.origin ? mapData.name.split(",")[0] : mapData.name })
     : t(loadFailed ? "loadError" : "loading");
@@ -208,7 +263,7 @@ function localize() {
   document.querySelector("#map-source").textContent =
     t(mapData.illustrative ? "demoSource" : "source", { source: mapData.source });
   const attribution = document.querySelector("#map-attribution");
-  attribution.hidden = !mapData.copyright;
+  attribution.hidden = !mapData.copyright && !mapData.oceanCoverage;
   attribution.replaceChildren();
   if (mapData.copyright) {
     const credit = document.createElement("a");
@@ -219,18 +274,39 @@ function localize() {
     license.textContent = "ODbL 1.0";
     attribution.append(credit, " · ", license);
   }
+  if (mapData.oceanCoverage) {
+    const credit = document.createElement("a");
+    credit.href = "https://www.soest.hawaii.edu/pwessel/gshhg/";
+    credit.textContent = "GSHHG 2.3.7";
+    const license = document.createElement("a");
+    license.href = "https://www.gnu.org/licenses/lgpl-3.0.html";
+    license.textContent = "LGPL 3+";
+    attribution.append(mapData.copyright ? " · " : "", credit, " · ", license);
+  }
 
   const legend = document.createDocumentFragment();
   mapData.legend.forEach((entry) => {
     const item = document.createElement("li");
     const glyph = document.createElement("span");
     glyph.className = `legend-glyph tile--${entry.terrain}`;
+    glyph.dataset.mapKind = entry.terrain;
     glyph.textContent = entry.glyph;
     const label = document.createElement("span");
     label.textContent = t(`terrain.${entry.terrain}`);
     item.append(glyph, label);
     legend.append(item);
   });
+  const kinds = new Set(mapData.rows.flatMap(row => row.flatMap(cell => mappedSites(cell).map(site => site.kind))));
+  for (const kind of Object.keys(SITE_GLYPHS).filter(kind => kinds.has(kind))) {
+    const item = document.createElement("li"), glyph = document.createElement("span");
+    glyph.className = "legend-glyph";
+    glyph.dataset.mapKind = kind;
+    glyph.textContent = SITE_GLYPHS[kind];
+    const label = document.createElement("span");
+    label.textContent = t(`site.${kind}`);
+    item.append(glyph, label);
+    legend.append(item);
+  }
   document.querySelector("#legend").replaceChildren(legend);
   mapElement.querySelectorAll(".tile").forEach((tile) => {
     const details = tileDetails(tile);
@@ -261,7 +337,8 @@ function renderMap(data) {
     row.forEach((cell, colIndex) => {
       const tile = document.createElement("span");
       tile.className = `tile tile--${cell.terrain}`;
-      tile.textContent = cell.glyph;
+      tile.textContent = SITE_GLYPHS[visualKind(cell)] ?? cell.glyph;
+      decorateMapTile(tile, cell);
       if (cell.downloading) {
         tile.classList.add("tile--downloading");
         tile.title = t("travelChunkLoading");
@@ -281,6 +358,7 @@ function renderMap(data) {
   mapElement.replaceChildren(map);
   mapElement.style.setProperty("--map-columns", data.width);
   inspectedTile = undefined;
+  coordinates.update();
   viewport.replaceChildren(mapElement);
   mapData = data;
   const referenceFrame = document.querySelector("#osm-frame");

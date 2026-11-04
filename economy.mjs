@@ -1,11 +1,19 @@
 import { journeyDate } from "./travel.mjs";
 import { skyState } from "./sky.mjs";
-import { eatSurvival, sleepSurvival, restSurvival, characterProfile } from "./survival.mjs";
+import { eatSurvival, sleepSurvival, restSurvival, faintSurvival, characterProfile, canEat } from "./survival.mjs";
+import { applyWeatherExposure } from "./weather-effects.mjs";
+import { advancePressures, didPlace, washingAvailable, refreshPressureTarot } from "./pressures.mjs";
+import { tarotEventChance } from "./tarot-effects.mjs";
+import { healthValue } from "./health.mjs";
+import { journeyEquipmentModifiers, syncJourneyEquipment } from "./equipment.mjs";
+import { activePower, powerCoverage, protectedFatigue, cancelPower } from "./lore-effects.mjs";
+export { tarotEventChance } from "./tarot-effects.mjs";
 
 export function validateEconomy(data) {
   const positive = n => Number.isFinite(n) && n > 0;
   const source = url => typeof url === "string" && url.startsWith("https://");
-  if (data?.version !== 1 || !Number.isSafeInteger(data.pricing?.referenceCents) ||
+  if (data?.version !== 1 || (data.restRuleVersion !== undefined && data.restRuleVersion !== 1) ||
+      !Number.isSafeInteger(data.pricing?.referenceCents) ||
       !positive(data.pricing.referenceCents) || !positive(data.pricing.referenceDollarPrice) ||
       !source(data.pricing.source) || !data.pricing.markets ||
       Object.values(data.pricing.markets).some(m => !m.name || !positive(m.dollarPrice)) ||
@@ -34,7 +42,12 @@ export function validateEconomy(data) {
       data.meals.some(m => !m.id || !m.name || !m.fr || !m.en || !m.publisher ||
         !source(m.source) || !positive(m.reserveKcal) || !positive(m.mealUnits) ||
         !Array.isArray(m.bounds) || m.bounds.length !== 4 || !m.bounds.every(Number.isFinite) ||
-        m.bounds[0] >= m.bounds[2] || m.bounds[1] >= m.bounds[3])) {
+        m.bounds[0] >= m.bounds[2] || m.bounds[1] >= m.bounds[3] ||
+        (m.scope !== undefined && (!["regional", "national"].includes(m.scope) ||
+          typeof m.area !== "string" || !m.area.trim() ||
+          !Array.isArray(m.countries) || !m.countries.length ||
+          new Set(m.countries).size !== m.countries.length ||
+          m.countries.some(code => typeof code !== "string" || !/^[A-Z]{2}$/.test(code)))))) {
     throw new Error("Invalid economy database.");
   }
   return data;
@@ -62,17 +75,6 @@ export function applyBirthTarot(state, data) {
   return { ...state, profileId: "tarot", character: characterProfile(card.attributes) };
 }
 
-export function tarotEventChance(baseChance, state, data) {
-  if (!Number.isFinite(baseChance) || baseChance < 0 || baseChance > 1) {
-    throw new Error("Invalid base event probability.");
-  }
-
-  const birth = data.tarot.find(c => c.id === state.birthCard);
-  const daily = data.tarot.find(c => c.id === state.dailyCard);
-  if (!birth || !daily) throw new Error("Unknown event tarot card.");
-  return Math.min(1, baseChance * (0.5 + (birth.nightRisk + daily.nightRisk) / 2));
-}
-
 export function dailyTarotPending(state) {
   return Boolean(state && !state.ended && state.dailyTarotSeenDay !== undefined &&
     state.dailyTarotSeenDay !== state.tarotDay);
@@ -83,9 +85,28 @@ export function acknowledgeDailyTarot(state) {
   return { ...state, dailyTarotSeenDay: state.tarotDay };
 }
 
-export function localMeals(info, data) {
-  return data.meals.filter(({ bounds: [west, south, east, north] }) =>
-    info.longitude >= west && info.longitude <= east && info.latitude >= south && info.latitude <= north);
+export function localMeals(info, data, countryCodes = []) {
+  const countries = [...new Set(countryCodes)];
+  return data.meals.filter(({ bounds: [west, south, east, north], countries: allowed, scope }) => {
+    if (scope && (countries.length !== 1 || !allowed.includes(countries[0]))) return false;
+    return info.longitude >= west && info.longitude <= east && info.latitude >= south && info.latitude <= north;
+  }).sort((a, b) => Number(a.scope === "national") - Number(b.scope === "national"));
+}
+
+function usablePoi({ tags = {} }) {
+  return !["private", "no"].includes(tags.access) &&
+    (!tags.disused || tags.disused === "no") && (!tags.abandoned || tags.abandoned === "no");
+}
+
+export function mealOptions(cell, info, data) {
+  if (!canEat(cell) || cell.unavailable) return [];
+  const basic = { id: "basic-meal", kind: "basic", mealUnits: 1, reserveKcal: 900 };
+  const restaurants = [...new Map((cell.pois ?? []).filter(p => usablePoi(p) &&
+    /^(node|way|relation)\/\d+$/.test(p.osmId) &&
+    ["restaurant", "fast_food", "cafe", "food_court"].includes(p.tags?.amenity))
+    .map(p => [p.osmId, p])).values()];
+  return [basic, ...localMeals(info, data, cell.countryCodes).map(meal => ({ ...meal, kind: "specialty" })),
+    ...restaurants.map(venue => ({ ...basic, id: `basic-meal@${venue.osmId}`, kind: "restaurant", venue }))];
 }
 
 export function marketPrice(cell, units, data, info) {
@@ -109,19 +130,56 @@ export function marketPrice(cell, units, data, info) {
     estimated: !market && Boolean(data.pricing.fallback) };
 }
 
+export function mealOffers(state, cell, info, data) {
+  const meals = mealOptions(cell, info, data);
+  if (!meals.length) return [];
+  const day = journeyDate(state).toISOString().slice(0, 10);
+  const baseCents = marketPrice(cell, 1, data, info).cents;
+  return meals.map(meal => {
+    const identity = JSON.stringify([state.startedAt, state.col, state.row, day, meal.id]);
+    let hash = 2166136261;
+    for (const char of identity) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0;
+    hash = Math.imul(hash ^ hash >>> 16, 0x85ebca6b);
+    hash = Math.imul(hash ^ hash >>> 13, 0xc2b2ae35);
+    const factor = 0.7 + ((hash ^ hash >>> 16) >>> 0) / 2 ** 32 * 0.8;
+    const cents = marketPrice(cell, meal.mealUnits * factor, data, info).cents;
+    return { ...meal, cents, reserveKcal: Math.round(900 * cents / baseCents) };
+  });
+}
+
 export function refreshPricing(savedEconomy, currentEconomy) {
   validateEconomy(currentEconomy);
   return validateEconomy({ ...structuredClone(savedEconomy), pricing: structuredClone(currentEconomy.pricing) });
 }
 
-export function shelters(cell) {
-  return (cell.pois ?? []).filter(p => {
+export function refreshMeals(savedEconomy, currentEconomy) {
+  validateEconomy(savedEconomy);
+  validateEconomy(currentEconomy);
+  const meals = new Map(savedEconomy.meals.map(meal => [meal.id, structuredClone(meal)]));
+  for (const meal of currentEconomy.meals) {
+    if (!meals.has(meal.id)) meals.set(meal.id, structuredClone(meal));
+  }
+  return validateEconomy({ ...structuredClone(savedEconomy), meals: [...meals.values()] });
+}
+
+export function refreshNightRest(savedEconomy, currentEconomy) {
+  validateEconomy(savedEconomy);
+  validateEconomy(currentEconomy);
+  const updated = structuredClone(savedEconomy);
+  if (updated.restRuleVersion === undefined && currentEconomy.restRuleVersion === 1) {
+    updated.restRuleVersion = 1;
+    updated.rules.nightRestRecoveryFactor = currentEconomy.rules.nightRestRecoveryFactor;
+  }
+  return validateEconomy(updated);
+}
+
+export function shelters(cell, state) {
+  return (cell.pois ?? []).filter(p => usablePoi(p)).filter(p => {
     const tags = p.tags ?? {};
-    if (["private", "no"].includes(tags.access) ||
-        (tags.disused && tags.disused !== "no") || (tags.abandoned && tags.abandoned !== "no")) return false;
-    return ["hotel", "hostel", "guest_house", "motel", "alpine_hut"].includes(tags.tourism) ||
+    return (state && journeyEquipmentModifiers(state).hasTent && tags.tourism === "camp_site") ||
+      ["hotel", "hostel", "guest_house", "motel", "alpine_hut"].includes(tags.tourism) ||
       (["shelter", "wilderness_hut"].includes(tags.amenity ?? tags.tourism) && tags.fee === "no");
-  }).map(p => ({ ...p, free: p.tags.fee === "no" }));
+  }).map(p => ({ ...p, free: p.tags.fee === "no", ...(p.tags.tourism === "camp_site" ? { camping: true } : {}) }));
 }
 
 export function nightMinutes(state, minutes, info) {
@@ -134,16 +192,127 @@ export function nightMinutes(state, minutes, info) {
   return night;
 }
 
-export function finishAction(previous, next, info, data, { sheltered = false, random = Math.random } = {}) {
+export function faintingRisk(state, info, data, sheltered = false) {
+  const night = skyState(journeyDate(state), info.latitude, info.longitude).phase === "night";
+  return tarotEventChance(sheltered ? 0.05 : info.terrain === "place" ? 0.3 : 0.15, state, data) *
+    (night && !sheltered ? journeyEquipmentModifiers(state).nightVigilanceMultiplier : 1);
+}
+
+function collapseDraw(state, label) {
+  const identity = JSON.stringify(["fainting-v1", state.serverJourney?.seed ?? state.startedAt,
+    state.birthCard, state.faints ?? 0, state.col, state.row, state.elapsedMinutes, label]);
+  let hash = 2166136261;
+  for (const char of identity) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0;
+  return hash / 2 ** 32;
+}
+
+export function didFaint(previous, next) {
+  return (next.faints ?? 0) > (previous.faints ?? 0);
+}
+
+export function actionInterrupted(previous, next) {
+  return Boolean(next.ended || didFaint(previous, next) || didPlace(previous, next));
+}
+
+export function washEconomy(state, cell, info, survival, data) {
+  if (!state.pressures || !washingAvailable(cell)) throw new Error("No washing facilities available here.");
+  const cents = marketPrice(cell, 0.25, data, info).cents;
+  const paid = charge(state, cents);
+  const next = restSurvival(paid, { ...survival, rest_minutes: 20, rest_fatigue_recovery: 0 });
+  return finishAction(state, next, info, data, { survival, activity: "wash" });
+}
+
+export function finishAction(previous, next, info, data,
+  { sheltered = false, random = Math.random, survival, activity, outdoorSleep = false, washed = false } = {}) {
+  if (previous.ended) throw new Error("This journey has ended.");
+  const beforeWeatherFatigue = next.fatigue;
+  if (!sheltered) next = applyWeatherExposure(previous, next, info);
+  if (healthValue(next) <= 0) next = { ...next, ended: "health" };
   const minutes = next.elapsedMinutes - previous.elapsedMinutes;
-  const exposed = sheltered ? 0 : nightMinutes(previous, minutes, info);
-  const fatigue = Math.min(100, next.fatigue + exposed / 60 * data.rules.outdoorFatiguePerNightHour);
+  let exposed = sheltered ? 0 : nightMinutes(previous, minutes, info);
+  const actionGain = next.lastMove ? 0 : Math.max(0, beforeWeatherFatigue - previous.fatigue);
+  const exposureGain = next.fatigue - beforeWeatherFatigue + exposed / 60 * data.rules.outdoorFatiguePerNightHour *
+    (outdoorSleep ? journeyEquipmentModifiers(previous).outdoorSleepFatigueMultiplier : 1);
+  const fatigue = Math.min(100, beforeWeatherFatigue - actionGain +
+    protectedFatigue(previous, minutes, actionGain + exposureGain));
+  next = { ...next, fatigue };
+  const rescue = result => {
+    const charge = activePower(previous, "nameless");
+    if (!charge || result.elapsedMinutes > charge.expiresMinutes ||
+        !["health", "hunger", "fatigue"].includes(result.ended)) return result;
+    if (!charge.marker || !Number.isSafeInteger(charge.marker.col) ||
+        !Number.isSafeInteger(charge.marker.row)) throw new Error("Invalid life-saving recovery marker.");
+    const saved = cancelPower({ ...result, ...charge.marker, ended: null,
+      health: Math.max(50, result.health), reserveKcal: Math.max(survival.reserve_kcal / 2, result.reserveKcal),
+      fatigue: Math.min(30, result.fatigue),
+      pressures: { ...result.pressures, vigilance: 0 },
+      lore: { ...result.lore, rescueReceipts: [...(result.lore.rescueReceipts ?? []),
+        { observedMinutes: result.elapsedMinutes, cause: result.ended, ...charge.marker }] } }, "nameless");
+    return saved;
+  };
+  next = rescue(next);
+  const sleepy = next.ended === "sleep";
+  if ((next.fatigue >= 100 || sleepy) && !["health", "hunger"].includes(next.ended)) {
+    const startedMinutes = next.elapsedMinutes;
+    const chance = faintingRisk(previous, info, data, sheltered);
+    const robbed = !activePower(previous, "emperor") && collapseDraw(next, "robbery") < chance;
+    const stolenCents = robbed
+      ? Math.min(Math.floor(next.walletCents / 2),
+        Math.ceil(next.walletCents * (0.25 + collapseDraw(next, "loss") * 0.25))) : 0;
+    const unconscious = faintSurvival(next, survival);
+    const recovered = sheltered ? unconscious : applyWeatherExposure(next, unconscious, info);
+    if (!sheltered) exposed += nightMinutes(next, 8 * 60, info);
+    next = { ...recovered, walletCents: next.walletCents - stolenCents,
+      faints: (next.faints ?? 0) + 1,
+      lastFaint: { startedMinutes, finishedMinutes: recovered.elapsedMinutes,
+        ...(sleepy ? { reason: "sleep" } : {}),
+        col: next.col, row: next.row, sheltered, chance, robbed, stolenCents,
+        walletBeforeCents: next.walletCents } };
+    next = rescue(next);
+  }
+  next = advancePressures(previous, next, info, { sheltered, survival, activity, washed });
+  if (!next.ended && (next.lore?.rescueReceipts?.length ?? 0) >
+      (previous.lore?.rescueReceipts?.length ?? 0)) {
+    next = { ...next, pressures: { ...next.pressures, vigilance: 0 } };
+  }
   const day = journeyDate(next).toISOString().slice(0, 10);
-  return { ...next, fatigue, ended: next.ended ?? (fatigue >= 100 ? "fatigue" : null),
+  const { metabolism, ...settled } = next;
+  const override = previous.lore?.protections?.judgement;
+  const naturalCard = day === previous.tarotDay
+    ? override?.naturalCard ?? previous.dailyCard : drawTarot(data, random);
+  let result = { ...settled,
     outdoorNightMinutes: previous.outdoorNightMinutes + exposed,
-    dailyCard: day === previous.tarotDay ? previous.dailyCard : drawTarot(data, random),
+    dailyCard: override && next.elapsedMinutes < override.expiresMinutes ? override.card : naturalCard,
     dailyTarotSeenDay: previous.dailyTarotSeenDay ?? previous.tarotDay,
     tarotDay: day };
+  if (override) {
+    result = { ...result, lore: { ...result.lore, protections: { ...result.lore.protections,
+      judgement: { ...override, naturalCard } } } };
+    if (next.elapsedMinutes >= override.expiresMinutes) result = cancelPower(result, "judgement");
+  }
+  return syncJourneyEquipment(previous, refreshPressureTarot(result, data));
+}
+
+export function validateFainting(state) {
+  if (state.faints === undefined && state.lastFaint === undefined) return;
+  const f = state.lastFaint;
+  const integer = n => Number.isSafeInteger(n) && n >= 0;
+  if (!Number.isSafeInteger(state.faints) || state.faints < 1 ||
+      !f || !Number.isFinite(f.startedMinutes) || f.startedMinutes < 0 ||
+      !Number.isFinite(f.finishedMinutes) || f.finishedMinutes > state.elapsedMinutes ||
+      Math.abs(f.finishedMinutes - f.startedMinutes - 480) > 1e-6 ||
+      state.faints * 480 > state.elapsedMinutes + 1e-6 ||
+      !Number.isSafeInteger(f.col) || Math.abs(Math.floor(f.col / 8)) > 1000 ||
+      !Number.isSafeInteger(f.row) || Math.abs(Math.floor(f.row / 8)) > 1000 ||
+      typeof f.sheltered !== "boolean" || typeof f.robbed !== "boolean" ||
+      (f.reason !== undefined && f.reason !== "sleep") ||
+      !Number.isFinite(f.chance) || f.chance <= 0 || f.chance > (f.sheltered ? 0.075 : 0.45) + 1e-9 ||
+      !integer(f.walletBeforeCents) || !integer(f.stolenCents) ||
+      (!f.robbed && f.stolenCents !== 0) ||
+      (f.robbed && (f.stolenCents < Math.min(Math.floor(f.walletBeforeCents / 2),
+        Math.ceil(f.walletBeforeCents / 4)) || f.stolenCents > Math.floor(f.walletBeforeCents / 2)))) {
+    throw new Error("Invalid fainting history in journey save.");
+  }
 }
 
 function charge(state, cents) {
@@ -154,28 +323,61 @@ function charge(state, cents) {
 }
 
 export function buyMeal(state, cell, info, mealId, survival, data) {
-  const meal = localMeals(info, data).find(m => m.id === mealId);
-  if (!meal) throw new Error("No sourced local meal available.");
-  const paid = charge(state, marketPrice(cell, meal.mealUnits, data, info).cents);
+  if (!canEat(cell)) throw new Error("Meals are only available in settlement cells.");
+  const meal = mealOffers(state, cell, info, data).find(m => m.id === mealId);
+  if (!meal) throw new Error("No local meal available in the player's cell.");
+  const paid = charge(state, meal.cents);
   const next = eatSurvival(paid, cell, { ...survival, meal_kcal: meal.reserveKcal });
-  return finishAction(state, next, info, data, { sheltered: true });
+  return finishAction(state, next, info, data, { sheltered: true, survival });
 }
 
-export function sleepEconomy(state, cell, info, shelterId, survival, data) {
-  const shelter = shelterId === null ? null : shelters(cell).find(s => s.osmId === shelterId);
+export function sleepEconomy(state, cell, info, shelterId, survival, data,
+  { minutes = survival.sleep_hours * 60 } = {}) {
+  const sanctuary = activePower(state, "emperor");
+  const sanctuaryShelter = sanctuary && sanctuary.col === state.col && sanctuary.row === state.row &&
+    powerCoverage(state, "emperor", minutes) === minutes;
+  const shelter = shelterId === null ? null : shelters(cell, state).find(s => s.osmId === shelterId);
   if (shelterId !== null && !shelter) throw new Error("Shelter is not available in the player's cell.");
   const cents = shelter && !shelter.free ? marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents : 0;
   const paid = charge(state, cents);
-  const config = shelter ? survival : { ...survival,
+  const fullBoard = Boolean(shelter && !shelter.free && !shelter.camping);
+  const config = sanctuaryShelter ? survival : shelter?.camping ? { ...survival,
+    sleep_fatigue_recovery_per_hour: survival.sleep_fatigue_recovery_per_hour * data.rules.outdoorSleepRecoveryFactor,
+    sleep_recovery_per_hour: survival.sleep_recovery_per_hour * data.rules.outdoorSleepRecoveryFactor,
+  } : shelter ? survival : { ...survival,
     sleep_fatigue_recovery_per_hour: 0,
     sleep_recovery_per_hour: survival.sleep_recovery_per_hour * data.rules.outdoorSleepRecoveryFactor };
-  const next = sleepSurvival(paid, config);
-  return finishAction(state, next, info, data, { sheltered: Boolean(shelter) });
+  const sleeping = fullBoard ? { ...paid, reserveKcal: survival.reserve_kcal } : paid;
+  let next = sleepSurvival(sleeping, { ...config, sleep_hours: minutes / 60 });
+  if (fullBoard) next = { ...next, reserveKcal: survival.reserve_kcal,
+    fatigue: 0, awakeHours: 0, meals: next.meals + 2, ended: null };
+  return finishAction(state, next, info, data, { sheltered: Boolean(shelter || sanctuaryShelter), survival,
+    outdoorSleep: !shelter && !sanctuaryShelter, washed: fullBoard });
 }
 
-export function restEconomy(state, info, survival, data) {
+export function restEffect(state, info, survival, data) {
+  const sanctuary = activePower(state, "emperor");
+  if (sanctuary && sanctuary.col === state.col && sanctuary.row === state.row &&
+      powerCoverage(state, "emperor", survival.rest_minutes) === survival.rest_minutes) {
+    return { recovery: survival.rest_fatigue_recovery,
+      fatigue: Math.max(0, state.fatigue - survival.rest_fatigue_recovery) };
+  }
   const night = nightMinutes(state, survival.rest_minutes, info) / survival.rest_minutes;
-  const next = restSurvival(state, { ...survival, rest_fatigue_recovery:
-    survival.rest_fatigue_recovery * (1 - night * (1 - data.rules.nightRestRecoveryFactor)) });
-  return finishAction(state, next, info, data);
+  const recovery = survival.rest_fatigue_recovery * (1 - night * (1 - data.rules.nightRestRecoveryFactor));
+  const rested = { ...state, elapsedMinutes: state.elapsedMinutes + survival.rest_minutes,
+    fatigue: Math.max(0, state.fatigue - recovery) };
+  const exposed = applyWeatherExposure(state, rested, info);
+  return { recovery, fatigue: Math.min(100, exposed.fatigue +
+    night * survival.rest_minutes / 60 * data.rules.outdoorFatiguePerNightHour) };
+}
+
+export function restEconomy(state, info, survival, data, { minutes = survival.rest_minutes } = {}) {
+  const config = { ...survival, rest_minutes: minutes,
+    rest_fatigue_recovery: survival.rest_fatigue_recovery * minutes / survival.rest_minutes };
+  const next = restSurvival(state, { ...config,
+    rest_fatigue_recovery: restEffect(state, info, config, data).recovery });
+  const sanctuary = activePower(state, "emperor");
+  const sheltered = Boolean(sanctuary && sanctuary.col === state.col && sanctuary.row === state.row &&
+    powerCoverage(state, "emperor", minutes) === minutes);
+  return finishAction(state, next, info, data, { survival, sheltered });
 }

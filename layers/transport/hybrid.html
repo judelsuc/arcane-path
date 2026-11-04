@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hybrid transport preview</title>
+  <style>
+    body { margin: 2rem auto; padding: 0 1rem; max-width: 1000px; font: 17px/1.5 system-ui; background: #f5eddc; color: #342d28; }
+    aside { border: 2px solid #a45c22; padding: 1rem; }
+    button, select { font: inherit; padding: .4rem; margin: .3rem; }
+    li { padding: .7rem; margin: .5rem 0; background: #fffaf0; }
+    .fictional { border-left: 5px solid #a45c22; }
+    .real { border-left: 5px solid #287051; }
+    #error { color: #9d1919; }
+    #offers { padding: 0; list-style: none; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: .3rem; text-align: left; border-bottom: 1px solid #ccc; }
+    a { color: #205c72; }
+  </style>
+</head>
+<body>
+  <select id="language" aria-label="Language / Langue"><option value="fr">Francais</option><option value="en">English</option></select>
+  <h1 id="title"></h1>
+  <aside id="warning"></aside>
+  <p id="scope"></p>
+  <p><a href="https://transport.data.gouv.fr/datasets/horaires-sncf">SNCF Voyageurs</a> ·
+    <a href="https://opendatacommons.org/licenses/odbl/1.0/">Open Database License (ODbL)</a> ·
+    <a id="sourceLink" href="../../data/transport/examples/grenoble-lyon/source.json"></a> ·
+    <a id="docsLink" href="../../data/transport/README.md"></a></p>
+  <p id="state" aria-live="polite"></p>
+  <label><span id="destinationLabel"></span><select id="destination" disabled></select></label>
+  <button id="reset" disabled></button>
+  <button id="finish" disabled></button>
+  <button id="save" disabled></button>
+  <button id="resume" disabled></button>
+  <p id="error" role="alert"></p>
+  <ul id="offers"></ul>
+  <p id="route"></p>
+  <details><summary id="connectionsLabel"></summary>
+    <p id="serviceDate"></p>
+    <table><thead><tr><th id="trainHeading"></th><th id="departureHeading"></th><th id="arrivalHeading"></th><th id="durationHeading"></th></tr></thead><tbody id="connections"></tbody></table>
+  </details>
+  <script type="module" src="./hybrid-preview.mjs"></script>
+</body>
+</html>

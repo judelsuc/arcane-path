@@ -49,13 +49,17 @@ class TerraformCredentialsTests(unittest.TestCase):
         rules = files["/etc/nftables.conf"]
         self.assertIn("table inet arcane", rules)
         self.assertIn("policy drop", rules)
-        self.assertIn("ip saddr 192.0.2.1/32 tcp dport 22", rules)
+        self.assertIn("tcp dport 22 ct state new accept", rules)
+        self.assertNotIn("ip saddr", rules)
         self.assertNotIn("dport 8766", rules)
         self.assertNotIn("dport 80", rules)
         self.assertFalse(data["ssh_pwauth"])
         self.assertTrue(data["disable_root"])
         ssh = files["/etc/ssh/sshd_config.d/00-arcane-path.conf"]
         self.assertIn("PasswordAuthentication no", ssh)
+        self.assertIn("KbdInteractiveAuthentication no", ssh)
+        self.assertIn("PubkeyAuthentication yes", ssh)
+        self.assertIn("AuthenticationMethods publickey", ssh)
         self.assertIn("PermitRootLogin no", ssh)
         self.assertIn("PermitOpen 127.0.0.1:8766", ssh)
         service = files["/etc/systemd/system/arcane-path.service"]

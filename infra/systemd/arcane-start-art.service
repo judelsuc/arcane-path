@@ -1,0 +1,20 @@
+[Unit]
+Description=Arcane Path daily shared start-page illustration
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/opt/arcane-path/scripts/start_art.py
+
+[Service]
+Type=oneshot
+User=arcane
+Group=arcane
+WorkingDirectory=/opt/arcane-path
+Environment=ARCANE_START_IMAGES_TOKEN_FILE=/etc/arcane-path/ovh-ai-endpoints-token
+ExecStart=/usr/bin/python3 scripts/start_art.py --cache /var/lib/arcane-path/cache/travel
+TimeoutStartSec=5min
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/arcane-path

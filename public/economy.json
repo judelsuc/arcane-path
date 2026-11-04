@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "restRuleVersion": 1,
   "pricing": {
     "date": "2026-07-01",
     "source": "https://raw.githubusercontent.com/TheEconomist/big-mac-data/master/source-data/big-mac-source-data-v2.csv",
@@ -234,7 +235,7 @@
     "lodgingMealUnits": 4,
     "outdoorFatiguePerNightHour": 2,
     "outdoorSleepRecoveryFactor": 0.25,
-    "nightRestRecoveryFactor": 0,
+    "nightRestRecoveryFactor": 0.5,
     "performanceMinutes": 30,
     "performanceFatigue": 4
   },
@@ -294,6 +295,141 @@
       "en":"Fish, lime and coconut milk, accompanied by vegetables.",
       "source":"https://www.tahititourisme.com/cooking-raw-fish-with-coconut-milk/",
       "publisher":"Tahiti Tourisme","checked":"2026-10-17"
+    },
+    {
+      "id":"ficelle-picarde","name":"Ficelle picarde","area":"Picardie",
+      "scope":"regional","countries":["FR"],"bounds":[1.35,48.9,4.3,50.4],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Crêpe salée garnie de jambon et de champignons, gratinée à la crème.",
+      "en":"Savory crêpe with ham and mushrooms, baked with cream.",
+      "source":"https://en.wikipedia.org/wiki/Ficelle_picarde",
+      "publisher":"Wikipedia contributors","checked":"2026-10-17"
+    },
+    {
+      "id":"pizza-napoletana","name":"Pizza napoletana","area":"Napoli / Campania",
+      "scope":"regional","countries":["IT"],"bounds":[13.7,40,15.8,41.5],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Pizza de tradition napolitaine, ici avec tomate, mozzarella et basilic.",
+      "en":"Neapolitan-style pizza, here with tomato, mozzarella and basil.",
+      "source":"https://www.italia.it/en/campania/naples/things-to-do/pizza",
+      "publisher":"Italia.it","checked":"2026-10-17"
+    },
+    {
+      "id":"tortilla","name":"Tortilla de patatas","area":"España",
+      "scope":"national","countries":["ES"],"bounds":[-18,27,5,44],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Omelette de pommes de terre, avec ou sans oignons.",
+      "en":"Potato omelette, with or without onions.",
+      "source":"https://en.wikipedia.org/wiki/Spanish_omelette",
+      "publisher":"Wikipedia contributors","checked":"2026-10-17"
+    },
+    {
+      "id":"bacalhau-bras","name":"Bacalhau à Brás","area":"Portugal",
+      "scope":"national","countries":["PT"],"bounds":[-32,30,-6,43],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Morue émiettée avec pommes de terre fines, oignons et œufs.",
+      "en":"Shredded salt cod with thin potatoes, onions and eggs.",
+      "source":"https://en.wikipedia.org/wiki/Bacalhau_%C3%A0_Br%C3%A1s",
+      "publisher":"Wikipedia contributors","checked":"2026-10-17"
+    },
+    {
+      "id":"rosti","name":"Rösti","area":"Schweiz / Suisse",
+      "scope":"national","countries":["CH"],"bounds":[5.9,45.7,10.6,47.9],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Pommes de terre râpées dorées à la poêle ; portion de jeu accompagnée.",
+      "en":"Pan-fried grated potatoes; served as an accompanied game meal.",
+      "source":"https://en.wikipedia.org/wiki/R%C3%B6sti",
+      "publisher":"Wikipedia contributors","checked":"2026-10-17"
+    },
+    {
+      "id":"wiener-schnitzel","name":"Wiener Schnitzel","area":"Österreich",
+      "scope":"national","countries":["AT"],"bounds":[9.4,46.3,17.2,49.1],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Escalope de veau panée, issue de la tradition viennoise.",
+      "en":"Breaded veal cutlet from the Viennese tradition.",
+      "source":"https://en.wikipedia.org/wiki/Wiener_schnitzel",
+      "publisher":"Wikipedia contributors","checked":"2026-10-17"
+    },
+    {
+      "id":"bratwurst","name":"Bratwurst","area":"Deutschland",
+      "scope":"national","countries":["DE"],"bounds":[5.8,47.2,15.1,55.1],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Saucisse grillée ; la recette varie selon les régions allemandes.",
+      "en":"Grilled sausage; recipes vary across German regions.",
+      "source":"https://en.wikipedia.org/wiki/Bratwurst",
+      "publisher":"Wikipedia contributors","checked":"2026-10-17"
+    },
+    {
+      "id":"carbonnade","name":"Carbonnade flamande","area":"Belgique / België",
+      "scope":"national","countries":["BE"],"bounds":[2.5,49.4,6.5,51.6],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Ragoût de bœuf aux oignons et à la bière, de tradition flamande.",
+      "en":"Flemish-style beef stew with onions and beer.",
+      "source":"https://en.wikipedia.org/wiki/Carbonade_flamande",
+      "publisher":"Wikipedia contributors","checked":"2026-10-17"
+    },
+    {
+      "id":"stamppot","name":"Stamppot","area":"Nederland",
+      "scope":"national","countries":["NL"],"bounds":[3.2,50.7,7.3,53.7],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Pommes de terre écrasées avec des légumes, selon la saison.",
+      "en":"Mashed potatoes mixed with seasonal vegetables.",
+      "source":"https://en.wikipedia.org/wiki/Stamppot",
+      "publisher":"Wikipedia contributors","checked":"2026-10-17"
+    },
+    {
+      "id":"pierogi","name":"Pierogi","area":"Polska",
+      "scope":"national","countries":["PL"],"bounds":[14,49,24.2,55],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Raviolis farcis ; ici une version aux pommes de terre et au fromage.",
+      "en":"Filled dumplings; here a potato and cheese version.",
+      "source":"https://en.wikipedia.org/wiki/Pierogi",
+      "publisher":"Wikipedia contributors","checked":"2026-10-17"
+    },
+    {
+      "id":"gulyas","name":"Gulyás","area":"Magyarország",
+      "scope":"national","countries":["HU"],"bounds":[16,45.7,23,48.7],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Soupe de viande et de légumes parfumée au paprika.",
+      "en":"Meat and vegetable soup seasoned with paprika.",
+      "source":"https://en.wikipedia.org/wiki/Goulash",
+      "publisher":"Wikipedia contributors","checked":"2026-10-17"
+    },
+    {
+      "id":"svickova","name":"Svíčková","area":"Česko",
+      "scope":"national","countries":["CZ"],"bounds":[12,48.5,18.9,51.1],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Bœuf avec sauce crémeuse aux légumes et quenelles de pain.",
+      "en":"Beef with a creamy vegetable sauce and bread dumplings.",
+      "source":"https://en.wikipedia.org/wiki/Sv%C3%AD%C4%8Dkov%C3%A1",
+      "publisher":"Wikipedia contributors","checked":"2026-10-17"
+    },
+    {
+      "id":"moussaka","name":"Moussaka","area":"Ελλάδα",
+      "scope":"national","countries":["GR"],"bounds":[19.3,34.7,29.7,41.8],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Version grecque : aubergines et viande, gratinées sous une sauce blanche.",
+      "en":"Greek version: eggplant and meat baked under a white sauce.",
+      "source":"https://en.wikipedia.org/wiki/Moussaka",
+      "publisher":"Wikipedia contributors","checked":"2026-10-17"
+    },
+    {
+      "id":"irish-stew","name":"Irish stew","area":"Éire / Ireland",
+      "scope":"national","countries":["IE"],"bounds":[-10.8,51.3,-5.3,55.5],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Ragoût irlandais d'agneau ou de mouton avec pommes de terre et oignons.",
+      "en":"Irish lamb or mutton stew with potatoes and onions.",
+      "source":"https://en.wikipedia.org/wiki/Irish_stew",
+      "publisher":"Wikipedia contributors","checked":"2026-10-17"
+    },
+    {
+      "id":"haggis","name":"Haggis","area":"Scotland",
+      "scope":"regional","countries":["GB"],"bounds":[-8.7,54.6,-0.7,61],
+      "mealUnits":1,"reserveKcal":900,
+      "fr":"Préparation écossaise à base de viande, d'avoine, d'oignons et d'épices.",
+      "en":"Scottish savory dish with meat, oats, onions and spices.",
+      "source":"https://www.visitscotland.com/things-to-do/food-drink/haggis",
+      "publisher":"VisitScotland","checked":"2026-10-17"
     }
   ]
 }
