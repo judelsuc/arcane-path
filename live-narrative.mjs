@@ -4,6 +4,7 @@ import { parentWordingKey } from "./parent-intimacy.mjs";
 
 export const NARRATIVE_BRIEFS = Object.freeze(briefs);
 export const OPENING_STORY = "story.opening";
+export const OPENING_STORY_MAX_CHARACTERS = 3000;
 export const LOST_PLAYER_DREAM = "dream.lost-player";
 export const JOURNAL_SUBTITLE = "journal.subtitle";
 export const SERVICE_QUEST = "quest.service";
@@ -89,7 +90,7 @@ export function createLiveNarrative({
           if (current !== epoch) return;
           const validText = text => text && ["en", "fr"].every(lang =>
             typeof text[lang] === "string" && text[lang].length >= (id === CLOSING_STORY ? 600 : id === OPENING_STORY ? 500 : 5) &&
-            text[lang].length <= (id === CLOSING_STORY ? 3000 : id === OPENING_STORY ? 1800 : id === JOURNAL_SUBTITLE ? 160 : 400));
+            text[lang].length <= (id === CLOSING_STORY ? 3000 : id === OPENING_STORY ? OPENING_STORY_MAX_CHARACTERS : id === JOURNAL_SUBTITLE ? 160 : 400));
           if (typeof result.enabled !== "boolean" || result.brief !== id ||
               !["queued", "running", "ready", "failed", "disabled"].includes(result.status) ||
               result.status === "ready" && (!validText(result.text) ||

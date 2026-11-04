@@ -19,8 +19,8 @@ from content_factory import LIMIT, OvhWriter, WorkshopError
 from journal_art import JournalArt
 from journeys import JourneyStore, JourneyRequest, JourneyCapacity
 from live_narrative import CATALOGUE, COVER_BRIEF, DREAM_BRIEF, MODEL, VERSION, LiveNarrative, provider_request, validate_output, version_for
-from opening_story import (BRIEF_ID, OPENING_MODEL, OPENING_TIMEOUT, opening_brief, validate_opening_text,
-                           validate_parent_reference)
+from opening_story import (BRIEF_ID, MAX_CHARACTERS, OPENING_MODEL, OPENING_TIMEOUT, opening_brief,
+                           repair_opening_text, validate_opening_text, validate_parent_reference)
 from closing_story import BRIEF_ID as CLOSING_BRIEF, LIMITS, closing_brief
 from travel_server import ChunkStore, ChunkJobs, atomic_write, make_handler
 import quest_wording
@@ -706,15 +706,21 @@ class LiveNarrativeTests(unittest.TestCase):
         self.assertIn("does not possess", custody["child"])
         self.assertIn("describes the past", custody["memory"])
         self.assertIn("letter, not the missing object", custody["departure"])
+        self.assertNotRegex(brief["adultStory"]["encounter"], r"\b(?:she|he|her|his)\b")
         prompt = request["messages"][0]["content"]
         for constraint in ("THE SAME object", "ONLY as a past memory", "NOT this object",
                            "pocket, hand, bag", "carried talisman", "duplicate, fragment",
                            "check BOTH languages"):
             self.assertIn(constraint, prompt)
         self.assertEqual(request["temperature"], 0.9)
-        self.assertEqual(request["max_tokens"], 3000)
+        self.assertEqual(request["max_tokens"], 4000)
         self.assertEqual(request["model"], OPENING_MODEL)
         self.assertEqual(request["reasoning_effort"], "low")
+        self.assertIn("the child searches for their parent, never for the missing object", prompt)
+        for language in ("en", "fr"):
+            field = request["response_format"]["json_schema"]["schema"]["properties"][language]
+            self.assertEqual((field["minLength"], field["maxLength"]), (500, MAX_CHARACTERS))
+            self.assertEqual(field["maxLength"], 3000)
         self.assertNotEqual(provider_request(CATALOGUE["event.coins"], MODEL)["model"], OPENING_MODEL)
         self.assertGreater(request["temperature"], provider_request(CATALOGUE["event.coins"], MODEL)["temperature"])
         self.assertEqual(json.loads(request["messages"][1]["content"]), brief)
@@ -772,10 +778,17 @@ class LiveNarrativeTests(unittest.TestCase):
         for _ in range(3):
             self.request(BRIEF_ID)
         self.writer.assert_called_once()
-        for value in [response(en="a" * 1801, fr="b" * 600),
+        for value in [response(en="a" * (MAX_CHARACTERS + 1), fr="b" * 600),
                       response(en="<script>" + "a" * 600, fr="b" * 600)]:
             with self.assertRaises(WorkshopError):
                 validate_output(value, story=True)
+        for length in (500, 1801, 2001, MAX_CHARACTERS):
+            story = {"en": "a" * length, "fr": "b" * length}
+            self.assertEqual(validate_output(response(**story), story=True), story)
+        with self.assertRaises(WorkshopError):
+            validate_output(response(en="😀" * 1501, fr="b" * 600), story=True)
+        with self.assertRaises(WorkshopError):
+            validate_output(response(en="a" * 499, fr="b" * 600), story=True)
         for text in ["Your mother Camille left.", "Your father Camille left.",
                      "Votre mère Camille est partie.", "Camille left; she said goodbye.",
                      "Your parent Alex left."]:
@@ -809,13 +822,126 @@ class LiveNarrativeTests(unittest.TestCase):
         self.assertFalse(validate_opening_text({"en": "You love the night as Dracula did.", "fr": "Ok."},
                                                {"characterName": "Dracula"}))
         name = self.journeys.read(self.owner)["state"]["trail"]["parentName"]
-        self.writer.return_value = response(en=(f"Your parent {name} left. " * 30).strip() + " Now, as",
+        self.writer.return_value = response(en=f"Your parent {name} " + "x" * 600,
                                             fr=(f"Votre parent {name} est parti. " * 30).strip())
         self.request(BRIEF_ID)
         result = self.settle(BRIEF_ID)
         self.assertEqual(result["status"], "failed")
         self.assertIn("truncated", result["error"])
         self.writer.assert_called_once()
+
+    def test_opening_repairs_neutral_pronouns_parent_agreement_and_obvious_name_comparisons(self):
+        brief = {"parent": "Camille", "characterName": "Henri de Toulouse-Lautrec"}
+        output = {
+            "en": "Like Henri de Toulouse-Lautrec, you sketch the market.",
+            "fr": ("Comme Lautrec, vous dessinez. Votre parent Camille est parti(e). "
+                   "Il/elle écrit. Vous pensez à lui / elle. Ils/elles voyagent."),
+        }
+        repaired, changes = repair_opening_text(output, brief)
+        self.assertEqual(repaired, {
+            "en": "You sketch the market.",
+            "fr": ("Vous dessinez. Votre parent Camille est parti. "
+                   "Iel écrit. Vous pensez à cette personne. Iels voyagent."),
+        })
+        self.assertEqual(changes, {"neutral pronoun", "parent agreement", "explicit name comparison"})
+        self.assertTrue(validate_opening_text(repaired, brief))
+        self.assertIn("Lautrec", output["fr"], "the caller's source is unchanged")
+
+        for source, expected in [
+            ({"en": "Like the great Henri de Toulouse‑Lautrec, you sketch the market.",
+              "fr": "À l’image du grand Henri de Toulouse‑Lautrec, vous dessinez."},
+             {"en": "You sketch the market.", "fr": "Vous dessinez."}),
+            ({"en": "You, like the great Toulouse‑Lautrec you admire, sketch the market.",
+              "fr": "Vous, à l’image du grand Henri de Toulouse‑Lautrec que vous admirez, dessinez."},
+             {"en": "You sketch the market.", "fr": "Vous dessinez."}),
+        ]:
+            actual, changes = repair_opening_text(source, brief)
+            self.assertEqual(actual, expected)
+            self.assertEqual(changes, {"explicit name comparison"})
+            self.assertTrue(validate_opening_text(actual, brief))
+
+        for phrase in ("Vous êtes parti(e).", "Camille est parti(e).", "Vous pensez à elle/lui-même."):
+            repaired, _ = repair_opening_text({"en": "Night falls.", "fr": phrase}, brief)
+            self.assertEqual(repaired["fr"], phrase)
+            self.assertFalse(validate_opening_text(repaired, brief))
+        for phrase in ("The story mentions Lautrec.", "As Lautrec, you draw.",
+                       "Like Henri de Toulouse-Lautrec, the town is colourful."):
+            repaired, _ = repair_opening_text({"en": phrase, "fr": "La nuit tombe."}, brief)
+            self.assertEqual(repaired["en"], phrase)
+            self.assertFalse(validate_opening_text(repaired, brief))
+
+    def test_opening_repair_trims_only_an_incomplete_last_sentence(self):
+        en = ("Your parent Camille left. " * 25).strip()
+        fr = ("Votre parent Camille est parti. " * 25).strip()
+        original = {"en": en + " Now, as", "fr": fr + " Vous partez vers"}
+        repaired, changes = repair_opening_text(original, {"parent": "Camille"})
+        self.assertEqual(repaired, {"en": en, "fr": fr})
+        self.assertEqual(changes, {"incomplete ending"})
+        self.assertTrue(validate_opening_text(repaired, {"parent": "Camille"}))
+        self.assertEqual(repair_opening_text(repaired, {"parent": "Camille"}), (repaired, set()))
+
+        too_short = {"en": "A complete sentence. " + "An unfinished thought " * 30, "fr": fr}
+        self.assertEqual(repair_opening_text(too_short, {"parent": "Camille"})[0], too_short)
+        for fragment in (" Dr. Ca", " M. Du", " 3. rue"):
+            ambiguous = {"en": en + fragment, "fr": fr}
+            self.assertEqual(repair_opening_text(ambiguous, {"parent": "Camille"})[0], ambiguous)
+            self.assertFalse(validate_opening_text(ambiguous, {"parent": "Camille"}))
+        self.assertFalse(validate_opening_text({"en": "An unfinished thought)", "fr": fr}, {}))
+
+    def test_repaired_opening_is_persisted_once_and_still_validated(self):
+        record = self.journeys.read(self.owner)
+        parent = record["state"]["trail"]["parentName"]
+        player = record["state"]["name"]
+        en = (f"Your parent {parent} left. " * 25).strip()
+        fr = (f"Votre parent {parent} est parti. " * 25).strip()
+        self.writer.return_value = response(
+            en=f"Like {player}, you sketch. {en} Now, as",
+            fr=f"Comme {player}, vous dessinez. {fr} Il/elle marche. Puis vous",
+        )
+        with self.assertLogs(level="INFO") as logs:
+            self.request(BRIEF_ID)
+            result = self.settle(BRIEF_ID)
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(result["text"], {
+            "en": f"You sketch. {en}", "fr": f"Vous dessinez. {fr} Iel marche.",
+        })
+        self.assertEqual(result["accounting"]["attempts"], 1)
+        self.assertTrue(any("Opening story repaired:" in message for message in logs.output))
+        self.assertEqual(self.request(BRIEF_ID), result)
+        self.assertEqual(self.journeys.read(self.owner), record)
+        self.writer.assert_called_once()
+
+    def test_repair_does_not_bypass_parent_name_gender_markup_or_billing_checks(self):
+        parent = self.journeys.read(self.owner)["state"]["trail"]["parentName"]
+        player = self.journeys.read(self.owner)["state"]["name"]
+        en = (f"Your parent {parent} left. " * 25).strip()
+        fr = (f"Votre parent {parent} est parti. " * 25).strip()
+        cases = [
+            response(en=en + f" Your mother {parent} left.", fr=fr + " Il/elle marche."),
+            response(en=en + f" The traveller is {player}.", fr=fr + " Il/elle marche."),
+            response(en=en + " <script>bad</script>", fr=fr + " Il/elle marche."),
+            response(en=("A winter memory. " * 40).strip() + f" Your parent {parent} left",
+                     fr=fr + " Il/elle marche."),
+            response(en=en, fr=fr + " Vous êtes parti(e)."),
+            {**response(en=en, fr=fr), "choices": [{"finish_reason": "length",
+                                                      "message": {"content": "incomplete"}}]},
+        ]
+        for value in cases:
+            with self.subTest(value=value):
+                self.service.close()
+                with self.service.connect() as db:
+                    db.execute("DELETE FROM wording")
+                self.writer.reset_mock()
+                self.writer.return_value = value
+                self.service = LiveNarrative(self.journeys, self.auth, self.writer)
+                self.addCleanup(self.service.close)
+                self.request(BRIEF_ID)
+                result = self.settle(BRIEF_ID)
+                self.assertEqual(result["status"], "failed")
+                self.assertIsNone(result["text"])
+                self.assertEqual(result["accounting"]["attempts"], 1)
+                self.assertEqual(self.request(BRIEF_ID)["status"], "failed")
+                self.writer.assert_called_once()
 
     def test_configured_writer_waits_longer_only_for_opening_story(self):
         with patch.dict("os.environ", {"ARCANE_LIVE_TEXT_TOKEN_FILE": "unused"}), \

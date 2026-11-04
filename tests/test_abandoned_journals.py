@@ -362,6 +362,21 @@ class JournalsTests(unittest.TestCase):
         self.assertIn(self.ids[0], [q["id"] for q in nearby])
         self.assertEqual(self.genesis, self.records)
 
+    def test_long_biographies_survive_notebook_sharing_without_relaxing_photo_notes(self):
+        photos = self.notebook()
+        photos[0].update(id="biography:journey:revision:fr", note="😀" * 1500)
+        self.call(action="publish", notebook=photos, clues=[], row=5)
+        self.heard(1, self.ids[0])
+        self.call(1, action="claim", journal=self.ids[0], row=5)
+        self.assertEqual(self.call(1, action="read", journal=self.ids[0], row=5)["notebook"]["photos"], photos)
+        for id, note in (("biography:journey:revision:fr", "x" * 3001),
+                         ("biography:journey:revision:fr", "😀" * 1501),
+                         ("photo:one", "x" * 2001)):
+            invalid = self.notebook()
+            invalid[0].update(id=id, note=note)
+            with self.subTest(id=id, length=len(note)), self.assertRaises(JourneyRequest):
+                self.call(2, action="publish", notebook=invalid, clues=[])
+
     def test_legacy_keeper_cannot_rebind_public_journey_or_another_keeper(self):
         keeper, token = "a" * 32, "b" * 64
         body = {"journey": self.ids[0], "keeper": keeper, "col": 0, "row": 0, "index": 0}

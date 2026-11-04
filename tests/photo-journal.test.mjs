@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { setupPhotoJournal, validateJournalPhoto, biographyJournalEntries } from "../photo-journal.mjs";
+import { setupPhotoJournal, createPhotoJournalStore, validateJournalPhoto, biographyJournalEntries } from "../photo-journal.mjs";
 import { translate } from "../i18n.mjs";
 import { readFileSync } from "node:fs";
 import { startSurvival } from "../survival.mjs";
@@ -15,6 +15,53 @@ const photo = (id = 1) => ({ blob: new Blob(["image fixture"], { type: "image/pn
   title: `Secret photo ${id}`, attribution: "Photographer", license: "CC BY 4.0",
   licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
   sourceUrl: `https://example.org/photo/${id}`, note: "", pinnedAt: `2026-10-17T12:00:0${id}Z` });
+
+test("journal storage preserves long biographies without increasing ordinary note limits", async () => {
+  const rows = new Map();
+  const connection = {
+    createObjectStore() {},
+    transaction() {
+      const tx = {
+        objectStore() {
+          return {
+            get(key) {
+              const request = {};
+              queueMicrotask(() => {
+                request.result = rows.get(key);
+                request.onsuccess();
+                queueMicrotask(() => tx.oncomplete());
+              });
+              return request;
+            },
+            add(value, key) { rows.set(key, value); },
+            put(value, key) { rows.set(key, value); },
+          };
+        },
+      };
+      return tx;
+    },
+  };
+  const index = { open() {
+    const request = {};
+    queueMicrotask(() => {
+      request.result = connection;
+      request.onupgradeneeded();
+      request.onsuccess();
+    });
+    return request;
+  } };
+  const store = await createPhotoJournalStore(index).scope("journey");
+  const id = "biography:journey:revision:fr";
+  const text = "😀".repeat(1500);
+  assert.equal(await store.pin(photo(), { id, note: text }), true);
+  assert.equal((await store.get(id)).note, text);
+  await store.note(id, "x".repeat(3000));
+  assert.equal((await store.get(id)).note, "x".repeat(3000));
+  assert.throws(() => store.note(id, "😀".repeat(1501)), /too long/);
+  assert.throws(() => store.pin(photo(2), { id: "photo:two", note: "x".repeat(2001) }),
+    /Invalid journal entry/);
+  assert.throws(() => store.note("photo:two", "x".repeat(2001)), /too long/);
+});
 
 for (const language of ["fr", "en"]) {
   for (const ended of ["health", "hunger", "fatigue", "sleep", "reunion", "placement"]) {
@@ -175,7 +222,7 @@ test("biographies keep complete bilingual revisions in the scoped notebook, PDF 
     store, makePdf: async input => { exported = input; return new Blob(["pdf"]); }, downloadPdf() {},
   });
   const state = { serverJourney: { id: "journey-a" }, birthCard: "star" };
-  const wording = { fr: "Un récit complet. ".repeat(100), en: "A complete story. ".repeat(100) };
+  const wording = { fr: "Un récit complet. ".repeat(120), en: "A complete story. ".repeat(120) };
   await ui.useJourney(state);
   const pending = ui.pinBiography(state, wording);
   assert.equal(ui.pinBiography(state, wording), pending);
@@ -206,6 +253,12 @@ test("biographies keep complete bilingual revisions in the scoped notebook, PDF 
   assert.deepEqual(element("#journal-pages").children.map(page =>
     page.children.find(child => child.className === "journal-narrative-text").textContent),
   [wording.fr, wording.en]);
+  const firstPage = element("#journal-pages").children[0];
+  const descendants = node => [node, ...(node.children ?? []).flatMap(descendants)];
+  const textarea = descendants(firstPage).find(node => node.maxLength !== undefined);
+  assert.equal(textarea?.maxLength, 3000);
+  await assert.rejects(biographyJournalEntries(state, { en: "a".repeat(3001), fr: "Texte." }),
+    /Invalid journal biography/);
 });
 
 test("archived notebook selector reads preserved photos without changing or publishing the new notebook", async test => {

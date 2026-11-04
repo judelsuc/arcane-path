@@ -19,8 +19,8 @@ from journey_storage import StoreConnection
 from content_factory import OvhWriter, WorkshopError
 from journeys import JourneyRequest, JourneyCapacity
 from terraform_ovh import private_file
-from opening_story import (BRIEF_ID, MAX_CHARACTERS, OPENING_MODEL, OPENING_TIMEOUT, opening_brief, story_request,
-                           validate_opening_text, validate_parent_reference)
+from opening_story import (BRIEF_ID, OPENING_MODEL, OPENING_TIMEOUT, opening_brief, repair_opening_text,
+                           story_request, valid_opening_length, validate_opening_text, validate_parent_reference)
 from journal_art import CARDS
 import quest_wording
 import parent_wording
@@ -191,7 +191,10 @@ def validate_output(response, *, story=False, closing=False, variants=False, cov
                 if len({str(item[language]).strip().casefold() for item in sentences}) != VARIANT_COUNT:
                     raise ValueError()
         for text in (text for sentence in sentences for text in sentence.values()):
-            if (not isinstance(text, str) or not (CLOSING_MIN if closing else 500 if story else 5) <= len(text) <= (CLOSING_MAX if closing else MAX_CHARACTERS if story else 160 if cover else 400) or text.strip() != text
+            if (not isinstance(text, str) or
+                    (not valid_opening_length(text) if story else
+                     not (CLOSING_MIN if closing else 5) <= len(text) <= (CLOSING_MAX if closing else 160 if cover else 400))
+                    or text.strip() != text
                     or any(ord(c) < 32 and not ((story or closing) and c == "\n") for c in text)
                     or any(marker in text.lower() for marker in ("<", ">", "http:", "https:", "```"))):
                 raise ValueError()
@@ -456,10 +459,16 @@ class LiveNarrative:
                     usage = usage_of(response)
                     output = validate_output(response, story=story, closing=closing, cover=cover,
                                              variants=row["brief"].startswith("event.") or row["brief"] == DREAM_BRIEF)
+                    if story:
+                        output, repairs = repair_opening_text(output, brief)
+                        if repairs:
+                            logging.info("Opening story repaired: %s", ", ".join(sorted(repairs)))
                     if story and not validate_parent_reference(output, brief):
                         raise WorkshopError("Opening backstory changed the saved parent identity; authored text retained.", 502)
-                    if story and not validate_opening_text(output, brief):
-                        raise WorkshopError("Opening backstory was truncated or printed the character name; authored text retained.", 502)
+                    if story and (not all(valid_opening_length(text) for text in output.values())
+                                  or not validate_opening_text(output, brief)):
+                        raise WorkshopError("Opening backstory was truncated or contains an unresolved name or slash form; "
+                                            "authored text retained.", 502)
                     if parent:
                         parent_wording.validate_text(output, brief)
                 except WorkshopError as failure:

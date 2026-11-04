@@ -9,7 +9,8 @@ from journeys import JourneyRequest, character_name
 from parent_story import intimate_story
 
 BRIEF_ID = "story.opening"
-MAX_CHARACTERS = 1800
+MIN_CHARACTERS = 500
+MAX_CHARACTERS = 3000
 OPENING_MODEL = "gpt-oss-120b"
 OPENING_TIMEOUT = 150
 MOTIVES = {
@@ -32,9 +33,106 @@ def validate_parent_reference(output, brief):
             and not any(re.search(gendered, text, flags=re.IGNORECASE) for text in output.values()))
 
 
+def utf16_length(text):
+    return len(text.encode("utf-16-le", errors="surrogatepass")) // 2
+
+
+def valid_opening_length(text):
+    return isinstance(text, str) and MIN_CHARACTERS <= utf16_length(text) <= MAX_CHARACTERS
+
+
+ENDING = r"""[.!?…]+[»”"'’)\]]*"""
+SENTENCE_END = re.compile(ENDING + r"(?=\s|$)")
+COMPLETE_SENTENCE_END = re.compile(ENDING + r"$")
+ABBREVIATIONS = {"mr", "mrs", "ms", "dr", "prof", "st", "ste", "m", "mme", "mlle", "etc", "vs"}
+SLASH_PRONOUN = re.compile(
+    r"\b(il\s*/\s*elle|elle\s*/\s*il|lui\s*/\s*elle|elle\s*/\s*lui|"
+    r"ils\s*/\s*elles|elles\s*/\s*ils)\b(?![\w(]|[-‐‑]même)",
+    flags=re.IGNORECASE,
+)
+
+
+def repair_opening_text(output, brief):
+    """Make only mechanical repairs; all normal validation still applies afterwards."""
+    repaired = dict(output)
+    changes = set()
+
+    def replace_pronoun(match):
+        pair = re.sub(r"\s+", "", match.group().casefold())
+        replacement = ("iels" if pair in ("ils/elles", "elles/ils") else
+                       "cette personne" if pair in ("lui/elle", "elle/lui") else "iel")
+        if match.group().isupper():
+            return replacement.upper()
+        return replacement.capitalize() if match.group()[0].isupper() else replacement
+
+    repaired["fr"], count = SLASH_PRONOUN.subn(replace_pronoun, repaired["fr"])
+    if count:
+        changes.add("neutral pronoun")
+
+    parent = brief.get("parent")
+    if isinstance(parent, str) and parent:
+        parent_participle = re.compile(
+            r"(\bvotre\s+parent(?:\s+" + re.escape(parent) +
+            r")?\s+(?:est|était|sera|serait|reste|restait)\s+)(\w+)\(e\)(?![\w(])",
+            flags=re.IGNORECASE,
+        )
+        repaired["fr"], count = parent_participle.subn(r"\1\2", repaired["fr"])
+        if count:
+            changes.add("parent agreement")
+
+    name = brief.get("characterName")
+    if isinstance(name, str) and len(name) >= 4:
+        words = re.findall(r"\w+", name)
+        separator = r"[\s'’\-‐‑‒–—]+"
+        names = {re.escape(name)}
+        if words and re.fullmatch(r"\w+(?:[\s'’\-‐‑‒–—]+\w+)*", name):
+            names.add(separator.join(re.escape(word) for word in words))
+            if len(words) >= 2:
+                names.add(separator.join(re.escape(word) for word in words[-2:]))
+        if words and len(words[-1]) >= 4:
+            names.add(re.escape(words[-1]))
+        alternatives = "|".join(sorted(names, key=len, reverse=True))
+        comparisons = {
+            "en": (r"like\s+(?:(?:the\s+)?(?:great|famous)\s+)?", "you",
+                   r"(?:\s+you\s+admire)?"),
+            "fr": (r"(?:comme\s+(?:(?:le|la)\s+(?:grand|grande|célèbre)\s+)?|"
+                   r"à\s+l['’]image\s+(?:(?:du|de\s+la|de)\s+|d['’])"
+                   r"(?:(?:grand|grande|célèbre)\s+)?)", "vous", r"(?:\s+que\s+vous\s+admirez)?"),
+        }
+        for language, (comparison, subject, suffix) in comparisons.items():
+            introductory = re.compile(
+                r"(^|(?<=[.!?…])\s+)" + comparison + r"(?:" + alternatives +
+                r"),\s+(" + subject + r")\b", flags=re.IGNORECASE,
+            )
+            repaired[language], count = introductory.subn(
+                lambda match: match.group(1) + match.group(2).capitalize(), repaired[language])
+            parenthetical = re.compile(
+                r"\b(" + subject + r"),\s+" + comparison + r"(?:" + alternatives + r")" +
+                suffix + r",\s+", flags=re.IGNORECASE,
+            )
+            repaired[language], inline_count = parenthetical.subn(r"\1 ", repaired[language])
+            if count or inline_count:
+                changes.add("explicit name comparison")
+
+    for language, text in repaired.items():
+        endings = list(SENTENCE_END.finditer(text))
+        if endings and endings[-1].end() != len(text):
+            ending = endings[-1]
+            prior = re.search(r"\w+$", text[:ending.start()])
+            ambiguous = (ending.group().startswith(".") and not ending.group().startswith("..")
+                         and (not prior or prior.group().casefold() in ABBREVIATIONS or
+                              prior.group().isdecimal() or len(prior.group()) == 1 and
+                              (not prior.start() or text[prior.start() - 1] not in "'’")))
+            candidate = text[:ending.end()]
+            if not ambiguous and valid_opening_length(candidate):
+                repaired[language] = candidate
+                changes.add("incomplete ending")
+    return repaired, changes
+
+
 def validate_opening_text(output, brief):
-    """Reject truncated prose or a printed opted-in character name."""
-    if any(not re.search(r"[.!?…»\"”)]$", text) for text in output.values()):
+    """Reject incomplete prose, unresolved slash forms and a printed character name."""
+    if any(not COMPLETE_SENTENCE_END.search(text) for text in output.values()):
         return False
     if re.search(r"\b(il|elle|lui|ils|elles)\s*/\s*(il|elle|lui|ils|elles)\b|\(e\)", output.get("fr", ""),
                  flags=re.IGNORECASE):
@@ -79,7 +177,7 @@ def opening_brief(record, chunks, *, name_flavour=False):
 
 def story_request(brief, model=OPENING_MODEL):
     return {
-        "model": OPENING_MODEL, "reasoning_effort": "low", "stream": False, "max_tokens": 3000,
+        "model": OPENING_MODEL, "reasoning_effort": "low", "stream": False, "max_tokens": 4000,
         "temperature": 0.9,
         "messages": [
             {"role": "system", "content": (
@@ -161,6 +259,11 @@ def story_request(brief, model=OPENING_MODEL):
                 "or fellow characters, not even as a comparison ('like X', 'as X once did'); readers must "
                 "recognize it only through the child's traits, tastes and habits. "
                 "Do not invent a cartomancer unless departure or adultStory mentions one. "
+                "FINAL CHECK, in both languages: the child searches for their parent, never for the missing object "
+                "or the place where it is hidden. The parent left the letter for the child; the parent did not "
+                "take it away. Do not invent a second object, talisman, clue or direction, and never let the birth "
+                "card guide the search. If adultStory is supplied, end with the child's hope of finding the parent "
+                "and bringing them home, not of finding an object. Correct any sentence that violates these facts. "
                 "The variation token is creative entropy only; do not print or describe it."
             )},
             {"role": "user", "content": json.dumps(brief, ensure_ascii=False)},
@@ -173,7 +276,7 @@ def story_request(brief, model=OPENING_MODEL):
                                             "items": {"type": "string", "maxLength": 160}},
                            "nameTraits": {"type": "array", "maxItems": 5,
                                           "items": {"type": "string", "maxLength": 160}},
-                           **{lang: {"type": "string", "minLength": 500, "maxLength": MAX_CHARACTERS}
+                           **{lang: {"type": "string", "minLength": MIN_CHARACTERS, "maxLength": MAX_CHARACTERS}
                               for lang in ("en", "fr")}},
                        "required": ["localCulture", "nameTraits", "en", "fr"]},
         }},

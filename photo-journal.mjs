@@ -9,7 +9,7 @@ import { journeyMapView, journeyMapDescription, drawJourneyMap } from "./journey
 import { notebookCover } from "./notebook-cover.mjs";
 import { renderDiscoveryNotebook, discoveryNotebookEntries } from "./discovery-ui.mjs";
 import { createJournalIllustrator, illustrationScenes, illustrationSettingNote, COVER_ART_ID } from "./journal-art.mjs";
-import { createLiveNarrative, JOURNAL_SUBTITLE } from "./live-narrative.mjs";
+import { createLiveNarrative, JOURNAL_SUBTITLE, OPENING_STORY_MAX_CHARACTERS } from "./live-narrative.mjs";
 import { archivedJourneys } from "./journey-save.mjs";
 import { translate } from "./i18n.mjs";
 import { CLOSING_STORY, closingSummary, closingStoryText } from "./closing-story.mjs";
@@ -18,7 +18,8 @@ import { questJournalEntries } from "./quest-journal.mjs";
 
 export async function biographyJournalEntries(state, wording, generated = true) {
   if (!wording || !["fr", "en"].every(language =>
-    typeof wording[language] === "string" && wording[language].trim() && wording[language].length <= 1800)) {
+    typeof wording[language] === "string" && wording[language].trim() &&
+      wording[language].length <= OPENING_STORY_MAX_CHARACTERS)) {
     throw new Error("Invalid journal biography.");
   }
   const digest = await crypto.subtle.digest("SHA-256",
@@ -32,6 +33,9 @@ export async function biographyJournalEntries(state, wording, generated = true) 
     note: wording[language],
   }));
 }
+
+const noteLimit = id => typeof id === "string" && id.startsWith("biography:")
+  ? OPENING_STORY_MAX_CHARACTERS : 2000;
 
 export function validateJournalPhoto(photo) {
   if (!photo || typeof photo.sourceUrl !== "string" || typeof photo.licenseUrl !== "string" ||
@@ -119,7 +123,7 @@ export function createPhotoJournalStore(index = indexedDB) {
     pin(photo, { unannotated = false, id = photo.sourceUrl, caption = "", note = "" } = {}) {
       validateJournalPhoto(photo);
       if (typeof id !== "string" || !id || typeof caption !== "string" ||
-          typeof note !== "string" || note.length > 2000) throw new Error("Invalid journal entry.");
+          typeof note !== "string" || note.length > noteLimit(id)) throw new Error("Invalid journal entry.");
       return transaction("readwrite", (store, done) => {
         const request = store.get(key(id));
         request.onsuccess = () => {
@@ -132,7 +136,7 @@ export function createPhotoJournalStore(index = indexedDB) {
       });
     },
     note(id, note) {
-      if (typeof note !== "string" || note.length > 2000) throw new Error("Journal note is too long.");
+      if (typeof note !== "string" || note.length > noteLimit(id)) throw new Error("Journal note is too long.");
       return transaction("readwrite", (store, done) => {
         const request = store.get(key(id));
         request.onsuccess = () => {
@@ -572,7 +576,7 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
           const note = document.createElement("textarea");
           note.value = drafts.get(entry.id) ?? photo.note;
           note.placeholder = t("journalNotePlaceholder");
-          note.maxLength = 2000;
+          note.maxLength = noteLimit(entry.id);
           note.rows = 3;
           note.disabled = readOnly;
           label.append(note);

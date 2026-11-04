@@ -246,14 +246,20 @@ sans bouton de regeneration. Une ancienne biographie sans cette inspiration est
 remplacee une seule fois ; les relectures reutilisent ensuite le recit conserve.
 Un message visible « Veuillez patienter » et un indicateur accompagnent l'ecriture ;
 le voyage ne peut pas commencer avant son terme. En cas d'echec explicite, le recit
-d'origine permet de continuer. Le recit integre au moins trois details culturels
-connus de la ville ou de sa region (plats, marches, fetes, traditions), comme
-simple atmosphere, jamais comme indice. Un nom celebre reconnu (personnage ou
-figure historique) faconne nettement la personnalite et les habitudes de l'enfant,
-sans le nommer ni changer l'intrigue. Ce recit utilise le modele OVH gpt-oss-120b
-(raisonnement faible, delai 150 s, environ une minute d'attente) ; un texte tronque,
-qui cite le nom du personnage ou une forme « il/elle » est ecarte. La case de personnalisation concerne les evenements
-uniquement. Les nouveaux textes d'evenements evoluent par jour de jeu,
+d'origine permet de continuer. Le modele est invite a integrer au moins trois details
+culturels de la ville ou de sa region (plats, marches, fetes, traditions), comme
+simple atmosphere, jamais comme indice ; il peut toutefois se tromper sur un detail.
+Un nom celebre reconnu (personnage ou figure historique) inspire la personnalite
+et les habitudes de l'enfant, sans le nommer ni changer l'intrigue. Le recit utilise
+le modele OVH gpt-oss-120b (raisonnement faible, delai 150 s, environ une minute
+d'attente), avec 4 000 jetons de sortie et jusqu'a 3 000 caracteres par langue.
+Les formes « il/elle » peuvent etre remplacees par « iel », certaines comparaisons
+explicites au nom sont retirees et une derniere phrase incomplete peut etre coupee.
+Les textes corriges passent les memes controles ; si un probleme ne peut pas etre
+resolu, le recit d'origine reste disponible sans nouvel appel automatique. Le carnet,
+le partage et le PDF conservent aussi les biographies plus longues.
+La case de personnalisation concerne les evenements uniquement. Les nouveaux textes
+d'evenements evoluent par jour de jeu,
 sans modifier leurs effets ni remplacer une introduction deja affichee.
 Un indicateur visible signale les textes en cours de generation (sans animation
 si le navigateur demande de reduire les mouvements). Tous les recits de depart,

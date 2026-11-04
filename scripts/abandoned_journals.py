@@ -13,6 +13,7 @@ import time
 
 from journeys import JourneyRequest, JourneyConflict
 from journey_storage import StoreConnection
+from opening_story import MAX_CHARACTERS as BIOGRAPHY_MAX_CHARACTERS, utf16_length
 
 LEASE_SECONDS = 7 * 24 * 60 * 60
 MAX_NOTEBOOK_BYTES = 48 * 1024 * 1024
@@ -30,10 +31,14 @@ def validate_notebook(entries, clues):
                 "id", "title", "sourceUrl", "attribution", "license", "licenseUrl",
                 "note", "caption", "unannotated", "pinnedAt", "mime", "image"}:
             raise JourneyRequest("Invalid notebook entry.")
+        note_limit = (BIOGRAPHY_MAX_CHARACTERS if isinstance(entry["id"], str) and
+                      entry["id"].startswith("biography:") else 2000)
         for field, maximum in (("id", 1000), ("title", 1000), ("attribution", 2000),
-                               ("license", 1000), ("note", 2000), ("caption", 1000),
+                               ("license", 1000), ("note", note_limit), ("caption", 1000),
                                ("pinnedAt", 40), ("sourceUrl", 4000), ("licenseUrl", 4000)):
-            if not isinstance(entry[field], str) or len(entry[field]) > maximum:
+            if (not isinstance(entry[field], str) or
+                    (utf16_length(entry[field]) if field == "note" and note_limit == BIOGRAPHY_MAX_CHARACTERS
+                     else len(entry[field])) > maximum):
                 raise JourneyRequest("Invalid notebook metadata.")
         if not entry["id"] or entry["id"] in seen or any(not entry[k].strip()
                 for k in ("title", "attribution", "license", "pinnedAt")):

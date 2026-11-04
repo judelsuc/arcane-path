@@ -24,7 +24,7 @@ def intimate_story(trail):
     return {
         "card": intimacy["card"], **{key: profile[key] for key in ("desire", "memory", "object", "letter")},
         "encounter": "The cartomancer presented a card and asked for a personal object it evoked. "
-                     "A real power appeared briefly. She hid the object, claiming its recovery must be deserved. "
+                     "A real power appeared briefly. The cartomancer hid the object, claiming its recovery must be deserved. "
                      "The adult expected a short absence, but kept postponing the return.",
         "objectCustody": {
             "current": "Hidden by the cartomancer and still missing; its location is unknown to the child.",

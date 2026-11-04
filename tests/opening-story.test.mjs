@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createLiveNarrative, OPENING_STORY } from "../live-narrative.mjs";
+import { createLiveNarrative, OPENING_STORY, OPENING_STORY_MAX_CHARACTERS } from "../live-narrative.mjs";
 import { setupOpeningStory } from "../opening-story-ui.mjs";
 import { translate, translations } from "../i18n.mjs";
 
@@ -82,6 +82,35 @@ test("a failed opening uses authored backstory, not a blocking loading screen", 
   const client = createLiveNarrative({ fetcher: async () => ({
     ok: true, json: async () => ({ enabled: true, brief: OPENING_STORY,
       status: "failed", text: null, error: "Test failure" }),
+  }) });
+  client.prefetch(state, [OPENING_STORY]);
+  await flush();
+  assert.equal(client.snapshot(state, OPENING_STORY), null);
+  assert.match(client.status(state, OPENING_STORY, "en"), /could not be written/);
+});
+
+test("opening stories accept the shared 3000-character boundary, but not oversized output", async () => {
+  assert.equal(OPENING_STORY_MAX_CHARACTERS, 3000);
+  for (const length of [1801, 2001, 3000]) {
+    const text = { en: "a".repeat(length), fr: "b".repeat(length) };
+    const client = createLiveNarrative({ fetcher: async () => ({
+      ok: true, json: async () => ({ enabled: true, brief: OPENING_STORY, status: "ready", text }),
+    }) });
+    client.prefetch(state, [OPENING_STORY]);
+    await flush();
+    assert.deepEqual(client.snapshot(state, OPENING_STORY), text);
+  }
+  const previousText = { en: "a".repeat(3000), fr: "b".repeat(3000) };
+  const retained = createLiveNarrative({ fetcher: async () => ({
+    ok: true, json: async () => ({ enabled: true, brief: OPENING_STORY, status: "failed",
+      error: "Test failure", previousText }),
+  }) });
+  retained.prefetch(state, [OPENING_STORY]);
+  await flush();
+  assert.deepEqual(retained.snapshot(state, OPENING_STORY), previousText);
+  const client = createLiveNarrative({ fetcher: async () => ({
+    ok: true, json: async () => ({ enabled: true, brief: OPENING_STORY, status: "ready",
+      text: { en: "😀".repeat(1501), fr: "b".repeat(600) } }),
   }) });
   client.prefetch(state, [OPENING_STORY]);
   await flush();

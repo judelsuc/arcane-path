@@ -1,10 +1,15 @@
 {
-  "version": "0.21.10",
+  "version": "0.21.11",
   "entries": [
     {
+      "version": "0.21.11",
+      "fr": "Le récit d'ouverture dispose de plus de place pour se terminer. Certaines formes neutres, comparaisons au nom et fins incomplètes peuvent être corrigées sans nouvel appel ; le récit d'origine reste disponible si la vérification échoue. Le carnet et son partage conservent les biographies plus longues.",
+      "en": "The opening story has more room to finish. Some neutral forms, comparisons to the name and incomplete endings can be repaired without another call; the authored story remains available if validation fails. The journal and notebook sharing preserve longer biographies."
+    },
+    {
       "version": "0.21.10",
-      "fr": "Le récit d'ouverture est écrit par un modèle plus grand : spécialités et traditions locales plus justes, et un nom célèbre transparaît davantage dans le caractère de l'enfant. L'écriture peut prendre environ une minute. Le récit vouvoie toujours le joueur, et un texte tronqué ou qui cite le nom du personnage est écarté au profit du récit d'origine.",
-      "en": "The opening story is written by a larger model: more accurate local specialities and traditions, and a famous name shows more clearly in the child's character. Writing can take about a minute. A story that is cut off or prints the character's name is discarded in favour of the authored story."
+      "fr": "Le récit d'ouverture est écrit par un modèle plus grand : davantage de spécialités et de traditions locales, et un nom célèbre transparaît davantage dans le caractère de l'enfant. L'écriture peut prendre environ une minute. Le modèle reçoit la consigne de vouvoyer le joueur, et un texte tronqué ou qui cite le nom du personnage est écarté au profit du récit d'origine.",
+      "en": "The opening story is written by a larger model: more local specialities and traditions, and a famous name shows more clearly in the child's character. Writing can take about a minute. A story that is cut off or prints the character's name is discarded in favour of the authored story."
     },
     {
       "version": "0.21.9",
