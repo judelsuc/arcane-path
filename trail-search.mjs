@@ -211,15 +211,40 @@ export function openingClueText(state, t) {
     direction: t(`hintCompass.${fieldClueFacts(state, hint).direction}`) });
 }
 
+function arrivalPhotoClue(state) {
+  const trail = state.trail, hints = trail?.exploration?.hints ?? [];
+  const discovery = trail?.discovery;
+  if (discovery?.kind !== "photo" || discovery.step + 1 !== trail.index ||
+      hints.some(h => h.stage === trail.index && h.kind === "photo")) return undefined;
+  // A witness lead can be downgraded to a direction while the arrival photo is still shown;
+  // the photo keeps that lead's position, time and precision so save validation still holds.
+  const witness = hints.find(h => h.stage === trail.index && h.channel === "npc" &&
+    h.elapsedMinutes === discovery.elapsedMinutes && h.precision !== "precise");
+  return witness && { ...witness, kind: "photo", source: "arrival" };
+}
+
+export function collectedClues(state) {
+  const hints = (state.trail?.exploration?.hints ?? []).filter(h =>
+    h.stage === state.trail.index && ["prefix", "photo"].includes(h.kind));
+  const arrival = arrivalPhotoClue(state);
+  return arrival ? [arrival, ...hints] : hints;
+}
+
+function isCollectedClue(state, hint) {
+  return hint?.source === "arrival"
+    ? JSON.stringify(hint) === JSON.stringify(arrivalPhotoClue(state))
+    : Boolean(state.trail.exploration?.hints.includes(hint));
+}
+
 export function recognitionHint(state) {
   const hints = state.trail?.exploration?.hints ?? [];
   if (hints.some(h => h.stage === state.trail.index && h.kind === "place")) return undefined;
-  return hints.findLast(h => h.stage === state.trail.index && h.precision === "partial" && h.kind === "prefix") ??
-    hints.findLast(h => h.stage === state.trail.index && ["prefix", "photo"].includes(h.kind));
+  const clues = collectedClues(state);
+  return clues.findLast(h => h.precision === "partial" && h.kind === "prefix") ?? clues.at(-1);
 }
 
 export async function prepareRecognition(state, hint, signal, fetcher = fetch) {
-  if (!state.serverJourney?.id || !state.trail.exploration?.hints.includes(hint) ||
+  if (!state.serverJourney?.id || !isCollectedClue(state, hint) ||
       hint.stage !== state.trail.index || !["prefix", "photo"].includes(hint.kind)) {
     throw new Error("No collected clue to ask about.");
   }
@@ -248,7 +273,7 @@ export async function prepareRecognition(state, hint, signal, fetcher = fetch) {
 
 export function askAboutClue(state, prepared, cell, info, survival, economy, random = Math.random) {
   if (state.ended || prepared.hint.stage !== state.trail.index ||
-      !state.trail.exploration?.hints.includes(prepared.hint) ||
+      !isCollectedClue(state, prepared.hint) ||
       state.col !== prepared.col || state.row !== prepared.row) throw new Error("Stale recognition request.");
   const result = askDirections(state, cell, info, survival, economy, random);
   let suggestion;
@@ -269,7 +294,10 @@ export function askAboutClue(state, prepared, cell, info, survival, economy, ran
         : others[Math.floor((correct ? (roll - confidence) / (1 - confidence) : roll) * others.length)];
     }
   }
-  const exploration = state.trail.exploration;
+  const { source, ...recorded } = prepared.hint;
+  const exploration = source === "arrival"
+    ? { ...state.trail.exploration, hints: [...state.trail.exploration.hints, recorded] }
+    : state.trail.exploration;
   const report = { stage: state.trail.index, kind: prepared.hint.kind,
     precision: prepared.hint.precision, elapsedMinutes: result.state.elapsedMinutes,
     outcome: suggestion ? "suggestion" : result.outcome === "helped" ? "unsure" : result.outcome,

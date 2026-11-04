@@ -1863,6 +1863,11 @@ la plus proche commencant par ces lettres, ou une ville qui rappelle la photo.
 Elles peuvent confondre des noms similaires ou se tromper sur l'image.
 Ces avis restent explicitement **non confirmes**, sont sauvegardes a part
 des indices et n'avancent jamais la quete.
+La photo recue a l'arrivee dans une ville compte comme photo recueillie pour
+l'etape en cours, meme si le temoin, lasse, n'a donne qu'une direction : elle
+est enregistree comme indice photo vague au moment ou on la montre. Dans
+Quetes, le bouton **Interroger quelqu'un sur cette photo…** sous la photo
+ouvre la section Indices et reperes du panneau **Enqueter ici**.
 
 Pour les parcours de villes, l'enquete est accessible sur la case du point
 repere et ses huit voisines (250 m par axe), afin de ne pas exiger le pixel

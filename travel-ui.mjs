@@ -685,6 +685,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const trailUI = setupTrail(t, {
     narrative: liveNarrative,
     pinPhoto,
+    openClues: () => {
+      trailUI.localize();
+      questLayout.openClues();
+    },
     askDirections(destination) {
       const current = economyContext();
       if (!current || current.blocked) return null;

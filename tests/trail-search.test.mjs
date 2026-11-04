@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { beginExploration, fieldSearchRules, fieldSearchChance, fieldSearchAvailable,
   prepareFieldSearch, applyFieldSearch, loadSearchProximity, fieldClueText,
-  prepareRecognition, askAboutClue, recognitionHint, openingClue, openingClueText } from "../trail-search.mjs";
+  prepareRecognition, askAboutClue, recognitionHint, collectedClues, openingClue, openingClueText } from "../trail-search.mjs";
 import { startSurvival } from "../survival.mjs";
 import { startEconomy } from "../economy.mjs";
 import { trailClue } from "../trail-actions.mjs";
@@ -415,6 +415,44 @@ test("recognition API validates collected clue, candidates and stale replies, wi
   await assert.rejects(prepareRecognition(state, hint, signal(),
     async () => response({ error: "Offline" }, 503)), /Offline/);
   await assert.rejects(prepareRecognition(state, { ...hint }, signal()), /collected/);
+});
+
+function arrivedWithPhoto() {
+  const initial = start();
+  const next = trailClue({ ...initial, col: initial.trail.stages[0].col }, "photo", cell, info, survival, economy);
+  // A cooled witness downgrades the photo lead to a direction while the arrival photo is still shown.
+  const hints = next.trail.exploration.hints.map(h => h.kind === "photo" ? { ...h, kind: "direction" } : h);
+  return { ...next, trail: { ...next.trail, exploration: { ...next.trail.exploration, hints } } };
+}
+
+test("the arrival photo can be shown to someone even when its witness lead was a direction", async () => {
+  const arrived = arrivedWithPhoto();
+  assert.deepEqual(validateSave(JSON.parse(JSON.stringify(save(arrived)))).state, arrived);
+  const state = { ...arrived, serverJourney: { id: "a".repeat(32) } };
+  const hint = recognitionHint(state);
+  assert.deepEqual(collectedClues(state), [hint]);
+  assert.equal(hint.kind, "photo");
+  assert.equal(hint.source, "arrival");
+  const target = state.trail.stages[1];
+  const prepared = await prepareRecognition(state, hint, signal(), async url => {
+    assert.match(url, /stage=1/);
+    assert.match(url, /recognize=vague-photo/);
+    return response({ status: "recognition", stage: 1, col: state.col, row: state.row, kind: "vague-photo",
+      towns: [town(target.name, target.latitude, target.longitude), town("Elsewhere")],
+      sourceUrl: "https://www.geonames.org/" });
+  });
+  const result = askAboutClue(state, prepared, cell, info, survival, economy, () => 0);
+  const hints = result.state.trail.exploration.hints;
+  assert.equal(hints.filter(h => h.stage === 1 && h.kind === "photo").length, 1);
+  assert.equal(hints.at(-1).source, undefined);
+  assert.equal(result.state.trail.exploration.lastReport.kind, "photo");
+  const { serverJourney: _, ...saved } = result.state;
+  assert.deepEqual(validateSave(JSON.parse(JSON.stringify(save(saved)))).state, saved);
+  assert.deepEqual(collectedClues(result.state).map(h => h.source), [undefined]);
+  await assert.rejects(prepareRecognition(state, { ...hint, precision: "partial" }, signal()), /collected/);
+  const moved = { ...state, trail: { ...state.trail, discovery: { ...state.trail.discovery, kind: "letter" } } };
+  assert.deepEqual(collectedClues(moved), []);
+  assert.throws(() => askAboutClue(moved, prepared, cell, info, survival, economy, () => 0), /Stale/);
 });
 
 test("save validation rejects malformed or future hint/recognition history", () => {

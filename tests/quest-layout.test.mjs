@@ -98,6 +98,18 @@ test("directions shortcut focuses the empty-state explanation when no destinatio
   assert.equal(f.get("hint-town").focused, false);
 });
 
+test("clue shortcut leaves Quests for the investigation clue list and focuses the first question", t => {
+  const f = fixture(t, true);
+  const ask = { focused: false, focus() { this.focused = true; }, scrollIntoView(o) { this.scrolled = o; } };
+  f.get("hint-clues").querySelector = selector => selector === "button:not([disabled])" ? ask : null;
+  f.get("trail-dialog").showModal();
+  f.layout.openClues();
+  assert.equal(f.get("trail-dialog").open, false);
+  assert.equal(f.get("investigation-dialog").open, true);
+  assert.equal(ask.focused, true);
+  assert.deepEqual(ask.scrolled, { block: "center" });
+});
+
 test("directions shortcut respects disabled actions and other modals", t => {
   const f = fixture(t, true);
   f.get("open-investigation").disabled = true;

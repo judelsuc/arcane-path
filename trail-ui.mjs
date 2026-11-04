@@ -14,7 +14,7 @@ import { LOST_PLAYER_DREAM } from "./live-narrative.mjs";
 import { intimateWitness, parentIntimacy } from "./parent-intimacy.mjs";
 import { parentIntuitionText } from "./parent-recollection.mjs";
 import { fieldSearchAvailable, fieldSearchRules, prepareFieldSearch, fieldClueText, vagueLead,
-  recognitionHint, prepareRecognition, openingClue, openingClueText } from "./trail-search.mjs";
+  recognitionHint, collectedClues, prepareRecognition, openingClue, openingClueText } from "./trail-search.mjs";
 
 export function parentClueText(state, discovery, t) {
   const testimony = ["discuss", "buy"].includes(discovery.kind) ? intimateWitness(state, discovery.step, t) : "";
@@ -136,7 +136,8 @@ export function trailEntryDate(state, minutes, language, t) {
   }).format(new Date(state.startedAt + minutes * 60_000))} UTC`;
 }
 
-export function setupTrail(t, { context, interview, discover, askDirections, searchField, recognizeField, pinPhoto, narrative }) {
+export function setupTrail(t, { context, interview, discover, askDirections, searchField, recognizeField, pinPhoto, narrative,
+  openClues = () => {} }) {
   const dialog = document.querySelector("#trail-dialog");
   const investigationDialog = document.querySelector("#investigation-dialog");
   const action = document.querySelector("#trail-interview");
@@ -349,8 +350,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
           : t(directionsOutcome ? `hintOutcome.${directionsOutcome}` : "hintBeforeAsk");
       const clues = document.querySelector("#hint-clues");
       clues.replaceChildren();
-      for (const hint of current.state.trail?.exploration?.hints ?? []) {
-        if (hint.stage !== current.state.trail.index || !["prefix", "photo"].includes(hint.kind)) continue;
+      for (const hint of current.state.trail ? collectedClues(current.state) : []) {
         const item = document.createElement("li"), button = document.createElement("button");
         paragraph(item, fieldClueText(current.state, hint, t));
         button.type = "button";
@@ -706,6 +706,10 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       photo.hidden = true;
       clearPhoto();
     }
+    const photoAsk = document.querySelector("#trail-photo-ask");
+    photoAsk.textContent = t("fieldAskPhoto");
+    photoAsk.hidden = photo.hidden || !currentPage || viewedStage !== trail.index ||
+      !collectedClues(state).some(hint => hint.kind === "photo");
   }
   function open() {
     if (!context()?.state.trail || document.querySelector("dialog[open]")) return;
@@ -726,6 +730,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     if (viewedStage < lastActiveStage) changePage(viewedStage + 1);
   });
   document.querySelector("#trail-page-current").addEventListener("click", () => changePage(lastActiveStage));
+  document.querySelector("#trail-photo-ask").addEventListener("click", () => openClues());
   for (const name of ["current", "past"]) {
     document.querySelector(`#trail-section-${name}`).addEventListener("click", () => {
       section = name;

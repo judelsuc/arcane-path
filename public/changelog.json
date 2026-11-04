@@ -1,6 +1,11 @@
 {
-  "version": "0.21.7",
+  "version": "0.21.8",
   "entries": [
+    {
+      "version": "0.21.8",
+      "fr": "La photo reçue en arrivant dans une ville peut toujours être montrée à quelqu'un, même lorsque le témoin n'a donné qu'une direction. Sous la photo, dans Quêtes, « Interroger quelqu'un sur cette photo… » ouvre directement les indices du panneau « Enquêter ici ». Les réponses restent non confirmées.",
+      "en": "The photo received on arriving in a town can always be shown to someone, even when the witness only gave a direction. Below the photo in Quests, “Ask someone about this photo…” opens the clues in the “Investigate here” panel directly. Answers remain unconfirmed."
+    },
     {
       "version": "0.21.7",
       "fr": "Les personnages proposent de nouveau leurs missions de service. Les lieux réels d'une mission sont d'abord lus dans les données de carte OpenStreetMap déjà téléchargées pour le monde du jeu, puis auprès du service en ligne seulement si nécessaire. Quand ce service est saturé et que la carte locale est incomplète, la demande reste réessayable au lieu d'être refusée définitivement. Aucun lieu n'est inventé.",

@@ -109,6 +109,14 @@ export function setupQuestLayout(t) {
     target.scrollIntoView({ block: "center" });
     target.focus();
   }
+  function openClues() {
+    if (quests.open) quests.close();
+    openInvestigation();
+    if (!investigation.open) return;
+    const target = $("hint-clues").querySelector("button:not([disabled])") ?? $("hint-clues");
+    target.scrollIntoView({ block: "center" });
+    target.focus();
+  }
   investigationTrigger.addEventListener("click", openInvestigation);
   investigationClose.addEventListener("click", () => investigation.close());
   investigation.addEventListener("close", () => investigationTrigger.focus());
@@ -116,7 +124,7 @@ export function setupQuestLayout(t) {
   quests.addEventListener("close", () => $("open-quests").focus());
   select(selected);
   return {
-    open, select, openDirections,
+    open, select, openDirections, openClues,
     localize() {
       title.textContent = t("quests.title");
       close.textContent = t("windowHelpClose");
