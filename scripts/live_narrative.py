@@ -19,7 +19,8 @@ from journey_storage import StoreConnection
 from content_factory import OvhWriter, WorkshopError
 from journeys import JourneyRequest, JourneyCapacity
 from terraform_ovh import private_file
-from opening_story import BRIEF_ID, MAX_CHARACTERS, opening_brief, story_request, validate_parent_reference
+from opening_story import (BRIEF_ID, MAX_CHARACTERS, OPENING_MODEL, OPENING_TIMEOUT, opening_brief, story_request,
+                           validate_opening_text, validate_parent_reference)
 from journal_art import CARDS
 import quest_wording
 import parent_wording
@@ -171,6 +172,12 @@ def validate_output(response, *, story=False, closing=False, variants=False, cov
         if message.get("refusal"):
             raise ValueError()
         value = json.loads(message["content"])
+        if story and isinstance(value, dict) and set(value) == {"localCulture", "nameTraits", "en", "fr"}:
+            if (any(not isinstance(value[key], list) or len(value[key]) > 6 or
+                    any(not isinstance(note, str) or len(note) > 160 for note in value[key])
+                    for key in ("localCulture", "nameTraits")) or len(value["localCulture"]) < 3):
+                raise ValueError()
+            value = {"en": value["en"], "fr": value["fr"]}
         if not isinstance(value, dict) or set(value) != ({"en", "fr", "alternatives"} if variants else {"en", "fr"}):
             raise ValueError()
         sentences = [{lang: value[lang] for lang in ("en", "fr")}]
@@ -237,7 +244,8 @@ class LiveNarrative:
             token = private_file(Path(path)).strip()
             if not token or not token.isascii() or any(c.isspace() for c in token):
                 raise ValueError("Invalid private live narrative access key.")
-            writer = OvhWriter(token, MODEL, provider_request)
+            writer = OvhWriter(token, MODEL, provider_request,
+                               timeout=lambda brief: OPENING_TIMEOUT if brief.get("kind") == BRIEF_ID else 45)
         return cls(journeys, authorization, writer)
 
     @contextmanager
@@ -439,7 +447,8 @@ class LiveNarrative:
                         db.execute(f"UPDATE {self.wording_table} SET status='running',calls=calls+1,"
                                    f"token=?,expires=({clock(self.assets.catalogue)})+300 WHERE seq=?",
                                    (token, row["rowid"]))
-                logging.info("Live narrative provider attempt: brief=%s model=%s", row["brief"], MODEL)
+                logging.info("Live narrative provider attempt: brief=%s model=%s", row["brief"],
+                             OPENING_MODEL if story else MODEL)
                 output, usage, error = None, None, None
                 try:
                     brief = json.loads(row["input"]) if story or closing or cover or contextual or quest or parent else CATALOGUE[row["brief"]]
@@ -449,6 +458,8 @@ class LiveNarrative:
                                              variants=row["brief"].startswith("event.") or row["brief"] == DREAM_BRIEF)
                     if story and not validate_parent_reference(output, brief):
                         raise WorkshopError("Opening backstory changed the saved parent identity; authored text retained.", 502)
+                    if story and not validate_opening_text(output, brief):
+                        raise WorkshopError("Opening backstory was truncated or printed the character name; authored text retained.", 502)
                     if parent:
                         parent_wording.validate_text(output, brief)
                 except WorkshopError as failure:

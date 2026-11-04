@@ -158,9 +158,10 @@ def validate_response(response):
 
 
 class OvhWriter:
-    def __init__(self, token, model, request_builder=provider_request):
+    def __init__(self, token, model, request_builder=provider_request, timeout=45):
         self.token, self.model = token, model
         self.request_builder = request_builder
+        self.timeout = timeout
         self.opener = urllib.request.build_opener(NoRedirect())
 
     def __call__(self, brief):
@@ -170,7 +171,8 @@ class OvhWriter:
                      "Accept": "application/json", "User-Agent": "ArcanePath-ContentWorkshop/1"},
         )
         try:
-            with self.opener.open(request, timeout=45) as response:
+            timeout = self.timeout(brief) if callable(self.timeout) else self.timeout
+            with self.opener.open(request, timeout=timeout) as response:
                 if response.status != 200 or response.headers.get_content_type() != "application/json":
                     raise WorkshopError("OVH returned an unexpected response type.", 502)
                 raw = response.read(64 * 1024 + 1)

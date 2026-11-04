@@ -1,6 +1,11 @@
 {
-  "version": "0.21.9",
+  "version": "0.21.10",
   "entries": [
+    {
+      "version": "0.21.10",
+      "fr": "Le récit d'ouverture est écrit par un modèle plus grand : spécialités et traditions locales plus justes, et un nom célèbre transparaît davantage dans le caractère de l'enfant. L'écriture peut prendre environ une minute. Le récit vouvoie toujours le joueur, et un texte tronqué ou qui cite le nom du personnage est écarté au profit du récit d'origine.",
+      "en": "The opening story is written by a larger model: more accurate local specialities and traditions, and a famous name shows more clearly in the child's character. Writing can take about a minute. A story that is cut off or prints the character's name is discarded in favour of the authored story."
+    },
     {
       "version": "0.21.9",
       "fr": "Le récit d'ouverture s'ancre davantage dans la ville de départ : plats, marchés, fêtes et traditions locales colorent les souvenirs de famille. Un nom de personnage célèbre façonne nettement la personnalité de l'enfant et ses petites habitudes. Les illustrations des événements du voyage représentent désormais la scène décrite. Les fenêtres de discussion se ferment quand vous quittez la ville, et les flèches déplacent de nouveau le personnage lorsqu'une fenêtre ouverte n'a pas le focus.",

@@ -10,6 +10,8 @@ from parent_story import intimate_story
 
 BRIEF_ID = "story.opening"
 MAX_CHARACTERS = 1800
+OPENING_MODEL = "gpt-oss-120b"
+OPENING_TIMEOUT = 150
 MOTIVES = {
     "seasonal": "left to seek seasonal work",
     "debt": "left because of debts",
@@ -28,6 +30,22 @@ def validate_parent_reference(output, brief):
     gendered = r"\b(mother|father|mum|mom|dad|maman|papa|mère|père|he|she|him|his|her)\b"
     return (all(brief["parent"] in text for text in output.values())
             and not any(re.search(gendered, text, flags=re.IGNORECASE) for text in output.values()))
+
+
+def validate_opening_text(output, brief):
+    """Reject truncated prose or a printed opted-in character name."""
+    if any(not re.search(r"[.!?…»\"”)]$", text) for text in output.values()):
+        return False
+    if re.search(r"\b(il|elle|lui|ils|elles)\s*/\s*(il|elle|lui|ils|elles)\b|\(e\)", output.get("fr", ""),
+                 flags=re.IGNORECASE):
+        return False
+    name = brief.get("characterName")
+    if not isinstance(name, str):
+        return True
+    words = re.findall(r"\w+", name)
+    banned = {name.casefold()} | ({words[-1].casefold()} if words and len(words[-1]) >= 4 else set())
+    return not any(re.search(r"(?<!\w)" + re.escape(item) + r"(?!\w)", text.casefold())
+                   for item in banned for text in output.values())
 
 
 def opening_brief(record, chunks, *, name_flavour=False):
@@ -59,18 +77,35 @@ def opening_brief(record, chunks, *, name_flavour=False):
     return brief
 
 
-def story_request(brief, model):
+def story_request(brief, model=OPENING_MODEL):
     return {
-        "model": model, "stream": False, "max_tokens": 1400, "temperature": 0.9,
+        "model": OPENING_MODEL, "reasoning_effort": "low", "stream": False, "max_tokens": 3000,
+        "temperature": 0.9,
         "messages": [
             {"role": "system", "content": (
                 "Write a fresh, tender, mysterious opening backstory for a fictional walking adventure, "
-                "in English and French. Return JSON with en and fr strings, 500-1800 characters each, "
-                "with equivalent meaning. Address the child traveller as 'you'. Explain who their parent "
+                "in English and French. Return JSON with en and fr strings of about 700-1100 characters each "
+                "(French included, never above 1500), with equivalent meaning, each ending with a complete sentence. "
+                "Address the child traveller as 'you'. Explain who their parent "
                 "is to them, the parent's supplied reason for leaving, and why the child begins searching. "
+                "PLAN FIRST, in two private planning arrays that are never shown to players. "
+                "localCulture: 3 to 6 short notes naming specific, confidently known traditions of "
+                "startingPlace itself or, failing that, its immediate region: signature dishes, pastries, "
+                "cheeses, drinks, markets, festivals, saints' days, songs, crafts, trades, industrial heritage, "
+                "dialect words, landmarks or customs, fitting the season. Prefer what makes this town or region "
+                "distinct over national cliches, and never attribute another region's speciality to it. "
+                "nameTraits: if characterName confidently evokes a well-known fictional character, historical "
+                "figure or public persona, 3 to 5 short notes of concrete, recognizable traits, tastes and habits "
+                "the child will show, inspired by that reference; otherwise an empty array. "
+                "Then write en and fr so that EVERY localCulture note and EVERY nameTraits note visibly appears in "
+                "both texts. These two requirements matter as much as the plot facts. "
                 "The supplied parent name and departure reason are immutable. "
                 "Refer only to 'your parent NAME' / 'votre parent NAME'; gender is unknown. "
                 "Never use mother, father, he, she, his, her, mere or pere, or invent parental gender. "
+                "Use 'they/them/their' and avoid gendered relatives such as grandmother, grandfather, "
+                "grand-mere or grand-pere. In French, always address the child with 'vous' (never 'tu'), "
+                "and never write slash forms such as il/elle, lui/elle or parti(e); rephrase with "
+                "'votre parent' or the parent's name instead. "
                 "When adultStory is supplied, ground the biography in its intimate desire, its exact domestic "
                 "memory and personal object, the cartomancer encounter and the letter left before departure. "
                 "Respect adultStory.objectCustody literally. The personal object in the domestic memory is "
@@ -122,6 +157,10 @@ def story_request(brief, model):
                 "Do not import that work's events or setting. For other or uncertain references, use broad literary "
                 "qualities, not close imitation of a creator's distinctive style. "
                 "Keep the child premise and all supplied parent facts unchanged. Do not print characterName. "
+                "Never write characterName or any part of it, and never name the reference, its creator, works "
+                "or fellow characters, not even as a comparison ('like X', 'as X once did'); readers must "
+                "recognize it only through the child's traits, tastes and habits. "
+                "Do not invent a cartomancer unless departure or adultStory mentions one. "
                 "The variation token is creative entropy only; do not print or describe it."
             )},
             {"role": "user", "content": json.dumps(brief, ensure_ascii=False)},
@@ -129,8 +168,13 @@ def story_request(brief, model):
         "response_format": {"type": "json_schema", "json_schema": {
             "name": "opening_backstory", "strict": True,
             "schema": {"type": "object", "additionalProperties": False,
-                       "properties": {lang: {"type": "string", "minLength": 500,
-                                             "maxLength": MAX_CHARACTERS}
-                                      for lang in ("en", "fr")}, "required": ["en", "fr"]},
+                       "properties": {
+                           "localCulture": {"type": "array", "minItems": 3, "maxItems": 6,
+                                            "items": {"type": "string", "maxLength": 160}},
+                           "nameTraits": {"type": "array", "maxItems": 5,
+                                          "items": {"type": "string", "maxLength": 160}},
+                           **{lang: {"type": "string", "minLength": 500, "maxLength": MAX_CHARACTERS}
+                              for lang in ("en", "fr")}},
+                       "required": ["localCulture", "nameTraits", "en", "fr"]},
         }},
     }

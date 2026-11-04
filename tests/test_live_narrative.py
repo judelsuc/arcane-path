@@ -19,7 +19,8 @@ from content_factory import LIMIT, OvhWriter, WorkshopError
 from journal_art import JournalArt
 from journeys import JourneyStore, JourneyRequest, JourneyCapacity
 from live_narrative import CATALOGUE, COVER_BRIEF, DREAM_BRIEF, MODEL, VERSION, LiveNarrative, provider_request, validate_output, version_for
-from opening_story import BRIEF_ID, opening_brief, validate_parent_reference
+from opening_story import (BRIEF_ID, OPENING_MODEL, OPENING_TIMEOUT, opening_brief, validate_opening_text,
+                           validate_parent_reference)
 from closing_story import BRIEF_ID as CLOSING_BRIEF, LIMITS, closing_brief
 from travel_server import ChunkStore, ChunkJobs, atomic_write, make_handler
 import quest_wording
@@ -711,7 +712,10 @@ class LiveNarrativeTests(unittest.TestCase):
                            "check BOTH languages"):
             self.assertIn(constraint, prompt)
         self.assertEqual(request["temperature"], 0.9)
-        self.assertEqual(request["max_tokens"], 1400)
+        self.assertEqual(request["max_tokens"], 3000)
+        self.assertEqual(request["model"], OPENING_MODEL)
+        self.assertEqual(request["reasoning_effort"], "low")
+        self.assertNotEqual(provider_request(CATALOGUE["event.coins"], MODEL)["model"], OPENING_MODEL)
         self.assertGreater(request["temperature"], provider_request(CATALOGUE["event.coins"], MODEL)["temperature"])
         self.assertEqual(json.loads(request["messages"][1]["content"]), brief)
         self.assertNotEqual(opening_brief(record, self.chunks)["variation"],
@@ -776,6 +780,51 @@ class LiveNarrativeTests(unittest.TestCase):
                      "Votre mère Camille est partie.", "Camille left; she said goodbye.",
                      "Your parent Alex left."]:
             self.assertFalse(validate_parent_reference({"en": text, "fr": "Camille"}, {"parent": "Camille"}))
+
+    def test_opening_story_planning_notes_are_validated_and_never_stored(self):
+        story = {"en": "Your parent Camille left. " * 25, "fr": "Votre parent Camille est parti. " * 25}
+        story = {key: value.strip() for key, value in story.items()}
+        def planned(**notes):
+            return {"choices": [{"finish_reason": "stop", "message": {"content": json.dumps(
+                {"localCulture": ["aligot", "fouace", "Laguiole knives"], "nameTraits": [], **notes, **story})}}]}
+        self.assertEqual(validate_output(planned(), story=True), story)
+        for invalid in [{"localCulture": ["aligot"]}, {"nameTraits": ["x" * 161]},
+                        {"nameTraits": "sketching"}]:
+            with self.assertRaises(WorkshopError):
+                validate_output(planned(**invalid), story=True)
+        with self.assertRaises(WorkshopError):
+            validate_output(planned(), story=False)
+
+    def test_opening_story_rejects_truncation_and_printed_character_name(self):
+        brief = {"parent": "Camille", "characterName": "Henri de Toulouse-Lautrec"}
+        complete = {"en": "You sketch the market by the old bridge.", "fr": "Vous dessinez le marché."}
+        self.assertTrue(validate_opening_text(complete, brief))
+        self.assertTrue(validate_opening_text({**complete, "en": "You walk toward Toulouse."}, brief))
+        for text in ["You sketch, much as Lautrec might have.", "Like HENRI DE TOULOUSE-LAUTREC, you draw.",
+                     "Now, as"]:
+            self.assertFalse(validate_opening_text({**complete, "en": text}, brief))
+        for text in ["Camille a dit qu'il/elle partait.", "Vous reviendrez vers lui / elle.", "Camille est parti(e)."]:
+            self.assertFalse(validate_opening_text({**complete, "fr": text}, brief))
+        self.assertTrue(validate_opening_text({"en": "Night falls.", "fr": "La nuit tombe."}, {"parent": "Camille"}))
+        self.assertFalse(validate_opening_text({"en": "You love the night as Dracula did.", "fr": "Ok."},
+                                               {"characterName": "Dracula"}))
+        name = self.journeys.read(self.owner)["state"]["trail"]["parentName"]
+        self.writer.return_value = response(en=(f"Your parent {name} left. " * 30).strip() + " Now, as",
+                                            fr=(f"Votre parent {name} est parti. " * 30).strip())
+        self.request(BRIEF_ID)
+        result = self.settle(BRIEF_ID)
+        self.assertEqual(result["status"], "failed")
+        self.assertIn("truncated", result["error"])
+        self.writer.assert_called_once()
+
+    def test_configured_writer_waits_longer_only_for_opening_story(self):
+        with patch.dict("os.environ", {"ARCANE_LIVE_TEXT_TOKEN_FILE": "unused"}), \
+                patch("live_narrative.private_file", return_value="private-fixture-key"):
+            configured = LiveNarrative.configured(self.journeys, self.auth)
+        self.addCleanup(configured.close)
+        self.assertEqual(configured.writer.timeout({"kind": BRIEF_ID}), OPENING_TIMEOUT)
+        self.assertEqual(configured.writer.timeout(CATALOGUE["event.coins"]), 45)
+        self.assertGreater(OPENING_TIMEOUT, 45)
 
     def test_opening_story_rejects_invented_parent_gender_without_retry(self):
         name = self.journeys.read(self.owner)["state"]["trail"]["parentName"]

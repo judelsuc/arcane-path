@@ -250,7 +250,9 @@ d'origine permet de continuer. Le recit integre au moins trois details culturels
 connus de la ville ou de sa region (plats, marches, fetes, traditions), comme
 simple atmosphere, jamais comme indice. Un nom celebre reconnu (personnage ou
 figure historique) faconne nettement la personnalite et les habitudes de l'enfant,
-sans le nommer ni changer l'intrigue. La case de personnalisation concerne les evenements
+sans le nommer ni changer l'intrigue. Ce recit utilise le modele OVH gpt-oss-120b
+(raisonnement faible, delai 150 s, environ une minute d'attente) ; un texte tronque,
+qui cite le nom du personnage ou une forme « il/elle » est ecarte. La case de personnalisation concerne les evenements
 uniquement. Les nouveaux textes d'evenements evoluent par jour de jeu,
 sans modifier leurs effets ni remplacer une introduction deja affichee.
 Un indicateur visible signale les textes en cours de generation (sans animation
