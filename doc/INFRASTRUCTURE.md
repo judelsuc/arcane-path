@@ -12,6 +12,29 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: arrival photo questions (4 November 2026)
+
+Runtime `c45d3af9b4d16d8626bbafc1a12306c2e1a36a44`, tag
+`deploy-2026-11-04-arrival-photo-questions`, game version **0.21.8**,
+packaged at `2026-11-04T12:37:44.131821+00:00`.
+
+The arrival photo can now be shown to someone as a collected clue, including
+when the witness lead was downgraded to a direction. The button below the photo
+in Quests opens the shared investigation panel's clue list. The hint is recorded
+when asked about so the saved journey remains valid.
+
+The eight-file runtime delta was 136,459 bytes, SHA-256
+`99268d275c8267af00f916157ae1f5dea0c055f0dd82209dea81dadea89e1eea`.
+Rollback archive `/home/ubuntu/runtime-before-0218-c45d3af.tar.gz` (0600),
+SHA-256 `bf6fbd10e85e2656be4646505b74be8f5b83018eb6640d4568c94ab10ebbb9ac`.
+No service restart, database migration or nginx change was needed.
+
+Validation: **1,314 JavaScript tests passed**. All eight deployed file hashes
+matched the package, the homepage, changelog and changed modules returned 200
+over loopback, and both services were active. There were no recent
+error-priority service entries. Authenticated public HTTPS and interactive
+gameplay were not verified.
+
 ## Checkpoint deployed: quest places from cached map data (3 November 2026)
 
 Runtime `127f5be353c945176a6d9130994ca1a349eeb09e`, tag
