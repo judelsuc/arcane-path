@@ -12,6 +12,36 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: opening-story recovery (4 November 2026)
+
+Runtime `b5ed24d9d3c05bf02ec4caab5055b76a4b49c09b`, tag
+`deploy-2026-11-04-opening-recovery`, game version **0.21.11**, packaged at
+`2026-11-04T17:04:32.234267+00:00`. The opening writer has 4,000 output
+tokens and a 3,000-UTF-16-unit limit per language. The client and biography
+storage use the same limit. Narrow repairs for some neutral-pronoun forms,
+explicit name comparisons and incomplete trailing sentences run before the
+existing checks; unresolved problems still keep the authored story, without
+an automatic retry.
+
+The eight-file delta was 45,677 bytes, SHA-256
+`94cd7ef9de3c1f3bb23a84b39e17ffc55c366d958c1d17763794b24ba271a70f`.
+Rollback archive `/home/ubuntu/runtime-before-0.21.11-b5ed24d.tar.gz` (0600),
+SHA-256 `23303c34586d44250564cf03456ea4d480315965a9829bfec1c2147bfd1d39a7`.
+All three local origins were present in shared `custom_origins` immediately
+before restart. All deployed file hashes matched; loopback pages and modules
+returned 200, the service was active with no warning logs, and public HTTPS
+returned 401 without credentials. The generated `release.json` timestamp was
+refreshed after extraction so existing conditional caches fetch the new
+manifest rather than receiving a stale 304.
+
+Validation: 90 focused Python and 54 JavaScript tests passed. A browser check
+stored and edited a 3,000-unit biography while preserving the 2,000-unit limit
+for ordinary photo notes. One post-deploy synthetic Dracula/Firmi worker test
+made one provider call and returned `ready` in 41.5 s (1,401 English and
+1,512 French characters). Technical validation does not guarantee local
+facts or narrative fidelity. Clients still open on the previous release should
+refresh before using longer stories; rolling back to 0.21.10 can reject them.
+
 ## Checkpoint deployed: gpt-oss opening story (4 November 2026)
 
 Runtime `d080dd335ac3e0b50e43836d1f31bab771b8ebf0`, tag
