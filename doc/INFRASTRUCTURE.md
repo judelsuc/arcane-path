@@ -12,6 +12,38 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: companion presence and hygiene (6 November 2026)
+
+Runtime `a0021d232f54cf8745c1adefd0786cca976f1429`, tag
+`deploy-2026-11-06-companion-hygiene`, game version **0.21.16**, packaged at
+`2026-11-06T12:51:12.535573+00:00`. Adds forest hunting and authored companion
+participation in relevant actions/events, including suspended-help explanations.
+Hygiene temporarily reduces effective reputation but improves begging odds;
+walking dirt depends on terrain. Clue-search feedback links to the journal.
+Existing saves remain readable, with no migration or data reset.
+
+The 21-file frontend delta was 184,629 bytes, SHA-256
+`4fc03afdb6e081f845ed4f874bd22a3545096aabb49f6134546dfd2b4337c0d8`.
+Rollback archive `/home/ubuntu/runtime-before-0.21.16-a0021d2.tar.gz` (0600),
+SHA-256 `804db6b6c3e09921085ff1516319b0b2e6ed9f714402c552f9de5b4842c1c41c`.
+Restore its 20 files under `/opt/arcane-path`, remove only the newly added
+`companion-presence.mjs`, and refresh the release manifest mtime to roll back.
+No backend restart or Nginx change is required. Saves containing hunting actions
+require this release's validator: preserve player data and prefer a forward fix
+over rolling clients back after hunting has been used.
+
+Validation: 231 targeted JavaScript tests passed, including exact hunting costs
+and odds, companion need thresholds and historical participation, hygiene
+reputation/compassion bounds, road-versus-forest hygiene, bilingual UI feedback,
+save roundtrips and journal navigation. Browser verification was attempted but
+blocked by browser connection timeouts. All 19 existing source baseline hashes
+and the prior release commit matched; the new module was absent as expected.
+All 21 installed and loopback-served hashes matched the package; the manifest
+mtime was refreshed. Backend PID stayed 266974, both services remained active,
+and recent warning logs were empty. Both public HTTPS domains retained 401 on
+the homepage, travel API and manifest, with favicon 200. Authenticated public
+gameplay was not tested. Reload existing clients for the new modules.
+
 ## Checkpoint deployed: dotted map contrast (6 November 2026)
 
 Runtime `6b7831d77d5ea6c225dbb32a755170b5ebc46055`, tag
