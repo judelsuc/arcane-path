@@ -3,6 +3,7 @@ import { actionInterrupted, finishAction } from "./economy.mjs";
 import { restSurvival, sleepSurvival } from "./survival.mjs";
 import { changeReputation } from "./pressures.mjs";
 import { healthValue } from "./health.mjs";
+import { companionRecord, companionText, validateCompanionRecord } from "./companion-presence.mjs";
 
 export const EVENT_CATALOGUE = Object.freeze({
   food: { polarity: "positive", food: 300 },
@@ -129,6 +130,7 @@ export function advanceJourneyEvents(previous, moved, info, survival, economy) {
   const count = ledger.count + 1;
   const previousWording = ledger.history.findLast(event => event.kind === kind)?.wordingVariant;
   const record = { id: count, opportunity: checks, kind, birthCard, dailyCard,
+    ...companionRecord(moved),
     wordingVariant: ((previousWording ?? -1) + 1) % 3,
     ...chances, elapsedMinutes: moved.elapsedMinutes, col: moved.col, row: moved.row, terrain: info.terrain,
     minutes: next.elapsedMinutes - moved.elapsedMinutes,
@@ -153,7 +155,10 @@ export function journeyEventText(record, t) {
 export function journeyEventTextParts(record, t) {
   const signed = (n, digits = 0) => `${n > 0 ? "+" : ""}${n.toFixed(digits)}`;
   const narrative = `${record.wording?.[t("discovery.inscriptionLanguage")] ?? t(`journeyEvent.${record.kind}`)} `;
-  if (EVENT_CATALOGUE[record.kind].polarity === "story") return [narrative, t("journeyEventStoryOnly")];
+  const companion = ["forestBoar", "forestDogs", "food", "picnic", "waterBreak", "catNap", "whiteDeer", "ribbon"]
+    .includes(record.kind) ? companionText(record, `event.${record.kind}`, t) : "";
+  if (EVENT_CATALOGUE[record.kind].polarity === "story") return [narrative,
+    t("journeyEventStoryOnly"), ...(companion ? [" ", companion] : [])];
   const template = (key, values, benefits) => t(key,
     Object.fromEntries(Object.keys(values).map(name => [name, `{${name}}`])))
     .split(/(\{\w+\})/).filter(Boolean).map(text => {
@@ -173,6 +178,7 @@ export function journeyEventTextParts(record, t) {
     percent: signed((record.speedEffect.factor - 1) * 100),
     minutes: Math.round(record.speedEffect.expiresMinutes - record.elapsedMinutes),
   }, { percent: record.speedEffect.factor - 1 }));
+  if (companion) parts.push(" ", companion);
   return parts;
 }
 
@@ -190,6 +196,7 @@ export function validateJourneyEvents(state, economy, survival) {
   let lastTime = -1, lastOpportunity = 0;
   for (let i = 0; i < e.history.length; i++) {
     const r = e.history[i];
+    validateCompanionRecord(r);
     if (!r || r.id !== e.count - e.history.length + i + 1 ||
         !integer(r.opportunity) || r.opportunity <= lastOpportunity || r.opportunity > e.checks ||
         !Object.hasOwn(EVENT_CATALOGUE, r.kind) ||

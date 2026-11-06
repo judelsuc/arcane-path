@@ -6,6 +6,7 @@ import { advancePressures, didPlace, washingAvailable, refreshPressureTarot } fr
 import { tarotEventChance } from "./tarot-effects.mjs";
 import { healthValue } from "./health.mjs";
 import { journeyEquipmentModifiers, syncJourneyEquipment } from "./equipment.mjs";
+import { companionRecord, validateCompanionRecord } from "./companion-presence.mjs";
 import { activePower, powerCoverage, protectedFatigue, cancelPower } from "./lore-effects.mjs";
 export { tarotEventChance } from "./tarot-effects.mjs";
 
@@ -265,6 +266,9 @@ export function finishAction(previous, next, info, data,
     next = { ...recovered, walletCents: next.walletCents - stolenCents,
       faints: (next.faints ?? 0) + 1,
       lastFaint: { startedMinutes, finishedMinutes: recovered.elapsedMinutes,
+        ...(!sheltered && !activePower(previous, "emperor") &&
+          skyState(journeyDate(previous), info.latitude, info.longitude).phase === "night"
+          ? companionRecord(previous) : {}),
         ...(sleepy ? { reason: "sleep" } : {}),
         col: next.col, row: next.row, sheltered, chance, robbed, stolenCents,
         walletBeforeCents: next.walletCents } };
@@ -296,6 +300,7 @@ export function finishAction(previous, next, info, data,
 export function validateFainting(state) {
   if (state.faints === undefined && state.lastFaint === undefined) return;
   const f = state.lastFaint;
+  validateCompanionRecord(f);
   const integer = n => Number.isSafeInteger(n) && n >= 0;
   if (!Number.isSafeInteger(state.faints) || state.faints < 1 ||
       !f || !Number.isFinite(f.startedMinutes) || f.startedMinutes < 0 ||

@@ -4,6 +4,7 @@ import { changeReputation, sympathy } from "./pressures.mjs";
 import { practiceSkill, practice, outcomeReputation } from "./practice.mjs";
 import { resolveResonance, resonanceGain } from "./arcane-resonance.mjs";
 import { journeyEquipmentModifiers } from "./equipment.mjs";
+import { companionRecord } from "./companion-presence.mjs";
 
 export const MUSIC = Object.freeze({
   beats: 24, loops: 3, slots: 12,
@@ -152,6 +153,7 @@ export function beginBusking(state, cell, info, survival, data, options = {}) {
     resonance: options.resonance ?? false,
   });
   return { ...next, performancePending: actionInterrupted(state, next) ? null : {
+    ...companionRecord(state),
     beats: difficulty.beats,
     maxRewardCents: Math.round(marketPrice(cell, 2, data, info).cents *
       (state.pressures ? 0.75 + sympathy(state) / 200 : 1) * difficulty.multiplier *

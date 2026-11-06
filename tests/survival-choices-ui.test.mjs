@@ -5,6 +5,9 @@ import { setupSurvivalChoices } from "../survival-choices-ui.mjs";
 import { startSurvival } from "../survival.mjs";
 import { startEconomy } from "../economy.mjs";
 import { translate } from "../i18n.mjs";
+import { beginEquipment } from "../equipment.mjs";
+import { companionRecord } from "../companion-presence.mjs";
+import { beginPressures } from "../pressures.mjs";
 
 const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
 const survival = json("../public/config.json").survival;
@@ -42,7 +45,8 @@ function harness(t, language = "en") {
     act: kind => {
       if (fail) { get("#survival-choice-error").textContent = "Action failed"; return; }
       current.state.lastSurvivalChoice = { kind, outcome: "food",
-        foodKcal: 450, moneyCents: 0, minutes: 30, detentionMinutes: 0 };
+        foodKcal: kind === "hunt" ? 800 : 450, moneyCents: 0, minutes: 30, detentionMinutes: 0,
+        ...(kind === "hunt" ? companionRecord(current.state) : {}) };
     },
   });
   ui.localize();
@@ -50,6 +54,46 @@ function harness(t, language = "en") {
   return { get, current, ui, fail: () => { fail = true; } };
 }
 for (const language of ["en", "fr"]) {
+  test(`${language} hunting names the ready dog, explains suspended help and disables on unsuitable terrain`, t => {
+    const h = harness(t, language);
+    h.current.state = beginEquipment(h.current.state);
+    h.current.state.equipment.dog = { name: "Étoile", hunger: 15, careNeed: 15 };
+    h.ui.localize();
+    assert.match(h.get("#choice-hunt-note").textContent, /Étoile/);
+    assert.match(h.get("#choice-hunt-note").textContent, /15/);
+    h.get("#choice-hunt").click();
+    assert.match(h.get("#survival-choice-result").textContent, /Étoile/);
+    assert.match(h.get("#survival-choice-result").textContent, /800/);
+    assert.equal(h.get("#survival-choice-result").focused, true);
+    h.current.state.equipment.dog.hunger = 65;
+    h.ui.localize();
+    assert.match(h.get("#choice-hunt-note").textContent, /65/);
+    h.get("#choice-hunt").click();
+    assert.match(h.get("#survival-choice-result").textContent, /65/);
+    h.current.cell = { terrain: "place" };
+    h.ui.localize();
+    assert.equal(h.get("#choice-hunt").disabled, true);
+    h.current.cell = { terrain: "forest" };
+    h.current.blocked = true;
+    h.ui.localize();
+    assert.equal(h.get("#choice-hunt").disabled, true);
+  });
+  test(`${language} begging preview explains the current hygiene penalty and compassion bonus`, t => {
+    const h = harness(t, language);
+    h.current.state = beginPressures(h.current.state, economy);
+    h.current.state.pressures.cleanliness = 0;
+    h.ui.localize();
+    assert.match(h.get("#choice-beg-note").textContent, /24\.0/);
+    assert.match(h.get("#choice-beg-note").textContent, /12\.0/);
+    h.current.state.lastSurvivalChoice = { kind: "beg", outcome: "money",
+      foodKcal: 0, moneyCents: 100, minutes: 30, detentionMinutes: 0, hygieneBonus: 0.12 };
+    h.ui.localize();
+    assert.match(h.get("#survival-choice-result").textContent, /12\.0/);
+    h.current.state.pressures.cleanliness = 100;
+    h.ui.localize();
+    assert.doesNotMatch(h.get("#choice-beg-note").textContent, /24\.0|12\.0/);
+    assert.match(h.get("#survival-choice-result").textContent, /12\.0/);
+  });
   test(`${language} food search focuses and scrolls the visible result, not the bottom save status`, t => {
     const h = harness(t, language);
     assert.equal(h.get("#survival-choice-result").hidden, true);

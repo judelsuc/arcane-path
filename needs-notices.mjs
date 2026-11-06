@@ -3,6 +3,7 @@ import { isDeath } from "./death.mjs";
 import { renderTarotCard } from "./tarot-cards.mjs";
 import { healthValue } from "./health.mjs";
 import { PLACEMENT_FACTORS } from "./pressures.mjs";
+import { companionText } from "./companion-presence.mjs";
 
 const WARNING_MESSAGES = {
   warning: ["hungerWarningTitle", "hungerWarningText"],
@@ -77,7 +78,7 @@ export function setupNeedsNotices(t, { context }) {
     })}${placement.recovery ? ` ${t("placementRecovery", { town: placement.recovery.town })}` : ""}` : "";
     const faintText = faint ? `${t(faint.reason === "sleep" ? "sleepFaintingText" : "faintingText")} ${t(faint.robbed ? "faintingRobbed" : "faintingSafe", {
       money: (faint.stolenCents / 100).toFixed(2), risk: Math.round(faint.chance * 100),
-    })}` : "";
+    })} ${companionText(faint, "vigilance", t)}`.trimEnd() : "";
     const warning = WARNING_MESSAGES[kind];
     document.querySelector("#needs-notice-title").textContent = t(
       dead ? "deathTitle" : warning ? warning[0] : kind === "fainted" ? "faintingTitle"

@@ -1,6 +1,11 @@
 {
-  "version": "0.21.15",
+  "version": "0.21.16",
   "entries": [
+    {
+      "version": "0.21.16",
+      "fr": "Le chien est présent dans les actions et rencontres où il vous accompagne, avec ses bonus et ses besoins explicités. La chasse en forêt est possible avec ou sans lui ; un chien en forme améliore les chances. Une mauvaise hygiène réduit temporairement la réputation, mais favorise les dons lorsque vous faites la manche. La marche salit moins sur route qu’en forêt. Le mot « journal » dans les résultats de recherche d’indice ouvre directement le carnet.",
+      "en": "Your dog is mentioned in the actions and encounters it accompanies, with explicit bonuses and care needs. Forest hunting is available with or without a dog; a ready companion improves the odds. Poor hygiene temporarily lowers reputation but encourages donations when begging. Walking causes less dirt on roads than in forests. The word “journal” in clue-search feedback opens the notebook directly."
+    },
     {
       "version": "0.21.15",
       "fr": "Les pointillés des cartes sont plus épais et plus sombres, avec un contour clair pour rester visibles sur les tuiles à icônes comme sur le terrain classique. Ils indiquent toujours une direction à vol d’oiseau, pas un chemin praticable.",

@@ -1,10 +1,13 @@
 import { restSurvival, sleepSurvival } from "./survival.mjs";
 import { finishAction, marketPrice, tarotEventChance, didFaint, actionInterrupted } from "./economy.mjs";
-import { didPlace, socialFailureChance, changeReputation } from "./pressures.mjs";
+import { didPlace, beggingFailureChance, changeReputation, beggingHygieneBonus } from "./pressures.mjs";
 import { resolveResonance } from "./arcane-resonance.mjs";
+import { companionRecord } from "./companion-presence.mjs";
+import { journeyEquipmentModifiers } from "./equipment.mjs";
 
 export const CHOICE_RULES = Object.freeze({
   forage: Object.freeze({ minutes: 30, fatigue: 5, failureChance: 0.35, foodKcal: 450 }),
+  hunt: Object.freeze({ minutes: 60, fatigue: 10, failureChance: 0.6, foodKcal: 800, dogChanceBonus: 0.15 }),
   beg: Object.freeze({ minutes: 30, fatigue: 2, failureChance: 0.4, mealUnits: 0.5 }),
   steal: Object.freeze({ minutes: 10, fatigue: 3, failureChance: 0.35, foodKcal: 900, detentionHours: 6 }),
 });
@@ -23,8 +26,16 @@ export function hasFoodShop(cell) {
 export function choiceAvailable(kind, cell) {
   if (!Object.hasOwn(CHOICE_RULES, kind)) throw new Error("Unknown survival choice.");
   if (!cell || cell.unavailable) return false;
-  return kind === "forage" ? cell.terrain === "forest"
+  return ["forage", "hunt"].includes(kind) ? cell.terrain === "forest"
     : kind === "beg" ? cell.terrain === "place" : hasFoodShop(cell);
+}
+
+export function survivalChoiceFailureChance(state, kind, economy) {
+  if (!Object.hasOwn(CHOICE_RULES, kind)) throw new Error("Unknown survival choice.");
+  const rule = CHOICE_RULES[kind];
+  const base = tarotEventChance(rule.failureChance, state, economy);
+  return kind === "beg" ? beggingFailureChance(base, state)
+    : Math.max(0, base - (journeyEquipmentModifiers(state).dogReady ? rule.dogChanceBonus ?? 0 : 0));
 }
 
 export function survivalChoice(state, kind, cell, info, survival, economy, random = Math.random) {
@@ -33,8 +44,7 @@ export function survivalChoice(state, kind, cell, info, survival, economy, rando
   const roll = random();
   if (!Number.isFinite(roll) || roll < 0 || roll >= 1) throw new Error("Invalid survival choice draw.");
   const rule = CHOICE_RULES[kind];
-  const baseFailure = tarotEventChance(rule.failureChance, state, economy);
-  const failure = roll < (kind === "beg" ? socialFailureChance(baseFailure, state) : baseFailure);
+  const failure = roll < survivalChoiceFailureChance(state, kind, economy);
   let next = restSurvival(state, { ...survival,
     rest_minutes: rule.minutes, rest_fatigue_recovery: 0 });
   next = { ...next, fatigue: Math.min(100, next.fatigue + rule.fatigue) };
@@ -71,6 +81,8 @@ function resolveChoice(state, next, kind, failure, cell, info, survival, economy
   return { ...next,
     choiceCounts: { ...state.choiceCounts, [kind]: (state.choiceCounts?.[kind] ?? 0) + 1 },
     lastSurvivalChoice: { kind, outcome, foodKcal, moneyCents, detentionMinutes,
+      ...(kind === "hunt" ? companionRecord(state) : {}),
+      ...(kind === "beg" && state.pressures ? { hygieneBonus: beggingHygieneBonus(state) } : {}),
       minutes: next.elapsedMinutes - state.elapsedMinutes },
   };
 }

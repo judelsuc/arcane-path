@@ -1,5 +1,5 @@
 import { hungerPercent } from "./survival.mjs";
-import { sympathy } from "./pressures.mjs";
+import { sympathy, localReputation, hygieneReputationPenalty } from "./pressures.mjs";
 import { practiceSkill } from "./practice.mjs";
 import { journeyEventText, eventChances } from "./journey-events.mjs";
 import { healthValue } from "./health.mjs";
@@ -45,6 +45,7 @@ export function journeyStats({ state: s, survival, economy }, t, language = "fr"
       row("statsCafeSkill", t("practiceLevel", practiceSkill(s, "cafe"))),
       row("statsFaints", s.faints ?? 0),
       row("choice.forage", s.choiceCounts?.forage ?? 0),
+      row("choice.hunt", s.choiceCounts?.hunt ?? 0),
       row("choice.beg", s.choiceCounts?.beg ?? 0),
       row("choice.steal", s.choiceCounts?.steal ?? 0),
     ]),
@@ -61,7 +62,8 @@ export function journeyStats({ state: s, survival, economy }, t, language = "fr"
       row("pressureVigilance", `${number(p.vigilance)}%`),
       row("pressureCleanliness", `${number(p.cleanliness)}%`),
       row("pressureSympathy", `${number(sympathy(s))}%`),
-      row("statsReputation", p.reputation.find(r => r.locality === p.locality)?.value ?? 0),
+      row("statsReputation", number(localReputation(s), 1)),
+      row("statsHygieneReputation", number(hygieneReputationPenalty(s) ? -hygieneReputationPenalty(s) : 0, 1)),
       row("statsPlacements", `${p.placements.length} / 3`),
       row("statsLocalTime", `${number(p.localMinutes / 60, 1)} h`),
     ]));

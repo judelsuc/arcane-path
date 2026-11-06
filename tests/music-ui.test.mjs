@@ -40,6 +40,7 @@ test("street performance wires melody, successful and failed taps, finish and hi
   t.mock.method(globalThis, "setInterval", callback => { tick = callback; return 123; });
   t.mock.method(globalThis, "clearInterval", () => {});
   const ui = setupMusic((key, args) => `${key} ${JSON.stringify(args ?? {})}`, { available: () => true, begin: () => true,
+    companion: () => ({ companion: { name: "Étoile", ready: true } }),
     difficulty: () => musicDifficulty({ skills: { music: level * 60 } }),
     resonance: () => resonance,
     mistakeLimit: () => limit,
@@ -49,6 +50,7 @@ test("street performance wires melody, successful and failed taps, finish and hi
   nodes.get("#open-music").handlers.click();
   nodes.get("#music-start").handlers.click();
   assert.ok(current);
+  assert.match(nodes.get("#music-skill").textContent, /companion.music.*Étoile/);
   assert.equal(nodes.get("#music-track").children.length, MUSIC.slots);
   assert.equal(nodes.get("#music-track").children.filter(e => e.className === "music-beat rest").length, 4);
   assert.deepEqual(nodes.get("#music-track").children.map(e => e.className !== "music-beat rest"),
@@ -74,6 +76,7 @@ test("street performance wires melody, successful and failed taps, finish and hi
   assert.equal(stops, 1);
   assert.equal(nodes.get("#music-result").dataset.feedback, "failure");
   assert.match(nodes.get("#music-result").textContent, /minigameReputation.*"amount":-3/);
+  assert.match(nodes.get("#music-result").textContent, /companion.music.*Étoile/);
   assert.equal(nodes.get("#music-tap").disabled, true);
   roll = 0.99;
   nodes.get("#music-start").handlers.click();
@@ -83,6 +86,7 @@ test("street performance wires melody, successful and failed taps, finish and hi
   doc.hidden = true;
   doc.handlers.visibilitychange();
   assert.deepEqual(settled, [1, 0]);
+  assert.match(nodes.get("#music-result").textContent, /companion.interrupted.*Étoile/);
   assert.equal(stops, 2);
   ui.reset();
   assert.equal(stops, 2);

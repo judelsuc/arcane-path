@@ -4,6 +4,7 @@ import { askDirections } from "./directions.mjs";
 import { didPlace, witnessCooling } from "./pressures.mjs";
 import { journeyEquipmentModifiers } from "./equipment.mjs";
 import { parentIntimacy, savedParentWording } from "./parent-intimacy.mjs";
+import { companionRecord, validateCompanionRecord } from "./companion-presence.mjs";
 
 const COMPASS = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
 
@@ -151,6 +152,7 @@ export function applyFieldSearch(state, result, cell, info, survival, economy) {
         (exploration.searchStreak?.stage === result.stage ? exploration.searchStreak.failures ?? 0 : 0) +
         (outcome === "nothing" ? 1 : 0)) },
     lastSearch: { stage: result.stage, outcome, minutes: result.minutes, fatigue: result.fatigue,
+      ...(!(state.pressures && rules.precision === "precise") ? companionRecord(state) : {}),
       ...(repeated ? { repeated: true } : {}),
       ...(result.destinationBased ? { destinationBased: true } : {}),
       ...position, elapsedMinutes: next.elapsedMinutes },
@@ -367,6 +369,7 @@ export function validateExploration(state) {
   }
   if (e.lastSearch !== undefined) {
     const r = e.lastSearch;
+    validateCompanionRecord(r);
     if (r?.destinationBased !== undefined && typeof r.destinationBased !== "boolean") fail();
     if (r?.repeated !== undefined && (typeof r.repeated !== "boolean" || r.outcome !== "found")) fail();
     if (!r || !Number.isInteger(r.stage) || r.stage < e.firstStage || r.stage > state.trail.index ||

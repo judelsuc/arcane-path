@@ -12,6 +12,7 @@ import { validateJourneyMap } from "./journey-map.mjs";
 import { validateJourneyEvents, eventPlaytestEnabled } from "./journey-events.mjs";
 import { validateHealth } from "./health.mjs";
 import { restoreEquipment } from "./equipment.mjs";
+import { validateCompanionRecord } from "./companion-presence.mjs";
 import { validateJourneyMiniGames, abandonJourneyMiniGame } from "./journey-mini-games.mjs";
 import { validateDiscovery } from "./discovery.mjs";
 import { validateDiscoverySchedule } from "./discovery-policy.mjs";
@@ -150,10 +151,13 @@ export function validateSave(save) {
       s.dailyTarotSeenDay > s.tarotDay)) fail();
   if (s.choiceCounts !== undefined && (!s.choiceCounts || typeof s.choiceCounts !== "object" ||
       Array.isArray(s.choiceCounts) || Object.entries(s.choiceCounts).some(([kind, count]) =>
-        !["forage", "beg", "steal"].includes(kind) || !integer(count) || count < 0))) fail();
+        !["forage", "hunt", "beg", "steal"].includes(kind) || !integer(count) || count < 0))) fail();
   if (s.lastSurvivalChoice !== undefined) {
     const result = s.lastSurvivalChoice;
-    if (!result || !["forage", "beg", "steal"].includes(result.kind) ||
+    validateCompanionRecord(result);
+    if (result?.hygieneBonus !== undefined && (result.kind !== "beg" ||
+        !Number.isFinite(result.hygieneBonus) || result.hygieneBonus < 0 || result.hygieneBonus > 0.12)) fail();
+    if (!result || !["forage", "hunt", "beg", "steal"].includes(result.kind) ||
         !["food", "money", "nothing", "detained", "exhausted", "fainted", "placed"].includes(result.outcome) ||
         !["foodKcal", "moneyCents", "detentionMinutes", "minutes"].every(k => nonnegative(result[k])) ||
         !integer(result.moneyCents) || !s.choiceCounts?.[result.kind]) fail();
@@ -167,6 +171,7 @@ export function validateSave(save) {
   if (s.lastMove !== null && (!s.lastMove || !["meters", "minutes", "speedKmh",
     "energyKcal", "fatigueGain", "ascentMeters", "descentMeters", "terrainCost"]
     .every(k => nonnegative(s.lastMove[k])) || typeof s.lastMove.elevationKnown !== "boolean")) fail();
+  validateCompanionRecord(s.lastMove);
   const trail = s.trail;
   if (!trail || ![1, 2].includes(trail.version) || typeof trail.parentName !== "string" || !trail.parentName.trim() ||
       !Array.isArray(trail.stages) || !(trail.version === 2

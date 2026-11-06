@@ -2,6 +2,7 @@ import { initialJourney, moveJourney } from "./travel.mjs";
 import { weatherWalkingFactor } from "./weather-effects.mjs";
 import { applyMetabolism, healthValue } from "./health.mjs";
 import { journeyEquipmentModifiers } from "./equipment.mjs";
+import { companionRecord } from "./companion-presence.mjs";
 import { applyLoreWalking } from "./lore-walking.mjs";
 import { activePower, ordinaryEnergyFactor, powerCoverage, protectedFatigue } from "./lore-effects.mjs";
 
@@ -206,7 +207,7 @@ export function walkSurvival(state, dc, dr, from, to, config, weatherInfo) {
       distanceMeters: state.distanceMeters + 250, ascentMeters: state.ascentMeters + ascent,
       descentMeters: state.descentMeters + descent, fatigue: Math.min(100, state.fatigue + fatigueGain),
       lastMove: { ...base, meters: 250, minutes, energyKcal, fatigueGain, speedKmh: 15 / minutes,
-        protectedWearMeters },
+        protectedWearMeters, ...companionRecord(state) },
       metabolism: { minutes, spentKcal: segments.reduce((sum, part) => sum + part.spentKcal, 0),
         availableKcal: state.reserveKcal, healthBefore: healthValue(state), sleeping: false, segments } };
   }
@@ -215,7 +216,7 @@ export function walkSurvival(state, dc, dr, from, to, config, weatherInfo) {
   const energyKcal = moved.lastMove.energyKcal * gear.energyMultiplier;
   const fatigueGain = protectedFatigue(state, moved.lastMove.minutes, moved.lastMove.fatigueGain * gear.fatigueMultiplier);
   moved = { ...moved, fatigue: Math.min(100, state.fatigue + fatigueGain),
-    lastMove: { ...moved.lastMove, energyKcal, fatigueGain } };
+    lastMove: { ...moved.lastMove, energyKcal, fatigueGain, ...companionRecord(state) } };
   const next = consume(state, moved.lastMove.minutes, energyKcal, config);
   return { ...next, col: moved.col, row: moved.row, distanceMeters: moved.distanceMeters,
     ascentMeters: moved.ascentMeters, descentMeters: moved.descentMeters,

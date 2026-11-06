@@ -3,10 +3,11 @@ import { MUSIC, rhythm, beatTime, rhythmEnd, tapRhythm, holdDuration,
 import { setFeedback } from "./feedback.mjs";
 import { outcomeReputation } from "./practice.mjs";
 import { decorateResonance } from "./arcane-resonance.mjs";
+import { companionText } from "./companion-presence.mjs";
 
 export function setupMusic(t, { begin, settle, available, audio, mistakeLimit = () => MUSIC.minMistakes,
   difficulty = () => ({ level: 0, xp: 0, beats: MUSIC.beats, multiplier: 1 }),
-  resonance = () => false }) {
+  resonance = () => false, companion = () => ({}) }) {
   const dialog = document.querySelector("#music-dialog");
   const play = document.querySelector("#music-start");
   const tap = document.querySelector("#music-tap");
@@ -15,6 +16,7 @@ export function setupMusic(t, { begin, settle, available, audio, mistakeLimit = 
   const beats = [];
   let game, timer, settled, feedback = "", decorated = false, decorationNodes = [];
   let feedbackOutcome = "";
+  let performanceCompanion;
   let holdSource = null, pointerClick = false;
   let pressFeedback = null;
   const instructions = document.querySelector("#music-dialog .window-help-text");
@@ -58,6 +60,8 @@ export function setupMusic(t, { begin, settle, available, audio, mistakeLimit = 
       holds: skill.holdNotes ?? 0, slots: skill.slots ?? MUSIC.slots,
       bonus: Math.round((skill.multiplier - 1) * 100),
     });
+    const companionNote = companionText(game ? performanceCompanion : companion(), "music", t);
+    if (companionNote) document.querySelector("#music-skill").textContent += ` ${companionNote}`;
     const resonant = game ? game.resonance : Boolean(skill.resonance || resonance());
     showVariantHelp(resonant);
     setResonanceDecoration(resonant);
@@ -157,12 +161,17 @@ export function setupMusic(t, { begin, settle, available, audio, mistakeLimit = 
     if (settled !== null) feedback += ` ${t("minigameReputation", {
       amount: outcomeReputation(hits, total, failed, cancelled),
     })}`;
+    if (settled !== null) {
+      const note = companionText(performanceCompanion, cancelled || failed ? "interrupted" : "music", t);
+      if (note) feedback += ` ${note}`;
+    }
     localize();
   }
 
   function start() {
     if (game || !available()) return;
     const skill = difficulty();
+    performanceCompanion = companion();
     const started = begin();
     if (!started) {
       feedback = t("musicFailed");

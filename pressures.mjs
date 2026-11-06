@@ -22,18 +22,42 @@ export function refreshPressureTarot(state, economy) {
   return { ...state, pressures: { ...state.pressures, tarotFactor: tarotEventFactor(state, economy) } };
 }
 
+export function hygieneReputationPenalty(state) {
+  return state.pressures ? Math.max(0, 80 - state.pressures.cleanliness) * 0.3 : 0;
+}
+
+export function localReputation(state) {
+  const earned = state.pressures?.reputation.find(r => r.locality === sector(state))?.value ?? 0;
+  return earned - hygieneReputationPenalty(state);
+}
+
+export function beggingHygieneBonus(state) {
+  return hygieneReputationPenalty(state) / 200;
+}
+
 export function sympathy(state) {
   if (!state.pressures) return 50;
   const p = state.pressures;
-  const reputation = p.reputation.find(r => r.locality === sector(state))?.value ?? 0;
-  return clamp(50 + (p.cleanliness - 80) * 0.3 - state.fatigue * 0.15 + reputation +
+  return clamp(50 + Math.max(0, p.cleanliness - 80) * 0.3 - state.fatigue * 0.15 + localReputation(state) +
     (1 - p.tarotFactor) * 30);
 }
 
 export function socialFailureChance(base, state) {
+  return adjustedSocialFailureChance(base, state);
+}
+
+export function beggingFailureChance(base, state) {
+  return adjustedSocialFailureChance(base, state, true);
+}
+
+function adjustedSocialFailureChance(base, state, begging = false) {
   if (!Number.isFinite(base) || base < 0 || base > 1) throw new Error("Invalid social probability.");
   if (base === 0 || base === 1) return base;
-  return state.pressures ? Math.max(0.05, Math.min(0.95, base + (50 - sympathy(state)) / 200)) : base;
+  // Begging replaces the hygiene penalty with compassion, not a second earned-reputation change.
+  const score = begging && state.pressures ? sympathy({ ...state,
+    pressures: { ...state.pressures, cleanliness: Math.max(80, state.pressures.cleanliness) } }) +
+    hygieneReputationPenalty(state) : sympathy(state);
+  return state.pressures ? Math.max(0.05, Math.min(0.95, base + (50 - score) / 200)) : base;
 }
 
 export function didPlace(previous, next) {
@@ -73,10 +97,12 @@ export function advancePressures(previous, next, info, { sheltered, activity, su
   const unprotectedFraction = minutes ? 1 - protectedMinutes / minutes : 1;
   const hours = minutes / 60, unprotectedHours = (minutes - protectedMinutes) / 60;
   const moving = Math.hypot(next.col - previous.col, next.row - previous.row) * 0.25;
+  const walkingDirtPerKm = ["road", "major_road"].includes(info.terrain) ? 0.1
+    : info.terrain === "forest" ? 0.8 : 0.4;
   const completedWash = washed && sheltered && next.sleeps > previous.sleeps &&
     !next.ended && (next.faints ?? 0) === (previous.faints ?? 0);
   const cleanliness = activity === "wash" || completedWash ? 100
-    : clamp(p.cleanliness - (hours * (sheltered ? 0.2 : 0.8) + moving * 0.4) *
+    : clamp(p.cleanliness - (hours * (sheltered ? 0.2 : 0.8) + moving * walkingDirtPerKm) *
       (0.75 + p.tarotFactor * 0.25) +
       (sheltered && next.sleeps > previous.sleeps ? 30 : 0));
   const urban = ["place", "station", "building", "church"].includes(info.terrain);

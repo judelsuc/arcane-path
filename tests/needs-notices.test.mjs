@@ -216,6 +216,21 @@ for (const locale of ["fr", "en"]) {
     assert.ok(explanation.includes(tr("placementCause.urban")));
     assert.ok(explanation.includes("2.50"), "the actual money loss stays visible beside its reason");
     assert.ok(explanation.includes(tr("placementRecovery", { town: "Recovery Town" })));
+    ui.reset();
+    current.state = { ...state(20), faints: 1, lastFaint: {
+      robbed: false, stolenCents: 0, chance: 0.135,
+      companion: { name: "Étoile", ready: true },
+    } };
+    await tick();
+    assert.match(element("#needs-notice-text").textContent, /Étoile/);
+    assert.ok(element("#needs-notice-text").textContent.includes(
+      tr("companion.vigilance", { name: "Étoile" })));
+    ui.reset();
+    current.state.lastFaint.companion.ready = false;
+    await tick();
+    assert.ok(element("#needs-notice-text").textContent.includes(
+      tr("companion.unavailable", { name: "Étoile" })));
+    current.state = { ...state(20), pressures: { placements: [placement] } };
     ui.reset(current.state);
     await tick();
     assert.equal(element("#needs-notice-dialog").open, false, "resuming cannot reannounce this historical placement");

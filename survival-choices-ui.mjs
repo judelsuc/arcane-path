@@ -1,6 +1,6 @@
-import { CHOICE_RULES, choiceAvailable } from "./survival-choices.mjs";
-import { tarotEventChance } from "./economy.mjs";
-import { socialFailureChance } from "./pressures.mjs";
+import { CHOICE_RULES, choiceAvailable, survivalChoiceFailureChance } from "./survival-choices.mjs";
+import { companionRecord, companionText } from "./companion-presence.mjs";
+import { beggingHygieneBonus, hygieneReputationPenalty } from "./pressures.mjs";
 import { canEat } from "./survival.mjs";
 import { setFeedback, focusFeedback } from "./feedback.mjs";
 
@@ -39,11 +39,17 @@ export function setupSurvivalChoices(t, { context, act }) {
         current.blocked || !choiceAvailable(kind, current.cell);
       document.querySelector(`#choice-${kind}-note`).textContent = t(`choiceNote.${kind}`, {
         minutes: rule.minutes, fatigue: rule.fatigue,
-        risk: Math.round((kind === "beg"
-          ? socialFailureChance(tarotEventChance(rule.failureChance, current.state, current.data), current.state)
-          : tarotEventChance(rule.failureChance, current.state, current.data)) * 100),
+        risk: Math.round(survivalChoiceFailureChance(current.state, kind, current.data) * 100),
         kcal: rule.foodKcal ?? 0, hours: rule.detentionHours ?? 0,
       });
+      if (kind === "hunt") document.querySelector("#choice-hunt-note").textContent +=
+        ` ${companionText(companionRecord(current.state), "hunt", t)}`.trimEnd();
+      if (kind === "beg" && current.state.pressures) {
+        document.querySelector("#choice-beg-note").textContent += ` ${t("begHygieneEffect", {
+          penalty: hygieneReputationPenalty(current.state).toFixed(1),
+          bonus: (beggingHygieneBonus(current.state) * 100).toFixed(1),
+        })}`;
+      }
     }
     const result = current.state.lastSurvivalChoice;
     const resultElement = document.querySelector("#survival-choice-result");
@@ -54,6 +60,11 @@ export function setupSurvivalChoices(t, { context, act }) {
         kcal: Math.round(result.foodKcal), money: (result.moneyCents / 100).toFixed(2),
         minutes: Math.round(result.minutes), hours: result.detentionMinutes / 60,
       })}` : "";
+    if (result?.kind === "hunt") resultElement.textContent += ` ${companionText(result,
+      ["food", "nothing"].includes(result.outcome) ? "hunt" : "interrupted", t)}`.trimEnd();
+    if (result?.kind === "beg" && result.hygieneBonus > 0) {
+      resultElement.textContent += ` ${t("begHygieneResult", { bonus: (result.hygieneBonus * 100).toFixed(1) })}`;
+    }
   }
   function open() {
     if (!context() || context().blocked || document.querySelector("dialog[open]")) return;
@@ -73,7 +84,7 @@ export function setupSurvivalChoices(t, { context, act }) {
     localize();
     return succeeded;
   }
-  for (const kind of ["forage"]) {
+  for (const kind of ["forage", "hunt"]) {
     document.querySelector(`#choice-${kind}`).addEventListener("click", () => {
       document.querySelector("#survival-choice-error").textContent = "";
       perform(kind);

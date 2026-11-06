@@ -1,11 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { choiceAvailable, hasFoodShop, survivalChoice } from "../survival-choices.mjs";
-import { applyBirthTarot, startEconomy } from "../economy.mjs";
+import { choiceAvailable, hasFoodShop, survivalChoice, survivalChoiceFailureChance } from "../survival-choices.mjs";
+import { applyBirthTarot, startEconomy, washEconomy } from "../economy.mjs";
+import { beginPressures, sympathy, socialFailureChance, beggingFailureChance, localReputation,
+  hygieneReputationPenalty, beggingHygieneBonus, changeReputation } from "../pressures.mjs";
 import { startSurvival } from "../survival.mjs";
 import { createTrail } from "../trail.mjs";
 import { createSave, validateSave } from "../journey-save.mjs";
+import { journeyStats } from "../journey-stats.mjs";
+import { translate } from "../i18n.mjs";
 
 const json = path => JSON.parse(readFileSync(new URL(path, import.meta.url)));
 const economy = json("../public/economy.json");
@@ -25,6 +29,9 @@ const act = (s, kind, cell, roll) => survivalChoice(s, kind, cell, info, surviva
 test("availability uses actual forest/settlement cells and explicit food-shop tags", () => {
   assert.equal(choiceAvailable("forage", forest), true);
   assert.equal(choiceAvailable("forage", town), false);
+  assert.equal(choiceAvailable("hunt", forest), true);
+  assert.equal(choiceAvailable("hunt", town), false);
+  assert.equal(choiceAvailable("hunt", { ...forest, unavailable: true }), false);
   assert.equal(choiceAvailable("beg", town), true);
   assert.equal(choiceAvailable("beg", forest), false);
   assert.equal(choiceAvailable("steal", shop), true);
@@ -105,5 +112,71 @@ test("night exposure applies to attempts, not detention, with saved daily reveal
   const saved = createSave(details, 1);
   assert.deepEqual(validateSave(JSON.parse(JSON.stringify(saved))).state, next);
   saved.state.choiceCounts.steal = -1;
+  assert.throws(() => validateSave(saved));
+});
+
+test("poor hygiene temporarily hurts effective reputation but helps begging rather than ordinary social actions", () => {
+  const clean = changeReputation(beginPressures(start(), economy), 5);
+  const dirty = { ...clean, pressures: { ...clean.pressures, cleanliness: 0 } };
+  assert.equal(hygieneReputationPenalty(clean), 0);
+  assert.equal(hygieneReputationPenalty(dirty), 24);
+  assert.equal(localReputation(clean), 5);
+  assert.equal(localReputation(dirty), -19);
+  assert.deepEqual(dirty.pressures.reputation, clean.pressures.reputation);
+  assert.ok(sympathy(dirty) < sympathy(clean));
+  assert.ok(socialFailureChance(0.5, dirty) > socialFailureChance(0.5, clean));
+  assert.equal(beggingHygieneBonus(dirty), 0.12);
+  assert.ok(Math.abs(beggingFailureChance(0.5, clean) - beggingFailureChance(0.5, dirty) - 0.12) < 1e-10);
+  const cleanRisk = survivalChoiceFailureChance(clean, "beg", economy);
+  const dirtyRisk = survivalChoiceFailureChance(dirty, "beg", economy);
+  assert.ok(cleanRisk > dirtyRisk);
+  const roll = (cleanRisk + dirtyRisk) / 2;
+  assert.equal(act(clean, "beg", town, roll).lastSurvivalChoice.outcome, "nothing");
+  const won = act(dirty, "beg", town, roll);
+  assert.equal(won.lastSurvivalChoice.outcome, "money");
+  assert.equal(won.lastSurvivalChoice.hygieneBonus, 0.12);
+  assert.equal(won.lastSurvivalChoice.moneyCents, act(clean, "beg", town, 0.99).lastSurvivalChoice.moneyCents);
+  assert.equal(won.elapsedMinutes, 30);
+  assert.equal(won.fatigue, 2);
+  assert.equal(won.pressures.reputation[0].value, 4);
+  assert.deepEqual(validateSave(JSON.parse(JSON.stringify(saveChoice(won)))).state, won);
+  const washed = washEconomy(dirty, town, info, survival, economy);
+  assert.equal(hygieneReputationPenalty(washed), 0);
+  assert.equal(beggingHygieneBonus(washed), 0);
+  assert.equal(localReputation(washed), 5);
+  assert.deepEqual(washed.pressures.reputation, clean.pressures.reputation);
+  for (const language of ["fr", "en"]) {
+    const t = (key, args) => translate(language, key, args);
+    const rows = journeyStats({ state: dirty, survival, economy }, t, language).flatMap(group => group.rows);
+    assert.match(rows.find(row => row.label === t("statsReputation")).value, /-19/);
+    assert.match(rows.find(row => row.label === t("statsHygieneReputation")).value, /-24/);
+  }
+});
+
+function saveChoice(state) {
+  return createSave({ state, region: "firmi", map, survival, economy }, 1);
+}
+
+test("hygiene effects are bounded, do not accumulate on reads, and remain absent for legacy games", () => {
+  const state = beginPressures(start(), economy);
+  let previousRisk = Infinity;
+  for (const cleanliness of [0, 20, 40, 60, 80]) {
+    const dirty = { ...state, pressures: { ...state.pressures, cleanliness } };
+    const risk = beggingFailureChance(0.5, dirty);
+    assert.ok(risk >= 0.05 && risk <= 0.95);
+    if (cleanliness > 0) assert.ok(risk > previousRisk);
+    previousRisk = risk;
+    const snapshot = structuredClone(dirty);
+    for (let i = 0; i < 3; i++) localReputation(dirty);
+    assert.deepEqual(dirty, snapshot);
+    assert.equal(beggingFailureChance(0, dirty), 0);
+    assert.equal(beggingFailureChance(1, dirty), 1);
+  }
+  assert.equal(hygieneReputationPenalty(start()), 0);
+  assert.equal(beggingHygieneBonus(start()), 0);
+  assert.equal(beggingFailureChance(0.5, start()), 0.5);
+  assert.throws(() => beggingFailureChance(NaN, state), /probability/);
+  const saved = saveChoice(act(state, "beg", town, 0.99));
+  saved.state.lastSurvivalChoice.hygieneBonus = 0.13;
   assert.throws(() => validateSave(saved));
 });

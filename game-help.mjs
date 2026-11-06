@@ -13,7 +13,7 @@ export const GAME_HELP_SOURCES = [
   ].map(key => `[data-i18n="${key}"]`),
   ...["travel-toolbar-help", "needs-speed-effect", "rest-effect", "meal-location", "look-status",
     "weather-effects", "birth-tarot-events", "daily-tarot-events", "pressure-tarot", "ascii-title",
-    "choice-forage-note", "choice-beg-note", "choice-steal-note",
+    "choice-forage-note", "choice-hunt-note", "choice-beg-note", "choice-steal-note",
     "music-card-effect", "music-skill", "cafe-skill", "trail-evidence-summary",
   ].map(id => `#${id}`),
 ].join(", ");

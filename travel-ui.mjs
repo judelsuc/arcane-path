@@ -32,6 +32,7 @@ import { setupEarnMoney } from "./earn-money-ui.mjs";
 import { recordJourneyPosition, createJourneyTerrainLoader } from "./journey-map.mjs";
 import { renderJourneyMarker } from "./death.mjs";
 import { setupMusic } from "./music-ui.mjs";
+import { companionRecord, companionText } from "./companion-presence.mjs";
 import { interviewTrail, recordTrailArrival } from "./trail.mjs";
 import { setupTrailArrival } from "./trail-arrival-ui.mjs";
 import { setupTrailDream } from "./trail-dream-ui.mjs";
@@ -65,7 +66,8 @@ import { pendingJournalCreation, finishJournalCreation, ensureJournalAccess, cre
 import { setupAbandonedJournals } from "./abandoned-journals-ui.mjs";
 import { encodeNotebook } from "./notebook-transfer.mjs";
 import { updateWeatherPanel } from "./weather-panel.mjs";
-import { beginPressures, sympathy, policePresence, washingAvailable } from "./pressures.mjs";
+import { beginPressures, sympathy, policePresence, washingAvailable,
+  hygieneReputationPenalty, beggingHygieneBonus } from "./pressures.mjs";
 import { setupArtifactQuests } from "./artifacts-ui.mjs";
 import { setupQuestTracking } from "./quest-tracking-ui.mjs";
 import { followedQuest, objectiveCell } from "./quest-objectives.mjs";
@@ -566,6 +568,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     context: () => active ? economyContext() : null, mutate: mutateQuest,
   });
   const musicUI = setupMusic(t, {
+    companion: () => state?.performancePending ?? (state ? companionRecord(state) : {}),
     difficulty: () => state ? musicDifficulty(state) : { level: 0, xp: 0, beats: 24, multiplier: 1 },
     mistakeLimit: () => state ? musicMistakeLimit(state) : null,
     audio: musicAudio,
@@ -967,7 +970,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         }
         document.querySelector("#pressure-status").textContent = t("pressureStatus", {
           count: pressures.placements.length, hours: (pressures.localMinutes / 60).toFixed(1),
-        });
+        }) + ` ${t("begHygieneEffect", {
+          penalty: hygieneReputationPenalty(state).toFixed(1),
+          bonus: (beggingHygieneBonus(state) * 100).toFixed(1),
+        })}`;
         const language = document.documentElement.lang === "en" ? "en" : "fr";
         document.querySelector("#pressure-tarot").textContent = t("pressureTarot", {
           birth: economyData.tarot.find(c => c.id === state.birthCard)[language],
@@ -1084,6 +1090,12 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         const speed = document.createElement("p");
         speed.textContent = t("travelSpeed", { speed: state.lastMove.speedKmh.toFixed(2) });
         height.append(speed);
+        const companionNote = companionText(state.lastMove, "walk", t);
+        if (companionNote) {
+          const companion = document.createElement("p");
+          companion.textContent = companionNote;
+          height.append(companion);
+        }
       }
       if (missingHeightMoves) {
         const warning = document.createElement("p");

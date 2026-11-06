@@ -88,6 +88,32 @@ test("moving reduces vigilance and resets only sector dwell time, including term
   validatePressures(ended, economy);
 });
 
+test("walking hygiene loss distinguishes roads and forests at identical time and distance", () => {
+  const state = start();
+  const minutes = 10;
+  const cleanliness = (terrain, moving = true) => finishAction(state, {
+    ...state, col: state.col + (moving ? 1 : 0), elapsedMinutes: state.elapsedMinutes + minutes,
+  }, { ...info, terrain }, economy, { survival }).pressures.cleanliness;
+  const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-10,
+    `${actual} != ${expected}`);
+  const timeLoss = minutes / 60 * 0.8;
+  for (const terrain of ["road", "major_road"]) {
+    near(cleanliness(terrain), 80 - timeLoss - 0.25 * 0.1);
+    assert.ok(cleanliness(terrain) > cleanliness("forest"));
+  }
+  near(cleanliness("forest"), 80 - timeLoss - 0.25 * 0.8);
+  near(cleanliness("plain"), 80 - timeLoss - 0.25 * 0.4);
+  for (const terrain of ["road", "major_road", "forest", "plain"]) {
+    near(cleanliness(terrain, false), 80 - timeLoss);
+    const ground = { terrain, elevationMeters: 100 };
+    const walked = finishAction(state, walkSurvival(state, 1, 0, ground, ground, survival, { ...info, terrain }),
+      { ...info, terrain }, economy, { survival });
+    const dirtRate = ["road", "major_road"].includes(terrain) ? 0.1 : terrain === "forest" ? 0.8 : 0.4;
+    near(walked.pressures.cleanliness, 80 - walked.elapsedMinutes / 60 * 0.8 - 0.25 * dirtRate);
+    assert.deepEqual(validateSave(save(walked)).state, walked);
+  }
+});
+
 test("100 vigilance gives two recoverable days in care, then ends the third journey episode", () => {
   const threshold = start();
   threshold.pressures.vigilance = 96.999;

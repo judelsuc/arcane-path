@@ -8,6 +8,7 @@ import { parentSighting, parentReunion } from "./parent-story.mjs";
 import { DIRECTIONS_RULES, directionsChance, citedTowns } from "./directions.mjs";
 import { questDirectionTargets } from "./quest-knowledge.mjs";
 import { setFeedback } from "./feedback.mjs";
+import { companionRecord, companionText } from "./companion-presence.mjs";
 import { witnessCooling } from "./pressures.mjs";
 import { trailDreamText, trailDreamVariant } from "./trail-dreams.mjs";
 import { LOST_PLAYER_DREAM } from "./live-narrative.mjs";
@@ -249,6 +250,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     p.className = className;
     setFeedback(p, outcome);
     container.append(p);
+    return p;
   }
   function photoButton(container, state, stage) {
     const view = document.createElement("button");
@@ -563,14 +565,35 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
       if (state.pressures) paragraph(help, t(`fieldCooling.${witnessCooling(state)}`));
       item.append(button);
       paragraph(item, t("fieldSearchCostSummary", rules));
+      if (!(state.pressures && rules.precision === "precise")) {
+        paragraph(item, companionText(companionRecord(state), "search", t));
+      }
       item.append(help);
       if (!state.serverJourney) paragraph(item, t("fieldSearchServer"), "", "technical-text");
       const last = trail.exploration.lastSearch;
       if (last?.stage === trail.index) {
         if (last.destinationBased) paragraph(item, t("fieldDestinationSearch"), "", "window-help-text");
-        paragraph(item, t(`fieldOutcome.${last.repeated ? "repeated" : last.outcome}`, last),
+        const outcome = paragraph(item, t(`fieldOutcome.${last.repeated ? "repeated" : last.outcome}`,
+          { ...last, journal: "{journal}" }),
           !last.repeated && ["found", "sign"].includes(last.outcome) ? "success" : "failure");
+        if (outcome.textContent.includes("{journal}")) {
+          const [before, after] = outcome.textContent.split("{journal}");
+          const link = document.createElement("a");
+          link.href = "#photo-journal-dialog";
+          link.textContent = t("fieldJournalLink");
+          link.setAttribute("aria-haspopup", "dialog");
+          link.setAttribute("aria-controls", "photo-journal-dialog");
+          link.addEventListener("click", event => {
+            event.preventDefault();
+            if (dialog.open) dialog.close();
+            if (investigationDialog.open) investigationDialog.close();
+            document.querySelector("#open-journal").click();
+          });
+          outcome.replaceChildren(before, link, after);
+        }
         if (last.outcome === "nothing") paragraph(item, t("fieldNothingAdvice"), "", "window-help-text");
+        paragraph(item, companionText(last,
+          ["found", "sign", "nothing"].includes(last.outcome) ? "search" : "interrupted", t));
         if (fieldPhotoUnavailable) paragraph(item, t("fieldPhotoFallback"));
       }
       button.addEventListener("click", async () => {

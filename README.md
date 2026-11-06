@@ -21,6 +21,9 @@ Background artifact-story synchronization keeps the selected person and dialog
 open. Actions are temporarily disabled with a visible saving message; they
 become available again when synchronization finishes.
 
+Clue-search feedback links the word "journal" directly to the journal in French
+and English, closing the investigation window before opening it.
+
 Quest maps label the player's current position explicitly and number only the
 destinations. Cached terrain is loaded through the same bounded terrain service
 as the journal map. Compass bearings and straight-line distances remain readable
@@ -53,6 +56,39 @@ including for large saved journeys. A failed response leaves the command
 pending and movement blocked until its receipt is acknowledged; retrying
 reuses that receipt without repeating a paid action. The server reports
 artifact synchronization failures distinctly from new-journey creation.
+
+## Companion presence and hunting
+
+A cared-for dog is named in walking, clue-search, street-music and nighttime
+fainting feedback, as well as relevant woodland encounters and rest/food events.
+These authored French/English notes explain actual bonuses, not guaranteed
+outcomes. Participation is recorded when the action starts, so later feeding or
+renaming does not rewrite the result. Hunger or care need at 65 suspends help;
+feeding and care still cost their existing time and supplies. Event mentions
+do not grant extra damage protection or silently feed the dog.
+
+The cell action menu offers fictional small-game hunting in forest cells:
+60 game minutes, 10 fatigue, and up to 800 kcal eaten on site. Base failure
+chance is 60%, adjusted by tarot; a ready dog lowers it by 15 percentage points,
+to a minimum of zero. Hunting is possible without a dog. Metabolism, weather,
+night exposure, fainting and dog needs still apply; interrupted hunts give no
+food. Existing foraging is unchanged.
+
+## Hygiene and local reputation
+
+Walking dirt depends on the destination terrain: 0.1 cleanliness points per km
+on roads and major roads, 0.8 in forests, and the existing 0.4 elsewhere.
+Time-based hygiene loss and tarot scaling still apply on top; stationary
+actions do not incur walking dirt.
+
+Below 80 cleanliness, effective local reputation loses 0.3 points per missing
+cleanliness point (up to 24). This is a temporary presentation penalty, not a
+repeated deduction from earned reputation; washing removes it. Ordinary social
+sympathy retains its existing hygiene effect. Begging instead treats visible
+need as a compassion bonus, up to 12 percentage points of donation success,
+subject to the usual 5–95% social failure bounds. Donation amounts, time,
+fatigue and the existing reputation cost of begging are unchanged. Action
+previews/results, the pressure panel and notebook explain these effects.
 
 ## Character-owned service quests
 
