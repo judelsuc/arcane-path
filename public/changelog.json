@@ -1,6 +1,11 @@
 {
-  "version": "0.21.11",
+  "version": "0.21.12",
   "entries": [
+    {
+      "version": "0.21.12",
+      "fr": "Les conversations commencent automatiquement avec des phrases adaptées au métier, sans génération de texte. Les propositions de quête et leurs boutons Accepter ou Refuser apparaissent directement dans Dialogue ; les actions facultatives restent repliées. Les nouvelles rencontres proposent 48 métiers, avec des paroles, portraits et missions adaptés, sans doublon de métier dans une même ville tant que des choix restent disponibles. Les personnages existants conservent leur identité.",
+      "en": "Conversations begin automatically with occupation-specific sentences, without text generation. Quest offers and their Accept or Decline buttons appear directly in Dialogue; optional actions stay folded away. New encounters draw from 48 occupations with matching dialogue, portraits and quests, avoiding duplicate jobs within a town while choices remain available. Existing characters keep their identity."
+    },
     {
       "version": "0.21.11",
       "fr": "Le récit d'ouverture dispose de plus de place pour se terminer. Certaines formes neutres, comparaisons au nom et fins incomplètes peuvent être corrigées sans nouvel appel ; le récit d'origine reste disponible si la vérification échoue. Le carnet et son partage conservent les biographies plus longues.",

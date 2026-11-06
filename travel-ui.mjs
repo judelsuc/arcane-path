@@ -542,7 +542,6 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
   const serviceQuestsUI = setupServiceQuests(t, {
     context: () => active ? economyContext() : null,
-    narrative: liveNarrative,
     mutate: mutateQuest,
     character: conversations.currentCharacter,
     characters: charactersClient,

@@ -47,6 +47,7 @@ export function setupQuestLayout(t) {
   parentTalk.id = "dialogue-parent";
   const serviceTalk = document.createElement("section");
   serviceTalk.id = "dialogue-services";
+  dialogue.insertBefore(serviceTalk, $("conversation-options"));
   const journalTalk = document.createElement("section");
   journalTalk.id = "dialogue-journals";
   const artifactTalk = document.createElement("section");
@@ -55,7 +56,6 @@ export function setupQuestLayout(t) {
   const groups = [
     ["investigation.parent", [parentActions, parentTalk]],
     ["investigation.clues", [directionPanel]],
-    ["investigation.services", [serviceTalk]],
     ["investigation.journals", [journalTalk]],
     ["investigation.artifacts", [artifactTalk]],
   ].map(([titleKey, panels]) => {
@@ -97,7 +97,7 @@ export function setupQuestLayout(t) {
     groups[0].section.hidden = !hasParentTrail;
     parentActions.hidden = !hasParentTrail;
     parentTalk.hidden = !hasParentTrail;
-    for (const panel of [directionPanel, serviceTalk, journalTalk, artifactTalk]) panel.hidden = false;
+    for (const panel of [directionPanel, journalTalk, artifactTalk]) panel.hidden = false;
     investigation.showModal();
     investigationClose.focus();
   }

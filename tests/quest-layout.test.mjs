@@ -11,6 +11,10 @@ class Element {
   disabled = false;
   focused = false;
   append(...children) { this.children.push(...children); }
+  insertBefore(child, reference) {
+    const index = this.children.indexOf(reference);
+    this.children.splice(index < 0 ? this.children.length : index, 0, child);
+  }
   addEventListener(type, callback) { this.events[type] = callback; }
   close() { this.open = false; this.events.close?.(); }
   focus() { this.focused = true; }
@@ -57,13 +61,22 @@ test("map investigation opens clue groups without requiring a parent-trail quest
   f.get("open-investigation").events.click();
   const groups = f.get("investigation-content").children;
   assert.equal(f.get("investigation-dialog").open, true);
-  assert.equal(groups.length, 5);
+  assert.equal(groups.length, 4);
   assert.equal(groups[0].hidden, true);
   assert.equal(f.get("trail-investigation-page").hidden, true);
-  for (const index of [1, 2, 3, 4]) assert.equal(groups[index].hidden, false);
+  for (const index of [1, 2, 3]) assert.equal(groups[index].hidden, false);
   assert.equal(f.get("investigation-close").focused, true);
   f.get("investigation-dialog").close();
   assert.equal(f.get("open-investigation").focused, true);
+});
+
+test("quest offers belong to the conversation itself, not the closed investigation dialog", t => {
+  const f = fixture(t, true);
+  const conversation = f.get("conversation-dialog");
+  const services = conversation.children.find(node => node.id === "dialogue-services");
+  assert.ok(services);
+  assert.equal(services.hidden, false);
+  assert.ok(!f.get("investigation-content").children.some(group => group.children.includes(services)));
 });
 
 test("map investigation includes parent actions when a parent trail exists", t => {

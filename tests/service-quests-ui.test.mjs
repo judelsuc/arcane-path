@@ -49,7 +49,12 @@ function offerFixture(t, prepare) {
       calls.push(args);
       return prepare ? prepare(ready, ...args) : ready;
     } },
-    narrative: { questSnapshot() {}, prefetchQuest() {}, questStatus() { return ""; }, subscribe() {} },
+    narrative: {
+      questSnapshot() { assert.fail("Quest dialogue must not consume LLM text"); },
+      prefetchQuest() { assert.fail("Quest dialogue must not request LLM text"); },
+      questStatus() { assert.fail("Quest dialogue must not show LLM status"); },
+      subscribe() { assert.fail("Quest dialogue must not subscribe to LLM updates"); },
+    },
   });
   return { ui, get, calls, state: () => state,
     blocked(value) { blocked = value; },
@@ -71,7 +76,7 @@ test("characters propose their assigned quest automatically without a radius or 
   await settle();
   assert.equal(f.calls.length, 1);
   const section = f.get("dialogue-services").children[3].children[0];
-  section.children.find(node => node.textContent === "Accept").events.click();
+  section.children.at(-1).children.find(node => node.textContent === "Accept").events.click();
   f.ui.localize();
   await settle();
   assert.equal(f.state().serviceQuests.quests[0].status, "active");
@@ -93,6 +98,26 @@ test("no selected character means no quest generation and no other character's o
   assert.equal(f.get("dialogue-services").children[3].children.length, 0);
   assert.ok(f.get("quests-services").children.length > 0);
 });
+
+for (const language of ["en", "fr"]) {
+  test(`${language} quest templates and accept/reject controls are ready without generated wording`, async t => {
+    const f = offerFixture(t);
+    document.documentElement.lang = language;
+    f.ui.characterChanged();
+    await settle();
+    const section = f.get("dialogue-services").children[3].children[0];
+    assert.equal(section.children[1].textContent, QUEST_TEMPLATES[0].request[language]);
+    const controls = section.children.at(-1);
+    assert.deepEqual(controls.children.map(node => node.textContent),
+      language === "en" ? ["Accept", "Not this time"] : ["Accepter", "Pas cette fois"]);
+    assert.ok(controls.children.every(node => !node.disabled));
+    controls.children[0].events.click();
+    assert.equal(f.state().serviceQuests.quests[0].status, "active");
+    assert.match(f.get("dialogue-services").children[1].textContent,
+      language === "en" ? /Thank you/ : /Merci/);
+    assert.equal(f.get("dialogue-services").children[3].children.length, 0);
+  });
+}
 
 test("provider failure has a retry for the same character, not a new random request", async t => {
   let failing = true;
@@ -120,7 +145,7 @@ test("refusing a character's offer does not create another quest on reopening", 
   f.ui.characterChanged();
   await settle();
   const section = f.get("dialogue-services").children[3].children[0];
-  section.children.find(node => node.textContent === "Not this time").events.click();
+  section.children.at(-1).children.find(node => node.textContent === "Not this time").events.click();
   f.ui.reset();
   f.ui.characterChanged();
   await settle();
@@ -190,7 +215,7 @@ test("preparing another character's quest does not block accepting an existing o
   f.ui.characterChanged();
   await settle();
   const saved = f.get("quests-services").children[0];
-  const accept = saved.children.find(node => node.textContent === "Accept");
+  const accept = saved.children.at(-1).children.find(node => node.textContent === "Accept");
   assert.equal(accept.disabled, false);
   accept.events.click();
   assert.equal(f.state().serviceQuests.quests[0].status, "active");

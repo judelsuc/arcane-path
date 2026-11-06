@@ -1,5 +1,5 @@
 import { QUEST_TEMPLATES, createServiceOffer, acceptServiceQuest, declineServiceQuest,
-  advanceServiceQuest, abandonServiceQuest, setServiceQuestWording, SERVICE_QUEST_LIMITS } from "./service-quests.mjs";
+  advanceServiceQuest, abandonServiceQuest, SERVICE_QUEST_LIMITS } from "./service-quests.mjs";
 import { createQuestDestinationClient } from "./service-quest-client.mjs";
 import { followQuest, followedQuest } from "./quest-objectives.mjs";
 import { renderQuestMap } from "./quest-map.mjs";
@@ -10,6 +10,8 @@ const COPY = {
     empty: "Aucun engagement pour le moment. Les demandes se trouvent dans Dialogue.",
     preparing: "{name} prépare sa proposition…",
     proposal: "{name} vous propose un service.",
+    accepted: "« Merci. Je vous laisse ces indications pour la route. »",
+    refused: "« Je comprends. Bonne route à vous. »",
     unavailable: "« Je n’ai pas de mission à vous proposer pour le moment. »",
     failed: "La demande de cette personne n’a pas pu être préparée. Vous pouvez réessayer sans changer de mission.",
     limit: "Consultez vos missions en attente avant d’en écouter une autre.",
@@ -29,6 +31,8 @@ const COPY = {
     empty: "No commitments yet. Requests are available in Dialogue.",
     preparing: "{name} is preparing their offer…",
     proposal: "{name} offers you a service quest.",
+    accepted: "“Thank you. Take these directions with you.”",
+    refused: "“I understand. Safe travels.”",
     unavailable: "“I have no quest to offer you at the moment.”",
     failed: "This person's request could not be prepared. You can retry without changing their quest.",
     limit: "Review your pending offers before listening to another one.",
@@ -45,7 +49,7 @@ const COPY = {
   },
 };
 
-export function setupServiceQuests(t, { context, mutate, narrative,
+export function setupServiceQuests(t, { context, mutate,
   destinations = createQuestDestinationClient(), character = () => null, characters = null }) {
   const $ = id => document.getElementById(id);
   const talk = $("dialogue-services"), book = $("quests-services");
@@ -56,9 +60,6 @@ export function setupServiceQuests(t, { context, mutate, narrative,
   talk.append(form, status, diagnostics, offers, onSite);
   let working = false, controller, request, owner, mapQuest, confirming, error = "", contractError = "", feedback = "";
   let preparationKey, unavailable = false;
-  let consuming = false;
-  const pendingWording = new Set();
-  const failedWording = new Set();
   const syncedContractEvents = new Map();
   const syncingContracts = new Set();
   const language = () => document.documentElement.lang === "en" ? "en" : "fr";
@@ -143,29 +144,6 @@ export function setupServiceQuests(t, { context, mutate, narrative,
       }
     })();
   }
-  function wording(state, quest, phase, fallback) {
-    const saved = quest.wording?.[phase];
-    if (saved) return saved[language()];
-    const generated = narrative.questSnapshot(state, quest.id, phase);
-    if (generated && !pendingWording.has(`${quest.id}:${phase}`) && !failedWording.has(`${quest.id}:${phase}`)) {
-      const key = `${quest.id}:${phase}`, journey = state.serverJourney.id;
-      pendingWording.add(key);
-      queueMicrotask(() => {
-        consuming = true;
-        try {
-          if (context()?.state.serverJourney?.id === journey) commit(current =>
-            setServiceQuestWording(current, quest.id, phase, generated));
-        } catch (reason) {
-          console.error("Unable to preserve quest wording:", reason);
-          failedWording.add(key);
-          error = reason.message;
-        } finally { consuming = false; pendingWording.delete(key); }
-      });
-      return fallback;
-    }
-    narrative.prefetchQuest(state, { template: quest.template, instance: quest.id, phase, reason: "money" });
-    return fallback;
-  }
   function act(quest, social) {
     error = "";
     commit(state => advanceServiceQuest(state, quest.id, { social }));
@@ -202,8 +180,10 @@ export function setupServiceQuests(t, { context, mutate, narrative,
     status.textContent = working ? c.preparing.replace("{name}", speaker?.name ?? "")
       : feedback ? c[feedback] : !speaker ? c.noTown : full && !knownQuest ? c.limit
         : unavailable ? c.unavailable : knownQuest?.status === "offered"
-          ? c.proposal.replace("{name}", speaker.name) : "";
-    diagnostics.textContent = error ? c.failed : contractError;
+          ? c.proposal.replace("{name}", speaker.name)
+          : knownQuest?.status === "active" ? c.accepted
+            : knownQuest?.status === "declined" ? c.refused : "";
+    diagnostics.textContent = error ? `${c.failed} (${error})` : contractError;
     form.replaceChildren();
     if (error) button(form, c.retry, () => { void prepareOffer(true); }, current?.blocked || working);
     offers.replaceChildren(); onSite.replaceChildren(); book.replaceChildren();
@@ -211,13 +191,18 @@ export function setupServiceQuests(t, { context, mutate, narrative,
     for (const offer of state.serviceQuests?.offers ?? []) {
       const item = QUEST_TEMPLATES.find(item => item.id === offer.template);
       const section = document.createElement("section");
-      paragraph(section, item.title[lang]);
-      paragraph(section, wording(state, offer, "offer", item.request[lang]));
+      section.className = "quest-offer";
+      const heading = document.createElement("h3");
+      heading.textContent = item.title[lang];
+      section.append(heading);
+      paragraph(section, item.request[lang]);
       paragraph(section, `${c.route} : ${offer.distanceKm.toFixed(1)} km · ${c.reward} : €${(offer.rewardCents / 100).toFixed(2)}`);
       for (const poi of offer.destinations) paragraph(section, `${poi.town} — ${poi.name}`);
-      paragraph(section, narrative.questStatus(state, offer.id, "offer", lang));
-      button(section, c.accept, () => { commit(s => acceptServiceQuest(s, offer.id)); feedback = ""; localize(); }, current.blocked);
-      button(section, c.decline, () => { commit(s => declineServiceQuest(s, offer.id)); localize(); }, current.blocked);
+      const controls = document.createElement("div");
+      controls.className = "quest-command-block";
+      button(controls, c.accept, () => { commit(s => acceptServiceQuest(s, offer.id)); feedback = ""; localize(); }, current.blocked);
+      button(controls, c.decline, () => { commit(s => declineServiceQuest(s, offer.id)); localize(); }, current.blocked);
+      section.append(controls);
       if (offer.characterId === speaker?.id) offers.append(section);
       else book.append(section);
     }
@@ -243,7 +228,7 @@ export function setupServiceQuests(t, { context, mutate, narrative,
         paragraph(section, `${index < quest.step ? "✓ " : ""}${c.step} ${index + 1}/${quest.destinations.length} : ${poi.town} — ${poi.name} · ${c.actions[item.roles[index].action]}`);
       }
       if (quest.status !== "active") {
-        if (quest.status === "completed") paragraph(section, wording(state, quest, "conclusion", item.conclusion[lang]));
+        if (quest.status === "completed") paragraph(section, item.conclusion[lang]);
         book.append(section);
         continue;
       }
@@ -266,7 +251,7 @@ export function setupServiceQuests(t, { context, mutate, narrative,
       if (role.social && here) {
         const exchange = document.createElement("section");
         paragraph(exchange, `${item.title[lang]} — ${poi.name}`);
-        paragraph(exchange, wording(state, quest, "arrival", item.request[lang]));
+        paragraph(exchange, item.request[lang]);
         button(exchange, c.actions[role.action], () => act(quest, true), current.blocked);
         onSite.append(exchange);
       }
@@ -327,10 +312,9 @@ export function setupServiceQuests(t, { context, mutate, narrative,
       }
     }
   }
-  narrative.subscribe(() => { if (!consuming) localize(); });
   return { localize, characterChanged: localize,
     reset() {
       controller?.abort(); controller = undefined; request = undefined; owner = undefined;
-      preparationKey = undefined; unavailable = false; failedWording.clear();
+      preparationKey = undefined; unavailable = false;
     } };
 }

@@ -1079,6 +1079,20 @@ dialog p { margin: 12px 0; }
 .conversation-topics button { text-align: left; white-space: normal; }
 #conversation-dialog, #character-selector-dialog { width: min(850px, 94vw); max-height: 90dvh; overflow: auto; }
 #conversation-reply { line-height: 1.65; white-space: pre-line; }
+#conversation-dialog { width: min(660px, 94vw); }
+#conversation-context { color: var(--accent); margin-block-end: 1.5rem; }
+#conversation-intro, #conversation-character-reply,
+#conversation-artifact-rumour, #conversation-dialog #dialogue-services {
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+#conversation-character-reply { padding-inline-start: 1rem; border-inline-start: 2px solid var(--accent); }
+#conversation-options { margin-block-start: 1.5rem; border-block-start: 1px solid var(--line); padding-block-start: 1rem; }
+#conversation-options summary { cursor: pointer; color: var(--accent); }
+#conversation-options .conversation-topics { margin-block-start: 1rem; }
+#dialogue-services .quest-offer { padding-block: 1rem; }
+.quest-offer h3 { margin-block: 0 .5rem; }
+.quest-offer .quest-command-block { margin-block-start: 1rem; }
 .character-choices { display: grid; gap: 10px; list-style: none; margin: 0; padding: 0; }
 .character-choice { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; }
 .character-choice-details { display: grid; gap: 4px; }

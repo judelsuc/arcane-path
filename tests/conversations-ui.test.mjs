@@ -21,7 +21,8 @@ class Element {
   replaceChildren(...children) { this.children = children; }
 }
 
-function portraitFixture(t, fetchPortrait, { profile, onCharacter, onArtifactRumour } = {}) {
+function portraitFixture(t, fetchPortrait, { profile, onCharacter, onArtifactRumour,
+  role = "artisan", language = "en" } = {}) {
   const previous = globalThis.document, nodes = new Map(), revoked = [], errors = [];
   const get = id => {
     if (!nodes.has(id)) nodes.set(id, new Element());
@@ -37,13 +38,13 @@ function portraitFixture(t, fetchPortrait, { profile, onCharacter, onArtifactRum
   const current = { cell: { terrain: "major_road" },
     state: { serverJourney: { id: "a".repeat(32) }, journalAccess: "capability", col: 0, row: 0 },
     blocked: false };
-  const character = { id: "b".repeat(32), name: "Camille Aubry", role: "artisan",
+  const character = { id: "b".repeat(32), name: "Camille Aubry", role,
     portrait: { status: "ready", ref: "portrait" }, ...(profile ? { profile } : {}) };
   const characters = {
     async list() { return { characters: [character], canCreate: false }; },
-    portrait: fetchPortrait, async meet() {},
+    portrait: fetchPortrait, async meet() {}, async exchange() { return { factIds: [] }; },
   };
-  const ui = setupConversations((key, args) => translate("en", key, args),
+  const ui = setupConversations((key, args) => translate(language, key, args),
     { context: () => current, characters, onCharacter, onArtifactRumour });
   return { ui, get, characters, revoked, errors, created: () => created,
     portrait: () => get("character-choices").children[0].children[0].children[0],
@@ -61,7 +62,8 @@ test("meeting a character with a quest opens their proposal and notifies the que
   await fixture.get("character-choices").children[0].children[0].click();
   assert.deepEqual(speakers, ["b".repeat(32)]);
   assert.equal(fixture.get("dialogue-services").hidden, false);
-  assert.equal(fixture.get("conversation-services").focused, true);
+  assert.equal(fixture.get("conversation-character-reply").focused, true);
+  assert.equal(fixture.get("conversation-options").open, false);
   assert.equal(fixture.get("conversation-dialog").open, true);
 });
 
@@ -76,6 +78,95 @@ test("conversation replies contain only the character's in-world response", asyn
     translate("en", "character.fact.own_workshop"));
   assert.doesNotMatch(fixture.get("conversation-character-reply").textContent,
     /tools below|game rules|not testimony/i);
+});
+
+test("choosing a person starts a template exchange without a topic click", async t => {
+  const f = portraitFixture(t, async () => new Blob(["portrait"]));
+  const calls = [];
+  let resolve;
+  f.characters.exchange = async (_state, id, topic) => {
+    calls.push({ id, topic });
+    return new Promise(done => { resolve = done; });
+  };
+  await f.ui.open();
+  await f.get("character-choices").children[0].children[0].click();
+  assert.deepEqual(calls, [{ id: "b".repeat(32), topic: "services" }]);
+  assert.equal(f.get("conversation-character-reply").textContent,
+    translate("en", "character.opening.artisan"));
+  assert.doesNotMatch(f.get("conversation-intro").textContent, /what would you like/i);
+  resolve({ factIds: ["own_workshop"] });
+  await new Promise(done => setImmediate(done));
+  assert.equal(f.get("conversation-character-reply").textContent,
+    translate("en", "character.fact.own_workshop"));
+});
+
+const occupationalFacts = {
+  artisan: "own_workshop", gardener: "own_garden", bookseller: "own_bookstall",
+  traveller: "familiar_local_roads", baker: "own_bakery", innkeeper: "own_inn",
+  farmer: "own_farm", courier: "own_deliveries", musician: "own_music",
+  herbalist: "own_herbs", carpenter: "own_carpentry", teacher: "own_school",
+  beekeeper: "own_hives", shepherd: "own_flock", potter: "own_pottery",
+  weaver: "own_weaving", tailor: "own_tailoring", cobbler: "own_shoe_repairs",
+  blacksmith: "own_forge", miller: "own_mill", cook: "own_kitchen",
+  grocer: "own_grocery", florist: "own_flowers", guide: "own_guiding",
+  fisher: "own_fishing", cheesemaker: "own_cheese", orchardist: "own_orchard",
+  vintner: "own_vineyard", brewer: "own_brewery", barista: "own_cafe",
+  painter: "own_painting", sculptor: "own_sculpture", photographer: "own_photography",
+  storyteller: "own_stories", librarian: "own_library", archivist: "own_archives",
+  clockmaker: "own_clocks", locksmith: "own_locks", mason: "own_masonry",
+  roofer: "own_roofing", cooper: "own_barrels", wheelwright: "own_wheels",
+  basketmaker: "own_baskets", leatherworker: "own_leatherwork", soapmaker: "own_soap",
+  candlemaker: "own_candles", ferryman: "own_ferry", stationmaster: "own_station",
+};
+for (const language of ["en", "fr"]) {
+  for (const [role, fact] of Object.entries(occupationalFacts)) {
+    test(`${language} ${role} has a localized job, opening and automatic factual reply`, async t => {
+      const f = portraitFixture(t, async () => new Blob(["portrait"]), { role, language });
+      f.characters.exchange = async () => ({ factIds: [fact] });
+      for (const key of [`character.role.${role}`, `character.opening.${role}`, `character.fact.${fact}`]) {
+        assert.notEqual(translate(language, key), key);
+      }
+      await f.ui.open();
+      await f.get("character-choices").children[0].children[0].click();
+      await new Promise(done => setImmediate(done));
+      assert.equal(f.get("conversation-context").textContent,
+        translate(language, "character.identity", { name: "Camille Aubry",
+          role: translate(language, `character.role.${role}`) }));
+      assert.equal(f.get("conversation-character-reply").textContent,
+        translate(language, `character.fact.${fact}`));
+    });
+  }
+}
+
+test("a late opening exchange cannot replace a newer topic's reply", async t => {
+  const f = portraitFixture(t, async () => new Blob(["portrait"]));
+  let resolveOpening;
+  f.characters.exchange = async (_state, _id, topic) => topic === "services"
+    ? new Promise(done => { resolveOpening = done; }) : { factIds: ["own_garden"] };
+  await f.ui.open();
+  await f.get("character-choices").children[0].children[0].click();
+  f.get("conversation-notebooks").click();
+  await new Promise(done => setImmediate(done));
+  resolveOpening({ factIds: ["own_workshop"] });
+  await new Promise(done => setImmediate(done));
+  assert.equal(f.get("conversation-character-reply").textContent,
+    translate("en", "character.fact.own_garden"));
+});
+
+test("reopening the same person ignores an earlier meeting's unfinished exchange", async t => {
+  const f = portraitFixture(t, async () => new Blob(["portrait"]));
+  const replies = [];
+  f.characters.exchange = async () => new Promise(done => replies.push(done));
+  await f.ui.open();
+  await f.get("character-choices").children[0].children[0].click();
+  await f.get("conversation-back").click();
+  await f.get("character-choices").children[0].children[0].click();
+  replies[1]({ factIds: ["own_garden"] });
+  await new Promise(done => setImmediate(done));
+  replies[0]({ factIds: ["own_workshop"] });
+  await new Promise(done => setImmediate(done));
+  assert.equal(f.get("conversation-character-reply").textContent,
+    translate("en", "character.fact.own_garden"));
 });
 
 test("conversation localization does not hide investigation groups while the hub is open", t => {
@@ -99,10 +190,11 @@ test("spontaneous artifact speech is forwarded on meetings and ordinary topics, 
     eventId: "00000000-0000-4000-8000-000000000002" } });
   await f.ui.open();
   await f.get("character-choices").children[0].children[0].click();
-  assert.deepEqual(heard, [[rumour, rumour.characterId]]);
+  assert.deepEqual(heard[0], [rumour, rumour.characterId]);
+  assert.equal(heard.length, 2);
   f.get("conversation-notebooks").click();
   await new Promise(resolve => setImmediate(resolve));
-  assert.equal(heard.length, 2);
+  assert.equal(heard.length, 3);
   assert.equal(heard[1][0].eventId, "00000000-0000-4000-8000-000000000002");
   assert.equal(f.get("dialogue-journals").hidden, false);
 });
@@ -397,7 +489,7 @@ test("unknown character knowledge does not remove player-authorized dialogue too
   assert.equal(get("dialogue-directions").hidden, false);
   assert.equal(get("dialogue-directions").children[0], existingQuestTool);
   assert.equal(directionsOpened, 1);
-  assert.deepEqual(calls, []);
+  assert.deepEqual(calls.map(call => call.topic), ["services"]);
   get("investigation-dialog").close();
   await ui.open();
   await get("character-choices").children[0].children[0].click();

@@ -11,6 +11,13 @@ Conversations no longer show game-rules disclaimers or explain their underlying
 artifact-knowledge mechanism. Recollections and service requests use in-world
 wording in French and English; practical costs, controls and errors remain.
 
+Selecting a person starts a short, role-based exchange automatically, using
+French/English sentence templates rather than LLM generation. Their verified
+quest offer and accept/decline buttons appear directly in Dialogue, not in the
+closed investigation window. Optional topics and practical actions are folded
+under “Linger a little longer”. Service requests, on-site exchanges and
+conclusions use authored templates without background text-generation requests.
+
 ## Spontaneous artifact stories
 
 Characters receive fixed knowledge of one to three magical objects at creation:
@@ -34,6 +41,17 @@ reuses that receipt without repeating a paid action. The server reports
 artifact synchronization failures distinctly from new-journey creation.
 
 ## Character-owned service quests
+
+New encounters draw from 48 occupations: craftsperson, gardener, bookseller,
+traveller, baker, innkeeper, farmer, courier, musician, herbalist, carpenter and
+teacher, beekeeper, shepherd, potter, weaver, tailor, cobbler, blacksmith, miller,
+cook, grocer, florist, walking guide, fisher, cheesemaker, orchardist, vintner,
+brewer, barista, painter, sculptor, photographer, storyteller, librarian,
+archivist, clockmaker, locksmith, mason, roofer, cooper, wheelwright,
+basketmaker, leatherworker, soapmaker, candlemaker, ferry operator and stationmaster.
+New people in the same town receive different jobs while unused roles
+remain. Every role has bilingual dialogue, matching portrait guidance and an
+appropriate quest pool. Existing people keep their occupation and quest.
 
 New character names draw from 40 given names and 40 surnames per supported
 naming locale (1,600 combinations rather than 100). Creation avoids full-name

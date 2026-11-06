@@ -6,11 +6,7 @@ const TOPICS = {
   shelter: "sleep-travel", food: "eat-travel", work: "open-earn-money",
   transport: "open-journey-world", town: "open-town",
 };
-const PANE_TOPICS = {
-  parent: ["parent", "dialogue-parent"], clues: ["clues", "dialogue-directions"],
-  notebooks: ["notebooks", "dialogue-journals"], artifacts: ["artifacts", "dialogue-artifacts"],
-  services: ["services", "dialogue-services"],
-};
+const EXCHANGE_TOPICS = ["parent", "clues", "notebooks", "artifacts", "services"];
 
 export function setupConversations(t, { context, characters, onCharacter = () => {},
   onArtifactRumour = () => {},
@@ -19,7 +15,7 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
   const dialog = $("conversation-dialog");
   const selector = $("character-selector-dialog");
   const trigger = $("open-conversation");
-  let selected = "parent";
+  let selected = "services";
   let currentCharacter;
   let available = [];
   let canCreate = false;
@@ -31,7 +27,6 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
   let exchangeReply;
   const portraitUrls = new Set();
   let portraitGeneration = 0;
-  const panes = Object.fromEntries(Object.entries(PANE_TOPICS).map(([topic, [, pane]]) => [topic, pane]));
 
   function validContext() {
     const current = context();
@@ -69,7 +64,6 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
 
   function localize() {
     const current = validContext();
-    const investigating = $("investigation-dialog").open;
     if (!current && (selector.open || dialog.open)) {
       selector.close();
       dialog.close();
@@ -93,22 +87,21 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
       const source = $(target);
       $(`conversation-${topic}`).disabled = !current || !source || source.disabled || source.hidden;
     }
-    for (const [topic, pane] of Object.entries(panes)) {
+    for (const topic of EXCHANGE_TOPICS) {
       const button = $(`conversation-${topic}`);
       button.disabled = !current || topic === "clues" && $("open-investigation").disabled;
       button.setAttribute("aria-pressed", String(selected === topic));
-      const isVisible = selected === topic;
-      if (!investigating) $(pane).hidden = !isVisible;
     }
     if (currentCharacter) {
       const exchange = exchangeReply?.characterId === currentCharacter.id &&
-        exchangeReply.topic === PANE_TOPICS[selected][0] ? exchangeReply : null;
+        exchangeReply.topic === selected ? exchangeReply : null;
       const response = exchange?.status === "pending"
-        ? t("character.exchangePending")
+        ? t(`character.opening.${currentCharacter.role}`)
         : exchange?.status === "ready" && exchange.facts.length
           ? exchange.facts.map(fact => t(`character.fact.${fact}`)).join(" ")
           : exchange?.status === "failed" ? t("character.exchangeFailed", { error: exchange.error })
-            : selected === "parent" ? t("character.noParentKnowledge") : t("character.noKnowledge");
+            : selected === "services" ? t(`character.opening.${currentCharacter.role}`)
+              : selected === "parent" ? t("character.noParentKnowledge") : t("character.noKnowledge");
       const mention = exchange?.status === "ready" && exchange.visitorFacts?.[0]?.type === "met"
         ? t("character.visitorMention", { name: exchange.visitorFacts[0].name }) : "";
       $("conversation-character-reply").textContent = [response, mention].filter(Boolean).join(" ");
@@ -230,11 +223,12 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
     const current = validContext();
     if (!current || !currentCharacter) return;
     const character = currentCharacter;
-    exchangeReply = { characterId: character.id, topic, status: "pending" };
+    const request = { characterId: character.id, topic, status: "pending" };
+    exchangeReply = request;
     localize();
     try {
       const result = await characters.exchange(current.state, character.id, topic);
-      if (currentCharacter?.id !== character.id || !sameJourney(current)) return;
+      if (currentCharacter !== character || exchangeReply !== request || !sameJourney(current)) return;
       if (!Array.isArray(result.factIds) ||
           result.factIds.some(fact => typeof fact !== "string")) {
         throw new Error("Invalid character exchange response.");
@@ -245,7 +239,7 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
       if (result.artifactRumour) onArtifactRumour(result.artifactRumour, character);
       localize();
     } catch (error) {
-      if (currentCharacter?.id === character.id) {
+      if (currentCharacter === character && exchangeReply === request && sameJourney(current)) {
         exchangeReply = { characterId: character.id, topic, status: "failed", error: error.message };
         localize();
       }
@@ -262,15 +256,17 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
       const meeting = await characters.meet(current.state, character.id);
       if (!sameJourney(current)) return;
       currentCharacter = { ...character, familiarity: meeting?.familiarity ?? character.familiarity };
-      if (character.profile?.quest) selected = "services";
+      selected = "services";
       exchangeReply = undefined;
+      $("conversation-options").open = false;
       $("conversation-character-status").textContent = "";
       selector.close();
       dialog.showModal();
       onCharacter(currentCharacter);
       if (meeting?.artifactRumour) onArtifactRumour(meeting.artifactRumour, currentCharacter);
       localize();
-      $(`conversation-${selected}`).focus();
+      $("conversation-character-reply").focus();
+      void recordTopic("services");
     } catch (error) {
       $("character-selector-status").textContent = t("character.openFailed", { error: error.message });
     } finally {
@@ -342,7 +338,7 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
       $(target).click();
     });
   }
-  for (const topic of Object.keys(panes)) {
+  for (const topic of EXCHANGE_TOPICS) {
     $(`conversation-${topic}`).addEventListener("click", () => {
       if (topic === "clues") {
         localize();
@@ -366,7 +362,7 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
   return {
     localize, open,
     reset() {
-      selected = "parent";
+      selected = "services";
       currentCharacter = undefined;
       exchangeReply = undefined;
       releasePortraits();

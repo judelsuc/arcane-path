@@ -625,23 +625,25 @@
       </header>
       <p id="conversation-context"></p>
       <p id="conversation-intro"></p>
-      <div class="conversation-topics">
-        <button id="conversation-parent" type="button" data-i18n="conversation.parent"></button>
-        <button id="conversation-clues" type="button" data-i18n="conversation.clues"></button>
-        <button id="conversation-notebooks" type="button" data-i18n="conversation.notebooks"></button>
-        <button id="conversation-artifacts" type="button" data-i18n="conversation.artifacts"></button>
-        <button id="conversation-services" type="button" data-i18n="quests.services"></button>
-        <button id="conversation-shelter" type="button" data-i18n="conversation.shelter"></button>
-        <button id="conversation-food" type="button" data-i18n="conversation.food"></button>
-        <button id="conversation-work" type="button" data-i18n="conversation.work"></button>
-        <button id="conversation-transport" type="button" data-i18n="conversation.transport"></button>
-        <button id="conversation-town" type="button" data-i18n="conversation.town"></button>
-      </div>
-      <p id="conversation-character-reply" role="status" hidden></p>
+      <p id="conversation-character-reply" role="status" tabindex="-1" hidden></p>
       <div id="conversation-artifact-rumour" role="status" hidden></div>
       <p id="conversation-character-status" role="status"></p>
       <p id="conversation-reply" role="status" tabindex="-1" hidden></p>
-      <p data-i18n="conversation.rules"></p>
+      <details id="conversation-options">
+        <summary data-i18n="conversation.more"></summary>
+        <div class="conversation-topics">
+          <button id="conversation-parent" type="button" data-i18n="conversation.parent"></button>
+          <button id="conversation-clues" type="button" data-i18n="conversation.clues"></button>
+          <button id="conversation-notebooks" type="button" data-i18n="conversation.notebooks"></button>
+          <button id="conversation-artifacts" type="button" data-i18n="conversation.artifacts"></button>
+          <button id="conversation-services" type="button" data-i18n="quests.services"></button>
+          <button id="conversation-shelter" type="button" data-i18n="conversation.shelter"></button>
+          <button id="conversation-food" type="button" data-i18n="conversation.food"></button>
+          <button id="conversation-work" type="button" data-i18n="conversation.work"></button>
+          <button id="conversation-transport" type="button" data-i18n="conversation.transport"></button>
+          <button id="conversation-town" type="button" data-i18n="conversation.town"></button>
+        </div>
+      </details>
     </dialog>
     <dialog id="investigation-dialog" aria-labelledby="investigation-title">
       <header class="journal-header">

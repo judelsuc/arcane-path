@@ -188,6 +188,62 @@ class CharactersTests(unittest.TestCase):
         self.assertEqual(self.create()["profile"]["quest"], plan)
         self.assertEqual(self.request("list", journey="b" * 32)["characters"][0]["profile"]["quest"], plan)
 
+    def test_new_people_in_a_town_have_distinct_jobs_without_rewriting_existing_people(self):
+        created = [self.create(
+            request_id=f"00000000-0000-4000-8000-{index:012d}") for index in range(1, 5)]
+        self.assertEqual(len({character["role"] for character in created}), 4)
+        expected = {character["id"]: (character["role"], character["profile"]) for character in created}
+        reopened = Characters(self.journeys, self.auth)
+        listed = reopened.request({"action": "list", "journey": self.journey,
+                                   "location": {"col": 0, "row": 0}}, self.token)["characters"]
+        self.assertEqual({character["id"]: (character["role"], character["profile"])
+                          for character in listed}, expected)
+        self.assertEqual(self.create()["role"], created[0]["role"])
+
+    def test_every_occupation_has_real_dialogue_knowledge_portrait_and_a_stable_quest(self):
+        self.assertGreaterEqual(len(character_module.ROLES), 48)
+        for index, entry in enumerate(character_module.ROLES):
+            role = entry[0]
+            with self.subTest(role=role):
+                position = (8 + index, 0)
+                self.journeys.chunks.cache_cell(*position, {
+                    "terrain": "place", "countryCodes": ["FR"],
+                    "settlements": [{"osmId": f"node/{2000 + index}", "name": f"Town {index}"}],
+                })
+                with patch.object(character_module, "ROLES", (entry,)):
+                    created = self.create(
+                        request_id=f"00000000-0000-4000-8000-{1000 + index:012x}", location=position)
+                self.assertEqual(created["role"], role)
+                self.assertEqual(created["profile"]["quest"],
+                                 character_module.character_quest(created["id"], role))
+                self.assertIn(character_module.PORTRAIT_ROLE_PROMPTS[role],
+                              character_module.portrait_prompt(role)["prompt"])
+                self.request("meet", characterId=created["id"], location=position,
+                             requestId=f"00000000-0000-4000-8000-{2000 + index:012x}")
+                topics, facts = character_module.ROLE_KNOWLEDGE[role]
+                reply = self.request("exchange", characterId=created["id"], location=position,
+                                     topic=topics[0],
+                                     requestId=f"00000000-0000-4000-8000-{3000 + index:012x}")
+                self.assertEqual(reply["factIds"], facts)
+                self.assertTrue(all(fact in character_module.FACT_TEXT for fact in reply["factIds"]))
+
+    def test_encounters_across_towns_use_the_full_job_pool_without_local_duplicates(self):
+        seen = set()
+        for index in range(128):
+            position = (8 + index, 0)
+            self.journeys.chunks.cache_cell(*position, {
+                "terrain": "place", "countryCodes": ["FR"],
+                "settlements": [{"osmId": f"node/{3000 + index}", "name": f"Town {index}"}],
+            })
+            roles = {
+                self.create(request_id=f"00000000-0000-4000-8000-{4000 + index * 4 + slot:012x}",
+                            location=position)["role"]
+                for slot in range(4)
+            }
+            self.assertEqual(len(roles), 4)
+            seen.update(roles)
+        self.assertEqual(seen, {entry[0] for entry in character_module.ROLES})
+
     def test_name_catalogues_cover_regional_capacity_and_stay_locale_specific(self):
         for locale, names in character_module.NAMES.items():
             with self.subTest(locale=locale):
