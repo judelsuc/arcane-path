@@ -12,6 +12,33 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: conversation synchronization hotfix (6 November 2026)
+
+Runtime `f9f97e5adb1790180b90d7f588aebb9c0ff39f34`, tag
+`deploy-2026-11-06-conversation-sync`, game version **0.21.13**, packaged at
+`2026-11-06T10:50:22.841788+00:00`. Saving a spontaneous artifact story locks
+gameplay temporarily; this must disable actions rather than close the character
+dialog. Conversation lifetime and stale-response checks now tolerate that lock,
+preserving the selected person and expanded options. A bilingual saving message
+is shown until actions become available again. Invalid contexts still close.
+
+The four-file frontend delta was 102,720 bytes, SHA-256
+`55165ad68ae0ae1bfce03b9863cf42db5f471dd6616270be5ea5cf67b7478eae`.
+Rollback archive `/home/ubuntu/runtime-before-0.21.13-f9f97e5.tar.gz` (0600),
+SHA-256 `3a1a4ce902b4e8c9766a557935c4147864a74874fe4b35e69893c1070c11f56e`.
+Restore its files under `/opt/arcane-path` and refresh the release manifest mtime
+to roll back; no restart, migration or nginx change is necessary.
+
+Validation: 172 targeted JavaScript tests passed, including integration of the
+real conversation and artifact UI controllers during meeting/topic story saves.
+Browser fixtures confirmed the dialog and expanded options remain open while
+syncing, and actions re-enable afterward. All three production baseline hashes
+and all four installed/loopback-served hashes matched. Release metadata announced
+the exact runtime commit; its mtime was refreshed. Backend PID stayed unchanged,
+both services remained active, and recent warning logs were empty. Public
+apex/www HTTPS returned the expected 401; authenticated live gameplay was not
+tested. Reload existing clients to use the fix.
+
 ## Checkpoint deployed: automatic dialogue and 48 occupations (6 November 2026)
 
 Runtime `361344a0ae5977320c5e377560d92881be7a971d`, tag
