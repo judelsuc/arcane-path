@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { setupConversations } from "../conversations-ui.mjs";
+import { setupArtifactQuests } from "../artifacts-ui.mjs";
 import { translate } from "../i18n.mjs";
+import RUMOURS from "../public/artifact-rumours.json" with { type: "json" };
 
 class Element {
   disabled = false;
@@ -46,7 +48,7 @@ function portraitFixture(t, fetchPortrait, { profile, onCharacter, onArtifactRum
   };
   const ui = setupConversations((key, args) => translate(language, key, args),
     { context: () => current, characters, onCharacter, onArtifactRumour });
-  return { ui, get, characters, revoked, errors, created: () => created,
+  return { ui, get, characters, current, revoked, errors, created: () => created,
     portrait: () => get("character-choices").children[0].children[0].children[0],
     status: () => get("character-choices").children[0].children[0].children[1].children[2] };
 }
@@ -79,6 +81,113 @@ test("conversation replies contain only the character's in-world response", asyn
   assert.doesNotMatch(fixture.get("conversation-character-reply").textContent,
     /tools below|game rules|not testimony/i);
 });
+
+for (const source of ["meeting", "topic"]) {
+  test(`artifact story from a ${source} keeps the real conversation open during synchronization`, async t => {
+    let artifacts, resolve;
+    let pending = false;
+    const rumour = { characterId: "b".repeat(32), artifactId: "hermit",
+      eventId: "00000000-0000-4000-8000-000000000001" };
+    const f = portraitFixture(t, async () => new Blob(["portrait"]), {
+      onArtifactRumour: (message, character) => artifacts.hear(message, character),
+    });
+    document.documentElement = { lang: "en" };
+    document.createTextNode = textContent => Object.assign(new Element(), { textContent });
+    artifacts = setupArtifactQuests((key, args) => translate("en", key, args), {
+      context: () => f.current,
+      character: f.ui.currentCharacter,
+      mutate: transform => { f.current.state = transform(f.current.state); return true; },
+      lock(value) { f.current.blocked = value; f.ui.localize(); },
+      client: {
+        pending: () => pending,
+        acknowledge() { pending = false; },
+        async request(state, action) {
+          assert.equal(action.type, "character-rumour");
+          pending = true;
+          await new Promise(done => { resolve = done; });
+          return {
+            state: { ...state, artifactRevision: 1, discovery: { version: 1, entries: [{
+              targetType: "artifact", targetId: "hermit", targetRevision: "legend:1",
+              evidenceKey: "legend", kind: "legend", precision: "text",
+              facts: { artifact: "hermit", ...RUMOURS.hermit }, source: "character-artifact-legend",
+              observedMinutes: 0, channels: ["npc"], availability: "current", contentVersion: "template-v1",
+            }] } },
+            revision: 1, offers: [], owned: [],
+            conversationRumour: { ...rumour, clueRevision: null },
+          };
+        },
+      },
+    });
+    if (source === "meeting") f.characters.meet = async () => ({ artifactRumour: rumour });
+    f.characters.exchange = async (_state, _id, topic) => ({
+      factIds: ["own_workshop"],
+      ...(source === "topic" && topic === "artifacts" ? { artifactRumour: rumour } : {}),
+    });
+    await f.ui.open();
+    await f.get("character-choices").children[0].children[0].click();
+    if (source === "topic") f.get("conversation-artifacts").click();
+    await new Promise(done => setImmediate(done));
+    assert.equal(f.current.blocked, true);
+    assert.equal(f.get("conversation-dialog").open, true);
+    assert.equal(f.ui.currentCharacter()?.id, rumour.characterId);
+    assert.equal(f.get("conversation-parent").disabled, true);
+    assert.equal(f.get("conversation-character-status").textContent, translate("en", "conversation.wait"));
+    f.get("conversation-options").open = true;
+    f.ui.localize();
+    assert.equal(f.get("conversation-dialog").open, true);
+    resolve();
+    await new Promise(done => setImmediate(done));
+    assert.equal(f.current.blocked, false);
+    assert.equal(f.get("conversation-dialog").open, true);
+    assert.equal(f.get("conversation-options").open, true);
+    assert.equal(f.get("conversation-parent").disabled, false);
+    assert.equal(f.get("conversation-character-status").textContent, "");
+    assert.equal(f.get("conversation-artifact-rumour").hidden, false);
+    assert.equal(f.get("conversation-artifact-rumour").children[0].textContent, RUMOURS.hermit.en);
+    assert.equal(f.errors.length, 0);
+  });
+}
+
+test("temporary locks retain the selector and in-flight meeting, but prevent new actions", async t => {
+  const f = portraitFixture(t, async () => new Blob(["portrait"]));
+  let resolve;
+  f.characters.meet = async () => new Promise(done => { resolve = done; });
+  await f.ui.open();
+  f.current.blocked = true;
+  f.ui.localize();
+  assert.equal(f.get("character-selector-dialog").open, true);
+  await f.get("character-choices").children[0].children[0].click();
+  assert.equal(resolve, undefined);
+  f.current.blocked = false;
+  f.ui.localize();
+  const choosing = f.get("character-choices").children[0].children[0].click();
+  f.current.blocked = true;
+  f.ui.localize();
+  resolve();
+  await choosing;
+  assert.equal(f.get("conversation-dialog").open, true);
+  assert.ok(f.ui.currentCharacter());
+  f.get("conversation-close").click();
+  assert.equal(f.get("conversation-dialog").open, false);
+});
+
+for (const [reason, invalidate] of [
+  ["journey ended", current => { current.state.ended = "death"; }],
+  ["water", current => { current.cell.terrain = "water"; }],
+  ["unavailable cell", current => { current.cell.unavailable = true; }],
+  ["missing access", current => { current.state.journalAccess = null; }],
+]) {
+  test(`${reason} still closes the dialog during a temporary lock`, async t => {
+    const f = portraitFixture(t, async () => new Blob(["portrait"]));
+    await f.ui.open();
+    await f.get("character-choices").children[0].children[0].click();
+    f.current.blocked = true;
+    invalidate(f.current);
+    f.ui.localize();
+    assert.equal(f.get("conversation-dialog").open, false);
+    assert.equal(f.ui.currentCharacter(), undefined);
+  });
+}
 
 test("choosing a person starts a template exchange without a topic click", async t => {
   const f = portraitFixture(t, async () => new Blob(["portrait"]));

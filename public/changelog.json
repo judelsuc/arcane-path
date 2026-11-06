@@ -1,6 +1,11 @@
 {
-  "version": "0.21.12",
+  "version": "0.21.13",
   "entries": [
+    {
+      "version": "0.21.13",
+      "fr": "La fenêtre de dialogue reste ouverte pendant l’enregistrement des histoires d’objets magiques, à l’ouverture comme après le choix d’un sujet. La personne et les options dépliées sont conservées ; les actions redeviennent disponibles à la fin de l’enregistrement.",
+      "en": "The conversation window stays open while magical-object stories are saved, both on opening and after choosing a topic. The selected person and expanded options are preserved; actions become available again when saving finishes."
+    },
     {
       "version": "0.21.12",
       "fr": "Les conversations commencent automatiquement avec des phrases adaptées au métier, sans génération de texte. Les propositions de quête et leurs boutons Accepter ou Refuser apparaissent directement dans Dialogue ; les actions facultatives restent repliées. Les nouvelles rencontres proposent 48 métiers, avec des paroles, portraits et missions adaptés, sans doublon de métier dans une même ville tant que des choix restent disponibles. Les personnages existants conservent leur identité.",

@@ -17,6 +17,9 @@ quest offer and accept/decline buttons appear directly in Dialogue, not in the
 closed investigation window. Optional topics and practical actions are folded
 under “Linger a little longer”. Service requests, on-site exchanges and
 conclusions use authored templates without background text-generation requests.
+Background artifact-story synchronization keeps the selected person and dialog
+open. Actions are temporarily disabled with a visible saving message; they
+become available again when synchronization finishes.
 
 ## Spontaneous artifact stories
 

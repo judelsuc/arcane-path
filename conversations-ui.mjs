@@ -28,10 +28,10 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
   const portraitUrls = new Set();
   let portraitGeneration = 0;
 
-  function validContext() {
+  function validContext(allowBlocked = false) {
     const current = context();
     return current && current.state?.serverJourney?.id && current.state?.journalAccess &&
-      !current.blocked && !current.state.ended && current.cell && !current.cell.unavailable &&
+      (allowBlocked || !current.blocked) && !current.state.ended && current.cell && !current.cell.unavailable &&
       current.cell.terrain !== "water"
       ? current : null;
   }
@@ -63,13 +63,15 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
   }
 
   function localize() {
-    const current = validContext();
+    const current = validContext(true);
+    const enabled = current && !current.blocked;
     if (!current && (selector.open || dialog.open)) {
       selector.close();
       dialog.close();
     }
-    trigger.disabled = !current;
-    $("town-conversation").disabled = !current;
+    trigger.disabled = !enabled;
+    $("town-conversation").disabled = !enabled;
+    $("conversation-character-status").textContent = current?.blocked ? t("conversation.wait") : "";
     $("character-selector-context").textContent = locationText(current);
     $("conversation-context").textContent = currentCharacter
       ? t("character.identity", { name: currentCharacter.name,
@@ -85,11 +87,11 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
     $("conversation-reply").textContent = "";
     for (const [topic, target] of Object.entries(TOPICS)) {
       const source = $(target);
-      $(`conversation-${topic}`).disabled = !current || !source || source.disabled || source.hidden;
+      $(`conversation-${topic}`).disabled = !enabled || !source || source.disabled || source.hidden;
     }
     for (const topic of EXCHANGE_TOPICS) {
       const button = $(`conversation-${topic}`);
-      button.disabled = !current || topic === "clues" && $("open-investigation").disabled;
+      button.disabled = !enabled || topic === "clues" && $("open-investigation").disabled;
       button.setAttribute("aria-pressed", String(selected === topic));
     }
     if (currentCharacter) {
@@ -106,7 +108,7 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
         ? t("character.visitorMention", { name: exchange.visitorFacts[0].name }) : "";
       $("conversation-character-reply").textContent = [response, mention].filter(Boolean).join(" ");
     }
-    $("character-create").disabled = !current || !loaded || !canCreate || busy;
+    $("character-create").disabled = !enabled || !loaded || !canCreate || busy;
     $("character-selector-close").disabled = busy;
     $("character-selector-status").classList?.toggle("is-loading", busy);
     $("conversation-back").disabled = busy;
@@ -179,7 +181,7 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
   }
 
   function sameJourney(current) {
-    const latest = validContext();
+    const latest = validContext(true);
     return latest && latest.state.serverJourney.id === current.state.serverJourney.id &&
       latest.state.col === current.state.col && latest.state.row === current.state.row;
   }
