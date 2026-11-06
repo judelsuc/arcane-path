@@ -24,7 +24,8 @@ become available again when synchronization finishes.
 Quest maps label the player's current position explicitly and number only the
 destinations. Cached terrain is loaded through the same bounded terrain service
 as the journal map. Compass bearings and straight-line distances remain readable
-even when terrain is missing; dotted connections are not walking routes.
+even when terrain is missing. Dotted connections use a dark brown core and pale
+outline to remain visible over either tileset; they are not walking routes.
 
 Preview favicons and Apple touch icons are public read-only assets so browsers
 can fetch them independently of preview authentication. The game and APIs

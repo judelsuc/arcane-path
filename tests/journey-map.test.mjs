@@ -171,7 +171,7 @@ for (const locale of ["fr", "en"]) {
     const view = journeyMapView({ col: 10, row: 10, distanceMeters: 10000,
       trail: { origin: { col: 0, row: 0 } } });
     drawJourneyMap(canvas, view, t);
-    assert.ok(dashes.some(pattern => String(pattern) === "4,9"));
+    assert.ok(dashes.some(pattern => String(pattern) === "4,14"));
     assert.ok(journeyMapDescription(view, t).includes(t("journalMapConnections")));
   });
 }

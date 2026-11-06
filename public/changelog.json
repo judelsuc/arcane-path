@@ -1,6 +1,11 @@
 {
-  "version": "0.21.14",
+  "version": "0.21.15",
   "entries": [
+    {
+      "version": "0.21.15",
+      "fr": "Les pointillés des cartes sont plus épais et plus sombres, avec un contour clair pour rester visibles sur les tuiles à icônes comme sur le terrain classique. Ils indiquent toujours une direction à vol d’oiseau, pas un chemin praticable.",
+      "en": "Dotted map connections are thicker and darker, with a pale outline to remain visible over both icon tiles and classic terrain. They still indicate a straight-line direction, not a walkable route."
+    },
     {
       "version": "0.21.14",
       "fr": "Les cartes de quête affichent le terrain déjà en cache, un repère « Vous » distinct, les destinations numérotées ainsi que leur direction et distance à vol d’oiseau. Les zones sans terrain sont expliquées. Les icônes du site sont accessibles sans mot de passe pour les navigateurs qui les chargent séparément ; le jeu reste protégé.",

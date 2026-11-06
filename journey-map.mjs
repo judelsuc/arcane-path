@@ -160,13 +160,18 @@ export function drawJourneyMap(canvas, view, t, progress = 1) {
   c.strokeStyle = "#59472c";
   c.beginPath(); c.moveTo(45, 725); c.lineTo(205, 725); c.stroke();
   if (view.partial && view.stops.length > 1) {
-    c.strokeStyle = "#8b7048";
-    c.lineWidth = 3;
-    c.setLineDash([4, 9]);
+    c.lineCap = "round";
+    c.setLineDash([4, 14]);
     c.beginPath();
     c.moveTo(...project(view.stops[0]));
     for (const stop of view.stops.slice(1)) c.lineTo(...project(stop));
+    c.strokeStyle = "#fff8e6";
+    c.lineWidth = 10;
     c.stroke();
+    c.strokeStyle = "#594022";
+    c.lineWidth = 5;
+    c.stroke();
+    c.lineCap = "butt";
   }
   c.strokeStyle = "#ac3029";
   c.lineWidth = 5;

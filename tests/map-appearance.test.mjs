@@ -108,6 +108,44 @@ test("live switching, independent local preference, diagnostic snapshot and note
   assert.equal(frozenView.appearance.tileset, "path-pixel");
 });
 
+test("dotted directions have a pale casing and dark core above both terrain tilesets", async t => {
+  const f = fixture(t);
+  for (const tileset of ["ascii", "path-pixel"]) {
+    await f.ui.activate(tileset);
+    const strokes = [], events = [];
+    let path = [], dash = [];
+    const ctx = {
+      fillRect() { events.push("terrain"); }, fillText() {}, arc() {},
+      fill() { events.push("marker"); },
+      beginPath() { path = []; },
+      moveTo(...p) { path.push(p); }, lineTo(...p) { path.push(p); },
+      setLineDash(value) { dash = value; },
+      stroke() {
+        events.push(this.strokeStyle);
+        strokes.push({ color: this.strokeStyle, width: this.lineWidth,
+          cap: this.lineCap, dash, path: structuredClone(path) });
+      },
+    };
+    const view = journeyMapView({ col: 4, row: 3, distanceMeters: 1000,
+      trail: { origin: { col: 0, row: 0 } } });
+    view.terrain = { cells: [{ col: 2, row: 1, terrain: "forest" }], stride: 1 };
+    drawJourneyMap({ getContext: () => ctx }, view, key => translate("en", key));
+    const casing = strokes.find(stroke => stroke.color === "#fff8e6");
+    const core = strokes.find(stroke => stroke.color === "#594022");
+    assert.deepEqual(casing, { color: "#fff8e6", width: 10, cap: "round",
+      dash: [4, 14], path: core.path });
+    assert.equal(core.width, 5);
+    assert.equal(core.cap, "round");
+    assert.deepEqual(core.dash, casing.dash);
+    assert.equal(core.path.length, 2);
+    assert.ok(events.lastIndexOf("terrain") < events.indexOf(casing.color));
+    assert.ok(events.indexOf(casing.color) < events.indexOf(core.color));
+    assert.ok(events.indexOf(core.color) < events.indexOf("marker"));
+    assert.equal(strokes.find(stroke => stroke.color === "#ac3029").cap, "butt");
+  }
+  await f.ui.activate("ascii");
+});
+
 test("failed manifest retains working ASCII, reports error and does not persist a broken preference", async t => {
   // The already validated pack is process-cached; test rejection before any activation in a fresh module.
   const isolated = await import(`../map-appearance.mjs?failure=${Date.now()}`);
