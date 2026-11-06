@@ -181,7 +181,7 @@ class HttpsConfigurationTests(unittest.TestCase):
                      "/public/icons/favicon-32.png", "/public/icons/apple-touch-icon.png"]:
             self.assertIsNotNone(asset_pattern.fullmatch(path), path)
         self.assertIsNone(asset_pattern.fullmatch("/public/icons/other.png"))
-        self.assertIn("location = /favicon.ico {\n        limit_except GET { deny all; }\n"
+        self.assertIn("location = /favicon.ico {\n        auth_basic off;\n        limit_except GET { deny all; }\n"
                       "        proxy_pass http://127.0.0.1:8766/public/icons/favicon.ico;", config)
         self.assertIn("rewrite ^ /public/icons/apple-touch-icon.png break;", config)
         for path in ["/content-workshop.css", "/scripts/travel_server.py", "/.env",
@@ -190,6 +190,23 @@ class HttpsConfigurationTests(unittest.TestCase):
         asset_body = config.split(assets, 1)[1].split("\n    }", 1)[0]
         self.assertIn("limit_except GET { deny all; }", asset_body)
         self.assertIn("proxy_pass http://127.0.0.1:8766;", asset_body)
+
+    def test_only_public_icon_routes_bypass_preview_authentication(self):
+        config = (ROOT / "infra/nginx/preview.conf").read_text()
+        routes = re.findall(r"location ([^\n]+) \{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\n    \}", config)
+        public = [(route, body) for route, body in routes if "auth_basic off;" in body]
+        self.assertEqual(len(public), 3)
+        icon_route = next(route for route, _ in public if "favicon\\.svg" in route)
+        pattern = re.compile(icon_route.removeprefix("~ "))
+        for path in ["/favicon.svg", "/public/icons/favicon.ico", "/public/icons/favicon-32.png",
+                     "/public/icons/favicon-192.png", "/public/icons/apple-touch-icon.png"]:
+            self.assertIsNotNone(pattern.fullmatch(path), path)
+        for path in ["/", "/index.html", "/api/travel", "/public/release.json",
+                     "/public/icons/private.png", "/favicon.svg/extra"]:
+            self.assertIsNone(pattern.fullmatch(path), path)
+        for _, body in public:
+            self.assertIn("limit_except GET { deny all; }", body)
+        self.assertIn('auth_basic "Arcane Path private preview";', config)
 
     def test_certificate_scripts_parse_and_require_explicit_agreement(self):
         script = ROOT / "scripts/configure_https.sh"
@@ -207,7 +224,10 @@ class HttpsConfigurationTests(unittest.TestCase):
         config = (ROOT / "infra/nginx/preview.conf").read_text()
         self.assertIn('auth_basic "Arcane Path private preview";', config)
         self.assertIn("auth_basic_user_file /etc/nginx/arcane-preview.htpasswd;", config)
-        self.assertNotIn("auth_basic off", config)
+        for route in ["location = / {", "location = /api/characters {",
+                      'location ~ "^/api/(?:']:
+            body = config.split(route, 1)[1].split("\n    }", 1)[0]
+            self.assertNotIn("auth_basic off", body)
         self.assertIn("location / { return 404; }", config)
         self.assertIn('proxy_set_header Authorization "";', config)
         self.assertIn("proxy_pass http://127.0.0.1:8766;", config)

@@ -200,13 +200,19 @@ export function drawJourneyMap(canvas, view, t, progress = 1) {
   }
   c.stroke();
   c.setLineDash([]);
-  view.stops.forEach((stop, index) => {
+  const stops = view.stops.map((stop, index) => ({ stop, index }));
+  stops.sort((a, b) => Number(a.stop.kind === "current") - Number(b.stop.kind === "current"));
+  stops.forEach(({ stop, index }) => {
     const [x, y] = project(stop);
+    if (stop.kind === "current" && stop.label) {
+      c.fillStyle = "#fff8e6";
+      c.beginPath(); c.arc(x, y, 20, 0, Math.PI * 2); c.fill();
+    }
     c.fillStyle = stop.kind === "current" ? "#ac3029" : "#59472c";
     c.beginPath(); c.arc(x, y, stop.kind === "current" ? 12 : 8, 0, Math.PI * 2); c.fill();
     c.font = "bold 24px sans-serif";
     c.textAlign = "center";
-    c.fillText(String(index + 1), x, y + (stop.kind === "current" ? 36 : -20));
+    c.fillText(stop.label ?? String(index + 1), x, y + (stop.kind === "current" ? 36 : -20));
   });
 }
 

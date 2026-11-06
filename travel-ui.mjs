@@ -364,7 +364,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const pricedCell = !(mappedCell.countryCodes?.length) && country
       ? { ...mappedCell, countryCodes: [country] } : mappedCell;
     const cell = withDiscoveredAccommodations(pricedCell, discoveredLodging, state.col, state.row);
-    return { state, cell, map: base, info: exposureInfo(chunk, p.row, p.col),
+    return { state, cell, map: base, mapTerrain: stream.journeyTerrain, info: exposureInfo(chunk, p.row, p.col),
       data: economyData, survival: survivalConfig, blocked: busy || Boolean(cursor) || Boolean(state.ended) ||
         Boolean(artifactsUI?.pending(state) || transitActive(state) || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending ||
           state.equipment?.dogEncounter === "pending") };

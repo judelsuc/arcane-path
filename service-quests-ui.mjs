@@ -216,7 +216,7 @@ export function setupServiceQuests(t, { context, mutate,
       paragraph(section, `${c.reward} : €${(quest.rewardCents / 100).toFixed(2)} · ${c.route} : ${quest.distanceKm.toFixed(1)} km`);
       if (mapQuest === quest.id) {
         const poi = quest.destinations[quest.step] ?? quest.destinations.at(-1);
-        if (current.map) renderQuestMap(section, state, quest.destinations.slice(quest.step), current.map, t);
+        if (current.map) void renderQuestMap(section, state, quest.destinations.slice(quest.step), current.map, t, current.mapTerrain);
         paragraph(section, `${poi.town} — ${poi.name} · ${poi.latitude.toFixed(5)}, ${poi.longitude.toFixed(5)}`);
         const link = document.createElement("a");
         link.href = `https://www.openstreetmap.org/?mlat=${poi.latitude}&mlon=${poi.longitude}#map=12/${poi.latitude}/${poi.longitude}`;

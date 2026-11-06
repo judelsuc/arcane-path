@@ -34,8 +34,8 @@ export function setupQuestTracking(t, { context, mutate }) {
     if (followed) {
       const option = [...select.options].find(item => item.value === followed.id);
       summary.textContent = `${t("quests.follow")} : ${option.textContent}${followed.target ? "" : ` · ${t("quests.noExactTarget")}`}`;
-      if (current.map && followed.target) renderQuestMap(preview, state,
-        [{ ...followed.target, name: followed.destination ?? followed.name }], current.map, t);
+      if (current.map && followed.target) void renderQuestMap(preview, state,
+        [{ ...followed.target, name: followed.destination ?? followed.name }], current.map, t, current.mapTerrain);
     }
   }
   return { localize };

@@ -1,6 +1,11 @@
 {
-  "version": "0.21.13",
+  "version": "0.21.14",
   "entries": [
+    {
+      "version": "0.21.14",
+      "fr": "Les cartes de quête affichent le terrain déjà en cache, un repère « Vous » distinct, les destinations numérotées ainsi que leur direction et distance à vol d’oiseau. Les zones sans terrain sont expliquées. Les icônes du site sont accessibles sans mot de passe pour les navigateurs qui les chargent séparément ; le jeu reste protégé.",
+      "en": "Quest maps show cached terrain, a distinct “You” marker, numbered destinations and compass bearings with straight-line distances. Missing terrain is explained. Site icons are available without a password for browsers that fetch them separately; the game remains protected."
+    },
     {
       "version": "0.21.13",
       "fr": "La fenêtre de dialogue reste ouverte pendant l’enregistrement des histoires d’objets magiques, à l’ouverture comme après le choix d’un sujet. La personne et les options dépliées sont conservées ; les actions redeviennent disponibles à la fin de l’enregistrement.",

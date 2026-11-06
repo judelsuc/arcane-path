@@ -21,6 +21,16 @@ Background artifact-story synchronization keeps the selected person and dialog
 open. Actions are temporarily disabled with a visible saving message; they
 become available again when synchronization finishes.
 
+Quest maps label the player's current position explicitly and number only the
+destinations. Cached terrain is loaded through the same bounded terrain service
+as the journal map. Compass bearings and straight-line distances remain readable
+even when terrain is missing; dotted connections are not walking routes.
+
+Preview favicons and Apple touch icons are public read-only assets so browsers
+can fetch them independently of preview authentication. The game and APIs
+remain password-protected. Safari must have website icons in tabs enabled;
+previously missing icons may remain cached until the tab is reopened.
+
 ## Spontaneous artifact stories
 
 Characters receive fixed knowledge of one to three magical objects at creation:
