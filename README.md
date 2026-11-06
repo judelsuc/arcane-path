@@ -67,6 +67,18 @@ renaming does not rewrite the result. Hunger or care need at 65 suspends help;
 feeding and care still cost their existing time and supplies. Event mentions
 do not grant extra damage protection or silently feed the dog.
 
+Eight dedicated dog-only walking events are mixed into the normal positive,
+negative and story pools without increasing event frequency. A ready dog may
+find woodland food (+250 kcal), suggest a resting spot (10 minutes, -6 fatigue
+before exposure), or make a friend in town (+2 local reputation). Any companion
+may tangle its lead (10 minutes), follow a scent off the path (15 minutes,
++3 fatigue), or steal a snack (-150 player kcal). Playing and quiet company
+are story-only encounters. Terrain restrictions apply; none occur on water or
+without a dog. Benefits requiring a ready dog are suspended at the existing
+need thresholds. Costs use normal metabolism, exposure and care clocks.
+Each event has authored bilingual text using the recorded dog's name, a unique
+ASCII illustration, explicit actual effects and journal/save support.
+
 The cell action menu offers fictional small-game hunting in forest cells:
 60 game minutes, 10 fatigue, and up to 800 kcal eaten on site. Base failure
 chance is 60%, adjusted by tarot; a ready dog lowers it by 15 percentage points,

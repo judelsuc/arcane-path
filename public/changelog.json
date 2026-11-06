@@ -1,6 +1,11 @@
 {
-  "version": "0.21.16",
+  "version": "0.21.17",
   "entries": [
+    {
+      "version": "0.21.17",
+      "fr": "Huit événements réservés aux voyages avec un chien rejoignent les rencontres du chemin : nourriture découverte, coin de repos, nouvelle amitié, jeux et présence réconfortante, mais aussi longe emmêlée, piste suivie et collation dérobée. Le nom du compagnon et les conséquences réelles sont affichés. Les événements utiles demandent un chien en forme ; aucun de ces événements ne survient sans chien.",
+      "en": "Eight dog-only events join roadside encounters: finding food, a resting spot, making a friend, playing and quiet companionship, but also tangled leads, following scents and stolen snacks. Your companion's name and actual consequences are shown. Helpful events require a ready dog; none of these events occur without a dog."
+    },
     {
       "version": "0.21.16",
       "fr": "Le chien est présent dans les actions et rencontres où il vous accompagne, avec ses bonus et ses besoins explicités. La chasse en forêt est possible avec ou sans lui ; un chien en forme améliore les chances. Une mauvaise hygiène réduit temporairement la réputation, mais favorise les dons lorsque vous faites la manche. La marche salit moins sur route qu’en forêt. Le mot « journal » dans les résultats de recherche d’indice ouvre directement le carnet.",

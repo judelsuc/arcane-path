@@ -4,6 +4,7 @@ import { restSurvival, sleepSurvival } from "./survival.mjs";
 import { changeReputation } from "./pressures.mjs";
 import { healthValue } from "./health.mjs";
 import { companionRecord, companionText, validateCompanionRecord } from "./companion-presence.mjs";
+import { journeyEquipmentModifiers } from "./equipment.mjs";
 
 export const EVENT_CATALOGUE = Object.freeze({
   food: { polarity: "positive", food: 300 },
@@ -17,6 +18,14 @@ export const EVENT_CATALOGUE = Object.freeze({
   picnic: { polarity: "positive", food: 600, minutes: 10 },
   friendlyAdvice: { polarity: "positive", reputation: 2, speed: 1.1, duration: 60 },
   dogEncounter: { polarity: "positive" },
+  dogFindsFood: { polarity: "positive", dog: "ready", terrains: ["forest"], food: 250 },
+  dogRestSpot: { polarity: "positive", dog: "ready", fatigue: -6, minutes: 10 },
+  dogMakesFriend: { polarity: "positive", dog: "ready", terrains: ["place"], reputation: 2 },
+  dogTangled: { polarity: "negative", dog: "present", minutes: 10 },
+  dogChasesScent: { polarity: "negative", dog: "present", terrains: ["forest", "grass", "plain"], minutes: 15, fatigue: 3 },
+  dogStealsSnack: { polarity: "negative", dog: "present", food: -150 },
+  dogPlays: { polarity: "story", dog: "present" },
+  dogKeepsCompany: { polarity: "story", dog: "present" },
   delay: { polarity: "negative", minutes: 15 },
   lostCoins: { polarity: "negative", money: -150 },
   strain: { polarity: "negative", fatigue: 5 },
@@ -73,15 +82,21 @@ export function selectJourneyEvent(state, economy, occurrence, polarity, variant
     : polarity < chances.positive ? JOURNEY_EVENTS.positive : JOURNEY_EVENTS.negative;
   const eligible = pool.filter(k => (k !== "dogEncounter" ||
     state.equipment && !state.equipment.dog && state.equipment.dogEncounter === null &&
-    info.terrain !== "water") && (!EVENT_CATALOGUE[k].terrains ||
+    info.terrain !== "water") && dogEventAvailable(state, EVENT_CATALOGUE[k], info) && (!EVENT_CATALOGUE[k].terrains ||
     EVENT_CATALOGUE[k].terrains.includes(info.terrain)));
   return eligible[Math.floor(variant * eligible.length)];
+}
+
+function dogEventAvailable(state, rule, info) {
+  return !rule.dog || Boolean(state.equipment?.dog && info.terrain !== "water" &&
+    (rule.dog !== "ready" || journeyEquipmentModifiers(state).dogReady));
 }
 
 export function applyJourneyEvent(state, kind, info, survival, economy, random = Math.random) {
   if (!Object.hasOwn(EVENT_CATALOGUE, kind)) throw new Error("Unknown journey event.");
   if (state.ended) throw new Error("Cannot apply an event to an ended journey.");
   const rule = EVENT_CATALOGUE[kind];
+  if (!dogEventAvailable(state, rule, info)) throw new Error("Dog event unavailable for this companion or terrain.");
   if (kind === "dogEncounter") {
     if (!state.equipment || state.equipment.dog || state.equipment.dogEncounter !== null ||
         info.terrain === "water") throw new Error("Dog encounter unavailable.");
@@ -154,7 +169,9 @@ export function journeyEventText(record, t) {
 
 export function journeyEventTextParts(record, t) {
   const signed = (n, digits = 0) => `${n > 0 ? "+" : ""}${n.toFixed(digits)}`;
-  const narrative = `${record.wording?.[t("discovery.inscriptionLanguage")] ?? t(`journeyEvent.${record.kind}`)} `;
+  const narrative = `${record.wording?.[t("discovery.inscriptionLanguage")] ?? t(`journeyEvent.${record.kind}`, {
+    name: record.companion?.name ?? t("companion.dog"),
+  })} `;
   const companion = ["forestBoar", "forestDogs", "food", "picnic", "waterBreak", "catNap", "whiteDeer", "ribbon"]
     .includes(record.kind) ? companionText(record, `event.${record.kind}`, t) : "";
   if (EVENT_CATALOGUE[record.kind].polarity === "story") return [narrative,
@@ -221,6 +238,8 @@ export function validateJourneyEvents(state, economy, survival) {
     const chances = eventChances(r, economy);
     if (r.occurrence !== chances.occurrence || r.positive !== chances.positive) fail();
     const rule = EVENT_CATALOGUE[r.kind];
+    if (rule.dog && (!r.companion || r.terrain === "water" ||
+        rule.dog === "ready" && !r.companion.ready)) fail();
     if (rule.terrains && !rule.terrains.includes(r.terrain)) fail();
     if (rule.polarity === "story" && [r.minutes, r.foodKcal, r.moneyCents, r.fatigue,
       r.reputation, r.health ?? 0, r.awakeHours ?? 0].some(n => n !== 0)) fail();

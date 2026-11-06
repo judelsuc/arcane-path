@@ -96,7 +96,10 @@ test("local playtest checks at exactly five minutes and saves outside normal jou
 });
 function example(kind, transform = s => s) {
   for (let seed = 0; seed < 2000; seed++) {
-    const previous = transform(kind === "dogEncounter" ? beginEquipment(start(seed)) : start(seed)), moved = move(previous);
+    let initial = kind === "dogEncounter" || EVENT_CATALOGUE[kind].dog ? beginEquipment(start(seed)) : start(seed);
+    if (EVENT_CATALOGUE[kind].dog) initial = { ...initial,
+      equipment: { ...initial.equipment, dog: { name: "Étoile", hunger: 15, careNeed: 15 } } };
+    const previous = transform(initial), moved = move(previous);
     const next = advanceJourneyEvents(previous, moved,
       { ...info, terrain: EVENT_CATALOGUE[kind].terrains?.[0] ?? info.terrain }, survival, economy);
     if (next.events?.history.at(-1)?.kind === kind) return { previous, moved, next };
@@ -316,11 +319,60 @@ test("long journeys retain total counts and only the most recent 32 events; note
   }
 });
 
-test("catalogue has twenty mechanical events, an optional dog and eight story-only encounters", () => {
-  assert.equal(JOURNEY_EVENTS.positive.length + JOURNEY_EVENTS.negative.length, 21);
-  assert.equal(JOURNEY_EVENTS.story.length, 8);
+test("dog-only events require the recorded companion and respect readiness and terrain", () => {
+  const alone = beginEquipment(start());
+  const ready = { ...alone, equipment: { ...alone.equipment,
+    dog: { name: "Étoile", hunger: 15, careNeed: 15 } } };
+  const neglected = { ...ready, equipment: { ...ready.equipment,
+    dog: { ...ready.equipment.dog, hunger: 65 } } };
+  for (const [kind, rule] of Object.entries(EVENT_CATALOGUE).filter(([, rule]) => rule.dog)) {
+    const terrain = rule.terrains?.[0] ?? "road";
+    const context = { ...info, terrain };
+    assert.throws(() => applyJourneyEvent(alone, kind, context, survival, economy), /Dog event unavailable/);
+    assert.throws(() => applyJourneyEvent(ready, kind, { ...info, terrain: "water" }, survival, economy),
+      /Dog event unavailable/);
+    if (rule.dog === "ready") {
+      assert.throws(() => applyJourneyEvent(neglected, kind, context, survival, economy), /Dog event unavailable/);
+    } else {
+      assert.doesNotThrow(() => applyJourneyEvent(neglected, kind, context, survival, economy));
+    }
+    const { next } = example(kind);
+    const record = next.events.history.at(-1);
+    assert.deepEqual(record.companion, { name: "Étoile", ready: true });
+    assert.deepEqual(validateSave(createSave({ region: "firmi", map, state: next, survival, economy }, 1)).state, next);
+    for (const language of ["fr", "en"]) {
+      assert.match(journeyEventText(record, (key, args) => translate(language, key, args)), /Étoile/);
+    }
+    const malformed = structuredClone(next);
+    delete malformed.events.history.at(-1).companion;
+    assert.throws(() => validateJourneyEvents(malformed, economy, survival), /saved journey events/);
+  }
+  for (const state of [alone, ready, neglected]) {
+    const selected = new Set();
+    for (const terrain of ["road", "forest", "place", "water"]) {
+      for (const polarity of [0, 0.999]) for (const story of [0, 0.999]) {
+        for (let i = 0; i < 100; i++) {
+          const kind = selectJourneyEvent(state, economy, 0, polarity, i / 100, { terrain }, story);
+          const rule = EVENT_CATALOGUE[kind];
+          if (rule.dog) {
+            assert.notEqual(state, alone);
+            assert.notEqual(terrain, "water");
+            if (rule.dog === "ready") assert.notEqual(state, neglected);
+            selected.add(kind);
+          }
+        }
+      }
+    }
+    assert.equal(selected.size, state === alone ? 0 : state === ready ? 8 : 5);
+  }
+});
+
+test("catalogue includes eight dedicated companion events alongside existing encounters", () => {
+  assert.equal(JOURNEY_EVENTS.positive.length + JOURNEY_EVENTS.negative.length, 27);
+  assert.equal(JOURNEY_EVENTS.story.length, 10);
+  assert.equal(Object.values(EVENT_CATALOGUE).filter(rule => rule.dog).length, 8);
   for (const lang of ["fr", "en"]) for (const kind of Object.keys(EVENT_CATALOGUE)) {
-    assert.notEqual(translate(lang, `journeyEvent.${kind}`), `journeyEvent.${kind}`);
+    assert.notEqual(translate(lang, `journeyEvent.${kind}`, { name: "Étoile" }), `journeyEvent.${kind}`);
   }
   for (const terrain of ["road", "forest", "place", "water", "plain", "church"]) {
     const selected = new Set();
@@ -338,7 +390,12 @@ test("catalogue has twenty mechanical events, an optional dog and eight story-on
     }
   }
   for (const kind of JOURNEY_EVENTS.story) {
-    const s = start(), eventInfo = { ...info, terrain: EVENT_CATALOGUE[kind].terrains?.[0] ?? info.terrain };
+    let s = start();
+    if (EVENT_CATALOGUE[kind].dog) {
+      s = beginEquipment(s);
+      s = { ...s, equipment: { ...s.equipment, dog: { name: "Étoile", hunger: 15, careNeed: 15 } } };
+    }
+    const eventInfo = { ...info, terrain: EVENT_CATALOGUE[kind].terrains?.[0] ?? info.terrain };
     assert.equal(applyJourneyEvent(s, kind, eventInfo, survival, economy), s);
     const fixture = example(kind);
     const r = fixture.next.events.history[0];

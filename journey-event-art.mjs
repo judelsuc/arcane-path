@@ -1,4 +1,57 @@
 const ART = Object.freeze({
+  dogFindsFood: String.raw`
+        __       .-.
+   ____/ o) --> (===)
+  /      /       '-'
+  |_/|_|    . . . .
+`,
+  dogRestSpot: String.raw`
+      /\        /\   __
+     /  \  o       (o \__
+    /____\/|\   ___/  __/
+      ||  / \  |_/|_|
+`,
+  dogMakesFriend: String.raw`
+    o     <3      o
+   /|\     __    /|\
+   / \   (o  \___/ \
+  _______/  ___)_____
+        |_| |_|
+`,
+  dogTangled: String.raw`
+       o       __
+      /|\----(o  \__
+      / \  @--/ ___/
+  __________|_|_|____
+`,
+  dogChasesScent: String.raw`
+   o       ?   . . .
+  /|\         __
+  / \  -->  (o  \___
+  _________/  ___)___
+          |_| |_|
+`,
+  dogStealsSnack: String.raw`
+     o     !
+    /|\         __
+    / \  [ ]  (o  \__(=)
+  ____________/  ___/
+             |_| |_|
+`,
+  dogPlays: String.raw`
+       .   (o)   .
+            __
+   o      (o  \___
+  /|\____/    ___)
+  / \   /_/  /_/
+`,
+  dogKeepsCompany: String.raw`
+        *         .
+    o        __
+   /|\     (o  \__
+   / \_____/  ___/
+  ________|_|_|______
+`,
   dogEncounter: String.raw`
      o
     /|\                __
