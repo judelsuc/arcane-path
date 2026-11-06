@@ -12,6 +12,37 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: quest map guidance and browser icons (6 November 2026)
+
+Runtime `5208cabe42c539132e9299f6ebbef48a97423049`, tag
+`deploy-2026-11-06-quest-map-icons`, game version **0.21.14**, packaged at
+`2026-11-06T11:07:20.005649+00:00`. Quest previews now load bounded cached
+terrain, distinguish the player with a halo and localized label, number only
+destinations, and show compass bearings and straight-line distances. Missing
+terrain and failures remain explicit; dotted connections are not walking routes.
+Only the seven exact favicon/touch-icon URLs bypass preview authentication:
+Safari may fetch icons separately. Game pages and APIs remain protected.
+
+The nine-file delta was 128,791 bytes, SHA-256
+`543d3befe08f58773f547bdff97c990c8692c9cdc1936e1a5cedde4a59980102`.
+Rollback archive `/home/ubuntu/runtime-before-0.21.14-5208cab.tar.gz` (0600),
+SHA-256 `3adff406863073e5f9b807289ec46f13714a6468a4560284485402a92a5a173d`.
+Active Nginx backup `/home/ubuntu/nginx-before-0.21.14-5208cab.conf` (0600).
+Restore runtime files and the active Nginx configuration, refresh the release
+manifest mtime, run `nginx -t`, and reload Nginx to roll back.
+
+Validation: 63 targeted JavaScript and 21 HTTPS configuration tests passed.
+A browser fixture using the real local map showed terrain, a visible player,
+destination markers and correct southeast bearing/distance. All eight production
+baseline hashes and all nine installed hashes matched; all eight web assets
+matched over loopback. `nginx -t` passed and Nginx reloaded without restarting
+the backend (PID unchanged). Production cached terrain returned 512 cells for a
+Firmi-area probe with incomplete coverage explicitly flagged. Both HTTPS domains
+served all seven icon URLs with matching hashes, retained 401 on the homepage,
+travel API and release manifest, and returned 404 for an unknown icon.
+Recent warning logs were empty. Safari tab rendering and authenticated public
+gameplay were not tested; enable website icons in Safari and reopen cached tabs.
+
 ## Checkpoint deployed: conversation synchronization hotfix (6 November 2026)
 
 Runtime `f9f97e5adb1790180b90d7f588aebb9c0ff39f34`, tag
