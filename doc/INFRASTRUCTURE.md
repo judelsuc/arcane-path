@@ -12,6 +12,29 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: dotted map contrast (6 November 2026)
+
+Runtime `6b7831d77d5ea6c225dbb32a755170b5ebc46055`, tag
+`deploy-2026-11-06-map-contrast`, game version **0.21.15**, packaged at
+`2026-11-06T11:24:20.161663+00:00`. Dotted straight-line connections now have
+thicker dark brown cores and pale casings above both terrain tilesets.
+Directions remain distinct from walked routes; no gameplay or data changes.
+
+The three-file frontend delta was 13,909 bytes, SHA-256
+`3ea2cced925ef09333771134ba77785fe2bede93a640914319fc3ac6a59f47d5`.
+Rollback archive `/home/ubuntu/runtime-before-0.21.15-6b7831d.tar.gz` (0600),
+SHA-256 `41441473d0f3ccfe51b71e5662c765c97f945d6d3aecd9bcc2d18d8f5fed08c5`.
+Restore its files under `/opt/arcane-path` and refresh the release manifest
+mtime to roll back. No backend restart, migration or Nginx change is required.
+
+Validation: 51 targeted JavaScript tests passed. A browser fixture using the
+real local map and icon tileset confirmed the outlined dots stand out.
+Both production source baseline hashes and the prior release commit matched;
+all three installed and loopback-served hashes matched the package. The release
+manifest mtime was refreshed. Backend PID stayed 266974; both services remained
+active, with no recent warnings. Both public HTTPS domains retained homepage
+401 and favicon 200. Authenticated public gameplay was not tested.
+
 ## Checkpoint deployed: quest map guidance and browser icons (6 November 2026)
 
 Runtime `5208cabe42c539132e9299f6ebbef48a97423049`, tag
