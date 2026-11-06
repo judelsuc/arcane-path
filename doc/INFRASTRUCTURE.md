@@ -12,6 +12,32 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: correct clue-journal link (6 November 2026)
+
+Runtime `083ec56e6771c5e58cd7c7ec8213b6b069bd3bda`, tag
+`deploy-2026-11-06-clue-journal`, game version **0.21.18**, packaged at
+`2026-11-06T15:11:32.469530+00:00`. The journal link in clue-search feedback
+now selects the parent pane in Quests, shows current evidence and focuses the
+clue history rather than opening the photo notebook. Investigation closes if
+necessary; an already open Quests window stays open.
+
+The four-file frontend delta was 37,616 bytes, SHA-256
+`c1af05fe1e95af74ac4c0f53b9d57a508b28a7dbf2748a76b6549b96ba4f8754`.
+Rollback archive `/home/ubuntu/runtime-before-0.21.18-083ec56.tar.gz` (0600),
+SHA-256 `ea57fa7cb0a1f02e39c74394f1537b5db1c13381d4182a63b1d38a9ef29a5061`.
+Restore its files under `/opt/arcane-path` and refresh the release manifest
+mtime to roll back. No backend restart, migration or Nginx change.
+
+Validation: 46 targeted JavaScript tests passed, including bilingual navigation
+from search feedback, visible current clues, focus, quest layout and release
+metadata; browser entrypoint syntax and whitespace checks passed. All three
+source baseline hashes and the prior release commit matched; all four installed
+and loopback-served hashes matched the package. The manifest mtime was refreshed.
+Backend PID stayed 266974; both services remained active, with no recent warning
+logs. Both public HTTPS domains retained homepage, API and manifest 401 with
+favicon 200. Authenticated public gameplay was not tested. Reload existing
+clients for the correction.
+
 ## Checkpoint deployed: dedicated dog events (6 November 2026)
 
 Runtime `c9db2bc4f0829be2f3f478b1c7ac4c5b2f987be5`, tag
