@@ -12,6 +12,36 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: automatic dialogue and 48 occupations (6 November 2026)
+
+Runtime `361344a0ae5977320c5e377560d92881be7a971d`, tag
+`deploy-2026-11-06-dialogue-occupations`, game version **0.21.12**, packaged at
+`2026-11-06T09:28:29.846584+00:00`. Selecting a person starts a template-based
+exchange automatically. Verified quest offers and accept/decline controls now
+belong to the conversation dialog rather than the closed investigation dialog.
+Optional actions are folded away; service-quest wording no longer requests LLM
+generation. New characters draw from 48 occupations, avoiding local duplicates,
+with bilingual speech, portrait guidance and role-specific quest pools.
+Existing identities, quests, portraits and saved journeys are not rewritten.
+
+The eleven-file delta was 171,038 bytes, SHA-256
+`87fd078b7c0402719a0949c51bfb9fad9c8885b0b946a8eba7dbbe154f324fa4`.
+Rollback archive `/home/ubuntu/runtime-before-0.21.12-361344a.tar.gz` (0600),
+SHA-256 `e45bc86f5df6c59e9bf8f6ebc9ea55da07450471cbee9cac0e793d192bf328b4`.
+Restore its files under `/opt/arcane-path`, refresh the release manifest mtime
+and restart `arcane-path` to roll back. No database migration or nginx change.
+
+Validation: 186 focused JavaScript tests, 54 character backend tests and the
+packaging test passed. Browser fixtures checked automatic dialogue, visible
+quest acceptance, reopening without duplicate offers, and a 390 px layout
+without horizontal overflow. All ten production baseline hashes matched;
+all three local custom origins existed in shared storage before restarting.
+All eleven installed hashes and served loopback assets matched the package.
+The running release announced the exact commit, the production pool contained
+48 roles, both services were active, and recent warning logs were empty.
+The manifest mtime was refreshed. Public apex/www HTTPS retained their expected
+401 protection; authenticated public gameplay was not tested.
+
 ## Checkpoint deployed: opening-story recovery (4 November 2026)
 
 Runtime `b5ed24d9d3c05bf02ec4caab5055b76a4b49c09b`, tag
