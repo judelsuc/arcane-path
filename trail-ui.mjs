@@ -138,7 +138,7 @@ export function trailEntryDate(state, minutes, language, t) {
 }
 
 export function setupTrail(t, { context, interview, discover, askDirections, searchField, recognizeField, pinPhoto, narrative,
-  openClues = () => {} }) {
+  openClues = () => {}, selectClueJournal = () => {} }) {
   const dialog = document.querySelector("#trail-dialog");
   const investigationDialog = document.querySelector("#investigation-dialog");
   const action = document.querySelector("#trail-interview");
@@ -579,15 +579,21 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         if (outcome.textContent.includes("{journal}")) {
           const [before, after] = outcome.textContent.split("{journal}");
           const link = document.createElement("a");
-          link.href = "#photo-journal-dialog";
+          link.href = "#trail-history";
           link.textContent = t("fieldJournalLink");
           link.setAttribute("aria-haspopup", "dialog");
-          link.setAttribute("aria-controls", "photo-journal-dialog");
+          link.setAttribute("aria-controls", "trail-dialog");
           link.addEventListener("click", event => {
             event.preventDefault();
-            if (dialog.open) dialog.close();
             if (investigationDialog.open) investigationDialog.close();
-            document.querySelector("#open-journal").click();
+            selectClueJournal();
+            section = "current";
+            if (!dialog.open) open();
+            else localize();
+            const history = document.querySelector("#trail-history");
+            history.setAttribute("tabindex", "-1");
+            history.scrollIntoView({ block: "start" });
+            history.focus();
           });
           outcome.replaceChildren(before, link, after);
         }

@@ -490,6 +490,8 @@ for (const locale of ["fr", "en"]) {
       showModal() { this.open = true; }
       close() { this.open = false; }
       click() { this.events.click?.(); }
+      scrollIntoView() { this.scrolled = true; }
+      focus() { this.focused = true; }
     }
     const elements = new Map();
     const element = selector => {
@@ -520,11 +522,6 @@ for (const locale of ["fr", "en"]) {
       recognizeField(prepared) { state = askAboutClue(state, prepared, cell, info, survival, economy).state; },
     });
     const texts = node => typeof node === "string" ? [node] : [node.textContent, ...node.children.flatMap(texts)];
-    element("#open-journal").addEventListener("click", () => {
-      assert.equal(element("#trail-dialog").open, false);
-      assert.equal(element("#investigation-dialog").open, false);
-      element("#photo-journal-dialog").showModal();
-    });
     ui.open();
     assert.equal(element("#trail-investigation-page").hidden, false);
     assert.ok(texts(element("#trail-history")).includes(translate(locale, "trailOpeningClueTitle")));
@@ -552,7 +549,7 @@ for (const locale of ["fr", "en"]) {
       translate(locale, "companion.search", { name: "Étoile" })));
     const successFeedback = element("#trail-actions").children.flatMap(c => c.children)
       .find(c => c.dataset?.feedback === "success");
-    const journalLink = successFeedback.children.find(c => c.href === "#photo-journal-dialog");
+    const journalLink = successFeedback.children.find(c => c.href === "#trail-history");
     assert.equal(journalLink.textContent, translate(locale, "fieldJournalLink"));
     assert.equal(texts(successFeedback).join("").includes("{journal}"), false);
     assert.equal(texts(successFeedback).join(""), translate(locale, "fieldOutcome.found",
@@ -560,9 +557,11 @@ for (const locale of ["fr", "en"]) {
     let prevented = false;
     journalLink.events.click({ preventDefault() { prevented = true; } });
     assert.equal(prevented, true);
-    assert.equal(element("#photo-journal-dialog").open, true);
-    element("#photo-journal-dialog").close();
-    ui.open();
+    assert.equal(element("#trail-dialog").open, true);
+    assert.equal(element("#photo-journal-dialog").open, false);
+    assert.equal(element("#trail-history").focused, true);
+    assert.equal(element("#trail-history").scrolled, true);
+    assert.equal(element("#trail-evidence-page").hidden, false);
     rolls = [0, 0, 0.999];
     await element("#trail-actions").children.flatMap(c => c.children)
       .find(b => b.id === "clue-field-search").events.click();
@@ -600,18 +599,19 @@ for (const locale of ["fr", "en"]) {
     ui.localize();
     const repeatedItem = element("#trail-actions").children.find(c =>
       c.children.some(b => b.id === "clue-field-search"));
-    const feedback = repeatedItem.children.find(c => c.children.some(b => b.href === "#photo-journal-dialog"));
+    const feedback = repeatedItem.children.find(c => c.children.some(b => b.href === "#trail-history"));
     assert.ok(feedback);
     assert.equal(feedback.dataset.feedback, "failure");
     assert.equal(texts(feedback).join(""), translate(locale, "fieldOutcome.repeated",
       { ...state.trail.exploration.lastSearch, journal: translate(locale, "fieldJournalLink") }));
     element("#trail-dialog").close();
     element("#investigation-dialog").showModal();
-    feedback.children.find(b => b.href === "#photo-journal-dialog")
+    feedback.children.find(b => b.href === "#trail-history")
       .events.click({ preventDefault() {} });
-    assert.equal(element("#photo-journal-dialog").open, true);
-    element("#photo-journal-dialog").close();
-    ui.open();
+    assert.equal(element("#trail-dialog").open, true);
+    assert.equal(element("#investigation-dialog").open, false);
+    assert.equal(element("#photo-journal-dialog").open, false);
+    assert.equal(element("#trail-evidence-page").hidden, false);
     assert.equal(state.trail.exploration.hints.length, repeatedCount);
     state = validateSave(JSON.parse(JSON.stringify(save(state)))).state;
     state = { ...state, col: state.trail.stages[0].col - 8 };

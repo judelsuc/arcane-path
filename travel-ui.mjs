@@ -685,6 +685,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     miniGames: miniGamesUI,
   });
   const trailUI = setupTrail(t, {
+    selectClueJournal: () => questLayout.select("parent"),
     narrative: liveNarrative,
     pinPhoto,
     openClues: () => {

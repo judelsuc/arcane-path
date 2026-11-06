@@ -21,8 +21,9 @@ Background artifact-story synchronization keeps the selected person and dialog
 open. Actions are temporarily disabled with a visible saving message; they
 become available again when synchronization finishes.
 
-Clue-search feedback links the word "journal" directly to the journal in French
-and English, closing the investigation window before opening it.
+Clue-search feedback links the word "journal" directly to the parent-clue history
+in Quests, not the photo notebook. In French and English, it closes investigation
+if needed, selects the parent pane and focuses the current clue history.
 
 Quest maps label the player's current position explicitly and number only the
 destinations. Cached terrain is loaded through the same bounded terrain service

@@ -1,6 +1,11 @@
 {
-  "version": "0.21.17",
+  "version": "0.21.18",
   "entries": [
+    {
+      "version": "0.21.18",
+      "fr": "Le lien « journal » dans les résultats de recherche ouvre désormais le relevé des indices du parent dans Quêtes, au lieu du carnet de photos. Les indices actuels sont affichés et mis au premier plan.",
+      "en": "The “journal” link in search results now opens the parent-clue history in Quests instead of the photo notebook. Current clues are shown and brought into focus."
+    },
     {
       "version": "0.21.17",
       "fr": "Huit événements réservés aux voyages avec un chien rejoignent les rencontres du chemin : nourriture découverte, coin de repos, nouvelle amitié, jeux et présence réconfortante, mais aussi longe emmêlée, piste suivie et collation dérobée. Le nom du compagnon et les conséquences réelles sont affichés. Les événements utiles demandent un chien en forme ; aucun de ces événements ne survient sans chien.",
