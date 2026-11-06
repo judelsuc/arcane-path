@@ -12,6 +12,35 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: dedicated dog events (6 November 2026)
+
+Runtime `c9db2bc4f0829be2f3f478b1c7ac4c5b2f987be5`, tag
+`deploy-2026-11-06-dog-events`, game version **0.21.17**, packaged at
+`2026-11-06T14:51:23.334086+00:00`. Eight dedicated companion encounters join
+the existing walking pools: three helpful events, three setbacks and two
+story-only moments. Eligibility requires a dog, with readiness and terrain
+guards. Each has authored bilingual text, recorded companion identity, explicit
+effects and distinct ASCII art. Event opportunity frequency is unchanged.
+
+The five-file frontend delta was 109,630 bytes, SHA-256
+`74047f3249b55dadd87c38075fa08d0eacb05c7c8dc25649138eaec508f56ee4`.
+Rollback archive `/home/ubuntu/runtime-before-0.21.17-c9db2bc.tar.gz` (0600),
+SHA-256 `99f599deab11b10d0111a00cd81e73249ed6a513cc3b2a7d51b713055b12d741`.
+Restore its files under `/opt/arcane-path` and refresh the release manifest mtime
+to roll back; no restart or Nginx change is required. Saves containing the new
+event kinds require this release's validator; prefer a forward fix once these
+events have been recorded rather than restoring older clients.
+
+Validation: 53 targeted JavaScript tests passed, including eligibility for all
+eight events, readiness/terrain guards, deterministic selection, event records,
+save roundtrips, artwork, popup/journal support and release metadata. All four
+source baseline hashes and the prior release commit matched; all five installed
+and loopback-served hashes matched the package. The release manifest mtime was
+refreshed. Backend PID stayed 266974, both services remained active, and recent
+warning logs were empty. Both public HTTPS domains retained homepage, travel API
+and manifest 401, with favicon 200. Authenticated public gameplay and browser
+visuals were not tested. Reload existing clients for the new event catalogue.
+
 ## Checkpoint deployed: companion presence and hygiene (6 November 2026)
 
 Runtime `a0021d232f54cf8745c1adefd0786cca976f1429`, tag
