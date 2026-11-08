@@ -151,6 +151,12 @@ def poi_category(tags: dict[str, str]) -> str | None:
     for category in ("amenity", "shop", "tourism", "historic"):
         if tags.get(category) and tags[category] != "no":
             return category
+    if tags.get("leisure") == "pitch" and any(
+            sport.strip().lower() in ("boules", "petanque")
+            for sport in tags.get("sport", "").split(";")):
+        return "leisure"
+    if tags.get("leisure") == "festival_grounds" or tags.get("event") == "festival":
+        return "leisure"
     return None
 
 
@@ -585,10 +591,15 @@ def rasterize(
                 "latitude": math.degrees(point[1] / EARTH_RADIUS_METERS),
                 "longitude": math.degrees(point[0] / EARTH_RADIUS_METERS) / math.cos(math.radians(center_lat)),
                 "tags": {key: tags[key] for key in (
-                    "amenity", "shop", "tourism", "historic", "access", "disused",
-                    "abandoned", "railway", "aerialway",
+                    "amenity", "shop", "tourism", "historic", "leisure", "sport", "event",
+                    "access", "disused", "abandoned", "demolished", "razed", "construction",
+                    "proposed", "removed", "closed", "railway", "aerialway",
                     "fee", "shelter_type",
-                ) if key in tags},
+                ) if key in tags} | {
+                    key: value for key, value in tags.items()
+                    if key.startswith(("disused:", "abandoned:", "demolished:", "razed:",
+                                       "construction:", "proposed:", "removed:", "closed:"))
+                },
             }
             if tags.get("name"):
                 poi["name"] = tags["name"]

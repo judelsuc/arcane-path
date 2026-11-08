@@ -7,6 +7,21 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class HttpsConfigurationTests(unittest.TestCase):
+    def test_hitchhiking_is_exact_get_only_proxied_and_retains_preview_protection(self):
+        config = (ROOT / "infra/nginx/preview.conf").read_text()
+        route = next(line.strip() for line in config.splitlines()
+                     if line.strip().startswith('location ~ "^/api/(?:travel|'))
+        pattern = re.compile(route.removeprefix('location ~ "').removesuffix('" {'))
+        self.assertIsNotNone(pattern.fullmatch("/api/hitchhiking"))
+        for path in ["/api/hitchhiking/private", "/api/hitchhiking-extra", "/api/private"]:
+            self.assertIsNone(pattern.fullmatch(path))
+        endpoint = config.split(route, 1)[1].split("\n    }", 1)[0]
+        self.assertIn("limit_except GET { deny all; }", endpoint)
+        self.assertIn("proxy_pass http://127.0.0.1:8766;", endpoint)
+        self.assertNotIn("auth_basic off", endpoint)
+        self.assertIn('auth_basic "Arcane Path private preview";', config)
+        self.assertIn("limit_req zone=arcane_api_requests burst=100 nodelay;", config)
+
     def test_audio_is_served_directly_for_byte_ranges_without_exposing_other_files(self):
         config = (ROOT / "infra/nginx/preview.conf").read_text()
         route = next(line.strip() for line in config.splitlines()

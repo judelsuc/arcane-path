@@ -110,7 +110,7 @@ function play(game, angle, power, now) {
   return advance(game, game.rolling.until);
 }
 
-test("venue requires a mapped, active, public boules/pétanque pitch in the current cell", () => {
+test("venue requires a mapped, active, public boules/pétanque pitch here or within two kilometres", () => {
   assert.equal(available({ pois: [pitch({})] }), true);
   assert.equal(available({ pois: [pitch({ sport: "petanque" })] }), true);
   assert.equal(available({ pois: [pitch({ sport: "soccer;boules" })] }), true);
@@ -122,6 +122,14 @@ test("venue requires a mapped, active, public boules/pétanque pitch in the curr
   assert.equal(available({ pois: [{ osmId: "node/1", tags: { "disused:sport": "boules", leisure: "pitch" } }] }), false);
   assert.equal(available({ unavailable: true, pois: [pitch({})] }), false);
   assert.equal(available({ nearby: [pitch({})] }), false);
+  assert.equal(available({ nearby: { pois: [{ ...pitch({}), distance: 2000 }] } }), true);
+  for (const distance of [-1, 2000.01, Infinity, NaN, undefined, "100"]) {
+    assert.equal(available({ nearby: { pois: [{ ...pitch({}), distance }] } }), false);
+  }
+  for (const tags of [{ access: "private" }, { closed: "yes" }, { "disused:sport": "boules" }]) {
+    assert.equal(available({ nearby: { pois: [{ ...pitch(tags), distance: 100 }] } }), false);
+  }
+  assert.equal(available({ unavailable: true, nearby: { pois: [{ ...pitch({}), distance: 100 }] } }), false);
   for (const cell of [null, undefined, {}, { pois: "x" }]) assert.equal(available(cell), false);
 });
 

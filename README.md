@@ -559,6 +559,15 @@ livraisons, petanque, lanternes et objets trouves. Les possibilites dependent
 des cellules et lieux OSM disponibles ; ce ne sont pas des emplois annonces
 par les vrais etablissements.
 
+La petanque demande un terrain public OSM (`leisure=pitch` et
+`sport=boules` ou `petanque`). Les lanternes demandent un lieu culturel ou
+festif public (centre culturel, theatre, terrain de festival). Ces deux
+activites peuvent aussi etre proposees a proximite, jusqu'a 2 km, si le lieu
+reel est present dans les cellules deja chargees ; aucun lieu n'est invente
+et aucun telechargement n'est declenche pour les chercher.
+La generation de carte conserve les tags sportifs, festifs et de fermeture.
+Les lieux fermes, prives ou desaffectes restent exclus.
+
 Les conditions affichent le temps simule et la fatigue engages avant le choix
 de l'activite, ainsi que le plafond de gain de base, ou le prix par point payant
 pour les vendanges sans plafond artificiel. Le score joue determine
@@ -2573,3 +2582,43 @@ node --test tests/*.test.mjs
 Node.js est necessaire pour les tests JavaScript, pas pour lancer le prototype.
 
 Les tests regionaux couvrent les vrais snapshots de Paris, Chamonix et Firmi a 250 m et 50 m par case : provenance, licence, dimensions, presence des terrains attendus, glyphes, determinisme et reutilisation hors ligne. Les tests unitaires separes couvrent notamment les champs, les priorites de rendu, les limites geographiques, l'invalidation et la corruption du cache.
+
+## Auto-stop / Hitchhiking
+
+Sur une route ou une route principale, ouvrez **Agenda, transports et auto-stop**.
+Une liste propose exactement les dix villes réelles les plus proches du catalogue
+GeoNames local, hors de la case de départ, sans inventer de destinations.
+Chaque tentative coûte 30 minutes d'attente avec les besoins et l'exposition
+ordinaires ; un trajet accepté est gratuit, mais sa durée s'ajoute à l'attente :
+distance jusqu'à la case d'arrivée estimée à 40 km/h, arrondie à la minute
+supérieure, entre 1 minute et 12 heures. Les trajets écourtés utilisent la
+fraction de distance effectivement parcourue. Les besoins évoluent minute par
+minute à l'abri dans la voiture, sans récupération de fatigue, ni temps ou
+distance de marche. Une perte de connaissance, un placement ou une santé
+épuisée interrompt l'attente ou le trajet et empêche l'arrivée à destination.
+
+La probabilité d'arrêt est `0,45` de jour (7 h–20 h, heure solaire du jeu) ou
+`0,20` la nuit, plus `(propreté − 50) × 0,004`, moins `0,05` avec un chien,
+bornée entre `0,05` et `0,90`. Parmi les voitures qui s'arrêtent, les issues
+exclusives sont : 1 % de blessure (20 points de santé au maximum, retour sur la
+route de départ), 1 % de vol de la moitié de l'argent arrondie au centime
+supérieur, 8 % de trajet écourté, 90 % d'arrivée à la ville choisie. Le chien
+et les objets ne sont jamais volés par cette mécanique.
+
+Les trajets écourtés et les vols déposent le personnage sur une vraie case
+route chargée près du milieu du trajet, sans prétendre calculer un itinéraire
+routier réel. L'arrivée réutilise la relocalisation des transports, les visites,
+le carnet et les indices d'arrivée. Les étapes à pied et trajets en voiture
+restent distingués sur la carte du voyage.
+
+L'issue et les 30 minutes sont sauvegardées avant le chargement de la carte.
+Un échec de chargement est visible : **Charger la carte et terminer le trajet**
+réessaie sans nouveau tirage ni nouvelle attente ; la durée du trajet et ses
+besoins ne sont appliqués qu'une seule fois, après chargement réussi de la carte.
+**Renoncer et rester sur la route de
+départ** offre une sortie sûre, sans annuler le temps ou les pertes enregistrés.
+Cette récupération reste accessible après rechargement de la sauvegarde.
+Le texte de jeu est écrit en français et en anglais.
+
+Tests ciblés : `node --test tests/hitchhiking*.test.mjs tests/cell-nearby.test.mjs`
+et `python3 -m unittest discover -s tests -p 'test_hitchhiking.py'`.

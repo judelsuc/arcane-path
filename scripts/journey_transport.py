@@ -15,6 +15,36 @@ class JourneyTransport:
         self.chunks = chunks
         self.towns = LocalTowns()
 
+    def hitchhiking(self, region, col, row):
+        if region not in self.chunks.bases or any(
+                isinstance(value, bool) or not isinstance(value, int) or abs(value // 8) > 1000
+                for value in (col, row)):
+            raise ValueError("Invalid hitchhiking location.")
+        base = self.chunks.bases[region]
+        projection = base.get("projectionLatitude",
+                              (base["bounds"]["minLatitude"] + base["bounds"]["maxLatitude"]) / 2)
+        step = base["cellSizeMeters"] / 6371008.8 * 180 / math.pi
+        point = {"latitude": base["bounds"]["maxLatitude"] - (row + .5) * step,
+                 "longitude": base["bounds"]["minLongitude"] + (col + .5) * step /
+                 math.cos(math.radians(projection))}
+        towns = []
+        for rows in self.towns.buckets.values():
+            for identity, name, lat, lon, country, _ in rows:
+                position = grid_position(base, lat, lon)
+                if position == {"col": col, "row": row}:
+                    continue
+                towns.append({"id": f"geoname:{identity}", "name": name, "latitude": lat,
+                              "longitude": lon, "country": country, **position,
+                              "distanceMeters": round(distance(point, {"latitude": lat, "longitude": lon}))})
+        # No radius cutoff: sparse regions still offer the exact ten closest real towns.
+        towns.sort(key=lambda town: (distance(point, town), town["id"]))
+        selected = towns[:10]
+        if len(selected) != 10 or any(abs(town[key] // 8) > 1000
+                                      for town in selected for key in ("col", "row")):
+            raise ValueError("Ten nearby towns are not available in this map.")
+        return {"version": 1, "gridId": region, "col": col, "row": row,
+                "destinations": selected, "source": "https://www.geonames.org/"}
+
     def lookup(self, region, col, row, day):
         if region not in self.chunks.bases or any(
                 isinstance(value, bool) or not isinstance(value, int) or abs(value // 8) > 1000

@@ -1,4 +1,5 @@
 import { resolveResonance, resonanceResult } from "../arcane-resonance.mjs";
+import { mappedGameVenues } from "./venues.mjs";
 // Village pétanque: pure, deterministic engine. Every state is a deeply frozen plain object.
 
 export const PETANQUE = Object.freeze({
@@ -32,7 +33,6 @@ const LEVELS = Object.freeze([
 const ACTIONS = new Set(["left", "right", "up", "down", "throw", "cancel", "setAngle", "setPower", "steady", "carreau"]);
 const OSM_ID = /^(node|way|relation)\/\d+$/;
 const CLOSED_ACCESS = new Set(["private", "no", "members", "customers", "permit", "delivery"]);
-const INACTIVE = new Set(["yes", "true", "1"]);
 
 function deepFreeze(value) {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
@@ -87,14 +87,14 @@ function boulesPitch(poi) {
   if (!sports.some(s => s === "boules" || s === "petanque")) return false;
   if (tags.leisure !== "pitch") return false;
   if (CLOSED_ACCESS.has(String(tags.access ?? "").toLowerCase())) return false;
-  return !["disused", "abandoned", "demolished", "razed", "construction"]
-    .some(key => tags[key] !== undefined && tags[key] !== "no" && (INACTIVE.has(String(tags[key]).toLowerCase()) || key === "construction"));
+  return !["disused", "abandoned", "demolished", "razed", "construction", "proposed", "removed", "closed"]
+    .some(key => tags[key] !== undefined && tags[key] !== "no") &&
+    !Object.keys(tags).some(key => /^(disused|abandoned|demolished|razed|construction|proposed|removed|closed):/.test(key));
 }
 
-/** Mapped, active, public boules/pétanque pitch in this exact cell, or null. */
+/** Mapped, active, public boules/pétanque pitch here or within walking distance. */
 export function venue(cell) {
-  if (!cell || typeof cell !== "object" || cell.unavailable || !Array.isArray(cell.pois)) return null;
-  const pitch = cell.pois.find(boulesPitch);
+  const pitch = mappedGameVenues(cell).find(boulesPitch);
   return pitch ? deepFreeze({ osmId: pitch.osmId, name: pitch.name ?? pitch.tags.name ?? null }) : null;
 }
 

@@ -256,9 +256,7 @@ export function advanceTransit(feed, state, bookingId, {
   if (Math.abs(now(result) - (now(state) + minutes * 60000)) > 0.01) fail("INVALID_SETTLEMENT_CLOCK");
   if (riding && now(result) >= targetAt) {
     const stop = b.calls[b.nextCall].stop;
-    result.col = stop.col; result.row = stop.row;
-    result.journeyMap = { version: 1, partial: true, simplified: false,
-      points: [{ col: stop.col, row: stop.row }] };
+    Object.assign(result, relocateJourneyTransit(result, stop));
     result.transport.rides.at(-1).points.push({ col: stop.col, row: stop.row });
     booking.nextCall++;
     if (booking.nextCall === booking.calls.length) {
@@ -266,6 +264,15 @@ export function advanceTransit(feed, state, bookingId, {
     }
   }
   return result;
+}
+export function relocateJourneyTransit(state, stop) {
+  if (!point(stop)) fail("INVALID_TRANSPORT_STOP");
+  const locality = `${Math.floor(stop.col / 8)},${Math.floor(stop.row / 8)}`;
+  return { ...state, col: stop.col, row: stop.row, lastMove: null,
+    ...(state.pressures ? { pressures: { ...state.pressures, locality,
+      localMinutes: state.pressures.locality === locality ? state.pressures.localMinutes : 0 } } : {}),
+    journeyMap: { version: 1, partial: true, simplified: false,
+      points: [{ col: stop.col, row: stop.row }] } };
 }
 export function validateTransportSave(state) {
   const t = state.transport;

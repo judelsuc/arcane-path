@@ -5,6 +5,7 @@
  * persist neither states nor rewards. Host integration requires a separate playtest.
  */
 import { resolveResonance, resonanceResult } from "../arcane-resonance.mjs";
+import { mappedGameVenues } from "./venues.mjs";
 
 const issued = new WeakSet();
 const patterns = Object.freeze([
@@ -13,10 +14,9 @@ const patterns = Object.freeze([
   Object.freeze([1, 2, 2, 0, 1, 3, 0, 1, 4, 2, 0, 5]),
 ]);
 
-/** Only current-cell, mapped, active public cultural venues qualify. */
+/** Mapped, active public cultural venues here or within walking distance qualify. */
 export function available(cell) {
-  if (!cell || cell.unavailable || !Array.isArray(cell.pois)) return false;
-  return cell.pois.some(place => {
+  return mappedGameVenues(cell).some(place => {
     if (!place || !/^(node|way|relation)\/[1-9]\d*$/.test(place.osmId)) return false;
     const tags = place.tags;
     if (!tags || typeof tags !== "object") return false;

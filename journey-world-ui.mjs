@@ -1,12 +1,17 @@
 import { importAgenda, encounterAgenda, acknowledgeEncounter, emptyEncounterState } from "./layers/living-world/agenda.mjs";
 import { journeyTransportOptions, transitActive } from "./journey-world.mjs";
+import { hitchhikingAvailable, hitchhikingActive, hitchhikingDestinations, hitchhikingStopChance } from "./hitchhiking.mjs";
 
-export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance, cancel, fetcher = fetch }) {
+export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance, cancel,
+  hitchhike, resumeHitchhiking, fetcher = fetch }) {
   const $ = id => document.querySelector(`#${id}`);
   const dialog = $("journey-world-dialog");
   let agenda, payload, offers = [], selected, loading = false, error = "", coverage = "";
   let controller, generation = 0;
   let searchedDay;
+  let hitchPayload, hitchSelected;
+  const hitchSection = hitchhike ? document.createElement("section") : null;
+  if (hitchSection) $("journey-world-transports").before(hitchSection);
   const language = () => document.documentElement.lang === "en" ? "en" : "fr";
   const date = at => new Intl.DateTimeFormat(language() === "en" ? "en-GB" : "fr-FR",
     { timeZone: "UTC", dateStyle: "short", timeStyle: "short" }).format(new Date(at)) + " UTC";
@@ -46,6 +51,53 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
     $("journey-world-error").textContent = error;
     $("journey-world-status").textContent = loading ? t("worldLoading") : !payload && !agenda ? t("worldUnloaded") : "";
     $("journey-world-coverage").textContent = coverage;
+    if (hitchhike) {
+      hitchSection.replaceChildren();
+      const title = document.createElement("h3");
+      title.textContent = t("hitch.title"); hitchSection.append(title);
+      const ride = current.state.hitchhiking;
+      if (ride) {
+        const result = document.createElement("p");
+        result.setAttribute("role", "status");
+        result.textContent = t(`hitch.${ride.outcome}`, { town: ride.destination.name,
+          money: (ride.stolenCents / 100).toFixed(2), injury: ride.injury });
+        hitchSection.append(result);
+      }
+      if (hitchhikingActive(current.state)) {
+        const pending = document.createElement("p");
+        pending.textContent = t(current.busy ? "hitch.mapLoading" : "hitch.pending");
+        hitchSection.append(pending,
+          button(t("hitch.retry"), () => run(() => resumeHitchhiking()), current.busy),
+          button(t("hitch.stay"), () => run(() => resumeHitchhiking(true)), current.busy));
+      } else if (!hitchhikingAvailable(current.cell)) {
+        const note = document.createElement("p"); note.textContent = t("hitch.roadOnly"); hitchSection.append(note);
+      } else {
+        const rules = document.createElement("p");
+        rules.textContent = t("hitch.rules", { chance: Math.round(hitchhikingStopChance(current.state, current.info) * 100) });
+        hitchSection.append(rules);
+        if (hitchPayload?.col === current.state.col && hitchPayload?.row === current.state.row) {
+          const towns = hitchhikingDestinations(hitchPayload, current.state, current.gridId);
+          const label = document.createElement("label"), select = document.createElement("select");
+          label.textContent = t("hitch.destination");
+          select.setAttribute("aria-label", t("hitch.destination"));
+          for (const town of towns) {
+            const option = document.createElement("option");
+            option.value = town.id; option.textContent = `${town.name} · ${(town.distanceMeters / 1000).toFixed(1)} km`;
+            select.append(option);
+          }
+          if (!towns.some(town => town.id === hitchSelected)) hitchSelected = towns[0].id;
+          select.value = hitchSelected;
+          select.addEventListener("change", () => { hitchSelected = select.value; });
+          select.disabled = loading || current.blocked;
+          label.append(select);
+          hitchSection.append(label, button(t("hitch.attempt"),
+            () => run(() => hitchhike(towns.find(town => town.id === hitchSelected))), loading || current.blocked));
+          hitchSection.append(link(t("hitch.source"), "https://www.geonames.org/"));
+        } else {
+          const note = document.createElement("p"); note.textContent = t("hitch.unloaded"); hitchSection.append(note);
+        }
+      }
+    }
     const events = $("journey-world-events");
     events.replaceChildren();
     const clock = current.state.startedAt + current.state.elapsedMinutes * 60000;
@@ -83,6 +135,7 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
     const list = $("journey-world-transports");
     list.replaceChildren();
     const booking = current.state.transport?.booking;
+    if (hitchhikingActive(current.state)) return;
     if (booking) {
       const status = document.createElement("p");
       status.textContent = t("worldBooking", { from: booking.offer.from.name, to: booking.offer.to.name,
@@ -162,13 +215,16 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
     controller?.abort(); controller = new AbortController();
     const signal = controller.signal, epoch = ++generation;
     const day = new Date(current.state.startedAt + current.state.elapsedMinutes * 60000).toISOString().slice(0, 10);
-    loading = true; agenda = payload = undefined; selected = undefined; coverage = ""; update();
+    loading = true; agenda = payload = hitchPayload = undefined; selected = undefined; coverage = ""; update();
     const results = await Promise.allSettled([
       request(`/api/living-world?${new URLSearchParams({ lat: current.info.latitude.toFixed(2),
         lon: current.info.longitude.toFixed(2) })}`, signal),
       request(`/api/journey-transport?${new URLSearchParams({ region: current.gridId,
         col: current.state.col, row: current.state.row,
         day })}`, signal),
+      ...(hitchhike && hitchhikingAvailable(current.cell) ? [
+        request(`/api/hitchhiking?${new URLSearchParams({ region: current.gridId,
+          col: current.state.col, row: current.state.row })}`, signal)] : []),
     ]);
     if (epoch !== generation) return;
     const latest = context();
@@ -176,6 +232,13 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
         latest.state.startedAt !== current.state.startedAt) { loading = false; throw new Error(t("worldBlocked")); }
     loading = false;
     const failures = [];
+    if (results[2]) {
+      try {
+        if (results[2].status === "rejected") throw results[2].reason;
+        hitchhikingDestinations(results[2].value, current.state, current.gridId);
+        hitchPayload = results[2].value;
+      } catch (reason) { failures.push(`${t("hitch.title")}: ${reason.message}`); }
+    }
     try {
       if (results[0].status === "fulfilled") {
         agenda = importAgenda(results[0].value);
@@ -193,7 +256,7 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
   $("journey-world-refresh").addEventListener("click", () => run(refresh));
   $("open-journey-world").addEventListener("click", () => {
     const current = context();
-    if (!current || current.busy || current.blocked || document.querySelector("dialog[open]")) return;
+    if (!current || current.busy || current.blocked && !transitActive(current.state) || document.querySelector("dialog[open]")) return;
     dialog.showModal();
     update();
     if (!loading && !transitActive(current.state) &&
@@ -201,7 +264,7 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
           searchedDay !== new Date(current.state.startedAt + current.state.elapsedMinutes * 60000).toISOString().slice(0, 10))) return run(refresh);
   });
   return { update, reset() {
-    generation++; controller?.abort(); loading = false; agenda = payload = selected = undefined;
+    generation++; controller?.abort(); loading = false; agenda = payload = selected = hitchPayload = hitchSelected = undefined;
     searchedDay = undefined;
     error = coverage = ""; offers = []; $("journey-world-notice").textContent = ""; dialog.close();
   } };

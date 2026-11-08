@@ -1009,6 +1009,13 @@ def make_handler(store, jobs, path_pool=None):
                     return self.send_json(500, {"error": str(error)})
             if url.path.startswith("/api/"):
                 try:
+                    if url.path == "/api/hitchhiking":
+                        query = urllib.parse.parse_qs(url.query, strict_parsing=True)
+                        if set(query) != {"region", "col", "row"} or any(len(v) != 1 for v in query.values()):
+                            raise ValueError("Invalid hitchhiking query.")
+                        store.load_origin(query["region"][0])
+                        return self.send_json(200, journey_transport.hitchhiking(
+                            query["region"][0], int(query["col"][0]), int(query["row"][0])))
                     if url.path == "/api/journey-transport":
                         query = urllib.parse.parse_qs(url.query, strict_parsing=True)
                         if set(query) != {"region", "col", "row", "day"} or any(len(v) != 1 for v in query.values()):

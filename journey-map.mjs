@@ -90,7 +90,9 @@ export function journeyMapView(state, cellSizeMeters = 250) {
   stops.push({ col: state.col, row: state.row, kind: "current" });
   return { points: points.map(p => ({ col: p.col, row: p.row })), stops,
     appearance: mapAppearance(),
-    walkedLegs: state.transport?.walkedLegs ?? [], rides: state.transport?.rides ?? [],
+    walkedLegs: [...(state.transport?.walkedLegs ?? []),
+      ...(state.hitchhikingHistory ?? []).flatMap(ride => ride.walkedLeg ? [ride.walkedLeg] : [])],
+    rides: [...(state.transport?.rides ?? []), ...(state.hitchhikingHistory ?? [])],
     partial: recorded?.partial ?? state.distanceMeters > 0, simplified: recorded?.simplified ?? false,
     cellSizeMeters };
 }

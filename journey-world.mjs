@@ -3,11 +3,13 @@ import { finishAction } from "./economy.mjs";
 import { importTimetable, bookTransit, advanceTransit, validateTransportSave } from "./layers/transport/transport.mjs";
 import { hybridTransportOffers } from "./layers/transport/hybrid.mjs";
 import { restoreEncounterState } from "./layers/living-world/agenda.mjs";
+import { hitchhikingActive, validateHitchhiking } from "./hitchhiking.mjs";
 
-export const transitActive = state => state?.transport?.booking?.status === "active";
+export const transitActive = state => state?.transport?.booking?.status === "active" || hitchhikingActive(state);
 
 export function validateJourneyWorld(state) {
   if (!state) return;
+  validateHitchhiking(state);
   validateTransportSave(state);
   if (state.worldEncounters !== undefined) restoreEncounterState(state.worldEncounters, state);
   if (state.transitFeed !== undefined) {
@@ -16,7 +18,7 @@ export function validateJourneyWorld(state) {
     const booking = state.transport?.booking;
     if (!booking || feed.id !== booking.feedId || feed.revision !== booking.revision ||
         !feed.trips.some(trip => trip.id === booking.offer.tripId)) throw new Error("Saved transport timetable does not match booking.");
-  } else if (transitActive(state)) throw new Error("Active transport requires its saved timetable.");
+  } else if (state.transport?.booking?.status === "active") throw new Error("Active transport requires its saved timetable.");
 }
 
 export function journeyTransportOptions(payload, state, gridId) {
@@ -28,6 +30,7 @@ export function journeyTransportOptions(payload, state, gridId) {
 }
 
 export function reserveJourneyTransit(state, feed, offerId, gridId) {
+  if (hitchhikingActive(state)) throw new Error("Finish the hitchhiking ride first.");
   if ((state.transport?.sequence ?? 0) >= 64) throw new Error("Journey transport history is full (64 bookings).");
   const canonical = importTimetable(feed, { allowFictional: true });
   const next = { ...bookTransit(canonical, state, offerId, { gridId }), transitFeed: canonical };

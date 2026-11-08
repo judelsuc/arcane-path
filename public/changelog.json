@@ -1,6 +1,11 @@
 {
-  "version": "0.21.19",
+  "version": "0.21.20",
   "entries": [
+    {
+      "version": "0.21.20",
+      "fr": "L’auto-stop est disponible sur les routes : choisissez une des dix villes réelles les plus proches. Chaque tentative prend trente minutes ; la propreté, l’heure et le chien influencent les chances. Le trajet est gratuit et fait passer du temps, avec de rares blessures, vols d’argent ou trajets écourtés sur une route. Les arrivées et la reprise après un problème de carte sont enregistrées. Les terrains de pétanque et lieux festifs conservent leurs tags OSM ; la pétanque et les lanternes sont aussi proposées près de lieux publics adaptés déjà chargés, jusqu’à deux kilomètres.",
+      "en": "Hitchhiking is available on roads: choose one of the ten nearest real towns. Each attempt takes thirty minutes; cleanliness, time of day and your dog affect the odds. Rides are free and consume game time, with rare injuries, money theft or shortened rides ending on a road. Arrivals and map-error recovery are saved. Pétanque pitches and festival venues retain their OSM tags; pétanque and lantern games are also offered near suitable loaded public venues, within two kilometres."
+    },
     {
       "version": "0.21.19",
       "fr": "Les activités proposent vingt niveaux plus progressifs : croquis plus accessibles, davantage de temps pour les objets trouvés et commandes du café mélangées aux niveaux supérieurs. Trois échecs consécutifs font perdre un niveau ; une réussite remet le compteur à zéro, une annulation ne compte pas. Les personnages peuvent proposer de nouvelles missions même si un autre propose le même type de service ; leurs indications déjà en cache évitent des attentes inutiles, avec des paroles immersives. Les déplacements vers une case non chargée ne bloquent plus les autres actions. Les objets magiques non portés sont répartis à travers l’Europe. Les signalements privés sont activables avec captures sur le serveur et suppression manuelle après examen.",

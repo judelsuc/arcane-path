@@ -19,6 +19,7 @@ import { setupParentRecollection } from "./parent-recollection-ui.mjs";
 import { citedTownDirections } from "./trail-ui.mjs";
 import { nearestSettlement } from "./towns.mjs";
 import { distanceMeters } from "./cell-content.mjs";
+import { withNearbyMappedPois } from "./cell-nearby.mjs";
 import { refreshPricing, refreshMeals, refreshNightRest, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, restEffect, finishAction, washEconomy, marketPrice } from "./economy.mjs";
 import { setupDailyTarot } from "./daily-tarot-ui.mjs";
 import { survivalChoice, beginTheft, settleTheft, choiceAvailable } from "./survival-choices.mjs";
@@ -38,6 +39,7 @@ import { setupTrailArrival } from "./trail-arrival-ui.mjs";
 import { setupTrailDream } from "./trail-dream-ui.mjs";
 import { settleTrailDream, trailDreamText, trailDreamVariant } from "./trail-dreams.mjs";
 import { setupJourneyWorld } from "./journey-world-ui.mjs";
+import { attemptHitchhiking, hitchhikingActive, finishHitchhiking, loadHitchhikingLanding } from "./hitchhiking.mjs";
 import { transitActive, reserveJourneyTransit, stepJourneyTransit, cancelJourneyTransit } from "./journey-world.mjs";
 import { createServerJourney, serverJourneyExists } from "./server-journey.mjs";
 import { prepareParentPaths } from "./parent-path.mjs";
@@ -103,6 +105,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const note = document.querySelector("#travel-note");
   const directions = [...document.querySelectorAll("[data-move]")];
   let state, stream, region, base, token = 0, busy = false, error = "", active = false;
+  let hitchhikingController;
   const towns = setupTowns(t, { context: () => state, pinPhoto });
   const changeRequests = setupChangeRequests(t, { context: () => active ? state : null });
   let artifactsUI;
@@ -365,11 +368,45 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const country = pricingCountries.get(`${state.col},${state.row}`);
     const pricedCell = !(mappedCell.countryCodes?.length) && country
       ? { ...mappedCell, countryCodes: [country] } : mappedCell;
-    const cell = withDiscoveredAccommodations(pricedCell, discoveredLodging, state.col, state.row);
-    return { state, cell, map: base, mapTerrain: stream.journeyTerrain, info: exposureInfo(chunk, p.row, p.col),
+    const info = exposureInfo(chunk, p.row, p.col);
+    const discoveredCell = withDiscoveredAccommodations(pricedCell, discoveredLodging, state.col, state.row);
+    const cell = withNearbyMappedPois(discoveredCell, info, stream.chunks);
+    return { state, cell, map: base, mapTerrain: stream.journeyTerrain, info,
       data: economyData, survival: survivalConfig, blocked: busy || Boolean(cursor) || Boolean(state.ended) ||
         Boolean(artifactsUI?.pending(state) || transitActive(state) || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending ||
           state.equipment?.dogEncounter === "pending") };
+  }
+  function finishJourneyArrival() {
+    autosave();
+    if (saveError) throw new Error(t("saveError", { error: saveError }));
+    resetContent();
+    draw();
+    if (!state.ended) prefetch();
+    serviceQuestsUI.localize();
+    questTrackingUI.localize();
+  }
+  async function resumeHitchhiking(stay = false) {
+    if (busy || !hitchhikingActive(state)) throw new Error(t("worldBlocked"));
+    busy = true;
+    const currentToken = token;
+    hitchhikingController?.abort();
+    hitchhikingController = new AbortController();
+    const controller = hitchhikingController;
+    localize();
+    try {
+      const { landing, cell } = await loadHitchhikingLanding(state, stream, stay, controller.signal);
+      if (currentToken !== token) throw new DOMException("Journey changed during arrival loading.", "AbortError");
+      const current = economyContext();
+      if (!current) throw new Error(t("worldCellMissing"));
+      state = finishHitchhiking(state, landing, cell, stay, current.info, survivalConfig, economyData);
+      finishJourneyArrival();
+    } catch (reason) {
+      if (reason.name === "AbortError") throw reason;
+      throw new Error(`${t("hitch.mapError")} ${reason.message}`);
+    } finally {
+      if (hitchhikingController === controller) hitchhikingController = undefined;
+      if (currentToken === token) { busy = false; localize(); }
+    }
   }
   const journeyWorldUI = setupJourneyWorld(t, {
     context() {
@@ -377,6 +414,16 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       return active && current ? { ...current, gridId: region, busy } : null;
     },
     saveEncounters(encounters) { state = { ...state, worldEncounters: encounters }; autosave(); },
+    async hitchhike(town) {
+      const current = economyContext();
+      if (!current || current.blocked) throw new Error(t("worldBlocked"));
+      state = attemptHitchhiking(state, town, current.cell, current.info, survivalConfig, economyData);
+      autosave(); localize();
+      if (saveError) throw new Error(t("saveError", { error: saveError }));
+      if (hitchhikingActive(state)) await resumeHitchhiking();
+      else { draw(); }
+    },
+    resumeHitchhiking,
     reserve(feed, id) {
       const current = economyContext();
       if (!current || current.blocked) throw new Error(t("worldBlocked"));
@@ -407,7 +454,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
           state = stepJourneyTransit(state, region, current.info, survivalConfig, economyData);
           autosave();
         }
-        resetContent(); draw(); prefetch();
+        finishJourneyArrival();
       } finally {
         if (currentToken === token) { busy = false; localize(); }
       }
@@ -1484,6 +1531,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
 
   function reset() {
+    hitchhikingController?.abort();
+    hitchhikingController = undefined;
     serviceQuestsUI.reset();
     artifactsUI.reset();
     saveFeedback.reset();

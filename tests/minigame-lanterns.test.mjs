@@ -32,7 +32,7 @@ const endTime = game => game.startedAt + game.rules.leadMs +
 const started = (options = {}) => input(createGame({ random: () => 0, ...options }), { type: "start" }, 0);
 const press = (game, lantern, now) => input(game, { type: "press", lantern }, now);
 
-test("availability requires a mapped current active public venue, never a remote offer", () => {
+test("availability requires a mapped active public venue here or within two kilometres", () => {
   const cell = (tags, extra = {}) => ({ pois: [{ osmId: "node/17", tags }], ...extra });
   for (const amenity of ["community_centre", "arts_centre", "theatre", "festival_grounds"]) {
     assert.equal(available(cell({ amenity })), true);
@@ -47,6 +47,15 @@ test("availability requires a mapped current active public venue, never a remote
   }
   assert.equal(available(cell({ leisure: "festival_grounds", access: "public" })), true);
   assert.equal(available(cell({ event: "festival", access: "yes" })), true);
+  const nearby = (distance, tags = { amenity: "theatre" }) => ({
+    nearby: { pois: [{ osmId: "node/42", tags, distance }] },
+  });
+  assert.equal(available(nearby(2000)), true);
+  for (const distance of [-1, 2000.01, Infinity, NaN, undefined, "100"]) {
+    assert.equal(available(nearby(distance)), false);
+  }
+  assert.equal(available(nearby(100, { amenity: "theatre", access: "private" })), false);
+  assert.equal(available({ ...nearby(100), unavailable: true }), false);
   assert.equal(available(cell({ amenity: "theatre" }, { unavailable: true })), false);
   for (const invalid of [null, {}, { pois: null }, { pois: [null, {}, { osmId: "remote", tags: { amenity: "theatre" } }] },
     cell({ amenity: "cafe" }), cell({ "disused:amenity": "theatre" })]) {
