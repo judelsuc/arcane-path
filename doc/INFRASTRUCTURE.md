@@ -12,6 +12,49 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: hitchhiking and nearby games (8 November 2026)
+
+Runtime `103a5c84e035ca401e0dbc80cdabc7da5bfe0d67`, game version **0.21.20**,
+packaged at `2026-11-08T17:12:57.398121+00:00`. Road cells now offer
+hitchhiking to the exact ten nearest real GeoNames towns. Attempts cost thirty
+minutes; cleanliness, local game hour and companion presence affect stopping.
+Free rides consume sheltered game time at an estimated 40 km/h. Conditional
+outcomes are 1% injury, 1% money theft, 8% shortened ride and 90% normal arrival.
+Interrupted rides use mapped road landings; pending map loads are saved and
+retryable without repeating the paid wait. Survival interruptions and ordinary
+arrival/quest notifications retain their existing ordering.
+
+Pétanque pitches now retain OSM leisure/sport tags; festival venues retain
+leisure/event tags and closure flags. Pétanque and lantern activities accept
+appropriate active public venues within 2 km in loaded chunks, without
+inventing venues or downloading terrain just to search for activities.
+The map-pipeline fingerprint changes with the rasterizer, so new chunk
+preparation uses the corrected POIs; no blanket cache deletion occurred.
+
+The 17-file delta was 178,918 bytes, SHA-256
+`bbbf125920b7e5c334b7486e05ee623f876cf9590c7c5ffc5d80e12239e08ba7`.
+Rollback `/home/ubuntu/runtime-before-0.21.20-103a5c8.tar.gz` (0600), SHA-256
+`49565508cb7a790a33ec4a4e2e784f4dfad5c14474d02e9e2df1455e2ec60b06`.
+The three newly added files are `cell-nearby.mjs`, `hitchhiking.mjs` and
+`minigames/venues.mjs`; an actual rollback must remove only those exact files
+after restoring the archive. Nginx backup:
+`/home/ubuntu/nginx-before-0.21.20-103a5c8.conf` (0600).
+
+The reviewed nginx GET allowlist now includes `/api/hitchhiking`; the installed
+configuration matched the previous committed configuration before replacement,
+passed `nginx -t` and was reloaded. All cached custom origins were confirmed
+published before the application restart. All 17 deployed hashes matched disk;
+16 non-infrastructure files also matched loopback HTTP. The live API returned
+ten unique real-town IDs in increasing distance order. Both public domains
+return 401 for gameplay, the release manifest and the new API without site
+credentials; favicons return 200. Both services are active, with zero automatic
+restarts and no recent error-priority entries. Private feedback configuration
+and the 0700 report directory remain unchanged.
+
+Validation: full JavaScript regression suite passed before packaging;
+117 focused JavaScript tests and 42 focused Python tests passed for the release.
+Browser connection timed out, so interactive visual verification is not claimed.
+
 ## Checkpoint deployed: adaptive games, quests and private feedback (8 November 2026)
 
 Runtime `803c107ac6b4c93f8e7893123c764523d7e80a02`, game version **0.21.19**,
