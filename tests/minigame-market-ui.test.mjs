@@ -270,7 +270,7 @@ test("extra-amount buttons adjust by exactly five cents without asking or submit
 });
 
 test("all difficulty levels finish normal and resonant UI shifts with one terminal callback", t => {
-  for (let level = 0; level < 5; level++) for (const resonance of [false, true]) {
+  for (let level = 0; level < 20; level++) for (const resonance of [false, true]) {
     const h = harness(t, { level, resonance });
     const game = createGame({ level, resonance, random: () => 0 });
     h.click("Start");

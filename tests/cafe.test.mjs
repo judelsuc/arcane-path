@@ -103,20 +103,36 @@ test("collapse or hunger during upfront costs suppresses pending shift and all r
 
 test("practice increases difficulty/pay with bounded separate skills and strict validation", () => {
   let state = start();
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     state = { ...state, skills: { cafe: level * 60 } };
     const profile = cafeDifficulty(state), terms = begin(state).cafePending;
-    assert.equal(profile.orders, 5 + level);
-    assert.equal(profile.patienceMs, 14000 - level * 1500);
-    assert.equal(terms.maxRewardCents, Math.round(marketPrice(cell, 1.5, data, info).cents * (1 + level / 4)));
+    assert.equal(profile.orders, 5 + Math.floor(level * 4 / 19));
+    assert.equal(profile.patienceMs, 14000 - Math.round(level * 6000 / 19));
+    assert.equal(terms.maxRewardCents, Math.round(marketPrice(cell, 1.5, data, info).cents * (1 + level / 19)));
   }
   state = practice(state, "cafe", 500);
-  assert.equal(practiceSkill(state, "cafe").xp, 300);
+  assert.equal(practiceSkill(state, "cafe").xp, 1199);
   assert.equal(practiceSkill(state, "music").xp, 0);
-  for (const skills of [null, [], { piano: 0 }, { cafe: -1 }, { music: 301 }, { cafe: 1.1 }]) {
+  for (const skills of [null, [], { piano: 0 }, { cafe: -1 }, { music: 1200 }, { cafe: 1.1 }]) {
     assert.throws(() => validatePractice({ skills }));
   }
   assert.throws(() => practice(state, "unknown", 1));
+});
+
+test("cafe failure streak drops one level, survives cancellation, and resets on success", () => {
+  let state = { ...start(), skills: { cafe: 197, music: 120 } };
+  const settle = (served, cancelled = false) => { state = settleCafe(begin(state), served, 0, cancelled); };
+  settle(0); settle(0); settle(0, true);
+  assert.equal(state.practiceFailureStreaks.cafe, 2);
+  settle(0);
+  assert.equal(state.skills.cafe, 137);
+  assert.equal(state.skills.music, 120);
+  settle(0); settle(5);
+  assert.equal(state.practiceFailureStreaks.cafe, 0);
+  validatePractice(state);
+  for (const streaks of [{ cafe: 3 }, { music: -1 }, { unknown: 1 }, []]) {
+    assert.throws(() => validatePractice({ practiceFailureStreaks: streaks }));
+  }
 });
 
 test("perfect cafe round serves all orders with quantities independent of ingredient order", () => {
@@ -169,10 +185,10 @@ test("Temperance changes an order halfway through preparation, preserves tray an
 });
 
 test("Temperance eligibility uses exact increasing probability boundaries and never affects normal play", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const profile = cafeDifficulty({ skills: { cafe: level * 60 } });
-    const chance = (20 + level * 10) / 100;
-    for (const [value, eligible] of [[chance - 0.001, true], [chance, false]]) {
+    const chance = (20 + Math.round(level * 40 / 19)) / 100;
+    for (const [value, eligible] of [[chance - 0.001, true], [chance + 0.001, false]]) {
       const game = createCafeGame(profile, 0, () => value, { resonance: true });
       assert.equal(game.orders.every(order => Boolean(order.changePlan) === eligible), true);
     }
@@ -182,7 +198,7 @@ test("Temperance eligibility uses exact increasing probability boundaries and ne
 });
 
 test("changed recipes can be served perfectly at every level with no final recovery delay", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const profile = cafeDifficulty({ skills: { cafe: level * 60 } });
     let game = createCafeGame(profile, 0, () => 0, { resonance: true });
     for (const order of game.orders) {
@@ -203,14 +219,14 @@ test("changed recipes can be served perfectly at every level with no final recov
 });
 
 test("every difficulty has varied order sizes of at least three items, with exact tray quantities", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const profile = cafeDifficulty({ skills: { cafe: level * 60 } });
     for (const draw of [0, 0.4, 0.99]) {
       const game = createCafeGame(profile, 0, () => draw);
       const sizes = game.orders.map(order => order.recipe.length);
       assert.equal(new Set(sizes).size, 3);
-      assert.ok(sizes.every(size => size >= 3 + Math.floor(level / 2) &&
-        size <= 5 + Math.floor(level / 2)));
+      assert.ok(sizes.every(size => size >= profile.recipeSize &&
+        size <= profile.recipeSize + 2));
       let next = game;
       for (const ingredient of game.orders[0].recipe.slice(1)) {
         next = cafeInput(next, "ingredient", ingredient, 0);

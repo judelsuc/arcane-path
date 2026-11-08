@@ -100,8 +100,18 @@ export function createChunkStream(region, { fetcher = fetch, onUpdate = () => {}
     return data;
   }
   function remember(data) {
-    chunks.set(key(data.chunk.x, data.chunk.y), data);
+    const id = key(data.chunk.x, data.chunk.y);
+    chunks.delete(id);
+    chunks.set(id, data);
     if (chunks.size > 25) chunks.delete(chunks.keys().next().value);
+  }
+  function get(x, y) {
+    const id = key(x, y), data = chunks.get(id);
+    if (data) {
+      chunks.delete(id);
+      chunks.set(id, data);
+    }
+    return data;
   }
   async function retrieve(x, y) {
     const deadline = Date.now() + 180_000;
@@ -155,7 +165,7 @@ export function createChunkStream(region, { fetcher = fetch, onUpdate = () => {}
   function load(x, y, priority = false) {
     if (controller.signal.aborted) return Promise.reject(controller.signal.reason);
     const id = key(x, y);
-    if (chunks.has(id)) return Promise.resolve(chunks.get(id));
+    if (chunks.has(id)) return Promise.resolve(get(x, y));
     if (requests.has(id)) {
       if (priority) {
         const index = queue.findIndex(job => job.key === id);
@@ -209,7 +219,7 @@ export function createChunkStream(region, { fetcher = fetch, onUpdate = () => {}
         (ranks.get(a.key) ?? Infinity) - (ranks.get(b.key) ?? Infinity));
     },
     drop: (x, y) => chunks.delete(key(x, y)),
-    get: (x, y) => chunks.get(key(x, y)),
+    get,
     isPending: (x, y) => !controller.signal.aborted && requests.has(key(x, y)),
     stop() {
       controller.abort();

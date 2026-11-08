@@ -1,10 +1,10 @@
 import { resolveResonance, resonanceResult } from "../arcane-resonance.mjs";
 // Fictional sorting only; settlement, payment and save handling belong to the host.
-const RULES = Object.freeze(Array.from({ length: 5 }, (_, level) => Object.freeze({
-  level, baskets: Math.max(3, 2 + level), rounds: 16,
-  fallMs: level === 0 ? 2500 : 2800 - level * 350, steerPerSecond: 0.75,
-  rewardMultiplier: 1 + level * 0.25,
-  rottenCount: 2 + level,
+const RULES = Object.freeze(Array.from({ length: 20 }, (_, level) => Object.freeze({
+  level, baskets: 3 + Math.floor(level * 3 / 19), rounds: 16,
+  fallMs: 2500 - Math.round(level * 1100 / 19), steerPerSecond: 0.75,
+  rewardMultiplier: 1 + level / 19,
+  rottenCount: 2 + Math.floor(level * 4 / 19),
   durationMs: 30000,
   squashMs: 500, fastFallMs: 160,
 })));
@@ -17,8 +17,8 @@ function time(value) {
 }
 
 export function difficulty(level) {
-  if (!Number.isInteger(level) || level < 0 || level > 4) {
-    throw new RangeError("Harvest level must be 0–4.");
+  if (!Number.isInteger(level) || level < 0 || level > 19) {
+    throw new RangeError("Harvest level must be 0–19.");
   }
   return RULES[level];
 }

@@ -4,7 +4,7 @@ import { available, difficulty, createGame, input, advance, result } from "../mi
 
 test("Priestess personal wish accepts either authored fitting book, preserves shelving and all other exact requests", () => {
   for (const options of [{ resonance: true }, { journeyCard: "priestess" }, { birthCard: "priestess" }, { dailyCard: "priestess" }, { journeyCard: "priestess", dailyCard: "priestess" }]) {
-    for (const language of ["fr", "en"]) for (let level = 0; level <= 4; level++) {
+    for (const language of ["fr", "en"]) for (let level = 0; level <= 19; level++) {
       const normal = createGame({ level, language, random: () => .3 });
       const initial = createGame({ level, language, random: () => .3, ...options });
       assert.deepEqual(initial.books, normal.books);
@@ -57,7 +57,7 @@ function served(game) {
   return game;
 }
 
-for (let level = 0; level <= 4; level++) {
+for (let level = 0; level <= 19; level++) {
   test(`level ${level}: perfect spatial sorting and all customer requests`, () => {
     const initial = createGame({ level, now: 100, random: seeded(20 + level) });
     const game = served(sorted(initial));
@@ -109,11 +109,12 @@ for (let level = 0; level <= 4; level++) {
 
 test("difficulty and board/request complexity strictly increase, with bounded content", () => {
   let previous;
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const config = difficulty(level);
     if (previous) {
-      assert.ok(config.shelves * config.slots > previous.shelves * previous.slots);
-      assert.ok(config.requests > previous.requests);
+      assert.ok(config.shelves * config.slots >= previous.shelves * previous.slots);
+      assert.ok(config.requests >= previous.requests);
+      assert.ok(config.durationMs > previous.durationMs);
       assert.ok(config.rewardMultiplier > previous.rewardMultiplier);
     }
     previous = config;
@@ -128,7 +129,7 @@ test("real classics sort by displayed title within each theme, including article
     en: [[1, 3, 4, 2], [6, 5, 7, 8], [9, 10, 11, 12], [16, 14, 15, 13]],
   };
   for (const language of ["fr", "en"]) {
-    let game = createGame({ level: 4, language, random: seeded(17) });
+    let game = createGame({ level: 19, language, random: seeded(17) });
     for (const [shelf, ids] of expected[language].entries()) {
       for (const [slot, id] of ids.entries()) {
         game = input(game, { type: "select", bookId: `book-${id}` }, game.lastNow);
@@ -149,7 +150,7 @@ test("real classics sort by displayed title within each theme, including article
 
 test("a right theme in the wrong alphabetical position is rejected, and placement changes with language", () => {
   for (const language of ["fr", "en"]) {
-    let game = createGame({ level: 4, language, random: seeded(5) });
+    let game = createGame({ level: 19, language, random: seeded(5) });
     game = input(game, { type: "select", bookId: "book-1" }, 0);
     const correct = language === "fr" ? 1 : 0;
     game = input(game, { type: "place", shelf: 0, slot: 1 - correct }, 0);
@@ -162,7 +163,7 @@ test("a right theme in the wrong alphabetical position is rejected, and placemen
 });
 
 test("requests consistently identify an existing unique title, handwritten and bilingual across seeds/levels", () => {
-  const all = createGame({ level: 4, random: seeded(15) }).books;
+  const all = createGame({ level: 19, random: seeded(15) }).books;
   assert.equal(new Set(all.map(book => book.title.fr)).size, 16);
   assert.equal(new Set(all.map(book => book.title.en)).size, 16);
   assert.equal(new Set(all.map(book => book.request.fr)).size, 16);
@@ -175,7 +176,7 @@ test("requests consistently identify an existing unique title, handwritten and b
     ["baudelaire", "baudelaire"], ["whitman", "whitman"], ["hugo", "hugo"], ["fontaine", "fontaine"],
   ];
   const seen = new Set();
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     for (let seed = 0; seed < 50; seed++) {
       const game = createGame({ level, random: seeded(seed) });
       assert.equal(new Set(game.requests.map(request => request.bookId)).size, game.config.requests);
@@ -196,9 +197,9 @@ test("requests consistently identify an existing unique title, handwritten and b
 });
 
 test("immutability, deterministic randomness and state provenance", () => {
-  const game = createGame({ level: 4, random: seeded(42) });
-  assert.deepEqual(game, createGame({ level: 4, random: seeded(42) }));
-  assert.notDeepEqual(game.books, createGame({ level: 4, random: seeded(43) }).books);
+  const game = createGame({ level: 19, random: seeded(42) });
+  assert.deepEqual(game, createGame({ level: 19, random: seeded(42) }));
+  assert.notDeepEqual(game.books, createGame({ level: 19, random: seeded(43) }).books);
   for (const value of [game, game.books, game.books[0], game.books[0].title, game.requests, game.requests[0], game.slots, result(game)]) {
     assert.ok(Object.isFrozen(value));
   }
@@ -212,7 +213,7 @@ test("immutability, deterministic randomness and state provenance", () => {
 });
 
 test("invalid levels, randoms, clocks and actions reject without changing state", () => {
-  for (const level of [-1, 5, 1.5, NaN, Infinity, "1", null]) {
+  for (const level of [-1, 20, 1.5, NaN, Infinity, "1", null]) {
     assert.throws(() => difficulty(level), RangeError);
     assert.throws(() => createGame({ level }), RangeError);
   }

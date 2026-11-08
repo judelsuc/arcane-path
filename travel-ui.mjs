@@ -114,7 +114,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const pricingCountries = new Map();
   let discoveredLodging = [];
   let lodgingTarget;
-  let transient = "", missingHeightMoves = 0;
+  let transient = "", missingHeightMoves = 0, terrainWaitingState;
   let heading = [0, 0];
   let cursor, cameraData;
   let renderedRecovery;
@@ -560,7 +560,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   artifactsUI = setupArtifactQuests(t, {
     character: () => conversations.currentCharacter(),
     context: () => active ? economyContext() : null,
-    beforeRequest: () => abandonedUI.whenIdle(),
+    beforeRequest: signal => abandonedUI.whenIdle(signal),
     mutate: mutateQuest,
     lock(value) { busy = value; localize(); },
   });
@@ -885,6 +885,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     document.querySelector("#character-setup").hidden = active;
     retry.disabled = busy;
     stop.disabled = busy;
+    if (["travelTerrainPreparing", "travelTerrainReady"].includes(transient) && terrainWaitingState !== state) {
+      transient = "";
+    }
     status.textContent = error ? t("travelError", { error }) : transient ? t(transient) : "";
     document.querySelector("#travel-diagnostics").textContent = error || saveError;
     setFeedback(status, error ? "failure" : "");
@@ -1274,6 +1277,27 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         state.events?.pending || state.equipment?.dogEncounter === "pending") return;
     heading = [dc, dr];
     stream.prioritize(visibleDownloads(state.col, state.row, ...heading));
+    const to = chunkPosition(state.col + dc, state.row + dr);
+    if (!stream.get(to.x, to.y)) {
+      const waitingState = state, currentToken = token;
+      terrainWaitingState = waitingState;
+      error = "";
+      transient = "travelTerrainPreparing";
+      localize();
+      try {
+        await stream.load(to.x, to.y, true);
+        if (currentToken === token && state === waitingState) {
+          transient = "travelTerrainReady";
+          localize();
+        }
+      } catch (reason) {
+        if (currentToken === token && state === waitingState) {
+          transient = "";
+          report(reason);
+        }
+      }
+      return;
+    }
     busy = true;
     transient = "travelLoading";
     error = "";
@@ -1281,7 +1305,6 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const currentToken = token;
     try {
       const from = chunkPosition(state.col, state.row);
-      const to = chunkPosition(state.col + dc, state.row + dr);
       const target = await stream.load(to.x, to.y, true);
       if (currentToken !== token) return;
       const fromCell = stream.get(from.x, from.y).rows[from.row][from.col];

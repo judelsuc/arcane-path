@@ -1,6 +1,11 @@
 {
-  "version": "0.21.18",
+  "version": "0.21.19",
   "entries": [
+    {
+      "version": "0.21.19",
+      "fr": "Les activités proposent vingt niveaux plus progressifs : croquis plus accessibles, davantage de temps pour les objets trouvés et commandes du café mélangées aux niveaux supérieurs. Trois échecs consécutifs font perdre un niveau ; une réussite remet le compteur à zéro, une annulation ne compte pas. Les personnages peuvent proposer de nouvelles missions même si un autre propose le même type de service ; leurs indications déjà en cache évitent des attentes inutiles, avec des paroles immersives. Les déplacements vers une case non chargée ne bloquent plus les autres actions. Les objets magiques non portés sont répartis à travers l’Europe. Les signalements privés sont activables avec captures sur le serveur et suppression manuelle après examen.",
+      "en": "Activities offer twenty smoother levels: gentler drawing, more time for lost-and-found and mixed café orders at higher levels. Three consecutive failures drop one level; success resets the streak and cancellation does not count. Characters can offer new quests even when another offers the same service type; cached directions avoid unnecessary waits, with immersive dialogue. Steps toward unloaded cells no longer lock other actions. Uncarried magical objects are distributed across Europe. Private feedback supports server-stored screenshots and manual deletion after review."
+    },
     {
       "version": "0.21.18",
       "fr": "Le lien « journal » dans les résultats de recherche ouvre désormais le relevé des indices du parent dans Quêtes, au lieu du carnet de photos. Les indices actuels sont affichés et mis au premier plan.",

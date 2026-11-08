@@ -48,9 +48,10 @@ function time(now, previous = 0) {
   if (!Number.isSafeInteger(now) || now < previous) throw new RangeError("Invalid or decreasing time.");
 }
 export function difficulty(level) {
-  if (!Number.isInteger(level) || level < 0 || level > 4) throw new RangeError("Level must be 0–4.");
-  return Object.freeze({ level, objectCount: 4 + level, maxMistakes: 3, timeLimitMs: 15000,
-    rewardMultiplier: 1 + level * 0.25 });
+  if (!Number.isInteger(level) || level < 0 || level > 19) throw new RangeError("Level must be 0–19.");
+  return Object.freeze({ level, clueStyle: Math.floor(level * 4 / 19),
+    objectCount: 4 + Math.floor(level * 4 / 19), maxMistakes: 3, timeLimitMs: 15000 + level * 1000,
+    rewardMultiplier: 1 + level / 19 });
 }
 const open = tags => tags && !["private", "no", "customers", "permit"].includes(tags.access) &&
   !["disused", "abandoned", "demolished", "construction"].some(key =>
@@ -85,7 +86,7 @@ export function createGame({ level = 0, random = Math.random, now = 0, ...option
   if (typeof random !== "function") throw new TypeError("Expected a random function.");
   const objects = variants.slice(0, settings.objectCount).map(([id, fr, en]) => ({ id, label: { fr, en } }));
   const reports = shuffle(variants.slice(0, settings.objectCount), random).map(([objectId, , , fr, en]) =>
-    ({ objectId, description: { fr: fr[level], en: en[level] } }));
+    ({ objectId, description: { fr: fr[settings.clueStyle], en: en[settings.clueStyle] } }));
   if (resonance) {
     for (const [index, object] of objects.slice(0, 2).entries()) {
       object.inspectRequired = true;

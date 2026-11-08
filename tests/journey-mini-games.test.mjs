@@ -49,6 +49,50 @@ const start = () => startEconomy(startSurvival(
 ), data, () => 0);
 const context = game => ({ cell: cells[game], info, survival, data });
 
+test("all twenty levels construct normal and resonant games and preserve bounded profiles", () => {
+  const engines = [harvestEngine, workshopEngine, sketchEngine, marketEngine, bookshopEngine,
+    deliveriesEngine, petanqueEngine, lanternsEngine, lostFoundEngine];
+  for (const engine of engines) {
+    let reward = 0;
+    for (let level = 0; level < 20; level++) {
+      const rules = engine.difficulty(level);
+      assert.ok(rules.rewardMultiplier > reward);
+      reward = rules.rewardMultiplier;
+      for (const resonance of [false, true]) {
+        assert.ok(engine.createGame({ level, resonance, random: () => 0.42, now: 0 }));
+      }
+    }
+    assert.throws(() => engine.difficulty(20));
+  }
+  assert.ok(sketchEngine.difficulty(1).width <= 3);
+  assert.ok(sketchEngine.difficulty(19).observeMs >= 20000);
+  assert.ok(lostFoundEngine.difficulty(19).timeLimitMs > lostFoundEngine.difficulty(0).timeLimitMs);
+});
+
+test("each game's failures are independent, cancellation preserves the streak, success resets it", () => {
+  for (const game of JOURNEY_MINI_GAMES) {
+    let state = { ...start(), journeyMiniGameSkills: { [game]: 3 * 60 + 17 } };
+    const play = result => {
+      const pending = beginJourneyMiniGame(state, game, context(game));
+      state = settleJourneyMiniGame(pending, game, result);
+    };
+    const failure = { completed: false, cancelled: false, score: 0, maxScore: 10 };
+    const cancel = { completed: false, cancelled: true, score: 0, maxScore: 10 };
+    const success = { completed: true, cancelled: false, score: 10, maxScore: 10 };
+    play(failure); play(failure); play(cancel);
+    assert.equal(state.journeyMiniGameFailureStreaks[game], 2);
+    play(failure);
+    assert.equal(state.journeyMiniGameSkills[game], 2 * 60 + 17);
+    assert.equal(state.journeyMiniGameFailureStreaks[game], 0);
+    play(failure); play(success);
+    assert.equal(state.journeyMiniGameFailureStreaks[game], 0);
+    validateJourneyMiniGames(state);
+  }
+  for (const streaks of [{ harvest: 3 }, { harvest: -1 }, { unknown: 1 }, []]) {
+    assert.throws(() => validateJourneyMiniGames({ journeyMiniGameFailureStreaks: streaks }));
+  }
+});
+
 test("all nine journey activities require their real mapped feature", () => {
   for (const game of JOURNEY_MINI_GAMES) {
     assert.equal(journeyMiniGameAvailable(game, cells[game]), true, game);
@@ -92,7 +136,7 @@ test("cancellation clears pending without payment or practice and resonance is s
     completed: false, cancelled: true, score: 0, maxScore: 1,
   });
   assert.equal(cancelled.walletCents, pending.walletCents);
-  assert.equal(cancelled.journeyMiniGameSkills.harvest, 0);
+  assert.equal(cancelled.journeyMiniGameSkills?.harvest ?? 0, 0);
   assert.equal(cancelled.miniGamePending, null);
 });
 
@@ -199,12 +243,12 @@ test("fractional elapsed clocks remain valid pending snapshots and experience st
       completed: true, cancelled: false, score: 1, maxScore: 3,
     }), game);
   }
-  const capped = { ...start(), journeyMiniGameSkills: { harvest: 300 } };
+  const capped = { ...start(), journeyMiniGameSkills: { harvest: 1199 } };
   const pending = beginJourneyMiniGame(capped, "harvest", context("harvest"));
   const settled = settleJourneyMiniGame(pending, "harvest", {
     completed: true, cancelled: false, score: 1, maxScore: 1,
   });
-  assert.equal(settled.journeyMiniGameSkills.harvest, 300);
+  assert.equal(settled.journeyMiniGameSkills.harvest, 1199);
   assert.equal(settled.lastJourneyMiniGame.levelUps, 0);
 });
 
@@ -228,7 +272,7 @@ test("saved mini-game fields use strict schemas and reject replayable pending ac
   };
   assert.equal(validateJourneyMiniGames(valid), valid);
   for (const state of [
-    { ...valid, journeyMiniGameSkills: { harvest: 301 } },
+    { ...valid, journeyMiniGameSkills: { harvest: 1200 } },
     { ...valid, journeyMiniGameSkills: { harvest: 0, typo: 1 } },
     { ...valid, journeyMiniGameSkills: [] },
     { ...valid, journeyMiniGamesPlayed: -1 },

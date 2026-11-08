@@ -104,7 +104,7 @@ function setup(options = {}) {
     doc.dispatch("keyup", { key: keyName });
   };
   const rideTo = cell => {
-    const grid = 3 + Math.floor((options.level ?? 0) / 2);
+    const grid = 3 + Math.floor((options.level ?? 0) * 2 / 19);
     let x = position % grid, y = Math.floor(position / grid);
     while (x < cell % grid) { ride("ArrowRight"); x++; }
     while (x > cell % grid) { ride("ArrowLeft"); x--; }
@@ -158,7 +158,7 @@ test("bilingual memory, original graphics, no coordinates, free riding and Space
 });
 
 test("top-row and numpad physical keys select parcels, including the sixth; undelivered labels stay hidden", () => {
-  const h = setup({ level: 4, language: "en" });
+  const h = setup({ level: 19, language: "en" });
   h.click("start");
   const targets = h.manifest();
   h.click("ready");
@@ -349,7 +349,7 @@ test("close, Escape, destroy and hidden-tab cancellation stop timers and report 
 });
 
 test("clock automatically hides memory and times out with no reward at hard level", () => {
-  const h = setup({ level: 4, language: "en" });
+  const h = setup({ level: 19, language: "en" });
   h.click("start");
   assert.equal(h.manifest().length, 7);
   h.advance(9000);

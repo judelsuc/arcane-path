@@ -14,15 +14,15 @@ const cell = { terrain: "place", countryCodes: ["FR"] };
 const info = { latitude: 44.54, longitude: 2.3 };
 
 test("practice adds notes and potential earnings at every level and snapshots scoring terms", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const state = { ...start(), skills: { music: level * 60 } };
     const difficulty = musicDifficulty(state);
-    assert.equal(difficulty.beats, 24 + level * 3);
+    assert.equal(difficulty.beats, 3 * (8 + Math.floor(level * 4 / 19)));
     let game = rhythm(0, () => 0.4, musicMistakeLimit(state), difficulty.beats, difficulty);
-    assert.equal(game.pattern.filter(note => note > 0).length, 8 + level);
+    assert.equal(game.pattern.filter(note => note > 0).length, difficulty.beats / 3);
     assert.equal(game.pattern.length, difficulty.slots);
     assert.ok(game.pattern.filter(note => note === 0).length >= 2);
-    assert.equal(game.intervalMs, 400 - level * 35);
+    assert.equal(game.intervalMs, 400 - Math.round(level * 140 / 19));
     assert.deepEqual(game.pattern.filter(note => note > 1).sort(), [...difficulty.holdLengths].sort());
     for (let i = 0; i < game.hits.length; i++) {
       game = tapRhythm(game, beatTime(game, i));
@@ -32,10 +32,10 @@ test("practice adds notes and potential earnings at every level and snapshots sc
     const pending = beginBusking(state, cell, info, survival, data);
     assert.equal(pending.performancePending.beats, difficulty.beats);
     const base = beginBusking(start(), cell, info, survival, data).performancePending.maxRewardCents;
-    assert.equal(pending.performancePending.maxRewardCents, Math.round(base * (1 + level / 4)));
+    assert.equal(pending.performancePending.maxRewardCents, Math.round(base * (1 + level / 19)));
     const done = settleBusking(pending, difficulty.beats, 0);
     assert.equal(done.walletCents - pending.walletCents, pending.performancePending.maxRewardCents);
-    assert.equal(done.skills.music, Math.min(300, level * 60 + difficulty.beats));
+    assert.equal(done.skills.music, Math.min(1199, level * 60 + difficulty.beats));
     const failed = settleBusking(pending, difficulty.beats, musicMistakeLimit(state));
     assert.equal(failed.skills.music, level * 60);
     assert.equal(failed.lastEarningsCents, 0);
@@ -45,6 +45,22 @@ test("practice adds notes and potential earnings at every level and snapshots sc
   const done = settleBusking(pending, 24);
   assert.equal(musicDifficulty(done).level, 1);
   assert.equal(done.lastEarningsCents, pending.performancePending.maxRewardCents);
+});
+
+test("music tracks failures independently, preserves cancellations and falls back after three", () => {
+  let state = { ...start(), skills: { music: 1199, cafe: 180 } };
+  const play = (hits, cancelled = false) => {
+    const pending = beginBusking(state, cell, info, survival, data);
+    state = settleBusking(pending, hits, 0, cancelled);
+  };
+  play(0); play(0); play(0, true);
+  assert.equal(state.practiceFailureStreaks.music, 2);
+  play(0);
+  assert.equal(state.skills.music, 1139);
+  assert.equal(musicDifficulty(state).level, 18);
+  assert.equal(state.skills.cafe, 180);
+  play(0); play(musicDifficulty(state).beats);
+  assert.equal(state.practiceFailureStreaks.music, 0);
 });
 
 test("Judgement snapshots birth/daily matches and multiplies only completed earnings once", () => {
@@ -85,7 +101,7 @@ test("resonant rhythm carries its phrase preview duration without changing the p
 });
 
 test("two-, three- and four-beat holds accept 300 ms early/late releases, count once and never retry", () => {
-  const profile = musicDifficulty({ skills: { music: 240 } });
+  const profile = musicDifficulty({ skills: { music: 1140 } });
   const initial = rhythm(100, () => 0.99, 8, profile.beats, profile);
   for (const length of [2, 3, 4]) {
   const index = initial.pattern.filter(note => note > 0).indexOf(length);

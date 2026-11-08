@@ -41,9 +41,9 @@ test("carreau chance boundaries, failures, targets and animation are determinist
   const normal = createGame({ random: () => 0.5 });
   assert.deepEqual(normal, createGame({ random: () => 0.5, dailyCard: "star" }));
   assert.equal(input(normal, "steady", 0).steadyActive, false);
-  for (let level = 0; level < 5; level++) for (const success of [false, true]) {
+  for (let level = 0; level < 20; level++) for (const success of [false, true]) {
     const base = createGame({ level, resonance: true, random: () => 0.5 });
-    assert.equal(base.rules.carreauChance, [0.75, 0.65, 0.55, 0.45, 0.35][level]);
+    assert.equal(base.rules.carreauChance, 0.75 - level * 0.4 / 19);
     const target = { id: 0, owner: "computer", end: { x: 0.25, y: 6 }, out: false, distance: 1 };
     const other = { id: 1, owner: "player", end: { x: -1, y: 4 }, out: false, distance: 3 };
     let game = { ...base, throws: [target, other], carreauDraw: base.rules.carreauChance - (success ? 0.000001 : 0) };
@@ -134,20 +134,20 @@ test("difficulty levels 0-4 tighten targets, worsen terrain and raise rewardMult
     assert.ok(levels[i].rewardMultiplier > levels[i - 1].rewardMultiplier);
   }
   assert.equal(levels[0].rewardMultiplier, 1);
-  assert.equal(levels[4].rewardMultiplier, 2);
-  for (const bad of [-1, 5, 1.5, "1", NaN]) assert.throws(() => difficulty(bad), RangeError);
+  assert.equal(difficulty(19).rewardMultiplier, 2);
+  for (const bad of [-1, 20, 1.5, "1", NaN]) assert.throws(() => difficulty(bad), RangeError);
   assert.ok(Object.isFrozen(levels[2].radii));
 });
 
 test("createGame validates inputs and is deterministic and frozen", () => {
-  const a = createGame({ level: 3, random: seq([0.2, 0.7, 0.4]), now: 10 });
-  const b = createGame({ level: 3, random: seq([0.2, 0.7, 0.4]), now: 10 });
+  const a = createGame({ level: 15, random: seq([0.2, 0.7, 0.4]), now: 10 });
+  const b = createGame({ level: 15, random: seq([0.2, 0.7, 0.4]), now: 10 });
   assert.deepEqual(a, b);
   assert.ok(Object.isFrozen(a) && Object.isFrozen(a.jack) && Object.isFrozen(a.terrain.slope));
   assert.equal(a.phase, "aiming");
-  const [near, far] = difficulty(3).jackDistance;
+  const [near, far] = difficulty(15).jackDistance;
   assert.ok(a.jack.y >= near && a.jack.y <= far);
-  assert.throws(() => createGame({ level: 9 }), RangeError);
+  assert.throws(() => createGame({ level: 20 }), RangeError);
   assert.throws(() => createGame({ random: 3 }), TypeError);
   assert.throws(() => createGame({ random: () => 1 }), RangeError);
   assert.throws(() => createGame({ now: -1 }), RangeError);
@@ -196,11 +196,12 @@ test("smooth local slopes repel from bumps, attract into hollows, and vanish out
 });
 
 test("each random pitch has visible, bounded immutable bumps and hollows, growing with difficulty", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const game = createGame({ level, random: seq([0.1, 0.8, 0.3]) });
-    assert.ok(game.terrain.relief.length >= 2 + level * 2 && game.terrain.relief.length <= 3 + level * 2);
-    assert.equal(createGame({ level, random: () => 0 }).terrain.relief.length, 2 + level * 2);
-    assert.equal(createGame({ level, random: () => 0.999 }).terrain.relief.length, 3 + level * 2);
+    assert.ok(game.terrain.relief.length >= 2 + Math.floor(level * 8 / 19) &&
+      game.terrain.relief.length <= 3 + Math.floor(level * 8 / 19));
+    assert.equal(createGame({ level, random: () => 0 }).terrain.relief.length, 2 + Math.floor(level * 8 / 19));
+    assert.equal(createGame({ level, random: () => 0.999 }).terrain.relief.length, 3 + Math.floor(level * 8 / 19));
     assert.equal(new Set(game.terrain.relief.map(feature => `${feature.x}:${feature.y}`)).size, game.terrain.relief.length);
     assert.ok(Object.isFrozen(game.terrain.relief));
     for (const feature of game.terrain.relief) {
@@ -217,8 +218,9 @@ test("each random pitch has visible, bounded immutable bumps and hollows, growin
 
 test("varied relieved pitches offer at least a good scoring shot at each level", () => {
   for (const values of [[0.1, 0.6, 0.8], [0.5], [0.9, 0.1, 0.4]]) {
-    for (let level = 0; level <= 4; level++) {
+    for (let level = 0; level <= 19; level++) {
       const game = createGame({ level, random: seq(values) });
+      assert.ok(Math.abs(game.jack.x) <= 1.25, "jack stays within the playable pitch");
       const aim = bestAim(game);
       assert.ok(aim && aim.d <= game.rules.radii.good,
         `level ${level}, draws ${values}: closest ${aim?.d}`);
@@ -235,7 +237,7 @@ function computerTurn(game) {
 }
 
 test("six alternating boules use the same terrain; scores wait for the count animation", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     let game = createGame({ level, random: seq([0.999, 0.999, 0.25]) });
     const aim = bestAim(game);
     assert.ok(aim.d <= game.rules.radii.perfect, `level ${level}: ${aim.d}`);
@@ -372,7 +374,7 @@ test("time limit never invents boules or points, and cancellation gives neither 
 
 test("computer search is reproducible, quantized, skill-dependent and terrain-aware", () => {
   const flat = createGame({ random: () => 0.8 });
-  const expert = createGame({ level: 4, random: () => 0.8 });
+  const expert = createGame({ level: 19, random: () => 0.8 });
   assert.ok(expert.rules.computerAngleError < flat.rules.computerAngleError);
   assert.ok(expert.rules.computerPowerError < flat.rules.computerPowerError);
   assert.deepEqual(computerAim(flat), computerAim(createGame({ random: () => 0.8 })));
@@ -389,7 +391,7 @@ test("computer search is reproducible, quantized, skill-dependent and terrain-aw
 });
 
 test("ground height and the gravity used by boules share the same smooth height field", () => {
-  const terrain = createGame({ level: 4, random: () => 0.7 }).terrain;
+  const terrain = createGame({ level: 19, random: () => 0.7 }).terrain;
   const delta = 0.00001;
   for (const { x, y } of [{ x: 0.3, y: 3.4 }, { x: -1, y: 9 }, { x: 0.8, y: 5.2 }]) {
     const acceleration = groundAcceleration(terrain, x, y);

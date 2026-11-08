@@ -324,13 +324,13 @@ test("hidden state without an event also cancels on the next tick", t => {
 });
 
 test("French hard level has six illustrated baskets, faster falls, and Escape cancellation", t => {
-  const h = harness(t, { language: "fr", level: 4 });
+  const h = harness(t, { language: "fr", level: 19 });
   assert.equal(h.start.textContent, "Commencer");
   assert.equal(h.baskets.length, 6);
   assert.equal(new Set(h.baskets.map(basket => basket.style.color)).size, 6);
   assert.equal(h.root.lang, "fr");
   h.start.click();
-  h.tick(1000 + difficulty(4).fallMs);
+  h.tick(1000 + difficulty(19).fallMs);
   assert.equal(h.sounds.length, 1);
   assert.equal(h.key("ArrowLeft", { ctrlKey: true }), false);
   assert.equal(h.key("Escape"), true);

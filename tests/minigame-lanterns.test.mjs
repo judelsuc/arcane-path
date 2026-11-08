@@ -4,7 +4,7 @@ import { available, difficulty, createGame, input, advance, result } from "../mi
 
 test("Hermit card matches preserve validated Simon sequences, lengths and failure rules with a completion-only bonus", () => {
   for (const options of [{ resonance: true }, { journeyCard: "hermit" }, { birthCard: "hermit" }, { dailyCard: "hermit" }, { journeyCard: "hermit", dailyCard: "hermit" }]) {
-    for (let level = 0; level <= 4; level++) {
+    for (let level = 0; level <= 19; level++) {
       const normal = createGame({ level, random: () => .3 });
       let game = createGame({ level, random: () => .3, ...options });
       assert.equal(game.resonance, true);
@@ -20,7 +20,7 @@ test("Hermit card matches preserve validated Simon sequences, lengths and failur
         for (let step = 0; step < game.round; step++) game = input(game, { type: "press", lantern: game.sequence[step] }, game.updatedAt);
         if (game.phase === "roundGap") game = advance(game, game.nextAt);
       }
-      assert.equal(result(game).score, 7 + level);
+      assert.equal(result(game).score, (7 + Math.floor(level * 4 / 19)));
       assert.equal(result(game).earningsMultiplier, 1.1);
     }
   }
@@ -56,30 +56,30 @@ test("availability requires a mapped current active public venue, never a remote
 
 test("levels strictly increase length and reward, and accelerate playback", () => {
   let previous;
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const rules = difficulty(level);
     const game = createGame({ level, random: () => 0 });
     assert.equal(game.phase, "ready");
     assert.equal(game.sequence.length, rules.length);
-    assert.equal(rules.length, 7 + level);
+    assert.equal(rules.length, (7 + Math.floor(level * 4 / 19)));
     assert.equal(game.round, 1);
     assert.ok(game.sequence.every(value => value >= 0 && value < rules.lanternCount));
     assert.ok(Object.isFrozen(rules));
     if (previous) {
-      assert.ok(rules.length > previous.length);
+      assert.ok(rules.length >= previous.length);
       assert.ok(rules.rewardMultiplier > previous.rewardMultiplier);
       assert.ok(rules.litMs < previous.litMs);
     }
     previous = rules;
   }
-  for (const level of [-1, 5, 0.5, NaN, Infinity, "1", null]) {
+  for (const level of [-1, 20, 0.5, NaN, Infinity, "1", null]) {
     assert.throws(() => difficulty(level), RangeError);
     assert.throws(() => createGame({ level }), RangeError);
   }
 });
 
 test("three authored variants and bounded deterministic generation", () => {
-  const authored = [0, 0.26, 0.51].map(value => createGame({ level: 4, random: () => value }));
+  const authored = [0, 0.26, 0.51].map(value => createGame({ level: 19, random: () => value }));
   assert.equal(new Set(authored.map(game => game.sequence.join(","))).size, 3);
   const generator = () => {
     let seed = 8123;
@@ -88,7 +88,7 @@ test("three authored variants and bounded deterministic generation", () => {
   function generated() {
     const next = generator();
     let calls = 0;
-    const game = createGame({ level: 4, random: () => ++calls === 1 ? 0.99 : next() });
+    const game = createGame({ level: 19, random: () => ++calls === 1 ? 0.99 : next() });
     assert.equal(calls, 12);
     assert.equal(game.variant, 3);
     return game.sequence;
@@ -128,10 +128,10 @@ test("playback lead, lit/gap boundaries, repeated lanterns and input gate", () =
 });
 
 test("Simon rounds grow from one item to 7–11, preserving every earlier item and awarding one point per round", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     let game = started({ level });
     const initial = game, sequence = game.sequence;
-    for (let round = 1; round <= 7 + level; round++) {
+    for (let round = 1; round <= (7 + Math.floor(level * 4 / 19)); round++) {
       assert.equal(game.round, round);
       assert.equal(game.phase, "playback");
       assert.equal(game.sequence, sequence);
@@ -146,7 +146,7 @@ test("Simon rounds grow from one item to 7–11, preserving every earlier item a
         assert.equal(game.cursor, step + 1);
         if (step < round - 1) assert.equal(game.phase, "input");
       }
-      if (round < 7 + level) {
+      if (round < (7 + Math.floor(level * 4 / 19))) {
         assert.equal(result(game).score, 0, "unfinished runs cannot award rewards");
         assert.equal(game.phase, "roundGap");
         const nextAt = game.nextAt;
@@ -156,7 +156,7 @@ test("Simon rounds grow from one item to 7–11, preserving every earlier item a
         assert.equal(game.litLantern, null);
       }
     }
-    assert.deepEqual(result(game), { completed: true, score: 7 + level, maxScore: 7 + level, cancelled: false, earningsMultiplier: 1 });
+    assert.deepEqual(result(game), { completed: true, score: (7 + Math.floor(level * 4 / 19)), maxScore: (7 + Math.floor(level * 4 / 19)), cancelled: false, earningsMultiplier: 1 });
     assert.equal(input(game, { type: "cancel" }, game.updatedAt), game);
     assert.equal(press(game, 0, game.updatedAt), game);
     assert.equal(initial.score, 0);

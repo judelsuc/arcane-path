@@ -242,6 +242,16 @@ test("offers/active caps, duplicate template and bounded history are enforced wi
   assert.throws(() => validateServiceQuests(over));
 });
 
+test("different characters can offer the same kind of service without suppressing new quests", () => {
+  let current = createServiceOffer(state(), offerOptions(QUEST_TEMPLATES[0], 1, { characterId: nonce(11) }));
+  current = acceptServiceQuest(current, nonce(1));
+  current = createServiceOffer(current, offerOptions(QUEST_TEMPLATES[0], 2, { characterId: nonce(12) }));
+  validateServiceQuests(current);
+  assert.equal(current.serviceQuests.offers.length, 1);
+  assert.throws(() => createServiceOffer(current,
+    offerOptions(QUEST_TEMPLATES[1], 3, { characterId: nonce(11) })), /duplicate/);
+});
+
 test("ended and pending gameplay blocks physical quest actions, without mutating the input", () => {
   const blockers = [{ ended: "health" }, { events: { pending: {} } }, { actionPending: true },
     { pendingAction: {} }, { transport: { booking: { status: "active" } } },

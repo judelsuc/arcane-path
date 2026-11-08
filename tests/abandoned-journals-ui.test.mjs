@@ -37,8 +37,9 @@ test("SIDEQUEST pickup, progress, delivery and death publication never alter own
     photos: ["PRIVATE"], notes: "PRIVATE" };
   const quest = { id: "3".repeat(32), parent: "Other parent", history: ["Earlier town"],
     stages: [{ name: "Other town", latitude: 44, longitude: 2 }], step: 0, delivered: false };
-  let held = false, delivered = false, paused = false, atTarget = true;
+  let held = false, delivered = false, paused = false, atTarget = true, pauseFetch = false, release;
   globalThis.fetch = async (url, options) => {
+    if (pauseFetch) await new Promise(resolve => { release = resolve; });
     const body = JSON.parse(options.body);
     sent.push(body);
     assert.equal(url, "/api/abandoned-journals");
@@ -61,6 +62,18 @@ test("SIDEQUEST pickup, progress, delivery and death publication never alter own
       },
     });
 
+    await ui.whenIdle();
+    pauseFetch = true;
+    const inFlight = nodes["abandoned-refresh"].listeners.click();
+    await new Promise(resolve => setImmediate(resolve));
+    const controller = new AbortController();
+    const waiting = ui.whenIdle(controller.signal);
+    const timeout = new DOMException("Notebook synchronization timed out", "TimeoutError");
+    controller.abort(timeout);
+    await assert.rejects(waiting, error => error === timeout);
+    pauseFetch = false;
+    release();
+    await inFlight;
     await ui.whenIdle();
     const sentBeforePause = sent.length;
     paused = true;

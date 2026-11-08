@@ -17,6 +17,7 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
   const trigger = $("open-conversation");
   let selected = "services";
   let currentCharacter;
+  let characterLocation;
   let available = [];
   let canCreate = false;
   let limit = 4;
@@ -64,6 +65,14 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
 
   function localize() {
     const current = validContext(true);
+    if (currentCharacter && (!current ||
+        characterLocation?.journey !== current.state.serverJourney.id ||
+        characterLocation.col !== current.state.col || characterLocation.row !== current.state.row)) {
+      currentCharacter = undefined;
+      characterLocation = undefined;
+      exchangeReply = undefined;
+      if (dialog.open) dialog.close();
+    }
     const enabled = current && !current.blocked;
     if (!current && (selector.open || dialog.open)) {
       selector.close();
@@ -258,6 +267,8 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
       const meeting = await characters.meet(current.state, character.id);
       if (!sameJourney(current)) return;
       currentCharacter = { ...character, familiarity: meeting?.familiarity ?? character.familiarity };
+      characterLocation = { journey: current.state.serverJourney.id,
+        col: current.state.col, row: current.state.row };
       selected = "services";
       exchangeReply = undefined;
       $("conversation-options").open = false;
@@ -366,6 +377,7 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
     reset() {
       selected = "services";
       currentCharacter = undefined;
+      characterLocation = undefined;
       exchangeReply = undefined;
       releasePortraits();
       available = [];

@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from abandoned_journals import JournalForbidden
 from asset_storage import AssetError, S3Blobs, local_storage
 from change_requests import (ChangeRequests, PREFIX, RETENTION, SCOPE, delete_versions,
-                             export_report, purge, validate_image, validate_snapshot)
+                             export_report, delete_report, report_storage, purge, validate_image, validate_snapshot)
 from journeys import JourneyCapacity, JourneyConflict, JourneyRequest
 
 
@@ -78,6 +78,32 @@ class ChangeRequestTests(unittest.TestCase):
         self.assertEqual(output.stat().st_mode & 0o777, 0o700)
         self.assertEqual((output / "request.json").stat().st_mode & 0o777, 0o600)
         self.assertNotIn("private", json.dumps(report))
+
+    def test_manual_local_storage_accepts_without_a_retention_timer_and_can_delete_after_review(self):
+        root = self.root / "reports"
+        root.mkdir(mode=0o700)
+        with patch.dict("os.environ", {"ARCANE_CHANGE_REQUESTS_LOCAL_DIR": str(root)}):
+            assets = report_storage(self.assets)
+        service = ChangeRequests(self.journeys, self.service.authorization,
+                                 enabled=True, assets=assets, manual_cleanup=True)
+        with self.assets.catalogue.connection() as db:
+            db.execute("DELETE FROM change_request_retention")
+        service.submit(self.data, "private")
+        self.assertTrue(list(root.rglob("*")))
+        export_report(assets, self.data["id"], self.root / "manual-review")
+        self.assertEqual(delete_report(assets, self.data["id"]), 1)
+        with self.assets.catalogue.connection() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM change_requests").fetchone()[0], 0)
+        self.assertFalse(any(path.is_file() for path in root.rglob("*")))
+
+    def test_local_report_directory_must_be_private_and_manual_cleanup_cannot_use_s3(self):
+        root = self.root / "public"
+        root.mkdir(mode=0o755)
+        with patch.dict("os.environ", {"ARCANE_CHANGE_REQUESTS_LOCAL_DIR": str(root)}), self.assertRaises(AssetError):
+            report_storage(self.assets)
+        bad = SimpleNamespace(blobs=S3Blobs(Mock(), "fixture-bucket"), catalogue=self.assets.catalogue)
+        with self.assertRaises(AssetError):
+            ChangeRequests(self.journeys, self.service.authorization, assets=bad, manual_cleanup=True)
 
     def test_invalid_capability_changed_evidence_and_unconfigured_collection_are_rejected(self):
         with self.assertRaises(JournalForbidden):

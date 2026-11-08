@@ -13,7 +13,7 @@ function assemble(game) {
 }
 
 test("all levels have an assembled model and unique solvable shelves with colour and size distractors", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     for (const draw of [0, 0.1, 0.5, 0.999]) {
       const game = createGame({ level, random: () => draw, now: 10 });
       const rules = difficulty(level);
@@ -64,12 +64,12 @@ test("incomplete and mismatching builds can be corrected, without resetting the 
 });
 
 test("time starts only on Start, survives selections, and expires exactly at the deadline", () => {
-  let game = createGame({ level: 4 });
+  let game = createGame({ level: 19 });
   game = advance(game, 500000);
   assert.equal(game.status, "ready");
   assert.equal(game.startedAt, null);
   game = act(game, "start");
-  const end = game.startedAt + difficulty(4).timeMs;
+  const end = game.startedAt + difficulty(19).timeMs;
   game = assemble(game);
   const before = advance(game, end - 1);
   assert.equal(act(before, "submit").status, "completed");
@@ -105,15 +105,15 @@ test("cancellation from ready or partially built is terminal and never rewards",
 test("fresh rounds vary and difficulty increases choices while reducing time", () => {
   assert.notDeepEqual(createGame({ random: () => 0 }).model, createGame({ random: () => 0.9 }).model);
   assert.equal(difficulty(0).timeMs, 60000);
-  assert.equal(difficulty(4).timeMs, 36000);
-  for (let level = 1; level <= 4; level++) {
-    assert.ok(difficulty(level).options > difficulty(level - 1).options);
+  assert.equal(difficulty(19).timeMs, 36000);
+  for (let level = 1; level <= 19; level++) {
+    assert.ok(difficulty(level).options >= difficulty(level - 1).options);
     assert.ok(difficulty(level).timeMs < difficulty(level - 1).timeMs);
   }
 });
 
 test("invalid inputs, clocks, choices and forged states fail explicitly", () => {
-  for (const level of [-1, 5, 1.5, "1", NaN]) assert.throws(() => createGame({ level }));
+  for (const level of [-1, 20, 1.5, "1", NaN]) assert.throws(() => createGame({ level }));
   for (const random of [() => 1, () => -0.1, () => NaN, () => "0", null]) assert.throws(() => createGame({ random }));
   for (const now of [-1, Infinity, NaN, "0", Number.MAX_SAFE_INTEGER]) assert.throws(() => createGame({ now }));
   const game = createGame({ now: 5 });
@@ -149,7 +149,7 @@ test("only current-cell mapped public active bicycle venues qualify", () => {
     { neighbours: [cell({ shop: "bicycle" })] }]) assert.equal(available(value), false);
 });
 test("Magician replaces exactly one exact match with a repaintable correct-size piece at every level", () => {
-  for (let level = 0; level <= 4; level++) for (const options of [
+  for (let level = 0; level <= 19; level++) for (const options of [
     { journeyCard: "magician" }, { dailyCard: "magician" },
     { journeyCard: "magician", dailyCard: "magician" },
   ]) {
@@ -191,7 +191,7 @@ test("normal workshop retains six exact choices and ignores repaint attempts", (
 });
 
 test("Magician can repaint every fitted part, including wrong sizes, without changing geometry", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     let game = createGame({ level, resonance: true, random: () => 0 });
     game = input(game, { type: "start" }, 0);
     for (const part of PARTS) {

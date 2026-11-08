@@ -1,5 +1,14 @@
 # Les Arcanes du Chemin
 
+## Private player feedback
+
+Bug/change reports contain the confirmed comment, an allowlisted diagnostic
+snapshot and a validated game screenshot. They stay private in PostgreSQL and
+the server's dedicated screenshot directory, never automatically published or
+sent to an AI service. Reviewer access expires after 90 days; physical cleanup
+is manual during feedback review, not automatic. Operator instructions are in
+[Infrastructure](./doc/INFRASTRUCTURE.md#private-filesystem-activation-and-manual-review).
+
 ## Arrival engravings and immersive dialogue
 
 Approved, visible knife engravings appear directly in the cell description on
@@ -38,6 +47,14 @@ previously missing icons may remain cached until the tab is reopened.
 
 ## Spontaneous artifact stories
 
+The main world's 22 magical objects start at distinct geographic locations
+across 22 European countries, independent of the player's starting map.
+Existing worlds receive one redistribution of all unowned objects, including
+player caches; carried objects remain with their owners. Relocated generations
+invalidate old location leads. Subsequent player caches are not redistributed,
+and the isolated lore playtest keeps its nearby settlement placements.
+Town and region leads describe the object's destination, not the player's map.
+
 Characters receive fixed knowledge of one to three magical objects at creation:
 an authored legend, and sometimes an approximate town/region lead captured from
 the public, unowned artifact world. Their unspoken knowledge stays server-side.
@@ -57,6 +74,10 @@ including for large saved journeys. A failed response leaves the command
 pending and movement blocked until its receipt is acknowledged; retrying
 reuses that receipt without repeating a paid action. The server reports
 artifact synchronization failures distinctly from new-journey creation.
+While synchronization blocks actions, its status is visible on the map;
+failures offer receipt-safe retry without reloading the game. Waiting for an
+in-flight notebook synchronization is limited to 20 seconds and releases the
+action lock on failure. All other blocking reasons appear beside the action bar.
 
 ## Companion presence and hunting
 
@@ -759,19 +780,19 @@ l'exercice ; l'Aide explique la variation active.
 | Vendanges | L'Imperatrice | Écraser les grappes pourries avec Espace ; une grappe pourrie dans un panier retire un point. |
 | Atelier | Le Bateleur | Repeindre toute pièce montée ; une pièce impose de trouver sa bonne taille puis sa couleur. |
 | Carte postale | L'Etoile | Retenir trois reperes dont seules les positions restent visibles. |
-| Petanque | La Force | Tenter un carreau une fois : Main sure puis une boule cible, a toute puissance ; 75/65/55/45/35 % de reussite selon le niveau. |
-| Objets trouves | La Lune | Inspecter une paire ressemblante avant de confirmer, toujours en 15 secondes. |
+| Petanque | La Force | Tenter un carreau une fois : Main sure puis une boule cible, a toute puissance ; de 75 % a 35 % de reussite sur vingt niveaux. |
+| Objets trouves | La Lune | Inspecter une paire ressemblante avant de confirmer, avec 15 a 34 secondes selon le niveau. |
 | Lanternes | L'Hermite | Lanternes masquees pendant la demonstration ; petites etincelles aux positions jouees avec les notes, puis lanternes visibles pour repondre. |
 | Librairie | La Papesse | Interpreter le souhait d'un lecteur, avec plusieurs titres acceptables. |
 | Marche | La Justice | Equilibrer une pesee pour le premier client. |
 
 Test direct de Cafe rush : ouvrir `/cafe-preview.html?lang=fr` sur le serveur
 local (`?lang=en` pour l'anglais). Ce bac a sable reutilise le vrai dialogue,
-les regles et les raccourcis, avec un cafe explicitement fictif et cinq niveaux.
+les regles et les raccourcis, avec un cafe explicitement fictif et vingt niveaux.
 Il ne lit ni ne modifie la sauvegarde du voyage.
 
 Test direct de musique : `/music-preview.html?lang=fr` (`?lang=en` en anglais),
-avec son active et niveaux 0 a 4, sans acces a la sauvegarde. Utiliser un serveur
+avec son active et niveaux 0 a 19, sans acces a la sauvegarde. Utiliser un serveur
 statique pour ces deux pages (par exemple `python3 -m http.server 8777 --bind 127.0.0.1`) :
 elles lisent directement les fichiers de configuration publics.
 
@@ -791,7 +812,7 @@ Memoriser les lettres des colis devant les maisons fictives, puis choisir
 un colis avec 1–7 et maintenir les fleches pour rouler librement a velo.
 La maison a portee s'illumine ; Espace ou le bouton Livrer depose le colis.
 Des boutons directionnels maintenus permettent aussi de jouer au tactile.
-Niveaux 0 a 4 ; aucune sauvegarde ni consequence sur le
+Niveaux 0 a 19 ; aucune sauvegarde ni consequence sur le
 voyage : l'integration des couts et gains reste a faire apres validation.
 Le plateau illustre colis, maisons et depot. Des consignes par phase expliquent
 les associations a memoriser, puis le colis en main et la progression des
@@ -806,7 +827,7 @@ Les chiffres de la rangee superieure et du pave numerique selectionnent les coli
 (1–6, et 7 au dernier niveau). Une fois livre, le colis reste dessine devant sa
 maison avec sa lettre et une coche ; les destinations encore inconnues restent
 masquees.
-La difficulte augmente de 3 a 7 colis, de 3×3 a 5×5 maisons et reduit la
+La difficulte augmente de 4 a 7 colis, de 3×3 a 5×5 maisons et reduit la
 memorisation de 15 a 9 secondes. La tournee passe de 60 a 100 secondes pour
 tenir compte du village plus grand ; trois erreurs terminent toujours la partie.
 Jeu de livraisons valide en test local par l'utilisateur. Le compte a rebours
@@ -820,10 +841,8 @@ Relacher arrete uniquement le mouvement horizontal. Les boutons fleches
 maintenus fonctionnent aussi au tactile. Le panier sous la grappe est souligne ;
 couleurs, symboles et noms permettent de reperer les associations.
 Un son distingue bonne et mauvaise reception, avec coupure locale.
-Les niveaux 0 a 4 proposent 3, 3, 4, 5 et 6 couleurs/paniers, avec des chutes
-de 2,5, 2,45, 2,1, 1,75 et 1,4 secondes. Le niveau facile a ete renforce
-apres le retour utilisateur ; les autres niveaux, dont le difficile valide,
-restent inchanges. Jeu de vendanges valide en test local avec cet ajustement.
+Les niveaux 0 a 19 proposent progressivement 3 a 6 couleurs/paniers,
+avec des chutes de 2,5 a 1,4 seconde.
 La vitesse horizontale reste fixe. Chaque manche dure 30 secondes à tous les
 niveaux, sans limite de grappes : plus vous triez correctement, plus le gain
 potentiel augmente, sans multiplicateur de vitesse. Appuyez puis relâchez
@@ -846,7 +865,7 @@ Les tailles de guidon sont nettement distinctes ; un refus nomme les
 pièces incorrectes sans donner la solution. Les pieces peuvent etre
 remplacees ; Verifier le velo valide le modele complet, ou indique les pieces
 a revoir sans remettre le chronometre a zero.
-Les niveaux 0 a 4 donnent 3 a 7 choix par piece et 60, 54, 48, 42 ou 36 secondes
+Les niveaux 0 a 19 donnent progressivement 3 a 7 choix par piece et 60 a 36 secondes
 pour assembler un velo. Le temps ne commence qu'avec Commencer et son expiration
 termine la partie. Cliquer/toucher les choix illustres, ou Tab/Entree/Espace ;
 1–6 selectionne les categories, Echap annule. Aucune sauvegarde ni remuneration
@@ -861,13 +880,12 @@ Le modele et la comparaison finale gardent la meme grande taille de symboles
 (36 a 52 px). Sous 640 px, les deux dessins sont empiles plutot que reduits
 pour tenir cote a cote ; les grilles de 3 a 7 cases restent lisibles.
 Croquis de carte postale : observer un motif original, puis le reproduire
-de memoire en cliquant/touchant les cases. Les niveaux 0 a 4 proposent des
-grilles 3×3, 4×4, 5×5, 6×6 et 7×7, avec 1, 1, 2, 2 et 4 couleurs.
-Pour reduire le saut entre les niveaux 2 et 3, le niveau 2 garde deux couleurs
-mais demande une memorisation plus rapide (7 secondes au lieu de 9). Le niveau 3
-garde aussi deux couleurs et laisse 12 secondes au lieu de 10 pour sa grille
-plus grande. L'observation dure ainsi 7, 8, 7, 12 ou 11 secondes ; ces parametres sont affiches
-avant de commencer. Choisir la couleur dans la palette, puis peindre les cases ;
+de memoire en cliquant/touchant les cases. Les niveaux 0 a 19 proposent des
+grilles de 3×3 a 7×7, avec une couleur jusqu'au niveau 6, deux aux niveaux
+7 a 14, puis quatre. L'observation commence a 10 secondes et augmente
+avec la taille et les nouvelles couleurs (environ 23 secondes au dernier niveau).
+Ces parametres sont affiches avant de commencer.
+Choisir la couleur dans la palette, puis peindre les cases ;
 recliquer avec la meme couleur efface. La gomme et Effacer permettent de corriger.
 Les couleurs ont aussi des symboles distincts (#, O, +, *).
 Les fleches deplacent le focus, Espace/Entree bascule une case. Dessiner maintenant
@@ -876,7 +894,7 @@ pour les cases superflues ou mal colorees. Le resultat conserve les symboles
 de couleur et la taille reelle de la grille. La phase de dessin est sans limite de temps.
 Au resultat, le modele original et le dessin du joueur sont affiches cote a cote
 avec les memes dimensions et couleurs. Jeu 7 valide localement ; pas de publication.
-Niveaux 0 a 4, Nouvelle partie et Echap pour annuler ; aucune sauvegarde ou
+Niveaux 0 a 19, Nouvelle partie et Echap pour annuler ; aucune sauvegarde ou
 remuneration du voyage n'est appliquee.
 
 Huitieme test : `/petanque-preview.html?lang=en` (ou `?lang=fr`).
@@ -886,7 +904,7 @@ Fleches Gauche/Droite pour viser, Haut/Bas pour la
 puissance, Maj pour de grands pas, Espace/Entree pour lancer, Echap pour annuler.
 Les curseurs et boutons permettent aussi de jouer au tactile. Les niveaux
 augmentent la difficulte du terrain et la precision de l'ordinateur.
-Deux a six reliefs alternent bosses et creux, dont les pixels sont colores selon
+Deux a onze reliefs alternent bosses et creux, dont les pixels sont colores selon
 la hauteur locale : clair pour une bosse, sombre pour un creux ;
 leurs pentes locales influencent reellement la trajectoire et la vitesse.
 Les niveaux superieurs ont davantage de relief et des hauteurs plus marquees.
@@ -920,8 +938,9 @@ leur description reste accessible aux lecteurs d'ecran.
 Les cartes disposent de grandes illustrations vectorielles (jusqu'a 260 px,
 320 px en inspection). Sous 640 px, les choix gardent deux colonnes et des
 marges reduites pour rester lisibles sans debordement horizontal.
-Les niveaux 0 a 4 proposent 4 a 8 objets et des indices de moins en moins directs.
-Un compte a rebours visible de 15 secondes (reduit de 90, puis 60 et 30 apres les retours de test)
+Les niveaux 0 a 19 proposent progressivement 4 a 8 objets et des indices
+de moins en moins directs. Le compte a rebours visible augmente de 15 a
+34 secondes pour laisser le temps de lire les indices plus complexes ; il
 commence uniquement sur Commencer,
 devient urgent dans les dix dernieres secondes et termine l'enquete a zero.
 Trois erreurs terminent aussi l'enquete. Les clics apres le delai ne comptent pas.
@@ -930,14 +949,16 @@ le test. Les eventuels cadeaux de remerciement restent imaginaires :
 aucune sauvegarde, integration au voyage ou remuneration reelle.
 
 Cafe rush propose des commandes de tailles variees : 3 a 5 articles au niveau 0,
-jusqu'a 5 a 7 au niveau 4. Les quantites repetees sont regroupees (`Cafe x2`).
+jusqu'a 5 a 7 au niveau 19. Les quantites repetees sont regroupees (`Cafe x2`).
+A partir du niveau 5, les ingredients demandes suivent l'ordre aleatoire de la
+recette, au lieu de celui des boutons ; cet ordre reste stable pendant la commande.
 Les boutons d'ingredients sont carres et espaces ; un plateau illustre reserve
 une place fixe a chaque ingredient, avec de grandes illustrations et un compteur
 superpose (les ingredients absents restent estompes), un format de plateau 4:2,
 plus un resume textuel
 accessible.
 La patience des clients est de 14 secondes au niveau 0, puis diminue jusqu'a
-8 secondes au niveau 4. Chaque ingredient effectivement ajoute joue un petit
+8 secondes au niveau 19. Chaque ingredient effectivement ajoute joue un petit
 son distinct. Une ambiance originale synthetisee (brouhaha, machine et vaisselle)
 boucle pendant le service, sans enregistrement externe. Volume et coupure
 suivent Options ; fermeture, fin du service ou onglet masque arretent les sons.
@@ -1337,6 +1358,13 @@ mais n'est plus utilise pour creer les nouvelles pistes.
 Pendant la marche, une roue apparait aussi au centre de chaque morceau
 visible en attente de streaming. Elle disparait au chargement ou en cas
 d'echec ; les zones inconnues non demandees gardent simplement leurs « ? ».
+Le cache de 25 morceaux conserve les terrains les plus recemment consultes,
+y compris la position du joueur : les telechargements de fond ne doivent pas
+faire disparaitre son terrain et griser toutes les actions sans deplacement.
+Un pas vers un morceau non charge lance sa preparation sans bloquer les
+actions ni deplacer le joueur. Le message pres de la carte invite a refaire
+ce pas quand le terrain est pret ; aucun deplacement differe ne se declenche
+apres une autre action. Un echec de chargement reste visible et reessayable.
   Si l'API OSM depasse sa limite de noeuds, les requetes sont subdivisees ;
   si quatre niveaux ne suffisent pas, le chargement essaie Overpass
   (overpass-api.de, puis overpass.kumi.systems) sur la zone complete.

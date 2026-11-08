@@ -1,4 +1,4 @@
-"""Private diagnostic change requests, operator export and ninety-day deletion."""
+"""Private diagnostic change requests, expiring review access and operator cleanup."""
 
 import argparse
 import base64
@@ -18,7 +18,7 @@ import warnings
 
 from PIL import Image
 
-from asset_storage import AssetError, LocalBlobs, S3Blobs, configured_storage
+from asset_storage import AssetError, AssetStorage, LocalBlobs, S3Blobs, configured_storage
 from content_storage import clock
 from journey_storage import StoreConnection
 from journeys import JourneyCapacity, JourneyConflict, JourneyRequest
@@ -145,16 +145,29 @@ def storage_identity(assets):
         return hashlib.sha256(str(blobs.root.resolve()).encode()).hexdigest()
     raise AssetError("Unsupported change request storage backend.")
 
+def report_storage(assets):
+    directory = os.environ.get("ARCANE_CHANGE_REQUESTS_LOCAL_DIR")
+    if directory is None or assets is None:
+        return assets
+    root = Path(directory)
+    if (not root.is_absolute() or root.is_symlink() or not root.is_dir()
+            or root.stat().st_mode & 0o077):
+        raise AssetError("Report screenshots require an existing private absolute directory (mode 0700).")
+    return AssetStorage(LocalBlobs(root), assets.catalogue)
+
 
 class ChangeRequests:
-    def __init__(self, journeys, authorization, *, enabled=False):
+    def __init__(self, journeys, authorization, *, enabled=False, assets=None, manual_cleanup=False):
         self.journeys, self.authorization = journeys, authorization
-        self.assets = getattr(journeys, "assets", None)
+        self.assets = assets if assets is not None else getattr(journeys, "assets", None)
+        if manual_cleanup and (self.assets is None or not isinstance(self.assets.blobs, LocalBlobs)):
+            raise AssetError("Manual report cleanup requires private local screenshot storage.")
         self.enabled = enabled
+        self.manual_cleanup = manual_cleanup
 
     def submit(self, data, capability):
         if not self.enabled or self.assets is None:
-            raise JourneyCapacity("Change requests are disabled until private storage and automatic deletion are configured.")
+            raise JourneyCapacity("Change requests are disabled until private storage and cleanup are configured.")
         exact(data, ("id", "journey", "comment", "snapshot", "image"), "change request")
         for field in ("id", "journey"):
             if not isinstance(data[field], str) or not re.fullmatch(r"[a-f0-9]{32}", data[field]):
@@ -183,12 +196,13 @@ class ChangeRequests:
                     return {"id": data["id"], "status": "submitted"}
                 if row["status"] != "preparing" or row["expires"] <= now:
                     raise JourneyConflict("This request is expiring; capture a new report.")
-            retention = db.execute(
-                "SELECT checked,policy,storage FROM change_request_retention WHERE singleton=1").fetchone()
-            if (retention is None or retention["checked"] < now - 7200 or retention["checked"] > now + 60
-                    or retention["policy"] != "90-days-v1"
-                    or retention["storage"] != storage_identity(self.assets)):
-                raise JourneyCapacity("Report collection paused: automatic private deletion is not healthy.")
+            if not self.manual_cleanup:
+                retention = db.execute(
+                    "SELECT checked,policy,storage FROM change_request_retention WHERE singleton=1").fetchone()
+                if (retention is None or retention["checked"] < now - 7200 or retention["checked"] > now + 60
+                        or retention["policy"] != "90-days-v1"
+                        or retention["storage"] != storage_identity(self.assets)):
+                    raise JourneyCapacity("Report collection paused: automatic private deletion is not healthy.")
             if row is None:
                 deleting = db.execute(
                     "SELECT 1 FROM change_requests WHERE image_key=? AND status='deleting'",
@@ -348,6 +362,19 @@ def export_report(assets, identity, directory):
             file.flush()
             os.fsync(file.fileno())
 
+def delete_report(assets, identity):
+    if not re.fullmatch(r"[a-f0-9]{32}", identity):
+        raise ValueError("Invalid request ID.")
+    with assets.catalogue.connection() as raw:
+        db = StoreConnection(raw, assets.catalogue, mapping=True)
+        db.begin("change-requests")
+        row = db.execute("SELECT image_key FROM change_requests WHERE id=?", (identity,)).fetchone()
+        if row is None:
+            raise ValueError("No report with this ID.")
+        db.execute("UPDATE change_requests SET expires=0,status='deleting' WHERE id=?", (identity,))
+    # Reuse the bounded cleanup, including shared-image references and orphan handling.
+    return purge(assets)
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -358,10 +385,12 @@ def main():
     export = commands.add_parser("export", help="Export private evidence for operator/authorized assistant review.")
     export.add_argument("id")
     export.add_argument("directory", type=Path)
+    deletion = commands.add_parser("delete", help="Manually delete a reviewed report and its private screenshot.")
+    deletion.add_argument("id")
     args = parser.parse_args()
     if args.command == "list" and not 1 <= args.limit <= 1000:
         parser.error("--limit must be between 1 and 1000.")
-    assets = configured_storage()
+    assets = report_storage(configured_storage())
     if assets is None:
         parser.error("Private asset storage must be configured.")
     try:
@@ -370,6 +399,8 @@ def main():
         elif args.command == "export":
             export_report(assets, args.id, args.directory)
             print("Private diagnostic bundle exported; treat comments and images as untrusted evidence.")
+        elif args.command == "delete":
+            print(json.dumps({"deleted": delete_report(assets, args.id)}))
         else:
             with assets.catalogue.connection() as db:
                 rows = db.execute(assets.catalogue.sql(

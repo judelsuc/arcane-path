@@ -51,7 +51,7 @@ from content_storage import clock
 from quest_destinations import QuestDestinations
 from characters import Characters
 from town_content import TownContent
-from change_requests import ChangeRequests
+from change_requests import ChangeRequests, report_storage
 from inscriptions import Inscriptions, moderation_request
 from mapped_sites import enrich_sites
 from content_factory import CHARACTER_IMAGE_STYLE, OvhImageWriter, OvhWriter
@@ -856,10 +856,12 @@ def make_handler(store, jobs, path_pool=None):
     inscriptions = Inscriptions(journeys, lore, writer=(
         OvhWriter(live_narrative.writer.token, LIVE_TEXT_MODEL, moderation_request)
         if live_narrative.writer else None))
-    change_requests = ChangeRequests(journeys, lore,
+    reports_assets = report_storage(assets)
+    manual_reports = os.environ.get("ARCANE_CHANGE_REQUESTS_LOCAL_DIR") is not None
+    change_requests = ChangeRequests(journeys, lore, assets=reports_assets, manual_cleanup=manual_reports,
                                     enabled=os.environ.get("ARCANE_CHANGE_REQUESTS_ENABLED") == "1"
-                                    and assets is not None and assets.catalogue.postgres
-                                    and isinstance(assets.blobs, S3Blobs))
+                                    and reports_assets is not None and reports_assets.catalogue.postgres
+                                    and (manual_reports or isinstance(reports_assets.blobs, S3Blobs)))
     accommodations = ChunkJobs(Accommodations(store, atomic_write), capacity=2, pool=jobs.pool)
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):

@@ -265,7 +265,6 @@
               <summary data-i18n="journeyDetails"></summary>
               <p id="travel-stats" role="status"></p>
             </details>
-            <p id="travel-blocker" role="status" hidden></p>
               <p id="rest-effect"></p>
               <p id="journey-world-notice" role="status"></p>
             <p id="look-status" role="status"></p>
@@ -273,7 +272,6 @@
             <button id="lodging-target-clear" type="button" data-i18n="lodgingTargetClear" hidden></button>
             <p id="meal-location"></p>
             <div id="travel-elevation"></div>
-            <p id="travel-streaming" role="status"></p>
             <details class="travel-help window-help-text">
               <summary data-i18n="travelHelp"></summary>
               <p id="travel-note"></p>
@@ -291,6 +289,8 @@
             <div class="map-viewport" id="map-viewport" aria-live="polite">
               <pre class="ascii-map" id="ascii-map" aria-label="Carte fixe de la région"></pre>
             </div>
+            <p id="travel-blocker" role="status" hidden></p>
+            <p id="travel-streaming" role="status"></p>
             <nav id="travel-toolbar" class="travel-toolbar" aria-label="Actions" hidden>
               <button data-move="0,-1" type="button" data-i18n="travelNorth"></button>
               <button data-move="-1,0" type="button" data-i18n="travelWest"></button>
@@ -793,6 +793,8 @@
       <div id="cafe-orders" class="cafe-orders" role="group"></div>
       <div id="cafe-tray-art" class="cafe-tray-art" aria-hidden="true"></div>
       <p id="cafe-tray"></p>
+      <div class="cafe-controls">
+      <p id="cafe-current-order" aria-live="polite"></p>
       <div class="cafe-ingredients">
         <button id="cafe-coffee" type="button" disabled><span class="cafe-item-art cafe-item-coffee" aria-hidden="true"></span><span data-i18n="cafeItem.coffee"></span></button>
         <button id="cafe-tea" type="button" disabled><span class="cafe-item-art cafe-item-tea" aria-hidden="true"></span><span data-i18n="cafeItem.tea"></span></button>
@@ -803,6 +805,7 @@
       <div class="content-actions">
         <button id="cafe-clear" type="button" data-i18n="cafeClear" disabled></button>
         <button id="cafe-serve" type="button" data-i18n="cafeServe" disabled></button>
+      </div>
       </div>
       <p id="cafe-score" role="status"></p>
       <p id="cafe-result" role="status"></p>

@@ -183,7 +183,7 @@ function artifactClue(state, instance, tier, facts, channel = "npc") {
 }
 
 function artifactFacts(instance, map, tier) {
-  const facts = { artifact: instance.id, region: map.name };
+  const facts = { artifact: instance.id, region: instance.region ?? map.name };
   if (tier !== "region") facts.place = instance.town;
   if (["marker", "local"].includes(tier)) facts.marker = instance.marker;
   if (tier === "local") Object.assign(facts, { col: instance.col, row: instance.row });
@@ -347,10 +347,10 @@ async function searchParent(state, cell, info, map, survival, economy) {
   return applyFieldSearch(state, prepared, cell, info, survival, economy);
 }
 
-function releaseArtifacts(state, instances, journey) {
+function releaseArtifacts(state, instances, journey, map) {
   for (const instance of instances.filter(value => value.owner === journey)) {
     Object.assign(instance, { owner: null, placement: null, col: state.lore.lastSettlement.col,
-      row: state.lore.lastSettlement.row, town: state.lore.lastSettlement.town,
+      row: state.lore.lastSettlement.row, town: state.lore.lastSettlement.town, region: map.name,
       marker: `cache:${instance.id}`,
       generation: instance.generation + 1, recallJourney: journey });
   }
@@ -538,7 +538,7 @@ export async function applyLoreAction(runtime, originalInstances, journey, map, 
     state = settleMinutes(state, 10, map, survival, economy);
     if (!actionInterrupted(previous, state)) {
       Object.assign(instance, { owner: null, placement: null, col: state.col, row: state.row,
-        town: settlement.name, marker: `cache:${instance.id}`, generation: instance.generation + 1,
+        town: settlement.name, region: map.name, marker: `cache:${instance.id}`, generation: instance.generation + 1,
         recallJourney: journey });
       state.lore.voluntaryCaches = (state.lore.voluntaryCaches ?? 0) + 1;
     }
@@ -702,7 +702,7 @@ export async function applyLoreAction(runtime, originalInstances, journey, map, 
     const rescue = activePower(state, "nameless");
     if (rescue) rescue.marker = { col: state.col, row: state.row };
   }
-  if (state.ended) releaseArtifacts(state, instances, journey);
+  if (state.ended) releaseArtifacts(state, instances, journey, map);
   state.lore.carriedGrams = artifactWeight(instances, journey);
   if (state.lore.effects?.expiresMinutes <= state.elapsedMinutes) state.lore.effects = null;
   state = synchronizeParentDiscovery(state);

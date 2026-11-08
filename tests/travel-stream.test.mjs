@@ -28,6 +28,26 @@ test("stationary camera requests all eight visible neighbors, including the four
 });
 
 const flush = () => new Promise(resolve => setImmediate(resolve));
+
+test("background downloads retain recently read or revisited player terrain in the bounded cache", async () => {
+  for (const access of ["get", "load"]) {
+    const stream = createChunkStream("firmi", {
+      fetcher: async url => {
+        const params = new URL(url, "http://localhost").searchParams;
+        return new Response(JSON.stringify(chunk(Number(params.get("x")), Number(params.get("y")))));
+      },
+    });
+    try {
+      for (let x = 0; x < 25; x++) await stream.load(x, 0);
+      const player = await stream[access](0, 0);
+      await stream.load(25, 0);
+      assert.equal(stream.get(0, 0), player, "the player's terrain must not become unavailable");
+      assert.equal(stream.get(1, 0), undefined, "evict the least recently used terrain instead");
+      assert.equal(stream.chunks.size, 25);
+    } finally { stream.stop(); }
+  }
+});
+
 function backgroundHarness(fetcher) {
   let clock = 0, id = 0;
   const timers = new Map(), errors = [], loaded = [];
@@ -272,6 +292,32 @@ test("stream fails visibly on provider failure or malformed chunks", async () =>
     await assert.rejects(stream.load(0, 0));
     stream.stop();
   }
+});
+
+test("an unloaded destination can fail and retry while the current terrain stays usable", async () => {
+  let rejectDestination, failed = false;
+  const stream = createChunkStream("firmi", { fetcher: async url => {
+    const x = Number(new URL(url, "http://localhost").searchParams.get("x"));
+    if (x === 1 && !failed) {
+      await new Promise((resolve, reject) => { rejectDestination = reject; });
+    }
+    return new Response(JSON.stringify(chunk(x, 0)));
+  } });
+  try {
+    const current = await stream.load(0, 0);
+    const destination = stream.load(1, 0, true);
+    assert.equal(stream.isPending(1, 0), true);
+    assert.equal(await stream.load(0, 0, true), current);
+    const rejected = assert.rejects(destination, /Network unavailable/);
+    rejectDestination(new TypeError("Network unavailable"));
+    await rejected;
+    await flush();
+    assert.equal(stream.isPending(1, 0), false);
+    assert.equal(stream.get(0, 0), current);
+    failed = true;
+    assert.equal((await stream.load(1, 0, true)).chunk.x, 1);
+    assert.equal(stream.get(0, 0), current);
+  } finally { stream.stop(); }
 });
 
 test("stream cancellation rejects queued work and prevents new work", async () => {

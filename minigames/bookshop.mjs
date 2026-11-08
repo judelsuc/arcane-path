@@ -97,8 +97,10 @@ export function available(cell) {
 }
 
 export function difficulty(level) {
-  if (!Number.isInteger(level) || level < 0 || level > 4) throw new RangeError("Level must be 0–4.");
-  return settings[level];
+  if (!Number.isInteger(level) || level < 0 || level > 19) throw new RangeError("Level must be 0–19.");
+  const tier = Math.floor(level * 4 / 19);
+  return freeze({ ...settings[tier], level, durationMs: Math.round(120000 + level * 80000 / 19),
+    rewardMultiplier: 1 + level * 1.2 / 19 });
 }
 
 function time(now, previous = 0) {

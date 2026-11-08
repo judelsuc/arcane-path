@@ -4,7 +4,7 @@ import { available, difficulty, createGame, input, advance, result, constellatio
 
 const make = (level = 0, sample = 0) => createGame({ level, random: () => sample });
 test("Star marks three occupied positions, connects only correct colours and never alters targets or raw scores", () => {
-  for (let level = 0; level <= 4; level++) for (const sample of [0, 0.25, 0.5, 0.75]) {
+  for (let level = 0; level <= 19; level++) for (const sample of [0, 0.25, 0.5, 0.75]) {
     const normal = make(level, sample);
     for (const options of [{ journeyCard: "star" }, { dailyCard: "star" },
       { journeyCard: "star", dailyCard: "star" }]) {
@@ -67,18 +67,18 @@ test("all original scenes and levels are playable, progressively detailed and re
   const sceneIds = new Set();
   for (const sample of [0, 0.25, 0.5, 0.75, 0.999]) {
     let previous = null;
-    for (let level = 0; level <= 4; level++) {
+    for (let level = 0; level <= 19; level++) {
       const game = make(level, sample);
       sceneIds.add(game.scene);
-      assert.equal(game.target.length, (3 + level) ** 2);
+      assert.equal(game.target.length, (3 + Math.floor(level * 4 / 19)) ** 2);
       assert.equal(game.marks.length, game.target.length);
-      assert.equal(game.colours, [1, 1, 2, 2, 4][level]);
+      assert.equal(game.colours, level < 7 ? 1 : level < 15 ? 2 : 4);
       assert.ok(game.target.every(value => Number.isInteger(value) && value >= 0 && value <= game.colours));
       assert.equal(new Set(game.target.filter(Boolean)).size, game.colours);
       assert.equal(difficulty(level).level, level);
-      assert.equal(game.rewardMultiplier, 1 + level / 4);
+      assert.equal(game.rewardMultiplier, 1 + level / 19);
       if (previous) {
-        assert.ok(game.width > previous.width);
+        assert.ok(game.width >= previous.width);
         assert.ok(game.rewardMultiplier > previous.rewardMultiplier);
       }
       const complete = input(reproduce(drawing(game)), { type: "submit" }, 3);
@@ -111,22 +111,22 @@ test("explicit start, timed observation, early hide, and untimed drawing", () =>
   assert.equal(automatic.marks[0], 1);
 });
 
-test("levels 2 and 3 bridge grid complexity without adding a third colour at the same time", () => {
-  const medium = difficulty(2), harder = difficulty(3);
+test("intermediate levels bridge grid complexity without adding colours at the same time", () => {
+  const medium = difficulty(10), harder = difficulty(14);
   assert.equal(medium.width, 5);
   assert.equal(medium.colours, 2);
-  assert.equal(medium.observeMs, 7000, "level 2 asks for faster memorization than before");
-  assert.equal(harder.width, 6);
+  assert.ok(medium.observeMs >= 16000);
+  assert.equal(harder.width, 5);
   assert.equal(harder.colours, 2);
-  assert.equal(harder.observeMs, 12000, "more time to learn the larger grid");
+  assert.ok(harder.observeMs >= 16000);
   for (const settings of [medium, harder]) {
     const observing = input(make(settings.level), { type: "start" }, 10);
     assert.equal(advance(observing, 10 + settings.observeMs - 1).phase, "observe");
     assert.equal(advance(observing, 10 + settings.observeMs).phase, "draw");
   }
   for (const level of [0, 1, 4]) {
-    assert.equal(difficulty(level).colours, Math.max(1, level));
-    assert.equal(difficulty(level).observeMs, 7000 + 1000 * level);
+    assert.equal(difficulty(level).colours, 1);
+    assert.ok(difficulty(level).observeMs >= 9000);
   }
 });
 
@@ -148,7 +148,7 @@ test("wrong, missing and excess ink reduce score; clear and toggling work", () =
 });
 
 test("invalid options fail safely; invalid actions/times cannot change state", () => {
-  for (const level of [-1, 5, 1.5, NaN, Infinity, "2", null])
+  for (const level of [-1, 20, 1.5, NaN, Infinity, "2", null])
     assert.throws(() => difficulty(level), RangeError);
   for (const sample of [-0.1, 1, NaN, Infinity, undefined, "0"])
     assert.throws(() => createGame({ random: () => sample }), RangeError);
@@ -196,7 +196,7 @@ test("immutable states/results, terminal actions, and cancellation never award a
 });
 
 test("wrong colours lose points, repainting and erasing work, and clear preserves palette rules", () => {
-  let game = reproduce(drawing(make(4)));
+  let game = reproduce(drawing(make(19)));
   const index = game.target.findIndex(value => value === 1);
   const position = { row: Math.floor(index / game.width), col: index % game.width };
   game = input(game, { type: "toggle", ...position, colour: 2 }, 2);

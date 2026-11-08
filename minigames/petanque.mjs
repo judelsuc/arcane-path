@@ -56,8 +56,8 @@ function snap(value, step) {
 }
 
 function checkLevel(level) {
-  if (!Number.isInteger(level) || level < 0 || level >= LEVELS.length)
-    throw new RangeError(`Pétanque level must be an integer from 0 to ${LEVELS.length - 1}.`);
+  if (!Number.isInteger(level) || level < 0 || level > 19)
+    throw new RangeError("Pétanque level must be an integer from 0 to 19.");
   return level;
 }
 
@@ -103,17 +103,25 @@ export function available(cell) {
 }
 
 export function difficulty(level = 0) {
-  const spec = LEVELS[checkLevel(level)];
+  checkLevel(level);
+  const tier = Math.floor(level * 4 / 19);
+  const fraction = level * 4 / 19 - tier;
+  const a = LEVELS[tier], b = LEVELS[Math.min(4, tier + 1)];
+  const mix = (x, y) => x + (y - x) * fraction;
+  const spec = { ...a, friction: mix(a.friction, b.friction), slope: mix(a.slope, b.slope),
+    jack: a.jack.map((v, i) => mix(v, b.jack[i])),
+    radii: a.radii.map((v, i) => mix(v, b.radii[i])), rewardMultiplier: 1 + level / 19 };
   const [perfect, good, near] = spec.radii;
   return deepFreeze({
     level, label: spec.label, terrain: spec.terrain, friction: spec.friction, slope: spec.slope,
     jackDistance: [...spec.jack], radii: { perfect, good, near },
     rewardMultiplier: spec.rewardMultiplier, boules: PETANQUE.boules,
     maxScore: PETANQUE.boules, timeLimitMs: PETANQUE.timeLimitMs,
-    reliefCount: { min: 2 + level * 2, max: 3 + level * 2 }, reliefHeight: 0.008 + level * 0.003,
-    computerAngleError: [5, 3.5, 2.5, 1.5, 0.75][level],
-    computerPowerError: [7, 5, 3.5, 2, 1][level],
-    carreauChance: [0.75, 0.65, 0.55, 0.45, 0.35][level],
+    reliefCount: { min: 2 + Math.floor(level * 8 / 19), max: 3 + Math.floor(level * 8 / 19) },
+    reliefHeight: 0.008 + level * 0.012 / 19,
+    computerAngleError: 5 - level * 4.25 / 19,
+    computerPowerError: 7 - level * 6 / 19,
+    carreauChance: 0.75 - level * 0.4 / 19,
   });
 }
 
@@ -124,7 +132,7 @@ export function createGame({ level = 0, random = Math.random, now = 0, ...option
   checkNow(now);
   const [near, far] = rules.jackDistance;
   const jack = {
-    x: round((draw(random) * 2 - 1) * (0.25 + 0.25 * level), 2),
+    x: round((draw(random) * 2 - 1) * (0.25 + level / 19), 2),
     y: round(near + draw(random) * (far - near), 2),
   };
   const heading = draw(random) * Math.PI * 2;

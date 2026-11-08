@@ -19,7 +19,7 @@ from abandoned_journals import AbandonedJournals, JournalForbidden
 from asset_storage import AssetError, local_storage
 from journeys import JourneyCapacity, JourneyConflict, JourneyRequest, JourneyStore
 from lore_playtest import LorePlaytest
-from main_artifacts import MainArtifacts, WORLD
+from main_artifacts import MainArtifacts, WORLD, EUROPE_DISTRIBUTION_VERSION
 from characters import Characters
 from travel_server import ChunkJobs, ChunkStore, atomic_write, make_handler
 
@@ -38,6 +38,11 @@ class ArtifactStorageTests(unittest.TestCase):
         self.now = 10_000_000
         self.api = MainArtifacts(self.first, self.books, clock=lambda: self.now)
         self.other = MainArtifacts(self.second, self.other_books, clock=lambda: self.now)
+        def local_world(base, origin):
+            world = LorePlaytest.initial_world(base, origin)
+            world["distributionVersion"] = EUROPE_DISTRIBUTION_VERSION
+            return world
+        self.api.initial_world = self.other.initial_world = local_world
         self.record, self.journey, self.token = self.source()
         self.state = copy.deepcopy(self.record["state"])
 

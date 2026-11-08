@@ -14,8 +14,8 @@ class Element {
   addEventListener(type, fn) { this.events[type] = fn; }
 }
 const settle = () => new Promise(resolve => setImmediate(resolve));
-function fixture(t, respond, { pending = false, storesRequest = false } = {}) {
-  const previous = globalThis.document, nodes = new Map(), calls = [];
+function fixture(t, respond, { pending = false, storesRequest = false, beforeRequest } = {}) {
+  const previous = globalThis.document, nodes = new Map(), calls = [], locks = [];
   const get = id => {
     if (!nodes.has(id)) nodes.set(id, new Element());
     return nodes.get(id);
@@ -37,7 +37,7 @@ function fixture(t, respond, { pending = false, storesRequest = false } = {}) {
     conversationRumour: { characterId: "b".repeat(32), artifactId: "hermit", clueRevision: null } });
   const ui = setupArtifactQuests((key, args) => translate("en", key, args), {
     context: () => ({ state, blocked }), mutate: transform => { state = transform(state); return true; },
-    lock() {}, character: () => speaker, client: { pending: () => pending,
+    lock(value) { locks.push(value); }, beforeRequest, character: () => speaker, client: { pending: () => pending,
       acknowledge() { acknowledged++; pending = false; },
       async request(_state, action) {
         calls.push(action);
@@ -45,13 +45,28 @@ function fixture(t, respond, { pending = false, storesRequest = false } = {}) {
         return respond ? respond(result()) : result();
       } },
   });
-  return { ui, get, calls, state: () => state, acknowledged: () => acknowledged,
+  return { ui, get, calls, locks, state: () => state, acknowledged: () => acknowledged,
     speaker(value) { speaker = value; }, blocked(value) { blocked = value; },
     changeJourney() { state = { ...state, serverJourney: { id: "c".repeat(32) } }; } };
 }
 const rumour = { characterId: "b".repeat(32), eventId: "00000000-0000-4000-8000-000000000001",
   artifactId: "hermit" };
 const speaker = { id: "b".repeat(32), name: "Camille" };
+
+test("a timed-out prerequisite releases the action lock and exposes retry on the map", async t => {
+  const f = fixture(t, undefined, { beforeRequest: async signal => {
+    assert.ok(signal instanceof AbortSignal);
+    throw new DOMException("Notebook synchronization timed out", "TimeoutError");
+  } });
+  f.ui.hear(rumour, speaker);
+  await settle();
+  assert.deepEqual(f.locks, [true, false]);
+  assert.deepEqual(f.calls, []);
+  const recovery = f.get("artifact-recovery");
+  assert.equal(recovery.hidden, false);
+  assert.equal(recovery.children[0].textContent, "Notebook synchronization timed out");
+  assert.equal(recovery.children.find(node => node.type === "button").disabled, false);
+});
 
 test("pending artifact commands can recover from the map while Dialogue and Quests are blocked", async t => {
   const f = fixture(t, undefined, { pending: true });
@@ -70,7 +85,7 @@ test("pending artifact commands can recover from the map while Dialogue and Ques
   assert.equal(recovery.hidden, true);
 });
 
-test("routine artifact syncs keep the map recovery banner hidden while in flight", async t => {
+test("routine artifact syncs explain the action lock on the map while in flight", async t => {
   let release, observedHidden;
   const f = fixture(t, async result => {
     observedHidden = f.get("artifact-recovery").hidden;
@@ -81,8 +96,10 @@ test("routine artifact syncs keep the map recovery banner hidden while in flight
   await settle();
   f.ui.localize();
   assert.equal(f.ui.pending(f.state()), true, "the in-flight command is stored for crash recovery");
-  assert.equal(f.get("artifact-recovery").hidden, true);
-  assert.equal(observedHidden, true);
+  assert.equal(f.get("artifact-recovery").hidden, false);
+  assert.equal(observedHidden, false);
+  assert.equal(f.get("artifact-recovery").children[0].textContent, "Contacting the artifact world…");
+  assert.equal(f.get("artifact-recovery").children.find(node => node.type === "button").disabled, true);
   release();
   await settle();
   assert.equal(f.get("artifact-recovery").hidden, true);

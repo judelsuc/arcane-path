@@ -25,10 +25,10 @@ export function available(cell) {
 }
 
 export function difficulty(level) {
-  if (!integer(level, 0, 4)) throw new TypeError("Invalid deliveries level");
-  return Object.freeze({ level, grid: 3 + Math.floor(level / 2), parcels: level === 0 ? 4 : 3 + level,
-    memoryMs: 15000 - level * 1500, routeMs: 60000 + level * 10000,
-    maxMistakes: 3, rewardMultiplier: 1 + level * 0.5 });
+  if (!integer(level, 0, 19)) throw new TypeError("Invalid deliveries level");
+  return Object.freeze({ level, grid: 3 + Math.floor(level * 2 / 19), parcels: 4 + Math.floor(level * 3 / 19),
+    memoryMs: 15000 - Math.round(level * 6000 / 19), routeMs: 60000 + Math.round(level * 40000 / 19),
+    maxMistakes: 3, rewardMultiplier: 1 + level * 2 / 19 });
 }
 
 function distance(a, b, grid) {
@@ -56,7 +56,7 @@ function seal(game) {
 }
 
 function validate(game) {
-  if (!record(game) || !integer(game.level, 0, 4)) throw new TypeError("Invalid deliveries state");
+  if (!record(game) || !integer(game.level, 0, 19)) throw new TypeError("Invalid deliveries state");
   const d = difficulty(game.level);
   if (Object.keys(game).length !== STATE_KEYS.length ||
       Object.keys(game).some(k => !STATE_KEYS.includes(k)) ||

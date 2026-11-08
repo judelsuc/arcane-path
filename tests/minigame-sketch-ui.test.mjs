@@ -100,7 +100,7 @@ function harness(options = {}) {
 
 test("Star UI sparkles three landmarks then keeps neutral positions without leaking model colours", t => {
   t.mock.method(Math, "random", () => 0.25);
-  const h = harness({ language: "en", level: 4, journeyCard: "star", dailyCard: "star" });
+  const h = harness({ language: "en", level: 19, journeyCard: "star", dailyCard: "star" });
   assert.match(h.nodes.find(node => node.className === "arcane-banner").textContent, /×1.1/);
   h.control("Start").click();
   const target = h.model.textContent.replaceAll("\n", "");
@@ -152,7 +152,7 @@ function drawFromModel(h) {
 
 test("reveal compares the original coloured model and the actual imperfect drawing side by side", () => {
   for (const language of ["en", "fr"]) {
-    const h = harness({ language, level: 4 });
+    const h = harness({ language, level: 19 });
     const comparison = h.nodes.find(node => node.className === "sketch-comparison");
     const player = h.nodes.find(node => node.className === "sketch-player");
     h.control(language === "en" ? "Start" : "Commencer").click();
@@ -219,7 +219,7 @@ test("French defaults, clear, wrong/empty score, and accessible native touch/key
   assert.equal(h.root.lang, "fr");
   assert.match(h.status.textContent, /Prêt/);
   h.control("Commencer").click();
-  assert.match(h.status.textContent, /7 secondes/);
+  assert.match(h.status.textContent, /10 secondes/);
   h.control("Dessiner maintenant").click();
   assert.equal(h.doc.activeElement, h.cells[0]);
   assert.equal(h.cells.length, 9);
@@ -252,9 +252,9 @@ test("French defaults, clear, wrong/empty score, and accessible native touch/key
 });
 
 test("all levels show their actual grid and palette; coloured models reproduce with exact colours", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const h = harness({ level, language: "en" });
-    const size = 3 + level, colours = [1, 1, 2, 2, 4][level];
+    const size = 3 + Math.floor(level * 4 / 19), colours = level < 7 ? 1 : level < 15 ? 2 : 4;
     assert.equal(h.cells.length, size ** 2);
     assert.ok(h.nodes.some(node => node.textContent.includes(`${size}×${size} grid, ${colours} colour(s)`)));
     h.control("Start").click();
@@ -281,10 +281,10 @@ test("all levels show their actual grid and palette; coloured models reproduce w
 });
 
 test("observation timeout respects level, drawing has no timeout, early hiding clears timer", () => {
-  const h = harness({ level: 4, language: "en" });
+  const h = harness({ level: 19, language: "en" });
   h.control("Start").click();
   assert.equal(h.timers.size, 1);
-  h.tick(10999);
+  h.tick(22949);
   assert.equal(h.model.hidden, false);
   h.tick(1);
   assert.equal(h.model.hidden, true);
@@ -297,11 +297,11 @@ test("observation timeout respects level, drawing has no timeout, early hiding c
   h.assertClean();
 });
 
-test("levels 2 and 3 display and enforce the rebalanced two-colour observation windows", () => {
-  for (const [level, seconds] of [[2, 7], [3, 12]]) {
+test("intermediate levels display and enforce the two-colour observation windows", () => {
+  for (const [level, seconds] of [[10, 16.579], [14, 16.011]]) {
     const h = harness({ level, language: "en" });
     assert.ok(h.nodes.some(node => node.textContent.includes(
-      `${3 + level}×${3 + level} grid, 2 colour(s), ${seconds} seconds`)));
+      `5×5 grid, 2 colour(s), ${seconds} seconds`)));
     assert.equal(h.control("+ Blue"), undefined);
     h.control("Start").click();
     h.tick(seconds * 1000 - 1);
@@ -380,7 +380,7 @@ test("invalid mounting options do not attach nodes or listeners; fallback locale
   const h = harness({ language: "unknown" });
   h.ui.destroy();
   assert.throws(() => mount(h.container, { onFinish: "bad" }), TypeError);
-  assert.throws(() => mount(h.container, { level: 5 }), RangeError);
+  assert.throws(() => mount(h.container, { level: 20 }), RangeError);
   assert.equal(h.container.children.length, 0);
   h.assertClean();
   const fresh = harness({ language: "unknown" });

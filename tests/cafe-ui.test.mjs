@@ -32,7 +32,7 @@ for (const language of ["fr", "en"]) {
     globalThis.document = { hidden: false, activeElement: null,
       createElement: () => new Element(), addEventListener: (name, fn) => { events[name] = fn; },
       querySelector: id => id === "dialog[open]" ? [...elements.values()].find(e => e.open) : element(id) };
-    let now = 0, tick, timers = 0, pending = false, settlements = [], starts = 0, stops = 0;
+    let now = 0, tick, timers = 0, pending = false, settlements = [], starts = 0, stops = 0, highLevel = false;
     const pickups = [];
     globalThis.performance = { now: () => now };
     globalThis.setInterval = fn => { tick = fn; timers++; return 1; };
@@ -43,7 +43,7 @@ for (const language of ["fr", "en"]) {
     const ui = setupCafe((key, args) => translate(language, key, args), {
       audio: { start() { starts++; }, stop() { stops++; }, pickup(item) { pickups.push(item); } },
       context: () => ({ ...current, state: { cafePending: pending ? {} : null } }),
-      begin() { pending = true; return cafeDifficulty({}); },
+      begin() { pending = true; return cafeDifficulty({ skills: { cafe: highLevel ? 300 : 0 } }); },
       settle(served, mistakes, cancelled) {
         pending = false;
         settlements.push({ served, mistakes, cancelled });
@@ -98,6 +98,26 @@ for (const language of ["fr", "en"]) {
     assert.equal(settlements.length, 2);
     assert.equal(stops, 2);
     assert.equal(element("#cafe-dialog").open, false);
+    highLevel = true;
+    globalThis.document.hidden = false;
+    const draws = [0, .99, .6, .3];
+    let draw = 0;
+    Math.random = () => draws[draw++ % draws.length];
+    ui.open();
+    element("#cafe-start").click();
+    const recipe = element("#cafe-orders").children[0].children[0].textContent;
+    const cake = translate(language, "cafeItem.cake");
+    const bread = translate(language, "cafeItem.bread");
+    const tea = translate(language, "cafeItem.tea");
+    assert.ok(recipe.indexOf(cake) >= 0);
+    assert.ok(recipe.indexOf(cake) < recipe.indexOf(bread));
+    assert.ok(recipe.indexOf(bread) < recipe.indexOf(tea));
+    now += 200; tick();
+    const refreshed = element("#cafe-orders").children[0].children[0].textContent;
+    assert.ok(refreshed.indexOf(cake) < refreshed.indexOf(bread));
+    assert.ok(refreshed.indexOf(bread) < refreshed.indexOf(tea));
+    ui.reset();
+    assert.equal(timers, 0);
   });
 }
 

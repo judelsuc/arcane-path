@@ -183,16 +183,16 @@ test("explicit start, bilingual instructions and accessible native labeled butto
 });
 
 test("actual visual playback gates input; click and keyboard complete perfect games at every level", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const f = fixture({ level, language: "en" });
     let remembered = [];
-    for (let round = 1; round <= 7 + level; round++) {
+    for (let round = 1; round <= (7 + Math.floor(level * 4 / 19)); round++) {
       const sequence = f.playback();
       assert.equal(sequence.length, round);
       assert.deepEqual(sequence.slice(0, -1), remembered, "same sequence extended by one");
       remembered = sequence;
       assert.match(f.status.textContent, /Your turn/);
-      assert.match(f.status.textContent, new RegExp(`Round ${round}/${7 + level}`));
+      assert.ok(f.status.textContent.includes(`Round ${round}/${7 + Math.floor(level * 4 / 19)}`));
       assert.equal(f.doc.activeElement, f.buttons[0]);
       assert.ok(f.buttons.every(button => !button.disabled));
       assert.equal(f.key("1", { repeat: true }), false);
@@ -204,11 +204,11 @@ test("actual visual playback gates input; click and keyboard complete perfect ga
         assert.equal(f.buttons[index].attributes["data-lit"], "true");
         f.next();
       }
-      if (round < 7 + level) assert.equal(f.results.length, 0);
+      if (round < (7 + Math.floor(level * 4 / 19))) assert.equal(f.results.length, 0);
     }
-    assert.deepEqual(f.results, [{ completed: true, score: 7 + level, maxScore: 7 + level, cancelled: false, earningsMultiplier: 1 }]);
+    assert.deepEqual(f.results, [{ completed: true, score: (7 + Math.floor(level * 4 / 19)), maxScore: (7 + Math.floor(level * 4 / 19)), cancelled: false, earningsMultiplier: 1 }]);
     assert.match(f.status.textContent, /complete/);
-    assert.match(f.score.textContent, new RegExp(`${7 + level}/${7 + level}`));
+    assert.match(f.score.textContent, new RegExp(`${(7 + Math.floor(level * 4 / 19))}/${(7 + Math.floor(level * 4 / 19))}`));
     assert.equal(f.timers.size, 0);
     assert.equal(f.listeners(), 0);
     f.cancel.click();
@@ -231,7 +231,7 @@ test("Escape cancels the rehearsal once and clears playback timers", () => {
 });
 
 test("all six lanterns use distinct original SVG motifs and colours, not word labels or external images", () => {
-  const f = fixture({ level: 4 });
+  const f = fixture({ level: 19 });
   const drawings = f.buttons.map(button => button.children[0]);
   const serialized = drawings.map(drawing => JSON.stringify(drawing.children.map(node => [node.tagName, node.attributes])));
   assert.equal(new Set(serialized).size, 6);
@@ -397,7 +397,7 @@ test("hidden attributes cancel even while ready or waiting for input, without a 
 
 test("mount validates options before adding UI; callback exceptions still clean up", () => {
   assert.throws(() => mount(null), TypeError);
-  assert.throws(() => fixture({ level: 8 }), RangeError);
+  assert.throws(() => fixture({ level: 20 }), RangeError);
   assert.throws(() => fixture({ onFinish: 3 }), TypeError);
   const f = fixture({ onFinish() { throw new Error("host failure"); } });
   f.start.click();

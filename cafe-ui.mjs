@@ -106,8 +106,9 @@ export function setupCafe(t, { context, begin, settle, audio, resonance = () => 
     setResonanceDecoration(resonant);
   }
 
-  function groupedItems(items) {
-    return CAFE.ingredients.filter(item => items.includes(item)).map(item => {
+  function groupedItems(items, shuffled = false) {
+    const order = shuffled ? [...new Set(items)] : CAFE.ingredients;
+    return order.filter(item => items.includes(item)).map(item => {
       const count = items.filter(value => value === item).length;
       return { item, count, label: `${t(`cafeItem.${item}`)}${count > 1 ? ` x${count}` : ""}` };
     });
@@ -115,6 +116,7 @@ export function setupCafe(t, { context, begin, settle, audio, resonance = () => 
 
   function clearTray() {
     document.querySelector("#cafe-tray").textContent = "";
+    document.querySelector("#cafe-current-order").textContent = "";
     renderTray([]);
   }
 
@@ -129,6 +131,12 @@ export function setupCafe(t, { context, begin, settle, audio, resonance = () => 
   function render() {
     if (!game) return;
     const active = game.orders.filter(o => o.status === "waiting" && o.arrivesAt <= game.lastAt);
+    const selected = active.find(order => order.id === game.selected);
+    text(document.querySelector("#cafe-current-order"), selected
+      ? t("cafeOrder", { number: selected.id + 1,
+        recipe: groupedItems(selected.recipe, game.level >= 5).map(item => item.label).join(" + "),
+        seconds: Math.max(0, Math.ceil((selected.deadline - game.lastAt) / 1000)) })
+      : t("cafeWaiting"));
     for (let slot = 0; slot < 3; slot++) {
       const order = active[slot], button = customerButtons[slot];
       button.dataset.orderId = order ? String(order.id) : "";
@@ -138,7 +146,7 @@ export function setupCafe(t, { context, begin, settle, audio, resonance = () => 
         ? `Changement d'avis : ${order.change.kind === "add" ? "ajouter" : "retirer"} 1 ${t(`cafeItem.${order.change.item}`)}`
         : `Changed my mind: ${order.change.kind === "add" ? "add" : "remove"} 1 ${t(`cafeItem.${order.change.item}`)}`) : "");
       if (order) {
-          const recipe = groupedItems(order.recipe).map(item => item.label).join(" + ");
+          const recipe = groupedItems(order.recipe, game.level >= 5).map(item => item.label).join(" + ");
           text(button.children[0], t("cafeOrder", { number: order.id + 1, recipe,
             seconds: Math.max(0, Math.ceil((order.deadline - game.lastAt) / 1000)) }));
       } else text(button.children[0], t("cafeWaiting"));

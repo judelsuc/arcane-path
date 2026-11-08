@@ -210,5 +210,21 @@ export function setupAbandonedJournals(t, { context, persist, publishNotebook, s
   }
   dialog?.addEventListener("close", () => openButton?.focus?.());
   return { update, localize, open,
-    whenIdle: () => working ? new Promise(resolve => idleWaiters.push(resolve)) : Promise.resolve() };
+    whenIdle(signal) {
+      if (!working) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        signal?.throwIfAborted();
+        const done = () => {
+          signal?.removeEventListener("abort", abort);
+          resolve();
+        };
+        const abort = () => {
+          const index = idleWaiters.indexOf(done);
+          if (index >= 0) idleWaiters.splice(index, 1);
+          reject(signal.reason);
+        };
+        idleWaiters.push(done);
+        signal?.addEventListener("abort", abort, { once: true });
+      });
+    } };
 }

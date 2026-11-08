@@ -69,6 +69,17 @@ test("meeting a character with a quest opens their proposal and notifies the que
   assert.equal(fixture.get("conversation-dialog").open, true);
 });
 
+test("moving away clears the selected character before another quest can be requested", async t => {
+  const f = portraitFixture(t, async () => new Blob(["portrait"]));
+  await f.ui.open();
+  await f.get("character-choices").children[0].children[0].click();
+  assert.ok(f.ui.currentCharacter());
+  f.current.state = { ...f.current.state, col: 1 };
+  f.ui.localize();
+  assert.equal(f.ui.currentCharacter(), undefined);
+  assert.equal(f.get("conversation-dialog").open, false);
+});
+
 test("conversation replies contain only the character's in-world response", async t => {
   const fixture = portraitFixture(t, async () => new Blob(["portrait"]));
   fixture.characters.exchange = async () => ({ factIds: ["own_workshop"] });

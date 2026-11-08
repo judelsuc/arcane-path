@@ -34,7 +34,7 @@ test("availability uses only a mapped town cell and its own named public deliver
 });
 
 test("perfect memory and optimal route earns maximum at every skill level", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     let g = input(game(level), { type: "ready" }, 1);
     const initial = g, order = bestOrder(g);
     for (const parcel of order) g = move(g, parcel);
@@ -42,7 +42,7 @@ test("perfect memory and optimal route earns maximum at every skill level", () =
     assert.equal(r.completed, true);
     assert.equal(r.score, r.maxScore);
     assert.equal(r.distance, r.optimalDistance);
-    assert.equal(r.rewardMultiplier, 1 + level * 0.5);
+    assert.equal(r.rewardMultiplier, 1 + level * 2 / 19);
     assert.equal(initial.delivered.some(Boolean), false);
     assert.ok(Object.isFrozen(g) && Object.isFrozen(g.targets) && Object.isFrozen(g.delivered));
     assert.deepEqual(input(g, { type: "cancel" }, g.lastNow), g);
@@ -50,7 +50,7 @@ test("perfect memory and optimal route earns maximum at every skill level", () =
 });
 
 test("route order matters and wrong addresses consume distance and scoring", () => {
-  let g = input(game(2), { type: "ready" }, 0);
+  let g = input(game(10), { type: "ready" }, 0);
   const orders = permutations(g.targets.map((_, i) => i));
   const outcomes = orders.map(order => result(order.reduce((state, p) => move(state, p), g)));
   assert.ok(outcomes.some(r => r.score < r.maxScore));
@@ -87,8 +87,8 @@ test("three failures, deadline, delayed advance, duplicates and cancellation", (
 });
 
 test("difficulty increases route size, memory pressure and potential pay", () => {
-  assert.deepEqual([0, 1, 2, 3, 4].map(level => difficulty(level).parcels), [4, 4, 5, 6, 7]);
-  for (let level = 1; level <= 4; level++) {
+  assert.deepEqual([0, 5, 10, 15, 19].map(level => difficulty(level).parcels), [4, 4, 5, 6, 7]);
+  for (let level = 1; level <= 19; level++) {
     const before = difficulty(level - 1), after = difficulty(level);
     assert.ok(after.parcels >= before.parcels && after.grid >= before.grid);
     assert.ok(after.memoryMs < before.memoryMs && after.rewardMultiplier > before.rewardMultiplier);
@@ -97,7 +97,7 @@ test("difficulty increases route size, memory pressure and potential pay", () =>
 });
 
 test("malformed options, randomness, states, actions and clocks are rejected", () => {
-  for (const level of [-1, 5, 0.5, NaN, "1", null]) assert.throws(() => difficulty(level), TypeError);
+  for (const level of [-1, 20, 0.5, NaN, "1", null]) assert.throws(() => difficulty(level), TypeError);
   for (const options of [null, [], "x", { extra: 1 }, { now: -1 }, { now: Infinity },
     { random: 2 }, { random: () => 1 }, { random: () => NaN }, { resonance: "yes" }]) {
     assert.throws(() => createGame(options), TypeError);

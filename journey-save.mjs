@@ -198,7 +198,7 @@ export function validateSave(save) {
   validateHealth(s);
   if (s.lastCafe !== undefined) {
     const r = s.lastCafe;
-    if (!r || !integer(r.level) || r.level < 0 || r.level > 4 || r.orders !== 5 + r.level ||
+    if (!r || !integer(r.level) || r.level < 0 || r.level > 19 || r.orders !== 5 + Math.floor(r.level * 4 / 19) ||
         !integer(r.served) || r.served < 0 || r.served > r.orders ||
         !integer(r.mistakes) || r.mistakes < 0 || typeof r.cancelled !== "boolean" ||
         !integer(r.rewardCents) || r.rewardCents < 0 || !nonnegative(r.foodKcal) || r.foodKcal > 600 ||

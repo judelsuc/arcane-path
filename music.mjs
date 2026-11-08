@@ -1,7 +1,7 @@
 import { restSurvival } from "./survival.mjs";
 import { finishAction, marketPrice, actionInterrupted } from "./economy.mjs";
 import { changeReputation, sympathy } from "./pressures.mjs";
-import { practiceSkill, practice, outcomeReputation } from "./practice.mjs";
+import { practiceSkill, progressOutcome, outcomeReputation } from "./practice.mjs";
 import { resolveResonance, resonanceGain } from "./arcane-resonance.mjs";
 import { journeyEquipmentModifiers } from "./equipment.mjs";
 import { companionRecord } from "./companion-presence.mjs";
@@ -27,10 +27,11 @@ export function musicMistakeLimit(state) {
 
 export function musicDifficulty(state) {
   const { level, xp } = practiceSkill(state, "music");
-  const holdLengths = level === 0 ? [] : level === 1 ? [2] : level === 2 ? [2, 3] : [2, 3, 4];
+  const holdLengths = level < 5 ? [] : level < 10 ? [2] : level < 15 ? [2, 3] : [2, 3, 4];
   const extraSlots = holdLengths.reduce((sum, length) => sum + length - 1, 0);
-  return { level, xp, beats: (8 + level) * MUSIC.loops, multiplier: 1 + level * 0.25,
-    intervalMs: MUSIC.intervalMs - level * 35, slots: MUSIC.slots + level + extraSlots,
+  const notes = 8 + Math.floor(level * 4 / 19);
+  return { level, xp, beats: notes * MUSIC.loops, multiplier: 1 + level / 19,
+    intervalMs: MUSIC.intervalMs - Math.round(level * 140 / 19), slots: notes + 4 + extraSlots,
     holdNotes: holdLengths.length, holdLengths,
     resonance: resolveResonance("music", {
       journeyCard: state.journeyCard ?? null,
@@ -176,7 +177,8 @@ export function settleBusking(state, hits, mistakes = 0, cancelled = false) {
   const reward = resonanceGain(baseReward, state.performancePending.resonance ?? false);
   const reputation = outcomeReputation(hits, total, mistakes >= mistakeLimit, cancelled);
   let next = reputation ? changeReputation(state, reputation) : state;
-  if (!cancelled && mistakes < mistakeLimit && hits >= Math.ceil(total * 0.6)) next = practice(next, "music", hits);
+  const success = mistakes < mistakeLimit && hits >= Math.ceil(total * 0.6);
+  next = progressOutcome(next, "music", "skills", "practiceFailureStreaks", success, cancelled, hits);
   return { ...next, walletCents: state.walletCents + reward, performancePending: null,
     performances: (state.performances ?? 0) + 1, lastEarningsCents: reward };
 }

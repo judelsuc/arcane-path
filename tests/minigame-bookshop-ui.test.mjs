@@ -148,7 +148,7 @@ test("Priestess teardown before start has no gain and removes resources", t => {
   cleaned(h);
 });
 
-for (let level = 0; level <= 4; level++) {
+for (let level = 0; level <= 19; level++) {
   test(`clickable level ${level}: explicit start, shelves, requests, perfect finish once and cleanup`, t => {
     const h = harness(t, { level, language: "en" });
     assert.match(h.root.textContent, /alphabetically/);
@@ -190,7 +190,7 @@ for (let level = 0; level <= 4; level++) {
 }
 
 test("full level 4 is playable with keyboard alone; shelf cursor is bounded and visible", t => {
-  const h = harness(t, { level: 4 });
+  const h = harness(t, { level: 19 });
   assert.equal(h.root.lang, "fr");
   assert.match(h.root.textContent, /Commencer/);
   assert.equal(h.key("Tab"), false);
@@ -290,7 +290,7 @@ test("timer updates remaining time without stealing button focus; exact deadline
 
 test("bilingual original covers show titles, authors and themes, never genre labels or numbered answers", t => {
   for (const language of ["fr", "en"]) {
-    const h = harness(t, { level: 4, language });
+    const h = harness(t, { level: 19, language });
     h.click("start");
     const drawings = [];
     for (const book of h.game.books) {
@@ -361,7 +361,7 @@ test("mounting into a hidden document immediately cancels without a running time
 
 test("invalid mount options fail before creating listeners or nodes; unknown language falls back to French", t => {
   const doc = new Document(), container = doc.createElement("div");
-  for (const level of [-1, 5, "1", NaN]) assert.throws(() => mount(container, { level }), RangeError);
+  for (const level of [-1, 20, "1", NaN]) assert.throws(() => mount(container, { level }), RangeError);
   assert.throws(() => mount(null), TypeError);
   assert.throws(() => mount(container, { onFinish: 42 }), TypeError);
   assert.equal(container.children.length, 0);

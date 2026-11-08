@@ -39,7 +39,8 @@ from journal_storage import JournalStorage
 from abandoned_journals import AbandonedJournals, JournalForbidden, LEASE_SECONDS
 from journeys import JourneyConflict, JourneyStore
 from travel_server import ChunkStore, atomic_write
-from main_artifacts import MainArtifacts, WORLD as ARTIFACT_WORLD
+from main_artifacts import MainArtifacts, WORLD as ARTIFACT_WORLD, EUROPE_DISTRIBUTION_VERSION
+from lore_playtest import LorePlaytest
 from tests.test_content_storage import ContentStorageChecks
 
 
@@ -769,11 +770,17 @@ class RealStorageTests(ContentStorageChecks, unittest.TestCase):
             self.assertEqual(second.read(identity), record)
 
     def test_real_main_artifact_claim_race_has_one_owner_and_exact_receipt_replay(self):
+        def local_world(base, origin):
+            world = LorePlaytest.initial_world(base, origin)
+            world["distributionVersion"] = EUROPE_DISTRIBUTION_VERSION
+            return world
         with tempfile.TemporaryDirectory() as directory:
             first = JourneyStore(ChunkStore(cache=Path(directory) / "one"), atomic_write, assets=self.storage)
             second = JourneyStore(ChunkStore(cache=Path(directory) / "two"), atomic_write, assets=self.storage)
             books = AbandonedJournals(first)
             apis = (MainArtifacts(first, books), MainArtifacts(second, AbandonedJournals(second)))
+            for api in apis:
+                api.initial_world = local_world
             players = []
             for api in apis:
                 record, _ = first.create({"requestId": str(uuid.uuid4()), "region": "firmi", "name": "Fixture"})
@@ -819,6 +826,10 @@ class RealStorageTests(ContentStorageChecks, unittest.TestCase):
 
     def test_real_main_artifact_receipt_failure_rolls_back_custody_and_session(self):
         from journey_storage import StoreConnection
+        def local_world(base, origin):
+            world = LorePlaytest.initial_world(base, origin)
+            world["distributionVersion"] = EUROPE_DISTRIBUTION_VERSION
+            return world
 
         with tempfile.TemporaryDirectory() as directory:
             journeys = JourneyStore(ChunkStore(cache=Path(directory)), atomic_write, assets=self.storage)
@@ -827,6 +838,7 @@ class RealStorageTests(ContentStorageChecks, unittest.TestCase):
             identity, token = record["state"]["serverJourney"]["id"], "a" * 64
             books.bind(identity, token)
             api = MainArtifacts(journeys, books)
+            api.initial_world = local_world
             view = api.request({"journey": identity, "requestId": str(uuid.uuid4()), "state": record["state"],
                                 "action": {"type": "inquire", "id": "hermit"}}, token)
             with api.connect() as db:

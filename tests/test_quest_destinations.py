@@ -155,6 +155,15 @@ class QuestDestinationsTests(unittest.TestCase):
         with self.service.connect() as db:
             self.assertEqual(db.execute("SELECT COUNT(*) FROM pois").fetchone()[0], 0)
 
+    def test_partial_cache_with_required_endpoints_does_not_wait_for_network(self):
+        self.cache_sources(self.MAPPED, [(0, 0)])
+        self.fetcher.side_effect = TimeoutError("Provider timed out")
+        result = self.settle()
+        self.assertEqual(result["status"], "ready")
+        self.fetcher.assert_not_called()
+        with self.service.connect() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM pois").fetchone()[0], 0)
+
     def test_missing_category_in_partial_cache_stays_retryable(self):
         self.cache_sources(self.MAPPED.replace('v="post_office"', 'v="bench"'), [(0, 0)])
         self.fetcher.side_effect = TimeoutError("Provider timed out")

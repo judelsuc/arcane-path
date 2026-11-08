@@ -19,7 +19,7 @@ function pack(game, now = 1) {
 }
 
 test("normal and Justice shifts complete at every difficulty with unchanged raw scores", () => {
-  for (let level = 0; level < 5; level++) for (const resonance of [false, true]) {
+  for (let level = 0; level < 20; level++) for (const resonance of [false, true]) {
     for (const random of [0, 0.25, 0.5, 0.75]) {
       let game = createGame({ level, resonance, random: () => random });
       const initialCash = cashTotal(game.drawer);
@@ -37,7 +37,8 @@ test("normal and Justice shifts complete at every difficulty with unchanged raw 
         game = input(game, { type: "submit" }, 1);
       }
       assert.deepEqual(result(game), {
-        completed: true, score: (3 + level) * 2, maxScore: (3 + level) * 2,
+        completed: true, score: (3 + Math.floor(level * 4 / 19)) * 2,
+        maxScore: (3 + Math.floor(level * 4 / 19)) * 2,
         cancelled: false, earningsMultiplier: resonance ? 1.1 : 1,
       });
       assert.equal(cashTotal(game.drawer), initialCash + game.orders.reduce((sum, order) => sum + order.totalCents, 0));
@@ -213,7 +214,7 @@ test("three mistakes, exact deadline, cancellation and invalid actions never gra
     assert.equal(input(game, null, 1).error, "invalid-action");
     assert.equal(advance(game, -1).error, "invalid-time");
   }
-  assert.throws(() => createGame({ level: 5 }), RangeError);
+  assert.throws(() => createGame({ level: 20 }), RangeError);
   assert.throws(() => difficulty(NaN), RangeError);
   assert.throws(() => createGame({ random: () => 1 }), RangeError);
   assert.throws(() => advance({}, 1), TypeError);

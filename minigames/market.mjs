@@ -45,12 +45,12 @@ export function available(cell) {
 }
 
 export function difficulty(level) {
-  if (!Number.isInteger(level) || level < 0 || level > 4) throw new RangeError("Market level must be 0–4.");
-  const value = level;
+  if (!Number.isInteger(level) || level < 0 || level > 19) throw new RangeError("Market level must be 0–19.");
+  const value = Math.floor(level * 4 / 19);
   return Object.freeze({
-    level: value, orders: 3 + value, lines: 2 + value, maxQuantity: 1 + value,
-    durationMs: 180000 + value * 60000, maxMistakes: 3,
-    rewardMultiplier: 1 + value * 0.5,
+    level, orders: 3 + value, lines: 2 + value, maxQuantity: 1 + value,
+    durationMs: 180000 + Math.round(level * 240000 / 19), maxMistakes: 3,
+    rewardMultiplier: 1 + level * 2 / 19,
   });
 }
 
@@ -140,14 +140,14 @@ export function createGame({ level = 0, random = Math.random, now = 0, ...cards 
   if (!Number.isFinite(sample) || sample < 0 || sample >= 1) throw new RangeError("Invalid random sample");
   const offset = Math.floor(sample * 4);
   const orders = Object.freeze(Array.from({ length: rules.orders }, (_, index) => {
-    const recipe = RECIPES[rules.level][(offset + index) % 4];
+    const recipe = RECIPES[Math.floor(rules.level * 4 / 19)][(offset + index) % 4];
     const weighedProduct = resonance && index === 0
       ? recipe.find(([product]) => WEIGHABLE.has(PRODUCTS[product].id))?.[0] : undefined;
     const lines = Object.freeze(recipe.map(([product, quantity]) =>
       Object.freeze({ ...PRODUCTS[product], quantity,
         ...(product === weighedProduct ? { grams: quantity * 250, centsPerKg: PRODUCTS[product].cents * 4 } : {}) })));
     const totalCents = lines.reduce((sum, line) => sum + line.cents * line.quantity, 0);
-    const step = [500, 1000, 2000, 5000, 10000][rules.level];
+    const step = [500, 1000, 2000, 5000, 10000][Math.floor(rules.level * 4 / 19)];
     const tenderCents = (Math.floor(totalCents / step) + 1) * step;
     const payment = Object.freeze(splitCash(tenderCents));
     const purse = splitCash(totalCents % 100);
@@ -155,7 +155,7 @@ export function createGame({ level = 0, random = Math.random, now = 0, ...cards 
     return Object.freeze({ lines, totalCents, tenderCents, changeCents: tenderCents - totalCents,
       payment, purse: Object.freeze(purse) });
   }));
-  const drawer = initialFloat(orders, rules.level);
+  const drawer = initialFloat(orders, Math.floor(rules.level * 4 / 19));
   return freeze({
     rules, resonance, weights: WEIGHTS, weightGrams: 0,
     products: PRODUCTS, denominations: COINS, orders, orderIndex: 0,

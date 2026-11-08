@@ -55,7 +55,9 @@ test("mobile layout puts the map and toolbar first, retaining a desktop status s
 test("travel actions are a compact wrapping toolbar immediately below the map, not the sidebar", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const toolbar = html.slice(html.indexOf('<nav id="travel-toolbar"'), html.indexOf('</nav>', html.indexOf('<nav id="travel-toolbar"')));
-  assert.match(html, /id="ascii-map"[^>]*><\/pre>\s*<\/div>\s*<nav id="travel-toolbar"/);
+  assert.match(html, /id="ascii-map"[^>]*><\/pre>\s*<\/div>\s*<p id="travel-blocker" role="status" hidden><\/p>\s*<p id="travel-streaming" role="status"><\/p>\s*<nav id="travel-toolbar"/);
+  assert.equal(html.split('id="travel-blocker"').length - 1, 1);
+  assert.equal(html.split('id="travel-streaming"').length - 1, 1);
   for (const id of ["rest-travel", "open-survival-choices", "open-conversation", "save-travel"]) {
     assert.match(toolbar, new RegExp(`id="${id}"`));
     assert.equal(html.split(`id="${id}"`).length - 1, 1);
@@ -81,4 +83,18 @@ test("Dialogue and Quests replace specialized quest buttons and hidden action so
   assert.match(toolbar, /id="open-quests"/);
   for (const id of ["open-trail", "open-hint", "open-abandoned-journals", "cell-clues",
     "cell-hint", "cell-notebooks", "town-trail"]) assert.ok(!html.includes(`id="${id}"`));
+});
+
+test("unloaded movement prepares terrain without acquiring the global action lock or advancing the journey", () => {
+  const script = readFileSync(new URL("../travel-ui.mjs", import.meta.url), "utf8");
+  const movement = script.slice(script.indexOf("async function move(dc, dr)"), script.indexOf("async function begin("));
+  const preparation = movement.slice(movement.indexOf("if (!stream.get(to.x, to.y))"), movement.indexOf("busy = true;"));
+  assert.match(preparation, /await stream\.load\(to\.x, to\.y, true\)/);
+  assert.match(preparation, /transient = "travelTerrainPreparing"/);
+  assert.match(preparation, /transient = "travelTerrainReady"/);
+  assert.match(preparation, /currentToken === token && state === waitingState/);
+  assert.match(preparation, /report\(reason\)/);
+  assert.match(preparation, /return;\s*\}\s*$/);
+  assert.doesNotMatch(preparation, /busy = true|\bstate =(?!=)|walkSurvival|autosave\(/);
+  assert.match(script, /terrainWaitingState !== state\) \{\s*transient = "";/);
 });

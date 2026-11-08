@@ -8,12 +8,12 @@ const COPY = {
   fr: {
     accept: "Accepter", decline: "Pas cette fois",
     empty: "Aucun engagement pour le moment. Les demandes se trouvent dans Dialogue.",
-    preparing: "{name} prépare sa proposition…",
+    preparing: "« Un instant, je cherche les indications dans mes notes… »",
     proposal: "{name} vous propose un service.",
     accepted: "« Merci. Je vous laisse ces indications pour la route. »",
     refused: "« Je comprends. Bonne route à vous. »",
     unavailable: "« Je n’ai pas de mission à vous proposer pour le moment. »",
-    failed: "La demande de cette personne n’a pas pu être préparée. Vous pouvez réessayer sans changer de mission.",
+    failed: "« Je n’ai pas encore toutes les indications. Revenez me parler, je garde votre demande. »",
     limit: "Consultez vos missions en attente avant d’en écouter une autre.",
     retry: "Réessayer la même demande", active: "En cours", completed: "Terminée", abandoned: "Abandonnée", declined: "Refusée",
     follow: "Suivre", unfollow: "Ne plus suivre", destination: "Voir la destination",
@@ -29,12 +29,12 @@ const COPY = {
   en: {
     accept: "Accept", decline: "Not this time",
     empty: "No commitments yet. Requests are available in Dialogue.",
-    preparing: "{name} is preparing their offer…",
+    preparing: "“One moment, let me find the directions in my notes…”",
     proposal: "{name} offers you a service quest.",
     accepted: "“Thank you. Take these directions with you.”",
     refused: "“I understand. Safe travels.”",
     unavailable: "“I have no quest to offer you at the moment.”",
-    failed: "This person's request could not be prepared. You can retry without changing their quest.",
+    failed: "“I don’t have all the directions yet. Speak to me again; I’ll keep your request.”",
     limit: "Review your pending offers before listening to another one.",
     retry: "Retry this request", active: "Active", completed: "Completed", abandoned: "Abandoned", declined: "Declined",
     follow: "Track", unfollow: "Stop tracking", destination: "View destination",
@@ -168,10 +168,7 @@ export function setupServiceQuests(t, { context, mutate,
     }
     const knownQuest = speaker && [...(state?.serviceQuests?.offers ?? []),
       ...(state?.serviceQuests?.quests ?? [])].find(quest => quest.characterId === speaker.id);
-    const full = (state?.serviceQuests?.offers?.length ?? 0) >= SERVICE_QUEST_LIMITS.offers ||
-      [...(state?.serviceQuests?.offers ?? []), ...(state?.serviceQuests?.quests ?? [])]
-        .some(quest => quest.template === speaker?.profile?.quest?.template &&
-          ["offered", "active"].includes(quest.status));
+    const full = (state?.serviceQuests?.offers?.length ?? 0) >= SERVICE_QUEST_LIMITS.offers;
     if (speaker?.profile?.quest && !knownQuest && !request && !full &&
         state?.journalAccess && !current.blocked) {
       request = { characterId: speaker.id };

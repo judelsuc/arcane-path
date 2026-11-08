@@ -91,7 +91,7 @@ function harness(options = {}) {
 }
 
 test("visible graphical reference, six part categories, assembled preview, colour/size choices and successful building at all levels", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const h = harness({ level });
     assert.equal(h.timers.size, 0);
     assert.match(h.text(), /model stays visible/);
@@ -197,7 +197,7 @@ test("size and colour are visible in shelf labels; wrong parts can be replaced w
 });
 
 test("countdown is live without replacing bike or buttons, and late input fails at the exact deadline", () => {
-  const h = harness({ level: 4 });
+  const h = harness({ level: 19 });
   h.click("start");
   const bike = h.byClass("workshop-model").children[1];
   const choice = h.find("choose", 0);

@@ -40,11 +40,13 @@ export const INK = Object.freeze([
 ]);
 
 export function difficulty(level = 0) {
-  if (!Number.isInteger(level) || level < 0 || level > 4) throw new RangeError("Invalid sketch level");
-  return Object.freeze({ level, width: 3 + level, height: 3 + level,
-    colours: [1, 1, 2, 2, 4][level],
-    observeMs: [7000, 8000, 7000, 12000, 11000][level],
-    rewardMultiplier: 1 + level * 0.25 });
+  if (!Number.isInteger(level) || level < 0 || level > 19) throw new RangeError("Invalid sketch level");
+  const size = 3 + Math.floor(level * 4 / 19);
+  return Object.freeze({ level, width: size, height: size,
+    colours: level < 7 ? 1 : level < 15 ? 2 : 4,
+    observeMs: Math.round((10000 + (size - 3) * 3000 + (level >= 7 ? 2000 : 0) +
+      (level >= 15 ? 3000 : 0)) * (1 - level * 0.15 / 19)),
+    rewardMultiplier: 1 + level / 19 });
 }
 
 function timeValid(now) {

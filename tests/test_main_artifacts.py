@@ -7,7 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from main_artifacts import MainArtifacts, WORLD
+from main_artifacts import MainArtifacts, WORLD, EUROPE_ANCHORS, EUROPE_DISTRIBUTION_VERSION
+from lore_playtest import LorePlaytest
 from journeys import JourneyRequest, JourneyConflict
 from abandoned_journals import JournalForbidden
 import test_lore_playtest as fixtures
@@ -23,6 +24,12 @@ class MainArtifactTests(unittest.TestCase):
         self.api = MainArtifacts(fixture.journeys, fixture.abandoned, clock=lambda: fixture.now)
         self.journey, self.token = fixture.journey, fixture.token
         self.state = copy.deepcopy(fixture.journeys.read(self.journey)["state"])
+        # Custody tests use nearby fixtures; distribution is tested independently below.
+        def local_world(base, origin):
+            world = LorePlaytest.initial_world(base, origin)
+            world["distributionVersion"] = EUROPE_DISTRIBUTION_VERSION
+            return world
+        self.api.initial_world = local_world
 
     def request(self, action=None, request_id=None, state=None):
         body = {"journey": self.journey, "requestId": request_id or str(uuid.uuid4()),
@@ -231,6 +238,89 @@ class MainArtifactTests(unittest.TestCase):
         self.assertIsNone(item["owner"])
         self.assertEqual(item["recallJourney"], self.journey)
         self.assertEqual(item["marker"], "cache:hermit")
+
+
+class EuropeanArtifactTests(unittest.TestCase):
+    request = MainArtifactTests.request
+
+    def setUp(self):
+        MainArtifactTests.setUp(self)
+        del self.api.initial_world
+
+    def test_new_world_is_geographic_and_scattered_across_europe(self):
+        base = self.fixture.chunks.bases["firmi"]
+        world = self.api.initial_world(base, self.state)
+        self.assertEqual(len(world["instances"]), 22)
+        self.assertEqual(len({item["town"] for item in world["instances"]}), 22)
+        self.assertEqual(len({item["region"] for item in world["instances"]}), 22)
+        self.assertGreater(max(item["latitude"] for item in world["instances"]) -
+                           min(item["latitude"] for item in world["instances"]), 20)
+        self.assertGreater(max(item["longitude"] for item in world["instances"]) -
+                           min(item["longitude"] for item in world["instances"]), 35)
+        self.assertFalse(any(item["town"] == "Firmi" for item in world["instances"]))
+        other_base = copy.deepcopy(base)
+        other_base["bounds"] = {**base["bounds"], "minLongitude": -5, "maxLatitude": 55}
+        other = self.api.initial_world(other_base, self.state)
+        self.assertEqual([(item["id"], item["latitude"], item["longitude"]) for item in world["instances"]],
+                         [(item["id"], item["latitude"], item["longitude"]) for item in other["instances"]])
+        self.request()
+
+    def test_redistribution_moves_all_unowned_once_and_preserves_carried_objects(self):
+        base = self.fixture.chunks.bases["firmi"]
+        world = LorePlaytest.initial_world(base, self.state)
+        world["instances"][0].update(owner=self.journey, placement={"x": 0, "y": 0, "rotated": False})
+        world["instances"][1].update(marker="cache:chariot", recallJourney=self.journey)
+        carried = copy.deepcopy(world["instances"][0])
+        self.assertTrue(self.api.redistribute_unowned(world))
+        self.assertEqual(world["instances"][0], carried)
+        for item, anchor in zip(world["instances"][1:], EUROPE_ANCHORS[1:]):
+            self.assertEqual((item["town"], item["region"], item["latitude"], item["longitude"]), anchor)
+            self.assertEqual(item["generation"], 2)
+            self.assertIsNone(item["recallJourney"])
+            self.assertTrue(item["marker"].startswith("virtual:"))
+        world["instances"][1].update(col=5, row=6, town="Player cache",
+                                     marker="cache:chariot", recallJourney=self.journey)
+        before = copy.deepcopy(world)
+        self.assertFalse(self.api.redistribute_unowned(world))
+        self.assertEqual(world, before)
+
+    def test_character_knowledge_migrates_legacy_world_and_uses_destination_region(self):
+        base = self.fixture.chunks.bases["firmi"]
+        legacy = LorePlaytest.initial_world(base, self.state)
+        raw, checksum = self.api.encode(legacy)
+        with self.api.connect() as db:
+            db.execute("INSERT INTO world(id,region,payload,checksum) VALUES(?,?,?,?)",
+                       (WORLD, "firmi", raw, checksum))
+        clues = self.api.character_knowledge(self.journey, "firmi",
+            {"col": self.state["col"], "row": self.state["row"]})
+        self.assertFalse(any(clue["facts"].get("region") == base["name"] for clue in clues.values()))
+        with self.api.connect() as db:
+            world = self.api.decode(db.execute("SELECT * FROM world WHERE id=?", (WORLD,)).fetchone())
+        self.assertEqual(world["distributionVersion"], EUROPE_DISTRIBUTION_VERSION)
+        self.assertTrue(all("latitude" in item for item in world["instances"]))
+        hermit = world["instances"][0]
+        nearby = self.api.character_knowledge(self.journey, "firmi",
+            {"col": hermit["col"], "row": hermit["row"]})
+        self.assertEqual(nearby["hermit"]["facts"]["region"], "Portugal")
+        self.assertEqual(nearby["hermit"]["facts"]["place"], "Lisbon")
+
+    def test_request_migration_invalidates_old_leads_but_keeps_receipt_replay_exact(self):
+        def local_world(base, origin):
+            return {**LorePlaytest.initial_world(base, origin),
+                    "distributionVersion": EUROPE_DISTRIBUTION_VERSION}
+        self.api.initial_world = local_world
+        original, body = self.request({"type": "inquire", "id": "hermit"})
+        with self.api.connect() as db:
+            world = self.api.decode(db.execute("SELECT * FROM world WHERE id=?", (WORLD,)).fetchone())
+            del world["distributionVersion"]
+            raw, checksum = self.api.encode(world)
+            db.execute("UPDATE world SET payload=?,checksum=? WHERE id=?", (raw, checksum, WORLD))
+        result, _ = self.request()
+        old_leads = [entry for entry in result["state"]["discovery"]["entries"]
+                     if entry["targetType"] == "artifact" and entry["kind"] == "location"]
+        self.assertTrue(old_leads)
+        self.assertTrue(all(entry["availability"] == "historical" for entry in old_leads))
+        self.assertEqual(self.api.request(body, self.token), original)
 
 
 if __name__ == "__main__":

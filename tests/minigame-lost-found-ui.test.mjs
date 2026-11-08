@@ -176,7 +176,7 @@ test("Moon UI serves the inspected pair and ordinary objects, with the unchanged
 });
 
 test("explicit start, native buttons, score, instructions and bilingual perfect games at all levels", () => {
-  for (const language of ["fr", "en"]) for (let level = 0; level <= 4; level++) {
+  for (const language of ["fr", "en"]) for (let level = 0; level <= 19; level++) {
     const f = fixture({ language, level });
     assert.equal(f.find("match"), undefined);
     assert.equal(f.outcomes.length, 0);
@@ -187,13 +187,13 @@ test("explicit start, native buttons, score, instructions and bilingual perfect 
     f.keyboard(f.find("start"), "Enter");
     assert.equal(gifts.disabled, true);
     assert.equal(f.find("start").disabled, true);
-    for (let i = 0; i < 4 + level; i++) {
+    for (let i = 0; i < (4 + Math.floor(level * 4 / 19)); i++) {
       const choice = correctButton(f);
       assert.equal(choice.tagName, "button");
       assert.equal(choice.type, "button");
       if (i % 2) f.click(choice); else f.keyboard(choice, " ");
     }
-    assert.deepEqual(f.outcomes, [{ completed: true, score: 4 + level, maxScore: 4 + level, cancelled: false, timedOut: false, earningsMultiplier: 1 }]);
+    assert.deepEqual(f.outcomes, [{ completed: true, score: (4 + Math.floor(level * 4 / 19)), maxScore: (4 + Math.floor(level * 4 / 19)), cancelled: false, timedOut: false, earningsMultiplier: 1 }]);
     assert.match(f.all().map(node => node.textContent).join(" "), /×/);
     assert.equal(f.find("match"), undefined);
     assert.equal(f.observers[0].active, false);
@@ -267,7 +267,7 @@ test("initially hidden mounts cancel; invalid options do not modify the host", (
   const f = fixture({}, ({ doc }) => { doc.hidden = true; });
   assert.equal(f.outcomes[0].cancelled, true);
   f.api.destroy();
-  assert.throws(() => mount(f.container, { level: 8 }), RangeError);
+  assert.throws(() => mount(f.container, { level: 20 }), RangeError);
   assert.throws(() => mount(f.container, { onFinish: null }), TypeError);
   assert.throws(() => mount(null), TypeError);
   assert.equal(f.container.children.length, 0);
@@ -295,7 +295,7 @@ test("journey mode removes the fake thank-you gift and playtest disclaimers", ()
 });
 
 test("all eight objects have original, distinct SVG drawings with visible paired details", () => {
-  const f = fixture({ language: "en", level: 4 });
+  const f = fixture({ language: "en", level: 19 });
   f.click(f.find("start"));
   const choices = f.all().filter(node => node.dataset.action === "match");
   assert.equal(choices.length, 8);

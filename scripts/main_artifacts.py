@@ -9,11 +9,36 @@ import math
 from contextlib import contextmanager
 
 from journeys import JourneyRequest, JourneyConflict, JourneyCapacity
-from lore_playtest import LorePlaytest, MAX_RECEIPTS
+from lore_playtest import LorePlaytest, MAX_RECEIPTS, ARTIFACTS
 from journey_storage import StoreConnection
 
 WORLD = "main-artifacts-v1"
 COMMANDS = {"inquire", "claim", "cache", "share", "use", "pack", "interpret-clue", "archive"}
+EUROPE_DISTRIBUTION_VERSION = 1
+EUROPE_ANCHORS = (
+    ("Lisbon", "Portugal", 38.7223, -9.1393),
+    ("Madrid", "Spain", 40.4168, -3.7038),
+    ("Dublin", "Ireland", 53.3498, -6.2603),
+    ("Edinburgh", "United Kingdom", 55.9533, -3.1883),
+    ("Paris", "France", 48.8566, 2.3522),
+    ("Brussels", "Belgium", 50.8503, 4.3517),
+    ("Amsterdam", "Netherlands", 52.3676, 4.9041),
+    ("Copenhagen", "Denmark", 55.6761, 12.5683),
+    ("Oslo", "Norway", 59.9139, 10.7522),
+    ("Stockholm", "Sweden", 59.3293, 18.0686),
+    ("Helsinki", "Finland", 60.1699, 24.9384),
+    ("Berlin", "Germany", 52.5200, 13.4050),
+    ("Warsaw", "Poland", 52.2297, 21.0122),
+    ("Prague", "Czechia", 50.0755, 14.4378),
+    ("Vienna", "Austria", 48.2082, 16.3738),
+    ("Budapest", "Hungary", 47.4979, 19.0402),
+    ("Rome", "Italy", 41.9028, 12.4964),
+    ("Zagreb", "Croatia", 45.8150, 15.9819),
+    ("Sarajevo", "Bosnia and Herzegovina", 43.8563, 18.4131),
+    ("Sofia", "Bulgaria", 42.6977, 23.3219),
+    ("Bucharest", "Romania", 44.4268, 26.1025),
+    ("Athens", "Greece", 37.9838, 23.7275),
+)
 
 
 def geographic_position(base, col, row):
@@ -31,6 +56,37 @@ def grid_position(base, latitude, longitude):
 
 
 class MainArtifacts(LorePlaytest):
+    @staticmethod
+    def initial_world(base, origin):
+        if len(EUROPE_ANCHORS) != len(ARTIFACTS):
+            raise JourneyRequest("European artifact anchors do not cover the catalogue.")
+        instances = []
+        for artifact, (town, region, latitude, longitude) in zip(ARTIFACTS, EUROPE_ANCHORS):
+            col, row = grid_position(base, latitude, longitude)
+            instances.append({
+                "id": artifact, "col": col, "row": row, "town": town, "region": region,
+                "latitude": latitude, "longitude": longitude,
+                "marker": f"virtual:{artifact}", "owner": None, "placement": None,
+                "generation": 1, "cooldownUntil": 0, "recallJourney": None,
+            })
+        return {"map": base, "instances": instances, "minutes": 0,
+                "distributionVersion": EUROPE_DISTRIBUTION_VERSION}
+
+    @classmethod
+    def redistribute_unowned(cls, world):
+        if world.get("distributionVersion") == EUROPE_DISTRIBUTION_VERSION:
+            return False
+        anchors = {item["id"]: item for item in cls.initial_world(world["map"], None)["instances"]}
+        for instance in world["instances"]:
+            if instance["owner"] is not None:
+                continue
+            anchor = anchors[instance["id"]]
+            instance.update({key: anchor[key] for key in (
+                "col", "row", "town", "region", "latitude", "longitude", "marker")})
+            instance.update(placement=None, recallJourney=None, generation=instance["generation"] + 1)
+        world["distributionVersion"] = EUROPE_DISTRIBUTION_VERSION
+        return True
+
     def __init__(self, journeys, abandoned, clock=time.time, **kwargs):
         self.assets = getattr(journeys, "assets", None)
         if self.assets is None:
@@ -59,9 +115,11 @@ class MainArtifacts(LorePlaytest):
             row = db.execute(f"SELECT * FROM {self.world_table} WHERE id=?", (WORLD,)).fetchone()
             world = self.decode(row) if row else self.initial_world(
                 self.journeys.chunks.bases[genesis["region"]], genesis["state"])
-            if row is None:
+            redistributed = self.redistribute_unowned(world)
+            if row is None or redistributed:
                 raw, checksum = self.encode(world)
-                db.execute(f"INSERT INTO {self.world_table}(id,region,payload,checksum) VALUES(?,?,?,?)",
+                db.execute(f"INSERT INTO {self.world_table}(id,region,payload,checksum) VALUES(?,?,?,?) "
+                           "ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,checksum=excluded.checksum",
                            (WORLD, genesis["region"], raw, checksum))
         base = self.journeys.chunks.bases[region]
         result = {}
@@ -74,7 +132,7 @@ class MainArtifacts(LorePlaytest):
             meters = math.hypot(location["col"] - col, location["row"] - row) * base["cellSizeMeters"]
             if meters > 300000:
                 continue
-            facts = {"artifact": instance["id"], "region": world["map"]["name"]}
+            facts = {"artifact": instance["id"], "region": instance.get("region", world["map"]["name"])}
             if meters <= 30000:
                 facts["place"] = instance["town"]
             result[instance["id"]] = {
@@ -157,6 +215,7 @@ class MainArtifacts(LorePlaytest):
                 world = self.initial_world(self.journeys.chunks.bases[genesis["region"]], genesis["state"])
             else:
                 world = self.decode(row)
+            self.redistribute_unowned(world)
             anchor_map = world["map"]
             for instance in world["instances"]:
                 if "latitude" not in instance:
@@ -172,6 +231,7 @@ class MainArtifacts(LorePlaytest):
                     col, row_index = grid_position(anchor_map, cache["latitude"], cache["longitude"])
                     instance.update(owner=None, placement=None, col=col, row=row_index,
                                     latitude=cache["latitude"], longitude=cache["longitude"], town=cache["town"],
+                                    region=cache.get("region", anchor_map["name"]),
                                     marker=f"cache:{instance['id']}", generation=instance["generation"] + 1,
                                     recallJourney=stale["journey"])
             local = {"map": {**self.journeys.chunks.bases[genesis["region"]], "loreChunks": {}},
@@ -222,12 +282,14 @@ class MainArtifacts(LorePlaytest):
                 if moved or recached:
                     instance["latitude"], instance["longitude"] = geographic_position(
                         local["map"], instance["col"], instance["row"])
+                    instance["region"] = local["map"]["name"]
                 instance["col"], instance["row"] = grid_position(anchor_map, instance["latitude"], instance["longitude"])
             world["instances"], world["minutes"] = result["instances"], result["runtime"]["worldMinutes"]
             result["runtime"]["preparedChunks"] = list(local["map"].get("loreChunks", {}))
             last = result["runtime"]["state"]["lore"]["lastSettlement"]
             latitude, longitude = geographic_position(local["map"], last["col"], last["row"])
-            result["runtime"]["cacheLocation"] = {"latitude": latitude, "longitude": longitude, "town": last["town"]}
+            result["runtime"]["cacheLocation"] = {"latitude": latitude, "longitude": longitude,
+                                                 "town": last["town"], "region": local["map"]["name"]}
             raw, checksum = self.encode(world)
             db.execute(f"INSERT INTO {self.world_table}(id,region,payload,checksum) VALUES (?,?,?,?) "
                        "ON CONFLICT(id) DO UPDATE SET region=excluded.region,payload=excluded.payload,"

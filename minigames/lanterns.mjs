@@ -33,11 +33,11 @@ export function available(cell) {
 }
 
 export function difficulty(level) {
-  if (!Number.isInteger(level) || level < 0 || level > 4) throw new RangeError("Level must be 0–4.");
+  if (!Number.isInteger(level) || level < 0 || level > 19) throw new RangeError("Level must be 0–19.");
   return Object.freeze({
-    level, length: 7 + level, lanternCount: [3, 4, 4, 5, 6][level],
-    litMs: 800 - level * 80, gapMs: 260 - level * 20,
-    leadMs: 500, roundGapMs: 700, rewardMultiplier: 1 + level * 0.25,
+    level, length: 7 + Math.floor(level * 4 / 19), lanternCount: 3 + Math.floor(level * 3 / 19),
+    litMs: 800 - Math.round(level * 320 / 19), gapMs: 260 - Math.round(level * 80 / 19),
+    leadMs: 500, roundGapMs: 700, rewardMultiplier: 1 + level / 19,
   });
 }
 

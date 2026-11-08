@@ -1,6 +1,6 @@
 import { restSurvival } from "./survival.mjs";
 import { finishAction, marketPrice, actionInterrupted } from "./economy.mjs";
-import { practiceSkill, practice, outcomeReputation } from "./practice.mjs";
+import { practiceSkill, progressOutcome, outcomeReputation, PRACTICE } from "./practice.mjs";
 import { changeReputation, sympathy } from "./pressures.mjs";
 import { resolveResonance, resonanceGain } from "./arcane-resonance.mjs";
 
@@ -20,9 +20,14 @@ export function cafeVenues(cell) {
 
 export function cafeDifficulty(state) {
   const { level, xp } = practiceSkill(state, "cafe");
-  return { level, xp, orders: 5 + level, recipeSize: 3 + Math.floor(level / 2),
-    arrivalMs: 6500 - level * 500, patienceMs: 14000 - level * 1500,
-    multiplier: 1 + level * 0.25 };
+  return { ...cafeRules(level), xp };
+}
+
+export function cafeRules(level) {
+  if (!Number.isInteger(level) || level < 0 || level > PRACTICE.maxLevel) throw new Error("Invalid cafe level.");
+  return { level, orders: 5 + Math.floor(level * 4 / 19), recipeSize: 3 + Math.floor(level * 2 / 19),
+    arrivalMs: 6500 - Math.round(level * 2000 / 19), patienceMs: 14000 - Math.round(level * 6000 / 19),
+    multiplier: 1 + level / 19 };
 }
 
 export function beginCafe(state, cell, info, venueId, survival, economy, options = {}) {
@@ -57,7 +62,9 @@ export function settleCafe(state, served, mistakes, cancelled = false) {
   const completed = cancelled ? 0 : served;
   const reward = resonanceGain(Math.round(shift.maxRewardCents * completed / shift.orders), shift.resonance ?? false);
   const foodKcal = completed ? Math.min(shift.mealKcal, shift.reserveMax - state.reserveKcal) : 0;
-  let next = completed ? practice(state, "cafe", completed * 4) : state;
+  const success = completed / shift.orders >= 0.6;
+  let next = progressOutcome(state, "cafe", "skills", "practiceFailureStreaks",
+    success, cancelled, completed * 4);
   const reputation = outcomeReputation(completed, shift.orders, false, cancelled);
   if (reputation) next = changeReputation(next, reputation);
   return { ...next, cafePending: null, cafeShifts: (state.cafeShifts ?? 0) + 1,
@@ -68,10 +75,9 @@ export function settleCafe(state, served, mistakes, cancelled = false) {
 }
 
 export function createCafeGame(shift, now, random = Math.random, { resonance = false } = {}) {
-  if (!Number.isFinite(now) || !Number.isInteger(shift.level) || shift.level < 0 || shift.level > 4 ||
-      shift.orders !== 5 + shift.level || shift.recipeSize !== 3 + Math.floor(shift.level / 2) ||
-      shift.arrivalMs !== 6500 - shift.level * 500 || shift.patienceMs !== 14000 - shift.level * 1500 ||
-      typeof resonance !== "boolean") {
+  const rules = cafeRules(shift.level);
+  if (!Number.isFinite(now) || ["orders", "recipeSize", "arrivalMs", "patienceMs"]
+      .some(key => shift[key] !== rules[key]) || typeof resonance !== "boolean") {
     throw new Error("Invalid cafe shift configuration.");
   }
   const draw = max => {
@@ -89,7 +95,7 @@ export function createCafeGame(shift, now, random = Math.random, { resonance = f
   }));
   if (resonance) {
     for (const order of orders) {
-      if (draw(100) < 20 + shift.level * 10) {
+      if (draw(100) < 20 + Math.round(shift.level * 40 / 19)) {
         const kind = draw(2) === 0 ? "add" : "remove";
         order.changePlan = { kind, after: Math.ceil(order.recipe.length / 2),
           item: kind === "add" ? CAFE.ingredients[draw(CAFE.ingredients.length)]
@@ -97,7 +103,7 @@ export function createCafeGame(shift, now, random = Math.random, { resonance = f
       }
     }
   }
-  return { startedAt: now, lastAt: now, orders, selected: 0, tray: [], mistakes: 0, resonance };
+  return { level: shift.level, startedAt: now, lastAt: now, orders, selected: 0, tray: [], mistakes: 0, resonance };
 }
 
 export function advanceCafe(game, now) {

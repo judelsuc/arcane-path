@@ -1,7 +1,7 @@
 import { restSurvival } from "./survival.mjs";
 import { finishAction, marketPrice, actionInterrupted } from "./economy.mjs";
 import { changeReputation } from "./pressures.mjs";
-import { outcomeReputation } from "./practice.mjs";
+import { outcomeReputation, PRACTICE, progressOutcome, validateStreaks } from "./practice.mjs";
 import { resolveResonance, resonanceGain } from "./arcane-resonance.mjs";
 import * as harvest from "./minigames/harvest.mjs";
 import * as workshop from "./minigames/workshop.mjs";
@@ -49,8 +49,8 @@ function skillLevel(state, game) {
     throw new Error("Invalid journey mini-game skills.");
   }
   const xp = skills[game] ?? 0;
-  if (!integer(xp, 0, 300)) throw new Error("Invalid journey mini-game experience.");
-  return Math.min(4, Math.floor(xp / 60));
+  if (!integer(xp, 0, PRACTICE.maxXp)) throw new Error("Invalid journey mini-game experience.");
+  return Math.min(PRACTICE.maxLevel, Math.floor(xp / PRACTICE.perLevel));
 }
 
 function activityTerms(state, game, cell, info, data) {
@@ -93,12 +93,13 @@ export function journeyMiniGameOffer(state, game, cell, info, data) {
 export function validateJourneyMiniGames(state) {
   const fail = message => { throw new Error(message); };
   if (!record(state)) fail("Invalid journey mini-game save.");
+  validateStreaks(state, "journeyMiniGameFailureStreaks", JOURNEY_MINI_GAMES);
 
   if (state.journeyMiniGameSkills !== undefined) {
     const skills = state.journeyMiniGameSkills;
     if (!record(skills) || Object.getPrototypeOf(skills) !== Object.prototype ||
         Object.keys(skills).some(game => !JOURNEY_MINI_GAMES.includes(game)) ||
-        Object.values(skills).some(xp => !integer(xp, 0, 300))) {
+        Object.values(skills).some(xp => !integer(xp, 0, PRACTICE.maxXp))) {
       fail("Invalid journey mini-game skills.");
     }
   }
@@ -119,8 +120,8 @@ export function validateJourneyMiniGames(state) {
         !bounded(last.maxScore, 0, 10000) || !bounded(last.score, 0, last.maxScore) ||
         (last.maxScore === 0 && (!last.cancelled || last.score !== 0)) ||
         !integer(last.rewardCents, 0, Number.MAX_SAFE_INTEGER) ||
-        !integer(last.level, 0, 4) || !integer(last.xpGained, 0, 60) ||
-        !integer(last.levelUps, 0, 4) ||
+        !integer(last.level, 0, PRACTICE.maxLevel) || !integer(last.xpGained, 0, 60) ||
+        !integer(last.levelUps, 0, PRACTICE.maxLevel) ||
         (!last.completed && (last.score !== 0 || last.rewardCents !== 0 ||
           last.xpGained !== 0 || last.levelUps !== 0))) {
       fail("Invalid last journey mini-game result.");
@@ -220,18 +221,18 @@ export function settleJourneyMiniGame(state, game, result) {
   const reputation = completed ? outcomeReputation(score, result.maxScore) : 0;
   if (reputation) next = changeReputation(next, reputation);
   const oldXp = next.journeyMiniGameSkills?.[game] ?? 0;
-  const gainedXp = completed ? Math.ceil(60 * score / result.maxScore) : 0;
-  const skills = { ...(next.journeyMiniGameSkills ?? {}),
-    [game]: Math.min(300, oldXp + gainedXp) };
-  const oldLevel = Math.min(4, Math.floor(oldXp / 60));
-  const newLevel = Math.min(4, Math.floor(skills[game] / 60));
+  const success = completed && score / result.maxScore >= 0.6;
+  const gainedXp = success ? Math.min(PRACTICE.maxXp - oldXp, Math.ceil(60 * score / result.maxScore)) : 0;
+  next = progressOutcome(next, game, "journeyMiniGameSkills", "journeyMiniGameFailureStreaks",
+    success, result.cancelled, gainedXp);
+  const oldLevel = Math.min(PRACTICE.maxLevel, Math.floor(oldXp / 60));
+  const newLevel = skillLevel(next, game);
   const walletCents = state.walletCents + earnedCents;
   if (!Number.isSafeInteger(walletCents)) throw new Error("Journey mini-game reward exceeds currency precision.");
 
   return {
     ...next,
     miniGamePending: null,
-    journeyMiniGameSkills: skills,
     journeyMiniGamesPlayed: (state.journeyMiniGamesPlayed ?? 0) + 1,
     walletCents,
     lastJourneyMiniGame: {

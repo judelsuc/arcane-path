@@ -699,18 +699,47 @@ Source-less old chunks remain usable, with existing exact POI tags as limited
 fallback; this limitation is stated in Options. No blanket cache deletion,
 costly redownload or public-site scraping is enabled.
 
-## R-186 private player change requests (code deployed, collection disabled)
+## R-186 private player change requests
 
 The local implementation stores confirmed comments/allowlisted diagnostic
-snapshots in PostgreSQL and verified private screenshots in S3. Reports are
+snapshots in PostgreSQL and verified private screenshots in S3 or a dedicated
+private server directory. Reports are
 for the operator and, with their authorization, the development assistant.
 Nothing automatically contacts an AI service, creates an issue or publishes
 the evidence. There is deliberately no HTTP review/download API.
 
-**Collection remains disabled.** The current application S3 credentials cannot
-delete objects/versions. Do not enable collection merely because upload works.
+The application S3 credentials historically could not delete object versions;
+that permission has not been retested. S3 collection requires the automatic
+retention prerequisites below. The operator instead selected private filesystem
+storage and manual cleanup during feedback review, without new S3 credentials.
 
-### Activation prerequisites
+### Private filesystem activation and manual review
+
+1. Deploy the committed runtime and ensure the PostgreSQL report schema exists.
+   Keep the main game asset backend unchanged.
+2. Create `/var/lib/arcane-path/player-reports`, owned by `arcane`, mode 0700,
+   outside the web root, with no symlink. The service must be able to write there.
+3. Set `ARCANE_CHANGE_REQUESTS_LOCAL_DIR` to that absolute path and
+   `ARCANE_CHANGE_REQUESTS_ENABLED=1` in the private application service
+   environment, then restart. Only this local backend bypasses the S3 retention
+   health gate; PostgreSQL, authorization, validation and capacity limits remain.
+4. Verify synthetic HTTP submission, acknowledgement, private operator export
+   and deletion. The nginx route remains POST-only; no report or screenshot
+   download route is exposed.
+5. During review, run `scripts/change_requests.py export ID PRIVATE_DIRECTORY`
+   using the same configured environment, then `scripts/change_requests.py
+   delete ID`. The delete command also sweeps expired reports and orphan bytes,
+   preserving screenshots referenced by another active report. Remove private
+   exports after review.
+
+Reviewer access expires after 90 days. Physical deletion in this mode is
+manual, not automatic or promised exactly at expiry. Monitor disk usage and
+the report limits; collection stops at capacity until cleanup. Keep the
+directory and any backups private; exported evidence must never be committed
+or publicly attached. Removing the enable flag pauses collection without
+destroying existing evidence.
+
+### Alternative S3 activation prerequisites
 
 1. Deploy a reviewed committed runtime, including
    [the vendored renderer and MIT licence](../public/vendor/),
@@ -753,19 +782,17 @@ delete objects/versions. Do not enable collection merely because upload works.
    flag pauses collection without destroying existing reports; retain the
    deletion timer even when collection is paused.
 
-No commands in this runbook have installed the timer, changed IAM, enabled
-collection or modified the production schema/runtime.
-
 ### Retention and operational boundaries
 
-- The user chose **90 days**. Submitted records become inaccessible to reviewer
-  export at expiry; the hourly task physically removes comment/snapshot/SQL
+- Submitted records become inaccessible to reviewer export after **90 days**.
+  In automatic S3 mode, the hourly task physically removes comment/snapshot/SQL
   metadata and all S3 screenshot versions/delete markers. Deletion is hourly,
   not an exact-to-the-second promise. Incomplete submissions expire after
   24 hours; old unreferenced blobs and late/orphan catalogue writes are swept.
   Shared screenshot bytes are retained only while another active report
   references them. A deletion failure pauses collection and is an operational
-  incident, not permission to extend retention silently.
+  incident, not permission to extend retention silently. In private filesystem
+  mode, the same bounded purge runs only when the operator invokes it.
 - Dedicated screenshot scope prevents retention from deleting town photos,
   portraits, illustrations or other game assets. A blind bucket-wide TTL is
   inappropriate. Bounds are 2,000 comment characters, 8 KB diagnostic JSON,

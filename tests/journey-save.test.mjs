@@ -26,6 +26,24 @@ function storage() {
   return { getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v), data };
 }
 
+test("twenty-level experience and independent failure streaks survive a save round trip", () => {
+  const d = details(), memory = storage();
+  d.state.skills = { music: 1199, cafe: 1140 };
+  d.state.practiceFailureStreaks = { music: 2, cafe: 1 };
+  d.state.journeyMiniGameSkills = { sketch: 1199, "lost-found": 900 };
+  d.state.journeyMiniGameFailureStreaks = { sketch: 2, "lost-found": 1 };
+  const store = createJourneyStore(memory);
+  store.read(d.region);
+  store.write(d);
+  const restored = createJourneyStore(memory).read(d.region);
+  assert.deepEqual(restored.state, d.state);
+  for (const key of ["practiceFailureStreaks", "journeyMiniGameFailureStreaks"]) {
+    const invalid = structuredClone(restored);
+    invalid.state[key][Object.keys(invalid.state[key])[0]] = 3;
+    assert.throws(() => validateSave(invalid), /failure streaks/);
+  }
+});
+
 test("missing-server replacement archives the exact save before replacement and refuses data loss", () => {
   const memory = storage();
   Object.defineProperty(memory, "length", { get: () => memory.data.size });

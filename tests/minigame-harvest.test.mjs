@@ -23,10 +23,10 @@ test("Empress activates from either card, never stacks and completes the timed h
 });
 
 test("rotten bunches require 500 ms, award once per hold and missed rot subtracts without going negative", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const rule = difficulty(level);
     let game = createGame({ level, resonance: true, random: () => 0 });
-    assert.equal(game.rotten.filter(Boolean).length, 2 + level);
+    assert.equal(game.rotten.filter(Boolean).length, 2 + Math.floor(level * 4 / 19));
     const original = game;
     game = input(game, "press", 0);
     assert.equal(advance(game, 499).score, 0);
@@ -64,7 +64,7 @@ test("normal harvest still resets to the predetermined next spawn; unmatched car
 });
 
 test("grapes fall automatically and land exactly at the deadline at every level", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const rule = difficulty(level);
     let game = createGame({ level, now: 100, random: () => 0 });
     const original = game;
@@ -123,7 +123,7 @@ test("only landing position decides the basket; wrong catches do not score", () 
 });
 
 test("steering every colour from either extreme remains reachable even at the fastest level", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const rule = difficulty(level);
     for (let colour = 0; colour < rule.baskets; colour++) {
       for (const spawn of [0.08, 0.919]) {
@@ -170,7 +170,7 @@ test("controls cannot instantly score or teleport; cancellation is terminal", ()
 });
 
 test("all modes last exactly 30 seconds; fast falls start new bunches and more good sorting earns more", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const rule = difficulty(level);
     assert.equal(rule.durationMs, 30000);
     let fast = createGame({ level, random: () => 0 });
@@ -234,12 +234,11 @@ test("good grapes can be squashed in either mode without earning a point; abort 
 
 test("difficulty changes only colour count, falling speed and potential reward", () => {
   assert.equal(difficulty(0).baskets, 3);
-  assert.equal(difficulty(4).baskets, 6);
+  assert.equal(difficulty(19).baskets, 6);
   assert.equal(difficulty(0).fallMs, 2500);
-  assert.deepEqual([1, 2, 3, 4].map(level => [difficulty(level).baskets, difficulty(level).fallMs]),
-    [[3, 2450], [4, 2100], [5, 1750], [6, 1400]]);
-  assert.equal(difficulty(4).fallMs, 1400);
-  for (let i = 1; i <= 4; i++) {
+  assert.deepEqual([0, 7, 13, 19].map(level => difficulty(level).baskets), [3, 4, 5, 6]);
+  assert.equal(difficulty(19).fallMs, 1400);
+  for (let i = 1; i <= 19; i++) {
     assert.ok(difficulty(i).fallMs < difficulty(i - 1).fallMs);
     assert.equal(difficulty(i).rounds, 16);
     assert.equal(difficulty(i).steerPerSecond, difficulty(0).steerPerSecond);
@@ -249,7 +248,7 @@ test("difficulty changes only colour count, falling speed and potential reward",
 });
 
 test("invalid levels, times, draws, states and actions fail explicitly", () => {
-  for (const level of [-1, 5, 0.5, NaN, "0", null]) assert.throws(() => createGame({ level }), RangeError);
+  for (const level of [-1, 20, 0.5, NaN, "0", null]) assert.throws(() => createGame({ level }), RangeError);
   for (const now of [-1, NaN, Infinity, "0", Number.MAX_SAFE_INTEGER]) {
     assert.throws(() => createGame({ now }), RangeError);
     assert.throws(() => advance(createGame(), now), RangeError);

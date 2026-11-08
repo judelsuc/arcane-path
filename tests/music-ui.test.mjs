@@ -130,7 +130,7 @@ test("street performance wires melody, successful and failed taps, finish and hi
   assert.match(nodes.get("#music-result").textContent, /musicTooManyMistakes.*"limit":8/);
   ui.reset();
   doc.hidden = false;
-  level = 4;
+  level = 19;
   resonance = true;
   ui.localize();
   assert.match(nodes.get("#music-dialog").className, /arcane-resonance/);

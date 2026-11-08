@@ -4,7 +4,7 @@ import { available, difficulty, createGame, input, advance, result } from "../mi
 
 test("Moon card matches activate exactly one inspect-and-confirm pair without changing the 15-second clock", () => {
   for (const options of [{ resonance: true }, { journeyCard: "moon" }, { birthCard: "moon" }, { dailyCard: "moon" }, { journeyCard: "moon", dailyCard: "moon" }]) {
-    for (let level = 0; level <= 4; level++) {
+    for (let level = 0; level <= 19; level++) {
       let game = createGame({ level, random: () => .3, now: 100, ...options });
       assert.equal(game.resonance, true);
       assert.equal(game.objects.filter(object => object.inspectRequired).length, 2);
@@ -20,7 +20,7 @@ test("Moon card matches activate exactly one inspect-and-confirm pair without ch
           assert.equal(input(game, { type: "confirm", objectId }, game.now), game);
           game = input(game, { type: "inspect", objectId }, game.now + 10);
           assert.equal(game.startedAt, 100);
-          assert.equal(game.timeLimitMs, 15000);
+          assert.equal(game.timeLimitMs, 15000 + level * 1000);
           assert.equal(game.mistakes, 0);
           const score = game.score;
           game = input(game, { type: "inspect", objectId }, game.now + 10);
@@ -29,7 +29,7 @@ test("Moon card matches activate exactly one inspect-and-confirm pair without ch
         } else game = input(game, { type: "match", objectId }, game.now);
       }
       assert.equal(result(game).earningsMultiplier, 1.1);
-      assert.equal(result(game).score, 4 + level);
+      assert.equal(result(game).score, 4 + Math.floor(level * 4 / 19));
     }
   }
   let game = createGame({ resonance: true });
@@ -52,25 +52,25 @@ const solve = game => {
 
 test("levels 0–4 are bounded, harder, immutable and perfectly solvable", () => {
   let multiplier = 0;
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const settings = difficulty(level);
-    assert.equal(settings.objectCount, 4 + level);
-    assert.equal(settings.timeLimitMs, 15000);
+    assert.equal(settings.objectCount, 4 + Math.floor(level * 4 / 19));
+    assert.equal(settings.timeLimitMs, 15000 + level * 1000);
     assert.ok(settings.rewardMultiplier > multiplier);
     multiplier = settings.rewardMultiplier;
     const game = create(level);
-    assert.equal(game.objects.length, 4 + level);
+    assert.equal(game.objects.length, settings.objectCount);
     assert.ok(Object.isFrozen(game));
     assert.ok(Object.isFrozen(game.objects[0].label));
     assert.throws(() => { game.reports[0].objectId = "forged"; }, TypeError);
     const completed = solve(game);
-    assert.deepEqual(result(completed), { completed: true, score: 4 + level, maxScore: 4 + level, cancelled: false, timedOut: false, earningsMultiplier: 1 });
+    assert.deepEqual(result(completed), { completed: true, score: settings.objectCount, maxScore: settings.objectCount, cancelled: false, timedOut: false, earningsMultiplier: 1 });
     assert.equal(game.score, 0);
-    assert.equal(game.remaining.length, 4 + level);
+    assert.equal(game.remaining.length, settings.objectCount);
     assert.equal(input(completed, { type: "cancel" }, completed.now), completed);
     assert.equal(advance(completed, completed.now + 50), completed);
   }
-  assert.notEqual(create(0).reports[0].description.en, create(4).reports.find(
+  assert.notEqual(create(0).reports[0].description.en, create(19).reports.find(
     item => item.objectId === create(0).reports[0].objectId).description.en);
 });
 
@@ -85,7 +85,7 @@ test("handwritten clues distinguish lookalikes in both languages, at every level
     "pouch-square": [/square|four.corner|four right|four equal/i, /carrée|quatre coins|quatre angles|quatre côtés/i],
     "pouch-round": [/round|without corners|circle|without.*corner/i, /ronde|sans coins|cercle|sans.*coin/i],
   };
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const game = create(level);
     assert.equal(new Set(game.reports.map(item => item.objectId)).size, game.objects.length);
     for (const [lang, index] of [["en", 0], ["fr", 1]]) {
@@ -117,7 +117,7 @@ test("three errors fail without completing; correct matches consume objects only
 });
 
 test("cancel discards partial reward and remains terminal", () => {
-  let game = create(4);
+  let game = create(19);
   game = input(game, { type: "match", objectId: game.reports[0].objectId }, 10);
   game = input(game, { type: "cancel" }, 11);
   assert.deepEqual(result(game), { completed: false, score: 0, maxScore: 8, cancelled: true, timedOut: false, earningsMultiplier: 1 });
@@ -126,7 +126,7 @@ test("cancel discards partial reward and remains terminal", () => {
 });
 
 test("rejects invalid levels, RNG, actions, forged states and decreasing/unsafe time", () => {
-  for (const level of [-1, 5, 1.5, NaN, Infinity, "1", null]) {
+  for (const level of [-1, 20, 1.5, NaN, Infinity, "1", null]) {
     assert.throws(() => difficulty(level), RangeError);
     assert.throws(() => createGame({ level }), RangeError);
   }
@@ -154,8 +154,8 @@ test("rejects invalid levels, RNG, actions, forged states and decreasing/unsafe 
 });
 
 test("shuffling varies presentation without changing one-to-one solvability", () => {
-  const first = createGame({ level: 4, random: () => 0 });
-  const last = createGame({ level: 4, random: () => 0.999999 });
+  const first = createGame({ level: 19, random: () => 0 });
+  const last = createGame({ level: 19, random: () => 0.999999 });
   assert.notDeepEqual(first.objects, last.objects);
   assert.notDeepEqual(first.reports, last.reports);
   assert.equal(result(solve(first)).score, 8);
@@ -186,19 +186,20 @@ test("availability is current loaded settlement or mapped active public lost-pro
 });
 
 test("15-second deadline starts at creation and expires exactly, including before a late match", () => {
-  for (let level = 0; level <= 4; level++) {
+  for (let level = 0; level <= 19; level++) {
     const initial = createGame({ level, random: () => 0.25, now: 5000 });
-    let game = advance(initial, 19999);
+    const deadline = 20000 + level * 1000;
+    let game = advance(initial, deadline - 1);
     assert.equal(game.status, "playing");
     const objectId = game.reports[0].objectId;
-    const atBoundary = input(game, { type: "match", objectId }, 20000);
+    const atBoundary = input(game, { type: "match", objectId }, deadline);
     assert.equal(atBoundary.status, "timedOut");
     assert.equal(atBoundary.score, 0, "the match at the deadline must not count");
-    game = input(game, { type: "match", objectId }, 19999);
+    game = input(game, { type: "match", objectId }, deadline - 1);
     assert.equal(game.score, 1);
-    const expired = advance(game, 20000);
+    const expired = advance(game, deadline);
     assert.equal(expired.status, "timedOut");
-    assert.deepEqual(result(expired), { completed: false, score: 1, maxScore: 4 + level, cancelled: false, timedOut: true, earningsMultiplier: 1 });
+    assert.deepEqual(result(expired), { completed: false, score: 1, maxScore: (4 + Math.floor(level * 4 / 19)), cancelled: false, timedOut: true, earningsMultiplier: 1 });
     assert.equal(advance(expired, 100000), expired);
     assert.equal(input(expired, { type: "cancel" }, 100000), expired);
     assert.equal(initial.score, 0);

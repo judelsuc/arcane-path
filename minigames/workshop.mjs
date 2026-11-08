@@ -35,9 +35,9 @@ export function available(cell) {
 }
 
 export function difficulty(level) {
-  if (!integer(level, 0, 4)) throw new RangeError("Workshop level must be 0–4.");
-  return freeze({ level, options: 3 + level, timeMs: 60000 - level * 6000,
-    rewardMultiplier: 1 + level * 0.5, maxScore: 1000 });
+  if (!integer(level, 0, 19)) throw new RangeError("Workshop level must be 0–19.");
+  return freeze({ level, options: 3 + Math.floor(level * 4 / 19), timeMs: 60000 - Math.round(level * 24000 / 19),
+    rewardMultiplier: 1 + level * 2 / 19, maxScore: 1000 });
 }
 
 function validate(game, now) {

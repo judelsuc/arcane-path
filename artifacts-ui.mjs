@@ -47,7 +47,7 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
   client = createArtifactsClient() }) {
   const talk = document.getElementById("dialogue-artifacts"), book = document.getElementById("quests-artifacts");
   const recovery = document.getElementById("artifact-recovery");
-  let snapshot, working = false, retrying = false, error = "", feedback = "", owner, endingAttempt;
+  let snapshot, working = false, error = "", feedback = "", owner, endingAttempt;
   let automaticAttempt, observedDistance, observedSleeps;
   let queuedRumours = [], scheduledRumour, speech, rumourError;
   const spoken = document.getElementById("conversation-artifact-rumour");
@@ -64,9 +64,10 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
   async function request(action = null, allowEnded = false) {
     let current = context();
     if (!current || working || current.blocked && !client.pending(current.state) && !(allowEnded && current.state.ended)) return;
-    working = true; error = feedback = ""; lock(true); localize();
+    working = true; error = feedback = "";
     try {
-      await beforeRequest?.();
+      lock(true); localize();
+      await beforeRequest?.(AbortSignal.timeout(20000));
       const latest = context();
       if (latest?.state.serverJourney?.id !== current.state.serverJourney.id) throw new Error("The journey changed.");
       current = latest;
@@ -105,7 +106,7 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
       if (action?.type === "character-rumour" || rumourError) {
         rumourError = { characterId: action?.characterId ?? rumourError.characterId, message: reason.message };
       }
-    } finally { working = retrying = false; lock(false); localize(); }
+    } finally { working = false; lock(false); localize(); }
   }
   function targets(id, lang) {
     const named = ids => ids.map(value => ({ id: value, label: loreItem(value)[lang] }));
@@ -124,15 +125,13 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
     const current = context(), state = current?.state, lang = language(), c = WORDS[lang];
     recovery.replaceChildren();
     const pending = client.pending(state);
-    // Routine in-flight syncs are also stored as pending; only a stuck command or explicit retry needs the banner.
-    recovery.hidden = !state || !pending || working && !retrying;
+    recovery.hidden = !state || !(pending || working || error);
     recovery.setAttribute("aria-label", t("quests.artifacts"));
     if (!recovery.hidden) {
       const status = text(recovery, error || (working ? c.loading : t("travelBlocked.artifact")));
       status.setAttribute("role", error ? "alert" : "status");
       button(recovery, c.retry, () => {
         if (working) return;
-        retrying = true;
         void request();
       }, working);
     }

@@ -120,6 +120,16 @@ test("Hermit grants exact new knowledge, charges once and cannot reveal a holder
   }
 });
 
+test("Hermit reports a distant object's region rather than the traveler's map", async () => {
+  const owned = await own("hermit");
+  owned.instances[1].col = 10000;
+  owned.instances[1].region = "Finland";
+  const used = await step(owned.runtime, owned.instances, { type: "use", id: "hermit", target: "chariot" });
+  const clue = used.runtime.state.discovery.entries.find(entry => entry.targetId === "chariot");
+  assert.equal(clue.facts.region, "Finland");
+  assert.equal(clue.facts.col, 10000);
+});
+
 test("NPC interpretation authorizes only earned evidence, charges its quote and never raises precision", async () => {
   let runtime = start(), instances = world();
   ({ runtime, instances } = await step(runtime, instances, { type: "inquire", id: "hermit" }));

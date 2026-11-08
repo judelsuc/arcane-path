@@ -128,7 +128,7 @@ test("provider failure has a retry for the same character, not a new random requ
   f.ui.characterChanged();
   await settle();
   assert.equal(f.state().serviceQuests, undefined);
-  assert.match(f.get("dialogue-services").children[2].textContent, /could not be prepared/);
+  assert.match(f.get("dialogue-services").children[2].textContent, /don’t have all the directions/);
   failing = false;
   const retry = f.get("dialogue-services").children[0].children[0];
   assert.equal(retry.textContent, "Retry this request");
@@ -222,6 +222,18 @@ test("preparing another character's quest does not block accepting an existing o
   f.ui.reset();
   resolve();
   await settle();
+});
+
+test("a new speaker with the same quest template still proposes their own mission", async t => {
+  const f = offerFixture(t, (ready, _state, characterId) => ({ ...ready, characterId, nonce: characterId }));
+  f.ui.characterChanged();
+  await settle();
+  f.speaker({ id: "e".repeat(32), name: "Other person",
+    profile: { quest: { template: QUEST_TEMPLATES[0].id, scope: "local" } } });
+  f.ui.characterChanged();
+  await settle();
+  assert.equal(f.calls.length, 2);
+  assert.equal(f.state().serviceQuests.offers.length, 2);
 });
 
 for (const change of ["move", "changeJourney"]) {

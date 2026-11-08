@@ -29,8 +29,8 @@ function restart() {
     const level = Number(levelSelect.value);
     const settings = difficulty(level);
     document.querySelector("#preview-difficulty").textContent = french
-      ? `${settings.objectCount} objets · ${clueStyles[level]} · ${settings.timeLimitMs / 1000} secondes · ${settings.maxMistakes} erreurs maximum.`
-      : `${settings.objectCount} objects · ${clueStyles[level]} · ${settings.timeLimitMs / 1000} seconds · ${settings.maxMistakes} mistakes maximum.`;
+      ? `${settings.objectCount} objets · ${clueStyles[settings.clueStyle]} · ${settings.timeLimitMs / 1000} secondes · ${settings.maxMistakes} erreurs maximum.`
+      : `${settings.objectCount} objects · ${clueStyles[settings.clueStyle]} · ${settings.timeLimitMs / 1000} seconds · ${settings.maxMistakes} mistakes maximum.`;
     ui = mount(document.querySelector("#lostfound-board"), {
       language, level, ...resonance.options,
       onFinish(result) {

@@ -124,7 +124,7 @@ test("Strength runtime failure clears target selection, timer and result exactly
 });
 
 test("carreau targets support keyboard selection and a failed attempt leaves the target in place", t => {
-  const s = setup(t, { level: 4, language: "en", resonance: true });
+  const s = setup(t, { level: 19, language: "en", resonance: true });
   s.find("petanque-start").handlers.click();
   s.find("petanque-throw").handlers.click();
   waitForTurnOrCount(s);
@@ -217,7 +217,7 @@ test("UI needs explicit start, plays six boules, then highlights and counts each
 });
 
 test("keyboard controls aim, throw and quit; English dictionary", t => {
-  const s = setup(t, { language: "en", level: 2 });
+  const s = setup(t, { language: "en", level: 10 });
   assert.match(s.find("petanque-rules").textContent, /jack.*No stake/s);
   assert.equal(s.key("Enter"), true);
   assert.match(s.find("petanque-status").textContent, /boule 1\/3 — direction 0°, power 50%/);
@@ -263,13 +263,13 @@ test("engine errors are shown accessibly instead of crashing", t => {
   assert.match(s.find("petanque-error").textContent, /Action impossible/);
   assert.equal(s.finishes.length, 0);
   assert.throws(() => mount(null), TypeError);
-  assert.throws(() => mount(fakeDom().container, { level: 7 }), RangeError);
+  assert.throws(() => mount(fakeDom().container, { level: 20 }), RangeError);
 });
 
 test("ground raster maps actual local height to pixels, without bump/hollow overlay badges", t => {
-  const s = setup(t, { level: 4, language: "en" });
+  const s = setup(t, { level: 19, language: "en" });
   s.find("petanque-start").handlers.click();
-  const terrain = createGame({ level: 4, random: () => 0.5 }).terrain;
+  const terrain = createGame({ level: 19, random: () => 0.5 }).terrain;
   const canvas = s.find("petanque-relief");
   assert.equal(canvas.tagName, "CANVAS");
   assert.equal(canvas.style.imageRendering, "pixelated");

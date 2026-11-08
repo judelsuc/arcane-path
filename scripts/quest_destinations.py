@@ -24,6 +24,7 @@ import urllib.parse
 import urllib.request
 import uuid
 import xml.etree.ElementTree as ET
+from collections import Counter
 
 from asset_storage import AssetConflict, AssetError
 from fetch_osm import OVERPASS_URLS
@@ -464,13 +465,26 @@ class QuestDestinations:
                 elements.extend(json.loads(value) for value in records)
         return bounded_candidates(elements, town), complete
 
-    def pois(self, town, base, region=None, fallback=None):
+    def pois(self, town, base, region=None, fallback=None, required_kinds=None, excluded_cells=()):
         with self.connect() as db:
             row = db.execute(f"SELECT * FROM {self.pois_table} WHERE town=?", (town["id"],)).fetchone()
         if row is not None and 0 <= time.time() - row["observed"] < TTL:
             elements = json.loads(row["elements"])
         else:
             local, covered = self.cached_elements(town, base, region)
+            if local and not covered and required_kinds:
+                available = Counter()
+                seen_cells = set(excluded_cells)
+                for poi in normalize(local, town, base):
+                    cell = poi["col"], poi["row"]
+                    if cell not in seen_cells:
+                        available[poi["kind"]] += 1
+                        seen_cells.add(cell)
+                if all(available[kind] >= count for kind, count in Counter(required_kinds).items()):
+                    # Enough verified endpoints for this request, not a complete town inventory.
+                    if fallback is not None:
+                        fallback["incomplete"].add(town["id"])
+                    return normalize(local, town, base)
             if covered:
                 elements = local
             else:
@@ -568,7 +582,10 @@ class QuestDestinations:
                         if len(public_pois) >= MAX_TOWNS:
                             break
                         try:
-                            public_pois[town["id"]] = self.pois(town, base, region, fallback)
+                            required = [role["kind"] for index, role in enumerate(authored["roles"])
+                                        if groups[index] == group]
+                            public_pois[town["id"]] = self.pois(
+                                town, base, region, fallback, required, used_cells)
                         except (OSError, ValueError):
                             # Try other towns; an unverified town keeps the final outcome retryable.
                             logging.warning("Quest POIs unavailable for %s", town["id"], exc_info=True)

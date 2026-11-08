@@ -42,6 +42,7 @@ const coordinates = point => Number.isFinite(point.latitude) && Math.abs(point.l
 const cell = point => integer(point.col) && integer(point.row);
 const sameCell = (a, b) => a.col === b.col && a.row === b.row;
 const instanceId = id => typeof id === "string" && /^[a-f0-9]{32}$/u.test(id);
+const assignmentKey = quest => quest.characterId ? `character:${quest.characterId}` : `template:${quest.template}`;
 
 function sourceUrl(value) {
   if (!text(value, 1000)) return false;
@@ -146,7 +147,7 @@ export function validateServiceQuests(state) {
       services.offers.length > SERVICE_QUEST_LIMITS.offers ||
       services.offers.length + services.quests.length > SERVICE_QUEST_LIMITS.history ||
       !minutes(state.elapsedMinutes)) fail();
-  const ids = new Set(), activeTemplates = new Set();
+  const ids = new Set(), activeAssignments = new Set();
   let activeCount = 0;
   for (const [list, offered] of [[services.offers, true], [services.quests, false]]) {
     for (const quest of list) {
@@ -155,8 +156,9 @@ export function validateServiceQuests(state) {
       ids.add(quest.id);
       if (quest.status === "active") activeCount++;
       if (["offered", "active"].includes(quest.status)) {
-        if (activeTemplates.has(quest.template)) fail();
-        activeTemplates.add(quest.template);
+        const assignment = assignmentKey(quest);
+        if (activeAssignments.has(assignment)) fail();
+        activeAssignments.add(assignment);
       }
     }
   }
@@ -206,8 +208,8 @@ export function createServiceOffer(state, options) {
   if (services.offers.length >= SERVICE_QUEST_LIMITS.offers ||
       services.offers.length + services.quests.length >= SERVICE_QUEST_LIMITS.history ||
       [...services.offers, ...services.quests].some(quest =>
-        quest.template === options.template && ["offered", "active"].includes(quest.status))) {
-    throw new Error("Service quest limit or duplicate active template.");
+        assignmentKey(quest) === assignmentKey(options) && ["offered", "active"].includes(quest.status))) {
+    throw new Error("Service quest limit or duplicate active assignment.");
   }
   const template = templates.get(options.template);
   if (!template || !Array.isArray(options.destinations)) fail();
