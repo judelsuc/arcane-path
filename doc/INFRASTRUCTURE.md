@@ -12,6 +12,59 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Checkpoint deployed: adaptive games, quests and private feedback (8 November 2026)
+
+Runtime `803c107ac6b4c93f8e7893123c764523d7e80a02`, game version **0.21.19**,
+packaged at `2026-11-08T15:18:47.582566+00:00`. All eleven progression-based
+activities now have twenty levels, independent failure streaks and one-level
+fallback after three consecutive failures. Success resets the streak;
+cancellation does not count. Drawing grows more gradually, lost-and-found
+allows 15-34 seconds, and higher-level cafe orders use stable recipe order
+rather than ingredient-button order. Petanque's jack placement stays within
+the pitch across all twenty levels.
+
+Character quest discovery can immediately use partial cached OSM data when
+all required endpoint categories exist. Characters are no longer prevented
+from offering the same service type as a different NPC; dialogue preparation
+is in-world, and stale selections clear when leaving a cell. Unloaded steps
+prepare terrain without locking other actions or moving later automatically.
+The terrain cache uses LRU eviction. Unowned magical objects are distributed
+across 22 European countries; carried objects stay with their owners.
+
+The 44-file delta was 267,661 bytes, SHA-256
+`cf923fad6b5e11b155da6364643c593b9c191d413102de49ab20295b0b02176a`.
+Rollback archive `/home/ubuntu/runtime-before-0.21.19-803c107.tar.gz` (0600),
+SHA-256 `2fd640840bc211452b1fa0843e302a3abda5bb484ce393cf4f31c4305afa89f6`.
+All three cached custom origins were present in shared PostgreSQL before
+restart. All deployed file hashes matched both disk and HTTP responses.
+The release manifest mtime was refreshed after extraction. Both services
+are active, with zero automatic restarts and no error-priority service entries.
+
+**Private player reports are enabled.** The root-owned private drop-in
+`/etc/systemd/system/arcane-path.service.d/90-player-reports.conf` enables
+collection and selects `/var/lib/arcane-path/player-reports`, owned by `arcane`,
+mode 0700. PostgreSQL metadata and the main S3 game-asset backend are unchanged.
+No new S3 credentials, automatic retention timer or reviewer HTTP endpoint
+was added. Review access expires after 90 days; physical deletion is manual
+during feedback review, as agreed.
+
+Live synthetic verification rejected invalid capabilities (403), accepted
+confirmed evidence (200), reused the same acknowledgement on retry, read back
+identical private screenshot bytes, exported a private 0700/0600 review bundle
+and manually removed both screenshot and SQL/catalogue metadata. Temporary
+journey/capability records and exported evidence were removed. An export must
+use a parent writable by the operator; the smoke bundle used a temporary
+subdirectory of the private report directory. No player save or report was
+deleted.
+
+Both domains return 401 for unauthenticated gameplay, release metadata and
+POST submissions; GET on the POST-only report route is denied (403).
+Favicons remain public (200). Validation: the full JavaScript suite and
+95 targeted Python tests passed. The full Python suite ran 682 tests
+(36 skipped), with one unchanged pre-existing failure: the encounter-art
+scene catalogue lacks the eight previously deployed dog-event scene names.
+Interactive browser validation was not available.
+
 ## Checkpoint deployed: correct clue-journal link (6 November 2026)
 
 Runtime `083ec56e6771c5e58cd7c7ec8213b6b069bd3bda`, tag
