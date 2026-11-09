@@ -198,6 +198,25 @@ command rather than starting a new journey.
 
 This repair does not include the locally committed QTE or pursuer work.
 
+Deployed on 9 November 2026 as
+`4f54284d213dd42e372e5d6753cd2a13901acddc`. The six-file package contains only
+the four repaired Python modules, changelog and deployment metadata. Previous
+file hashes matched; installed disk hashes and served release/changelog hashes
+were verified after restart. Application, nginx and the map-completion timer
+are active. No database schema changes or player-save mutations were needed.
+
+Verification: 119 related Python tests and 99 client tests passed. On the live
+PostgreSQL catalogue the exact artifact-cache query succeeded in a read-only
+transaction, and ten retained NPC assignments validated without map reads.
+All 37 deployed scene IDs passed actual illustration request validation in an
+isolated temporary store, without model calls. An authenticated browser replay
+of the user's pending command was not performed.
+
+Rollback archive `/home/ubuntu/before-0.22.3-4f54284.tar.gz`, root-owned 0600:
+SHA-256 `fd6fd8b2613a09d03374895338168a25cdc9efb4a2bda4effc1a4747ef48f33d`.
+Restore its six files and touch `public/release.json`, then restart the
+application. Leave shared cache assets, quests and saves intact.
+
 ### Server-side map completion, 0.22.2
 
 The bounded worker [travel_prefetch.py](../scripts/travel_prefetch.py) completes
