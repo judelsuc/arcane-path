@@ -186,6 +186,10 @@ The [service](../infra/systemd/arcane-travel-prefetch.service) handles at most
 two chunks per invocation; the [timer](../infra/systemd/arcane-travel-prefetch.timer)
 waits two minutes after each run. Shared leases, usable cache assets and retry
 cooldowns prevent duplicate jobs or endless rapid provider retries.
+The service uses the same private AWS credential-file path as the application,
+not copied credentials or instance-metadata discovery. New chunk publications
+include their pipeline in the asset request key, so identical bytes retained
+from an older pipeline cannot conflict on immutable provenance metadata.
 
 After schema initialization and installation, bootstrap existing ready chunks
 **once**, then enable the timer:

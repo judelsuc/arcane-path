@@ -551,7 +551,7 @@ class ChunkStore:
         payload = json.dumps(data, sort_keys=True).encode()
         checksum = hashlib.sha256(payload).hexdigest()
         raw = json.dumps({"data": data, "sha256": checksum}, sort_keys=True).encode()
-        request = hashlib.sha256(raw).hexdigest()
+        request = hashlib.sha256(self.pipeline.encode() + b":" + raw).hexdigest()
         asset = self.assets.publish(
             "travel-chunk", request, raw, media_type="application/json", retention="cache",
             provenance={"source": "OpenStreetMap and Open-Meteo elevation service",

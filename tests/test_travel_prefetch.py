@@ -1,4 +1,6 @@
 import copy
+import hashlib
+import json
 import tempfile
 import threading
 import time
@@ -27,7 +29,7 @@ class TravelPrefetchTests(unittest.TestCase):
 
     def chunk(self, region, x, y):
         data = copy.deepcopy(self.store.bases[region])
-        data.update(width=8, height=8, chunk={"region": region, "x": x, "y": y, "size": 8})
+        data.update(width=8, height=8, sitesVersion=1, chunk={"region": region, "x": x, "y": y, "size": 8})
         data["rows"] = [row[:8] for row in data["rows"][:8]]
         return data
 
@@ -86,6 +88,22 @@ class TravelPrefetchTests(unittest.TestCase):
         with self.assets.catalogue.connection() as db:
             db.execute("UPDATE travel_chunk_interests SET snapshot='obsolete'")
         self.assertEqual(candidates(self.store, 10), [])
+
+    def test_identical_chunk_bytes_from_an_old_pipeline_do_not_conflict_on_provenance(self):
+        data = self.chunk("firmi", 1, 1)
+        checksum = hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
+        raw = json.dumps({"data": data, "sha256": checksum}, sort_keys=True).encode()
+        old_request = hashlib.sha256(raw).hexdigest()
+        self.assets.publish("travel-chunk", old_request, raw, media_type="application/json", retention="cache",
+                            provenance={"source": "OpenStreetMap and Open-Meteo elevation service",
+                                        "license": "ODbL and CC BY 4.0", "version": "old-pipeline"})
+        with patch.object(self.store, "compute_chunk", return_value=data):
+            self.assertEqual(self.store.build("firmi", 1, 1), data)
+        self.assertEqual(self.store.read_shared_chunk("firmi", 1, 1), data)
+        with self.assets.catalogue.connection() as db:
+            request = db.execute("SELECT asset_request FROM travel_chunk_cache WHERE chunk_id=?",
+                                 (self.store.chunk_id("firmi", 1, 1),)).fetchone()[0]
+        self.assertNotEqual(request, old_request)
 
     def test_both_browser_chunk_endpoints_persist_seeds_but_invalid_requests_do_not(self):
         with ThreadPoolExecutor(max_workers=1) as pool:

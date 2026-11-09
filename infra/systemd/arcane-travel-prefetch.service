@@ -10,6 +10,8 @@ User=arcane
 Group=arcane
 WorkingDirectory=/opt/arcane-path
 Environment=ARCANE_ASSET_STORAGE_CONFIG_FILE=/etc/arcane-path/shared-storage.json
+Environment=AWS_SHARED_CREDENTIALS_FILE=/etc/arcane-path/shared-storage-aws.ini
+Environment=AWS_EC2_METADATA_DISABLED=true
 ExecStart=/opt/arcane-path/.venv-shared-storage/bin/python scripts/travel_prefetch.py --cache /var/lib/arcane-path/cache/travel --limit 2
 TimeoutStartSec=20min
 UMask=0077
