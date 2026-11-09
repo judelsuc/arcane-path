@@ -322,6 +322,21 @@ class QuestDestinations:
         return {**result, "nonce": nonce, "template": plan["template"], "scope": plan["scope"],
                 "characterId": character["id"]}
 
+    def retained_character_offer(self, journey, region, character_id, contract_id, position, total):
+        with self.connect() as db:
+            row = db.execute(f"SELECT request,region,status,output FROM {self.instances_table} "
+                             "WHERE owner=? AND nonce=?", (journey, contract_id)).fetchone()
+        if row is None:
+            return False
+        request = json.loads(row["request"])
+        output = json.loads(row["output"]) if row["output"] else None
+        if (row["region"] != region or row["status"] != "ready" or
+                request.get("journey") != journey or request.get("characterId") != character_id or
+                request.get("origin") != position or not isinstance(output, dict) or
+                len(output.get("destinations", [])) != total):
+            raise JourneyConflict("This quest contract does not match its retained character assignment.")
+        return True
+
     def enqueue(self, owner, region, data, *, retry=False, character=False):
         canonical = json.dumps(data, sort_keys=True)
         with self.lock, self.connect() as db:

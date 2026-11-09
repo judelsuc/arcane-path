@@ -197,6 +197,17 @@ class QuestDestinationsTests(unittest.TestCase):
         self.assertEqual(ready["origin"], {"col": 0, "row": 0})
         self.assertEqual(ready["characterId"], character["id"])
         self.assertEqual(ready["template"], character["profile"]["quest"]["template"])
+        self.assertTrue(self.service.retained_character_offer(
+            self.owner, "test", character["id"], ready["nonce"], {"col": 0, "row": 0}, 2))
+        for region, identity, position, total in [
+                ("other", character["id"], {"col": 0, "row": 0}, 2),
+                ("test", "d" * 32, {"col": 0, "row": 0}, 2),
+                ("test", character["id"], {"col": 1, "row": 0}, 2),
+                ("test", character["id"], {"col": 0, "row": 0}, 1)]:
+            with self.assertRaises(JourneyConflict):
+                self.service.retained_character_offer(self.owner, region, identity, ready["nonce"], position, total)
+        self.assertFalse(self.service.retained_character_offer(
+            "e" * 32, "test", character["id"], ready["nonce"], {"col": 0, "row": 0}, 2))
         self.assertEqual(self.service.character_offer(
             self.owner, "test", {"col": 0, "row": 0}, character, retry=True), ready)
         self.fetcher.assert_called_once()

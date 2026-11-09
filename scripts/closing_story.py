@@ -30,6 +30,14 @@ EVENT_FACTS = {
     if key.startswith("event.")
 }
 EVENT_FACTS.update({
+    "dogFindsFood": "The traveller's dog found a small amount of food in woodland.",
+    "dogRestSpot": "The traveller's dog indicated a sheltered place for a short rest.",
+    "dogMakesFriend": "The traveller's dog helped make a friendly connection in a settlement.",
+    "dogTangled": "The traveller paused to untangle the dog's lead.",
+    "dogChasesScent": "The traveller followed their dog back after it chased a scent.",
+    "dogStealsSnack": "The traveller's dog took some of their food.",
+    "dogPlays": "The traveller's dog invited them to play for a moment.",
+    "dogKeepsCompany": "The traveller noticed their dog's reassuring company.",
     "dogEncounter": "A dog without a collar approached the traveller. Adoption or companionship is not established.",
     "whiteDeer": "A white deer seemed to stand between trees, then was no longer visible.",
     "silentBell": "The traveller thought they heard bells while the bell tower stayed still.",

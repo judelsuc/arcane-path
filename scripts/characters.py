@@ -1305,18 +1305,27 @@ class Characters:
             raise JourneyRequest("Invalid character quest contract.")
         request_id = data["requestId"]
         if event == "offered":
-            _, _, _, location = self._authorized_location(data, token)
             with self.connect() as db:
-                row = db.execute(self._sql(
-                    "SELECT 1 FROM world_characters WHERE character_id=? AND world_id=? AND location_id=?"),
-                    (character_id, WORLD, location["id"])).fetchone()
+                existing = db.execute(self._sql(
+                    "SELECT character_id,total_steps FROM character_quest_contracts WHERE journey=? AND contract_id=?"),
+                    (journey, contract_id)).fetchone()
                 met = db.execute(self._sql(
                     "SELECT 1 FROM character_encounters WHERE journey=? AND character_id=?"),
                     (journey, character_id)).fetchone()
-            if row is None:
-                raise JourneyConflict("This character cannot offer a quest away from their location.")
             if met is None:
                 raise JourneyConflict("A character quest cannot be attributed before the characters meet.")
+            retained = existing is not None and existing["character_id"] == character_id and existing["total_steps"] == total
+            if not retained and self.quests is not None:
+                retained = self.quests.retained_character_offer(
+                    journey, genesis["region"], character_id, contract_id, position, total)
+            if not retained:
+                _, _, _, location = self._authorized_location(data, token)
+                with self.connect() as db:
+                    row = db.execute(self._sql(
+                        "SELECT 1 FROM world_characters WHERE character_id=? AND world_id=? AND location_id=?"),
+                        (character_id, WORLD, location["id"])).fetchone()
+                if row is None:
+                    raise JourneyConflict("This character cannot offer a quest away from their location.")
 
         status, outcome = self._contract_status(event)
         event_type = f"quest_{event}"

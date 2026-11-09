@@ -3,6 +3,7 @@ import json
 import sys
 import unittest
 import uuid
+from unittest.mock import patch
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -48,6 +49,36 @@ class MainArtifactTests(unittest.TestCase):
         self.assertEqual(result["state"]["trail"], self.fixture.journeys.read(self.journey)["state"]["trail"])
         with self.fixture.lore.connect() as db:
             self.assertEqual(db.execute("SELECT count(*) FROM sessions").fetchone()[0], 0)
+
+    def test_opencache_query_is_adapted_exactly_once_by_shared_store_connection(self):
+        from journey_storage import StoreConnection
+        from types import SimpleNamespace
+        from contextlib import contextmanager
+
+        calls = []
+        class PostgreSQL:
+            def execute(inner, query, parameters=()):
+                self.assertEqual(query.count("%s"), len(parameters))
+                self.assertNotIn("%%s", query)
+                calls.append(query)
+                return SimpleNamespace(fetchall=lambda: [])
+        catalogue = SimpleNamespace(postgres=True, sql=lambda query: query.replace("?", "%s"))
+        raw = PostgreSQL()
+        class LocalConnection:
+            def __init__(inner, db): inner.db = db
+            def begin(inner, name): inner.db.execute("BEGIN IMMEDIATE")
+            def execute(inner, *args): return inner.db.execute(*args)
+        @contextmanager
+        def shared_connection():
+            with LorePlaytest.connect(self.api) as db:
+                yield LocalConnection(db)
+        original_offers = __import__("opencaches").offers
+        def verify(db, sql, *args):
+            return original_offers(StoreConnection(raw, catalogue), sql, *args)
+        self.api.assets = SimpleNamespace(catalogue=catalogue)
+        with patch.object(self.api, "connect", shared_connection), patch("main_artifacts.opencaches.offers", side_effect=verify):
+            self.request()
+        self.assertEqual(len(calls), 1)
 
     def test_receipts_replay_exactly_once_and_reject_conflicts(self):
         result, body = self.request({"type": "inquire"})

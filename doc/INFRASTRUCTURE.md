@@ -176,6 +176,28 @@ explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
 ## Checkpoint deployed: town legends and composed treasures (9 November 2026)
 
+### Regression repair, 0.22.3
+
+The artifact command failure reported as `Asset storage unavailable` was a
+PostgreSQL placeholder-adaptation error, not missing S3 credentials:
+`opencaches.offers` received SQL already adapted before `StoreConnection`
+adapted it again. Its query now goes through the connection exactly once.
+
+Historical NPC quest contracts now use their retained server quest assignment
+(journey, character, region, original position and destination count all checked),
+or an already recorded matching contract, rather than requiring a disposable
+old map chunk. A recorded meeting remains mandatory; new unassigned offers
+still require the existing cached-location authorization.
+
+Eight companion event facts were missing from the shared illustration scene
+catalogue. A mixed history containing one of these events caused HTTP 400 and
+stopped the client sync loop, hiding later illustrations as well. All 37
+event kinds now have registered scenes. Reload once after the repair to clear
+the old client-side failed sync state; retry the retained pending artifact
+command rather than starting a new journey.
+
+This repair does not include the locally committed QTE or pursuer work.
+
 ### Server-side map completion, 0.22.2
 
 The bounded worker [travel_prefetch.py](../scripts/travel_prefetch.py) completes

@@ -787,6 +787,46 @@ class CharactersTests(unittest.TestCase):
         events = [item["type"] for item in own["memories"]]
         self.assertEqual(events, ["met", "quest_offered", "quest_accepted", "quest_advanced", "quest_completed"])
 
+    def test_recorded_quest_offer_replays_after_its_streamed_origin_is_no_longer_cached(self):
+        location = (-80, -24)
+        self.journeys.chunks.cache_cell(*location, {"terrain": "grass", "settlements": [], "namingLocale": "fr-FR"})
+        character = self.create(location=location)
+        self.request("meet", location=location, characterId=character["id"],
+                     requestId="00000000-0000-4000-8000-000000000038")
+        details = {"characterId": character["id"],
+                   "contract": {"id": "c" * 32, "event": "offered", "step": 0, "totalSteps": 2},
+                   "requestId": "00000000-0000-4000-8000-000000000040"}
+        first = self.request("contract", location=location, **details)
+        self.journeys.chunks.cached.clear()
+        with patch.object(self.service, "_authorized_location", side_effect=AssertionError("No map revalidation")):
+            self.assertEqual(self.request("contract", location=location, **details), first)
+            self.assertEqual(self.request("contract", location=location, **{
+                **details, "requestId": "00000000-0000-4000-8000-000000000041"}), first)
+
+    def test_retained_server_assignment_can_register_an_offer_after_its_map_cache_is_missing(self):
+        location = (-80, -24)
+        self.journeys.chunks.cache_cell(*location, {"terrain": "grass", "settlements": [], "namingLocale": "fr-FR"})
+        character = self.create(location=location)
+        self.request("meet", location=location, characterId=character["id"],
+                     requestId="00000000-0000-4000-8000-000000000038")
+        self.journeys.chunks.cached.clear()
+        quests = Mock()
+        quests.retained_character_offer.return_value = True
+        self.service.quests = quests
+        details = {"characterId": character["id"],
+                   "contract": {"id": "c" * 32, "event": "offered", "step": 0, "totalSteps": 2},
+                   "requestId": "00000000-0000-4000-8000-000000000040"}
+        with patch.object(self.service, "_authorized_location", side_effect=AssertionError("Use retained assignment")):
+            result = self.request("contract", location=location, **details)
+        self.assertTrue(result["recorded"])
+        quests.retained_character_offer.assert_called_once_with(
+            self.journey, "firmi", character["id"], "c" * 32, {"col": -80, "row": -24}, 2)
+        quests.retained_character_offer.return_value = False
+        with self.assertRaisesRegex(JourneyConflict, "not cached"):
+            self.request("contract", location=location, **{**details,
+                "contract": {**details["contract"], "id": "d" * 32},
+                "requestId": "00000000-0000-4000-8000-000000000042"})
+
     def test_portrait_is_generated_once_and_served_from_durable_provenance(self):
         assets = local_storage(self.root / "shared-assets")
         DurableJobs(assets.catalogue).configure_quota("images", daily=None, monthly=None)

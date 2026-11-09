@@ -245,7 +245,7 @@ class MainArtifacts(LorePlaytest):
             self.redistribute_unowned(world)
             world.setdefault("treasures", [])
             opened = world.setdefault("openedCaches", [])
-            cache_offers = opencaches.offers(db, self.assets.catalogue.sql, self.journeys.chunks.bases[genesis["region"]],
+            cache_offers = opencaches.offers(db, lambda query: query, self.journeys.chunks.bases[genesis["region"]],
                                              snapshot, opened, self.clock()) if self.assets is not None else []
             geocache = None
             if cache_open:

@@ -153,6 +153,19 @@ class EncounterArtTests(unittest.TestCase):
         self.assertEqual({scene for scene in SCENES if scene.startswith("event.")},
                          {f"event.{kind}" for kind in kinds})
 
+    def test_dog_scenes_do_not_reject_a_mixed_sync_batch_or_hide_ready_event_images(self):
+        ordinary = self.art.generate("event.food", self.writer)
+        dogs = ["dogFindsFood", "dogRestSpot", "dogMakesFriend", "dogTangled",
+                "dogChasesScent", "dogStealsSnack", "dogPlays", "dogKeepsCompany"]
+        items = [self.item, *({"scene": f"event.{kind}", "occurrence": f"event:{index}"}
+                             for index, kind in enumerate(dogs))]
+        result = self.sync(*items)
+        self.assertEqual(len(result["entries"]), 9)
+        self.assertEqual(result["entries"][0]["id"], ordinary)
+        self.assertTrue(all(entry["status"] == "pending" for entry in result["entries"][1:]))
+        dog = self.art.generate("event.dogPlays", self.writer)
+        self.assertEqual(self.sync(*items)["entries"][7]["id"], dog)
+
     def test_missing_scene_starts_one_nonblocking_job_and_is_reused_by_other_players(self):
         entered, release = threading.Event(), threading.Event()
         def writer(brief):

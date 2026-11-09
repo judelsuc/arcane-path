@@ -1,6 +1,11 @@
 {
-  "version": "0.22.2",
+  "version": "0.22.3",
   "entries": [
+    {
+      "version": "0.22.3",
+      "fr": "Les commandes d'objets ne sont plus bloquées par une requête PostgreSQL mal adaptée. Les liens de quêtes déjà attribuées se synchronisent sans dépendre de l'ancien cache de carte. Les huit événements du chien disposent de scènes d'illustration et ne bloquent plus les autres images.",
+      "en": "Artifact commands no longer fail on a doubly adapted PostgreSQL query. Retained quest assignments synchronize without requiring their old map cache. All eight dog events now have illustration scenes and no longer block other event images."
+    },
     {
       "version": "0.22.2",
       "fr": "La carte se complète sur le serveur, même navigateur fermé, dans une couronne limitée autour des morceaux demandés par les joueurs. Les voisins générés ne relancent pas l'expansion, et les échecs de téléchargement redeviennent réessayables après une pause.",
