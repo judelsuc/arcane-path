@@ -6,7 +6,8 @@ The hosted console at `/admin.html` uses a **dedicated password**, not the game'
 HTTP preview password. The administrator HTML/CSS/module and fixed icon renderer
 are public login assets; `/api/admin` separately authenticates every private
 operation. Ordinary player endpoints retain the existing preview protection.
-Nothing in this section has been deployed automatically.
+The login assets and API shipped with 0.22.0; administrator access remains
+disabled until the separate credential file and service drop-in are configured.
 
 On the server, create the credential file outside the served repository. From the
 installed repository, use its Python environment (adjust the executable to the
@@ -172,6 +173,68 @@ Lors de la rédaction du plan, aucun service payant n'était provisionné ni auc
 donnée supprimée. La cible peut démarrer vide, sans migration des données existantes.
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
+
+## Checkpoint deployed: town legends and composed treasures (9 November 2026)
+
+Runtime `4d14c4b4eca2ea998774371c92168504d70436f8`, game version **0.22.0**,
+packaged at `2026-11-09T16:23:05.995786+00:00`. The protected preview now includes
+shared town discoveries, entrance clues, three locally played adventure formats
+with authoritative settlement, transferable composed treasures, independent
+appearances and named, varied story foundations.
+
+The 76-file delta was 365,881 bytes, SHA-256
+`e8c07540fc202a364d6c07a3e45cb905c446cc6421ad251d8378e6f89b4b19aa`.
+Preflight matched every replaced runtime file and the active nginx configuration
+against the previous deployed checkpoint. The application was stopped for backup
+and installation. Explicit shared-schema initialization succeeded: the catalogue
+now has 54 tables, up from 43. Existing journey, capability, journal and notebook
+row counts were preserved. No existing shared tables were dropped or truncated.
+
+Private rollback material is retained in
+`/home/ubuntu/before-0.22.0-4d14c4b` (root-owned 0700, files 0600):
+
+- `runtime.tar.gz`: previous versions of replaced files, SHA-256
+  `84d9e80aa80519d79bfec0843d18756784b9b80607ef143eb02677b9900630fe`.
+- `private-config-and-reports.tar.gz`: private configuration, application unit
+  and drop-ins, active nginx configuration and private feedback files, SHA-256
+  `808ab730f2845e5eac28643575db592b318ea5e36a9aa62650151a46efb7a222`.
+- `shared-tables.tar.gz`: a repeatable-read, read-only snapshot of all 43 previous
+  public tables (8,207 rows), using PostgreSQL binary COPY, with column,
+  constraint/index metadata and sequence state; SHA-256
+  `164d2f6d7b0792f50e65a6c9119f70dc2725b9ef157037287797639a34f45717`.
+  Archive contents and per-table checksums were verified. This is a logical data
+  snapshot, **not pg_dump**, and a complete database restoration was not tested.
+- `manifest.json` identifies every old/new file and its checksum; `checksums.json`
+  records backup integrity.
+
+For a runtime-only rollback, stop `arcane-path`, run the retained helper
+`sudo /opt/arcane-path/.venv-shared-storage/bin/python /home/ubuntu/deploy-022.py rollback`,
+start the service, then reload nginx. The helper restores old files/nginx,
+removes only the exact newly added files in the manifest and refreshes the
+release manifest mtime. Additive tables remain; do not restore the database
+snapshot merely to roll back code, since that could discard subsequent play.
+
+All 76 disk hashes and all 51 non-infrastructure/Python HTTP asset hashes matched.
+Nginx passed its syntax check and reloaded. Newly created artwork directories
+were explicitly made root-owned 0755 so the service account can traverse them;
+files remain 0644. The application and nginx are active, with zero automatic
+application restarts. Runtime dependency checks passed.
+
+Both HTTPS domains retain 401 responses for unauthenticated gameplay, release
+metadata and reward data; gameplay POST APIs also require preview authentication.
+Administrator login assets and favicons intentionally return 200. The live admin
+page was checked in a browser and explicitly reports that its separate credentials
+are not configured; its API returns 503 without exposing private data.
+The new daily-icon and naming units are present only as packaged source files:
+neither timer is installed/enabled, no new model quotas were configured and no
+OpenCaching import was performed. New composed stories wait for names until the
+naming worker is explicitly configured. Existing art-generation timers are unchanged.
+
+Validation before release: **1,675 JavaScript tests** and **130 focused Python
+tests** passed. Local inventory browser checks covered 36 FR/EN combinations at
+320, 390 and 1100 px without horizontal overflow or buttons below 48 px.
+A complete authenticated adventure/recovery playthrough on the live server is
+still pending; deployment smoke checks do not replace that playtest.
 
 ## Checkpoint deployed: hitchhiking and nearby games (8 November 2026)
 
