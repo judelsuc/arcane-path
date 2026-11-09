@@ -1,5 +1,166 @@
 # Infrastructure OVHcloud - rapport du 19 octobre 2026
 
+## Administrator console configuration
+
+The hosted console at `/admin.html` uses a **dedicated password**, not the game's
+HTTP preview password. The administrator HTML/CSS/module and fixed icon renderer
+are public login assets; `/api/admin` separately authenticates every private
+operation. Ordinary player endpoints retain the existing preview protection.
+Nothing in this section has been deployed automatically.
+
+On the server, create the credential file outside the served repository. From the
+installed repository, use its Python environment (adjust the executable to the
+deployed virtualenv):
+
+```sh
+sudo .venv/bin/python scripts/admin_console.py password \
+  --file /etc/arcane-path/admin-credential.json --username administrator
+sudo chown arcane:arcane /etc/arcane-path/admin-credential.json
+```
+
+The command prompts twice without echoing the password, requires 16-256 characters
+and creates a mode-0600 file exclusively. It stores a random salt and scrypt hash,
+not the password. Choose a password distinct from the preview credentials. Do not
+put it in a command argument, environment variable, Git, chat or the browser source.
+The service account needs read access to that file and traversal of its directory.
+
+Install [the optional drop-in](../infra/systemd/arcane-admin-console.conf) as
+`/etc/systemd/system/arcane-path.service.d/90-admin-console.conf`, review/install
+the updated nginx configuration, run `nginx -t`, reload systemd/nginx and restart
+the application using the normal release procedure. Before restarting, explicitly
+initialize the additive shared tables with the service's storage configuration:
+
+```sh
+.venv/bin/python scripts/asset_storage.py --configured initialize
+```
+
+Server startup does not implicitly initialize shared schemas. Existing shared PostgreSQL
+and private feedback screenshot storage are reused. The console is disabled
+without its credential setting; credential files inside the static root or with
+group/other permissions are rejected. Do not expose the loopback application
+port directly; use the existing HTTPS proxy.
+
+Sessions use random tokens, hashed in shared storage, with an eight-hour expiry
+and `Secure`, `HttpOnly`, `SameSite=Strict`, `__Host-` cookies. Mutations require
+the session's CSRF header; cross-origin JSON requests are rejected. Five failed
+login attempts in fifteen minutes pause login globally for that administrator.
+Successful login clears the counter. This deliberately conservative single-admin
+limit can temporarily block legitimate login during an attack. Logout revokes
+the session; replacing the credential file invalidates existing sessions.
+To rotate credentials, create a new mode-0600 file at a different private path
+using the same command, set ownership, then atomically replace the old file.
+Never delete the active file before preparing its replacement.
+
+Review notes expire with their private reports. Cosmetic drafts/decisions live
+in the shared catalogue; published collections are immutable. The console never
+calls a model, and daily generation/gameplay distribution are not enabled by
+installing it. Validation/publication details are in the
+[content workshop documentation](./CONTENT_FACTORY.md#hosted-administrator-console).
+
+### Daily server-generated icon collections
+
+Install the separate [daily service](../infra/systemd/arcane-daily-cosmetics.service)
+and [timer](../infra/systemd/arcane-daily-cosmetics.timer) into
+`/etc/systemd/system/`. The service runs as `arcane`, with a read-only application
+directory, no automatic restart and a five-minute timeout. Its private
+`/etc/arcane-path/daily-cosmetics.env` must contain the same
+`ARCANE_ASSET_STORAGE_CONFIG_FILE` setting as the application, pointing to its
+shared catalogue configuration. Set mode 0600 on this environment file.
+If needed, override `ARCANE_LIVE_TEXT_TOKEN_FILE` there to select an existing
+private OVH text-model token file readable by `arcane`. Never copy tokens into Git.
+The worker does not need the administrator password.
+
+With that storage configuration loaded into the operator's environment, initialize
+the shared schema and explicitly reserve a budget:
+
+```sh
+.venv/bin/python scripts/asset_storage.py --configured initialize
+.venv/bin/python scripts/durable_jobs.py quota \
+  --provider ovh-daily-cosmetic-icons --daily 1 --monthly 31
+sudo systemctl daemon-reload
+sudo systemctl enable --now arcane-daily-cosmetics.timer
+sudo systemctl list-timers arcane-daily-cosmetics.timer --no-pager
+```
+
+Enabling a persistent timer can dispatch immediately if its scheduled time was
+missed. Review credentials, the configured model and quota before doing so.
+The schedule is 05:30 Europe/Paris. A catch-up generates only the current Paris
+day; it never submits a backlog of historical sets. The theme and shared palette
+are retained before dispatch. Multiple hosts/restarts cannot reroll or resubmit
+that day. There is one attempt, no paid fallback and no automatic retry after
+provider or validation failure. The worker refuses a provider whose published
+pricing is missing or not explicitly zero USD.
+
+Inspect `journalctl -u arcane-daily-cosmetics.service` and the console's daily
+generation history. Successful sets enter the draft queue automatically, with
+six per-icon decisions still required before explicit publication. Failed,
+queued and interrupted attempts remain visible; an expired dispatched lease
+is uncertain and may have been billed. Use the existing ledger inspector
+(`scripts/durable_jobs.py inspect --kind daily-cosmetic-icons --request YYYY-MM-DD`)
+for operator diagnostics, not a resubmission command.
+
+To pause generation, disable/stop only `arcane-daily-cosmetics.timer`; disabling
+the timer does not cancel an already running service. No files in this section
+have been installed or enabled by the local implementation. Approved generated
+artwork is eligible only for newly composed towns' icon rewards; old towns remain
+unchanged.
+
+### Composed treasure naming
+
+Install [the naming service](../infra/systemd/arcane-treasure-names.service) and
+[hourly timer](../infra/systemd/arcane-treasure-names.timer) separately. It uses
+the same private storage/token environment as the daily icon service, but a
+separate explicit quota:
+
+```sh
+.venv/bin/python scripts/durable_jobs.py quota \
+  --provider ovh-treasure-names --daily 24 --monthly 744
+sudo systemctl daemon-reload
+sudo systemctl enable --now arcane-treasure-names.timer
+```
+
+These are example limits, not permission for paid model use. Every call verifies
+zero pricing, and a failure never retries automatically. Town discovery enqueues
+only after retaining nature, effects and characteristics. Each run processes at
+most four objects; legends for new composed objects wait for the retained name.
+Disabling the naming timer leaves those stories pending; fixed entrance clues
+remain usable. No provider calls or service activation were made locally.
+
+### Optional OpenCaching metadata
+
+The game never scrapes restricted listings or downloads coordinates from a player
+action. The server importer uses an operator-chosen public area and an application
+consumer key registered with that national OKAPI installation. Supported initial
+sites are Germany (also the shared French/Italian database), Poland and the UK.
+See [OKAPI authentication](https://opencaching.pl/okapi/introduction.html) and
+[search-and-retrieve](https://opencaching.pl/okapi/services/caches/shortcuts/search_and_retrieve.html).
+Accept the provider's current data terms before configuring an area. Store its
+consumer key in a private mode-0600 server file, outside the served tree.
+
+With shared storage configuration loaded and additive schemas initialized:
+
+```sh
+.venv/bin/python scripts/opencaches.py --site de \
+  --center 48.85 2.35 --radius 5 \
+  --key-file /etc/arcane-path/opencaching-de-consumer-key
+```
+
+The example is not an executed download. Refresh configured areas at least weekly
+using an operator-managed scheduled job; no importer schedule or geographic
+coverage is enabled implicitly. Imports accept only available traditional caches,
+within at most 20 km, with a maximum of 100 records; areas exceeding this limit
+fail explicitly and must be split. Provider failure retains previous records;
+a successful refresh deactivates entries no longer in that area's response.
+Data older than seven days is not offered for play.
+
+Only a matching game cell exposes a source-linked cache. Required provider
+attribution and team annotations are rendered as inert text, including license
+URLs. No descriptions, photographs, private coordinates or real cache logs are
+copied. One physical lockpick opens the fictional game coffer, consumes that
+lockpick and grants 2-6 euros once globally, atomically with the artifact receipt.
+This does not operate a physical lock or submit a real-world find. No coverage
+means no invented substitute caches.
+
 ## Projet de stockage externe et évolution du jeu (23 octobre 2026)
 
 L'inventaire actuel et la cible PostgreSQL géré + Object Storage compatible S3

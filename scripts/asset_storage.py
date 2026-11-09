@@ -184,6 +184,7 @@ class AssetCatalogue:
         from journey_storage import schemas as journey_schemas
         from artifact_storage import SCHEMAS as ARTIFACT_SCHEMAS
         from content_storage import schemas as content_schemas
+        from town_legend_storage import SCHEMAS as TOWN_LEGEND_SCHEMAS
 
         with self.connection() as db:
             db.execute(SCHEMA)
@@ -192,7 +193,7 @@ class AssetCatalogue:
                        "ON generation_jobs(kind,status,request)")
             for schema in (*SCHEMAS, *ENCOUNTER_SCHEMAS, *JOURNAL_SCHEMAS,
                            *journey_schemas(self.postgres), *ARTIFACT_SCHEMAS,
-                           *content_schemas(self.postgres)):
+                           *content_schemas(self.postgres), *TOWN_LEGEND_SCHEMAS):
                 db.execute(schema)
             if self.postgres:
                 db.execute(

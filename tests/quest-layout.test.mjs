@@ -94,6 +94,19 @@ test("map investigation does not open over another modal", t => {
   assert.equal(f.get("investigation-dialog").open, false);
 });
 
+test("legend recovery can reopen its quest pane even when ordinary quest actions are blocked", t => {
+  const f = fixture(t, false);
+  f.layout.openLegends();
+  assert.equal(f.get("trail-dialog").open, true);
+  const legends = f.get("trail-dialog").children.find(node => node.id === "quests-legends");
+  assert.equal(legends.hidden, false);
+  assert.ok(legends.children.some(node => node.id === "quests-legend-session"));
+  f.get("trail-dialog").close();
+  f.get("conversation-dialog").showModal();
+  f.layout.openLegends();
+  assert.equal(f.get("trail-dialog").open, false);
+});
+
 test("directions shortcut opens the shared chooser without requiring a parent trail", t => {
   const f = fixture(t, false);
   f.layout.openDirections();

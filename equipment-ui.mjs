@@ -6,6 +6,8 @@ import { dailyTarotPending } from "./economy.mjs";
 import { journeyEventArt } from "./journey-event-art.mjs";
 import { setFeedback } from "./feedback.mjs";
 import { LORE_ITEMS } from "./lore-catalogue.mjs";
+import { treasureItems } from "./legend-rewards.mjs";
+import { renderTreasureInventory } from "./legend-rewards-ui.mjs";
 
 const copy = {
   fr: {
@@ -64,7 +66,7 @@ const copy = {
   },
 };
 
-export function setupEquipment(t, { context, act }) {
+export function setupEquipment(t, { context, act, treasureAction }) {
   const trigger = document.querySelector("#equipment-travel");
   const dogTrigger = document.querySelector("#dog-travel");
   const inventoryDialog = document.createElement("dialog");
@@ -135,8 +137,9 @@ export function setupEquipment(t, { context, act }) {
     if (!pending) {
       if (!shopping) {
         renderInventory(controls, { state: gear, walletCents: state.walletCents, language, selected,
-          obstacles: (state.lore?.inventory ?? []).map(item => ({ ...item.placement, id: item.id })),
-          extraItems: LORE_ITEMS,
+          obstacles: [...(state.lore?.inventory ?? []), ...(state.treasures?.inventory ?? [])]
+            .map(item => ({ ...item.placement, id: item.id })),
+          extraItems: [...LORE_ITEMS, ...treasureItems(state)],
           itemName: id => w[id],
           onSelect(id) {
             selected = id;
@@ -150,6 +153,8 @@ export function setupEquipment(t, { context, act }) {
             dialog.querySelector(`[data-item="${id}"]`)?.focus();
           },
         });
+        renderTreasureInventory(controls, { state, language, blocked: current.blocked || !treasureAction,
+          onAction: treasureAction, getState: () => context()?.state, onRefresh: render });
         node("p", w.rules, controls).className = "window-help-text";
         node("p", w.shopHelp, controls).className = "window-help-text";
       }

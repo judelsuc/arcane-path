@@ -1,5 +1,374 @@
 # Requirements tracked outside the design PDF
 
+## R-191 - Quick-time challenges for journey events (after legends)
+
+- Implement after the town legends work (R-190), not as part of the current
+  legend increment. Existing journey-event behavior remains unchanged meanwhile.
+- Journey events should involve a short quick-time event (QTE): success can
+  avoid a negative consequence or earn a positive reward, depending on the event.
+  The interaction should fit the situation rather than be an unrelated mini-game.
+- Before implementation, define event coverage, success/failure/timeout outcomes,
+  difficulty and timing, accessible alternatives, and keyboard/touch controls.
+  Proposed direction: varied short challenges with visible shortcuts and clear
+  mobile controls, rather than one repeated reflex test.
+- Resolve each event outcome once through the existing authoritative journey
+  accounting; retries, reloads or duplicate submissions must not duplicate
+  rewards or penalties. Detailed rules and implementation are still pending.
+
+## R-190 - Town legends and treasure adventures
+
+- On first discovery of a previously unknown town, make a fresh random
+  eligibility decision, initially with approximately 10% probability. Do not
+  preselect towns through a map-generation pass, a deterministic town hash or
+  a disposable selection cache. Persist both eligible and ineligible outcomes;
+  revisits, reloads and concurrent discoveries must not reroll the town.
+  Existing map, town-content or narrative caches are not eligibility records:
+  a cached town with no persisted legend decision is new for legends and receives
+  its first roll on the next player discovery. Do not bulk-roll cached towns.
+- Eligible towns retain their legend identity, adventure format, treasure
+  definition, content version and level seed once assigned. Generate narrative
+  lazily and retain successful content. Failed generation remains explicitly
+  pending/retryable, not a new eligibility roll or a fabricated successful tale.
+- A canonical local legend supplies facts, entrance clues and the treasure's
+  history. Met characters retell it in different voices, with compatible
+  actionable clues. Opinions may differ; required facts must remain consistent.
+  Nearby accounts and journal evidence should prevent dependence on one NPC.
+  **Story variety:** use versioned composed foundations rather than rotating a
+  short fixed memory list. The initial expanded set combines 64 distinct events
+  with 24 choices each for people, motive, complication and aftermath; actual
+  seeded output must be at least 99.9% distinct over 8,192 samples and cover every
+  axis. These are story facts, not synonym bags. The LLM must connect them to the
+  selected object and preserve its exact name. Existing retained tales do not
+  regenerate just because the foundation catalogue grows.
+- **Entrance search:** scatter varied, retained descriptions across nearby map
+  cells, revealed through Look. Ground each in the actual cell's terrain and
+  compatible fictional landmarks; do not invent mapped rivers/buildings as
+  geographic facts. Exactly one reachable cell matches the complete set of
+  entrance clues. Separate geographic hints, landmark/sign details and counted
+  distinguishing features; vary structures, materials, symbols, condition and
+  environmental traces, not just synonyms. Persist the location/facts before
+  any narrative embellishment; neither prose nor reload can move the entrance.
+  Remote Look can reveal details; inspection and entry require being on the
+  correct cell. Retain private observations and the inspected entrance in
+  Quests, independently of unfinished dungeon state. Confirm costs before entry.
+  The current bounded prototype uses up to 48 connected prepared dry cells
+  within three cells of town, with at least four candidates. Insufficient
+  prepared terrain leaves an explicit retryable pending state, never a new
+  eligibility roll. Versioned procedural FR/EN details currently use 48
+  terrain-compatible landmarks and shuffled feature bags. Prepared towns now
+  offer explicit lazy generation through Quests or the NPC local-legend topic:
+  one retained bilingual story and three stable witness perspectives, shared
+  across discovering journeys. Exact canonical entrance clues are appended
+  separately, including when generation is disabled, pending or failed. The
+  existing durable text queue dispatches at most once; failed/interrupted calls
+  do not retry automatically or reroll facts. Provider inputs exclude private
+  player data, hidden coordinates and client-authored prompts. Actual assigned
+  treasure histories/names await the object catalogue. New paced trials require
+  the inspected entrance; legacy start/recovery protocols remain compatible.
+- Compose treasures from a catalogue targeting about 100 object natures
+  (film, book, sword, etc.) and compatible, bounded attributes. Attributes can
+  affect gameplay, the character icon or an optional game skin. Apply
+  compatibility, stacking and power-budget rules before requesting an LLM name
+  and description from the chosen nature and attributes. Text cannot invent
+  executable effects. Keep these objects distinct from the major arcane items.
+  **9 November composition confirmation:** choose the object's nature first,
+  then compatible effects and characteristics, and only then give that fixed
+  specification to the LLM to generate its name. Do not select from a list of
+  prewritten named rewards. The first implementation uses sixteen natures,
+  ten compatible effects and separate material/motif bags. Persist the full
+  composition at first town discovery; an optional free-only server naming
+  worker returns only an EN/FR name and cannot alter those mechanics. A missing
+  or failed name leaves the nature label and a pending naming state, never a
+  fabricated successful LLM result. Previously discovered towns retain legacy
+  cosmetic originals.
+  **Named legends and spoken clues:** the canonical legend and every NPC
+  retelling must mention the treasure's exact retained name in the appropriate
+  language. Generate the name first, then the tale and three witness versions;
+  validate the name in each text. Different voices cannot rename the object.
+  Name generation failure blocks new generated tales, not entrance search.
+  Already retained prose may be accompanied by the authoritative name without
+  another model dispatch.
+  **Expanded rewards:** weapons (swords and knives), rings, chains, pendants,
+  bracelets and brooches have physical weight and bag cells. Select at most one
+  reward weapon and one jewel; ordinary equipment remains unchanged. Weapons
+  enable optional dungeon combat with one/two-cell knife/sword reach. Jewellery
+  modifies cumulative adventure injury damage, fatigue and/or time with explicit
+  counterbalancing penalties, not ordinary walking or minimum-route reward value.
+  Rounding cumulative totals must not make bonuses depend on transcript packets.
+  Money stays in a transferable purse/coffer until opened once, then enters the
+  wallet. Charts/notes are read once to learn a current town-level location of an
+  existing unowned magical artifact, never a new artifact, exact hiding coordinates
+  or the position of a private holder. Keep the chart if no new lead is available.
+  Consumptions and final treasure recovery use the authoritative shared receipt;
+  retries/reloads cannot duplicate an item, its money or its clue.
+  **Curses:** stronger benefits come with clearly displayed drawbacks; a curse
+  applies only while equipped and is freely removable. Dropping also removes it.
+  Do not introduce binding or paid cleansing.
+  **Lockpicks and real cache sources:** a lockpick is consumed to open an optional
+  game coffer at the corresponding available traditional OpenCaching location.
+  Use the authorized public OKAPI, where coverage exists; no invented fallback
+  geocaches, restricted-listing scraping, puzzle-cache final-coordinate inference,
+  physical lock interaction or real cache log submissions. Retain source links
+  and required attribution. The bounded server importer uses operator-configured
+  public areas, not player traces; only same-cell metadata refreshed within seven
+  days is playable. A shared cache pays once globally, even with repeated receipts.
+  API consumer keys and region synchronization require explicit server setup.
+- Support three adventure formats: compact Rick Dangerous-inspired platform
+  exploration, and LucasArts-style investigation with dialogue, inventory and
+  environmental puzzles, plus early-Zelda-inspired top-down dungeons with
+  interconnected rooms, keys, switches, pushable blocks and readable hazards.
+  All share legend facts, clues, treasure definitions and completion concepts,
+  but have separate runtime rules. Dungeon bats/rats have predictable movement
+  and safe avoidance routes; combat is optional and requires an actually equipped
+  knife or sword. Never require a weapon to finish. A prototype may simulate
+  equipment explicitly; production must use authoritative inventory, not a
+  browser weapon selector. Defeating creatures never creates money or treasure.
+  **9 November food/respawn decision:** new dungeon attempts grant up to 150 kcal
+  immediately per defeated creature, capped at normal reserves and never healing.
+  Creatures stay gone during an attempt, including room revisits, retry and
+  resume. Starting a new attempt respawns them and permits food again; no
+  permanent animal or food-claim ledger is needed. This supersedes the earlier
+  no-farmable-reward constraint for this small energy reward.
+- **Variety contract:** choose mechanical room/puzzle templates before prose.
+  Vary challenge families, their spatial layout, timing and combinations, not
+  just names, colours or backgrounds. Target at least three distinct families
+  per adventure (four for medium/long adventures), forbid adjacent identical
+  challenge signatures, and keep any one family below half the required
+  encounters. Use versioned, seeded shuffle bags rather than independent rolls
+  that can accidentally repeat one challenge throughout. Alternate challenges
+  with safe observation/recovery spaces; telegraph danger and keep entrances
+  safe. Retain recent template signatures per journey to favour variety between
+  newly prepared adventures, without rerolling existing sites. Validate actual
+  traversal, solvability and damage-free creature avoidance, not a visual proxy.
+- **Reward/length contract:** choose a bounded treasure-value/power budget first,
+  then assign a versioned adventure-length profile. Bigger rewards require a
+  strictly longer mandatory route and more meaningful required encounters or
+  puzzle dependencies, not repeated corridors, forced damage or grinding.
+  Compare shortest valid completion routes; optional detours, retries, revisits
+  and player waiting must never inflate reward value. Investigation length uses
+  required dependencies as well as locations; platform/dungeon length uses
+  mandatory rooms and traversal challenges. Updated profiles across all three formats
+  use 8 / 16 / 32 mandatory rooms for modest / notable / exceptional value budgets
+  1 / 2 / 3. These are relative design budgets, not currency, item quantities or
+  implemented item effects. Pin reward and layout together once prepared;
+  increasing local costs does not improve the treasure. A claimed original or
+  later player's offering never changes the retained dungeon or guarantees a
+  reward to later visitors; show current availability before entry.
+- **Difficulty is separate from length:** introduce the four families one at a
+  time, develop familiar mechanics, combine them, insert a safe breathing room
+  before the finale, and keep complexity bounded across 8/16/32-room profiles.
+  Repeat safe breathing rooms every eight rooms, not escalating reaction speed.
+  Platform gates require multiple distinct objects and telegraphed timing with
+  generous safe windows. Dungeon gates combine latches/block puzzles and
+  avoidable hazards/patrols; introductions and breathing rooms have no creatures.
+  Investigation dependencies reference earlier solved sites, whose marks remain
+  visible; explicit rules and hints avoid guessing, forced backtracking or
+  essential-clue loss. Four/five-step sequences develop the three-step introduction.
+  Failed attempts preserve evidence and activated components. Combat remains
+  optional and representative actual routes must complete without damage.
+- Generate platform architecture first: choose the main directional room path,
+  add optional dead ends (health recovery or nothing), pair entrances/exits,
+  then construct traversable platforms between them. Optional branches must
+  permit return, including vertical connections. Align neighbouring doorway
+  offsets and reserve safe arrival/checkpoint space. Add hazards only after the
+  traversable structure; validate actual movement, not graph connectivity alone.
+  Build investigation sites from validated
+  puzzle dependency graphs before generating prose. Prevent circular
+  prerequisites, essential-item loss and irreversible dialogue dead ends.
+  Provide readable clues, progressive hints, retries/checkpoints and exit.
+- Use one or two generated atmosphere backgrounds per adventure through the
+  existing free-only image model; retain successful artwork with the adventure.
+  Reuse backgrounds across rooms. Keep platforms, doors, hazards, items and
+  essential clues in separate readable game-drawn layers. Pending/failed artwork
+  must not block play; expose its status and retain the simple palette scenery.
+  Do not substitute paid models or automatically repeat uncertain provider calls.
+- Use a readable 8-bit pixel-art style across all three formats, compatible with
+  the overworld: original outlined sprites, recognizable doors and locks,
+  distinct bat wings/ears and rat bodies/tails, textured tiles and recognizable
+  interactable props. Keep collision geometry independent of decoration. Provide
+  multiple coordinated sprite sets with structural differences, not palette
+  swaps alone. Eight sets are iron crypt, mossy ruins, timber cellar,
+  velvet cinema, old sewers, frozen cavern, abandoned forge and forgotten
+  library, selected reproducibly from the retained seed. Each adds distinct
+  wall/floor construction, themed doors and props without new collisions. Share
+  character/object conventions across formats and offer a localized sprite key.
+  Keep sprites crisp and readable on mobile; do not make background decoration
+  look like a traversable ledge, danger or required clue.
+- Support keyboard and touch, French and English. Display the actual shortcut beside each game command,
+  including pause, retry and interaction; scope shortcuts to the focused game
+  and expose them accessibly. Arrange directional touch controls as a spatial
+  D-pad: up above, down below, left/right on their corresponding sides, never a
+  wrapping text-order row. Keep this arrangement and at least 48px targets on
+  narrow mobile screens; place action buttons separately without overflow.
+  Discoveries and reward settlement must survive resume,
+  including idempotent claims. Do not grant a reward merely from generated text.
+- **Confirmed ownership:** town decisions and legends are shared. The original
+  treasure is globally claimable only once, not once per journey. Later visitors
+  may still explore the site. Offer an optional carved sentence recording a
+  player's passage and an optional replacement treasure selected from their
+  inventory for the next traveller. Claim/deposit must transfer actual custody
+  atomically, never copy an item or grant it from client-reported completion.
+  Keep the original claimed state distinct from later offerings. Public sentences
+  need the existing moderation/privacy/reporting safeguards; do not publish raw
+  player text through a new unmoderated route.
+- **Inventory and cosmetic custody:** every reward, including a skin or tileset,
+  must be a physical inventory item, with weight and bag placement. Cosmetic
+  rewards affect both overworld and adventures and belong to the journey, not
+  the account. They work only while carried: dropping unequips them, and a later
+  holder can equip the same original item. Provide preview/equip and place
+  drop/pickup controls. Do not retain a permanent unlock after giving it away.
+  **Independent appearance controls:** UI skins (panels, controls and colours)
+  are selectable separately from map/adventure tilesets. Allow mixing carried
+  sources and using a UI skin with ASCII maps. Unequipping or dropping one source
+  must not change the other selection. The initial expanded catalogue contains
+  sixteen themes; pre-expansion originals retain their exact appearance and
+  physical properties, and catalogue versions cannot duplicate a town's original.
+  **Player icons:** map-player icons are earned through carried treasures, not a
+  free/account-wide selector. Provide eight original pixel silhouettes with
+  bilingual previews and a third independent equip/remove control in Inventory.
+  They work with ASCII or pixel tiles and may come from a different carried item
+  than either skin. Dropping their source restores `@`; preserve the death cross,
+  position accessibility, selection/quest outlines and captured notebook icons.
+  Published daily collections now expand the icon reward pool for newly
+  discovered towns. Only individually approved artwork is eligible; drafts and
+  rejected icons are excluded. Copy the selected bounded pixels into the retained
+  reward so later publication cannot reroll an existing treasure. Generated icons
+  use the same validated live-map and notebook renderer as the original eight.
+  Reward settlement shares the final adventure transaction; no continuous
+  server synchronization is added. A full bag leaves the original at the
+  entrance with visible feedback rather than deleting it or inventing capacity.
+- **Confirmed costs:** adventure time, fatigue, health and dirt depend on rooms
+  entered and traps actually hit, rather than one fixed entrance fee. Count room
+  entries (including returns) separately from distinct rooms and manual retries
+  separately from trap collisions. Initial live-trial rates are confirmed:
+  per entry, 3 minutes, 1 fatigue and 1 dirt; per trap hit, an additional
+  2 minutes, 3 fatigue, 5 health damage and 4 dirt. Normal survival also applies.
+  **9 November dungeon confirmation:** per creature hit, an additional 1 minute,
+  1 fatigue, 2 health damage and 1 dirt. Live dungeons use ordinary journey health,
+  not the preview's three-heart limit. Continue after three hits if survival
+  permits; never restore journey health at a checkpoint.
+  Zero health follows existing journey-end rules, without free checkpoint
+  resurrection. Reuse existing protections and interruption rules. Essential-item
+  deposit rules, attribute limits and the production rendering engine remain
+  integration decisions; numeric balance can be tuned in a future version.
+- **Local gameplay and reload decision (supersedes earlier per-action trials):**
+  all three formats run locally without real-time server progress updates.
+  Charge initial entry on the server; at completion, interruption or leaving,
+  replay bounded inputs and settle canonical costs/food exactly once. Apply
+  ordinary survival locally too, stopping at interruptions. Unfinished progress
+  is memory-only: reload starts no saved partial run, discards uncommitted effects
+  (including damage and food), retains the entry charge and requires another
+  paid entry to restart from the beginning. No persistent progress log is needed.
+  Pending final settlement receipts remain durable and idempotent.
+  New paced trial protocols are `seeded-platform-v2`, `seeded-investigation-v3`,
+  `seeded-dungeon-v4`, fixed to the eight-room modest profile and retained town
+  seed. All eligible towns can opt into each trial without rerolling format.
+  Larger 16/32-room profiles are available in the isolated preview; production
+  treasure assignment remains pending. Local platform v1, investigation v2 and
+  dungeon v3 retain their original templates. Earlier four-room per-action protocols
+  below describe historical increments and remain supported for existing runs.
+- **Status:** Step 1 implemented locally as `/legend-preview.html`: an isolated,
+  authored legend and playable examples of both formats. The platform preview
+  now has seeded architecture, two reversible optional branches, health supplies,
+  a room map and paired checkpoint doors. An administrator-only preparation
+  script retains up to two backgrounds using the existing free-only adapter.
+  Artwork is not generated without a configured private token. No town
+  narrative LLM requests, persistent claims or production attribute catalogue
+  are performed by the isolated preview.
+- **Dungeon preview:** a third isolated, discrete-turn top-down trial now offers
+  seeded four-family shuffle bags (switch, block/plate, key/lock, timed spikes),
+  4/8/12-room reward-budget profiles and avoidable bat/rat patrols. An explicit
+  simulated weapon selector enables optional knife/sword combat; no inventory
+  is read. Creature hits are tracked separately from traps. No journey costs
+  or rewards apply in the preview; the separate live trial uses the approved rates.
+  Production three-format selection, cross-adventure variety history and richer
+  platform/investigation templates remain to implement; existing retained
+  decisions and live investigation content versions are unchanged.
+- **Platform variety increment:** the isolated generated platform preview now
+  has version-2 layouts with required jump-bells, ladder-operated levers,
+  key/lock challenges and timed spike crossings. A four-family shuffle bag
+  forbids adjacent repeats; forward doors and final recovery require the local
+  challenge, while solved gates remain open and return stays possible. Tier
+  budgets 1/2/3 select 4/8/12 mandatory rooms before optional branches, which
+  cannot shorten the route or increase the reward. The terrain is still
+  architecture-first; tested challenge geometry is added after paired ports.
+  Custom 4-16-room generator fixtures remain supported separately from tiers.
+  Existing live investigation versions and custody are unchanged. Broader
+  template geometry, moving platforms and live platform replay remain pending.
+- **Investigation variety increment:** the isolated preview now generates
+  4/8/12 mandatory puzzle sites for budgets 1/2/3. Four families (evidence
+  deduction, two-witness cross-check, two-item assembly, three-step sequencing)
+  use seeded shuffle bags, two authored variants each and retained evidence/
+  prerequisites. Every four-site group includes all families with no adjacent
+  repeat. Solving each site unlocks the next; all prerequisites are local or
+  previously completed. Wrong answers and sequence resets consume no essential
+  item; revisits retain progress and hints follow current prerequisites.
+  Generation and input validation remain mechanical, not LLM-produced code.
+  The isolated preview and separately versioned live trial share this engine; the authoritative
+  `cinema-investigation-v1` protocol, replay rules and saved sessions are unchanged.
+  Richer branching dependencies and live treasure assignment remain pending.
+- **Generated investigation authority:** eligible investigation towns also offer
+  an explicitly confirmed, saved generated trial with real costs and no reward.
+  `seeded-investigation-v1` pins the permanent server-owned town seed and the
+  modest/four-site profile, with one puzzle from each family. No seed, tier,
+  costs or completion can be supplied by the client. The existing main-world
+  transaction/revision/receipt channel replays canonical inputs and applies
+  actual room-entry charges through normal survival rules. Locked travel and
+  puzzle attempts do not create entry charges; revisits do. Partial progress,
+  completion and interruption survive restart; repeated receipts cannot
+  double-charge. The UI renders accepted inputs only, supports recovery,
+  retains visible shortcuts and restores command focus after replies.
+  Input histories remain bounded to 1024 actions, with leaving still available
+  at that limit. Authored runs keep their original rules and version. Neither
+  trial advertises a prepared local legend or enables a real treasure claim.
+- **Authoritative dungeon trial:** all eligible towns offer a separate,
+  explicitly confirmed four-room real-cost/no-treasure trial, without changing
+  permanent town format assignments or rerolling eligibility.
+  `seeded-dungeon-v1` pins the server-owned town seed, modest profile and usable
+  inventory knife access at entry. Broken/missing knives are unarmed; the live
+  catalogue currently has no sword. Clients cannot choose weapon/seed/tier,
+  positions, hits, health, completion or costs. The existing main-world
+  transaction/revision/receipt channel replays discrete movement, interaction,
+  wait, attack and position-reset inputs. It records trap and creature hits
+  separately and settles approved charges through normal survival, health,
+  equipment and interruption rules. All creatures remain avoidable unarmed.
+  Room entries include returns; position reset grants no healing or refund.
+  Partial progress and pending receipts survive reload/restart, repeated receipts
+  do not double-charge, and leaving remains available at the input-history limit.
+  The UI uses accepted state only, displays actual journey health and visible
+  keyboard/mobile controls, and locks pending/terminal inputs. Preview three-heart
+  rules and both investigation replay versions remain compatible. Real rewards,
+  custody transfers and production three-format assignment remain pending.
+- **Dungeon food increment:** new entries use `seeded-dungeon-v2`, retaining v1
+  mechanics/costs and adding the approved food reward only on a newly replayed
+  creature defeat. Energy is applied server-side after costs, never after a
+  survival interruption. Receipts/recovery cannot repeat the same gain; repeated
+  attacks, position retry and room revisits cannot respawn a defeated creature.
+  A new attempt deliberately respawns animals and can award energy again.
+  No cross-attempt claim state, meal counter increment, carried item or healing
+  is added. Show the accepted calorie gain in FR/EN; full reserves yield no
+  gain. Already-started `seeded-dungeon-v1` runs keep their no-food behavior.
+- **Discovery foundation:** authenticated `/api/town-legends` now makes the
+  permanent shared yes/no decision on first discovery of an actual prepared OSM
+  town. Positive decisions retain a seed and adventure format; both outcomes and
+  private per-journey discovery history live in the durable catalogue, not a TTL
+  cache or the browser save. Arrival records the current named town; Quests has a
+  localized Town legends pane with history, explicit preparation status/errors
+  and retry. Existing journeys need no save reset. Discovery alone does not grant
+  a treasure; inspected entrances now offer separate treasure-bearing sessions
+  alongside no-reward trials. Adventure carvings remain pending.
+- **Authoritative investigation trial:** eligible investigation towns offer an
+  explicitly confirmed authored cinema trial with real journey costs and no
+  reward. This is not generated town content. The existing main-world authority
+  saves a versioned input log and validates/replays every action; clients cannot
+  submit completion or cost totals. Room charges settle immediately through
+  survival, equipment and pressure rules, including interruptions. Repeated
+  receipts do not double-charge, resume has no new fee and leaving gives no
+  refund. A saved recovery marker blocks other journey activities until the
+  session ends or is left; closing Quests does not abandon it. Platform sessions
+  remain isolated previews until their replay protocol is integrated.
+- Implementation sequence: [Town legend plan](./TOWN_LEGENDS_PLAN.md).
+
 ## Journal journey-map loading progress
 
 - Show a localized preparation message and native progress bar while the journal

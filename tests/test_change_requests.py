@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import subprocess
 from pathlib import Path
 import sys
 import tempfile
@@ -158,6 +159,46 @@ class ChangeRequestTests(unittest.TestCase):
             state["appearance"]["tileset"] = value
             with self.assertRaises(JourneyRequest):
                 validate_snapshot(state)
+
+    def test_carried_map_and_independent_ui_skins_are_valid_diagnostic_evidence(self):
+        themes = json.loads(subprocess.run(
+            ["node", "--input-type=module", "-e",
+             "import { LEGEND_THEMES } from './legend-rewards.mjs';"
+             "console.log(JSON.stringify(LEGEND_THEMES.map(theme => theme.id)))"],
+            cwd=Path(__file__).resolve().parents[1], check=True, capture_output=True,
+            text=True, timeout=30).stdout)
+        for theme in themes:
+            state = snapshot()
+            state["appearance"] = {"tileset": "path-pixel", "skin": theme, "uiSkin": "moonlit"}
+            self.assertEqual(json.loads(validate_snapshot(state))["appearance"], state["appearance"])
+            state["appearance"] = {"tileset": "ascii", "skin": "default", "uiSkin": theme}
+            self.assertEqual(json.loads(validate_snapshot(state))["appearance"], state["appearance"])
+        for key in ("skin", "uiSkin"):
+            for value in ("remote-pack", "<style>", {}, None):
+                state = snapshot()
+                state["appearance"][key] = value
+                with self.assertRaises(JourneyRequest):
+                    validate_snapshot(state)
+
+    def test_player_icon_diagnostics_accept_only_the_bundled_catalogue_and_legacy_snapshots(self):
+        icons = json.loads(subprocess.run(
+            ["node", "--input-type=module", "-e",
+             "import { PLAYER_ICONS } from './player-icons.mjs';"
+             "console.log(JSON.stringify(PLAYER_ICONS.map(icon => icon.id)))"],
+            cwd=Path(__file__).resolve().parents[1], check=True, capture_output=True,
+            text=True, timeout=30).stdout)
+        for icon in ["default", *icons]:
+            state = snapshot()
+            state["appearance"]["playerIcon"] = icon
+            self.assertEqual(json.loads(validate_snapshot(state))["appearance"]["playerIcon"], icon)
+            state["appearance"].update(uiSkin="sepia", tileset="path-pixel", skin="moonlit")
+            self.assertEqual(json.loads(validate_snapshot(state))["appearance"]["playerIcon"], icon)
+        for icon in (None, {}, "unknown", "<svg>", "https://example.test/icon.svg"):
+            state = snapshot()
+            state["appearance"]["playerIcon"] = icon
+            with self.assertRaises(JourneyRequest):
+                validate_snapshot(state)
+        validate_snapshot(snapshot())
 
     def test_upload_failure_never_publishes_and_identical_retry_preserves_reservation(self):
         with patch.object(self.assets.blobs, "put", side_effect=AssetError("S3 unavailable")):

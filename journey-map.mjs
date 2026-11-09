@@ -1,4 +1,5 @@
 import { mapAppearance, pixelPack, drawPixelTile, SITE_GLYPHS } from "./map-appearance.mjs";
+import { drawPlayerIcon } from "./player-icons.mjs";
 export const MAX_JOURNEY_POINTS = 8192;
 const TERRAIN = {
   plain: ["#ddd5ac", "."], water: ["#8ebbc4", "~"], road: ["#c9b58f", "+"],
@@ -130,10 +131,11 @@ export function drawJourneyMap(canvas, view, t, progress = 1) {
     const glyph = SITE_GLYPHS[kind] ?? baseGlyph;
     c.fillStyle = color;
     c.fillRect(x - scale * size / 2, y - scale * size / 2, scale * size + 0.5, scale * size + 0.5);
-    if ((view.appearance ?? mapAppearance()).tileset === "path-pixel" && pixelPack()) {
-      drawPixelTile(c, pixelPack(), kind, x - scale * size / 2, y - scale * size / 2, scale * size + .5);
+    const appearance = view.appearance ?? mapAppearance(), pack = pixelPack(appearance.skin);
+    if (appearance.tileset === "path-pixel" && pack) {
+      drawPixelTile(c, pack, kind, x - scale * size / 2, y - scale * size / 2, scale * size + .5);
       if (cell.siteKind && protectedTerrain && scale >= 12) {
-        drawPixelTile(c, pixelPack(), cell.siteKind, x, y, scale / 2);
+        drawPixelTile(c, pack, cell.siteKind, x, y, scale / 2);
       }
     } else if (size === 1 && scale >= 12) {
       c.fillStyle = "#635c49";
@@ -217,6 +219,10 @@ export function drawJourneyMap(canvas, view, t, progress = 1) {
     }
     c.fillStyle = stop.kind === "current" ? "#ac3029" : "#59472c";
     c.beginPath(); c.arc(x, y, stop.kind === "current" ? 12 : 8, 0, Math.PI * 2); c.fill();
+    const appearance = view.appearance ?? mapAppearance(), icon = appearance.playerIcon ?? "default";
+    if (stop.kind === "current" && icon !== "default") {
+      drawPlayerIcon(c, appearance.playerIconArtwork ?? icon, x - 18, y - 18, 36);
+    }
     c.font = "bold 24px sans-serif";
     c.textAlign = "center";
     c.fillText(stop.label ?? String(index + 1), x, y + (stop.kind === "current" ? 36 : -20));

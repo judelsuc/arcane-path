@@ -71,6 +71,8 @@ import { updateWeatherPanel } from "./weather-panel.mjs";
 import { beginPressures, sympathy, policePresence, washingAvailable,
   hygieneReputationPenalty, beggingHygieneBonus } from "./pressures.mjs";
 import { setupArtifactQuests } from "./artifacts-ui.mjs";
+import { setupTownLegends } from "./town-legends-ui.mjs";
+import { setupLegendLook } from "./legend-look-ui.mjs";
 import { setupQuestTracking } from "./quest-tracking-ui.mjs";
 import { followedQuest, objectiveCell } from "./quest-objectives.mjs";
 import { IncompatibleJourneySaveError } from "./journey-save.mjs";
@@ -84,7 +86,7 @@ import { beginJourneyMiniGame, settleJourneyMiniGame } from "./journey-mini-game
 import { synchronizeParentDiscovery, applyJournalDiscovery } from "./discovery-targets.mjs";
 import { recordJourneyVisit } from "./journey-visits.mjs";
 
-export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onStep, onActiveChange, musicAudio, cafeAudio, theftAudio, miniGameAudio, pinPhoto, pinTarot, pinBiography, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats, encounterIllustrations }) {
+export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onAppearance, onStep, onActiveChange, musicAudio, cafeAudio, theftAudio, miniGameAudio, pinPhoto, pinTarot, pinBiography, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats, encounterIllustrations }) {
   const questLayout = setupQuestLayout(t);
   const start = document.querySelector("#start-travel");
   const resume = document.querySelector("#resume-travel");
@@ -461,6 +463,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     },
   });
   const equipmentUI = setupEquipment(t, {
+    treasureAction: action => artifactsUI.treasure(action),
     context() {
       const current = economyContext();
       return current && active ? { ...current, saveStatus: saveStatus.textContent,
@@ -560,6 +563,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const conversations = setupConversations(t, {
     context: () => active ? economyContext() : null,
     characters: charactersClient,
+    legendTelling: (character, request) => townLegendsUI.telling(character, request),
     onCharacter: () => {
       serviceQuestsUI.characterChanged();
       artifactsUI.localize();
@@ -610,6 +614,19 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     beforeRequest: signal => abandonedUI.whenIdle(signal),
     mutate: mutateQuest,
     lock(value) { busy = value; localize(); },
+    openLegends: () => questLayout.openLegends(),
+  });
+  const townLegendsUI = setupTownLegends({
+    context: () => active ? economyContext() : null,
+    startTrial: action => { void artifactsUI.startLegend(action); },
+    onNarrative: () => conversations.localize(),
+  });
+  const legendLookUI = setupLegendLook({
+    context: () => active ? economyContext() : null,
+    host: document.querySelector("#legend-look"),
+    onEntry: entry => townLegendsUI.acceptEntry(entry),
+    onObservation: observation => townLegendsUI.observe(observation),
+    openEntrance: () => questLayout.openLegends(),
   });
   const questTrackingUI = setupQuestTracking(t, {
     context: () => active ? economyContext() : null, mutate: mutateQuest,
@@ -879,6 +896,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const reported = new Set();
 
   function localize() {
+    onAppearance?.(active ? state : null);
     changeRequests.localize();
     abandonedUI.localize();
     saveFeedback.localize();
@@ -892,6 +910,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     questLayout.localize();
     serviceQuestsUI.localize();
     artifactsUI.localize();
+    townLegendsUI.localize();
+    updateLegendLook();
     parentNarrativeUI.update();
     parentRecollectionUI.update();
     questTrackingUI.localize();
@@ -1289,6 +1309,15 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const tile = document.querySelector(`.tile[data-row="${position.row}"][data-col="${position.col}"]`);
     if (cursor) tile.classList.add("tile--look");
     selectPlayer(cameraData, tile, cursor ? null : inscriptionsUI.current());
+    updateLegendLook();
+  }
+
+  function updateLegendLook() {
+    const p = state && chunkPosition(state.col, state.row);
+    legendLookUI.update(active && cursor && cameraData ? {
+      col: (p.x - 1) * 8 + cursor.col,
+      row: (p.y - 1) * 8 + cursor.row,
+    } : null);
   }
 
   function toggleLook() {
@@ -1531,6 +1560,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
 
   function reset() {
+    legendLookUI.reset();
+    townLegendsUI.reset();
     hitchhikingController?.abort();
     hitchhikingController = undefined;
     serviceQuestsUI.reset();

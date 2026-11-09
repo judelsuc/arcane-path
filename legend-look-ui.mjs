@@ -1,0 +1,132 @@
+import { createTownLegendsClient } from "./town-legends.mjs";
+
+const COPY = {
+  en: {
+    title: "Traces of an old story", loading: "Looking around…",
+    error: "Legend search failed:", retry: "Retry Look", inspect: "Inspect the passage",
+    travel: "This could be the passage they spoke of. Come closer to inspect it.",
+    found: "Entrance discovered.",
+    open: "Open the adventure entrance",
+  },
+  fr: {
+    title: "Traces d'une ancienne histoire", loading: "Observation des alentours…",
+    error: "Échec de recherche de légende :", retry: "Réessayer Regarder", inspect: "Inspecter le passage",
+    travel: "Ce pourrait être le passage dont on vous a parlé. Approchez pour l'inspecter.",
+    found: "Entrée découverte.",
+    open: "Ouvrir l'entrée de l'aventure",
+  },
+};
+
+export function setupLegendLook({ context, host, client = createTownLegendsClient(), onEntry, onObservation, openEntrance } = {}) {
+  const doc = host.ownerDocument;
+  let controller, key, target, observations = [], error = "", loading = false;
+  const identity = state => state?.serverJourney?.id && state.journalAccess
+    ? `${state.serverJourney.id}:${state.journalAccess}` : null;
+  function node(tag, value) {
+    const result = doc.createElement(tag);
+    result.textContent = value;
+    host.append(result);
+    return result;
+  }
+  function button(label, callback, disabled = false) {
+    const result = node("button", label);
+    result.type = "button";
+    result.disabled = disabled;
+    result.addEventListener("click", callback);
+  }
+  function render() {
+    const language = doc.documentElement.lang === "en" ? "en" : "fr", c = COPY[language];
+    host.replaceChildren();
+    host.hidden = !loading && !error && !observations.length;
+    if (host.hidden) return;
+    node("h3", c.title);
+    if (loading) node("p", c.loading).setAttribute("role", "status");
+    if (error) {
+      node("p", `${c.error} ${error}`).setAttribute("role", "alert");
+      button(c.retry, () => { void request(); }, loading);
+    }
+    for (const observation of observations) {
+      node("h4", observation.town);
+      node("p", observation.description[language]);
+      if (!observation.matches) continue;
+      const captured = context(), state = captured?.state;
+      const here = state?.col === target.col && state?.row === target.row;
+      if (observation.found) {
+        node("p", here ? c.found : c.travel).setAttribute("role", "status");
+        if (here && openEntrance) button(c.open, openEntrance, !!captured?.blocked);
+      }
+      else if (!here) node("p", c.travel);
+      else button(c.inspect, () => { void inspect(observation); }, loading || !!captured?.blocked);
+    }
+  }
+  async function request(inspecting) {
+    const captured = context(), owner = identity(captured?.state);
+    if (!owner || !target || captured.blocked) return;
+    controller?.abort();
+    const current = new AbortController(), requestedKey = key;
+    controller = current;
+    loading = true;
+    error = "";
+    render();
+    try {
+      const result = inspecting
+        ? await client.inspect(captured.state, inspecting.townId, current.signal)
+        : await client.look(captured.state, target, current.signal);
+      const state = context()?.state;
+      if (current.signal.aborted || key !== requestedKey || identity(state) !== owner ||
+          state.col !== captured.state.col || state.row !== captured.state.row) return;
+      if (inspecting) {
+        if (result.entry.townId !== inspecting.townId || result.entry.exploration?.status !== "found") {
+          throw new Error("Invalid inspected entrance response.");
+        }
+        onEntry?.(result.entry);
+        observations = observations.map(item => item.townId === inspecting.townId ? { ...item, found: true } : item);
+      } else {
+        observations = result.observations;
+        for (const observation of observations) {
+          if (observation.entry) onEntry?.(observation.entry);
+          onObservation?.(observation);
+        }
+      }
+    } catch (reason) {
+      if (current.signal.aborted) return;
+      console.error("Legend Look unavailable:", reason);
+      error = reason.message;
+    } finally {
+      if (!current.signal.aborted) { loading = false; render(); }
+    }
+  }
+  async function inspect(observation) {
+    const state = context()?.state;
+    if (!target || state?.col !== target.col || state?.row !== target.row) return;
+    await request(observation);
+  }
+  return {
+    update(position) {
+      const captured = context(), owner = identity(captured?.state);
+      const next = owner && position ? `${owner}:${captured.state.col},${captured.state.row}:${position.col},${position.row}` : null;
+      if (next !== key) {
+        controller?.abort();
+        controller = undefined;
+        key = next;
+        target = position;
+        observations = [];
+        error = "";
+        loading = false;
+        if (next && !captured.blocked) void request();
+      } else if (next && !captured.blocked && !loading && !error && !observations.length && controller === undefined) {
+        void request();
+      }
+      render();
+    },
+    reset() {
+      controller?.abort();
+      controller = undefined;
+      key = target = null;
+      observations = [];
+      loading = false;
+      error = "";
+      render();
+    },
+  };
+}

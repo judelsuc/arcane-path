@@ -44,6 +44,7 @@ const startArt = setupStartArt(t);
 void startArt.load();
 const travel = setupTravel({
   t, renderMap,
+  onAppearance: state => appearance?.syncJourney(state),
   pinPhoto: photoJournal.pinButton,
   pinTarot: photoJournal.pinTarot,
   pinBiography: photoJournal.pinBiography,

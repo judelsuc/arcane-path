@@ -52,7 +52,9 @@ from quest_destinations import QuestDestinations
 from characters import Characters
 from town_content import TownContent
 from change_requests import ChangeRequests, report_storage
+from admin_console import AdminConsole, AdminDenied, COOKIE
 from inscriptions import Inscriptions, moderation_request
+from town_legends import TownLegends
 from mapped_sites import enrich_sites
 from content_factory import CHARACTER_IMAGE_STYLE, OvhImageWriter, OvhWriter
 
@@ -853,6 +855,9 @@ def make_handler(store, jobs, path_pool=None):
                             artifacts=main_artifacts)
     main_artifacts.characters = characters
     town_content = TownContent(journeys, lore)
+    town_legends = TownLegends(journeys, lore)
+    live_narrative.town_legends = town_legends
+    main_artifacts.town_legends = town_legends
     inscriptions = Inscriptions(journeys, lore, writer=(
         OvhWriter(live_narrative.writer.token, LIVE_TEXT_MODEL, moderation_request)
         if live_narrative.writer else None))
@@ -862,6 +867,9 @@ def make_handler(store, jobs, path_pool=None):
                                     enabled=os.environ.get("ARCANE_CHANGE_REQUESTS_ENABLED") == "1"
                                     and reports_assets is not None and reports_assets.catalogue.postgres
                                     and (manual_reports or isinstance(reports_assets.blobs, S3Blobs)))
+    admin = AdminConsole.configured(reports_assets)
+    if admin and admin.credentials.resolve().is_relative_to(store.root.resolve()):
+        raise ValueError("Administrator credentials must be stored outside the served repository.")
     accommodations = ChunkJobs(Accommodations(store, atomic_write), capacity=2, pool=jobs.pool)
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
@@ -877,13 +885,17 @@ def make_handler(store, jobs, path_pool=None):
             self.wfile.write(encoded)
 
         def end_headers(self):
+            if urllib.parse.urlsplit(self.path).path in ("/admin", "/admin/", "/admin.html"):
+                self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; "
+                                 "style-src 'self'; img-src 'self' blob: data:; connect-src 'self'; "
+                                 "object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
             if not self.path.startswith("/api/"):
                 self.send_header("Cache-Control", "no-cache")
             super().end_headers()
 
         def do_POST(self):
             endpoint = urllib.parse.urlsplit(self.path).path
-            if endpoint not in ("/api/journeys", "/api/abandoned-journals", "/api/lore-playtest", "/api/artifacts", "/api/journal-art", "/api/live-narrative", "/api/encounter-art", "/api/quest-destinations", "/api/characters", "/api/town-content", "/api/change-requests", "/api/inscriptions"):
+            if endpoint not in ("/api/admin", "/api/journeys", "/api/abandoned-journals", "/api/lore-playtest", "/api/artifacts", "/api/journal-art", "/api/live-narrative", "/api/encounter-art", "/api/quest-destinations", "/api/characters", "/api/town-content", "/api/change-requests", "/api/inscriptions", "/api/town-legends"):
                 return self.send_json(404, {"error": "Unknown API endpoint."})
             origin = self.headers.get("Origin")
             try:
@@ -902,6 +914,7 @@ def make_handler(store, jobs, path_pool=None):
             except ValueError:
                 return self.send_json(400, {"error": "Invalid request body length."})
             maximum = (68 * 1024 * 1024 if endpoint == "/api/abandoned-journals"
+                       else 128 * 1024 if endpoint == "/api/admin"
                        else 4_100_000 if endpoint == "/api/change-requests"
                        else 2 * 1024 * 1024 if endpoint == "/api/artifacts"
                        else 16384 if endpoint == "/api/live-narrative" else 4096)
@@ -918,10 +931,29 @@ def make_handler(store, jobs, path_pool=None):
                 except (ValueError, UnicodeError) as error:
                     raise JourneyRequest("Invalid journey JSON.") from error
                 capability = self.headers.get("X-Journal-Capability")
+                if endpoint == "/api/admin":
+                    if admin is None:
+                        return self.send_json(503, {"error": "Administrator console is not configured."})
+                    result, token = admin.request(request, self.headers.get("Cookie"),
+                                                  self.headers.get("X-Admin-CSRF"))
+                    encoded = result if isinstance(result, bytes) else json.dumps(result).encode()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "image/png" if isinstance(result, bytes) else "application/json")
+                    self.send_header("Content-Length", str(len(encoded)))
+                    self.send_header("Cache-Control", "private, no-store")
+                    self.send_header("X-Content-Type-Options", "nosniff")
+                    if token is not None:
+                        self.send_header("Set-Cookie", f"{COOKIE}={token}; Path=/; HttpOnly; Secure; "
+                                         f"SameSite=Strict; Max-Age={28800 if token else 0}")
+                    self.end_headers()
+                    self.wfile.write(encoded)
+                    return
                 if endpoint == "/api/change-requests":
                     return self.send_json(200, change_requests.submit(request, capability))
                 if endpoint == "/api/inscriptions":
                     return self.send_json(200, inscriptions.request(request, capability))
+                if endpoint == "/api/town-legends":
+                    return self.send_json(200, town_legends.request(request, capability))
                 if endpoint == "/api/town-content":
                     result = town_content.request(request, capability)
                     if isinstance(result, tuple):
@@ -974,6 +1006,8 @@ def make_handler(store, jobs, path_pool=None):
                 if capability is not None:
                     abandoned.bind(record["state"]["serverJourney"]["id"], capability)
                 return self.send_json(201 if created else 200, record)
+            except AdminDenied as error:
+                return self.send_json(401, {"error": str(error)})
             except JournalForbidden as error:
                 return self.send_json(403, {"error": str(error)})
             except JourneyRequest as error:
@@ -990,6 +1024,9 @@ def make_handler(store, jobs, path_pool=None):
                 logging.exception("Asset storage unavailable")
                 return self.send_json(503, {"error": "Asset storage unavailable; check server logs."})
             except (OSError, ValueError, KeyError, sqlite3.Error):
+                if endpoint == "/api/admin":
+                    logging.exception("Administrator operation failed")
+                    return self.send_json(500, {"error": "Administrator service failed; check server logs."})
                 if endpoint == "/api/artifacts":
                     logging.exception("Main artifact synchronization failed")
                     return self.send_json(500, {"error": "Artifact synchronization failed; retry the pending command."})
@@ -1000,6 +1037,11 @@ def make_handler(store, jobs, path_pool=None):
 
         def do_GET(self):
             url = urllib.parse.urlsplit(self.path)
+            if url.path in ("/admin", "/admin/"):
+                self.send_response(302)
+                self.send_header("Location", "/admin.html")
+                self.end_headers()
+                return
             if url.path == "/public/config.json":
                 try:
                     config = load_config()
@@ -1190,6 +1232,7 @@ def make_handler(store, jobs, path_pool=None):
     Handler.live_narrative = live_narrative
     Handler.characters = characters
     Handler.town_content = town_content
+    Handler.town_legends = town_legends
     Handler.inscriptions = inscriptions
     Handler.change_requests = change_requests
     Handler.living_world = living_world
@@ -1217,6 +1260,7 @@ def main():
         server.RequestHandlerClass.encounter_art.close()
         server.RequestHandlerClass.characters.close()
         server.RequestHandlerClass.town_content.close()
+        server.RequestHandlerClass.town_legends.close()
         server.RequestHandlerClass.inscriptions.close()
         server.RequestHandlerClass.live_narrative.close()
         server.RequestHandlerClass.quest_destinations.close()

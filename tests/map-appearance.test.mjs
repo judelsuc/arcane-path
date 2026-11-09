@@ -8,9 +8,27 @@ import { translate } from "../i18n.mjs";
 import { drawJourneyMap, journeyMapView } from "../journey-map.mjs";
 import { initialJourney, moveJourney } from "../travel.mjs";
 import { mapIdentity } from "../journey-save.mjs";
+import { LEGEND_THEMES, treasureId, composedReward } from "../legend-rewards.mjs";
+import { pixelSet, drawPixelSprite } from "../minigames/legend-pixel-art.mjs";
+import { PLAYER_ICONS, themePlayerIcon } from "../player-icons.mjs";
 
 const pack = JSON.parse(readFileSync(new URL("../public/tilesets/path-pixel.json", import.meta.url)));
 
+test("generated carried icons render on ASCII maps and captured notebooks and are cleared on drop", async t => {
+  const f = fixture(t), artwork = { ...PLAYER_ICONS[0], id: "generated:daily-fixture:role-1" };
+  const id = treasureId("node/42", 6, true), reward = { ...composedReward(6), icon: artwork };
+  const state = { treasures: { version: 1, equipped: null, iconEquipped: id,
+    inventory: [{ id, reward, placement: { id, x: 0, y: 0, rotated: false } }] } };
+  const controller = f.ui;
+  await controller.syncJourney(state);
+  assert.equal(mapAppearance().playerIcon, artwork.id);
+  assert.deepEqual(mapAppearance().playerIconArtwork, artwork);
+  const captured = mapAppearance();
+  await controller.syncJourney({ treasures: { version: 1, equipped: null, iconEquipped: null, inventory: [] } });
+  assert.equal(mapAppearance().playerIcon, "default");
+  assert.equal(mapAppearance().playerIconArtwork, undefined);
+  assert.deepEqual(captured.playerIconArtwork, artwork);
+});
 test("original CC0 pixel pack has complete terrain/site/unknown coverage and bounded non-executable geometry", () => {
   assert.equal(validatePixelPack(pack), pack);
   assert.equal(Object.keys(SITE_GLYPHS).length, 12);
@@ -146,6 +164,63 @@ test("dotted directions have a pale casing and dark core above both terrain tile
   await f.ui.activate("ascii");
 });
 
+test("collectible looks apply to map and adventure renderers only while carried and preserve browser preferences", async t => {
+  const f = fixture(t);
+  await f.ui.activate("ascii");
+  const writes = f.writes.length, geometries = new Set(), sprites = new Set();
+  for (const [seed, theme] of LEGEND_THEMES.entries()) {
+    const id = treasureId("node/42", seed), state = { treasures: {
+      inventory: [{ id }], equipped: id,
+    } };
+    await f.ui.syncJourney(state);
+    assert.deepEqual(mapAppearance(), { tileset: "path-pixel", skin: theme.id, uiSkin: "default", playerIcon: "default" });
+    assert.equal(f.doc.documentElement.dataset.mapSkin, theme.id);
+    assert.equal(f.get("map-tileset").disabled, true);
+    assert.equal(f.writes.length, writes, "equipping never overwrites browser preference");
+    const set = pixelSet(0);
+    geometries.add(JSON.stringify([set.masonry, set.trim]));
+    assert.equal(set.accent, theme.accent);
+    const sprite = [], ctx = { fillRect: (...args) => sprite.push([ctx.fillStyle, ...args]) };
+    drawPixelSprite(ctx, "explorer", 0, 0);
+    sprites.add(JSON.stringify(sprite));
+    const frozen = journeyMapView(initialJourney(0, 0, 0));
+    await f.ui.syncJourney({ treasures: { inventory: [], equipped: id } });
+    assert.deepEqual(mapAppearance(), { tileset: "ascii", skin: "default", uiSkin: "default", playerIcon: "default" });
+    assert.equal(f.get("map-tileset").disabled, false);
+    assert.equal(frozen.appearance.skin, theme.id);
+    const rects = [];
+    drawJourneyMap({ getContext: () => ({ fillRect: (...args) => rects.push(args),
+      fillText() {}, beginPath() {}, stroke() {}, setLineDash() {}, moveTo() {}, lineTo() {}, arc() {}, fill() {} }) },
+    { ...frozen, terrain: { cells: [{ col: 0, row: 0, terrain: "forest" }], stride: 1 } }, key => key);
+    assert.ok(rects.length > pack.tiles.forest.rects.length, "frozen notebook retains its collectible tiles");
+  }
+  assert.equal(geometries.size, 16);
+  assert.equal(sprites.size, 16);
+});
+
+test("all sixteen UI skins work independently with ASCII or a different map theme and reset with custody", async t => {
+  const f = fixture(t), mapId = treasureId("node/42", 1);
+  await f.ui.syncJourney(null);
+  await f.ui.activate("ascii");
+  const writes = f.writes.length;
+  for (const [seed, theme] of LEGEND_THEMES.entries()) {
+    const id = treasureId("way/123", seed);
+    const state = { treasures: { inventory: [{ id }, { id: mapId }], equipped: null, uiEquipped: id } };
+    await f.ui.syncJourney(state);
+    assert.deepEqual(mapAppearance(), { tileset: "ascii", skin: "default", uiSkin: theme.id, playerIcon: "default" });
+    assert.equal(f.doc.documentElement.dataset.uiSkin, theme.id);
+    assert.equal(f.get("map-tileset").disabled, false);
+    assert.ok(f.get("treasure-ui-rules").textContent.includes(`--skin-surface:${theme.floor}`));
+    await f.ui.syncJourney({ treasures: { ...state.treasures, equipped: mapId } });
+    assert.deepEqual(mapAppearance(), { tileset: "path-pixel", skin: "moonlit", uiSkin: theme.id, playerIcon: "default" });
+    assert.equal(diagnosticSnapshot({ col: 2, row: 3 }, { doc: f.doc,
+      viewport: { innerWidth: 375, innerHeight: 812, devicePixelRatio: 2 } }).appearance.uiSkin, theme.id);
+  }
+  await f.ui.syncJourney(null);
+  assert.deepEqual(mapAppearance(), { tileset: "ascii", skin: "default", uiSkin: "default", playerIcon: "default" });
+  assert.equal(f.doc.documentElement.dataset.uiSkin, "default");
+  assert.equal(f.writes.length, writes);
+});
 test("failed manifest retains working ASCII, reports error and does not persist a broken preference", async t => {
   // The already validated pack is process-cached; test rejection before any activation in a fresh module.
   const isolated = await import(`../map-appearance.mjs?failure=${Date.now()}`);
@@ -159,6 +234,35 @@ test("failed manifest retains working ASCII, reports error and does not persist 
   assert.equal(isolated.mapAppearance().tileset, "ascii");
   assert.match(f.get("map-appearance-status").textContent, /Incomplete tileset/);
   assert.deepEqual(writes, []);
+});
+
+test("earned player icons are independent of skins, retain ASCII and freeze into notebook maps", async t => {
+  const f = fixture(t), selected = new Set();
+  await f.ui.syncJourney(null);
+  await f.ui.activate("ascii");
+  const writes = f.writes.length;
+  for (const [seed, theme] of LEGEND_THEMES.entries()) {
+    const id = treasureId("node/42", seed), icon = themePlayerIcon(theme.id);
+    await f.ui.syncJourney({ treasures: { inventory: [{ id }], equipped: null, iconEquipped: id } });
+    selected.add(icon);
+    assert.deepEqual(mapAppearance(), { tileset: "ascii", skin: "default", uiSkin: "default", playerIcon: icon });
+    assert.equal(f.get("map-tileset").disabled, false);
+    assert.ok(f.get("treasure-ui-rules").textContent.includes(`data-player-icon="${icon}"`));
+    const snapshot = diagnosticSnapshot({ col: 0, row: 0 }, { doc: f.doc,
+      viewport: { innerWidth: 375, innerHeight: 812, devicePixelRatio: 2 } });
+    assert.equal(snapshot.appearance.playerIcon, icon);
+    const frozen = journeyMapView(initialJourney(0, 0, 0));
+    await f.ui.syncJourney(null);
+    assert.equal(mapAppearance().playerIcon, "default");
+    const colours = [];
+    const ctx = { fillRect: () => colours.push(ctx.fillStyle), fillText() {}, beginPath() {}, stroke() {},
+      setLineDash() {}, moveTo() {}, lineTo() {}, arc() {}, fill() {} };
+    drawJourneyMap({ getContext: () => ctx }, frozen, key => key);
+    assert.ok(colours.includes(PLAYER_ICONS.find(item => item.id === icon).coat));
+    assert.equal(frozen.appearance.playerIcon, icon);
+  }
+  assert.equal(selected.size, 8);
+  assert.equal(f.writes.length, writes);
 });
 
 test("invalid saved preference or blocked storage is explicit without disabling ASCII", async t => {

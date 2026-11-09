@@ -8,6 +8,7 @@ import { synchronizeParentDiscovery, parentDiscoveryCandidates, journalDiscovery
 import { discoveryIdentity, learnDiscovery, reconcileDiscoveryAvailability } from "./discovery.mjs";
 import { deliverAutomaticDiscovery, selectDiscoveryCandidate, discoveryKnown } from "./discovery-policy.mjs";
 import { loreItem, LORE_ITEMS, LORE_WORLD } from "./lore-catalogue.mjs";
+import { treasureGrams, treasureItems } from "./legend-rewards.mjs";
 import { publicDreams, settleDream, validateDreams } from "./discovery-dreams.mjs";
 import { grantInterpretation, interpretationOffer, plainGuidancePermitted,
   validateInterpretations } from "./discovery-interpretation.mjs";
@@ -42,9 +43,9 @@ export function deliverMoonDream(previous, state, instances, journalContext) {
     moonReceipts: [...(state.lore.moonReceipts ?? []), { observedMinutes: state.elapsedMinutes, clues: receipts }] } };
 }
 
-function artifactWeight(instances, journey) {
+function artifactWeight(instances, journey, state) {
   return instances.filter(instance => instance.owner === journey)
-    .reduce((sum, instance) => sum + loreItem(instance.id).grams, 0);
+    .reduce((sum, instance) => sum + loreItem(instance.id).grams, 0) + treasureGrams(state);
 }
 
 function cellAt(map, col, row) {
@@ -55,7 +56,7 @@ function cellAt(map, col, row) {
   return cell;
 }
 
-function infoAt(map, state) {
+export function infoAt(map, state) {
   const step = map.cellSizeMeters / 6371008.8 * 180 / Math.PI;
   const projection = map.projectionLatitude ?? (map.bounds.minLatitude + map.bounds.maxLatitude) / 2;
   const cell = cellAt(map, state.col, state.row);
@@ -165,13 +166,15 @@ export function createLoreState(genesis, map, economy) {
 
 export function loreBag(state, instances, journey) {
   const owned = instances.filter(instance => instance.owner === journey);
-  const items = [...state.equipment.items, ...owned.map(instance => ({ id: instance.id }))];
+  const treasures = state.treasures?.inventory ?? [];
+  const catalogue = [...PACKING, ...treasureItems(state)];
+  const items = [...state.equipment.items, ...owned.map(instance => ({ id: instance.id })), ...treasures];
   const placements = [...state.equipment.placements,
-    ...owned.map(instance => ({ ...instance.placement, id: instance.id }))];
-  const grams = items.reduce((sum, item) => sum + PACKING.find(entry => entry.id === item.id).grams, 0);
+    ...owned.map(instance => ({ ...instance.placement, id: instance.id })), ...treasures.map(item => item.placement)];
+  const grams = items.reduce((sum, item) => sum + catalogue.find(entry => entry.id === item.id).grams, 0);
   if (grams > CAPACITY_GRAMS) throw new Error("The bag exceeds 5,500 g.");
-  restorePlacements(items, placements, PACKING);
-  return { items, placements, grams };
+  restorePlacements(items, placements, catalogue);
+  return { items, placements, grams, catalogue };
 }
 
 function artifactClue(state, instance, tier, facts, channel = "npc") {
@@ -232,7 +235,7 @@ export function loreView(runtime, instances, journey, map, { nowMillis = Date.no
   const reconciled = reconcileArtifacts(runtime.state, instances, journey);
   validateInterpretations(reconciled);
   const state = { ...reconciled, lore: { ...reconciled.lore,
-    carriedGrams: artifactWeight(instances, journey), dreams: publicDreams(reconciled), work: undefined } };
+    carriedGrams: artifactWeight(instances, journey, reconciled), dreams: publicDreams(reconciled), work: undefined } };
   if (state.lore.moon) {
     state.lore.moon = { expiresMinutes: state.lore.moon.expiresMinutes,
       domains: state.lore.moon.clues.map(clue => clue.targetType) };
@@ -362,7 +365,7 @@ export async function applyLoreAction(runtime, originalInstances, journey, map, 
   let state = recordSettlement(structuredClone(runtime.state), map);
   state = reconcileArtifacts(state, originalInstances, journey);
   const instances = structuredClone(originalInstances), previous = state;
-  state.lore.carriedGrams = artifactWeight(instances, journey);
+  state.lore.carriedGrams = artifactWeight(instances, journey, state);
   const { survival, economy } = runtime;
   const cell = cellAt(map, state.col, state.row), info = infoAt(map, state);
   const instance = action.id === undefined ? null : instances.find(value => value.id === action.id);
@@ -520,7 +523,7 @@ export async function applyLoreAction(runtime, originalInstances, journey, map, 
       inscription: "Record an artifact inscription before discovering the handkerchief." };
     if (blocked) throw new Error(failures[blocked] ?? `Discovery requirement not met: ${blocked}.`);
     if (bag.grams + item.grams > CAPACITY_GRAMS) throw new Error("The bag exceeds 5,500 g.");
-    const placement = firstPlacement(bag.placements, item, PACKING);
+    const placement = firstPlacement(bag.placements, item, bag.catalogue);
     state = settleMinutes(state, 10, map, survival, economy);
     if (!actionInterrupted(previous, state)) {
       Object.assign(instance, { owner: journey, placement, generation: instance.generation + 1,
@@ -553,7 +556,8 @@ export async function applyLoreAction(runtime, originalInstances, journey, map, 
   } else if (action.type === "pack") {
     if (!instance || instance.owner !== journey) throw new Error("You do not carry this artifact.");
     const placement = { id: instance.id, x: action.x, y: action.y, rotated: action.rotated };
-    if (!fits(loreBag(state, instances, journey).placements, loreItem(instance.id), placement, PACKING)) {
+    const bag = loreBag(state, instances, journey);
+    if (!fits(bag.placements, loreItem(instance.id), placement, bag.catalogue)) {
       throw new Error("Inventory overlaps or exceeds the bag.");
     }
     instance.placement = placement;
@@ -604,7 +608,7 @@ export async function applyLoreAction(runtime, originalInstances, journey, map, 
       if (!recalled) throw new Error("Choose your own still-unclaimed publicly cached artifact.");
       const bag = loreBag(state, instances, journey), item = loreItem(recalled.id);
       if (bag.grams + item.grams > CAPACITY_GRAMS) throw new Error("The bag exceeds 5,500 g.");
-      recalledPlacement = firstPlacement(bag.placements, item, PACKING);
+      recalledPlacement = firstPlacement(bag.placements, item, bag.catalogue);
     }
     const target = instance.id === "hermit" ? instances.find(value =>
       value.id === action.target && value.owner === null && value.id !== instance.id) : null;
@@ -703,7 +707,7 @@ export async function applyLoreAction(runtime, originalInstances, journey, map, 
     if (rescue) rescue.marker = { col: state.col, row: state.row };
   }
   if (state.ended) releaseArtifacts(state, instances, journey, map);
-  state.lore.carriedGrams = artifactWeight(instances, journey);
+  state.lore.carriedGrams = artifactWeight(instances, journey, state);
   if (state.lore.effects?.expiresMinutes <= state.elapsedMinutes) state.lore.effects = null;
   state = synchronizeParentDiscovery(state);
   validateDreams(state);

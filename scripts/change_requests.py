@@ -28,6 +28,8 @@ PREFIX = "v1/durable/" + hashlib.sha256(SCOPE.encode()).hexdigest() + "/"
 RETENTION = 90 * 86400
 MAX_IMAGE = 3_000_000
 SCHEMAS = (
+    """CREATE TABLE IF NOT EXISTS admin_feedback (
+        id TEXT PRIMARY KEY, status TEXT NOT NULL, note TEXT NOT NULL, revision INTEGER NOT NULL)""",
     """CREATE TABLE IF NOT EXISTS change_requests (
         id TEXT PRIMARY KEY, owner TEXT NOT NULL, fingerprint TEXT NOT NULL,
         comment TEXT NOT NULL, snapshot TEXT NOT NULL, created DOUBLE PRECISION NOT NULL,
@@ -76,10 +78,26 @@ def validate_snapshot(value):
     number(value["viewport"]["pixelRatio"], .25, 8, "pixel ratio")
     for key in ("scrollX", "scrollY"):
         number(value["viewport"][key], -100000, 100000, key, True)
-    exact(value["appearance"], ("tileset", "skin"), "appearance")
+    appearance = value["appearance"]
+    optional = tuple(key for key in ("uiSkin", "playerIcon", "playerIconArtwork") if isinstance(appearance, dict) and key in appearance)
+    exact(appearance, ("tileset", "skin") + optional, "appearance")
+    skins = ("default", "sepia", "moonlit", "verdant", "ember", "tide", "roseglass",
+             "sandstone", "porcelain", "autumn", "aurora", "clockwork", "lavender",
+             "inkwash", "coral", "mosaic", "starlight")
     if (value["appearance"]["tileset"] not in ("ascii", "path-pixel")
-            or value["appearance"]["skin"] != "default"):
+            or appearance["skin"] not in skins or appearance.get("uiSkin", "default") not in skins
+            or (appearance.get("playerIcon", "default") not in
+                ("default", "wanderer", "astronomer", "ranger", "smith", "sailor", "bard", "courier", "alchemist")
+                and not (isinstance(appearance.get("playerIcon"), str) and re.fullmatch(
+                    r"generated:[a-z0-9][a-z0-9-]{0,79}:[a-z][a-z0-9-]{0,47}", appearance["playerIcon"])))):
         raise JourneyRequest("Unsupported diagnostic appearance.")
+    if "playerIconArtwork" in appearance:
+        from admin_console import validate_collection
+        artwork = appearance["playerIconArtwork"]
+        if not isinstance(artwork, dict) or artwork.get("id") != appearance.get("playerIcon"):
+            raise JourneyRequest("Invalid diagnostic player artwork.")
+        validate_collection({"version": 1, "id": "diagnostic", "theme": "diagnostic", "model": "diagnostic",
+                             "icons": [{**artwork, "id": "diagnostic"}]})
     exact(value["visible"], ("screen", "dialogs"), "visible game")
     if value["visible"]["screen"] not in ("title-screen", "journey-setup", "travel-controls", "game"):
         raise JourneyRequest("Invalid visible screen.")
@@ -296,6 +314,7 @@ def purge(assets):
         with catalogue.connection() as raw:
             db = StoreConnection(raw, catalogue)
             db.execute("DELETE FROM asset_catalogue WHERE scope=? AND request=?", (SCOPE, row["id"]))
+            db.execute("DELETE FROM admin_feedback WHERE id=?", (row["id"],))
             db.execute("DELETE FROM change_requests WHERE id=? AND status='deleting'", (row["id"],))
     # Incomplete writes always reserve their key before S3 dispatch. Probe leftovers are swept as well.
     if isinstance(assets.blobs, S3Blobs):

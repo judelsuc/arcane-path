@@ -28,12 +28,18 @@ export function setupQuestLayout(t) {
   services.id = "quests-services";
   const artifacts = document.createElement("section");
   artifacts.id = "quests-artifacts";
+  const legends = document.createElement("section");
+  legends.id = "quests-legends";
+  const legendDiscovery = document.createElement("section"), legendSession = document.createElement("section");
+  legendDiscovery.id = "quests-legend-discovery";
+  legendSession.id = "quests-legend-session";
+  legends.append(legendDiscovery, legendSession);
   const journals = $("abandoned-journals");
   journals.id = "abandoned-journals";
   const journalPane = document.createElement("section");
   journalPane.id = "quests-journals";
   journalPane.append(journals);
-  quests.append(services, journalPane, artifacts);
+  quests.append(services, journalPane, artifacts, legends);
   $("abandoned-journals-dialog").remove();
 
   const directionPanel = document.createElement("section");
@@ -68,7 +74,7 @@ export function setupQuestLayout(t) {
     return { titleKey, heading, section };
   });
   let selected = "parent";
-  const panes = { parent, services, journals: journalPane, artifacts };
+  const panes = { parent, services, journals: journalPane, artifacts, legends };
   const buttons = {};
   for (const name of Object.keys(panes)) {
     const button = document.createElement("button");
@@ -109,6 +115,12 @@ export function setupQuestLayout(t) {
     target.scrollIntoView({ block: "center" });
     target.focus();
   }
+  function openLegends() {
+    if (!quests.open && document.querySelector("dialog[open]")) return;
+    select("legends");
+    if (!quests.open) quests.showModal();
+    buttons.legends.focus();
+  }
   function openClues() {
     if (quests.open) quests.close();
     openInvestigation();
@@ -124,7 +136,7 @@ export function setupQuestLayout(t) {
   quests.addEventListener("close", () => $("open-quests").focus());
   select(selected);
   return {
-    open, select, openDirections, openClues,
+    open, select, openDirections, openClues, openLegends,
     localize() {
       title.textContent = t("quests.title");
       close.textContent = t("windowHelpClose");

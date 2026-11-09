@@ -24,6 +24,7 @@ from opening_story import (BRIEF_ID, OPENING_MODEL, OPENING_TIMEOUT, opening_bri
 from journal_art import CARDS
 import quest_wording
 import parent_wording
+import legend_wording
 from closing_story import (BRIEF_ID as CLOSING_BRIEF, VERSION as CLOSING_VERSION,
                            MIN_CHARACTERS as CLOSING_MIN, MAX_CHARACTERS as CLOSING_MAX,
                            closing_brief, closing_request)
@@ -55,6 +56,8 @@ def event_context(value, record, name_flavour):
 
 
 def version_for(brief):
+    if brief == legend_wording.BRIEF:
+        return legend_wording.VERSION
     if brief == parent_wording.BRIEF:
         return parent_wording.VERSION
     if brief == BRIEF_ID:
@@ -71,6 +74,8 @@ def version_for(brief):
 
 
 def provider_request(brief, model):
+    if brief.get("kind") == legend_wording.BRIEF:
+        return legend_wording.provider_request(brief, model)
     if brief.get("kind") == parent_wording.BRIEF:
         return parent_wording.provider_request(brief, model)
     if brief.get("kind") == quest_wording.BRIEF:
@@ -207,6 +212,7 @@ class LiveNarrative:
     def __init__(self, journeys, authorization, writer=None):
         self.journeys = journeys
         self.authorization, self.writer = authorization, writer
+        self.town_legends = None
         self.path = journeys.path.parent / "live-narrative.sqlite3"
         self.lock = threading.Lock()
         self.running = False
@@ -277,6 +283,9 @@ class LiveNarrative:
         expected = {"journey", "brief"} | ({"keeper"} if "keeper" in data else set())
         quest = data.get("brief") == quest_wording.BRIEF
         parent = data.get("brief") == parent_wording.BRIEF
+        legend = data.get("brief") == legend_wording.BRIEF
+        if legend:
+            expected.add("townId")
         if quest:
             expected.add("quest")
         if parent:
@@ -296,14 +305,27 @@ class LiveNarrative:
         if data.get("brief") == CLOSING_BRIEF:
             expected.add("summary")
         if (set(data) != expected or not isinstance(data.get("brief"), str)
-                or data["brief"] not in CATALOGUE and data["brief"] not in (BRIEF_ID, CLOSING_BRIEF, COVER_BRIEF, quest_wording.BRIEF, parent_wording.BRIEF)):
+                or data["brief"] not in CATALOGUE and data["brief"] not in (BRIEF_ID, CLOSING_BRIEF, COVER_BRIEF, quest_wording.BRIEF, parent_wording.BRIEF, legend_wording.BRIEF)):
             raise JourneyRequest("Only registered public narrative briefs are accepted.")
+        if legend and ("keeper" in data or self.town_legends is None):
+            raise JourneyRequest("Town legend wording requires the discovering journey.")
         owner, record = self.authorization.authorize(data, token)
         brief = data["brief"]
         closing = closing_brief(data["summary"], record) if brief == CLOSING_BRIEF else None
         version = version_for(brief)
         quest_payload = quest_wording.wording(data["quest"]) if quest else None
         parent_payload = parent_wording.wording(data["evidence"], record) if parent else None
+        legend_payload = self.town_legends.narrative_definition(data["journey"], data["townId"], token) if legend else None
+        if legend and "namingStatus" in legend_payload:
+            status = legend_payload["namingStatus"]
+            return {"enabled": self.writer is not None, "brief": brief,
+                    "status": ("queued" if status in ("queued", "leased", "dispatched") else "failed") if self.writer else "disabled",
+                    "text": None, "alternatives": [], "phase": "treasure-name",
+                    "error": legend_payload.get("namingError"), "model": MODEL,
+                    "accounting": {"attempts": 0, "unknownUsage": 0, "promptTokens": 0, "completionTokens": 0}}
+        if legend:
+            owner = "town-legend:" + data["townId"]
+            version = legend_wording.version(legend_payload)
         if parent:
             version = parent_wording.evidence_version(data["evidence"])
         if quest:
@@ -324,7 +346,7 @@ class LiveNarrative:
                     raise JourneyRequest("Quest instance wording conflicts with its original template or reason.")
             row = (db.execute(f"SELECT * FROM {self.wording_table} WHERE owner=? AND brief=? "
                               f"ORDER BY created DESC,{self.sequence} DESC LIMIT 1",
-                              (owner, brief)).fetchone() if brief in (BRIEF_ID, CLOSING_BRIEF, COVER_BRIEF) and "regenerate" not in data else
+                              (owner, brief)).fetchone() if brief in (BRIEF_ID, CLOSING_BRIEF, COVER_BRIEF, legend_wording.BRIEF) and "regenerate" not in data else
                    db.execute(f"SELECT * FROM {self.wording_table} WHERE owner=? AND brief=? AND version=?",
                               (owner, brief, version)).fetchone())
             if quest and row is not None and json.loads(row["input"]) != quest_payload:
@@ -348,6 +370,8 @@ class LiveNarrative:
                     payload = quest_payload
                 if parent:
                     payload = parent_payload
+                if legend:
+                    payload = legend_payload
                 if brief == CLOSING_BRIEF and "regenerate" in data:
                     original = db.execute(
                         f"SELECT input FROM {self.wording_table} WHERE owner=? AND brief=? "
@@ -393,6 +417,7 @@ class LiveNarrative:
                 "status": row["status"] if row and enabled else "disabled",
                 "text": {lang: output[lang] for lang in ("en", "fr")} if output else None,
                 "alternatives": output.get("alternatives", []) if output else [],
+                **({"treasureName": legend_payload["treasureName"]} if legend and "treasureName" in legend_payload else {}),
                 **({"previousText": json.loads(previous["output"])} if previous else {}),
                 "error": row["error"] if enabled and row else None, "model": MODEL,
                 "accounting": {"attempts": totals["calls"] or 0, "unknownUsage": totals["unknown"],
@@ -428,6 +453,7 @@ class LiveNarrative:
                     closing = row["brief"] == CLOSING_BRIEF
                     cover = row["brief"] == COVER_BRIEF
                     quest = row["brief"] == quest_wording.BRIEF
+                    legend = row["brief"] == legend_wording.BRIEF
                     base_version = version_for(row["brief"])
                     regeneration = ((story or closing) and re.fullmatch(
                         re.escape(base_version) + r"-regenerate-[a-f0-9]{32}", row["version"])
@@ -438,7 +464,8 @@ class LiveNarrative:
                     parent_version = parent and re.fullmatch(re.escape(base_version) + r"-[a-f0-9]{24}", row["version"])
                     quest_version = quest and re.fullmatch(
                         re.escape(base_version) + r"-instance-[a-f0-9]{32}-(offer|arrival|conclusion)", row["version"])
-                    if row["version"] != base_version and not (regeneration or contextual or quest_version or parent_version) or row["brief"] not in CATALOGUE and not (story or closing or cover or quest or parent):
+                    legend_version = legend and re.fullmatch(re.escape(base_version) + r"-[a-f0-9]{24}", row["version"])
+                    if row["version"] != base_version and not (regeneration or contextual or quest_version or parent_version or legend_version) or row["brief"] not in CATALOGUE and not (story or closing or cover or quest or parent or legend):
                         db.execute(f"UPDATE {self.wording_table} SET status='failed',error=? WHERE {self.sequence}=?",
                                    ("Public brief version changed; no call made.", row["rowid"]))
                         continue
@@ -454,10 +481,10 @@ class LiveNarrative:
                              OPENING_MODEL if story else MODEL)
                 output, usage, error = None, None, None
                 try:
-                    brief = json.loads(row["input"]) if story or closing or cover or contextual or quest or parent else CATALOGUE[row["brief"]]
+                    brief = json.loads(row["input"]) if story or closing or cover or contextual or quest or parent or legend else CATALOGUE[row["brief"]]
                     response = self.writer(brief)
                     usage = usage_of(response)
-                    output = validate_output(response, story=story, closing=closing, cover=cover,
+                    output = legend_wording.validate_output(response, brief) if legend else validate_output(response, story=story, closing=closing, cover=cover,
                                              variants=row["brief"].startswith("event.") or row["brief"] == DREAM_BRIEF)
                     if story:
                         output, repairs = repair_opening_text(output, brief)

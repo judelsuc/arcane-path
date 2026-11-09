@@ -6,10 +6,11 @@ const TOPICS = {
   shelter: "sleep-travel", food: "eat-travel", work: "open-earn-money",
   transport: "open-journey-world", town: "open-town",
 };
-const EXCHANGE_TOPICS = ["parent", "clues", "notebooks", "artifacts", "services"];
+const EXCHANGE_TOPICS = ["parent", "clues", "notebooks", "artifacts", "services", "legends"];
 
 export function setupConversations(t, { context, characters, onCharacter = () => {},
   onArtifactRumour = () => {},
+  legendTelling = () => ({ text: "", status: "" }),
   onDirections = () => document.getElementById("open-investigation").click() }) {
   const $ = id => document.getElementById(id);
   const dialog = $("conversation-dialog");
@@ -104,18 +105,24 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
       button.setAttribute("aria-pressed", String(selected === topic));
     }
     if (currentCharacter) {
-      const exchange = exchangeReply?.characterId === currentCharacter.id &&
-        exchangeReply.topic === selected ? exchangeReply : null;
-      const response = exchange?.status === "pending"
-        ? t(`character.opening.${currentCharacter.role}`)
-        : exchange?.status === "ready" && exchange.facts.length
-          ? exchange.facts.map(fact => t(`character.fact.${fact}`)).join(" ")
-          : exchange?.status === "failed" ? t("character.exchangeFailed", { error: exchange.error })
-            : selected === "services" ? t(`character.opening.${currentCharacter.role}`)
-              : selected === "parent" ? t("character.noParentKnowledge") : t("character.noKnowledge");
-      const mention = exchange?.status === "ready" && exchange.visitorFacts?.[0]?.type === "met"
-        ? t("character.visitorMention", { name: exchange.visitorFacts[0].name }) : "";
-      $("conversation-character-reply").textContent = [response, mention].filter(Boolean).join(" ");
+      if (selected === "legends") {
+        const telling = legendTelling(currentCharacter);
+        $("conversation-character-reply").textContent = telling.text;
+        $("conversation-character-status").textContent = telling.status;
+      } else {
+        const exchange = exchangeReply?.characterId === currentCharacter.id &&
+          exchangeReply.topic === selected ? exchangeReply : null;
+        const response = exchange?.status === "pending"
+          ? t(`character.opening.${currentCharacter.role}`)
+          : exchange?.status === "ready" && exchange.facts.length
+            ? exchange.facts.map(fact => t(`character.fact.${fact}`)).join(" ")
+            : exchange?.status === "failed" ? t("character.exchangeFailed", { error: exchange.error })
+              : selected === "services" ? t(`character.opening.${currentCharacter.role}`)
+                : selected === "parent" ? t("character.noParentKnowledge") : t("character.noKnowledge");
+        const mention = exchange?.status === "ready" && exchange.visitorFacts?.[0]?.type === "met"
+          ? t("character.visitorMention", { name: exchange.visitorFacts[0].name }) : "";
+        $("conversation-character-reply").textContent = [response, mention].filter(Boolean).join(" ");
+      }
     }
     $("character-create").disabled = !enabled || !loaded || !canCreate || busy;
     $("character-selector-close").disabled = busy;
@@ -362,7 +369,8 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
       }
       if ($(`conversation-${topic}`).disabled) return;
       selected = topic;
-      void recordTopic(topic);
+      if (topic === "legends") legendTelling(currentCharacter, true);
+      else void recordTopic(topic);
       localize();
     });
   }

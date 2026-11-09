@@ -6,6 +6,154 @@ All survival numbers below are gameplay approximations, not medical advice.
 Sections are chronological checkpoint records: later layers supersede earlier
 shortcuts, especially free meals and unrestricted outdoor sleep.
 
+## Town legend prototypes (R-190, 9 November 2026)
+
+- The next implemented increment adds distinct treasure-bearing protocols for all
+  three paced eight-room formats, leaving existing trials without rewards.
+  Final replay, original recovery, physical inventory and receipt persist in one
+  artifact-world transaction. Concurrent completions cannot copy the original.
+- Cosmetic rewards are carried objects, not account flags. Initial composed
+  natures grant one of sixteen original themes. Inventory offers real
+  previews, independent UI-skin and map/adventure equip controls, packing and place
+  deposit controls. A UI skin can accompany an ASCII map or another carried theme.
+  New `:v2` IDs reach the expanded catalogue; unsuffixed originals retain their
+  pinned four-theme/nature assignment, and town-level uniqueness spans versions.
+  Dropping unequips the item's selected skin/look;
+  another journey can pick up and use that same item. Full bags leave the recovered
+  treasure at the entrance. Existing abandonment/death custody releases apply.
+  Larger object/attribute catalogues, LLM names and moderated carvings remain pending.
+- Eight original 12-by-12 player icons use a shared bounded pixel catalogue for
+  SVG map overlays, canvas inventory previews and frozen notebook maps. Treasure
+  themes explicitly map to an icon; this adds no new reward identity or weight.
+  Optional `iconEquipped` keeps older saves valid and is selected through the same
+  authoritative custody transaction as skins. It works independently of both
+  skins and with ASCII maps. Uncarried sources reset to `@`, death retains its
+  cross, and forced-colour mode exposes the text marker instead of the sprite.
+- Prepared towns now lazily request `legend.town` through the existing optional
+  LiveNarrative queue, only on the Quests story button or NPC legend topic.
+  Authorization requires private journey access and previous town discovery.
+  The shared owner is the town, not a player; the first retained attempt survives
+  wording revisions and cannot be regenerated through client fields. A bounded
+  public memory premise supplies one bilingual story plus exactly three distinct
+  bilingual voices. Stable character identity/role hashing selects a witness;
+  exact canonical clues are appended outside generated prose. The provider sees
+  no player identity, capability, hidden entrance or client prompts. Strict
+  structural/output validation is not a proof of semantic correctness.
+  Disabled/queued/failed states remain explicit and search remains playable.
+  Dispatch/accounting, interruption handling and no-automatic-retry behavior reuse
+  the existing queue. Actual composed treasures, names and claims remain pending.
+- Entrance discovery now precedes new paced trials. The shared catalogue pins
+  one search plan per eligible town; private observations and inspection are
+  retained through Look. Up to 48 prepared dry cells within radius three must
+  connect to town; missing terrain leaves a retryable pending state, not a
+  reroll. The API requires presence at the inspected entrance for paced starts.
+  No paid entry occurs during Look/inspection; final adventure synchronization
+  is unchanged. Geographic conversion helpers are shared with artifact custody
+  so the retained site is not tied to one regional grid origin.
+  Procedural bilingual scenes vary 48 terrain-compatible landmarks, shuffled
+  signs/materials/symbols and sensory details. Exactly one structural signature
+  matches the clues. Cell descriptions themselves add no LLM requests; optional
+  shared town prose is handled separately above. The standalone preview still
+  starts inside and says so explicitly.
+- Paced difficulty uses new `seeded-platform-v2`, `seeded-investigation-v3` and
+  `seeded-dungeon-v4` protocols, preserving every earlier replay version. Shared
+  deterministic beats introduce four families, develop/combine them, provide
+  safe breathing rooms every eight rooms, and end with a familiar combination.
+  Complexity is capped independently of the 8/16/32-room length profile.
+  Platform gates track individual activated objects; dungeon gates track
+  independent latches with three patrol geometries; investigations retain
+  earlier archive marks for explicitly defined cross-site seals and extend
+  sequences to four/five steps. No mandatory combat, narrower reflex windows,
+  healing retries or per-action server synchronization are introduced.
+  New live trials remain eight-room/no-treasure; production reward assignment
+  and cross-adventure recent-signature history remain pending.
+- Latest decision: all three formats play locally and sync only entry and final
+  settlement, not per input. Initial local protocols were `seeded-platform-v1`,
+  `seeded-investigation-v2` and `seeded-dungeon-v3`, fixed to modest/eight rooms.
+  All tier profiles now use 8/16/32 mandatory rooms. Unfinished effects and
+  progress are memory-only and discarded on reload; initial entry stays paid
+  and restart charges another entry. Final receipts remain durable/idempotent.
+  Local ordinary survival and server replay share settlement rules; platform
+  physics stays continuous. Earlier four-room/per-action versions remain
+  supported for existing runs. This supersedes the historical checkpoints below.
+- New dungeon entries use `seeded-dungeon-v2`: each newly defeated creature grants
+  up to 150 kcal immediately, capped at reserves and without healing. V1 runs
+  keep no-food behavior. Defeated animals stay gone within an attempt, but a new
+  attempt respawns them and permits food again as explicitly requested. There
+  is no cross-attempt claim ledger; canonical replay and existing receipts
+  prevent duplicate gain within one attempt. Survival interruptions settle
+  before food and cannot be undone by it.
+- Dungeon integration adds `seeded-dungeon-v1`, a confirmed four-room/no-reward
+  trial in any eligible town without changing its retained format. Server replay
+  pins the town seed and usable inventory knife, and settles actual entries,
+  traps and creature hits via existing main-world transactions/receipts.
+  Approved creature hits cost 1 minute / 1 fatigue / 2 health / 1 dirt; live runs
+  use ordinary journey health rather than preview hearts. Recovery, interruptions,
+  bounded histories and pending-input locks reuse the existing session channel.
+  The three-heart preview and both investigation content versions are unchanged.
+  Platform replay, atomic rewards/offerings and generated town narratives remain
+  pending.
+- Generated investigation now has its own live trial protocol,
+  `seeded-investigation-v1`: a fixed four-site modest profile from the permanent
+  server-owned town seed. It reuses existing main-world transactions, input
+  replay, immediate room costs and receipt/recovery rules; clients cannot choose
+  tier/seed or advance optimistically. The separate confirmed trial awards
+  nothing and does not claim local legend readiness. Existing
+  `cinema-investigation-v1` runs and their rules are unchanged. Authoritative
+  platform replay and atomic treasure/offer custody remain pending.
+- Latest isolated increment adds a discrete-turn top-down dungeon: seeded
+  switch/block/key/spike shuffle bags, avoidable bat/rat patrols and optional
+  equipment-gated combat (simulated knife/sword only). Treasure-budget profiles
+  fix 4/8/12 mandatory rooms; no real reward/effect or journey cost is enabled.
+  Existing town format assignments and live replay versions remain unchanged.
+  The full cross-format variety and reward-budget contract is tracked in R-190;
+  richer platform/investigation template expansion remains pending. The
+  four-family seeded platform/investigation increments are now implemented.
+  Game command
+  shortcuts are visible and scoped; touch direction pads preserve spatial
+  positions on mobile.
+- Integration foundation: named-town arrival records a fresh ~10% shared
+  eligibility decision, retained permanently by OSM town identity in the durable
+  catalogue, including negative outcomes. Private journey history is paginated
+  in a new Quests / Town legends pane. Positive entries are honestly unprepared;
+  no live adventure/claim or inventory transfer is advertised.
+- Ownership direction is now confirmed: globally unique original treasures,
+  optional inventory-backed successor offerings and moderated passage sentences.
+  Costs depend on room entries/traps. Both preview engines emit immutable
+  accounting and show provisional costs without modifying a real journey.
+- Investigation trial integration now reuses the main authority's revision,
+  transaction and receipt channel rather than introducing a competing journey
+  writer. `cinema-investigation-v1` records replayable discrete inputs and settles
+  approved room-entry costs through the existing survival/equipment/pressure
+  pipeline. A strictly validated saved run marker locks other activities and
+  exposes recovery after reload. It is an opt-in authored trial, not generated
+  town content, and awards nothing. Platform replay, atomic treasure custody and
+  moderated adventure inscriptions remain future integration work.
+- Follow-up: seeded architecture now chooses the main room path before branches,
+  paired doorways and connecting platforms/ladders. The minimap exposes the
+  topology for playtesting. Optional dead ends offer one-use health or nothing;
+  all connections support return and use safe doorway checkpoints.
+- The first generator uses conservative shelves/central ladders, not arbitrary
+  room puzzles. Graph tests cover 100 seeds; actual movement traverses every door
+  in both directions and reaches the treasure for 40 seeds.
+- Optional backgrounds use a retained two-slot public manifest. An admin-only
+  local preparation script reuses the existing free-only OVH writer and private
+  single-attempt storage; no browser action dispatches provider work. Both formats
+  can accept late artwork without restarting. No live image is claimed generated
+  without a configured private token; synthetic artwork is used only in tests.
+- `/legend-preview.html` offers alternative platform and investigation versions
+  of one authored film-reel legend, in FR/EN. The three-room movement simulation
+  and three-location inventory puzzle are independent of their Canvas/DOM UI.
+- Platforming uses a small fixed-step Canvas prototype, not a production physics
+  engine commitment. Investigation rules use explicit prerequisites; an exhaustive
+  reachable-state test checks for soft locks. Both formats show preview-only
+  completion and never read/write journey saves or grant real item effects.
+- Local validation: 22 targeted engine/UI/existing integration tests; browser
+  completion of both formats, French copy, narrow layout, pointer input,
+  checkpoints, pause and switching. No deployment, random town selection, LLM
+  generation, procedural levels or production catalogue is claimed.
+- Next decisions and phases are in the [town legend plan](./TOWN_LEGENDS_PLAN.md).
+
 ## Exact-cell aerial photo fallback
 
 - R-101: IGN's public WMS `ORTHOIMAGERY.ORTHOPHOTOS` is a final photo

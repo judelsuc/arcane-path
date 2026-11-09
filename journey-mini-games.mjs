@@ -84,7 +84,7 @@ function activityTerms(state, game, cell, info, data) {
 
 export function journeyMiniGameOffer(state, game, cell, info, data) {
   if (!record(state)) throw new TypeError("Invalid journey mini-game state.");
-  if (state.ended || state.miniGamePending || state.cafePending ||
+  if (state.ended || state.legendAdventure || state.miniGamePending || state.cafePending ||
       state.performancePending || state.theftPending || state.events?.pending ||
       state.equipment?.dogEncounter === "pending") return null;
   return activityTerms(state, game, cell, info, data);
@@ -151,7 +151,7 @@ export function beginJourneyMiniGame(state, game, context) {
   }
   const { cell, info, survival, data } = context;
   if (state.ended) throw new Error("This journey has ended.");
-  if (state.miniGamePending || state.cafePending || state.performancePending || state.theftPending ||
+  if (state.legendAdventure || state.miniGamePending || state.cafePending || state.performancePending || state.theftPending ||
       state.events?.pending || state.equipment?.dogEncounter === "pending") {
     throw new Error("Another journey activity is already active.");
   }

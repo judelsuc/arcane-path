@@ -1,3 +1,7 @@
+import { carriedTheme, carriedUiTheme, carriedPlayerIcon, carriedIconArtwork, LEGEND_THEMES } from "./legend-rewards.mjs";
+import { themedPixelPack } from "./legend-theme-tiles.mjs";
+import { PLAYER_ICONS, playerIconSource } from "./player-icons.mjs";
+
 export const SITE_GLYPHS = Object.freeze({
   stadium: "S", mall: "M", cemetery: "C", airport: "A", hospital: "H", university: "U",
   industrial: "I", harbour: "P", garden: "G", attraction: "Z", castle: "K", exhibition: "E",
@@ -7,11 +11,12 @@ export const TERRAIN_KINDS = Object.freeze(["plain", "water", "road", "major_roa
   "park", "church", "station", "place"]);
 export const TILE_KINDS = Object.freeze([...TERRAIN_KINDS, ...Object.keys(SITE_GLYPHS), "unknown"]);
 export const APPEARANCE_KEY = "arcane-path-map-appearance-v1";
-let current = { tileset: "ascii", skin: "default" };
+let current = { tileset: "ascii", skin: "default", uiSkin: "default", playerIcon: "default" };
 let activePack;
+const themedPacks = new Map();
 
 export function mapAppearance() { return { ...current }; }
-export function pixelPack() { return activePack; }
+export function pixelPack(skin = current.skin) { return skin === "default" ? activePack : themedPacks.get(skin); }
 
 export function mappedSites(cell) {
   const found = new Map();
@@ -75,15 +80,26 @@ export function setupMapAppearance(t, { onChange = () => {}, doc = document,
   storage, fetcher = fetch } = {}) {
   const select = doc.getElementById("map-tileset"), status = doc.getElementById("map-appearance-status");
   const credit = doc.getElementById("map-tileset-credit");
-  let loading = false, error = "";
+  let uiRules = doc.getElementById("treasure-ui-rules");
+  if (!uiRules) { uiRules = doc.createElement("style"); uiRules.id = "treasure-ui-rules"; doc.head.append(uiRules); }
+  uiRules.textContent = LEGEND_THEMES.map(theme => `[data-ui-skin="${theme.id}"]{--accent:${theme.accent};` +
+    `--muted:${theme.light};--line:${theme.wall};--skin-background:${theme.dark};` +
+    `--skin-surface:${theme.floor};--skin-text:${theme.light};--skin-radius:${
+      ["ice", "rivets", "panels"].includes(theme.masonry) ? "2px" : "10px"}}`).join("\n") +
+    PLAYER_ICONS.map(icon => `.tile[data-player-icon="${icon.id}"]{--player-icon:url("${playerIconSource(icon.id)}")}`).join("\n");
+  let loading = false, rulesInstalled = false, error = "", desiredSkin = "default", preference = current.tileset;
+  const generatedRules = doc.createElement("style");
+  generatedRules.id = "generated-player-icon-rules";
+  doc.head.append(generatedRules);
   function localize() {
     select.value = current.tileset;
-    select.disabled = loading;
+    select.disabled = loading || current.skin !== "default";
     status.textContent = error ? t("appearance.error", { error }) : loading ? t("appearance.loading")
-      : t("appearance.active", { name: t(`appearance.${current.tileset}`) });
-    credit.textContent = current.tileset === "path-pixel" ? activePack.credit : "";
+      : t("appearance.active", { name: current.skin === "default" ? t(`appearance.${current.tileset}`)
+        : LEGEND_THEMES.find(theme => theme.id === current.skin)[doc.documentElement.lang === "en" ? "en" : "fr"] });
+    credit.textContent = current.tileset === "path-pixel" ? pixelPack()?.credit ?? "" : "";
   }
-  async function activate(value, persist = true) {
+  async function activate(value, persist = true, skin = desiredSkin) {
     if (loading) return;
     if (!["ascii", "path-pixel"].includes(value)) {
       error = "Unsupported map appearance.";
@@ -100,45 +116,75 @@ export function setupMapAppearance(t, { onChange = () => {}, doc = document,
         const response = await fetcher("./public/tilesets/path-pixel.json", { signal: AbortSignal.timeout(10000) });
         if (!response.ok) throw new Error(`Tileset HTTP ${response.status}`);
         candidate = validatePixelPack(await response.json());
-        const rules = [];
-        for (const kind of TILE_KINDS) {
-          const canvas = doc.createElement("canvas");
-          canvas.width = canvas.height = 16;
-          const context = canvas.getContext("2d");
-          if (!context) throw new Error("Pixel tile canvas unavailable.");
-          drawPixelTile(context, candidate, kind, 0, 0, 16);
-          const source = canvas.toDataURL("image/png");
-          const image = new Image();
-          image.src = source;
-          await image.decode();
-          rules.push(`[data-map-tileset="path-pixel"] [data-map-kind="${kind}"]{--map-tile:url("${source}")}`);
-          rules.push(`[data-map-tileset="path-pixel"] [data-site-kind="${kind}"]{--site-tile:url("${source}")}`);
+      }
+      if (value === "path-pixel" && !rulesInstalled) {
+        const packs = [["default", candidate], ...LEGEND_THEMES.map(theme =>
+          [theme.id, validatePixelPack(themedPixelPack(candidate, theme.id))])];
+        const rules = [], decodes = [];
+        for (const [packSkin, pack] of packs) {
+          for (const kind of TILE_KINDS) {
+            const canvas = doc.createElement("canvas");
+            canvas.width = canvas.height = 16;
+            const context = canvas.getContext("2d");
+            if (!context) throw new Error("Pixel tile canvas unavailable.");
+            drawPixelTile(context, pack, kind, 0, 0, 16);
+            const source = canvas.toDataURL("image/png");
+            const image = new Image();
+            image.src = source;
+            decodes.push(image.decode());
+            const selector = `[data-map-tileset="path-pixel"][data-map-skin="${packSkin}"]`;
+            rules.push(`${selector} [data-map-kind="${kind}"]{--map-tile:url("${source}")}`);
+            rules.push(`${selector} [data-site-kind="${kind}"]{--site-tile:url("${source}")}`);
+          }
         }
+        await Promise.all(decodes);
         let style = doc.getElementById("map-pixel-rules");
         if (!style) { style = doc.createElement("style"); style.id = "map-pixel-rules"; doc.head.append(style); }
         style.textContent = rules.join("\n");
+        for (const [packSkin, pack] of packs) if (packSkin !== "default") themedPacks.set(packSkin, pack);
+        rulesInstalled = true;
       }
       if (value === "path-pixel") activePack = candidate;
-      current = { tileset: value, skin: "default" };
+      current = { ...current, tileset: value, skin };
       doc.documentElement.dataset.mapTileset = value;
+      doc.documentElement.dataset.mapSkin = skin;
       onChange();
-      if (persist) storage.setItem(APPEARANCE_KEY, value);
+      if (persist) { preference = value; storage.setItem(APPEARANCE_KEY, value); }
     } catch (reason) {
       console.error("Map appearance change failed:", reason);
       error = reason.message;
-    } finally { loading = false; localize(); }
+    } finally {
+      loading = false; localize();
+      if (!error && desiredSkin !== current.skin) void activate(desiredSkin === "default" ? preference : "path-pixel", false);
+    }
   }
   select.addEventListener("change", () => { void activate(select.value); });
   let stored;
   try { storage ??= globalThis.localStorage; stored = storage.getItem(APPEARANCE_KEY); }
   catch (reason) { console.error("Map appearance preference unavailable:", reason); error = reason.message; }
   doc.documentElement.dataset.mapTileset = current.tileset;
+  doc.documentElement.dataset.mapSkin = current.skin;
+  doc.documentElement.dataset.uiSkin = current.uiSkin;
   localize();
   if (stored) {
-    if (["ascii", "path-pixel"].includes(stored)) void activate(stored, false);
+    if (["ascii", "path-pixel"].includes(stored)) { preference = stored; void activate(stored, false); }
     else { error = "Invalid saved map appearance."; console.error(error); localize(); }
   }
-  return { activate, localize };
+  return { activate, localize, syncJourney(state) {
+    const uiSkin = carriedUiTheme(state);
+    const playerIcon = carriedPlayerIcon(state);
+    const artwork = carriedIconArtwork(state);
+    generatedRules.textContent = artwork ?
+      `.tile[data-player-icon="${artwork.id}"]{--player-icon:url("${playerIconSource(artwork)}")}` : "";
+    if (uiSkin !== current.uiSkin || playerIcon !== current.playerIcon) {
+      const { playerIconArtwork, ...appearance } = current;
+      current = { ...appearance, uiSkin, playerIcon, ...(artwork ? { playerIconArtwork: structuredClone(artwork) } : {}) };
+      doc.documentElement.dataset.uiSkin = uiSkin;
+      onChange();
+    }
+    desiredSkin = carriedTheme(state);
+    if (desiredSkin !== current.skin && !loading) return activate(desiredSkin === "default" ? preference : "path-pixel", false);
+  } };
 }
 
 export function decorateMapTile(tile, cell, { doc = document } = {}) {

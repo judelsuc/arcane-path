@@ -1,6 +1,21 @@
-"""Shared journey and notebook SQL, preserving the stores' existing row contracts."""
+"""Shared map geometry and journey/notebook SQL, preserving existing row contracts."""
 
 from asset_storage import AssetError
+import math
+
+
+def geographic_position(base, col, row):
+    step = base["cellSizeMeters"] / 6371008.8 * 180 / math.pi
+    projection = base.get("projectionLatitude", (base["bounds"]["minLatitude"] + base["bounds"]["maxLatitude"]) / 2)
+    return (base["bounds"]["maxLatitude"] - (row + 0.5) * step,
+            base["bounds"]["minLongitude"] + (col + 0.5) * step / math.cos(math.radians(projection)))
+
+
+def grid_position(base, latitude, longitude):
+    step = base["cellSizeMeters"] / 6371008.8 * 180 / math.pi
+    projection = base.get("projectionLatitude", (base["bounds"]["minLatitude"] + base["bounds"]["maxLatitude"]) / 2)
+    return (math.floor((longitude - base["bounds"]["minLongitude"]) / (step / math.cos(math.radians(projection)))),
+            math.floor((base["bounds"]["maxLatitude"] - latitude) / step))
 
 
 def cached_journey_cell(chunks, region, position):

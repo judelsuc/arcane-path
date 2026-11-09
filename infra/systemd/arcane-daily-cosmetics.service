@@ -1,0 +1,22 @@
+[Unit]
+Description=Arcane Path daily six-icon collection for administrator review
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/opt/arcane-path/scripts/daily_cosmetics.py
+
+[Service]
+Type=oneshot
+User=arcane
+Group=arcane
+WorkingDirectory=/opt/arcane-path
+Environment=ARCANE_LIVE_TEXT_TOKEN_FILE=/etc/arcane-path/ovh-ai-endpoints-token
+EnvironmentFile=/etc/arcane-path/daily-cosmetics.env
+ExecStart=/usr/bin/python3 scripts/daily_cosmetics.py
+TimeoutStartSec=5min
+Nice=15
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/arcane-path

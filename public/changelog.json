@@ -1,6 +1,11 @@
 {
-  "version": "0.21.20",
+  "version": "0.22.0",
   "entries": [
+    {
+      "version": "0.22.0",
+      "fr": "Les villes découvertes peuvent conserver une légende partagée et des indices vers une entrée cachée. Trois aventures de huit salles permettent de retrouver un trésor original, avec coûts de voyage réels et progression locale. Armes, bijoux maudits ou protecteurs, argent, pistes d’artefacts, crochets et apparences sont des objets transportables, déposables et échangeables. Les apparences de carte, d’interface et de personnage se choisissent séparément. Les récits utilisent des souvenirs composés plus variés et le nom exact du trésor. Une console d’administration à mot de passe distinct et des tâches de génération d’icônes et de noms sont disponibles ; leur activation nécessite une configuration serveur séparée.",
+      "en": "Discovered towns can retain a shared legend and clues to a hidden entrance. Three eight-room adventures offer an original treasure, with real journey costs and local gameplay. Weapons, cursed or protective jewellery, money, artifact leads, lockpicks and appearances are physical objects that can be carried, dropped and transferred. Map, interface and character appearances are selected separately. Stories use more varied composed memories and the exact treasure name. A separately password-protected administrator console and icon/name generation jobs are available; activation requires separate server configuration."
+    },
     {
       "version": "0.21.20",
       "fr": "L’auto-stop est disponible sur les routes : choisissez une des dix villes réelles les plus proches. Chaque tentative prend trente minutes ; la propreté, l’heure et le chien influencent les chances. Le trajet est gratuit et fait passer du temps, avec de rares blessures, vols d’argent ou trajets écourtés sur une route. Les arrivées et la reprise après un problème de carte sont enregistrées. Les terrains de pétanque et lieux festifs conservent leurs tags OSM ; la pétanque et les lanternes sont aussi proposées près de lieux publics adaptés déjà chargés, jusqu’à deux kilomètres.",

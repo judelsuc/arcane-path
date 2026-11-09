@@ -5,9 +5,12 @@ def schemas(postgres):
     from character_encounters import SCHEMAS as ENCOUNTER_SCHEMAS
     from town_content import SCHEMA as TOWN_SCHEMA
     from change_requests import SCHEMAS as CHANGE_REQUEST_SCHEMAS
+    from admin_console import SCHEMAS as ADMIN_SCHEMAS
+    from daily_cosmetics import SCHEMAS as COSMETIC_SCHEMAS
+    from opencaches import SCHEMAS as OPENCACHE_SCHEMAS
     from inscriptions import SCHEMAS as INSCRIPTION_SCHEMAS
     sequence = "BIGSERIAL PRIMARY KEY" if postgres else "INTEGER PRIMARY KEY AUTOINCREMENT"
-    return (*ENCOUNTER_SCHEMAS, TOWN_SCHEMA, *CHANGE_REQUEST_SCHEMAS, *INSCRIPTION_SCHEMAS,
+    return (*ENCOUNTER_SCHEMAS, TOWN_SCHEMA, *CHANGE_REQUEST_SCHEMAS, *ADMIN_SCHEMAS, *COSMETIC_SCHEMAS, *OPENCACHE_SCHEMAS, *INSCRIPTION_SCHEMAS,
         """CREATE TABLE IF NOT EXISTS quest_instances (
             owner TEXT NOT NULL, nonce TEXT NOT NULL, request TEXT NOT NULL,
             region TEXT NOT NULL, authored TEXT NOT NULL, status TEXT NOT NULL,

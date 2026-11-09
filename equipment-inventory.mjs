@@ -19,14 +19,20 @@ export function fits(placements, item, candidate, catalogue) {
   });
 }
 
-export function firstPlacement(placements, item, catalogue) {
+export function availablePlacement(placements, item, catalogue) {
   for (const rotated of [false, true]) {
     for (let y = 0; y < BAG.rows; y++) for (let x = 0; x < BAG.columns; x++) {
       const candidate = { id: item.id, x, y, rotated };
       if (fits(placements, item, candidate, catalogue)) return candidate;
     }
   }
-  throw new Error("No inventory space. Rearrange your bag first.");
+  return null;
+}
+
+export function firstPlacement(placements, item, catalogue) {
+  const placement = availablePlacement(placements, item, catalogue);
+  if (!placement) throw new Error("No inventory space. Rearrange your bag first.");
+  return placement;
 }
 
 export function restorePlacements(items, placements, catalogue) {

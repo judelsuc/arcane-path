@@ -13,6 +13,23 @@
   --feedback-failure: #ff9b9b;
 }
 
+[data-ui-skin]:not([data-ui-skin="default"]) {
+  background-color: var(--skin-background);
+  color: var(--skin-text);
+}
+[data-ui-skin]:not([data-ui-skin="default"]) :is(dialog, .travel-overview, .travel-panel, .trail-guide, .legend-card) {
+  background-color: var(--skin-surface);
+  color: var(--skin-text);
+  border-color: var(--accent);
+  border-radius: var(--skin-radius);
+}
+html[data-ui-skin]:not([data-ui-skin="default"]) :is(button, input, select, textarea) {
+  background-color: var(--skin-background);
+  color: var(--skin-text);
+  border-color: var(--line);
+  border-radius: var(--skin-radius);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -127,6 +144,12 @@ body.is-travelling[data-journey-phase] :is(.map-card, .legend-card) {
 body.is-travelling[data-journey-phase] .map-viewport {
   background-color: var(--journey-surface);
   background-image: radial-gradient(var(--journey-dots) 0.7px, transparent 0.7px);
+}
+
+html[data-ui-skin]:not([data-ui-skin="default"]) body {
+  --journey-surface: var(--skin-surface);
+  background: radial-gradient(ellipse at 50% -15%, var(--journey-glow, var(--line)) 0, transparent 55%),
+    var(--skin-background);
 }
 
 .game-shell {
@@ -1102,6 +1125,8 @@ dialog p { margin: 12px 0; }
 .character-portrait-placeholder img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
 .travel-help summary { cursor: pointer; color: var(--accent); }
 .travel-panel h3 { margin: 0 0 10px; }
+#legend-look { margin-block: 1rem; padding: .75rem; border: 1px solid var(--line); overflow-wrap: anywhere; }
+#legend-look button, #quests-legend-discovery button { min-height: 48px; }
 .travel-panel a { color: var(--accent); }
 .journey-atmosphere {
   position: relative;
@@ -1258,6 +1283,25 @@ dialog p { margin: 12px 0; }
   font-weight: 700;
 }
 
+.ascii-map .tile--player[data-player-icon]:not([data-player-icon="default"]) {
+  color: transparent;
+  text-shadow: none;
+}
+.ascii-map .tile--player[data-player-icon]:not([data-player-icon="default"])::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: var(--player-icon) center / contain no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+  filter: drop-shadow(0 0 1px #fff5d5);
+}
+@media (forced-colors: active) {
+  .ascii-map .tile--player[data-player-icon]:not([data-player-icon="default"]) { color: CanvasText; }
+  .ascii-map .tile--player[data-player-icon]::after { display: none; }
+}
+
 .ascii-map .tile--look {
   outline: 2px solid var(--accent);
   background-color: #354239;
@@ -1390,6 +1434,73 @@ dialog p { margin: 12px 0; }
   margin-block: .75rem;
 }
 .quest-command-block > p { flex-basis: 100%; }
+#quests-legend-session .legend-game > canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  box-sizing: border-box;
+}
+#quests-legend-session .legend-actions,
+#quests-legend-session .legend-game nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-block: .75rem;
+}
+#quests-legend-session .legend-game button { min-height: 48px; }
+#quests-legend-session button[aria-current="location"] { outline: 2px solid currentColor; }
+.legend-game .legend-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem;
+  margin-block: .75rem;
+}
+.legend-game .legend-dpad {
+  display: grid;
+  grid-template: repeat(3, minmax(48px, auto)) / repeat(3, minmax(0, 1fr));
+  width: 12rem;
+  max-width: 100%;
+  flex-shrink: 0;
+  gap: .2rem;
+}
+.legend-game .legend-dpad button {
+  min-width: 0;
+  min-height: 48px;
+  margin: 0;
+  padding: .25rem;
+  overflow-wrap: anywhere;
+}
+.legend-dpad [data-direction="up"] { grid-area: 1 / 2; }
+.legend-dpad [data-direction="left"] { grid-area: 2 / 1; }
+.legend-dpad [data-direction="right"] { grid-area: 2 / 3; }
+.legend-dpad [data-direction="down"] { grid-area: 3 / 2; }
+.legend-game .legend-control { touch-action: none; user-select: none; }
+.legend-game .legend-action-controls { display: flex; flex-wrap: wrap; gap: .25rem; flex: 1 1 8rem; }
+.legend-game .legend-action-controls button { min-height: 48px; }
+.legend-game kbd { white-space: nowrap; font-size: .85em; }
+.legend-game > canvas {
+  image-rendering: pixelated;
+  background: #141827;
+  border: 3px solid #a4acc2;
+  box-shadow: 0 0 0 2px #141827;
+}
+.legend-game h2, .legend-game .legend-symbols summary {
+  font-family: ui-monospace, monospace;
+  color: #fff09b;
+}
+.legend-game .legend-symbols { margin-block: .75rem; }
+.legend-game .legend-symbols > div { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-block: .5rem; }
+.legend-game .legend-symbols > div > span { display: flex; align-items: center; gap: .4rem; }
+.legend-game .legend-symbols canvas {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border: 0;
+  image-rendering: pixelated;
+  background: #141827;
+}
 .quest-command-block > select,
 #quests-artifacts select, #dialogue-artifacts select {
   min-width: 0;
@@ -1406,3 +1517,14 @@ dialog p { margin: 12px 0; }
 .tile--quest { outline: 2px solid #b377df; outline-offset: -2px; }
 .tile--artifact-route { box-shadow: inset 0 0 0 2px #e0bc69; }
 .quest-overview-map { display: block; width: 100%; max-width: 42rem; height: auto; }
+.treasure-theme-preview {
+  border: 2px solid;
+  border-radius: 4px;
+  padding: 1rem;
+  max-width: 100%;
+}
+.treasure-theme-preview canvas { display: block; max-width: 100%; image-rendering: pixelated; }
+.treasure-ui-preview { border: 1px solid; padding: 8px; margin-block: 8px; }
+.treasure-ui-preview span { display: block; margin-top: 6px; font-size: .85em; }
+.treasure-inventory-item { overflow-wrap: anywhere; }
+.treasure-inventory-item button { min-height: 48px; margin: 4px; max-width: 100%; white-space: normal; }

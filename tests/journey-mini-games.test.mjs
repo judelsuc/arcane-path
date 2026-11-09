@@ -256,6 +256,7 @@ test("an unacknowledged journey event or pending companion encounter blocks mini
   for (const state of [
     { ...start(), events: { pending: 1 } },
     { ...start(), equipment: { dogEncounter: "pending" } },
+    { ...start(), legendAdventure: { version: 1, runId: "00000000-0000-4000-8000-000000000001" } },
   ]) assert.throws(() => beginJourneyMiniGame(state, "harvest", context("harvest")),
     /already active/);
 });

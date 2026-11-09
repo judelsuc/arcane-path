@@ -3,26 +3,32 @@ import assert from "node:assert/strict";
 import { setupArtifactQuests } from "../artifacts-ui.mjs";
 import { translate } from "../i18n.mjs";
 import RUMOURS from "../public/artifact-rumours.json" with { type: "json" };
+import { generateInvestigation } from "../minigames/legend-investigation.mjs";
+import { setupLegendSession } from "../legend-session-ui.mjs";
 
 class Element {
   children = [];
   events = {};
   textContent = "";
-  append(...children) { this.children.push(...children); }
+  dataset = {};
+  append(...children) { for (const child of children) { child.parent = this; this.children.push(child); } }
   replaceChildren(...children) { this.children = children; }
   setAttribute() {}
   addEventListener(type, fn) { this.events[type] = fn; }
+  removeEventListener(type) { delete this.events[type]; }
+  remove() { this.parent.children = this.parent.children.filter(child => child !== this); }
+  getContext() { return { fillRect() {}, beginPath() {}, arc() {}, fill() {}, moveTo() {}, lineTo() {} }; }
 }
 const settle = () => new Promise(resolve => setImmediate(resolve));
 function fixture(t, respond, { pending = false, storesRequest = false, beforeRequest } = {}) {
   const previous = globalThis.document, nodes = new Map(), calls = [], locks = [];
   const get = id => {
-    if (!nodes.has(id)) nodes.set(id, new Element());
+    if (!nodes.has(id)) nodes.set(id, Object.assign(new Element(), { ownerDocument: globalThis.document }));
     return nodes.get(id);
   };
-  globalThis.document = { getElementById: get, createElement: () => new Element(),
+  globalThis.document = Object.assign(new Element(), { getElementById: get, createElement: () => Object.assign(new Element(), { ownerDocument: globalThis.document }),
     createTextNode: textContent => Object.assign(new Element(), { textContent }),
-    documentElement: { lang: "en" } };
+    documentElement: { lang: "en" }, defaultView: new Element() });
   t.after(() => { globalThis.document = previous; });
   t.mock.method(console, "error", () => {});
   let state = { col: 0, row: 0, elapsedMinutes: 0, serverJourney: { id: "a".repeat(32) },
@@ -42,9 +48,10 @@ function fixture(t, respond, { pending = false, storesRequest = false, beforeReq
       async request(_state, action) {
         calls.push(action);
         if (storesRequest) pending = true;
-        return respond ? respond(result()) : result();
+        return respond ? respond(result(), action) : result();
       } },
   });
+
   return { ui, get, calls, locks, state: () => state, acknowledged: () => acknowledged,
     speaker(value) { speaker = value; }, blocked(value) { blocked = value; },
     changeJourney() { state = { ...state, serverJourney: { id: "c".repeat(32) } }; } };
@@ -52,6 +59,107 @@ function fixture(t, respond, { pending = false, storesRequest = false, beforeReq
 const rumour = { characterId: "b".repeat(32), eventId: "00000000-0000-4000-8000-000000000001",
   artifactId: "hermit" };
 const speaker = { id: "b".repeat(32), name: "Camille" };
+
+test("live investigation stays activity-blocking after acknowledgement and accepts only server-rendered progress", async t => {
+  const runId = "00000000-0000-4000-8000-000000000001";
+  let actions = [];
+  const f = fixture(t, (result, action) => {
+    if (action?.type === "legend-input") actions = [...actions, action.input];
+    return { ...result, conversationRumour: null, revision: f.calls.length,
+      state: { ...result.state, artifactRevision: f.calls.length, legendAdventure: { version: 1, runId } },
+      adventure: { runId, status: "active", actions, town: "Firmi" } };
+  }, { storesRequest: true });
+  await f.ui.startLegend({ type: "legend-start", townId: "node/42", contentVersion: "cinema-investigation-v1" });
+  assert.equal(f.acknowledged(), 1);
+  assert.equal(f.ui.pending(f.state()), true, "active session is a journey activity, not an unacknowledged request");
+  assert.equal(f.get("artifact-recovery").hidden, false);
+  f.blocked(true);
+  f.ui.localize();
+  const descendants = node => [node, ...node.children.flatMap(descendants)];
+  const archive = descendants(f.get("quests-legend-session")).find(node => node.textContent === "Archive");
+  assert.equal(archive.disabled, false, "the session can bypass only its own activity lock");
+  archive.events.click();
+  await settle();
+  assert.deepEqual(f.calls[1], { type: "legend-input", runId, input: { type: "travel", location: "archive" } });
+  assert.equal(f.acknowledged(), 2);
+  assert.ok(descendants(f.get("quests-legend-session")).some(node => node.textContent === "Investigation - Archive"));
+  f.changeJourney();
+  delete f.state().legendAdventure;
+  f.ui.localize();
+  assert.equal(f.get("quests-legend-session").children.length, 0, "private puzzle state never leaks to the next journey");
+});
+
+test("local dungeon keeps inputs in memory through rendering and sends only the final transcript", async t => {
+  const runId = "00000000-0000-4000-8000-000000000001";
+  const f = fixture(t, (result, action) => {
+    const active = action?.type !== "legend-finish";
+    return { ...result, conversationRumour: null, revision: f.calls.length,
+      state: { ...result.state, health: 85, artifactRevision: f.calls.length,
+        legendAdventure: active ? { version: 1, runId } : null },
+      adventure: { contentVersion: "seeded-dungeon-v3", runId, seed: 4, weapon: "none", town: "Firmi",
+        status: active ? "active" : "left", actions: active ? [] : action.actions,
+        costs: { minutes: 3, fatigue: 1, health: 0, dirt: 1 } } };
+  });
+  f.ui.localize();
+  await f.ui.startLegend({ type: "legend-start", townId: "node/42", contentVersion: "seeded-dungeon-v3" });
+  const descendants = node => [node, ...node.children.flatMap(descendants)];
+  const nodes = () => descendants(f.get("quests-legend-session"));
+  nodes().find(node => node.dataset.legendAction === "left").events.click();
+  assert.equal(f.calls.length, 1, "movement makes no request");
+  assert.equal(f.ui.pending(f.state()), true, "ordinary journey actions stay locked");
+  f.ui.localize();
+  nodes().find(node => node.textContent === "Leave and settle costs").events.click();
+  await settle();
+  assert.deepEqual(f.calls[1], { type: "legend-finish", runId, actions: [{ type: "left" }] });
+  assert.equal(f.state().legendAdventure, null);
+});
+
+test("a new UI instance offers a paid entrance restart instead of restoring local progress", t => {
+  const f = fixture(t), runId = "00000000-0000-4000-8000-000000000001", requests = [];
+  const host = f.get("reload-local-session");
+  const ui = setupLegendSession({ host, request: action => { requests.push(action); } });
+  const state = { serverJourney: { id: "a".repeat(32) }, artifactRevision: 3,
+    legendAdventure: { version: 1, runId } };
+  ui.render({ state, session: { contentVersion: "seeded-dungeon-v3", seed: 4, weapon: "none",
+    runId, status: "active", actions: [], town: "Firmi" }, language: "en", blocked: false, pending: false });
+  assert.ok(host.children.some(node => node.textContent.includes("Progress discarded on reload")));
+  assert.ok(!host.children.some(node => node.className === "legend-game"));
+  host.children.find(node => node.textContent.startsWith("Restart from entrance")).events.click();
+  assert.deepEqual(requests, [{ type: "legend-restart", runId }]);
+  host.children.find(node => node.textContent === "Leave without restarting").events.click();
+  assert.deepEqual(requests[1], { type: "legend-finish", runId, actions: [] });
+  ui.reset();
+});
+
+test("generated sessions retain their version and canonical seed through live quest rendering and request recovery", async t => {
+  const runId = "00000000-0000-4000-8000-000000000001", seed = 4;
+  const actions = [];
+  const f = fixture(t, (result, action) => {
+    if (action?.type === "legend-input") actions.push(action.input);
+    return { ...result, conversationRumour: null, revision: f.calls.length,
+      state: { ...result.state, artifactRevision: f.calls.length, legendAdventure: { version: 1, runId } },
+      adventure: { contentVersion: "seeded-investigation-v1", seed, runId, status: "active",
+        actions: [...actions], town: "Firmi" } };
+  }, { storesRequest: true });
+  await f.ui.startLegend({ type: "legend-start", townId: "node/42", contentVersion: "seeded-investigation-v1" });
+  const descendants = node => [node, ...node.children.flatMap(descendants)];
+  const nodes = () => descendants(f.get("quests-legend-session"));
+  const firstRoom = generateInvestigation({ seed }).rooms[0];
+  assert.ok(nodes().some(node => node.textContent === "Generated investigation trial (real costs, no reward)"));
+  assert.ok(nodes().some(node => node.textContent.includes("Site 1/4")));
+  const firstAction = nodes().find(node => node.dataset.legendAction === "act:inspect");
+  assert.equal(firstRoom.family, "sequence");
+  firstAction.events.click();
+  await settle();
+  assert.deepEqual(f.calls[1], { type: "legend-input", runId, input: { type: "act", command: "inspect" } });
+  assert.equal(f.acknowledged(), 2);
+  assert.ok(nodes().some(node => node.textContent.includes("instruction plate gives this exact order")));
+  assert.equal(f.ui.pending(f.state()), true);
+  f.changeJourney();
+  delete f.state().legendAdventure;
+  f.ui.localize();
+  assert.equal(f.get("quests-legend-session").children.length, 0);
+});
 
 test("a timed-out prerequisite releases the action lock and exposes retry on the map", async t => {
   const f = fixture(t, undefined, { beforeRequest: async signal => {
@@ -66,6 +174,29 @@ test("a timed-out prerequisite releases the action lock and exposes retry on the
   assert.equal(recovery.hidden, false);
   assert.equal(recovery.children[0].textContent, "Notebook synchronization timed out");
   assert.equal(recovery.children.find(node => node.type === "button").disabled, false);
+});
+
+test("live dungeon quest rendering preserves canonical equipment and sends discrete inputs", async t => {
+  const runId = "00000000-0000-4000-8000-000000000001", actions = [];
+  const f = fixture(t, (result, action) => {
+    if (action?.type === "legend-input") actions.push(action.input);
+    return { ...result, conversationRumour: null, revision: f.calls.length,
+      state: { ...result.state, artifactRevision: f.calls.length, health: 89, legendAdventure: { version: 1, runId } },
+      adventure: { contentVersion: "seeded-dungeon-v1", seed: 4, runId, status: "active", weapon: "knife",
+        actions: [...actions], town: "Firmi" } };
+  }, { storesRequest: true });
+  await f.ui.startLegend({ type: "legend-start", townId: "node/42", contentVersion: "seeded-dungeon-v1" });
+  const descendants = node => [node, ...node.children.flatMap(descendants)];
+  const nodes = () => descendants(f.get("quests-legend-session"));
+  assert.ok(nodes().some(node => node.textContent === "Dungeon trial (real costs, no treasure)"));
+  assert.ok(nodes().some(node => node.textContent.includes("89/100")));
+  const up = nodes().find(node => node.dataset.legendAction === "up");
+  up.events.click();
+  await settle();
+  assert.deepEqual(f.calls[1], { type: "legend-input", runId, input: { type: "up" } });
+  assert.equal(f.acknowledged(), 2);
+  assert.equal(f.ui.pending(f.state()), true);
+  assert.ok(descendants(f.get("artifact-recovery")).some(node => node.textContent === "Resume adventure"));
 });
 
 test("pending artifact commands can recover from the map while Dialogue and Quests are blocked", async t => {

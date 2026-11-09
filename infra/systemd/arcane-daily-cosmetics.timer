@@ -1,0 +1,10 @@
+[Unit]
+Description=Prepare a new Arcane Path icon set daily at 05:30 Paris time
+
+[Timer]
+OnCalendar=*-*-* 05:30:00 Europe/Paris
+Persistent=true
+Unit=arcane-daily-cosmetics.service
+
+[Install]
+WantedBy=timers.target

@@ -209,10 +209,18 @@ class AssetStorageTests(unittest.TestCase):
             store.catalogue.initialize()
             self.assertIn("statement_timeout=30000", factory.call_args.kwargs["kwargs"]["options"])
             pool.open.assert_called_once()
-            self.assertEqual(db.execute.call_count, 73)
+            self.assertEqual(db.execute.call_count, 86)
             self.assertIn("generation_jobs", db.execute.call_args_list[1].args[0])
             self.assertTrue(any("world_characters" in call.args[0] for call in db.execute.call_args_list))
             self.assertTrue(any("town_documents" in call.args[0] for call in db.execute.call_args_list))
+            self.assertTrue(any("CREATE TABLE IF NOT EXISTS town_legends" in call.args[0]
+                                for call in db.execute.call_args_list))
+            self.assertTrue(any("CREATE TABLE IF NOT EXISTS town_legend_discoveries" in call.args[0]
+                                for call in db.execute.call_args_list))
+            self.assertTrue(any("CREATE TABLE IF NOT EXISTS town_legend_searches" in call.args[0]
+                                for call in db.execute.call_args_list))
+            self.assertTrue(any("CREATE TABLE IF NOT EXISTS town_legend_observations" in call.args[0]
+                                for call in db.execute.call_args_list))
             self.assertTrue(any("change_requests" in call.args[0] for call in db.execute.call_args_list))
             self.assertTrue(any("character-registry" in str(call.args) for call in db.execute.call_args_list))
             self.assertTrue(any("ADD COLUMN IF NOT EXISTS fact_version" in call.args[0]

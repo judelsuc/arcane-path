@@ -1,6 +1,7 @@
 import { ITEMS, CAPACITY_GRAMS } from "./equipment.mjs";
 import { LORE_ITEMS, loreItem } from "./lore-catalogue.mjs";
 import { restorePlacements } from "./equipment-inventory.mjs";
+import { treasureGrams, treasureItems } from "./legend-rewards.mjs";
 
 export function validateArtifactInventory(state) {
   if (state.artifactWorld === undefined) return;
@@ -28,11 +29,13 @@ export function validateArtifactInventory(state) {
       inventory.some(item => !item || !LORE_ITEMS.some(candidate => candidate.id === item.id) ||
         !Number.isFinite(item.cooldownUntil) || item.cooldownUntil < 0) ||
       new Set(inventory.map(item => item.id)).size !== inventory.length) throw new Error("Invalid artifact inventory.");
-  const grams = inventory.reduce((total, item) => total + loreItem(item.id).grams, 0);
+  const grams = inventory.reduce((total, item) => total + loreItem(item.id).grams, 0) + treasureGrams(state);
   if (grams !== state.lore.carriedGrams || grams + state.equipment.items.reduce((total, item) =>
     total + ITEMS.find(candidate => candidate.id === item.id).grams, 0) > CAPACITY_GRAMS) {
     throw new Error("Invalid artifact inventory weight.");
   }
-  restorePlacements([...state.equipment.items, ...inventory],
-    [...state.equipment.placements, ...inventory.map(item => ({ ...item.placement, id: item.id }))], [...ITEMS, ...LORE_ITEMS]);
+  const treasures = state.treasures?.inventory ?? [];
+  restorePlacements([...state.equipment.items, ...inventory, ...treasures],
+    [...state.equipment.placements, ...inventory.map(item => ({ ...item.placement, id: item.id })),
+      ...treasures.map(item => item.placement)], [...ITEMS, ...LORE_ITEMS, ...treasureItems(state)]);
 }

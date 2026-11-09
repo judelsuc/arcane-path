@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "natures": [
+    { "id": "sword", "kind": "weapon", "weapon": "sword", "en": "Sword", "fr": "Épée", "grams": 650, "footprint": [1, 3], "effects": ["reach"] },
+    { "id": "ring", "kind": "jewellery", "en": "Ring", "fr": "Anneau", "grams": 25, "footprint": [1, 1], "effects": ["ward", "patience", "haste", "blood-price"] },
+    { "id": "purse", "kind": "money", "en": "Coin purse", "fr": "Bourse", "grams": 140, "footprint": [1, 1], "effects": ["coins"] },
+    { "id": "film", "kind": "cosmetic", "en": "Film reel", "fr": "Bobine de film", "grams": 180, "footprint": [2, 1], "effects": ["appearance"] },
+    { "id": "chain", "kind": "jewellery", "en": "Chain", "fr": "Chaîne", "grams": 85, "footprint": [1, 1], "effects": ["patience", "ward", "blood-price", "haste"] },
+    { "id": "chart", "kind": "clue", "en": "Chart", "fr": "Carte", "grams": 45, "footprint": [1, 2], "effects": ["artifact-lead"] },
+    { "id": "badge", "kind": "icon", "en": "Traveller's badge", "fr": "Insigne de voyageur", "grams": 35, "footprint": [1, 1], "effects": ["portrait"] },
+    { "id": "knife", "kind": "weapon", "weapon": "knife", "en": "Knife", "fr": "Couteau", "grams": 120, "footprint": [1, 2], "effects": ["reach"] },
+    { "id": "pendant", "kind": "jewellery", "en": "Pendant", "fr": "Pendentif", "grams": 70, "footprint": [1, 1], "effects": ["haste", "blood-price", "ward", "patience"] },
+    { "id": "coffer", "kind": "money", "en": "Coin coffer", "fr": "Coffret de pièces", "grams": 420, "footprint": [2, 1], "effects": ["coins"] },
+    { "id": "lockpick", "kind": "tool", "en": "Lockpick", "fr": "Crochet de serrure", "grams": 15, "footprint": [1, 1], "effects": ["unlock-cache"] },
+    { "id": "notes", "kind": "clue", "en": "Notebook", "fr": "Carnet", "grams": 90, "footprint": [1, 2], "effects": ["artifact-lead"] },
+    { "id": "bracelet", "kind": "jewellery", "en": "Bracelet", "fr": "Bracelet", "grams": 55, "footprint": [1, 1], "effects": ["blood-price", "patience", "ward", "haste"] },
+    { "id": "atlas", "kind": "cosmetic", "en": "Star atlas", "fr": "Atlas céleste", "grams": 240, "footprint": [1, 2], "effects": ["appearance"] },
+    { "id": "ribbon", "kind": "icon", "en": "Embroidered ribbon", "fr": "Ruban brodé", "grams": 20, "footprint": [1, 1], "effects": ["portrait"] },
+    { "id": "brooch", "kind": "jewellery", "en": "Brooch", "fr": "Broche", "grams": 40, "footprint": [1, 1], "effects": ["ward", "blood-price", "patience", "haste"] }
+  ],
+  "effects": [
+    { "id": "reach", "en": "Enables dungeon attacks; sword reach is two cells, knife reach one. Weight is the trade-off.", "fr": "Permet les attaques en donjon : deux cases pour l'épée, une pour le couteau. Son poids est la contrepartie." },
+    { "id": "ward", "healthPercent": 80, "fatiguePercent": 125, "minutePercent": 100, "en": "Adventure injury damage −20%; adventure fatigue +25%.", "fr": "Dégâts de blessure en aventure −20 % ; fatigue d'aventure +25 %." },
+    { "id": "patience", "healthPercent": 100, "fatiguePercent": 80, "minutePercent": 120, "en": "Adventure fatigue −20%; adventure time +20%.", "fr": "Fatigue d'aventure −20 % ; durée d'aventure +20 %." },
+    { "id": "haste", "healthPercent": 125, "fatiguePercent": 100, "minutePercent": 85, "en": "Adventure time −15%; adventure injury damage +25%.", "fr": "Durée d'aventure −15 % ; dégâts de blessure en aventure +25 %." },
+    { "id": "blood-price", "cursed": true, "healthPercent": 150, "fatiguePercent": 60, "minutePercent": 100, "en": "Cursed: adventure fatigue −40%, injury damage +50%. Active only while equipped; freely removable.", "fr": "Maudit : fatigue d'aventure −40 %, dégâts de blessure +50 %. Actif seulement équipé ; retrait libre." },
+    { "id": "coins", "en": "Open once to receive its coins. The container is consumed.", "fr": "Ouvrir une fois pour recevoir les pièces. Le contenant disparaît." },
+    { "id": "artifact-lead", "en": "Read once to record a town-level lead to an existing magical artifact, never its exact hiding place.", "fr": "Lire une fois pour noter la ville d'un artefact magique existant, sans révéler sa cache exacte." },
+    { "id": "appearance", "en": "Choose a map/adventure look, UI skin and player icon independently while carried.", "fr": "Choisissez séparément une apparence carte/aventures, une interface et une icône tant que l'objet est porté." },
+    { "id": "portrait", "en": "Changes only your map character icon while carried.", "fr": "Change seulement l'icône du personnage sur la carte tant que l'objet est porté." },
+    { "id": "unlock-cache", "en": "Consumed to open one locked cache at an OpenCaching landmark.", "fr": "Consommé pour ouvrir une cache verrouillée à un repère OpenCaching." }
+  ],
+  "materials": ["copper", "silver", "brass", "iron", "amber", "glass", "oak", "leather"],
+  "motifs": ["stars", "waves", "ivy", "gears", "swallows", "lanterns", "knots", "leaves"]
+}

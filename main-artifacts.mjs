@@ -1,4 +1,6 @@
-import { applyLoreAction, createArtifactProgress, deliverMoonDream, loreView } from "./lore-engine.mjs";
+import { applyLoreAction, createArtifactProgress, deliverMoonDream, loreView, infoAt } from "./lore-engine.mjs";
+import { advanceLegendSession, isTreasureSession } from "./legend-session.mjs";
+import { syncTreasures, treasureAction, awardTreasure } from "./legend-rewards.mjs";
 import { mapIdentity, SAVE_VERSION, validateSave } from "./journey-save.mjs";
 import { beginEquipment } from "./equipment.mjs";
 import { beginPressures } from "./pressures.mjs";
@@ -11,7 +13,8 @@ import { loreCell } from "./lore-map.mjs";
 import { parentPath } from "./lore-knowledge.mjs";
 
 export async function mainArtifactRequest(input) {
-  const { genesis, map, journey, snapshot, action, journalContext } = input;
+  const { genesis, map, journey, action, journalContext } = input;
+  let { snapshot } = input;
   validateSave({ version: SAVE_VERSION, region: genesis.region, mapIdentity: mapIdentity(map),
     revision: 1, savedAt: new Date(input.nowMillis).toISOString(), state: snapshot,
     survival: genesis.survival, economy: genesis.economy });
@@ -22,12 +25,22 @@ export async function mainArtifactRequest(input) {
     throw new Error("Artifact interactions require the current, unoccupied main journey.");
   }
   const previous = input.runtime;
+  const treasureInstances = structuredClone(input.treasureInstances ?? []);
   if ((snapshot.artifactRevision ?? 0) !== (previous?.revision ?? 0)) {
     throw new Error("Artifact state changed; reload the current journey before continuing.");
   }
   if (previous && snapshot.elapsedMinutes < previous.state.elapsedMinutes) {
     throw new Error("The main journey predates its last artifact action. Start a new journey.");
   }
+  const legendAction = ["legend-start", "legend-input", "legend-leave", "legend-finish", "legend-restart"].includes(action?.type);
+  if (previous?.adventure?.status === "active") {
+    if (action && !legendAction) throw new Error("Finish or leave the active legend adventure first.");
+    if (snapshot.col !== previous.state.col || snapshot.row !== previous.state.row ||
+        snapshot.elapsedMinutes !== previous.state.elapsedMinutes) {
+      throw new Error("The journey moved during an active legend adventure.");
+    }
+    snapshot = previous.state;
+  } else if (snapshot.legendAdventure) throw new Error("No matching authoritative legend adventure.");
   const lore = previous ? structuredClone(previous.state.lore) : createArtifactProgress(snapshot, map);
   const elapsed = snapshot.elapsedMinutes - (previous?.state.elapsedMinutes ?? snapshot.elapsedMinutes);
   if (lore.effects) {
@@ -43,11 +56,13 @@ export async function mainArtifactRequest(input) {
   const artifactEntries = previous?.state.discovery?.entries.filter(entry => entry.targetType === "artifact") ?? [];
   let state = synchronizeParentDiscovery(beginPressures(beginEquipment({
     ...structuredClone(snapshot), lore,
+    treasures: previous?.state.treasures ?? { version: 1, inventory: [], equipped: null },
     discovery: { version: 1, entries: [
       ...(snapshot.discovery?.entries ?? []).filter(entry => entry.targetType !== "artifact"), ...artifactEntries,
     ] },
     artifactWorld: MAIN_ARTIFACT_WORLD, artifactRevision: (previous?.revision ?? 0) + 1,
   }), genesis.economy));
+  state = syncTreasures(state, treasureInstances, journey);
   state.lore.paidMeals = Math.max(lore.paidMeals ?? 0, state.meals);
   state.lore.sleptSixty = Math.max(lore.sleptSixty ?? 0, state.sleeps);
   state.lore.earnedActivities = Math.max(lore.earnedActivities ?? 0, state.performances ?? 0,
@@ -89,8 +104,10 @@ export async function mainArtifactRequest(input) {
       { revision: (previous?.revision ?? 0) + 1, minutes, signal, stage: compass.stage }];
   }
   const runtime = { state, economy: genesis.economy, survival: genesis.survival,
-    revision: previous?.revision ?? 0, worldMinutes: input.worldMinutes + elapsed };
+    revision: previous?.revision ?? 0, worldMinutes: input.worldMinutes + elapsed,
+    ...(previous?.adventure ? { adventure: previous.adventure } : {}) };
   let result = { runtime, instances: input.instances };
+  let treasureOutcome = null;
   let conversationClue;
   if (input.characterRumour) {
     const rumour = input.characterRumour, legend = ARTIFACT_RUMOURS[rumour.id];
@@ -119,17 +136,50 @@ export async function mainArtifactRequest(input) {
     state = learnDiscovery(state, clues);
     runtime.state = state;
   }
-  if (action) {
+  if (legendAction) {
+    result.runtime = advanceLegendSession(runtime, action, {
+      definition: input.legendDefinition, runId: input.requestId, info: infoAt(map, state),
+    });
+    const session = result.runtime.adventure;
+    if (action.type === "legend-finish" && session.status === "completed" &&
+        isTreasureSession(session.contentVersion) && !result.runtime.state.ended) {
+      const awarded = awardTreasure(result.runtime.state, treasureInstances, journey, session,
+        input.legendReward ?? input.legendDefinition?.reward);
+      result.runtime.state = awarded.state;
+      treasureOutcome = { id: awarded.id, outcome: awarded.outcome };
+    }
+  } else if (action?.type === "cache-open") {
+    const cache = input.geocache;
+    if (!cache || cache.id !== action.cacheId) throw new Error("No available OpenCaching cache at this location.");
+    result.runtime.state = treasureAction(state, treasureInstances, journey, map,
+      { type: "treasure-unlock", id: action.lockpick });
+    const cents = cache.cents;
+    if (!Number.isSafeInteger(cents) || cents < 200 || cents > 600 ||
+        result.runtime.state.walletCents + cents > 1_000_000_000) throw new Error("Invalid cache reward.");
+    result.runtime.state.walletCents += cents;
+    result.runtime.revision++;
+  } else if (action?.type?.startsWith("treasure-")) {
+    result.runtime.state = treasureAction(state, treasureInstances, journey, map, action, input.instances);
+    result.runtime.revision++;
+  } else if (action) {
     result = await applyLoreAction(runtime, input.instances, journey, map, action,
       { nowMillis: input.nowMillis, journalContext });
   } else {
     runtime.revision++;
-    const weights = input.instances.filter(item => item.owner === journey);
-    if (state.ended && weights.length) {
-      result = await applyLoreAction({ ...runtime, state: { ...state, ended: null } },
-        input.instances, journey, map, { type: "abandon" }, { nowMillis: input.nowMillis, journalContext });
-      result.runtime.state.ended = state.ended;
+  }
+  state = result.runtime.state;
+  if (state.ended) {
+    const last = state.lore.lastSettlement;
+    for (const item of treasureInstances.filter(item => item.owner === journey)) {
+      Object.assign(item, { owner: null, placement: null, col: last.col, row: last.row, place: last.town });
     }
+  }
+  state = syncTreasures(state, treasureInstances, journey);
+  result.runtime.state = state;
+  if (state.ended && result.instances.some(item => item.owner === journey)) {
+    result = await applyLoreAction({ ...result.runtime, state: { ...state, ended: null } },
+      result.instances, journey, map, { type: "abandon" }, { nowMillis: input.nowMillis, journalContext });
+    result.runtime.state.ended = state.ended;
   }
   state = result.runtime.state;
   state.artifactRevision = result.runtime.revision;
@@ -151,7 +201,14 @@ export async function mainArtifactRequest(input) {
   validateSave({ version: SAVE_VERSION, region: genesis.region, mapIdentity: mapIdentity(map),
     revision: 1, savedAt: new Date(input.nowMillis).toISOString(), state,
     survival: genesis.survival, economy: genesis.economy });
-  return { ...result, view: { ...view, world: MAIN_ARTIFACT_WORLD, revision: result.runtime.revision, state,
+  return { ...result, treasureInstances, view: { ...view, world: MAIN_ARTIFACT_WORLD, revision: result.runtime.revision, state,
+    treasures: { offers: treasureInstances.filter(item => item.owner === null && !item.consumed &&
+      item.col === state.col && item.row === state.row).map(({ id, place, reward }) =>
+      ({ id, place, ...(reward ? { reward } : {}) })),
+    result: treasureOutcome },
+    caches: { offers: (input.geocacheOffers ?? []).filter(cache => cache.id !== input.geocache?.id),
+      opened: input.geocache ? { id: input.geocache.id, cents: input.geocache.cents } : null },
+    adventure: result.runtime.adventure ?? null,
     conversationRumour: input.characterRumour ? { artifactId: input.characterRumour.id,
       characterId: input.characterRumour.characterId,
       clueRevision: conversationClue?.targetRevision ?? null,

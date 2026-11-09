@@ -1,5 +1,136 @@
 # Content workshop and optional live wording
 
+## Hosted administrator console
+
+`/admin.html` provides a separate administrator login, independent of the site's
+preview password. It reviews both private player reports and cosmetic collections.
+The console is disabled until `ARCANE_ADMIN_CREDENTIAL_FILE` and shared asset
+storage are configured; it does not reuse player capabilities or preview credentials.
+See [deployment instructions](./INFRASTRUCTURE.md#administrator-console-configuration).
+
+Feedback has status filters, 20-record pagination, comments, private screenshots,
+expandable game context and editable triage notes/status. Concurrent edits require
+the current revision. Report expiry remains authoritative: neither review nor notes
+extend the existing 90-day retention. Cleanup deletes review notes with their report.
+Comments, images and context remain untrusted evidence, never model instructions.
+
+The server prepares **one six-icon draft per Europe/Paris calendar day**, scheduled
+at 05:30 by `arcane-daily-cosmetics.timer`. Drafts arrive in the review queue
+automatically; there is no upload/import workflow or browser generation button.
+The workshop shows the last fourteen run dates, themes, palettes, states, errors,
+response model and token counts.
+
+The curated deck contains **120 specific themes in twelve families**, each with
+six complementary roles and concrete accessory motifs. Selection uses a retained
+no-repeat deck, avoids the preceding family where possible, prefers families less
+represented in the last seven sets and avoids the last four palettes. Every
+selection, including failed days, consumes that theme until the deck cycles.
+The theme, palette, six roles, model and prompt version are persisted before
+dispatch. A restart or concurrent server cannot reroll that day's brief.
+
+The fixed Mistral Small model receives only this public fictional art direction.
+It returns strict structured JSON for six 12-by-12 sprites and bilingual names;
+server-owned IDs, palette and collection provenance are added after validation.
+Each stored icon has `id`, `en`, `fr`, `coat`, `accent` and `pixels`:
+two hex colours and twelve strings of twelve characters.
+The pixel alphabet is `.` (transparent), `o` (outline), `c` (coat), `a` (accent),
+`s` (skin). Empty/excessively filled silhouettes, missing outlines, extra fields,
+duplicate IDs and within-set silhouette recolours are rejected. Daily sets require
+at least three coat pixels per icon, one common palette, less than 90% occupancy-mask
+overlap within the set, and less than 95% against every existing generated icon.
+These checks do not prove artistic quality; administrator approval remains necessary.
+
+The daily job reuses the shared fenced job ledger, with **one dispatch attempt**
+per day and explicit provider quotas. Before generation it verifies that the exact
+model remains listed at zero USD prices; unknown pricing or a paid offer stops
+the job without fallback. Failure, invalid JSON, repetition or an interrupted
+dispatch never causes an automatic retry. An expired dispatched lease is uncertain,
+not a successful draft. Draft creation, usage recording and ready-state settlement
+share one catalogue transaction. A missed timer runs for the current Paris day
+only, never backfills many provider calls.
+
+Review shows enlarged and actual-size previews over woodland, water and field
+backgrounds, bilingual names, model provenance and individual approve/reject
+controls. Similarity warnings compare occupancy masks against the original icons,
+visible drafts and **all previously published approved icons**, even on other
+pages. They are advisory, not proof of quality or originality. Every icon must be
+reviewed and at least one approved before explicit publication. Publication is
+immutable; the download contains approved icons only. Existing daily collection
+IDs cannot be overwritten with different artwork.
+
+This increment supplies the administration workflow and approved library.
+The timer and daily worker are implemented but require explicit server installation,
+shared schema initialization, private model credentials and a configured quota.
+Published approved icons are now eligible when composing rewards for newly
+discovered towns. Nature and effect are chosen first; an icon-compatible object
+may then receive a retained copy of one approved sprite. Existing towns and
+transferred originals never change after another publication. Where no approved
+sprite exists, the icon object retains a builtin icon rather than inventing artwork.
+Approval, publication and download never call a model. No provider credentials,
+repository source, private feedback or player data enter a prompt.
+
+## Town legend backgrounds and composed treasure naming (R-190)
+
+The [town legend layer](./REQUIREMENTS.md#r-190---town-legends-and-treasure-adventures)
+will assign town eligibility lazily on first discovery and persist both positive
+and negative decisions, independently of disposable content caches. Narrative
+generation must not reroll this decision. Retain the canonical legend and derive
+different witness accounts from its verified clue facts.
+
+Select an object's nature and compatible mechanical/cosmetic attributes before
+asking the model for its name and description. Models must not introduce new
+effects, executable level code or unvalidated puzzle dependencies. Platform room
+assembly, investigation dependency graphs and top-down dungeon room mechanisms
+belong to tested game rules. Choose the treasure budget and mandatory adventure
+length together before prose generation. Template families, layouts and timing
+must provide actual variety; different wording or artwork alone does not count.
+Narrative generation failures must stay explicit and retryable. The standalone
+preview still uses authored text and never requests model generation itself.
+
+The composed reward path now implements that ordering with sixteen initial natures.
+`scripts/reward_names.py` drains retained naming briefs, at most four per scheduled
+run. Its prompt contains only the chosen nature, compatible effect (including
+penalties/curses), material and motif, never a town identity, coordinates or player
+data. Strict output allows only a short EN/FR name. Validation, pricing refusal,
+dispatch fencing and one-attempt behavior retain the original composition on failure.
+Generic nature labels remain visible with an explicit unnamed state until success.
+Names attach to the same original after transfer; naming cannot change its value,
+weight, shape, effect or selected artwork.
+
+For composed treasures, legend generation waits for that retained name. The exact
+EN/FR name is then given to the canonical-story and three-witness prompt, and the
+validator requires it verbatim in **every** corresponding-language text.
+People's retellings and their appended canonical clues identify the same object.
+Previously retained prose is not re-billed; the renderer includes the authoritative
+name alongside it if necessary. Naming failure never silently produces an unnamed
+new legend, and entrance search facts remain available independently.
+
+Story memories are no longer a twelve-line rotating list. A versioned seeded
+foundation composes 64 distinct events with 24 choices each for the people,
+motive, complication and aftermath. This gives 21,233,664 possible fact combinations
+before object nature, characteristics, terrain and prose. This is a combinatorial
+capacity, not a claim that every combination is an equally good story: the prompt
+must connect the event and complication coherently rather than replacing them
+with generic keepsake prose. Tests measure actual variation across 8,192 seeds,
+require at least 99.9% distinct full foundations and complete axis coverage.
+Reloads keep the seed-derived facts, and already generated tales remain retained.
+
+The administrator-only `scripts/legend_art.py` now prepares one or two fixed
+fictional atmosphere briefs for that preview. It reuses `OvhImageWriter` with a
+muted pixel-art style, including the zero-USD price check before every dispatch.
+No town coordinates, player information or repository content enters a prompt.
+Its private `legend-art.sqlite3` retains each slot's single attempt and normalized
+image. Ready slots are reused; failed/pending slots never dispatch automatically
+again. Publishing exports only a public status/license manifest and ready WebPs.
+An interrupted publication can be recovered with `--publish-only`, without a
+provider call. This local preview workflow is not a shared production image queue.
+
+The browser reads at most two background slots, decodes ready images and reuses
+them across rooms without resetting progress. All interactive geometry is drawn
+above muted scenery. Missing, pending, failed or unreadable art leaves the simple
+background playable and exposes its actual status. Refresh artwork reloads
+published files only; it is not a generation/retry action.
+
 ## Shared encounter illustrations (R-177)
 
 `/api/encounter-art` uses the notebook capability and keeper scope. It observes

@@ -31,6 +31,7 @@ export function journeyActionBlocker(state, { busy = false, cell, artifactPendin
   if (busy) return "loading";
   if (!cell) return "terrain";
   if (state.ended) return "ended";
+  if (state.legendAdventure) return "legend";
   if (artifactPending) return "artifact";
   if (state.transport?.booking?.status === "active") return "transport";
   if (state.events?.pending) return "event";

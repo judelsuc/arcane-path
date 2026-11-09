@@ -3,6 +3,9 @@ import { loreItem } from "./lore-catalogue.mjs";
 import { extraPower, powerCopy, blockedCopy, CARD_NAMES } from "./lore-copy.mjs";
 import { TAROT_CARDS } from "./tarot-cards.mjs";
 import { discoveryClueText, discoveryNotebookEntries } from "./discovery-ui.mjs";
+import { setupLegendSession } from "./legend-session-ui.mjs";
+import { treasureItem } from "./legend-rewards.mjs";
+import { renderTreasureInventory } from "./legend-rewards-ui.mjs";
 
 const WORDS = {
   fr: { refresh: "Actualiser les objets", retry: "Réessayer la commande en attente",
@@ -44,14 +47,15 @@ const WORDS = {
 };
 
 export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, character = () => null,
-  client = createArtifactsClient() }) {
+  client = createArtifactsClient(), openLegends = () => {} }) {
   const talk = document.getElementById("dialogue-artifacts"), book = document.getElementById("quests-artifacts");
   const recovery = document.getElementById("artifact-recovery");
-  let snapshot, working = false, error = "", feedback = "", owner, endingAttempt;
+  let snapshot, working = false, error = "", feedback = "", owner, endingAttempt, legendStartRevision;
   let automaticAttempt, observedDistance, observedSleeps;
   let queuedRumours = [], scheduledRumour, speech, rumourError;
   const spoken = document.getElementById("conversation-artifact-rumour");
   const language = () => document.documentElement.lang === "en" ? "en" : "fr";
+  const legendSession = setupLegendSession({ request });
   function text(host, content, tag = "p") {
     const element = document.createElement(tag); element.textContent = content; host.append(element); return element;
   }
@@ -63,7 +67,9 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
   }
   async function request(action = null, allowEnded = false) {
     let current = context();
-    if (!current || working || current.blocked && !client.pending(current.state) && !(allowEnded && current.state.ended)) return;
+    const legendRequest = action === null || ["legend-input", "legend-leave", "legend-finish", "legend-restart"].includes(action?.type);
+    if (!current || working || current.blocked && !client.pending(current.state) &&
+        !(legendRequest && current.state.legendAdventure) && !(allowEnded && current.state.ended)) return;
     working = true; error = feedback = "";
     try {
       lock(true); localize();
@@ -94,6 +100,7 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
       }))) throw new Error("Artifact action could not be saved; retry the pending command.");
       client.acknowledge(result.state);
       snapshot = result;
+      if (["legend-start", "legend-restart"].includes(action?.type)) legendStartRevision = result.revision;
       if (nextSpeech) {
         speech = nextSpeech;
         rumourError = undefined;
@@ -101,11 +108,13 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
       observedDistance = result.state.distanceMeters;
       observedSleeps = result.state.sleeps;
       feedback = "saved";
+      return result;
     } catch (reason) {
       console.error("Main artifact action failed:", reason); error = reason.message;
       if (action?.type === "character-rumour" || rumourError) {
         rumourError = { characterId: action?.characterId ?? rumourError.characterId, message: reason.message };
       }
+      return { error: reason.message };
     } finally { working = false; lock(false); localize(); }
   }
   function targets(id, lang) {
@@ -125,22 +134,30 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
     const current = context(), state = current?.state, lang = language(), c = WORDS[lang];
     recovery.replaceChildren();
     const pending = client.pending(state);
-    recovery.hidden = !state || !(pending || working || error);
+    const activeLegend = Boolean(state?.legendAdventure);
+    recovery.hidden = !state || !(pending || working || error || activeLegend);
     recovery.setAttribute("aria-label", t("quests.artifacts"));
     if (!recovery.hidden) {
-      const status = text(recovery, error || (working ? c.loading : t("travelBlocked.artifact")));
+      const status = text(recovery, error || (working ? c.loading : t(activeLegend ? "travelBlocked.legend" : "travelBlocked.artifact")));
       status.setAttribute("role", error ? "alert" : "status");
-      button(recovery, c.retry, () => {
+      button(recovery, activeLegend && !pending ? c.refresh : c.retry, () => {
         if (working) return;
         void request();
       }, working);
+      if (activeLegend) button(recovery, language() === "fr" ? "Reprendre l'aventure" : "Resume adventure",
+        openLegends, working);
     }
     if (owner !== state?.serverJourney?.id) {
       snapshot = undefined; owner = state?.serverJourney?.id; endingAttempt = automaticAttempt = undefined;
       observedDistance = state?.distanceMeters; error = feedback = "";
       observedSleeps = state?.sleeps;
       queuedRumours = []; scheduledRumour = undefined; speech = undefined; rumourError = undefined;
+      legendStartRevision = undefined;
     }
+    legendSession.render({ state, session: snapshot && snapshot.revision === state?.artifactRevision ? snapshot.adventure : null,
+      blocked: working || Boolean(current?.blocked && !activeLegend), pending, language: lang,
+      runtime: { survival: current?.survival, economy: current?.data, info: current?.info },
+      startRevision: legendStartRevision });
     talk.replaceChildren(); book.replaceChildren();
     spoken.replaceChildren();
     const speaker = character();
@@ -183,14 +200,17 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
       automaticAttempt = `${state.col},${state.row}:${state.elapsedMinutes}`;
       queueMicrotask(() => void request());
     }
-    if (state.ended && state.lore?.inventory?.length && endingAttempt !== state.artifactRevision && !working) {
+    if (state.ended && (state.lore?.inventory?.length || state.treasures?.inventory?.length) &&
+        endingAttempt !== state.artifactRevision && !working) {
       endingAttempt = state.artifactRevision;
       queueMicrotask(() => void request(null, true));
     }
     const blocked = working || current.blocked || pending;
     const fresh = snapshot?.state.col === state.col && snapshot?.state.row === state.row &&
       snapshot?.state.elapsedMinutes === state.elapsedMinutes && snapshot?.revision === state.artifactRevision;
-    button(talk, pending ? c.retry : c.refresh, () => void request(), working || current.blocked && !pending);
+    for (const host of [talk, book]) {
+      button(host, pending ? c.retry : c.refresh, () => void request(), working || current.blocked && !pending);
+    }
     for (const host of [talk, book]) {
       const status = text(host, error || (working ? c.loading : feedback ? c[feedback] : "")); status.setAttribute("role", error ? "alert" : "status");
     }
@@ -202,7 +222,42 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
       text(talk, c.stale);
       text(book, c.stale);
       for (const owned of state.lore?.inventory ?? []) text(book, loreItem(owned.id)[lang], "h3");
+      for (const owned of state.treasures?.inventory ?? []) text(book, treasureItem(owned.id, owned.reward)[lang], "h3");
       return;
+    }
+    renderTreasureInventory(book, { state, language: lang, blocked, onAction: request, getState: () => context()?.state });
+    const outcome = snapshot.treasures?.result;
+    if (outcome) text(book, ({
+      collected: lang === "en" ? "Treasure added to your inventory." : "Trésor ajouté à votre inventaire.",
+      left: lang === "en" ? "Your bag is full. The treasure is waiting at the entrance."
+        : "Votre sac est plein. Le trésor vous attend à l'entrée.",
+      taken: lang === "en" ? "Another explorer has already recovered the original treasure."
+        : "Un autre explorateur a déjà recueilli le trésor original.",
+    })[outcome.outcome]);
+    for (const offer of snapshot.treasures?.offers ?? []) {
+      for (const host of [book, talk]) {
+        text(host, `${treasureItem(offer.id, offer.reward)[lang]} — ${offer.place}`, "h3");
+        button(host, lang === "en" ? "Pick up treasure" : "Ramasser le trésor",
+          () => void request({ type: "treasure-pickup", id: offer.id }), blocked);
+      }
+      if (snapshot.caches?.opened) text(book, lang === "en" ?
+        `Cache opened: €${(snapshot.caches.opened.cents / 100).toFixed(2)}.` :
+        `Cache ouverte : ${(snapshot.caches.opened.cents / 100).toFixed(2)} €.`);
+      for (const cache of snapshot.caches?.offers ?? []) {
+        const section = document.createElement("section"); book.append(section);
+        text(section, cache.name, "h3");
+        const source = document.createElement("a");
+        source.href = cache.url; source.textContent = `OpenCaching · ${cache.code}`;
+        source.target = "_blank"; source.rel = "noopener noreferrer"; section.append(source);
+        text(section, cache.attribution);
+        if (cache.annotation) text(section, cache.annotation);
+        const lockpick = state.treasures?.inventory.find(owned => treasureItem(owned.id, owned.reward).kind === "tool");
+        text(section, lang === "en" ? "A small lock protects the coffer. Opening it uses one lockpick." :
+          "Une petite serrure protège le coffret. L'ouvrir consomme un crochet.");
+        if (lockpick) button(section, lang === "en" ? "Open · 1 lockpick" : "Ouvrir · 1 crochet",
+          () => void request({ type: "cache-open", cacheId: cache.id, lockpick: lockpick.id }), blocked);
+        else text(section, lang === "en" ? "A lockpick is needed." : "Il faut un crochet.");
+      }
     }
     if (snapshot.compass) text(book, `${snapshot.compass.direction
       ? t("hintCompass." + snapshot.compass.direction) : t("quests.compass.unavailable")} · ${
@@ -278,7 +333,9 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
       }
     }
   }
-  return { localize, pending: state => client.pending(state),
+  return { localize, pending: state => client.pending(state) || Boolean(state?.legendAdventure),
+    startLegend: action => request(action),
+    treasure: action => request(action),
     hear(rumour, speaker) {
       localize();
       const state = context()?.state;
@@ -287,6 +344,7 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
       localize();
     },
     reset() {
+      legendSession.reset();
       snapshot = undefined; owner = undefined; error = feedback = "";
       queuedRumours = []; speech = undefined; rumourError = undefined;
       scheduledRumour = undefined;

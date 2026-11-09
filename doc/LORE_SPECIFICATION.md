@@ -1,5 +1,15 @@
 # Lore completion specification
 
+## Separate town-treasure layer (9 November 2026)
+
+[R-190](./REQUIREMENTS.md#r-190---town-legends-and-treasure-adventures) adds
+local legends with platforming, investigation or top-down dungeon sites. Their composed treasures
+(object nature plus compatible gameplay/cosmetic attributes) are distinct from
+the twenty-two major arcane objects below. Do not apply globally unique arcane
+custody or deliberately overpowering arcane rules to these new treasures by
+default. Ownership and journey integration remain future decisions; the first
+[playtest](../legend-preview.html) has no live item effects or save access.
+
 > **Narrative direction superseded, 21 October 2026.** The old-game, inherited
 > wager and empty-chair explanation below is historical and is no longer the
 > selected story direction. See [La Cartomancienne — bible narrative](./LA_CARTOMANCIENNE.md)

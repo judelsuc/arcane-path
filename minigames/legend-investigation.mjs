@@ -1,0 +1,160 @@
+import { adventurePacing } from "./legend-pacing.mjs";
+
+export const INVESTIGATION_PROFILES = Object.freeze({
+  modest: Object.freeze({ rooms: 8, rewardBudget: 1 }),
+  notable: Object.freeze({ rooms: 16, rewardBudget: 2 }),
+  exceptional: Object.freeze({ rooms: 32, rewardBudget: 3 }),
+});
+export const PUZZLE_FAMILIES = Object.freeze(["evidence", "witnesses", "assembly", "sequence"]);
+const levels = new WeakSet(), states = new WeakSet();
+function freeze(value) {
+  if (value && typeof value === "object" && !Object.isFrozen(value)) {
+    for (const child of Object.values(value)) freeze(child);
+    Object.freeze(value);
+  }
+  return value;
+}
+function retain(state) { freeze(state); states.add(state); return state; }
+
+export function generateInvestigation({ seed = 1, tier = "modest", roomCount = INVESTIGATION_PROFILES[tier]?.rooms, paced = false } = {}) {
+  if (!Number.isSafeInteger(seed) || seed < 0 || seed > 0xffffffff ||
+      !Object.hasOwn(INVESTIGATION_PROFILES, tier) || !Number.isSafeInteger(roomCount) ||
+      roomCount < 4 || roomCount > 32 || roomCount % 4 || typeof paced !== "boolean" ||
+      paced && roomCount < 8) throw new RangeError("Invalid investigation seed or tier.");
+  let value = seed;
+  const random = () => {
+    value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
+    return value / 4294967296;
+  };
+  const shuffle = values => {
+    const result = [...values];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  };
+  let bag = [];
+  const rooms = [];
+  for (let id = 0; id < roomCount; id++) {
+    if (!bag.length) {
+      bag = shuffle(PUZZLE_FAMILIES);
+      if (bag[0] === rooms.at(-1)?.family) [bag[0], bag[1]] = [bag[1], bag[0]];
+    }
+    rooms.push({ id, family: bag.shift(), variant: Math.floor(random() * 2),
+      order: shuffle([0, 1, 2]), answer: Math.floor(random() * 3) });
+  }
+  if (paced) for (const room of rooms) {
+    room.pacing = adventurePacing(room.id, roomCount);
+    if (room.pacing.complexity) {
+      room.reference = room.id - 1 - (room.id % 3);
+      room.shift = room.pacing.complexity === 2 ? 1 : 0;
+      room.seal = (rooms[room.reference].answer + room.shift) % 3;
+      if (room.family === "sequence") room.order.push(...room.order.slice(0, room.pacing.complexity));
+    }
+  }
+  const level = freeze({ version: paced ? 2 : 1, seed, tier, ...INVESTIGATION_PROFILES[tier], rooms });
+  levels.add(level);
+  return level;
+}
+
+export function createGeneratedInvestigation({ level = generateInvestigation() } = {}) {
+  if (!levels.has(level)) throw new TypeError("Expected a generated investigation.");
+  return retain({ level, room: 0, progress: level.rooms.map(() => ({
+    solved: false, inspected: false, witnesses: [], parts: [], sequence: [],
+    ...(level.version === 2 ? { resolved: false } : {}),
+  })), completed: false, message: "arrival",
+  metrics: { roomEntries: 1, roomsVisited: [0], trapHits: 0 } });
+}
+
+export function investigationCommands(state) {
+  if (!states.has(state)) throw new TypeError("Expected a generated investigation state.");
+  const room = state.level.rooms[state.room];
+  if (room.seal !== undefined && state.progress[state.room].resolved) return ["verify:0", "verify:1", "verify:2"];
+  return ({
+    evidence: ["inspect", "choose:0", "choose:1", "choose:2"],
+    witnesses: ["witness:0", "witness:1", "choose:0", "choose:1", "choose:2"],
+    assembly: ["take:0", "take:1", "combine"],
+    sequence: ["inspect", "press:0", "press:1", "press:2"],
+  })[room.family];
+}
+
+export function stepInvestigation(state, action) {
+  if (!states.has(state)) throw new TypeError("Expected a generated investigation state.");
+  if (!action || typeof action !== "object" || Array.isArray(action) ||
+      Object.keys(action).length !== 2 || !Object.hasOwn(action, "type") ||
+      !["travel", "act"].includes(action.type) ||
+      action.type === "travel" && (!Object.hasOwn(action, "room") || !Number.isSafeInteger(action.room) ||
+        action.room < 0 || action.room >= state.level.rooms.length) ||
+      action.type === "act" && (!Object.hasOwn(action, "command") || !investigationCommands(state).includes(action.command))) {
+    throw new RangeError("Invalid generated investigation input.");
+  }
+  if (state.completed) return state;
+  if (action.type === "travel") {
+    if (action.room === state.room) return state;
+    if (action.room > 0 && !state.progress[action.room - 1].solved) return retain({ ...state, message: "locked" });
+    return retain({ ...state, room: action.room, message: "arrival",
+      metrics: { ...state.metrics, roomEntries: state.metrics.roomEntries + 1,
+        roomsVisited: [...new Set([...state.metrics.roomsVisited, action.room])] } });
+  }
+  const room = state.level.rooms[state.room], old = state.progress[state.room];
+  if (old.solved) return retain({ ...state, message: "already" });
+  const current = { ...old, witnesses: [...old.witnesses], parts: [...old.parts], sequence: [...old.sequence] };
+  let message = "progress";
+  const [command, indexText] = action.command.split(":");
+  const index = Number(indexText);
+  if (command === "inspect") { current.inspected = true; message = "clue"; }
+  if (command === "witness") {
+    if (!current.witnesses.includes(index)) current.witnesses.push(index);
+    message = `witness:${index}`;
+  }
+  if (command === "take") {
+    if (!current.parts.includes(index)) current.parts.push(index);
+    message = "supplies";
+  }
+  if (command === "combine") {
+    current.solved = current.parts.length === 2;
+    message = current.solved ? "solved" : "needParts";
+  }
+  if (command === "choose") {
+    const ready = room.family === "evidence" ? current.inspected : current.witnesses.length === 2;
+    current.solved = ready && index === room.answer;
+    message = !ready ? "needEvidence" : current.solved ? "solved" : "wrong";
+  }
+  if (command === "press") {
+    if (!current.inspected) message = "needEvidence";
+    else if (index !== room.order[current.sequence.length]) {
+      current.sequence = [];
+      message = "resetSequence";
+    } else {
+      current.sequence.push(index);
+      current.solved = current.sequence.length === room.order.length;
+      message = current.solved ? "solved" : "progress";
+    }
+  }
+  if (room.seal !== undefined) {
+    if (command === "verify") {
+      current.solved = index === room.seal;
+      message = current.solved ? "solved" : "wrongSeal";
+    } else if (current.solved) {
+      current.resolved = true;
+      current.solved = false;
+      message = "sealReady";
+    }
+  }
+  const progress = state.progress.map((entry, id) => id === state.room ? current : entry);
+  const completed = progress.every(entry => entry.solved);
+  return retain({ ...state, progress, completed, message: completed ? "complete" : message });
+}
+
+export function generatedInvestigationHint(state) {
+  if (!states.has(state)) throw new TypeError("Expected a generated investigation state.");
+  const room = state.level.rooms[state.room], progress = state.progress[state.room];
+  if (state.completed) return "complete";
+  if (progress.solved) return "next";
+  if (room.seal !== undefined && progress.resolved) return "seal";
+  if (room.family === "assembly") return progress.parts.length === 2 ? "combine" : "take";
+  if (room.family === "sequence") return progress.inspected ? "sequence" : "inspect";
+  if (room.family === "witnesses") return progress.witnesses.length === 2 ? "choose" : "witnesses";
+  return progress.inspected ? "choose" : "inspect";
+}

@@ -1,5 +1,236 @@
 # Les Arcanes du Chemin
 
+## Town legend playtest
+
+Ordinary server-backed journeys now record permanent shared town-legend
+eligibility on entering a prepared named town. **Quests / Town legends** shows
+the current result and your private, paginated discovery history. Both positive
+and negative decisions survive revisits/reloads; clearing generated-content
+caches does not reroll towns. Entrance preparation waits for sufficient nearby terrain.
+Previously cached towns without an eligibility record receive their first roll
+on the next visit, just like new towns; no bulk reroll is performed.
+
+Eligible towns now provide an **entrance search** through **Quests / Town legends**.
+Read its three retained clues, then use **Look** on nearby map cells. Compare
+terrain, landmark, sign material/symbol and counted details; only one cell
+matches the complete combination. Travel there, use Look again and **Inspect the
+passage**, then **Open the adventure entrance**. Trial buttons are no longer
+available directly from town. Remote Look reveals details but cannot inspect
+or enter; discovery is retained separately from unfinished adventure progress.
+
+Searches use up to 48 prepared, dry, orthogonally connected cells within three
+cells of town. Water, rail, major roads and unavailable terrain cannot become
+entrances or connecting routes. If fewer than four cells are available, the
+search stays explicitly pending: explore the surroundings, return and retry
+preparation without rerolling eligibility. Search geometry and all descriptions
+are retained once prepared, shared across players and independent of content
+cache cleanup. Only your observed details and inspected entrance are private.
+No entrance coordinates are exposed before observing the matching cell.
+
+This increment generates bilingual descriptions **procedurally, without LLM
+calls**: 48 landmark types across woodland, cultivated, open, rocky, built and
+wayside terrain; 16 symbols; eight materials; six sign shapes; six counted-detail
+patterns; and shuffled conditions/traces. Shuffle bags prevent adjacent repeated
+landmark types and exhaust compatible families before reusing them. These are
+explicitly fictional adventure details grounded in map terrain, not assertions
+that a real building, cave or monument exists.
+
+Prepared towns also offer **Hear the local legend** in Quests, or **Local legends**
+when talking to a met character in town. Either action lazily requests one shared
+bilingual story and three witness perspectives (practical, sentimental, sceptical)
+through the existing optional live-text provider. NPC identities select stable
+voices; their accounts always append the same exact entrance clues. Successful
+stories survive reloads, other players' visits and wording-version changes.
+Generation is not triggered by arrival or Look. Disabled, queued and failed
+states are explicit; failures never retry automatically, and the canonical search
+remains usable without prose. The provider receives only a bounded public memory
+premise, not private player data or the hidden entrance. Generated prose is
+decorative, not a source of mechanics or reward promises.
+
+**Treasure rewards:** at an inspected entrance, **Recover the treasure** offers
+platforms, investigation or dungeon, each with eight required rooms and confirmed
+journey costs. The first successful final settlement recovers one globally unique
+physical memento. Sixteen collectible looks combine distinct map tile patterns,
+adventure sprites/masonry and interface skins for panels, controls and colours.
+Choose the **UI skin** and **map/adventure look** independently in Inventory,
+including mixing two carried treasures or using a UI skin with the ASCII map.
+Treasures also supply eight original pixel **player icons**: lantern wanderer,
+star watcher, woodland ranger, copper smith, tide sailor, travelling bard, letter
+courier and wandering alchemist. Preview and equip an icon separately in Inventory;
+it works on ASCII and pixel maps without changing either skin. Dropping its source
+restores `@`; the death cross remains unchanged, and notebook maps retain their
+captured icon.
+The catalogue includes Last light, Moonlit paths, Wild garden, Copper embers,
+Tidekeeper, Roseglass theatre, Amber caravan, Porcelain morning, Autumn letters,
+Northern ribbons, Clockmaker's road, Lavender dusk, Ink and rain, Coral harbour,
+Mosaic courtyard and Stargazer's vigil. Existing originals retain their original
+name, nature, weight, footprint and look.
+New towns now pin **object nature first, compatible effect second, material and motif
+third**. A separate bounded server job then asks the LLM only for the bilingual name.
+The first composed catalogue has sixteen natures: weapons, jewellery, money
+containers, artifact-location charts, lockpicks and cosmetic objects.
+Equip one weapon and one jewel independently. Jewellery has bounded adventure
+bonuses with explicit drawbacks; curses apply only while equipped and can be
+removed freely. Money containers and charts are consumed once when opened/read.
+Charts reveal an existing unowned magical artifact's town, never its exact cache.
+Lockpicks open optional game coffers at imported, available traditional
+OpenCaching locations; they never interact with a real container.
+The larger approximately hundred-nature catalogue remains future expansion.
+
+**Administration:** a dedicated-password console at `/admin.html` reviews private
+player reports and cosmetic draft collections, with per-icon approval/rejection
+and immutable approved-library exports. It is disabled until explicitly configured;
+it never reuses the preview password or triggers model calls. A separate server
+timer generates six coordinated icons daily from 120 retained themes for manual
+review, with free-only model checks and a single dispatch attempt. Only published,
+approved icons enter newly discovered towns' reward pool; existing rewards never
+change after later publications. See
+[configuration](./doc/INFRASTRUCTURE.md#administrator-console-configuration) and
+[review workflow](./doc/CONTENT_FACTORY.md#hosted-administrator-console).
+
+Every reward, including cosmetics, appears in **Inventory** and uses ordinary
+bag cells and weight. Preview and equip it there, rearrange it, or leave it at a
+mapped settlement/building/site. Dropping immediately removes its look; another
+journey can pick up the same item through **Quests / Artifacts**, after refreshing
+at that place. There is no permanent account unlock or copied item. A full bag
+leaves the recovered original at the entrance, with explicit feedback and pickup.
+Death or 30-day abandonment returns carried treasure to the last settlement.
+Original recovery, custody and retry receipts share the existing artifact-world
+transaction; action replay, not client-reported success, decides completion.
+
+Separate from treasure recovery, choose one of three confirmed trials: **platform
+exploration, generated investigation and dungeon**. These are not generated local legends
+and award no treasure or money. The server pins the permanent town seed and the
+modest **eight-room** profile. New paced protocols are `seeded-platform-v2`,
+`seeded-investigation-v3` and `seeded-dungeon-v4`; retained town format assignments
+do not change.
+
+Adventure length is separate from mechanical difficulty. The first four rooms
+introduce one family each, followed by development and combinations of familiar
+mechanisms; rooms 7, 15, 23 and 31 are safe breathing rooms, before a final
+combined challenge. Longer tiers repeat this bounded curve rather than demanding
+faster reactions or mandatory damage. Pacing labels and objectives are bilingual.
+Platform rooms gain multiple independent mechanisms and varied lever/key positions.
+Dungeon gates combine latches, movable blocks and avoidable spikes, with three
+patrol geometries; introductory and breathing rooms contain no creatures.
+Investigations extend sequences to four/five steps and add archive seals linked
+to earlier solved sites. Retained marks, explicit symbol-cycle rules and hints
+allow deductions without forced backtracking; mistakes consume no evidence.
+
+Gameplay runs locally, including continuous 60 Hz platform physics. The server
+charges entry and locks ordinary journey actions, but receives no per-action
+updates. On completion, interruption or leaving, it replays a bounded input
+transcript and settles actual effects exactly once through existing receipts.
+Each room entry costs 3 minutes, 1 fatigue and 1 dirt; each trap adds 2 minutes,
+3 fatigue, 5 health damage and 4 dirt. Creature hits add 1 minute, 1 fatigue,
+2 health damage and 1 dirt. Normal journey health, survival and protections are
+simulated locally and checked again at settlement; interruptions stop play.
+There is no preview-heart cutoff or free healing from retry/supplies.
+
+Unfinished progress exists only in memory. Closing Quests preserves the current
+page's attempt; **reloading discards its unfinished progress, damage and food**,
+retains the paid entry, and offers a restart from the entrance that charges
+another entry. Leaving after reload can instead release the activity without
+another entry charge. Submitted settlement receipts remain retryable after a
+network failure/reload; a committed outcome is never awarded twice.
+
+Dungeon combat requires an owned usable knife, pinned at entry; there is no
+live sword in the equipment catalogue. Every creature is avoidable. Defeats
+grant up to **150 kcal**, capped at normal reserves, with no healing or meal
+counter increase. Food is provisional until settlement. Creatures remain gone
+within an attempt, including room revisits and position retry; new attempts
+respawn them and permit food again, without a permanent claim ledger.
+Existing authored/generated investigation v1 and dungeon v1/v2 runs retain their
+four-room per-action recovery rules. Earlier local platform v1, investigation v2
+and dungeon v3 runs retain their original templates; new entries use paced versions.
+No live treasure claim, inventory offering or adventure carving is activated yet.
+
+Open `/legend-preview.html?lang=en` (or `?lang=fr`) on the local server.
+This isolated preview starts inside the site; entrance searches belong to
+ordinary private journeys and are not simulated by its sample witness text.
+The isolated authored legend offers seeded platform exploration (8/16/32 required
+rooms by treasure tier, plus optional branches), a seeded inventory/dialogue investigation and
+a seeded top-down dungeon;
+switch formats above the scene. The platform map shows the main path, dead ends
+and your current room. New architecture changes the seed; restart preserves it.
+Use `&seed=1` to reproduce a layout. Down descends ladders or drops through shelves;
+E uses a nearby door or collects an object. First-aid kits recover preview health.
+Use `&format=investigation` or `&format=dungeon` to open either directly. All recover the same
+fictional film reel, with clues, retries/hints and a preview-only completion.
+None reads saves, starts model generation or grants journey rewards or item
+effects. Generated backgrounds are optional, muted scenery behind game geometry.
+Their published status is visible; Refresh artwork never starts generation.
+The playtest now counts room entries, distinct rooms and actual trap collisions,
+and shows a provisional time/fatigue/health/dirt receipt without applying it.
+Manual checkpoint retries do not count as trap hits.
+
+The dungeon uses four mechanism families (switch, block/plate, key/lock and timed
+spikes), with no adjacent repeated family. Bats/rats move one turn per action and
+can be avoided without taking damage. Select simulated **Unarmed**, **Knife** or
+**Sword** equipment to try optional combat; no journey inventory is accessed.
+Planned treasure tiers select 8, 16 or 32 required rooms with relative reward
+budgets 1, 2 or 3; no real rewards are assigned yet. Reproduce with
+`?format=dungeon&seed=1&tier=exceptional&weapon=sword`. Health is not restored by
+position/block retry; at zero health restart the preview.
+Game buttons show shortcuts, including **P** pause and **R** checkpoint/position
+retry. Directional touch controls stay cross-shaped on mobile. Dungeon movement
+is one tile per press, **E** interacts, **X** attacks, **Space** waits; platform
+**Space** jumps. Investigation shows location numbers, action letters and **I**
+for a hint. Shortcuts work only within the focused game.
+
+The investigation preview now also uses treasure tiers: 8/16/32 required puzzle
+sites. Four seeded families alternate without adjacent repeats: evidence
+deduction, cross-checked witnesses, assembling two supplies, and reproducing
+a clue-defined three-to-five-step sequence. Each has two authored variants, with seeded
+answers and sequences. Evidence remains visible, failed attempts consume nothing,
+and solved sites remain accessible. **A–E** select the displayed actions,
+**[ / ]** move to the previous/next site, **I** gives a prerequisite-aware hint.
+New architecture changes the seed for investigations too.
+The standalone preview has no live costs, claims or save access. Its separate
+server-backed eight-site trial is available only through the confirmed town entry;
+existing `cinema-investigation-v1` authored runs remain unchanged.
+
+Platform exploration now also uses the treasure-tier selector: modest/notable/
+exceptional budgets require 8/16/32 main rooms. Each room has a required challenge
+before its forward doors unlock: a jump-bell (E while rising beside it), a lever
+reached using a separate ladder, a collectible key, or a lever beyond a timed
+spike patch. A seeded shuffle bag includes every family once per four rooms and
+never repeats adjacent families. Previously opened gates and branch returns stay
+usable; retries preserve every activated component, including unfinished gates.
+Paced spikes have a four-second cycle with at least 2.3 seconds retracted;
+objectives show each room's actual timing. Jump over them or cross safely during retraction.
+The map still shows architecture first; clues below the scene explain the current
+challenge. These remain preview-only budgets, not actual treasure awards.
+
+All three formats share original 8-bit sprites and eight coordinated environment
+sets: iron crypt, mossy ruins, timber cellar, velvet cinema, old sewers, frozen
+cavern, abandoned forge and forgotten library. Walls, floors,
+door construction and props vary, not just colours; bats/rats have distinct
+silhouettes. Expand **Sprite key** below the scene for object labels. The seed
+retains the style across restarts; seeds `0` through `7` preview the eight sets.
+New settings use drain grates/pipes, ice fractures/crystals, riveted steel/anvils
+and bookshelves/carved doors, with distinct floor patterns and decorative props.
+Artwork changes do not alter collisions, costs or puzzle rules.
+
+To prepare one or both backgrounds with the existing free-only OVH model, set
+`ARCANE_START_IMAGES_TOKEN_FILE` to an existing private token file, then run:
+
+```sh
+.venv/bin/python scripts/legend_art.py
+# Optional: generate only the passage background.
+.venv/bin/python scripts/legend_art.py --scene passage
+# Reexport retained status/artwork without any provider call.
+.venv/bin/python scripts/legend_art.py --publish-only
+```
+
+The default private attempt database is `.cache/travel/legend-art.sqlite3`;
+published assets go to `public/legend-art/last-screening/`. Each of the two fixed
+fictional scenes has one durable attempt. Ready images are reused, and failed or
+interrupted calls are not automatically repeated. No paid fallback exists.
+The initial manifest honestly reports that artwork has not been generated.
+See [R-190](./doc/REQUIREMENTS.md#r-190---town-legends-and-treasure-adventures)
+and the short [implementation plan](./doc/TOWN_LEGENDS_PLAN.md).
+
 ## Private player feedback
 
 Bug/change reports contain the confirmed comment, an allowlisted diagnostic

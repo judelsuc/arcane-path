@@ -23,7 +23,7 @@ class Element {
   replaceChildren(...children) { this.children = children; }
 }
 
-function portraitFixture(t, fetchPortrait, { profile, onCharacter, onArtifactRumour,
+function portraitFixture(t, fetchPortrait, { profile, onCharacter, onArtifactRumour, legendTelling,
   role = "artisan", language = "en" } = {}) {
   const previous = globalThis.document, nodes = new Map(), revoked = [], errors = [];
   const get = id => {
@@ -47,7 +47,7 @@ function portraitFixture(t, fetchPortrait, { profile, onCharacter, onArtifactRum
     portrait: fetchPortrait, async meet() {}, async exchange() { return { factIds: [] }; },
   };
   const ui = setupConversations((key, args) => translate(language, key, args),
-    { context: () => current, characters, onCharacter, onArtifactRumour });
+    { context: () => current, characters, onCharacter, onArtifactRumour, legendTelling });
   return { ui, get, characters, current, revoked, errors, created: () => created,
     portrait: () => get("character-choices").children[0].children[0].children[0],
     status: () => get("character-choices").children[0].children[0].children[1].children[2] };
@@ -91,6 +91,28 @@ test("conversation replies contain only the character's in-world response", asyn
     translate("en", "character.fact.own_workshop"));
   assert.doesNotMatch(fixture.get("conversation-character-reply").textContent,
     /tools below|game rules|not testimony/i);
+});
+
+test("local legend topic uses the selected NPC voice and canonical clues without inventing character knowledge", async t => {
+  const requests = [], exchanges = [];
+  const f = portraitFixture(t, async () => new Blob(["portrait"]), {
+    legendTelling: (character, request) => {
+      if (request) requests.push(character.id);
+      return { text: "A remembered gathering. Search the woodland; match the slate disc.",
+        status: "AI-generated local legend; canonical clues retained." };
+    },
+  });
+  f.characters.exchange = async (_state, _character, topic) => { exchanges.push(topic); return { factIds: [] }; };
+  await f.ui.open();
+  await f.get("character-choices").children[0].children[0].click();
+  f.get("conversation-legends").click();
+  assert.deepEqual(requests, ["b".repeat(32)]);
+  assert.deepEqual(exchanges, ["services"], "legend topic is not sent as an unsupported character exchange");
+  assert.match(f.get("conversation-character-reply").textContent, /remembered gathering.*slate disc/);
+  assert.match(f.get("conversation-character-status").textContent, /canonical clues retained/);
+  f.current.state = { ...f.current.state, col: 1 };
+  f.ui.localize();
+  assert.equal(f.ui.currentCharacter(), undefined);
 });
 
 for (const source of ["meeting", "topic"]) {

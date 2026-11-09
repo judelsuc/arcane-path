@@ -26,8 +26,10 @@ import { validateDreams } from "./discovery-dreams.mjs";
 import { validateInterpretations } from "./discovery-interpretation.mjs";
 import { validateQuestTracking } from "./quest-objectives.mjs";
 import { validateArtifactInventory } from "./artifact-inventory.mjs";
+import { validateTreasures } from "./legend-rewards.mjs";
 import { validateParentWording } from "./parent-intimacy.mjs";
 import { validateParentRecollection } from "./parent-recollection.mjs";
+import { validateLegendActivity } from "./legend-session.mjs";
 
 export const SAVE_VERSION = 3;
 export class IncompatibleJourneySaveError extends Error {
@@ -63,6 +65,8 @@ export function validateSave(save) {
   validateSurvivalConfig(save.survival);
   validateEconomy(save.economy);
   const s = save.state;
+  validateLegendActivity(s);
+  if (s) validateTreasures(s);
   validateParentWording(s);
   validateParentRecollection(s);
   if (s?.lore !== undefined) {
