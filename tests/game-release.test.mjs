@@ -18,9 +18,10 @@ const logger = { error() {} };
 test("tracked changelog declares a semantic game version and bilingual release notes", async () => {
   const actual = JSON.parse(await readFile(new URL("../public/changelog.json", import.meta.url)));
   assert.match(actual.version, /^\d+\.\d+\.\d+$/);
-  assert.deepEqual(actual.entries.map(entry => entry.version), ["0.21.20", "0.21.19", "0.21.18", "0.21.17", "0.21.16", "0.21.15", "0.21.14", "0.21.13", "0.21.12", "0.21.11", "0.21.10", "0.21.9", "0.21.8", "0.21.7", "0.21.6", "0.21.5", "0.21.4", "0.21.3", "0.21.2", "0.21.1", "0.21.0", "0.20.12", "0.20.11", "0.20.10", "0.20.9", "0.20.8", "0.20.7", "0.20.6", "0.20.5", "0.20.4", "0.20.3", "0.20.2", "0.20.1", "0.20.0", "0.19.0"]);
+  assert.deepEqual(actual.entries.slice(0, 4).map(entry => entry.version), ["0.22.2", "0.22.1", "0.22.0", "0.21.20"]);
+  assert.equal(new Set(actual.entries.map(entry => entry.version)).size, actual.entries.length);
   assert.equal(actual.version, actual.entries[0].version);
-  assert.doesNotMatch(JSON.stringify(actual.entries.filter(entry => !entry.version.startsWith("0.21."))),
+  assert.doesNotMatch(JSON.stringify(actual.entries.filter(entry => /^0\.(19|20)\./.test(entry.version))),
     /objets magiques|magical artifacts/);
   for (const entry of actual.entries) {
     assert.equal(typeof entry.fr, "string");

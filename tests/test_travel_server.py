@@ -15,7 +15,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from travel_server import (COMPATIBLE_CHUNK_PIPELINE, PREVIOUS_CHUNK_PIPELINE, ChunkJobs, ChunkStore, OriginStore,
-                           CHUNK_SIZE, chunk_geometry, fetch_elevations, make_handler)
+                           CHUNK_SIZE, CHUNK_RETRY_COOLDOWN, chunk_geometry, fetch_elevations, make_handler)
 from http.server import ThreadingHTTPServer
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -193,6 +193,71 @@ class TravelServerTests(unittest.TestCase):
                 self.assertEqual(store.build("firmi", 1, 1)["chunk"]["x"], 1)
             with patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}):
                 self.assertEqual(store.build("firmi", 2, 2)["chunk"]["x"], 2)
+            assets.catalogue.close()
+
+    def test_shared_chunk_retries_recover_after_cooldown_without_resetting_successful_cache(self):
+        from asset_storage import local_storage
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            assets = local_storage(root / "assets")
+            store = ChunkStore(cache=root / "cache")
+            store.set_shared_assets(assets)
+            chunk_id = store.chunk_id("firmi", 1, 1)
+            for attempt in range(3):
+                token = store.claim_shared_chunk("firmi", 1, 1, False)
+                self.assertIsInstance(token, str)
+                store.fail_shared_chunk("firmi", 1, 1, token, ValueError("Temporary OSM outage"))
+                with assets.catalogue.connection() as db:
+                    row = db.execute("SELECT attempts,expires FROM travel_chunk_cache WHERE chunk_id=?",
+                                     (chunk_id,)).fetchone()
+                self.assertEqual(row[0], attempt + 1)
+                self.assertGreaterEqual(row[1], time.time() + CHUNK_RETRY_COOLDOWN - 2)
+            with self.assertRaisesRegex(ValueError, "retry cooldown"):
+                store.claim_shared_chunk("firmi", 1, 1, False)
+            with assets.catalogue.connection() as db:
+                self.assertEqual(db.execute("SELECT attempts FROM travel_chunk_cache WHERE chunk_id=?",
+                                            (chunk_id,)).fetchone()[0], 3)
+                db.execute("UPDATE travel_chunk_cache SET expires=? WHERE chunk_id=?", (time.time() - 1, chunk_id))
+            restarted = ChunkStore(cache=root / "restarted")
+            restarted.set_shared_assets(assets)
+            with patch("travel_server.fetch_elevations", return_value={"values": [100] * 64}):
+                data = restarted.build("firmi", 1, 1)
+            self.assertEqual(data["width"], 8)
+            with assets.catalogue.connection() as db:
+                self.assertEqual(db.execute("SELECT status,attempts,expires FROM travel_chunk_cache WHERE chunk_id=?",
+                                            (chunk_id,)).fetchone(), ("ready", 1, None))
+            with patch.object(store, "compute_chunk", side_effect=AssertionError("Reuse ready chunk")):
+                self.assertEqual(store.read("firmi", 1, 1), data)
+            assets.catalogue.close()
+
+    def test_legacy_exhausted_chunks_and_expired_worker_leases_recover_safely(self):
+        from asset_storage import local_storage
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            assets = local_storage(root / "assets")
+            store = ChunkStore(cache=root / "cache")
+            store.set_shared_assets(assets)
+            for status, x in [("failed", 1), ("running", 2)]:
+                chunk_id = store.chunk_id("firmi", x, 1)
+                with assets.catalogue.connection() as db:
+                    db.execute(
+                        "INSERT INTO travel_chunk_cache(chunk_id,region,pipeline,snapshot,x,y,status,created,attempts,expires) "
+                        "VALUES(?,?,?,?,?,?,?,?,3,?)",
+                        (chunk_id, "firmi", store.pipeline, store.fingerprints["firmi"], x, 1,
+                         status, time.time() - 86400, None if status == "failed" else time.time() - 1))
+                if status == "running":
+                    with self.assertRaisesRegex(ValueError, "retry cooldown"):
+                        store.claim_shared_chunk("firmi", x, 1, False)
+                    with assets.catalogue.connection() as db:
+                        db.execute("UPDATE travel_chunk_cache SET expires=? WHERE chunk_id=?", (time.time() - 1, chunk_id))
+                token = store.claim_shared_chunk("firmi", x, 1, False)
+                self.assertIsInstance(token, str)
+                with assets.catalogue.connection() as db:
+                    self.assertEqual(db.execute("SELECT status,attempts FROM travel_chunk_cache WHERE chunk_id=?",
+                                                (chunk_id,)).fetchone(), ("running", 1))
+                store.fail_shared_chunk("firmi", x, 1, token, ValueError("Test cleanup"))
             assets.catalogue.close()
 
     def test_pre_gallery_pipeline_keeps_local_and_shared_chunks_without_redownloading(self):

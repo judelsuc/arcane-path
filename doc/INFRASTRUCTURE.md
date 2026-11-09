@@ -176,6 +176,58 @@ explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
 ## Checkpoint deployed: town legends and composed treasures (9 November 2026)
 
+### Server-side map completion, 0.22.2
+
+The bounded worker [travel_prefetch.py](../scripts/travel_prefetch.py) completes
+one ring around player-requested chunks with shared storage, independently of
+browser activity. Its generated neighbours do not become seeds. Both chunk API
+surfaces persist interests in the additive `travel_chunk_interests` table.
+The [service](../infra/systemd/arcane-travel-prefetch.service) handles at most
+two chunks per invocation; the [timer](../infra/systemd/arcane-travel-prefetch.timer)
+waits two minutes after each run. Shared leases, usable cache assets and retry
+cooldowns prevent duplicate jobs or endless rapid provider retries.
+
+After schema initialization and installation, bootstrap existing ready chunks
+**once**, then enable the timer:
+
+```sh
+sudo -u arcane env ARCANE_ASSET_STORAGE_CONFIG_FILE=/etc/arcane-path/shared-storage.json \
+  /opt/arcane-path/.venv-shared-storage/bin/python \
+  /opt/arcane-path/scripts/travel_prefetch.py \
+  --cache /var/lib/arcane-path/cache/travel --seed-existing
+sudo systemctl daemon-reload
+sudo systemctl enable --now arcane-travel-prefetch.timer
+```
+
+Do not put `--seed-existing` in the periodic service: doing so would turn
+generated neighbours into fresh seeds and cause recursive expansion.
+Inspect progress with `systemctl status arcane-travel-prefetch.timer` and
+`journalctl -u arcane-travel-prefetch.service`. Provider failures are logged,
+produce a failed service run, and remain retryable after a cooldown.
+Three failed attempts now pause for 15 minutes instead of permanently stranding
+a chunk. Exhausted older rows without a retry expiry recover without deleting
+cached terrain. No paid content generation is involved.
+
+### Player marker hotfix, 0.22.1
+
+Runtime hotfix `2c4f3730c5d9d79dd2a3c6810cf501cf3e8bc7f3` adds the missing
+French and English `poi.leisure` labels. Previously a streamed sports pitch or
+festival venue could interrupt map localization before the player marker was
+restored. Only `i18n.mjs`, `public/changelog.json` and `public/release.json`
+were replaced, without a service restart or database changes. Each previous
+file matched the 0.22.0 manifest; each new file's disk and loopback HTTP
+SHA-256 matched the hotfix package. Unfinished event QTE changes were excluded.
+The 37 targeted translation, town, map-appearance, player-icon and cell-info
+tests passed.
+
+Rollback archive `/home/ubuntu/before-0.22.1-2c4f373.tar.gz`, root-owned 0600:
+SHA-256 `622a2a736df1653f2ac93c7cd2be0d1ae336ea898654a989cf2ccf2751f02fc3`.
+Restoring its three files and touching `public/release.json` restores the
+0.22.0 static checkpoint. No authenticated live journey was modified or
+replayed during deployment verification.
+
+### Original 0.22.0 checkpoint
+
 Runtime `4d14c4b4eca2ea998774371c92168504d70436f8`, game version **0.22.0**,
 packaged at `2026-11-09T16:23:05.995786+00:00`. The protected preview now includes
 shared town discoveries, entrance clues, three locally played adventure formats

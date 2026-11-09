@@ -1,6 +1,11 @@
 {
-  "version": "0.22.1",
+  "version": "0.22.2",
   "entries": [
+    {
+      "version": "0.22.2",
+      "fr": "La carte se complète sur le serveur, même navigateur fermé, dans une couronne limitée autour des morceaux demandés par les joueurs. Les voisins générés ne relancent pas l'expansion, et les échecs de téléchargement redeviennent réessayables après une pause.",
+      "en": "The server fills one bounded map ring around player-requested chunks, even with the browser closed. Generated neighbours do not expand further, and failed downloads become retryable after a cooldown."
+    },
     {
       "version": "0.22.1",
       "fr": "Les lieux de loisirs cartographiés ont désormais leur libellé en français et en anglais. Leur présence ne bloque plus le dessin de la carte avant le rétablissement du repère du personnage.",

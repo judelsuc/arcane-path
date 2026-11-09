@@ -38,6 +38,11 @@ def schemas(postgres):
             attempts INTEGER NOT NULL DEFAULT 0, asset_request TEXT, sha256 TEXT, error TEXT,
             UNIQUE(region,pipeline,snapshot,x,y))""",
         "CREATE INDEX IF NOT EXISTS travel_chunk_queue ON travel_chunk_cache(status,created,chunk_id)",
+        """CREATE TABLE IF NOT EXISTS travel_chunk_interests (
+            chunk_id TEXT PRIMARY KEY, region TEXT NOT NULL, pipeline TEXT NOT NULL,
+            snapshot TEXT NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL,
+            requested DOUBLE PRECISION NOT NULL)""",
+        "CREATE INDEX IF NOT EXISTS travel_chunk_interests_recent ON travel_chunk_interests(pipeline,requested)",
         """CREATE TABLE IF NOT EXISTS travel_provider_cooldowns (
             provider TEXT PRIMARY KEY, retry_at DOUBLE PRECISION NOT NULL)""",
         "INSERT INTO journey_store_locks(name) VALUES('travel-chunks') ON CONFLICT(name) DO NOTHING",

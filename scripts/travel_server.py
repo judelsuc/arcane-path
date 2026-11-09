@@ -60,6 +60,7 @@ from content_factory import CHARACTER_IMAGE_STYLE, OvhImageWriter, OvhWriter
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNK_SIZE = 8
+CHUNK_RETRY_COOLDOWN = 900
 CELL_METERS = 250
 LEGACY_CHUNK_PIPELINE = "7b8785f23301fe9ec1131aa44cb64d4f68781494db3dfb1aefefdc0520122fab"
 PREVIOUS_CHUNK_PIPELINE = "2f4ee763ae407722a3eaa363372b342e6a8aa5b9ec09cbf345ce069960f04df7"
@@ -443,6 +444,18 @@ class ChunkStore:
                 return enrich_sites(data, source)
         return data
 
+    def request_chunks(self, region, positions):
+        if self.assets is None:
+            return
+        with self.assets.catalogue.connection() as db:
+            for x, y in positions:
+                db.execute(self.assets.catalogue.sql(
+                    "INSERT INTO travel_chunk_interests(chunk_id,region,pipeline,snapshot,x,y,requested) "
+                    "VALUES(?,?,?,?,?,?,?) ON CONFLICT(chunk_id) DO UPDATE SET requested=excluded.requested "
+                    "WHERE travel_chunk_interests.requested<excluded.requested-60"),
+                    (self.chunk_id(region, x, y), region, self.pipeline, self.fingerprints[region],
+                     x, y, time.time()))
+
     def read(self, region, x, y):
         if self.assets is not None:
             shared = self.read_shared_chunk(region, x, y)
@@ -486,9 +499,9 @@ class ChunkStore:
         with self.assets.catalogue.connection() as raw:
             db = StoreConnection(raw, self.assets.catalogue, mapping=True)
             db.begin("travel-chunks")
-            db.execute(f"UPDATE travel_chunk_cache SET status='failed',error=?,expires=NULL "
+            db.execute(f"UPDATE travel_chunk_cache SET status='failed',error=?,expires=({now_sql})+? "
                        f"WHERE status='running' AND expires<=({now_sql}) AND attempts>=3",
-                       ("Travel chunk retry limit reached.",))
+                       ("Travel chunk retry cooldown after an expired worker lease.", CHUNK_RETRY_COOLDOWN))
             db.execute(f"UPDATE travel_chunk_cache SET status='queued',token=NULL,expires=NULL "
                        f"WHERE status='running' AND expires<=({now_sql}) AND attempts<3")
             db.execute("INSERT INTO travel_chunk_cache(chunk_id,region,pipeline,snapshot,x,y,status,created) "
@@ -499,16 +512,21 @@ class ChunkStore:
             if row["status"] == "ready" and not refresh:
                 return "ready"
             if row["status"] == "ready":
-                if row["attempts"] >= 3:
+                if row["attempts"] >= 3 and row["created"] + CHUNK_RETRY_COOLDOWN > time.time():
                     return "ready"
-                db.execute("UPDATE travel_chunk_cache SET status='queued',token=NULL,expires=NULL "
+                db.execute("UPDATE travel_chunk_cache SET status='queued',token=NULL,expires=NULL,"
+                           "attempts=CASE WHEN attempts>=3 THEN 0 ELSE attempts END "
                            "WHERE chunk_id=?", (chunk_id,))
             if row["status"] == "failed":
                 if row["attempts"] >= 3:
-                    if row["asset_request"]:
-                        return "ready"
-                    raise ValueError("Travel chunk retry limit reached; inspect server logs.")
-                db.execute("UPDATE travel_chunk_cache SET status='queued',error=NULL "
+                    if row["expires"] is not None and row["expires"] > time.time():
+                        if row["asset_request"]:
+                            return "ready"
+                        # Keep expired-lease recovery even when this request must wait.
+                        raw.commit()
+                        raise ValueError("Travel chunk retry cooldown; retry shortly.")
+                db.execute("UPDATE travel_chunk_cache SET status='queued',error=NULL,"
+                           "attempts=CASE WHEN attempts>=3 THEN 0 ELSE attempts END "
                            "WHERE chunk_id=?", (chunk_id,))
             if row["status"] in {"queued", "running"} and row["asset_request"]:
                 return "ready"
@@ -550,11 +568,13 @@ class ChunkStore:
         return data
 
     def fail_shared_chunk(self, region, x, y, token, error):
+        now_sql = clock(self.assets.catalogue)
         with self.assets.catalogue.connection() as db:
             db.execute(self.assets.catalogue.sql(
-                "UPDATE travel_chunk_cache SET status='failed',error=?,expires=NULL "
+                f"UPDATE travel_chunk_cache SET status='failed',error=?,"
+                f"expires=({now_sql})+? "
                 "WHERE chunk_id=? AND token=? AND status='running'"),
-                (str(error)[:1000], self.chunk_id(region, x, y), token))
+                (str(error)[:1000], CHUNK_RETRY_COOLDOWN, self.chunk_id(region, x, y), token))
 
     def elevation_cooldown_until(self):
         retry_at = self.elevation_retry_at
@@ -1149,6 +1169,7 @@ def make_handler(store, jobs, path_pool=None):
                                         type(v) is not int or abs(v) > 1000 for v in p)
                                     for p in positions)):
                             raise ValueError("Invalid cached-chunk positions.")
+                        store.request_chunks(region, positions)
                         result = []
                         for x, y in positions:
                             cached = store.read(region, x, y)
@@ -1206,6 +1227,7 @@ def make_handler(store, jobs, path_pool=None):
                         except (OSError, ValueError, KeyError) as error:
                             logging.warning("Weather request failed: %s", error)
                             return self.send_json(502, {"error": str(error)})
+                    store.request_chunks(region, [(x, y)])
                     status, payload = jobs.request(region, x, y)
                     return self.send_json(status, payload)
                 except (ValueError, KeyError) as error:

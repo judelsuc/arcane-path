@@ -1,0 +1,11 @@
+[Unit]
+Description=Continue bounded Arcane Path map completion without an open browser
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=2min
+RandomizedDelaySec=15
+Unit=arcane-travel-prefetch.service
+
+[Install]
+WantedBy=timers.target
