@@ -5,6 +5,7 @@ import { setupJourneyEvents } from "../journey-events-ui.mjs";
 import { acknowledgeJourneyEvent } from "../journey-events.mjs";
 import { translate } from "../i18n.mjs";
 import { journeyEventArt } from "../journey-event-art.mjs";
+import { eventChallenge, challengeOutcome } from "../event-qte.mjs";
 
 const economy = JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url)));
 const flush = () => new Promise(resolve => setImmediate(resolve));
@@ -23,6 +24,7 @@ for (const language of ["fr", "en"]) {
       focus() {}
       before() {}
     }
+
     const nodes = new Map(), el = id => {
       if (!nodes.has(id)) nodes.set(id, new Element());
       return nodes.get(id);
@@ -105,3 +107,97 @@ for (const language of ["fr", "en"]) {
     assert.equal(acknowledgements, 2);
   });
 }
+
+test("QTE dialog blocks continue, preserves active attempts during localization, and clears stale journey controls", async t => {
+  const original = { document: globalThis.document, MutationObserver: globalThis.MutationObserver };
+  t.after(() => Object.assign(globalThis, original));
+  let doc;
+  class Element {
+    children = []; handlers = {}; attributes = {}; dataset = {}; style = {};
+    hidden = false; disabled = false; open = false; textContent = "";
+    constructor(tag = "div") { this.tag = tag; this.ownerDocument = doc; }
+    append(...children) { for (const child of children) { this.children.push(child); if (typeof child !== "string") child.parent = this; } }
+    before(child) { if (child.parent) child.remove(); this.parent.children.splice(this.parent.children.indexOf(this), 0, child); child.parent = this.parent; }
+    replaceChildren(...children) { this.children = []; this.append(...children); this.textContent = children.map(c => typeof c === "string" ? c : c.textContent).join(""); }
+    remove() { if (this.parent) this.parent.children = this.parent.children.filter(c => c !== this); }
+    addEventListener(name, callback) { this.handlers[name] = callback; }
+    removeEventListener(name, callback) { if (this.handlers[name] === callback) delete this.handlers[name]; }
+    setAttribute(name, value) { this.attributes[name] = value; }
+    removeAttribute(name) { delete this.attributes[name]; }
+    querySelector(selector) { return all(this).find(node => `#${node.id}` === selector) ?? null; }
+    focus() { doc.activeElement = this; }
+    showModal() { this.open = true; }
+    close() { this.open = false; }
+  }
+  const all = element => [element, ...element.children.filter(child => typeof child !== "string").flatMap(all)];
+  const nodes = new Map(), el = selector => {
+    if (!nodes.has(selector)) nodes.set(selector, new Element());
+    return nodes.get(selector);
+  };
+  const timers = new Set();
+  doc = { documentElement: { lang: "en" }, createElement: tag => new Element(tag),
+    defaultView: { performance: { now: () => 0 }, setInterval: fn => { timers.add(fn); return fn; }, clearInterval: fn => timers.delete(fn) },
+    addEventListener() {}, removeEventListener() {},
+    querySelector: selector => selector === "dialog[open]" ? [...nodes.values()].find(e => e.open) : el(selector) };
+  globalThis.document = doc;
+  globalThis.MutationObserver = class { observe() {} };
+  const dialog = el("#journey-event-dialog"), proceed = el("#journey-event-continue");
+  dialog.append(proceed);
+  const event = { id: 1, opportunity: 1, kind: "coins", birthCard: "star", dailyCard: "moon",
+    occurrence: 0.315, positive: 0.55, minutes: 0, foodKcal: 0, moneyCents: 0, fatigue: 0, reputation: 0,
+    qte: { version: 1, status: "ready" } };
+  const current = { state: { startedAt: "first-journey", ended: null, tarotDay: "2026-10-18",
+    dailyTarotSeenDay: "2026-10-18", events: { pending: 1, history: [event] } }, economy, busy: false, saveStatus: "Saved" };
+  let starts = 0, settlements = 0, acknowledgements = 0;
+  const ui = setupJourneyEvents((key, args) => translate(doc.documentElement.lang, key, args), {
+    context: () => current,
+    pinEvent(host) { host.textContent = "Settled event pin"; },
+    beginChallenge(id, mode) {
+      starts++;
+      assert.equal(id, 1);
+      current.state.events.history[0] = { ...event, qte: { version: 1, status: "active", mode } };
+      ui.update();
+      return true;
+    },
+    settleChallenge(id, result) {
+      settlements++;
+      const active = current.state.events.history[0];
+      const status = challengeOutcome(active, active.qte.mode, result.trace, result.elapsedMs, result.skipped);
+      current.state.events.history[0] = { ...active, qte: { ...active.qte, status }, moneyCents: status === "success" ? 150 : 0 };
+      ui.update();
+      return true;
+    },
+    acknowledge() { acknowledgements++; current.state = acknowledgeJourneyEvent(current.state); },
+  });
+  ui.update(); await flush();
+  assert.equal(dialog.open, true);
+  assert.equal(proceed.disabled, true);
+  proceed.handlers.click();
+  assert.equal(acknowledgements, 0);
+  const buttons = () => all(dialog).filter(node => node.tag === "button");
+  buttons().find(node => node.textContent === "Untimed accessible mode").handlers.click();
+  const activeSection = all(dialog).find(node => node.tag === "section");
+  doc.documentElement.lang = "fr";
+  ui.update(); await flush();
+  assert.equal(all(dialog).find(node => node.tag === "section"), activeSection, "language switch cannot restart an active attempt");
+  assert.equal(timers.size, 1);
+  activeSection.handlers.keydown({ key: eventChallenge(event, "relaxed").keys[0], preventDefault() {}, stopPropagation() {} });
+  assert.equal(starts, 1);
+  assert.equal(settlements, 1);
+  assert.equal(proceed.disabled, false);
+  assert.equal(doc.activeElement, proceed);
+  assert.equal(timers.size, 0);
+  assert.equal(dialog.attributes["data-native-controls"], undefined);
+  const pin = dialog.querySelector("#journey-event-pin");
+  assert.equal(pin.textContent, "Settled event pin");
+  current.state = { ...current.state, startedAt: "second-journey", events: { pending: 1, history: [event] } };
+  ui.update();
+  assert.equal(pin.hidden, true, "previous event's pin must not remain actionable on an unresolved event");
+  assert.equal(proceed.disabled, true);
+  const staleStart = buttons().find(node => node.textContent === "Commencer · 6 secondes");
+  ui.reset();
+  staleStart.handlers.click();
+  assert.equal(starts, 1);
+  assert.equal(timers.size, 0);
+  assert.equal(dialog.open, false);
+});

@@ -1528,3 +1528,9 @@ dialog p { margin: 12px 0; }
 .treasure-ui-preview span { display: block; margin-top: 6px; font-size: .85em; }
 .treasure-inventory-item { overflow-wrap: anywhere; }
 .treasure-inventory-item button { min-height: 48px; margin: 4px; max-width: 100%; white-space: normal; }
+.event-qte { border: 1px solid currentColor; padding: 12px; margin-block: 12px; overflow-wrap: anywhere; }
+.event-qte button { min-height: 48px; max-width: 100%; margin: 4px; white-space: normal; }
+.event-qte-target { font-weight: bold; }
+.event-qte-meter { position: relative; height: 32px; border: 2px solid currentColor; margin-block: 12px; }
+.event-qte-meter::before { content: ""; position: absolute; left: 35%; width: 30%; height: 100%; background: #537952; outline: 2px dashed currentColor; outline-offset: -3px; }
+.event-qte-marker { position: absolute; top: 0; height: 100%; width: 4px; background: currentColor; transform: translateX(-50%); }

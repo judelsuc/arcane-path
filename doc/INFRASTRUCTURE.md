@@ -212,6 +212,27 @@ Three failed attempts now pause for 15 minutes instead of permanently stranding
 a chunk. Exhausted older rows without a retry expiry recover without deleting
 cached terrain. No paid content generation is involved.
 
+Deployed and verified on 9 November 2026 as runtime
+`3abea761b9a82145bda07204439b692e2b1ac832`, game version **0.22.2**.
+The first pass retained 745 cached seeds. Two real bounded worker runs each
+selected two chunks and published both successfully (`failed: 0`), independently
+of browser requests. The timer is enabled; application and nginx stayed healthy.
+The raster pipeline remains
+`087f3475742375f556587ba45e495afb16b457e08e9550718847e7464affd3ce`.
+New event QTE source was excluded from both deployment packages.
+Validation: nine focused Python worker/recovery/grid-identity tests and all
+1,686 JavaScript tests passed. Elevation's existing HTTP 429 cooldown remains
+visible and does not prevent publishing the usable OSM grid.
+
+Pre-deployment runtime backup:
+`/home/ubuntu/before-0.22.2-8265157.tar.gz`, SHA-256
+`9f7b132e53cc83b0200b8fd014338305bc7f3d3594b43e0fc79855a10905b3d2`.
+To roll back, first disable/stop `arcane-travel-prefetch.timer` and its service,
+restore the four existing runtime files from that archive and touch
+`public/release.json`, then restart the application. Leave the additive
+interest table and verified chunk assets intact. The optional worker files
+may remain unused while its timer is disabled.
+
 ### Player marker hotfix, 0.22.1
 
 Runtime hotfix `2c4f3730c5d9d79dd2a3c6810cf501cf3e8bc7f3` adds the missing

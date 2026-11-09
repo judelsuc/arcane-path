@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { JOURNEY_EVENTS, EVENT_CATALOGUE, eventChances, selectJourneyEvent, advanceJourneyEvents,
-  acknowledgeJourneyEvent, validateJourneyEvents, journeyEventText, journeyEventTextParts, applyJourneyEvent, eventPlaytestEnabled } from "../journey-events.mjs";
+import { JOURNEY_EVENTS, EVENT_CATALOGUE, eventChances, selectJourneyEvent, advanceJourneyEvents as queueJourneyEvents,
+  beginJourneyEventChallenge, settleJourneyEventChallenge, acknowledgeJourneyEvent,
+  validateJourneyEvents, journeyEventText, journeyEventTextParts, applyJourneyEvent, eventPlaytestEnabled } from "../journey-events.mjs";
+import { eventChallenge } from "../event-qte.mjs";
 import { startEconomy, finishAction } from "../economy.mjs";
 import { startSurvival, restSurvival } from "../survival.mjs";
 import { beginPressures } from "../pressures.mjs";
@@ -17,6 +19,16 @@ const json = name => JSON.parse(readFileSync(new URL(name, import.meta.url)));
 const economy = json("../public/economy.json"), survival = json("../public/config.json").survival;
 const map = json("../public/map.json");
 const info = { latitude: 44.54, longitude: 2.3, terrain: "road" };
+function advanceJourneyEvents(previous, moved, eventInfo, survival, economy) {
+  const pending = queueJourneyEvents(previous, moved, eventInfo, survival, economy);
+  const event = pending.events?.history.at(-1);
+  if (event?.qte?.status !== "ready") return pending;
+  const active = beginJourneyEventChallenge(pending, event.id);
+  const rules = eventChallenge(event);
+  const trace = EVENT_CATALOGUE[event.kind].polarity === "negative" ? [] : rules.type === "timing"
+    ? [{ key: "Space", atMs: 1000 }] : rules.keys.map((key, index) => ({ key, atMs: 100 + index * 100 }));
+  return settleJourneyEventChallenge(active, event.id, trace, 1000, eventInfo, survival, economy);
+}
 function start(seed = 0) {
   const s = startEconomy(startSurvival(14, 10, Date.UTC(2026, 9, 17, 12) + seed,
     "balanced", survival), economy, () => 0);
@@ -63,7 +75,8 @@ test("local playtest checks at exactly five minutes and saves outside normal jou
     import assert from "node:assert/strict";
     import { readFileSync } from "node:fs";
     globalThis.location = { hostname: "127.0.0.1", search: "?eventPlaytest=1" };
-    const { JOURNEY_EVENTS, advanceJourneyEvents, acknowledgeJourneyEvent } = await import("./journey-events.mjs");
+    const { JOURNEY_EVENTS, advanceJourneyEvents, acknowledgeJourneyEvent,
+      beginJourneyEventChallenge, settleJourneyEventChallenge } = await import("./journey-events.mjs");
     const { JOURNEY_SAVE_PREFIX, createJourneyStore } = await import("./journey-save.mjs");
     const { startSurvival, restSurvival } = await import("./survival.mjs");
     const { startEconomy, finishAction } = await import("./economy.mjs");
@@ -90,7 +103,11 @@ test("local playtest checks at exactly five minutes and saves outside normal jou
     assert.equal(data.get("arcane-journey-v1:firmi"), "normal save untouched");
     assert.equal(JOURNEY_SAVE_PREFIX, "arcane-event-playtest-v1:");
     assert.deepEqual(createJourneyStore(storage).read("firmi").state.events, state.events);
-    if (state.events.pending) state = acknowledgeJourneyEvent(state);
+    if (state.events.pending) {
+      state = beginJourneyEventChallenge(state, state.events.pending);
+      state = settleJourneyEventChallenge(state, state.events.pending, [], 0, info, survival, economy, true);
+      state = acknowledgeJourneyEvent(state);
+    }
     step(5); assert.equal(state.events.checks, 2);
   `], { cwd: new URL("..", import.meta.url), stdio: "pipe" });
 });

@@ -1,19 +1,69 @@
 # Requirements tracked outside the design PDF
 
+## R-193 - Bounded server-side map completion
+
+- Complete map data even when the browser is closed, rather than relying only
+  on client-side downloads. Explicit user choice: one surrounding ring around
+  chunks requested by players, including the eight adjacent chunks (~2 km).
+- Keep player-requested seeds separate from generated neighbours. Worker output
+  must not become another seed: no unbounded recursive expansion.
+- Bootstrap the first pass explicitly from existing cached chunks. Thereafter
+  browser chunk and cached-chunk requests persist interests in shared storage.
+- Run a bounded server timer, at most two chunks per invocation with a two-minute
+  pause afterward. Reuse shared leases, cached results and provider cooldowns;
+  active jobs and overlapping rings must not duplicate downloads.
+- Retry transient failures after a cooldown. Three failures must not permanently
+  strand a chunk, including exhausted rows created before this change.
+- Preserve real OSM geometry and grid identity. Missing data remains missing
+  until verified; do not fabricate terrain or remove usable cached cells.
+
 ## R-191 - Quick-time challenges for journey events (after legends)
 
-- Implement after the town legends work (R-190), not as part of the current
-  legend increment. Existing journey-event behavior remains unchanged meanwhile.
+- Implement after the town legends work (R-190).
 - Journey events should involve a short quick-time event (QTE): success can
   avoid a negative consequence or earn a positive reward, depending on the event.
   The interaction should fit the situation rather than be an unrelated mini-game.
-- Before implementation, define event coverage, success/failure/timeout outcomes,
-  difficulty and timing, accessible alternatives, and keyboard/touch controls.
-  Proposed direction: varied short challenges with visible shortcuts and clear
-  mobile controls, rather than one repeated reflex test.
-- Resolve each event outcome once through the existing authoritative journey
-  accounting; retries, reloads or duplicate submissions must not duplicate
-  rewards or penalties. Detailed rules and implementation are still pending.
+- All 37 events participate, including atmospheric and companion events.
+  Success earns the ordinary positive reward or avoids the ordinary negative
+  penalty; failure, timeout or skipping gives no reward or the ordinary penalty.
+  Atmospheric stories remain mechanically neutral regardless of the result.
+- Use contextual timing, three-direction sequences and observation challenges.
+  Normal mode lasts six seconds, beginning only after an explicit start.
+  Arrow keys and labelled touch buttons perform directions; Space or the action
+  button stops a timing marker in its outlined 35–65% zone. No extra random
+  success roll follows the input.
+- An equally rewarding untimed accessible mode removes deadlines and replaces
+  moving-marker timing with observation. Instructions and targets stay visible.
+  No repeated-key mashing or audio/colour-only instructions are required.
+- Save the ready event before interaction and the active attempt before starting
+  its timer. Resolve once through existing client-owned journey accounting,
+  retaining the bounded input trace and validated result. A started attempt
+  restored after reload must settle as unsuccessful; it cannot start again.
+  Hiding the tab also ends an active attempt unsuccessfully. A ready event can
+  be restored without a reroll. Failed saves remain visible and retry only the
+  same result, never replay the challenge or effects.
+- Legacy events without challenge metadata keep their already-applied effects
+  and acknowledgement flow. Do not retroactively grant or remove rewards.
+  Event effects still obey existing survival, companion and midnight rules.
+  This does not make ordinary client-owned travel server-authoritative.
+
+## R-192 - Pursuer pressure and terrain-grounded escape (design only)
+
+- Proposed pressure: a persistent, fictional serial-killer pursuer can eventually
+  find the player and trigger a jump-and-run escape. The user's chosen consequence
+  of capture is the end of the journey, presented without graphic violence.
+- Implementation is deferred until the pressure rules are agreed. Do not activate
+  surprise lethal encounters while implementing event QTEs.
+- Proposed direction, not yet approved: visible warning stages, a grace period,
+  deterministic retained pursuit progress rather than rerolling on reload,
+  opportunities to gain distance, and a cooldown after a successful escape.
+  Decide whether movement, resting, settlements and transport alter the pressure.
+- Escape backgrounds and obstacles must reflect the actual cell terrain:
+  woodland, settlement streets, open country or rocky ground. Scenery must not
+  invent real mapped landmarks or change terrain/collision facts accidentally.
+- Before implementation, agree encounter cadence, escape length/difficulty,
+  accessibility options, safe zones and what persists across reloads. A fatal
+  outcome requires clear advance warning and a tested, achievable escape route.
 
 ## R-190 - Town legends and treasure adventures
 

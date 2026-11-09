@@ -3,8 +3,10 @@ import { journeyEventTextParts, eventPlaytestEnabled, JOURNEY_EVENTS } from "./j
 import { journeyEventArt } from "./journey-event-art.mjs";
 import { NARRATIVE_BRIEFS, LOST_PLAYER_DREAM } from "./live-narrative.mjs";
 import { setGenerating } from "./feedback.mjs";
+import { mountEventChallenge } from "./event-qte-ui.mjs";
 
-export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrative, rememberWording, illustrations }) {
+export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrative, rememberWording, illustrations,
+  beginChallenge, settleChallenge }) {
   const dialog = document.querySelector("#journey-event-dialog");
   const proceed = document.querySelector("#journey-event-continue");
   const illustration = illustrations ? document.createElement("figure") : null;
@@ -18,6 +20,8 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
     document.body.prepend(banner);
   }
   let queued = false;
+  let challenge, challengeKey, challengeHost, challengeLanguage;
+  const identity = state => `${state?.serverJourney?.id ?? state?.startedAt}`;
   let wordingId, wording;
   const wordingStatus = narrative ? document.createElement("p") : null;
   if (wordingStatus) {
@@ -37,6 +41,34 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
     const event = current?.state.events?.history.at(-1);
     if (!dialog.open || !event) return;
     const language = document.documentElement.lang === "en" ? "en" : "fr";
+    const unresolved = ["ready", "active"].includes(event.qte?.status);
+    const previousPin = pinEvent ? dialog.querySelector("#journey-event-pin") : null;
+    if (previousPin) previousPin.hidden = unresolved;
+    proceed.disabled = unresolved;
+    const owner = identity(current.state);
+    const nextChallenge = unresolved ? `${owner}:${event.id}` : null;
+    if (challengeKey !== nextChallenge || unresolved && event.qte.status === "ready" && challengeLanguage !== language) {
+      if (challengeKey && !nextChallenge) proceed.focus();
+      challenge?.destroy(); challenge = undefined;
+      challengeKey = nextChallenge;
+      challengeLanguage = language;
+      if (unresolved) {
+        challengeHost ??= document.createElement("div");
+        proceed.before(challengeHost);
+        dialog.setAttribute("data-native-controls", "");
+        challenge = mountEventChallenge(challengeHost, { event, language,
+          begin: mode => {
+            if (identity(context()?.state) !== owner) throw new Error(t("eventQte.unavailable"));
+            return beginChallenge(event.id, mode);
+          },
+          settle: result => {
+            if (identity(context()?.state) !== owner) throw new Error(t("eventQte.unavailable"));
+            return settleChallenge(event.id, result);
+          },
+          onError: reason => console.error("Event challenge failed:", reason),
+        });
+      } else dialog.removeAttribute?.("data-native-controls");
+    }
     const brief = `event.${event.kind}`;
     const imageReady = illustration &&
       illustrations.render(illustration, current.state, brief, `event:${event.id}`, t);
@@ -73,7 +105,7 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
       chance: Math.round(event.occurrence * 100), positive: Math.round(event.positive * 100),
     });
     document.querySelector("#journey-event-save").textContent = current.saveStatus;
-    if (pinEvent) {
+    if (pinEvent && !unresolved) {
       let pinned = dialog.querySelector("#journey-event-pin");
       if (!pinned) {
         pinned = document.createElement("div");
@@ -101,11 +133,13 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
     });
   }
   proceed.addEventListener("click", () => {
-    if (!context()?.state.events?.pending) return;
+    if (proceed.disabled || !context()?.state.events?.pending) return;
     try {
       acknowledge();
       dialog.close();
       wordingId = undefined;
+      challenge?.destroy(); challenge = undefined; challengeKey = undefined;
+      dialog.removeAttribute?.("data-native-controls");
       document.querySelector("#ascii-map").focus({ preventScroll: true });
     } catch (reason) {
       console.error("Unable to acknowledge journey event:", reason);
@@ -118,5 +152,10 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
   });
   narrative?.subscribe(localize);
   illustrations?.subscribe(localize);
-  return { update, reset() { wordingId = undefined; wording = null; dialog.close(); } };
+  return { update, reset() {
+    challenge?.destroy(); challenge = undefined; challengeKey = undefined;
+    challengeHost?.remove(); challengeHost = undefined;
+    dialog.removeAttribute?.("data-native-controls");
+    wordingId = undefined; wording = null; dialog.close();
+  } };
 }

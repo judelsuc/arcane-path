@@ -56,7 +56,8 @@ import { trailClue } from "./trail-actions.mjs";
 import { beginExploration, applyFieldSearch, askAboutClue, fieldClueText } from "./trail-search.mjs";
 import { setupNeedsNotices } from "./needs-notices.mjs";
 import { setupOpeningStory } from "./opening-story-ui.mjs";
-import { advanceJourneyEvents, acknowledgeJourneyEvent } from "./journey-events.mjs";
+import { advanceJourneyEvents, acknowledgeJourneyEvent, beginJourneyEventChallenge,
+  settleJourneyEventChallenge } from "./journey-events.mjs";
 import { setupJourneyEvents } from "./journey-events-ui.mjs";
 import { createLiveNarrative, LOST_PLAYER_DREAM } from "./live-narrative.mjs";
 import { CLOSING_STORY, closingStoryText } from "./closing-story.mjs";
@@ -278,6 +279,32 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     context: () => active && state && economyData ? {
       state, economy: economyData, busy, saveStatus: saveStatus.textContent,
     } : null,
+    beginChallenge(id, mode) {
+      if (!active || busy) throw new Error(t("eventQte.unavailable"));
+      const previous = state;
+      state = beginJourneyEventChallenge(state, id, mode);
+      autosave();
+      if (saveError) { state = previous; throw new Error(saveError); }
+      return true;
+    },
+    settleChallenge(id, result) {
+      if (!active || busy) throw new Error(t("eventQte.unavailable"));
+      const current = economyContext();
+      const event = state.events?.history.at(-1);
+      if (event?.id === id && ["success", "failure", "skipped"].includes(event.qte?.status)) {
+        autosave();
+        if (saveError) throw new Error(saveError);
+        localize();
+        return true;
+      }
+      if (!current) throw new Error(t("eventQte.unavailable"));
+      state = settleJourneyEventChallenge(state, id, result.trace, result.elapsedMs,
+        current.info, survivalConfig, economyData, result.skipped);
+      autosave();
+      if (saveError) throw new Error(saveError);
+      localize();
+      return true;
+    },
     acknowledge() {
       state = acknowledgeJourneyEvent(state);
       autosave();

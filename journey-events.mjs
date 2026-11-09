@@ -5,6 +5,7 @@ import { changeReputation } from "./pressures.mjs";
 import { healthValue } from "./health.mjs";
 import { companionRecord, companionText, validateCompanionRecord } from "./companion-presence.mjs";
 import { journeyEquipmentModifiers } from "./equipment.mjs";
+import { eventChallenge, challengeOutcome, validateEventChallenge } from "./event-qte.mjs";
 
 export const EVENT_CATALOGUE = Object.freeze({
   food: { polarity: "positive", food: 300 },
@@ -141,25 +142,58 @@ export function advanceJourneyEvents(previous, moved, info, survival, economy) {
   if (!kind) return next;
   const birthCard = moved.birthCard, dailyCard = moved.dailyCard;
   const chances = eventChances(moved, economy);
-  next = applyJourneyEvent(next, kind, info, survival, economy, () => draw(moved, checks, "daily-card"));
   const count = ledger.count + 1;
   const previousWording = ledger.history.findLast(event => event.kind === kind)?.wordingVariant;
   const record = { id: count, opportunity: checks, kind, birthCard, dailyCard,
     ...companionRecord(moved),
     wordingVariant: ((previousWording ?? -1) + 1) % 3,
     ...chances, elapsedMinutes: moved.elapsedMinutes, col: moved.col, row: moved.row, terrain: info.terrain,
+    qte: { version: 1, status: "ready" },
     minutes: next.elapsedMinutes - moved.elapsedMinutes,
     foodKcal: next.reserveKcal - moved.reserveKcal,
     moneyCents: next.walletCents - moved.walletCents, fatigue: next.fatigue - moved.fatigue,
     reputation: reputation(next) - reputation(moved),
     health: healthValue(next) - healthValue(moved), awakeHours: next.awakeHours - moved.awakeHours,
-    ...(EVENT_CATALOGUE[kind].speed ? { speedEffect: { ...next.speedEffect } } : {}) };
+  };
   return { ...next, events: { version: 1, walkedMinutes, checks, count, pending: count,
     history: [...ledger.history, record].slice(-JOURNEY_EVENTS.historyLimit) } };
 }
 
+export function beginJourneyEventChallenge(state, id, mode = "normal") {
+  const event = state.events?.history.at(-1);
+  if (state.ended || state.events?.pending !== id || event?.id !== id || event.qte?.status !== "ready") {
+    throw new Error("This event challenge cannot be started.");
+  }
+  eventChallenge(event, mode);
+  return { ...state, events: { ...state.events, history: state.events.history.map(record => record.id === id
+    ? { ...record, qte: { version: 1, status: "active", mode } } : record) } };
+}
+
+export function settleJourneyEventChallenge(state, id, trace, elapsedMs, info, survival, economy, skipped = false) {
+  const event = state.events?.history.at(-1);
+  if (state.ended || state.events?.pending !== id || event?.id !== id || event.qte?.status !== "active" ||
+      event.col !== state.col || event.row !== state.row || event.elapsedMinutes !== state.elapsedMinutes ||
+      event.terrain !== info.terrain) throw new Error("This event challenge cannot be settled.");
+  const status = challengeOutcome(event, event.qte.mode, trace, elapsedMs, skipped);
+  const rule = EVENT_CATALOGUE[event.kind];
+  const applies = rule.polarity === "positive" ? status === "success" : rule.polarity === "negative" && status !== "success";
+  const next = applies ? applyJourneyEvent(state, event.kind, info, survival, economy,
+    () => draw(state, event.opportunity, "daily-card")) : state;
+  const record = { ...event, qte: { ...event.qte, status, trace: structuredClone(trace), elapsedMs },
+    minutes: next.elapsedMinutes - state.elapsedMinutes, foodKcal: next.reserveKcal - state.reserveKcal,
+    moneyCents: next.walletCents - state.walletCents, fatigue: next.fatigue - state.fatigue,
+    reputation: reputation(next) - reputation(state), health: healthValue(next) - healthValue(state),
+    awakeHours: next.awakeHours - state.awakeHours,
+    ...(applies && rule.speed ? { speedEffect: { ...next.speedEffect } } : {}) };
+  return { ...next, events: { ...next.events,
+    history: next.events.history.map(item => item.id === id ? record : item) } };
+}
+
 export function acknowledgeJourneyEvent(state) {
   if (!state.events?.pending) throw new Error("No journey event to acknowledge.");
+  if (["ready", "active"].includes(state.events.history.at(-1)?.qte?.status)) {
+    throw new Error("Resolve the event challenge before continuing.");
+  }
   return { ...state, events: { ...state.events, pending: null } };
 }
 
@@ -174,7 +208,10 @@ export function journeyEventTextParts(record, t) {
   })} `;
   const companion = ["forestBoar", "forestDogs", "food", "picnic", "waterBreak", "catNap", "whiteDeer", "ribbon"]
     .includes(record.kind) ? companionText(record, `event.${record.kind}`, t) : "";
-  if (EVENT_CATALOGUE[record.kind].polarity === "story") return [narrative,
+  const challenge = record.qte ? [t(`eventQte.${record.qte.status}`), " "] : [];
+  if (record.qte && ["ready", "active"].includes(record.qte.status)) return [narrative, ...challenge,
+    ...(companion ? [" ", companion] : [])];
+  if (EVENT_CATALOGUE[record.kind].polarity === "story") return [narrative, ...challenge,
     t("journeyEventStoryOnly"), ...(companion ? [" ", companion] : [])];
   const template = (key, values, benefits) => t(key,
     Object.fromEntries(Object.keys(values).map(name => [name, `{${name}}`])))
@@ -183,7 +220,7 @@ export function journeyEventTextParts(record, t) {
       if (!Object.hasOwn(values, name) || text !== `{${name}}`) return text;
       return { text: values[name], feedback: benefits[name] > 0 ? "success" : benefits[name] < 0 ? "failure" : "" };
     });
-  const parts = [narrative, ...template("journeyEventEffects", {
+  const parts = [narrative, ...challenge, ...template("journeyEventEffects", {
     minutes: record.minutes.toFixed(0), food: signed(record.foodKcal),
     money: signed(record.moneyCents / 100, 2), fatigue: signed(record.fatigue, 1),
     reputation: signed(record.reputation), health: signed(record.health ?? 0, 1),
@@ -213,6 +250,16 @@ export function validateJourneyEvents(state, economy, survival) {
   let lastTime = -1, lastOpportunity = 0;
   for (let i = 0; i < e.history.length; i++) {
     const r = e.history[i];
+    if (r?.qte !== undefined) {
+      validateEventChallenge(r);
+      const unresolved = ["ready", "active"].includes(r.qte.status);
+      if (unresolved && (e.pending !== r.id || i !== e.history.length - 1 ||
+          r.elapsedMinutes !== state.elapsedMinutes || r.col !== state.col || r.row !== state.row)) fail();
+      const noEffects = unresolved || EVENT_CATALOGUE[r.kind]?.polarity === "positive" && r.qte.status !== "success" ||
+        EVENT_CATALOGUE[r.kind]?.polarity === "negative" && r.qte.status === "success";
+      if (noEffects && ([r.minutes, r.foodKcal, r.moneyCents, r.fatigue, r.reputation, r.health, r.awakeHours]
+        .some(value => value !== 0) || r.speedEffect !== undefined)) fail();
+    }
     validateCompanionRecord(r);
     if (!r || r.id !== e.count - e.history.length + i + 1 ||
         !integer(r.opportunity) || r.opportunity <= lastOpportunity || r.opportunity > e.checks ||

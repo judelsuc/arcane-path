@@ -844,6 +844,17 @@ Il ne s'agit pas d'une nouvelle jauge de sante ; recharger ne change pas ses bes
 
 ### Couche 13 : evenements du voyage
 
+Chaque nouvel evenement, y compris les rencontres d'ambiance, propose un defi
+contextuel : arreter un repere, suivre une sequence de directions ou reproduire
+une direction. Les consignes se lisent avant le depart du chronometre de
+6 secondes ; un mode accessible sans limite de temps est toujours disponible.
+Reussir donne la recompense habituelle ou evite la penalite. Echouer, passer
+ou depasser le delai ne donne aucune recompense ou applique la penalite normale.
+Les rencontres d'ambiance restent sans effet mecanique. Les effets ne sont
+appliques qu'une fois le defi resolu ; masquer l'onglet ou recharger un defi
+commence ne permet pas de le recommencer. Les anciens evenements deja regles
+gardent leurs effets et n'imposent pas de defi retroactif.
+
 Chaque evenement rencontre est automatiquement epingle une seule fois dans le
 carnet, aux cotes des photos et cartes : meme illustration ASCII, date et effets
 reels. Ces pages restent annotables et font partie de l'export PDF.
@@ -2596,11 +2607,11 @@ revient au joueur. Les cases `?` restent explicitement non cartographiees.
 
 Les morceaux de 8 x 8 cases suivent une grille geographique alignee par region,
 avec projection constante, y compris aux indices negatifs. La fenetre affiche
-24 x 24 cases autour du morceau courant. Les quatre voisins cardinaux sont
+24 x 24 cases autour du morceau courant. Les huit morceaux voisins sont
 precharges en arriere-plan : direction de marche en premier, cotes selon
-la proximite de leur frontiere, puis arriere. Un changement de direction
+la proximite de leur frontiere, puis arriere et diagonales. Un changement de direction
 reordonne les demandes en attente sans interrompre celles en cours ni
-retelecharger les morceaux en cache ; les diagonales inconnues apparaissent en `?`.
+retelecharger les morceaux en cache ; les morceaux encore inconnus apparaissent en `?`.
 Avant les preparations, une lecture groupee du cache serveur restaure les voisins
 deja termines, sans lancer de telechargement. Elle contourne la file des deux
 preparations lentes : des voisins caches ne restent plus en `?` derriere elles.
@@ -2609,6 +2620,17 @@ Le client limite les preparations simultanees a deux et conserve au plus 25 morc
 en memoire. Les demandes de deplacement sont prioritaires devant celles encore
 en file d'attente. Le serveur limite lui aussi ses travailleurs a deux et
 sa file a dix travaux, avec deduplication des demandes identiques.
+
+Sur le serveur partage, les demandes de morceaux sont retenues independamment
+du navigateur. Le travailleur [travel_prefetch.py](scripts/travel_prefetch.py)
+complete une seule couronne de huit voisins autour de ces demandes, meme
+navigateur ferme. Ses voisins generes ne deviennent jamais des points de depart
+pour une autre couronne. Le minuteur serveur prepare au plus deux morceaux par
+execution, puis attend deux minutes. Les caches deja presents amorcent une
+premiere passe explicite ; les travaux actifs et les pauses des fournisseurs
+sont respectes. Trois echecs declenchent une pause de quinze minutes, pas un
+blocage definitif. Les `?` restent visibles tant que les vraies donnees OSM ne
+sont pas disponibles.
 
 Les OSM compresses, altitudes, provenance et grilles sont conserves dans
 [.cache/travel/](./.cache/travel/) (ignore par Git). Les extraits inclus sont

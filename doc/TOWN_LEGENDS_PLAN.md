@@ -721,9 +721,17 @@ work well independently. Hybrid sites are a later extension.
 
 ## Follow-up after legends: journey-event QTEs (R-191)
 
-After completing the legends work, add short, situation-appropriate quick-time
-challenges to journey events. Success should either avoid an event disadvantage
-or earn its reward. This is a separate deferred requirement, not an expansion of
-the current legend implementation. Define event coverage, failure/timeout rules,
-accessible alternatives and keyboard/touch interaction before implementing it;
-see [R-191](REQUIREMENTS.md#r-191---quick-time-challenges-for-journey-events-after-legends).
+The next local increment covers all 37 events with contextual timing, directional
+sequences or observation. Effects wait for the outcome: success earns the ordinary
+reward or avoids the ordinary penalty; failure/timeout/skip does not earn a
+reward or applies the ordinary penalty. Atmospheric stories stay neutral.
+Six-second normal mode has an equally rewarding untimed accessible alternative.
+The started attempt is saved, preventing a free restart after reload; old events
+without challenge metadata retain their already-applied outcomes. This uses
+existing client-owned event accounting, not the treasure settlement protocol.
+See [R-191](REQUIREMENTS.md#r-191---quick-time-challenges-for-journey-events-after-legends).
+
+A serial-killer pursuer with terrain-grounded platform escapes is **design only**.
+The user chose journey end on capture; pressure cadence, warnings, grace periods
+and escape difficulty still need agreement before implementation.
+See [R-192](REQUIREMENTS.md#r-192---pursuer-pressure-and-terrain-grounded-escape-design-only).
