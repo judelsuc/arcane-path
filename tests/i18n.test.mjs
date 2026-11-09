@@ -54,6 +54,16 @@ test("reports missing translations and parameters explicitly", () => {
   assert.throws(() => translate("en", "scale"), /Missing parameter/);
 });
 
+test("all rasterizer POI categories, including streamed leisure venues, have bilingual labels", () => {
+  for (const locale of ["fr", "en"]) {
+    for (const category of ["amenity", "shop", "tourism", "historic", "leisure", "station", "cable_station", "summit"]) {
+      assert.ok(translate(locale, `poi.${category}`).trim(), `${locale}: ${category}`);
+    }
+  }
+  assert.equal(translate("fr", "poi.leisure"), "Loisirs");
+  assert.equal(translate("en", "poi.leisure"), "Leisure");
+});
+
 test("every starting tarot card has a symbolic reading in both languages", () => {
   const economy = JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url), "utf8"));
   for (const card of economy.tarot) {
