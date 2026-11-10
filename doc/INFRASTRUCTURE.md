@@ -228,6 +228,30 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Documentary culinary fallback, 0.22.14 (10 November 2026)
+
+Deployed runtime `8a37e33f286568a543b0f842394f84e2c150e062`, tagged
+`deploy-2026-11-10-culinary-fallback`, over 0.22.13. All six installed and
+loopback HTTP checksums matched; the release manifest mtime was refreshed.
+Application, Nginx and prefetch timer are active, `nginx -t` passed, HTTPS
+returns the expected authentication status 401, and the application error
+journal is clear. Shared culinary quotas remain 100/day and 3,000/month.
+No journey saves, schema or quota settings were modified.
+
+Validation: 129 targeted JavaScript/Python tests passed. An isolated smoke on
+the installed code deliberately failed the provider without sending a real
+LLM request. Actual Florence sources produced six documentary dishes including
+Bistecca alla fiorentina; its 581,496-byte licensed photograph (CC BY-SA 2.0)
+and cached result reuse across service instances were verified. The smoke used
+temporary local storage, not shared quotas or live journey data.
+
+The private rollback archive is
+`/home/ubuntu/before-0.22.14-8a37e33/runtime.tar.gz` (directory 0700, archive 0600),
+SHA-256 `c644648a43a1e8adaccb05235cdbda787934f46bfe535c9c79e99be391189af9`.
+Stop the application, restore archived files under `/opt/arcane-path`, refresh
+`public/release.json` mtime and restart to roll back. Retain shared provider
+accounting and cached results.
+
 ## Culinary discovery activation, 0.22.13 (10 November 2026)
 
 Deployed runtime `2487e7e16b2eafb18d0fa0f119d1d51afc25999d`, tagged
