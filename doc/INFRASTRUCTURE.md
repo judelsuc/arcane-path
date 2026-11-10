@@ -176,9 +176,9 @@ explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
 ## Checkpoint deployed: town legends and composed treasures (9 November 2026)
 
-### Regression repair, 0.22.3
+### Cell-description clues and route transport recovery, 0.22.4
 
-Follow-up, 0.22.4: entrance-search descriptions now occupy their own section
+Entrance-search descriptions now occupy their own section
 immediately after the selected cell's Wikipedia description. External content
 refreshes cannot overwrite this in-game content. Prepared current cells are
 checked without enabling Look; remote cursor inspection still works and
@@ -192,6 +192,28 @@ failures at most twice, three seconds apart, polling the same assignment without
 HTTP 422 routing-budget failures remain explicit; they are not fabricated
 successful routes or straight-line distance fallbacks. Stage changes and stop
 cancel pending polls.
+
+Deployed on 10 November 2026 as
+`cf89cf7fbae0a5b23d6826ff5486a0600e545f01`. The seven-file static package
+includes the five changed HTML/JS modules, changelog and release metadata.
+To exclude the undeployed event QTE, its travel UI is the live
+`3abea761b9a82145bda07204439b692e2b1ac832` version with only this commit's
+travel UI diff applied; other changed modules match the commit directly.
+Previous file hashes, all installed and served file hashes, and application,
+nginx and map-timer health were verified. No player saves or route retry
+counters were modified.
+
+All 1,691 JavaScript tests passed. A real-browser isolated check verified FR/EN
+traces below Wikipedia, survival across Wikipedia refresh, explicit inspection
+and clearing stale cell content. Authenticated gameplay was not replayed.
+The reported route's retained server error was its 180-second preparation
+budget, not a missing clue; that bounded failure remains explicitly retryable.
+
+Rollback archive `/home/ubuntu/before-0.22.4-cf89cf7.tar.gz`, root-owned 0600:
+SHA-256 `14d99413a22898ecd2d5893cd2debeb409f57378bdc647c0731ad71691576438`.
+Restore its seven files, touch `public/release.json` and restart the application.
+
+### Regression repair, 0.22.3
 
 The artifact command failure reported as `Asset storage unavailable` was a
 PostgreSQL placeholder-adaptation error, not missing S3 credentials:
