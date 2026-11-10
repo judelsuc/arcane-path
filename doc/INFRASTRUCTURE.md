@@ -174,6 +174,26 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Adult vigilance warning, 0.22.11 (10 November 2026)
+
+Deployed runtime `26d5d5891ffb919b965cbe8f1e1329137cac8c16`, tagged
+`deploy-2026-11-10-vigilance-warning`. The warning appears at 80/100,
+rearms below 80 and respects existing dialog and needs priorities. Restored
+high-vigilance journeys warn too. Pressure accounting and placement remain
+unchanged; no schema, journey save or paid generation was modified.
+
+The four-file delta over 0.22.10 passed baseline and package checks, and all
+four installed and loopback HTTP checksums matched. The release manifest mtime
+was refreshed. Application, Nginx and the travel prefetch timer are active;
+`nginx -t` passed and the application error journal is clear.
+
+Validation: 42 targeted JavaScript tests passed. Read-only checks on the installed
+runtime verified the exact threshold, rearming, restored journeys, priority,
+bilingual copy and absence of state mutation.
+The private rollback backup is
+`/home/ubuntu/before-0.22.11-26d5d58/runtime.tar.gz` (directory 0700, archive 0600),
+SHA-256 `dcb82fef7c47fa5bb8d3c39dd2c8f68c4d1b23d836055bd062013df0c4b16594`.
+
 ## Journey-event reaction challenges, 0.22.10 (10 November 2026)
 
 New journey events retain a version-2 QTE and their fatigue/health snapshot.
