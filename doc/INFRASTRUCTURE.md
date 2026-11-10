@@ -208,8 +208,24 @@ Validation: 1,697 JavaScript tests and 41 focused backend tests pass.
 Browser checks cover the real game mount in French/English and full-viewport
 geometry at 320×568, 390×844, 844×390 and 1100×800, with reachable controls and
 no horizontal overflow. Help contains the bell solution while the playfield
-only shows its riddle. The deployment is an isolated delta over the live 0.22.5
+only shows its riddle. Landscape checks additionally verify HUD text stays beside
+the canvas, not over it, with at least 44px touch targets.
+The deployment is an isolated delta over the live 0.22.5
 files; the separately committed event QTE work remains excluded.
+
+Deployed runtime: `8e3513f8bb44d1c36da4bfee5e4368b7771a05dc`.
+All 14 packaged files match their expected disk hashes, and all public runtime
+files also match through the loopback HTTP application. The additive table was
+initialized explicitly: all 18 existing town decisions are unchanged, with zero
+initial overrides. Application, nginx and the travel-prefetch timer remain
+active; nginx configuration validation succeeds.
+
+Rollback archive `/home/ubuntu/before-0.22.6-8e3513f.tar.gz`, root-owned 0600:
+`e3d8d57cb9de62b082ea5455f0cf0049b3f942ca8e9804d1c694c5a71430f8fa`.
+Restore its files and refresh the manifest timestamp. Preserve the additive
+table and any subsequent assignments: a later rollback after new dungeon
+assignments must retain the canonical format resolver, since the old runtime
+does not understand those overrides. No player save or retained entrance was changed.
 
 ### Arrival-cell legend guidance, 0.22.5
 
