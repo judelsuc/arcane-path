@@ -174,6 +174,35 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Journey-event reaction challenges, 0.22.10 (10 November 2026)
+
+New journey events retain a version-2 QTE and their fatigue/health snapshot.
+They start automatically when the event dialog is displayed, after persisting
+the active attempt. One arrow or Space cue appears at a time. Event nature sets
+3/4/5 base signals, lost health adds at most four, and fatigue shortens the
+reaction window from 1,100 to 600 ms. Help freezes the current instant; hiding
+the tab or restoring an active attempt ends it without success.
+
+The retained event narrative and existing generated encounter illustration are
+central, with the corresponding ASCII drawing when no decoded image is available.
+Contextual actions explain why reactions matter; social events advance dialogue
+and report graceful or awkward outcomes without additional reputation penalties.
+The numerical receipt uses actual settled deltas, including survival and caps,
+and opens in a dismissible modal above the event panel. Observer refreshes do
+not replace its focused dismissal control or reopen it after dismissal.
+
+Existing version-1 challenge transcripts retain their original validation.
+Older events without QTE metadata keep their already-applied effects and normal
+acknowledgement. Effects settle once; failed saves remain explicit and retry the
+same result. This remains client-owned journey accounting, not a new
+server-authoritative travel system. Production opportunity frequency stays at
+90 walking minutes; accelerated testing is localhost-only. No schema, paid
+generation call, illustration job or pursuer activation is part of this release.
+
+The deployment uses a checksum-verified delta over 0.22.9, adding the previously
+excluded QTE entry wiring and bilingual copy. Verification details follow after
+installation.
+
 ## Checkpoint deployed: town legends and composed treasures (9 November 2026)
 
 ### Reusable encounter recipes, 0.22.9

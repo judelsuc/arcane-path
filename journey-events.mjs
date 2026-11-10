@@ -6,6 +6,7 @@ import { healthValue } from "./health.mjs";
 import { companionRecord, companionText, validateCompanionRecord } from "./companion-presence.mjs";
 import { journeyEquipmentModifiers } from "./equipment.mjs";
 import { eventChallenge, challengeOutcome, validateEventChallenge } from "./event-qte.mjs";
+import { eventQteResult } from "./event-qte-copy.mjs";
 
 export const EVENT_CATALOGUE = Object.freeze({
   food: { polarity: "positive", food: 300 },
@@ -148,7 +149,7 @@ export function advanceJourneyEvents(previous, moved, info, survival, economy) {
     ...companionRecord(moved),
     wordingVariant: ((previousWording ?? -1) + 1) % 3,
     ...chances, elapsedMinutes: moved.elapsedMinutes, col: moved.col, row: moved.row, terrain: info.terrain,
-    qte: { version: 1, status: "ready" },
+    qte: { version: 2, status: "ready", fatigue: moved.fatigue, health: healthValue(moved) },
     minutes: next.elapsedMinutes - moved.elapsedMinutes,
     foodKcal: next.reserveKcal - moved.reserveKcal,
     moneyCents: next.walletCents - moved.walletCents, fatigue: next.fatigue - moved.fatigue,
@@ -166,7 +167,7 @@ export function beginJourneyEventChallenge(state, id, mode = "normal") {
   }
   eventChallenge(event, mode);
   return { ...state, events: { ...state.events, history: state.events.history.map(record => record.id === id
-    ? { ...record, qte: { version: 1, status: "active", mode } } : record) } };
+    ? { ...record, qte: { ...record.qte, status: "active", mode } } : record) } };
 }
 
 export function settleJourneyEventChallenge(state, id, trace, elapsedMs, info, survival, economy, skipped = false) {
@@ -201,18 +202,37 @@ export function journeyEventText(record, t) {
   return journeyEventTextParts(record, t).map(part => typeof part === "string" ? part : part.text).join("");
 }
 
-export function journeyEventTextParts(record, t) {
-  const signed = (n, digits = 0) => `${n > 0 ? "+" : ""}${n.toFixed(digits)}`;
+export function journeyEventTextParts(record, t, { includeEffects = true } = {}) {
   const narrative = `${record.wording?.[t("discovery.inscriptionLanguage")] ?? t(`journeyEvent.${record.kind}`, {
     name: record.companion?.name ?? t("companion.dog"),
   })} `;
   const companion = ["forestBoar", "forestDogs", "food", "picnic", "waterBreak", "catNap", "whiteDeer", "ribbon"]
     .includes(record.kind) ? companionText(record, `event.${record.kind}`, t) : "";
-  const challenge = record.qte ? [t(`eventQte.${record.qte.status}`), " "] : [];
+  const outcome = record.qte?.version === 2 ? eventQteResult(record, t("discovery.inscriptionLanguage")) : "";
+  const challenge = record.qte ? [t(`eventQte.${record.qte.status}`), " ", ...(outcome ? [outcome, " "] : [])] : [];
   if (record.qte && ["ready", "active"].includes(record.qte.status)) return [narrative, ...challenge,
     ...(companion ? [" ", companion] : [])];
   if (EVENT_CATALOGUE[record.kind].polarity === "story") return [narrative, ...challenge,
     t("journeyEventStoryOnly"), ...(companion ? [" ", companion] : [])];
+  return [narrative, ...challenge, ...(includeEffects ? journeyEventEffectParts(record, t) : []),
+    ...(companion ? [" ", companion] : [])];
+}
+
+export function journeyEventEffectParts(record, t) {
+  if (!["success", "failure", "skipped"].includes(record.qte?.status) && record.qte) {
+    throw new Error("Cannot display effects before the event is settled.");
+  }
+  const signed = (n, digits = 0) => `${n > 0 ? "+" : ""}${n.toFixed(digits)}`;
+  if (record.kind === "dogEncounter" && record.qte?.status === "success") {
+    return [t("discovery.inscriptionLanguage") === "en"
+      ? "The dog encounter is now available. No money or supplies gained."
+      : "La rencontre avec le chien est maintenant disponible. Aucun gain d'argent ni de provisions."];
+  }
+  if (![record.minutes, record.foodKcal, record.moneyCents, record.fatigue,
+    record.reputation, record.health ?? 0, record.awakeHours ?? 0].some(value => value !== 0) && !record.speedEffect) {
+    return [t("discovery.inscriptionLanguage") === "en"
+      ? "No reward or penalty applied." : "Aucune récompense ni pénalité appliquée."];
+  }
   const template = (key, values, benefits) => t(key,
     Object.fromEntries(Object.keys(values).map(name => [name, `{${name}}`])))
     .split(/(\{\w+\})/).filter(Boolean).map(text => {
@@ -220,7 +240,7 @@ export function journeyEventTextParts(record, t) {
       if (!Object.hasOwn(values, name) || text !== `{${name}}`) return text;
       return { text: values[name], feedback: benefits[name] > 0 ? "success" : benefits[name] < 0 ? "failure" : "" };
     });
-  const parts = [narrative, ...challenge, ...template("journeyEventEffects", {
+  const parts = [...template("journeyEventEffects", {
     minutes: record.minutes.toFixed(0), food: signed(record.foodKcal),
     money: signed(record.moneyCents / 100, 2), fatigue: signed(record.fatigue, 1),
     reputation: signed(record.reputation), health: signed(record.health ?? 0, 1),
@@ -232,7 +252,6 @@ export function journeyEventTextParts(record, t) {
     percent: signed((record.speedEffect.factor - 1) * 100),
     minutes: Math.round(record.speedEffect.expiresMinutes - record.elapsedMinutes),
   }, { percent: record.speedEffect.factor - 1 }));
-  if (companion) parts.push(" ", companion);
   return parts;
 }
 

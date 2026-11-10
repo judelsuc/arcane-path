@@ -1,9 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { EVENT_QTES, QTE_PROMPTS, eventChallenge, challengeOutcome } from "../event-qte.mjs";
+import { EVENT_QTES, QTE_PROMPTS, eventChallenge, challengeOutcome, reactionCue, validateEventChallenge } from "../event-qte.mjs";
 import { EVENT_CATALOGUE, advanceJourneyEvents, beginJourneyEventChallenge, settleJourneyEventChallenge,
-  acknowledgeJourneyEvent, validateJourneyEvents } from "../journey-events.mjs";
+  acknowledgeJourneyEvent, validateJourneyEvents, journeyEventText, journeyEventEffectParts } from "../journey-events.mjs";
+import { eventQtePresentation, eventQteResult } from "../event-qte-copy.mjs";
+import { translate } from "../i18n.mjs";
 import { startEconomy, finishAction } from "../economy.mjs";
 import { startSurvival, restSurvival } from "../survival.mjs";
 import { beginEquipment } from "../equipment.mjs";
@@ -37,13 +39,17 @@ function fixture(kind) {
 }
 function win(event, mode = "normal") {
   const rule = eventChallenge(event, mode);
+  if (rule.type === "reaction") return rule.keys.map((key, index) =>
+    ({ key, atMs: reactionCue(rule, index).startMs + 100 }));
   return rule.type === "timing" ? [{ key: "Space", atMs: 1000 }] :
     rule.keys.map((key, index) => ({ key, atMs: 100 + 100 * index }));
 }
 const settle = (state, context, success, skipped = false) => {
   const event = state.events.history.at(-1);
-  return settleJourneyEventChallenge(state, event.id, success ? win(event, event.qte.mode) : [],
-    success ? 1000 : 6000, context, survival, economy, skipped);
+  const trace = success ? win(event, event.qte.mode) : [];
+  return settleJourneyEventChallenge(state, event.id, trace,
+    success ? Math.max(1000, trace.at(-1).atMs) : eventChallenge(event, event.qte.mode).durationMs ?? 6000,
+    context, survival, economy, skipped);
 };
 
 test("all 37 events have contextual bilingual challenges and deterministic normal/accessible controls", () => {
@@ -115,6 +121,7 @@ test("every event defers all mechanics, then settles positive rewards or negativ
 
 test("ready, active and final saves roundtrip; started reloads fail, resolved events cannot replay, legacy stays acknowledged", () => {
   const { queued, context } = fixture("coins");
+  queued.events.history.at(-1).qte = { version: 1, status: "ready" };
   const roundtrip = state => validateSave(JSON.parse(JSON.stringify(
     createSave({ region: "firmi", map, state, survival, economy }, 1)))).state;
   assert.deepEqual(roundtrip(queued), queued);
@@ -141,4 +148,99 @@ test("ready, active and final saves roundtrip; started reloads fail, resolved ev
   }
   assert.throws(() => settleJourneyEventChallenge(active, active.events.pending, [], 0,
     { ...context, terrain: "water" }, survival, economy), /cannot be settled/);
+});
+
+test("reaction difficulty depends on event, fatigue shortens deadlines and poor health lengthens sequences", () => {
+  for (const kind of Object.keys(EVENT_QTES)) {
+    const make = (fatigue, health) => ({ kind, id: 1, opportunity: 1,
+      qte: { version: 2, status: "ready", fatigue, health } });
+    const rested = eventChallenge(make(0, 100)), tired = eventChallenge(make(100, 100));
+    const injured = eventChallenge(make(0, 0));
+    assert.equal(rested.type, "reaction");
+    assert.equal(rested.reactionMs, 1100);
+    assert.equal(tired.reactionMs, 600);
+    assert.deepEqual(tired.keys, rested.keys);
+    assert.equal(injured.keys.length, rested.keys.length + 4);
+    assert.equal(injured.reactionMs, rested.reactionMs);
+    assert.ok(injured.keys.length <= 9);
+    const event = make(37, 43), rule = eventChallenge(event), trace = win(event);
+    assert.equal(challengeOutcome(event, "normal", trace, trace.at(-1).atMs), "success");
+    for (const delta of [-1, 0, rule.reactionMs - 1, rule.reactionMs]) {
+      const inputs = rule.keys.map((key, index) => ({ key, atMs: reactionCue(rule, index).startMs + delta }));
+      assert.equal(challengeOutcome(event, "normal", inputs, inputs.at(-1).atMs),
+        delta < 0 || delta === rule.reactionMs ? "failure" : "success");
+    }
+    validateEventChallenge(event);
+    for (const condition of [{ fatigue: -1 }, { health: 101 }, { fatigue: NaN }, { health: undefined }]) {
+      assert.throws(() => eventChallenge({ ...event, qte: { ...event.qte, ...condition } }), /condition/);
+    }
+    assert.throws(() => eventChallenge(event, "relaxed"), /condition/);
+  }
+  const lengths = ["stars", "coins", "forestBoar"].map(kind => eventChallenge({
+    kind, id: 1, opportunity: 1, qte: { version: 2, status: "ready", fatigue: 0, health: 100 },
+  }).keys.length);
+  assert.deepEqual(lengths, [3, 4, 5]);
+});
+
+test("reaction condition snapshots and successful transcripts survive save/load without recalculation", () => {
+  const { queued, context } = fixture("forestBoar");
+  const event = queued.events.history.at(-1), condition = structuredClone(event.qte);
+  assert.equal(condition.fatigue, queued.fatigue);
+  assert.equal(condition.health, queued.health);
+  const active = beginJourneyEventChallenge(queued, event.id);
+  assert.equal(active.events.history.at(-1).qte.fatigue, condition.fatigue);
+  const completed = settle(active, context, true);
+  const restored = validateSave(JSON.parse(JSON.stringify(
+    createSave({ region: "firmi", map, state: completed, survival, economy }, 1)))).state;
+  assert.deepEqual(restored, completed);
+  assert.equal(restored.events.history.at(-1).qte.status, "success");
+  const trace = restored.events.history.at(-1).qte.trace;
+  const invalid = structuredClone(restored);
+  invalid.events.history.at(-1).qte.trace[0].atMs = 0;
+  assert.throws(() => validateJourneyEvents(invalid, economy, survival), /result/);
+  assert.equal(trace[0].atMs, 1000);
+});
+
+test("contextual actions cover every event and social impressions survive receipts without new reputation penalties", () => {
+  for (const language of ["en", "fr"]) for (const kind of Object.keys(EVENT_QTES)) {
+    const presentation = eventQtePresentation({ kind }, language);
+    assert.ok(presentation.action.length >= 20);
+    if (!presentation.social) continue;
+    assert.equal(presentation.lines.length, 9);
+    const { queued, context } = fixture(kind);
+    const active = beginJourneyEventChallenge(queued, queued.events.pending);
+    for (const skipped of [false, true]) {
+      const failed = settle(active, context, false, skipped);
+      assert.deepEqual(failed.pressures, queued.pressures);
+      const record = failed.events.history.at(-1);
+      assert.equal(record.reputation, 0);
+      const restored = validateSave(JSON.parse(JSON.stringify(
+        createSave({ region: "firmi", map, state: failed, survival, economy }, 1)))).state;
+      const text = journeyEventText(restored.events.history.at(-1),
+        (key, args) => translate(language, key, args));
+      assert.ok(text.includes(eventQteResult(record, language)));
+      assert.match(text, skipped ? language === "en" ? /let the moment pass/ : /laissez passer/ :
+        language === "en" ? /poor impression/ : /mauvaise impression/);
+    }
+  }
+});
+
+test("final receipts show applied rewards, penalties, avoided penalties and neutral results in both languages", () => {
+  for (const language of ["en", "fr"]) {
+    const t = (key, args) => translate(language, key, args);
+    for (const [kind, success, amount] of [["coins", true, "+1.50"], ["forestBoar", false, "-15.0"]]) {
+      const { queued, context } = fixture(kind);
+      assert.throws(() => journeyEventEffectParts(queued.events.history.at(-1), t), /before/);
+      const next = settle(beginJourneyEventChallenge(queued, queued.events.pending), context, success);
+      const parts = journeyEventEffectParts(next.events.history.at(-1), t);
+      assert.ok(parts.some(part => part.text === amount &&
+        part.feedback === (success ? "success" : "failure")));
+    }
+    for (const [kind, success] of [["coins", false], ["forestBoar", true], ["stars", true], ["stars", false]]) {
+      const { queued, context } = fixture(kind);
+      const next = settle(beginJourneyEventChallenge(queued, queued.events.pending), context, success);
+      assert.match(journeyEventEffectParts(next.events.history.at(-1), t).join(""),
+        language === "en" ? /No reward or penalty/ : /Aucune récompense ni pénalité/);
+    }
+  }
 });

@@ -845,9 +845,15 @@ Il ne s'agit pas d'une nouvelle jauge de sante ; recharger ne change pas ses bes
 ### Couche 13 : evenements du voyage
 
 Chaque nouvel evenement, y compris les rencontres d'ambiance, propose un defi
-contextuel : arreter un repere, suivre une sequence de directions ou reproduire
-une direction. Les consignes se lisent avant le depart du chronometre de
-6 secondes ; un mode accessible sans limite de temps est toujours disponible.
+contextuel qui demarre automatiquement : reproduire chaque touche illuminee
+(fleches ou Espace) avant qu'elle ne s'eteigne. La nature de l'evenement fixe
+la longueur de base, la fatigue raccourcit le delai et une mauvaise sante
+allonge la sequence. Le texte de la rencontre et son illustration generee
+restent centraux, avec un dessin ASCII si l'image est indisponible.
+Les regles sont dans Aide, qui suspend le defi et le reprend au meme instant.
+Les echanges sociaux avancent une replique par bonne touche ; une maladresse
+laisse une mauvaise impression narrative, sans penalite supplementaire.
+Le resultat et les effets reels apparaissent au-dessus du panneau.
 Reussir donne la recompense habituelle ou evite la penalite. Echouer, passer
 ou depasser le delai ne donne aucune recompense ou applique la penalite normale.
 Les rencontres d'ambiance restent sans effet mecanique. Les effets ne sont

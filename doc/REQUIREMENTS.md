@@ -27,14 +27,44 @@
   Success earns the ordinary positive reward or avoids the ordinary negative
   penalty; failure, timeout or skipping gives no reward or the ordinary penalty.
   Atmospheric stories remain mechanically neutral regardless of the result.
-- Use contextual timing, three-direction sequences and observation challenges.
-  Normal mode lasts six seconds, beginning only after an explicit start.
-  Arrow keys and labelled touch buttons perform directions; Space or the action
-  button stops a timing marker in its outlined 35–65% zone. No extra random
-  success roll follows the input.
-- An equally rewarding untimed accessible mode removes deadlines and replaces
-  moving-marker timing with observation. Instructions and targets stay visible.
-  No repeated-key mashing or audio/colour-only instructions are required.
+- **Revised 10 November after playtest:** use one automatic reaction mechanic,
+  not separate timing, observation or static-sequence modes. No Start button.
+  One key among Up, Down, Left, Right and Space lights up at a time; reproduce
+  it during a short window, with keyboard or labelled touch controls.
+  Keep an event-specific background drawing and explanatory text visible.
+  Highlight the key with a border and a textual cue, not colour alone.
+- The event's retained narrative is central, with its existing model-generated
+  illustration when decoded and available; use the corresponding ASCII drawing
+  only as an explicit fallback. Reuse the encounter illustration pipeline, without
+  generating additional images for QTEs. Rules and mechanical explanations belong
+  in a Help dialog. Opening Help freezes the QTE at its current simulated instant;
+  closing resumes that same cue/window, without rerolling or restarting.
+- Every QTE must justify its input through the scene: for example, the passer-by
+  tosses coins and the player tries to catch them. Keep this action text visible
+  alongside retained/generated prose, even when that prose only describes the
+  encounter generally. Human social exchanges advance one natural, courteous
+  line per successful signal; a failed exchange ends awkwardly and leaves a bad
+  impression in the narrative only, without an additional reputation penalty.
+  Preserve the outcome prose in the ordinary event receipt/journal; imagery or
+  localization refreshes must not erase the current dialogue progress.
+- End each attempt with a visible numerical receipt of the actual settled
+  rewards and penalties, including clamping and normal survival effects.
+  Show the outcome and receipt in a dismissible modal above the event panel,
+  not below it where scrolling can hide them.
+  Distinguish beneficial and harmful deltas; explicitly state when no reward or
+  penalty applies, including avoided penalties and neutral stories. The isolated
+  preview must simulate the same settlement rules without changing a real save.
+- The nature of the event determines the base sequence length (3 for atmospheric
+  observations, 4 for catching/handling objects, 5 for physical manoeuvres).
+  Retain fatigue/health at event creation: fatigue shortens each reaction window
+  from 1,100 ms to 600 ms; lost health adds up to four signals in 25-point bands,
+  for at most nine signals. There is a 900 ms opening approach and 250 ms between
+  windows. Early, wrong or late input fails; holding a key does not count again.
+  These bounds are provisional playtest tuning, not an automatic journey-level
+  difficulty ramp. No extra random success roll follows the input.
+- New events retain version-2 QTE rules and condition snapshots; old version-1
+  transcripts retain their timing, sequence/observation and relaxed-mode outcome
+  validation. Do not reinterpret saved results under the new rules.
 - Save the ready event before interaction and the active attempt before starting
   its timer. Resolve once through existing client-owned journey accounting,
   retaining the bounded input trace and validated result. A started attempt

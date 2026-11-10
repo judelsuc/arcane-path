@@ -1,6 +1,11 @@
 {
-  "version": "0.22.9",
+  "version": "0.22.10",
   "entries": [
+    {
+      "version": "0.22.10",
+      "fr": "Les rencontres du voyage deviennent interactives : reproduisez les flèches ou Espace qui s'illuminent, sans bouton de départ. La difficulté dépend de l'événement, de la fatigue et de la santé. Le récit et l'illustration de la rencontre accompagnent les gestes ; les échanges sociaux déroulent des répliques. Aide met le défi en pause. Le résultat et les récompenses ou pénalités réelles s'affichent au-dessus du panneau. Les anciens événements gardent leurs effets.",
+      "en": "Journey encounters become interactive: match each illuminated arrow or Space, with no start button. Difficulty depends on the event, fatigue and health. The encounter's story and illustration accompany the actions; social exchanges unfold through dialogue. Help pauses the challenge. The outcome and actual rewards or penalties appear above the panel. Legacy events retain their effects."
+    },
     {
       "version": "0.22.9",
       "fr": "Les nouvelles aventures ajoutent caisses, ponts temporisés, miroirs et mécanismes à assembler. Les enquêtes se jouent directement dans huit décors variés : objets à ramasser, inventaire graphique, menus contextuels et indices à observer sans dévoiler la solution à l'arrivée. Certains leviers réservent une mauvaise surprise. Les pièges ont un retour visuel marqué et temporaire ; les messages ne masquent plus le décor. Dans les donjons, les caisses restent visibles sur les pointes et le bouton Reprendre est accessible près des déplacements. Les essais déjà commencés gardent leurs règles.",

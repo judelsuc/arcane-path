@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mountEventChallenge } from "../event-qte-ui.mjs";
-import { eventChallenge, challengeOutcome } from "../event-qte.mjs";
+import { eventChallenge, challengeOutcome, reactionCue } from "../event-qte.mjs";
 
 class Target {
   listeners = new Map();
@@ -13,22 +13,25 @@ class Target {
   dispatch(type, data = {}) { for (const fn of this.listeners.get(type) ?? []) fn(data); }
 }
 class Element extends Target {
-  children = []; attributes = {}; style = {}; textContent = ""; disabled = false; hidden = false;
+  children = []; attributes = {}; style = {}; textContent = ""; disabled = false; hidden = false; open = false;
   constructor(tag, doc) { super(); this.tagName = tag; this.ownerDocument = doc; }
   append(node) { node.parent = this; this.children.push(node); }
   setAttribute(name, value) { this.attributes[name] = value; }
   remove() { this.parent.children = this.parent.children.filter(child => child !== this); }
   focus() {}
+  showModal() { this.open = true; }
+  close() { this.open = false; this.dispatch("close"); }
   click() { if (!this.disabled && !this.hidden) this.dispatch("click"); }
 }
-function fixture(kind = "coins", language = "en", options = {}) {
+async function fixture(kind = "coins", language = "en", options = {}) {
   let time = 0, serial = 0;
   const timers = new Map(), doc = new Target(), outcomes = [], starts = [], errors = [];
   doc.defaultView = { performance: { now: () => time },
     setInterval(fn) { timers.set(++serial, fn); return serial; }, clearInterval(id) { timers.delete(id); } };
   doc.createElement = tag => new Element(tag, doc);
   const host = new Element("div", doc);
-  const event = { id: 1, opportunity: 1, kind, qte: { version: 1, status: "ready" }, ...options.event };
+  const event = { id: 1, opportunity: 1, kind,
+    qte: { version: 2, status: "ready", fatigue: 0, health: 100 }, ...options.event };
   let mode;
   const api = mountEventChallenge(host, { event, language,
     begin: value => { mode = value; starts.push(value); return true; },
@@ -37,24 +40,31 @@ function fixture(kind = "coins", language = "en", options = {}) {
     onError: reason => errors.push(reason), ...options });
   const all = node => [node, ...node.children.flatMap(all)], root = host.children[0];
   const nodes = all(host);
+  await Promise.resolve();
   return { api, doc, host, nodes, timers, starts, outcomes, errors, root, event,
     button: text => nodes.find(node => node.tagName === "button" && node.textContent === text),
     tick(value) { time = value; for (const fn of [...timers.values()]) fn(); },
     key(key, extra = {}) { root.dispatch("keydown", { key, preventDefault() {}, stopPropagation() {}, ...extra }); } };
 }
-test("timing starts explicitly, accepts keyboard/touch, and cleans timers/listeners in both languages", () => {
+test("reaction starts automatically, lights one key at a time and accepts keyboard/touch in both languages", async () => {
   for (const language of ["en", "fr"]) for (const touch of [false, true]) {
-    const f = fixture("coins", language);
-    f.tick(10000);
-    assert.equal(f.timers.size, 0);
+    const f = await fixture("coins", language);
+    const rules = eventChallenge(f.event);
+    assert.deepEqual(f.starts, ["normal"]);
+    assert.ok(!f.nodes.some(node => /^(Start|Commencer)/.test(node.textContent)));
     assert.deepEqual(f.outcomes, []);
-    assert.ok(f.nodes.some(node => node.textContent.includes("35–65%") || node.textContent.includes("35–65 %")),
-      "timing instructions are visible before starting");
-    f.button(language === "en" ? "Start · 6 seconds" : "Commencer · 6 secondes").click();
     assert.equal(f.timers.size, 1);
-    f.tick(11000);
-    if (touch) f.button(language === "en" ? "Act · Space" : "Agir · Espace").click();
-    else f.key(" ");
+    assert.ok(f.nodes.some(node => node.className === "event-qte-backdrop" && node.textContent.trim()));
+    assert.equal(f.nodes.filter(node => node.attributes["aria-pressed"] === "true").length, 0);
+    for (const [index, key] of rules.keys.entries()) {
+      f.tick(reactionCue(rules, index).startMs + 50);
+      const lit = f.nodes.filter(node => node.attributes["aria-pressed"] === "true");
+      assert.equal(lit.length, 1);
+      assert.equal(lit[0].attributes["aria-keyshortcuts"], key);
+      if (touch) lit[0].click();
+      else f.key(key === "Space" ? " " : key);
+      assert.equal(f.nodes.filter(node => node.attributes["aria-pressed"] === "true").length, 0);
+    }
     assert.equal(f.outcomes[0].outcome, "success");
     f.key(" ");
     assert.equal(f.outcomes.length, 1);
@@ -64,61 +74,139 @@ test("timing starts explicitly, accepts keyboard/touch, and cleans timers/listen
     assert.equal(f.doc.listeners.get("visibilitychange").size, 0);
   }
 });
-test("sequence and observation require correct directions; repeat/modifier keys cannot complete the challenge", () => {
+
+test("Help owns the rules, freezes the exact cue instant and resumes without restarting or accepting paused input", async () => {
+  const f = await fixture("stars", "fr");
+  const rules = eventChallenge(f.event), help = f.nodes.find(node => node.tagName === "dialog");
+  assert.ok(help.children.some(node => node.textContent.startsWith("Réagissez")));
+  assert.ok(!f.root.children.some(node => node.textContent.startsWith("Réagissez")));
+  f.tick(1000);
+  f.button("Aide").click();
+  assert.ok(help.open);
+  f.tick(21000);
+  f.key(rules.keys[0]);
+  assert.deepEqual(f.outcomes, []);
+  f.button("Reprendre").click();
+  assert.equal(help.open, false);
+  assert.deepEqual(f.starts, ["normal"]);
+  for (const [index, key] of rules.keys.entries()) {
+    f.tick(20000 + reactionCue(rules, index).startMs + 100);
+    f.key(key);
+  }
+  assert.equal(f.outcomes[0].outcome, "success");
+  assert.equal(f.outcomes[0].trace[0].atMs, 1000);
+  f.api.destroy();
+});
+
+test("presentation prefers a ready generated illustration, restores ASCII on failure and keeps the event story central", async () => {
+  const f = await fixture("stars");
+  const art = f.nodes.find(node => node.className === "event-qte-backdrop");
+  f.api.updatePresentation({ text: "A brief light crosses the night sky.", imageReady: true });
+  assert.equal(art.hidden, true);
+  assert.equal(f.nodes.find(node => node.className === "event-qte-story").textContent,
+    "A brief light crosses the night sky.");
+  f.api.updatePresentation({ imageReady: false });
+  assert.equal(art.hidden, false);
+  f.api.destroy();
+});
+
+test("physical actions remain justified even when retained narrative or artwork refreshes", async () => {
+  for (const language of ["en", "fr"]) {
+    const f = await fixture("coins", language);
+    const action = f.nodes.find(node => node.className === "event-qte-action");
+    const text = action.textContent;
+    assert.match(text, language === "en" ? /tosses.*catch/ : /lance.*rattraper/);
+    f.api.updatePresentation({ text: language === "en" ? "A passer-by offers a few coins." :
+      "Un passant vous offre quelques pièces.", imageReady: true });
+    assert.equal(action.textContent, text);
+    f.tick(reactionCue(eventChallenge(f.event), 0).endMs);
+    assert.match(f.nodes.find(node => node.className === "event-qte-result").textContent,
+      language === "en" ? /coins slip/ : /pièces vous échappent/);
+    f.api.destroy();
+  }
+});
+
+test("each successful social signal advances a distinct line, refreshes preserve it, and mistakes leave a narrative impression", async () => {
+  for (const language of ["en", "fr"]) for (const kind of ["encouragement", "friendlyAdvice", "stranger", "dogMakesFriend"]) {
+    const f = await fixture(kind, language, { event: { id: 1, opportunity: 1, kind,
+      qte: { version: 2, status: "ready", fatigue: 100, health: 0 } } });
+    const rules = eventChallenge(f.event), dialogue = f.nodes.find(node => node.className === "event-qte-dialogue");
+    assert.equal(dialogue.hidden, false);
+    for (const [index, key] of rules.keys.entries()) {
+      f.tick(reactionCue(rules, index).startMs + 50);
+      f.key(key);
+      assert.equal(dialogue.children.length, index + 1);
+      assert.ok(dialogue.children[index].textContent);
+      f.api.updatePresentation({ text: "Retained context.", imageReady: true });
+      assert.equal(dialogue.children.length, index + 1);
+    }
+    assert.equal(new Set(dialogue.children.map(line => line.textContent)).size, rules.keys.length);
+    assert.equal(f.outcomes[0].outcome, "success");
+    assert.match(f.nodes.find(node => node.className === "event-qte-result").textContent,
+      language === "en" ? /warm impression/ : /impression chaleureuse/);
+    f.api.destroy();
+
+    const failed = await fixture(kind, language);
+    failed.tick(950);
+    failed.key(eventChallenge(failed.event).keys[0] === "Space" ? "ArrowLeft" : "Space");
+    assert.equal(failed.nodes.find(node => node.className === "event-qte-dialogue").children.length, 0);
+    assert.equal(failed.outcomes[0].outcome, "failure");
+    assert.match(failed.nodes.find(node => node.className === "event-qte-result").textContent,
+      language === "en" ? /poor impression/ : /mauvaise impression/);
+    failed.api.destroy();
+  }
+});
+test("every event uses the same reaction mechanic; wrong or premature input fails and held keys are ignored", async () => {
   for (const kind of ["forestBoar", "stars"]) {
-    const f = fixture(kind), rules = eventChallenge(f.event);
-    f.button("Start · 6 seconds").click();
+    const f = await fixture(kind), rules = eventChallenge(f.event);
+    f.tick(950);
     f.key(rules.keys[0], { repeat: true });
     f.key(rules.keys[0], { ctrlKey: true });
     assert.equal(f.outcomes.length, 0);
-    rules.keys.forEach(key => f.key(key));
+    rules.keys.forEach((key, index) => {
+      f.tick(reactionCue(rules, index).startMs + 50);
+      f.key(key);
+    });
     assert.equal(f.outcomes[0].outcome, "success");
     f.api.destroy();
-    const wrong = fixture(kind);
-    wrong.button("Start · 6 seconds").click();
-    wrong.key(rules.keys[0] === "ArrowLeft" ? "ArrowRight" : "ArrowLeft");
+    const wrong = await fixture(kind);
+    wrong.key(rules.keys[0]);
     assert.equal(wrong.outcomes[0].outcome, "failure");
     wrong.api.destroy();
   }
 });
-test("untimed alternative removes the reaction deadline and replaces timing with observation", () => {
-  const f = fixture();
-  f.button("Untimed accessible mode").click();
-  f.tick(100000);
-  assert.equal(f.outcomes.length, 0);
-  f.key(eventChallenge(f.event, "relaxed").keys[0]);
-  assert.equal(f.outcomes[0].outcome, "success");
-  assert.deepEqual(f.starts, ["relaxed"]);
+test("a missed cue fails without waiting for the end of the sequence", async () => {
+  const f = await fixture();
+  f.tick(reactionCue(eventChallenge(f.event), 0).endMs);
+  assert.equal(f.outcomes[0].outcome, "failure");
+  assert.equal(f.timers.size, 0);
   f.api.destroy();
 });
-test("deadline, skip and backgrounding settle once without rewards; restored active challenges cannot restart", () => {
+test("deadline, skip and backgrounding settle once without rewards; restored active challenges cannot restart", async () => {
   for (const action of ["timeout", "skip", "hidden"]) {
-    const f = fixture();
-    if (action !== "skip") f.button("Start · 6 seconds").click();
-    if (action === "timeout") f.tick(6000);
+    const f = await fixture();
+    if (action === "timeout") f.tick(eventChallenge(f.event).durationMs);
     if (action === "skip") f.button("Skip challenge").click();
     if (action === "hidden") { f.doc.hidden = true; f.doc.dispatch("visibilitychange"); }
     assert.equal(f.outcomes[0].outcome, action === "skip" ? "skipped" : "failure");
     assert.equal(f.outcomes.length, 1);
     f.api.destroy();
   }
-  const restored = fixture("coins", "en", { event: { id: 1, opportunity: 1, kind: "coins",
+  const restored = await fixture("coins", "en", { event: { id: 1, opportunity: 1, kind: "coins",
     qte: { version: 1, status: "active", mode: "relaxed" } } });
-  assert.equal(restored.button("Start · 6 seconds").hidden, true);
+  assert.deepEqual(restored.starts, []);
   assert.equal(restored.outcomes.length, 0);
   restored.button("Retry saving the result").click();
   assert.equal(restored.outcomes[0].outcome, "failure");
   restored.api.destroy();
 });
-test("save failures stay visible and result retries do not restart input or silently succeed", () => {
+test("save failures stay visible and result retries do not restart input or silently succeed", async () => {
   let attempts = 0;
-  const f = fixture("coins", "en", { settle() {
+  const f = await fixture("coins", "en", { settle() {
     if (++attempts === 1) throw new Error("Storage unavailable.");
     return true;
   } });
-  f.button("Start · 6 seconds").click();
-  f.tick(1000);
-  f.key(" ");
+  f.tick(reactionCue(eventChallenge(f.event), 0).endMs);
   assert.equal(f.errors[0].message, "Storage unavailable.");
   assert.equal(f.button("Retry saving the result").hidden, false);
   f.button("Retry saving the result").click();
@@ -126,8 +214,7 @@ test("save failures stay visible and result retries do not restart input or sile
   assert.equal(f.button("Retry saving the result").hidden, true);
   assert.equal(f.timers.size, 0);
   f.api.destroy();
-  const blocked = fixture("coins", "en", { begin() { throw new Error("Cannot save start."); } });
-  blocked.button("Start · 6 seconds").click();
+  const blocked = await fixture("coins", "en", { begin() { throw new Error("Cannot save start."); } });
   assert.equal(blocked.errors[0].message, "Cannot save start.");
   assert.equal(blocked.timers.size, 0);
   blocked.api.destroy();

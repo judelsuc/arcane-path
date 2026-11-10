@@ -5,7 +5,7 @@ import { execFileSync } from "node:child_process";
 import { JOURNEY_EVENTS, EVENT_CATALOGUE, eventChances, selectJourneyEvent, advanceJourneyEvents as queueJourneyEvents,
   beginJourneyEventChallenge, settleJourneyEventChallenge, acknowledgeJourneyEvent,
   validateJourneyEvents, journeyEventText, journeyEventTextParts, applyJourneyEvent, eventPlaytestEnabled } from "../journey-events.mjs";
-import { eventChallenge } from "../event-qte.mjs";
+import { eventChallenge, reactionCue } from "../event-qte.mjs";
 import { startEconomy, finishAction } from "../economy.mjs";
 import { startSurvival, restSurvival } from "../survival.mjs";
 import { beginPressures } from "../pressures.mjs";
@@ -25,9 +25,10 @@ function advanceJourneyEvents(previous, moved, eventInfo, survival, economy) {
   if (event?.qte?.status !== "ready") return pending;
   const active = beginJourneyEventChallenge(pending, event.id);
   const rules = eventChallenge(event);
-  const trace = EVENT_CATALOGUE[event.kind].polarity === "negative" ? [] : rules.type === "timing"
+  const trace = EVENT_CATALOGUE[event.kind].polarity === "negative" ? [] : rules.type === "reaction"
+    ? rules.keys.map((key, index) => ({ key, atMs: reactionCue(rules, index).startMs + 100 })) : rules.type === "timing"
     ? [{ key: "Space", atMs: 1000 }] : rules.keys.map((key, index) => ({ key, atMs: 100 + index * 100 }));
-  return settleJourneyEventChallenge(active, event.id, trace, 1000, eventInfo, survival, economy);
+  return settleJourneyEventChallenge(active, event.id, trace, Math.max(1000, trace.at(-1)?.atMs ?? 0), eventInfo, survival, economy);
 }
 function start(seed = 0) {
   const s = startEconomy(startSurvival(14, 10, Date.UTC(2026, 9, 17, 12) + seed,

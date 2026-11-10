@@ -1781,3 +1781,35 @@ dialog p { margin: 12px 0; }
 .event-qte-meter { position: relative; height: 32px; border: 2px solid currentColor; margin-block: 12px; }
 .event-qte-meter::before { content: ""; position: absolute; left: 35%; width: 30%; height: 100%; background: #537952; outline: 2px dashed currentColor; outline-offset: -3px; }
 .event-qte-marker { position: absolute; top: 0; height: 100%; width: 4px; background: currentColor; transform: translateX(-50%); }
+.event-qte { position: relative; isolation: isolate; background: #141827; color: #eee3bf; }
+.event-qte-scene { position: relative; min-height: 180px; }
+.event-qte-backdrop {
+  margin: 0; overflow: hidden;
+  display: grid; place-content: center; pointer-events: none;
+  font-size: clamp(16px, 3vw, 32px); line-height: 1.2;
+}
+.event-qte-backdrop[hidden] { display: none; }
+.event-qte-illustration { margin: 0; }
+.event-qte-illustration img { display: block; width: 100%; max-height: 45vh; object-fit: contain; }
+.event-qte-story { text-align: center; font-size: 1.2rem; line-height: 1.5; font-weight: bold; }
+.event-qte-action { text-align: center; font-size: 1.1rem; line-height: 1.5; }
+.event-qte-dialogue { line-height: 1.5; max-height: 24vh; overflow-y: auto; }
+.event-qte-dialogue li { margin-block: .4rem; }
+.event-qte-result { font-style: italic; }
+.event-qte-receipt {
+  position: fixed; inset: 0; margin: auto;
+  width: min(85vw, 560px); max-height: 80vh; overflow-y: auto;
+  padding: 1.5rem; border: 3px solid #fff09b;
+  background: #141827; color: #eee3bf; line-height: 1.6;
+  box-shadow: 0 8px 40px #000b;
+}
+.event-qte-receipt::backdrop { background: #0009; }
+.event-qte-help { max-width: min(90vw, 560px); }
+.event-qte .event-qte-key { min-width: 84px; border: 3px solid #8e8879; }
+.event-qte .event-qte-key[aria-pressed="true"] {
+  background: #fff09b; color: #141827; border-color: #fff;
+  box-shadow: 0 0 14px #fff09b; transform: scale(1.08); font-weight: bold;
+}
+@media (prefers-reduced-motion: reduce) {
+  .event-qte .event-qte-key[aria-pressed="true"] { transform: none; }
+}

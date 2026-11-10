@@ -20,9 +20,11 @@ for (const language of ["fr", "en"]) {
       replaceChildren(...children) { this.children = children; this.textContent = children.map(c => typeof c === "string" ? c : c.textContent).join(""); }
       addEventListener(name, fn) { this.handlers[name] = fn; }
       showModal() { this.open = true; }
-      close() { this.open = false; }
+      close() { this.open = false; this.handlers.close?.(); }
       focus() {}
       before() {}
+      querySelector() { return null; }
+      setAttribute() {}
     }
 
     const nodes = new Map(), el = id => {
@@ -126,8 +128,8 @@ test("QTE dialog blocks continue, preserves active attempts during localization,
     removeAttribute(name) { delete this.attributes[name]; }
     querySelector(selector) { return all(this).find(node => `#${node.id}` === selector) ?? null; }
     focus() { doc.activeElement = this; }
-    showModal() { this.open = true; }
-    close() { this.open = false; }
+    showModal() { this.open = true; this.children.find(child => child.tag === "button")?.focus(); }
+    close() { this.open = false; this.handlers.close?.(); }
   }
   const all = element => [element, ...element.children.filter(child => typeof child !== "string").flatMap(all)];
   const nodes = new Map(), el = selector => {
@@ -135,8 +137,9 @@ test("QTE dialog blocks continue, preserves active attempts during localization,
     return nodes.get(selector);
   };
   const timers = new Set();
+  let time = 0;
   doc = { documentElement: { lang: "en" }, createElement: tag => new Element(tag),
-    defaultView: { performance: { now: () => 0 }, setInterval: fn => { timers.add(fn); return fn; }, clearInterval: fn => timers.delete(fn) },
+    defaultView: { performance: { now: () => time }, setInterval: fn => { timers.add(fn); return fn; }, clearInterval: fn => timers.delete(fn) },
     addEventListener() {}, removeEventListener() {},
     querySelector: selector => selector === "dialog[open]" ? [...nodes.values()].find(e => e.open) : el(selector) };
   globalThis.document = doc;
@@ -148,9 +151,18 @@ test("QTE dialog blocks continue, preserves active attempts during localization,
     qte: { version: 1, status: "ready" } };
   const current = { state: { startedAt: "first-journey", ended: null, tarotDay: "2026-10-18",
     dailyTarotSeenDay: "2026-10-18", events: { pending: 1, history: [event] } }, economy, busy: false, saveStatus: "Saved" };
-  let starts = 0, settlements = 0, acknowledgements = 0;
+  let starts = 0, settlements = 0, acknowledgements = 0, imageReady = false, paint, imageContainer;
   const ui = setupJourneyEvents((key, args) => translate(doc.documentElement.lang, key, args), {
     context: () => current,
+    illustrations: {
+      render(container, state, scene, occurrence) {
+        imageContainer = container;
+        assert.equal(scene, "event.coins");
+        assert.equal(occurrence, "event:1");
+        return imageReady;
+      },
+      subscribe(listener) { paint = listener; },
+    },
     pinEvent(host) { host.textContent = "Settled event pin"; },
     beginChallenge(id, mode) {
       starts++;
@@ -172,20 +184,39 @@ test("QTE dialog blocks continue, preserves active attempts during localization,
   ui.update(); await flush();
   assert.equal(dialog.open, true);
   assert.equal(proceed.disabled, true);
+  assert.equal(all(dialog).find(node => node.className === "event-qte-receipt").hidden, true);
   proceed.handlers.click();
   assert.equal(acknowledgements, 0);
-  const buttons = () => all(dialog).filter(node => node.tag === "button");
-  buttons().find(node => node.textContent === "Untimed accessible mode").handlers.click();
+  assert.equal(starts, 1, "challenge starts automatically when the dialog opens");
+  assert.equal(imageContainer.parent.className, "event-qte-scene");
+  const fallback = all(dialog).find(node => node.className === "event-qte-backdrop");
+  assert.equal(fallback.hidden, false);
+  imageReady = true; paint();
+  assert.equal(fallback.hidden, true, "decoded model artwork replaces the QTE's ASCII fallback");
+  imageReady = false; paint();
+  assert.equal(fallback.hidden, false, "image failure restores the contextual fallback without restarting");
   const activeSection = all(dialog).find(node => node.tag === "section");
   doc.documentElement.lang = "fr";
   ui.update(); await flush();
   assert.equal(all(dialog).find(node => node.tag === "section"), activeSection, "language switch cannot restart an active attempt");
   assert.equal(timers.size, 1);
-  activeSection.handlers.keydown({ key: eventChallenge(event, "relaxed").keys[0], preventDefault() {}, stopPropagation() {} });
+  time = 1000;
+  activeSection.handlers.keydown({ key: " ", preventDefault() {}, stopPropagation() {} });
   assert.equal(starts, 1);
   assert.equal(settlements, 1);
   assert.equal(proceed.disabled, false);
+  const receipt = all(dialog).find(node => node.className === "event-qte-receipt");
+  assert.equal(receipt.hidden, false);
+  assert.equal(receipt.open, true, "settled outcome opens above the event panel");
+  assert.ok(receipt.children.some(node => node.textContent === "+1.50"));
+  assert.equal(doc.activeElement, receipt.children.at(-1), "result dismissal keeps keyboard focus above the event");
+  const dismiss = receipt.children.at(-1);
+  ui.update(); await flush();
+  assert.equal(receipt.children.at(-1), dismiss, "observer refresh preserves the focused dismissal control");
+  receipt.close();
   assert.equal(doc.activeElement, proceed);
+  ui.update(); await flush();
+  assert.equal(receipt.open, false, "refreshing the event cannot reopen a dismissed receipt");
   assert.equal(timers.size, 0);
   assert.equal(dialog.attributes["data-native-controls"], undefined);
   const pin = dialog.querySelector("#journey-event-pin");
@@ -194,9 +225,10 @@ test("QTE dialog blocks continue, preserves active attempts during localization,
   ui.update();
   assert.equal(pin.hidden, true, "previous event's pin must not remain actionable on an unresolved event");
   assert.equal(proceed.disabled, true);
-  const staleStart = buttons().find(node => node.textContent === "Commencer · 6 secondes");
+  const staleSection = all(dialog).find(node => node.tag === "section");
+  const staleInput = staleSection.handlers.keydown;
   ui.reset();
-  staleStart.handlers.click();
+  staleInput({ key: " ", preventDefault() {}, stopPropagation() {} });
   assert.equal(starts, 1);
   assert.equal(timers.size, 0);
   assert.equal(dialog.open, false);

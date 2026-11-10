@@ -1,45 +1,44 @@
-import { eventChallenge, QTE_KEYS, QTE_PROMPTS } from "./event-qte.mjs";
+import { eventChallenge, challengeOutcome, QTE_KEYS, REACTION_KEYS, reactionCue } from "./event-qte.mjs";
+import { journeyEventArt } from "./journey-event-art.mjs";
+import { eventQtePresentation, eventQteResult } from "./event-qte-copy.mjs";
 
 const COPY = {
   en: {
-    title: "React to the encounter", start: "Start · 6 seconds", relaxed: "Untimed accessible mode",
-    skip: "Skip challenge", retry: "Retry saving the result", act: "Act · Space",
-    timing: "Stop the marker inside the outlined middle zone (35–65%). One attempt.",
-    sequence: "Follow these directions in order with the arrow keys or touch buttons. A wrong direction ends the attempt.",
-    observe: "Match the indicated direction with an arrow key or touch button. One attempt.",
-    controls: "Read first, then start. No timer runs before starting. Leaving this tab or reloading a started challenge ends it without success.",
-    benefits: "Success earns the normal reward or avoids the penalty. Failure, timeout or skipping gives no reward or the normal penalty. Story events remain mechanically neutral.",
-    active: "Challenge in progress", progress: "Correct steps", remaining: "Seconds left",
-    reloaded: "The started challenge was interrupted. Its unsuccessful outcome must be saved before continuing.",
-    startSaveFailed: "Unable to save the challenge start.",
-    resultSaveFailed: "Unable to save the challenge result.",
+    title: "React to the encounter", skip: "Skip challenge", retry: "Retry saving the result",
+    retryStart: "Retry starting the encounter", act: "Space",
+    help: "Help", close: "Resume", paused: "Paused",
+    controls: "React as each key lights up. Arrow keys or Space; you can also tap the matching button. One attempt.",
+    timing: "Press Space when the marker reaches the outlined middle zone.",
+    waiting: "Watch the keys…", now: "Now:", progress: "Signals", finished: "Attempt finished.",
+    benefits: "Success earns the reward or avoids the penalty. Failure or skipping gives no reward or the normal penalty. Story events remain mechanically neutral.",
+    reloaded: "The interrupted challenge must be saved as unsuccessful before continuing.",
+    startSaveFailed: "Unable to save the challenge start.", resultSaveFailed: "Unable to save the challenge result.",
     directions: ["Left", "Up", "Right", "Down"],
   },
   fr: {
-    title: "Réagir à la rencontre", start: "Commencer · 6 secondes", relaxed: "Mode accessible sans limite de temps",
-    skip: "Passer le défi", retry: "Réessayer d'enregistrer le résultat", act: "Agir · Espace",
-    timing: "Arrêtez le repère dans la zone centrale encadrée (35–65 %). Un seul essai.",
-    sequence: "Suivez ces directions dans l'ordre avec les flèches ou les boutons tactiles. Une erreur termine l'essai.",
-    observe: "Reproduisez la direction indiquée avec une flèche ou un bouton tactile. Un seul essai.",
-    controls: "Lisez avant de commencer. Aucun chrono avant le départ. Masquer cet onglet ou recharger un défi commencé termine l'essai sans réussite.",
-    benefits: "Réussir donne la récompense habituelle ou évite la pénalité. Échouer, dépasser le délai ou passer ne donne rien ou applique la pénalité habituelle. Les récits restent sans effet mécanique.",
-    active: "Défi en cours", progress: "Étapes correctes", remaining: "Secondes restantes",
-    reloaded: "Le défi commencé a été interrompu. Son issue sans réussite doit être enregistrée avant de continuer.",
-    startSaveFailed: "Impossible d'enregistrer le début du défi.",
-    resultSaveFailed: "Impossible d'enregistrer le résultat du défi.",
+    title: "Réagir à la rencontre", skip: "Passer le défi", retry: "Réessayer d'enregistrer le résultat",
+    retryStart: "Réessayer de lancer la rencontre", act: "Espace",
+    help: "Aide", close: "Reprendre", paused: "En pause",
+    controls: "Réagissez à chaque touche illuminée : flèches ou Espace, ou touchez le bouton correspondant. Un seul essai.",
+    timing: "Appuyez sur Espace quand le repère atteint la zone centrale encadrée.",
+    waiting: "Surveillez les touches…", now: "Maintenant :", progress: "Signaux", finished: "Essai terminé.",
+    benefits: "Réussir donne la récompense ou évite la pénalité. Échouer ou passer ne donne rien ou applique la pénalité habituelle. Les récits restent sans effet mécanique.",
+    reloaded: "Le défi interrompu doit être enregistré sans réussite avant de continuer.",
+    startSaveFailed: "Impossible d'enregistrer le début du défi.", resultSaveFailed: "Impossible d'enregistrer le résultat du défi.",
     directions: ["Gauche", "Haut", "Droite", "Bas"],
   },
 };
 
-export function mountEventChallenge(host, { event, language, begin, settle, onError = console.error }) {
-  const doc = host.ownerDocument, view = doc.defaultView ?? globalThis;
-  const c = COPY[language], root = doc.createElement("section");
+export function mountEventChallenge(host, { event, language, begin, settle, illustration, onError = console.error }) {
+  const doc = host.ownerDocument, view = doc.defaultView ?? globalThis, c = COPY[language];
+  const presentation = eventQtePresentation(event, language);
+  const root = doc.createElement("section");
   root.className = "event-qte";
   root.lang = language;
   root.tabIndex = -1;
   root.setAttribute("aria-label", c.title);
   host.append(root);
-  let running = false, disposed = false, result, trace = [], startedAt, timer, rules;
+  let running = false, disposed = false, result, trace = [], startedAt, timer, rules, pausedAt;
   const buttons = [];
   function node(tag, value) {
     const element = doc.createElement(tag);
@@ -55,12 +54,32 @@ export function mountEventChallenge(host, { event, language, begin, settle, onEr
     buttons.push(element);
     return element;
   }
-  node("h3", c.title);
-  node("p", QTE_PROMPTS[event.kind][language === "en" ? 0 : 1]);
-  node("p", c.controls);
-  node("p", c.benefits);
-  const instruction = node("p", ""), target = node("p", "");
+  const scene = node("div");
+  scene.className = "event-qte-scene";
+  if (illustration) {
+    illustration.className = "event-qte-illustration";
+    scene.append(illustration);
+  }
+  const art = doc.createElement("pre");
+  art.textContent = journeyEventArt(event.kind);
+  scene.append(art);
+  art.className = "event-qte-backdrop";
+  art.setAttribute("aria-hidden", "true");
+  const story = node("p", "");
+  story.className = "event-qte-story";
+  story.hidden = true;
+  const action = node("p", presentation.action);
+  action.className = "event-qte-action";
+  const dialogue = node("ol");
+  dialogue.className = "event-qte-dialogue";
+  dialogue.hidden = !presentation.social;
+  dialogue.setAttribute("aria-live", "polite");
+  const narrativeResult = node("p", "");
+  narrativeResult.className = "event-qte-result";
+  narrativeResult.setAttribute("role", "status");
+  const target = node("p", c.waiting);
   target.className = "event-qte-target";
+  target.setAttribute("aria-live", "assertive");
   const meter = node("div", "");
   meter.className = "event-qte-meter";
   meter.hidden = true;
@@ -68,70 +87,112 @@ export function mountEventChallenge(host, { event, language, begin, settle, onEr
   const marker = doc.createElement("span");
   marker.className = "event-qte-marker";
   meter.append(marker);
-  const status = node("p", "");
-  status.setAttribute("role", "status");
-  const start = button(c.start, () => launch("normal"));
-  const relaxed = button(c.relaxed, () => launch("relaxed"));
-  const actionButtons = QTE_KEYS.map((key, index) => {
-    const element = button(c.directions[index], () => input(key));
+  const labels = [...c.directions, c.act], symbols = ["←", "↑", "→", "↓", "␣"];
+  const actionButtons = REACTION_KEYS.map((key, index) => {
+    const element = button(`${symbols[index]} ${labels[index]}`, () => input(key));
+    element.className = "event-qte-key";
     element.setAttribute("aria-keyshortcuts", key);
-    element.hidden = true;
+    element.setAttribute("aria-pressed", "false");
+    element.disabled = true;
     return element;
   });
-  const act = button(c.act, () => input("Space"));
-  act.hidden = true;
-  act.setAttribute("aria-keyshortcuts", "Space");
-  const skip = button(c.skip, () => {
-    if (!running && !launch("normal", true)) return;
-    if (running) finish(true);
-  });
+  const status = node("p", "");
+  status.setAttribute("role", "status");
+  button(c.skip, () => { if (running) finish(true); });
+  const retryStart = button(c.retryStart, launch);
+  retryStart.hidden = true;
   const retry = button(c.retry, saveResult);
   retry.hidden = true;
-  function describe(challenge) {
-    instruction.textContent = c[challenge.type];
-    target.textContent = challenge.type === "timing" ? "35–65%" :
-      challenge.keys.map(key => c.directions[QTE_KEYS.indexOf(key)]).join(" → ");
-    meter.hidden = challenge.type !== "timing";
+  const helpButton = button(c.help, openHelp);
+  const help = node("dialog");
+  help.className = "event-qte-help";
+  help.setAttribute("aria-label", c.help);
+  for (const text of [c.controls, c.benefits]) {
+    const paragraph = doc.createElement("p");
+    paragraph.textContent = text;
+    help.append(paragraph);
   }
-  describe(eventChallenge(event, event.qte.mode ?? "normal"));
-  function elapsed() { return Math.min(86400000, Math.max(0, view.performance.now() - startedAt)); }
+  const details = doc.createElement("p");
+  help.append(details);
+  const closeHelp = doc.createElement("button");
+  closeHelp.type = "button";
+  closeHelp.textContent = c.close;
+  closeHelp.setAttribute("data-shortcut-skip", "");
+  closeHelp.addEventListener("click", () => { help.close(); resume(); });
+  help.append(closeHelp);
+  help.addEventListener("close", resume);
+  function openHelp() {
+    if (disposed || help.open) return;
+    if (running) pausedAt = view.performance.now();
+    help.showModal();
+    if (running) status.textContent = c.paused;
+  }
+  function resume() {
+    if (disposed) return;
+    if (pausedAt !== undefined) {
+      startedAt += view.performance.now() - pausedAt;
+      pausedAt = undefined;
+      tick();
+      root.focus({ preventScroll: true });
+    } else if (!running && !result) launch();
+  }
+  function elapsed() { return Math.min(86400000, Math.max(0, (pausedAt ?? view.performance.now()) - startedAt)); }
   function error(reason) {
     onError(reason);
     status.textContent = reason.message;
     status.setAttribute("role", "alert");
   }
-  function launch(mode, immediateSkip = false) {
-    if (disposed || running || result || event.qte.status !== "ready") return false;
+  function launch() {
+    if (disposed || running || result || doc.hidden || help.open || event.qte.status !== "ready") return;
+    rules = eventChallenge(event, event.qte.mode ?? "normal");
     try {
-      if (begin(mode) !== true) throw new Error(c.startSaveFailed);
-    } catch (reason) { error(reason); return false; }
-    rules = eventChallenge(event, mode);
+      if (begin(rules.mode) !== true) throw new Error(c.startSaveFailed);
+    } catch (reason) { error(reason); retryStart.hidden = false; return; }
+    if (disposed) return;
     running = true;
     startedAt = view.performance.now();
-    start.hidden = relaxed.hidden = true;
-    describe(rules);
-    actionButtons.forEach(element => { element.hidden = rules.type === "timing"; });
-    act.hidden = rules.type !== "timing";
+    retryStart.hidden = true;
+    actionButtons.forEach(element => { element.disabled = false; });
+    meter.hidden = rules.type !== "timing";
     root.focus({ preventScroll: true });
     tick();
-    if (!immediateSkip && running) timer = view.setInterval(tick, 50);
-    return true;
+    if (running) timer = view.setInterval(tick, 25);
   }
   function tick() {
     if (!running || disposed) return;
+    if (pausedAt !== undefined) { status.textContent = c.paused; return; }
     const time = elapsed();
-    if (rules.durationMs !== null && time >= rules.durationMs) { finish(); return; }
-    if (rules.type === "timing") marker.style.left = `${time % 2000 / 20}%`;
-    const text = `${c.active}. ${c.progress}: ${trace.length}/${rules.keys.length}` +
-      (rules.durationMs === null ? "" : `. ${c.remaining}: ${Math.ceil((rules.durationMs - time) / 1000)}`);
-    if (status.textContent !== text) status.textContent = text;
+    if (rules.durationMs !== null && time >= rules.durationMs ||
+        rules.type === "reaction" && time >= reactionCue(rules, trace.length).endMs) { finish(); return; }
+    let key;
+    if (rules.type === "reaction") {
+      if (time >= reactionCue(rules, trace.length).startMs) key = rules.keys[trace.length];
+    } else if (rules.type === "timing") {
+      marker.style.left = `${time % 2000 / 20}%`;
+      if (time % 2000 >= 700 && time % 2000 <= 1300) key = "Space";
+    } else key = rules.keys[trace.length];
+    actionButtons.forEach((element, index) => {
+      element.setAttribute("aria-pressed", String(REACTION_KEYS[index] === key));
+    });
+    target.textContent = rules.type === "timing" ? c.timing :
+      key ? `${c.now} ${labels[REACTION_KEYS.indexOf(key)]}` : c.waiting;
+    status.textContent = `${c.progress}: ${trace.length}/${rules.keys.length}`;
   }
   function input(key) {
-    if (!running || disposed) return;
+    if (!running || disposed || pausedAt !== undefined) return;
     const atMs = elapsed();
     if (rules.durationMs !== null && atMs >= rules.durationMs) { finish(); return; }
     trace.push({ key, atMs });
-    if (rules.type === "timing" || key !== rules.keys[trace.length - 1] || trace.length === rules.keys.length) finish();
+    const index = trace.length - 1;
+    const cue = rules.type === "reaction" ? reactionCue(rules, index) : null;
+    const correct = rules.type !== "timing" && key === rules.keys[index] &&
+      (!cue || atMs >= cue.startMs && atMs < cue.endMs);
+    if (correct && presentation.social) {
+      const line = doc.createElement("li");
+      line.textContent = presentation.lines[index];
+      dialogue.append(line);
+    }
+    if (rules.type === "timing" || !correct || trace.length === rules.keys.length) finish();
     else tick();
   }
   function finish(skipped = false) {
@@ -140,6 +201,12 @@ export function mountEventChallenge(host, { event, language, begin, settle, onEr
     running = false;
     view.clearInterval(timer);
     buttons.forEach(element => { element.disabled = true; });
+    helpButton.disabled = false;
+    actionButtons.forEach(element => element.setAttribute("aria-pressed", "false"));
+    target.textContent = c.finished;
+    status.textContent = `${c.progress}: ${trace.length}/${rules.keys.length}`;
+    narrativeResult.textContent = eventQteResult(event, language,
+      challengeOutcome(event, rules.mode, result.trace, result.elapsedMs, skipped));
     saveResult();
   }
   function saveResult() {
@@ -150,29 +217,40 @@ export function mountEventChallenge(host, { event, language, begin, settle, onEr
     } catch (reason) { error(reason); retry.hidden = false; retry.disabled = false; }
   }
   function keydown(event) {
-    if (!running || event.repeat || event.altKey || event.ctrlKey || event.metaKey ||
+    if (!running || help.open || event.target?.tagName === "BUTTON" && event.target.className !== "event-qte-key" ||
+        event.repeat || event.altKey || event.ctrlKey || event.metaKey ||
         !["Space", " ", ...QTE_KEYS].includes(event.key)) return;
     event.preventDefault();
     event.stopPropagation();
     input(event.key === " " ? "Space" : event.key);
   }
-  function hidden() { if (doc.hidden && running) finish(); }
-  root.addEventListener("keydown", keydown);
-  doc.addEventListener("visibilitychange", hidden);
-  if (event.qte.status === "active") {
-    start.hidden = relaxed.hidden = skip.hidden = true;
-    status.textContent = c.reloaded;
-    result = { trace: [], elapsedMs: 6000, skipped: false };
-    retry.hidden = false;
-    // Saving is explicit: mounting a restored dialog must not mutate its journey.
-    retry.textContent = c.retry;
+  function visibility() {
+    if (doc.hidden && running) finish();
+    else if (!doc.hidden && !running && !result) launch();
   }
+  root.addEventListener("keydown", keydown);
+  doc.addEventListener("visibilitychange", visibility);
+  if (event.qte.status === "active") {
+    status.textContent = c.reloaded;
+    result = { trace: [], elapsedMs: eventChallenge(event, event.qte.mode).durationMs ?? 6000, skipped: false };
+    retry.hidden = false;
+  } else queueMicrotask(launch);
   return {
+    updatePresentation({ text, imageReady = false, helpText = "" }) {
+      if (disposed) return;
+      if (text) {
+        story.textContent = text;
+        story.hidden = text.trim() === presentation.action;
+      }
+      art.hidden = imageReady;
+      details.textContent = helpText;
+    },
     destroy() {
       disposed = true;
+      if (help.open) help.close();
       view.clearInterval(timer);
       root.removeEventListener("keydown", keydown);
-      doc.removeEventListener("visibilitychange", hidden);
+      doc.removeEventListener("visibilitychange", visibility);
       root.remove();
     },
   };

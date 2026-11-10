@@ -51,6 +51,12 @@ export const QTE_PROMPTS = Object.freeze({
 
 export const QTE_KEYS = Object.freeze(["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown"]);
 export const QTE_DURATION_MS = 6000;
+export const REACTION_KEYS = Object.freeze([...QTE_KEYS, "Space"]);
+
+export function reactionCue(challenge, index) {
+  const startMs = 900 + index * (challenge.reactionMs + 250);
+  return { startMs, endMs: startMs + challenge.reactionMs };
+}
 
 export function eventChallenge(event, mode = "normal") {
   if (!event || !Object.hasOwn(EVENT_QTES, event.kind) || !["normal", "relaxed"].includes(mode) ||
@@ -60,6 +66,19 @@ export function eventChallenge(event, mode = "normal") {
   for (const char of `${event.kind}:${event.id}:${event.opportunity}`) {
     seed = Math.imul(seed ^ char.charCodeAt(0), 16777619) >>> 0;
   }
+  if (event.qte?.version === 2) {
+    const { fatigue, health } = event.qte;
+    if (mode !== "normal" || ![fatigue, health].every(value =>
+      Number.isFinite(value) && value >= 0 && value <= 100)) throw new Error("Invalid event challenge condition.");
+    const count = ({ observe: 3, timing: 4, sequence: 5 })[EVENT_QTES[event.kind]] + Math.ceil((100 - health) / 25);
+    const reactionMs = Math.round(1100 - fatigue * 5);
+    const keys = Array.from({ length: count }, () => {
+      seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5;
+      return REACTION_KEYS[(seed >>> 0) % REACTION_KEYS.length];
+    });
+    const challenge = { type: "reaction", mode, keys, reactionMs };
+    return { ...challenge, durationMs: reactionCue(challenge, count - 1).endMs };
+  }
   const type = EVENT_QTES[event.kind] === "timing" && mode === "relaxed" ? "observe" : EVENT_QTES[event.kind];
   return { type, mode, durationMs: mode === "relaxed" ? null : QTE_DURATION_MS,
     keys: Array.from({ length: type === "sequence" ? 3 : 1 }, (_, index) => QTE_KEYS[(seed >>> (index * 4)) % 4]) };
@@ -67,7 +86,7 @@ export function eventChallenge(event, mode = "normal") {
 
 export function challengeOutcome(event, mode, trace, elapsedMs, skipped = false) {
   const challenge = eventChallenge(event, mode);
-  if (!Array.isArray(trace) || trace.length > 3 || !Number.isFinite(elapsedMs) || elapsedMs < 0 ||
+  if (!Array.isArray(trace) || trace.length > (challenge.type === "reaction" ? 9 : 3) || !Number.isFinite(elapsedMs) || elapsedMs < 0 ||
       elapsedMs > 86400000 || typeof skipped !== "boolean" ||
       trace.some((input, index) => !input || Object.keys(input).sort().join() !== "atMs,key" ||
         !["Space", ...QTE_KEYS].includes(input.key) || !Number.isFinite(input.atMs) ||
@@ -81,16 +100,21 @@ export function challengeOutcome(event, mode, trace, elapsedMs, skipped = false)
     return trace.length === 1 && trace[0].key === "Space" && position >= 0.35 && position <= 0.65
       ? "success" : "failure";
   }
+  if (challenge.type === "reaction" && trace.some((input, index) => {
+    const cue = reactionCue(challenge, index);
+    return input.atMs < cue.startMs || input.atMs >= cue.endMs;
+  })) return "failure";
   return trace.length === challenge.keys.length && trace.every((input, index) => input.key === challenge.keys[index])
     ? "success" : "failure";
 }
 
 export function validateEventChallenge(event) {
   const qte = event.qte;
-  if (!qte || qte.version !== 1 || !["ready", "active", "success", "failure", "skipped"].includes(qte.status)) {
+  if (!qte || ![1, 2].includes(qte.version) || !["ready", "active", "success", "failure", "skipped"].includes(qte.status)) {
     throw new Error("Invalid saved event challenge.");
   }
-  const expected = ["version", "status", ...(qte.status !== "ready" ? ["mode"] : []),
+  const expected = ["version", "status", ...(qte.version === 2 ? ["fatigue", "health"] : []),
+    ...(qte.status !== "ready" ? ["mode"] : []),
     ...(["success", "failure", "skipped"].includes(qte.status) ? ["trace", "elapsedMs"] : [])].sort().join();
   if (Object.keys(qte).sort().join() !== expected) throw new Error("Invalid saved event challenge fields.");
   eventChallenge(event, qte.mode ?? "normal");
