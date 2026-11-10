@@ -55,9 +55,9 @@ class MainArtifactTests(unittest.TestCase):
         for assigned in ("platform", "investigation", "dungeon"):
             self.api.town_legends = SimpleNamespace(trial_definition=lambda *args, **kwargs: {
                 "townId": "node/42", "eligible": True, "format": assigned, "seed": 1})
-            for requested in ("treasure-platform-v1", "treasure-platform-v2", "treasure-platform-v3",
-                              "treasure-investigation-v1", "treasure-investigation-v2",
-                              "treasure-dungeon-v1", "treasure-dungeon-v2"):
+            for requested in ("treasure-platform-v1", "treasure-platform-v2", "treasure-platform-v3", "treasure-platform-v4", "treasure-platform-v5",
+                              "treasure-investigation-v1", "treasure-investigation-v2", "treasure-investigation-v3", "treasure-investigation-v4",
+                              "treasure-dungeon-v1", "treasure-dungeon-v2", "treasure-dungeon-v3"):
                 if requested.startswith(f"treasure-{assigned}-"):
                     continue
                 with self.assertRaisesRegex(JourneyConflict, "permanently assigned"):

@@ -9,100 +9,16 @@ import { LORE_ITEMS } from "../lore-catalogue.mjs";
 import { infoAt } from "../lore-engine.mjs";
 import { generatePlatformLevel, EXPANDED_PLATFORM_ARCHETYPES, EXPANDED_PLATFORM_CHALLENGES } from "../minigames/legend-layout.mjs";
 import { createPlatformer, stepPlatformer, platformArrow, platformAnimal } from "../minigames/legend-platformer.mjs";
-import { generateDungeon, createDungeon, stepDungeon, dungeonGateOpen, dungeonTarget, DUNGEON_RUNES, DUNGEON_DIRECTIONS } from "../minigames/legend-dungeon.mjs";
-import { generateInvestigation, createGeneratedInvestigation, stepInvestigation, investigationWitnessPresent } from "../minigames/legend-investigation.mjs";
+import { generateDungeon, createDungeon, stepDungeon } from "../minigames/legend-dungeon.mjs";
 import { EXPANDED_PLATFORM_VERSION, EXPANDED_INVESTIGATION_VERSION, EXPANDED_DUNGEON_VERSION,
+  CATALOGUE_PLATFORM_VERSION, CATALOGUE_INVESTIGATION_VERSION, CATALOGUE_DUNGEON_VERSION, isCatalogueLegendSession,
+  DECOY_PLATFORM_VERSION, DECOY_INVESTIGATION_VERSION, hasDecoyLevers,
   replayLegendSession, validateLegendSessionView, createLocalLegendAttempt, stepLocalLegendAttempt } from "../legend-session.mjs";
 import { encounterCosts } from "../adventure-costs.mjs";
 import { variedPlatformRoute } from "./helpers/legend-varied-platform-route.mjs";
 import { findDungeonRoute } from "./helpers/legend-dungeon-route.mjs";
 
-export function expandedInvestigationRoute(seed, { tier = "modest", mistakes = false } = {}) {
-  let state = createGeneratedInvestigation({ level: generateInvestigation({ seed, tier, paced: true, expanded: true }) });
-  const actions = [];
-  function act(command) {
-    const action = { type: "act", command }; actions.push(action); state = stepInvestigation(state, action);
-  }
-  for (const room of state.level.rooms) {
-    if (room.id) {
-      const action = { type: "travel", room: room.id }; actions.push(action); state = stepInvestigation(state, action);
-    }
-    if (room.concealed) {
-      act("inspect");
-      if (mistakes) act(`search:${(room.order[0] + 1) % 3}`);
-      act(`search:${room.order[0]}`);
-    }
-    if (["evidence", "cipher", "sequence", "alignment", "exchange"].includes(room.family)) act("inspect");
-    if (room.family === "deduction") { act("inspect:0"); act("inspect:1"); }
-    if (room.family === "witnesses") for (const witness of [0, 1]) {
-      if (!investigationWitnessPresent(state, witness)) act("wait");
-      act(`witness:${witness}`);
-    }
-    if (["evidence", "cipher", "deduction", "witnesses"].includes(room.family)) {
-      if (mistakes) act(`choose:${(room.answer + 1) % 3}`);
-      act(`choose:${room.answer}`);
-    } else if (room.family === "sequence") {
-      if (mistakes) act(`press:${(room.order[0] + 1) % 3}`);
-      for (const index of room.order) act(`press:${index}`);
-    } else if (room.family === "assembly") { act("take:0"); act("take:1"); act("combine"); }
-    else if (room.family === "exchange") { act(`take:${room.variant}`); act(`offer:${room.answer}`); }
-    else if (room.family === "alignment") {
-      for (let i = 0; i < 3; i++) for (let count = 0; count < room.order[i]; count++) act(`rotate:${i}`);
-      act("combine");
-    }
-    if (room.seal !== undefined) {
-      if (mistakes) act(`verify:${(room.seal + 1) % 3}`);
-      act(`verify:${room.seal}`);
-    }
-    assert.ok(state.progress[room.id].solved, `unsolved ${room.family}, ${seed}, ${room.id}`);
-  }
-  assert.ok(state.completed);
-  return { state, actions };
-}
-
-export function expandedDungeonRoute(seed, { tier = "modest", secrets = true } = {}) {
-  let state = createDungeon({ level: generateDungeon({ seed, tier, paced: true, expanded: true }), healthMode: "journey" });
-  const actions = [];
-  function route(predicate) {
-    const found = findDungeonRoute(state, predicate);
-    actions.push(...found.actions); state = found.state;
-  }
-  function operate(point, predicate) {
-    const roomId = state.room;
-    route(next => next.room === roomId && predicate(next));
-    assert.ok(predicate(state), `operation seed${seed} room${state.room} ${JSON.stringify(point)} from ${state.x},${state.y}: ${state.message}; secrets ${state.secrets}`);
-  }
-  function enter(door) {
-    const [x, y] = DUNGEON_DIRECTIONS[door.direction].door;
-    if (door.secret) operate({ x, y }, next => next.secrets.includes(`${state.room}:${door.target}`));
-    route(next => next.room === door.target);
-  }
-  while (!state.completed) {
-    const room = state.level.rooms[state.room];
-    for (const mechanism of room.mechanisms) {
-      const done = next => next.activated.includes(`${room.id}:${mechanism}`);
-      if (mechanism === "spikes" || done(state)) continue;
-      if (mechanism === "block" || mechanism === "plate") route(done);
-      else if (mechanism === "runes") for (const index of room.runeOrder) {
-        operate(DUNGEON_RUNES[index], next => done(next) || next.runes.length > room.runeOrder.indexOf(index));
-      }
-      else {
-        if (mechanism === "torch") operate(room.flame, next => next.flames.includes(room.id));
-        operate(dungeonTarget(room, mechanism), done);
-      }
-    }
-    assert.ok(dungeonGateOpen(state));
-    if (secrets) for (const door of room.connections.filter(door => state.level.rooms[door.target].hidden)) {
-      enter(door);
-      const hidden = state.level.rooms[state.room];
-      operate(hidden.stash, next => next.stashes.includes(hidden.id));
-      enter(hidden.connections[0]);
-    }
-    if (room.id === state.level.treasureRoom) operate({ x: 6, y: 3 }, next => next.completed);
-    else enter(room.connections.find(door => door.target === room.id + 1));
-  }
-  return { state, actions };
-}
+import { expandedInvestigationRoute, expandedDungeonRoute } from "./helpers/legend-expanded-route.mjs";
 
 test("expanded platform decks include sixteen architectures and eight distinct mechanisms", () => {
   const archetypes = new Set(), challenges = new Set();
@@ -192,17 +108,28 @@ function journeyRequest() {
 }
 
 test("all expanded formats settle actual journey penalties and first-clear money/food stashes, never on abandon or replay", async () => {
-  for (const [format, contentVersion] of [["platform", EXPANDED_PLATFORM_VERSION],
-    ["investigation", EXPANDED_INVESTIGATION_VERSION], ["dungeon", EXPANDED_DUNGEON_VERSION]]) {
-    const seed = 1;
+  for (const [format, contentVersion, seed = 1] of [["platform", EXPANDED_PLATFORM_VERSION],
+    ["investigation", EXPANDED_INVESTIGATION_VERSION], ["dungeon", EXPANDED_DUNGEON_VERSION],
+    ["platform", CATALOGUE_PLATFORM_VERSION], ["investigation", CATALOGUE_INVESTIGATION_VERSION],
+    ["dungeon", CATALOGUE_DUNGEON_VERSION], ["platform", DECOY_PLATFORM_VERSION],
+    ["investigation", DECOY_INVESTIGATION_VERSION], ["platform", DECOY_PLATFORM_VERSION, 0],
+    ["investigation", DECOY_INVESTIGATION_VERSION, 0]]) {
     const base = journeyRequest();
     const request = { ...base, legendDefinition: { townId: "node/42", town: "Firmi", eligible: true, format, seed },
       action: { type: "legend-start", townId: "node/42", contentVersion } };
     const started = await mainArtifactRequest(request);
     validateLegendSessionView(started.view.adventure, started.view.state);
-    const route = format === "platform" ? variedPlatformRoute(seed, { expanded: true, visitBranches: true }) :
-      format === "dungeon" ? expandedDungeonRoute(seed) : expandedInvestigationRoute(seed, { mistakes: true });
+    const catalogue = isCatalogueLegendSession(contentVersion);
+    const decoys = hasDecoyLevers(contentVersion);
+    const route = format === "platform" ? variedPlatformRoute(seed, {
+      expanded: true, visitBranches: true, catalogue, decoys, pullFirstDecoy: decoys,
+    }) : format === "dungeon" ? expandedDungeonRoute(seed, { catalogue }) :
+      expandedInvestigationRoute(seed, { mistakes: true, catalogue, decoys, pullFirstDecoy: decoys });
     const { actions } = route;
+    if (decoys) {
+      assert.equal(route.state.metrics.trapHits, seed);
+      if (!seed) assert.ok(route.state.metrics.wrongAttempts > 0);
+    }
     let local = createLocalLegendAttempt(started.view.adventure, { ...started.runtime,
       info: infoAt(request.map, started.view.state) });
     for (const action of actions) local = stepLocalLegendAttempt(local, action);
@@ -232,5 +159,39 @@ test("all expanded formats settle actual journey penalties and first-clear money
     assert.equal(taken.view.state.walletCents, local.state.walletCents);
     await assert.rejects(() => mainArtifactRequest({ ...finish(actions), runtime: finished.runtime,
       snapshot: finished.view.state }), /No matching active/);
+  }
+});
+
+test("surprise injuries interrupt fragile journeys consistently in local and authoritative replay", async () => {
+  for (const [format, contentVersion] of [["platform", DECOY_PLATFORM_VERSION], ["investigation", DECOY_INVESTIGATION_VERSION]]) {
+    const seed = 1, base = journeyRequest();
+    const state = { ...base.snapshot, health: 5 };
+    const request = { ...base, snapshot: state, genesis: { ...base.genesis, state },
+      legendDefinition: { townId: "node/42", town: "Firmi", eligible: true, format, seed },
+      action: { type: "legend-start", townId: "node/42", contentVersion } };
+    const started = await mainArtifactRequest(request);
+    const route = format === "platform" ? variedPlatformRoute(seed, {
+      expanded: true, catalogue: true, decoys: true, pullFirstDecoy: true,
+    }) : expandedInvestigationRoute(seed, { catalogue: true, decoys: true, pullFirstDecoy: true });
+    let local = createLocalLegendAttempt(started.view.adventure, {
+      ...started.runtime, info: infoAt(request.map, started.view.state),
+    });
+    const actions = [];
+    for (const action of route.actions) {
+      actions.push(action);
+      local = stepLocalLegendAttempt(local, action);
+      if (local.interrupted) break;
+    }
+    assert.equal(local.interrupted, true);
+    assert.equal(local.progress.metrics.trapHits, 1);
+    const finished = await mainArtifactRequest({ ...request, runtime: started.runtime, snapshot: started.view.state,
+      worldMinutes: started.runtime.worldMinutes, instances: started.instances,
+      action: { type: "legend-finish", runId: base.requestId, actions } });
+    assert.equal(finished.view.adventure.status, "interrupted");
+    assert.equal(finished.view.treasures.result, null);
+    for (const key of ["health", "fatigue", "elapsedMinutes", "walletCents"]) {
+      assert.equal(finished.view.state[key], local.state[key]);
+    }
+    validateLegendSessionView(finished.view.adventure, finished.view.state);
   }
 });

@@ -176,6 +176,128 @@ explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
 ## Checkpoint deployed: town legends and composed treasures (9 November 2026)
 
+### Reusable encounter recipes, 0.22.9
+
+The isolated dungeon preview accepts a bounded `resume` URL parameter replaying
+direction/interact/wait/attack inputs (`u/r/d/l/e/w/x`). It restores a verified
+route for local room playtests only; authoritative mounts reject resume inputs.
+
+New entry controls and the local preview select `treasure-platform-v5`,
+`treasure-dungeon-v3` and `treasure-investigation-v4`. Their layout versions are
+7 / 4 / 5 respectively. These additive protocols retain all previous replay
+paths, including the currently deployed 0.22.8 protocols. No database or town
+assignment migration is required. The 0.22.9 deployment is prepared as an isolated
+delta over the verified 0.22.8 runtime, excluding unrelated event-QTE work.
+
+The previous catalogue protocols (`treasure-platform-v4` and
+`treasure-investigation-v3`, layouts 6 / 4) remain unchanged. The new versions
+add optional surprise levers through `minigames/legend-decoys.mjs`. Neutral
+sprites, hotspot names and inspection prose do not disclose the consequence.
+Seeded levers mix faulty-mechanism penalties with standard concealed-dart hits,
+recording a spent room ID before applying the consequence. Retry and revisit
+preserve it; no essential item or required puzzle state is consumed. Platform
+levers use E and reserve floor space clear of required controls and doors.
+Investigations use a separate validated `decoy:pull` contextual command,
+without expanding the five primary action buttons. Dungeon rules do not change.
+Ordinary hazard warnings remain; general penalty rules are available in Help.
+
+`minigames/legend-mechanisms.mjs` is the small shared catalogue. Definitions have
+stable IDs/versions, compatible formats, geometry slots, sprites and bilingual
+clues/help. Immutable recipes carry bounded variants, explicit dependency/link
+descriptions, solution milestones and reset rules. A shared pure transition
+function handles switches, keys, plates and cranks as well as the new encounters.
+Generators attach compatible recipes to supported rooms and reject blocked
+rails/beam paths or unsupported bridge endpoints. Existing room gates combine
+completed components; this is deliberately not a generic graph interpreter,
+script language, external content importer or new movement engine.
+
+- Platform crate recipes reserve a clear floor rail and keep door/checkpoint
+  positions outside it. Crates can be approached from either side or jumped over;
+  pushing onto the marked plate latches the gate. Retry resets an unsolved crate.
+- Timed bridges have three bounded span variants, a supported boarding ledge,
+  one return ladder, a far-side seal and a 720-tick window at 60 Hz. A missed
+  crossing drops onto safe ground, never into a required injury. The lever can
+  rearm; reaching the seal latches the crossing permanently.
+- Dungeon mirrors turn a harmless beam toward one of two receiver positions.
+  Beam traversal is bounded by the room, not recursive. Rail-bound weight
+  puzzles reuse the same pressure transition; paced rooms may additionally
+  require a key. Other expanded traps, patrols, runes and secrets remain.
+- Investigations add matching tools/fittings, two-part repair and installation,
+  and two-sheet document overlays. Wrong tools/answers never consume essential
+  items. Clue facts follow the generated answer; controls stay within five
+  existing action buttons. Earlier solved marks still feed later seals.
+  A graphical inventory tray displays retained items with crisp pixel sprites
+  and localized name tooltips on hover/focus, including legacy adventures.
+  Slots are keyboard-focusable and expose accessible names without permanent
+  text labels. It is a read-only view of
+  canonical inventory for old puzzle families. Tool, repair and overlay recipes
+  now support inventory selection and small contextual Observe/Use/Assemble
+  menus. Their collectibles have matching visible sprites and percentage-based
+  DOM hotspots over the 640x320 scene, with mouse hover and native keyboard
+  focus highlights. Selection routes to existing canonical commands only.
+  Escape or empty scenery cancels; no dragging or new engine protocol is needed.
+  All procedural families hide the old action row while preserving A–E in Help.
+  Evidence, witnesses, sequences, ciphers, deductions, exchanges and alignment
+  expose command-grouped scene objects with localized contextual menus.
+  Witness waiting and archive seals also have scene targets; examination and
+  testimony bubbles include the actual clue text. Procedural navigation uses clickable
+  visible doors instead of the previous/next bar, with forward progress locked
+  until the site/seal is solved and bracket shortcuts retained.
+  Ordinary assembly puzzles also expose their actual supplies as individual
+  sprites/hotspots and allow contextual assembly. Scene feedback appears in an accessible
+  bubble above the canvas, in normal document flow, until the next action.
+  Long messages cannot overlap scene objects or seals. The optional lever's presentation is separated
+  from decorative papers; canonical positions and replay rules are unchanged.
+  Inventory derives a single combined item from repair/overlay progress;
+  installed repairs and used ordinary assemblies no longer display loose
+  components. This presentation-only projection preserves canonical item IDs,
+  failure recovery and replay. The mounted wheel has its own 16x16 sprite.
+  Concealed-passage panels have matching scene hotspots with Observe/Search
+  menus. Revealing a passage removes
+  panel hotspots and exposes its puzzle objects without changing canonical rules.
+  Each site has a localized, observation-only introduction without solution
+  instructions. Main-puzzle procedural objectives stay hidden; clues are
+  discovered by interacting. Arrivals repeat only the introduction in the
+  bubble. The separate archive-seal phase names its scene target and repeats
+  the referenced site's retained mark and cycle rule, including after mistakes.
+  This avoids confusing a document's answer with the later seal's answer.
+  Investigation scenery now uses eight deterministic location compositions:
+  archive shelves, workshop tools, observatory skyline, greenhouse glazing and
+  plants, vault pillars, portrait gallery, canal warehouse and theatre seating.
+  Each eight-site chapter visits all eight in a seeded order. Distinct geometry
+  remains visible over shared optional artwork; puzzle state and transcripts
+  are unchanged. Location names are exposed in French/English canvas labels.
+
+Engine-specific adapters supply geometry predicates and draw collision-backed
+objects; in-world inscriptions provide clues, while procedures remain in paused
+Help. New protocols retain authoritative replay, standard journey costs and the
+same first-original-recovery-only stash settlement. Tests exercise seeded
+physical completion across all profiles, reversible secrets, retry/timer/beam
+behavior, bounded item-state recovery, localized console controls and actual
+journey settlement. No paid calls, daily jobs or LLM infrastructure are enabled.
+
+Independent platform hazards and uncollected side-room stashes remain rendered
+after a gate is solved; arrows and patrols never become invisible colliders.
+
+Validation: the full JavaScript suite passed 1,742 tests, including all 42
+adventure UI tests. The main-artifacts backend suite passed 19 tests.
+The session/packaging check passed 22 of 23 tests; the remaining session fixture
+expects a legacy `town_legends.format` edit to override the retained
+`town_legend_gameplay` assignment. It fails identically on the unmodified
+pre-release HEAD and is not changed by this release.
+Console coverage includes bilingual click-only canonical completion routes,
+item retention, distinct component icons, bounded recipe hotspots, reversible
+doors, cancellation without costs and blocking during Help/pending settlement.
+Click-only routes cover all eight original/expanded families in both languages,
+including concealed panels, witness waiting, sequences and archive seals.
+Surprise-lever coverage checks both penalties, held input, retained spent state,
+damage-free routes, legacy replay and exact journey settlement, including
+interruption for fragile characters.
+Integrated-browser visual verification is
+unavailable because the browser's CDP connection times out; no visual acceptance
+is claimed. Production installation and verification are recorded below after
+deployment.
+
 ### Expanded encounters and journey stakes, 0.22.8
 
 New entries request `treasure-platform-v3`, `treasure-investigation-v2` or

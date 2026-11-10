@@ -1,4 +1,6 @@
 import { adventurePacing } from "./legend-pacing.mjs";
+import { createMechanism, advanceMechanism, initialMechanismState, mechanismCommands } from "./legend-mechanisms.mjs";
+import { decoyLever } from "./legend-decoys.mjs";
 
 export const INVESTIGATION_PROFILES = Object.freeze({
   modest: Object.freeze({ rooms: 8, rewardBudget: 1 }),
@@ -17,11 +19,13 @@ function freeze(value) {
 }
 function retain(state) { freeze(state); states.add(state); return state; }
 
-export function generateInvestigation({ seed = 1, tier = "modest", roomCount = INVESTIGATION_PROFILES[tier]?.rooms, paced = false, expanded = false } = {}) {
+export function generateInvestigation({ seed = 1, tier = "modest", roomCount = INVESTIGATION_PROFILES[tier]?.rooms, paced = false, expanded = false, catalogue = false, decoys = false } = {}) {
   if (!Number.isSafeInteger(seed) || seed < 0 || seed > 0xffffffff ||
       !Object.hasOwn(INVESTIGATION_PROFILES, tier) || !Number.isSafeInteger(roomCount) ||
       roomCount < 4 || roomCount > 32 || roomCount % 4 || typeof paced !== "boolean" ||
-      typeof expanded !== "boolean" || expanded && !paced || paced && roomCount < 8) throw new RangeError("Invalid investigation seed or tier.");
+      typeof expanded !== "boolean" || typeof catalogue !== "boolean" || catalogue && !expanded ||
+      typeof decoys !== "boolean" || decoys && !catalogue ||
+      expanded && !paced || paced && roomCount < 8) throw new RangeError("Invalid investigation seed or tier.");
   let value = seed;
   const random = () => {
     value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
@@ -59,19 +63,29 @@ export function generateInvestigation({ seed = 1, tier = "modest", roomCount = I
     room.cipherShift = 1 + room.id % 2;
     room.stash = room.concealed ? { kind: room.id % 8 === 2 ? "money" : "food" } : null;
   }
-  const level = freeze({ version: expanded ? 3 : paced ? 2 : 1, seed, tier, ...INVESTIGATION_PROFILES[tier], rooms });
+  if (catalogue) for (const room of rooms) {
+    const kind = { 1: "tool", 3: "repair", 5: "overlay" }[room.id % 8];
+    if (kind) {
+      room.family = kind;
+      room.recipe = createMechanism("investigation", kind, room.answer);
+    }
+  }
+  if (decoys) for (const room of rooms.filter(room => room.id % 2 === 0)) room.decoy = decoyLever(seed, room.id);
+  const level = freeze({ version: decoys ? 5 : catalogue ? 4 : expanded ? 3 : paced ? 2 : 1, seed, tier, ...INVESTIGATION_PROFILES[tier], rooms });
   levels.add(level);
   return level;
 }
 
 export function createGeneratedInvestigation({ level = generateInvestigation() } = {}) {
   if (!levels.has(level)) throw new TypeError("Expected a generated investigation.");
-  return retain({ level, room: 0, progress: level.rooms.map(() => ({
+  return retain({ level, room: 0, progress: level.rooms.map(room => ({
     solved: false, inspected: false, witnesses: [], parts: [], sequence: [],
     ...(level.version >= 2 ? { resolved: false } : {}),
     ...(level.version >= 3 ? { revealed: false, branches: [], dials: [0, 0, 0] } : {}),
+    ...(room.recipe ? { mechanism: initialMechanismState() } : {}),
   })), completed: false, message: "arrival",
   ...(level.version >= 3 ? { tick: 0, stashes: [] } : {}),
+  ...(level.version >= 5 ? { spentDecoys: [] } : {}),
   metrics: { roomEntries: 1, roomsVisited: [0], trapHits: 0, ...(level.version >= 3 ? { wrongAttempts: 0 } : {}) } });
 }
 
@@ -83,6 +97,7 @@ export function investigationCommands(state) {
   const room = state.level.rooms[state.room];
   if (room.concealed && !state.progress[state.room].revealed) return ["inspect", "search:0", "search:1", "search:2"];
   if (room.seal !== undefined && state.progress[state.room].resolved) return ["verify:0", "verify:1", "verify:2"];
+  if (room.recipe) return mechanismCommands(room.recipe, state.progress[state.room].mechanism);
   if (room.family === "witnesses" && state.level.version >= 3) {
     return state.progress[state.room].witnesses.length < 2 ? ["witness:0", "witness:1", "wait"] : ["choose:0", "choose:1", "choose:2"];
   }
@@ -106,7 +121,8 @@ export function stepInvestigation(state, action) {
       !["travel", "act"].includes(action.type) ||
       action.type === "travel" && (!Object.hasOwn(action, "room") || !Number.isSafeInteger(action.room) ||
         action.room < 0 || action.room >= state.level.rooms.length) ||
-      action.type === "act" && (!Object.hasOwn(action, "command") || !investigationCommands(state).includes(action.command))) {
+      action.type === "act" && (!Object.hasOwn(action, "command") || !investigationCommands(state).includes(action.command) &&
+        !(state.level.rooms[state.room].decoy && action.command === "decoy:pull"))) {
     throw new RangeError("Invalid generated investigation input.");
   }
   if (state.completed) return state;
@@ -118,59 +134,75 @@ export function stepInvestigation(state, action) {
         roomsVisited: [...new Set([...state.metrics.roomsVisited, action.room])] } });
   }
   const room = state.level.rooms[state.room], old = state.progress[state.room];
+  if (action.command === "decoy:pull") {
+    if (state.spentDecoys.includes(room.id)) return retain({ ...state, message: "decoySpent" });
+    const trap = room.decoy.kind === "trap";
+    return retain({ ...state, tick: state.tick + 1, spentDecoys: [...state.spentDecoys, room.id],
+      message: trap ? "decoyTrap" : "decoyMistake",
+      metrics: { ...state.metrics, trapHits: state.metrics.trapHits + Number(trap),
+        wrongAttempts: state.metrics.wrongAttempts + Number(!trap) } });
+  }
   if (old.solved) return retain({ ...state, message: "already" });
   const current = { ...old, witnesses: [...old.witnesses], parts: [...old.parts], sequence: [...old.sequence] };
   let message = "progress";
   const [command, indexText] = action.command.split(":");
   const index = Number(indexText);
-  if (command === "inspect") {
-    current.inspected = true; message = "clue";
-    if (room.family === "deduction" && indexText !== undefined) current.branches = [...new Set([...old.branches, index])];
-  }
-  if (command === "search") {
-    if (!current.inspected) message = "needEvidence";
-    else if (index !== room.order[0]) message = "wrong";
-    else { current.revealed = true; current.inspected = false; message = "secret"; }
-  }
-  if (command === "witness") {
-    if (!investigationWitnessPresent(state, index)) message = "witnessAway";
-    else {
-      if (!current.witnesses.includes(index)) current.witnesses.push(index);
-      message = `witness:${index}`;
+  if (room.recipe && command !== "verify") {
+    const result = advanceMechanism(room.recipe, old.mechanism, { command: action.command });
+    current.mechanism = result.state;
+    current.parts = [...result.state.items];
+    current.inspected = result.state.inspected;
+    current.solved = result.state.solved;
+    message = result.state.solved ? "solved" : result.message;
+  } else {
+    if (command === "inspect") {
+      current.inspected = true; message = "clue";
+      if (room.family === "deduction" && indexText !== undefined) current.branches = [...new Set([...old.branches, index])];
     }
-  }
-  if (command === "take") {
-    if (!current.parts.includes(index)) current.parts.push(index);
-    message = "supplies";
-  }
-  if (command === "combine") {
-    current.solved = room.family === "alignment" ? current.inspected && current.dials.every((value, i) => value === room.order[i]) :
-      current.parts.length === 2;
-    if (room.family === "alignment" && !current.solved) message = "wrong";
-    else
-    message = current.solved ? "solved" : "needParts";
-  }
-  if (command === "rotate") current.dials = old.dials.map((value, i) => i === index ? (value + 1) % 3 : value);
-  if (command === "offer") {
-    current.solved = current.inspected && current.parts.includes(room.variant) && index === room.answer;
-    message = current.solved ? "solved" : "wrong";
-    if (!current.solved) current.parts = [];
-  }
-  if (command === "choose") {
-    const ready = ["evidence", "cipher"].includes(room.family) ? current.inspected :
-      room.family === "deduction" ? current.branches.length === 2 : current.witnesses.length === 2;
-    current.solved = ready && index === room.answer;
-    message = !ready ? "needEvidence" : current.solved ? "solved" : "wrong";
-  }
-  if (command === "press") {
-    if (!current.inspected) message = "needEvidence";
-    else if (index !== room.order[current.sequence.length]) {
-      current.sequence = [];
-      message = "resetSequence";
-    } else {
-      current.sequence.push(index);
-      current.solved = current.sequence.length === room.order.length;
-      message = current.solved ? "solved" : "progress";
+    if (command === "search") {
+      if (!current.inspected) message = "needEvidence";
+      else if (index !== room.order[0]) message = "wrong";
+      else { current.revealed = true; current.inspected = false; message = "secret"; }
+    }
+    if (command === "witness") {
+      if (!investigationWitnessPresent(state, index)) message = "witnessAway";
+      else {
+        if (!current.witnesses.includes(index)) current.witnesses.push(index);
+        message = `witness:${index}`;
+      }
+    }
+    if (command === "take") {
+      if (!current.parts.includes(index)) current.parts.push(index);
+      message = "supplies";
+    }
+    if (command === "combine") {
+      current.solved = room.family === "alignment" ? current.inspected && current.dials.every((value, i) => value === room.order[i]) :
+        current.parts.length === 2;
+      if (room.family === "alignment" && !current.solved) message = "wrong";
+      else message = current.solved ? "solved" : "needParts";
+    }
+    if (command === "rotate") current.dials = old.dials.map((value, i) => i === index ? (value + 1) % 3 : value);
+    if (command === "offer") {
+      current.solved = current.inspected && current.parts.includes(room.variant) && index === room.answer;
+      message = current.solved ? "solved" : "wrong";
+      if (!current.solved) current.parts = [];
+    }
+    if (command === "choose") {
+      const ready = ["evidence", "cipher"].includes(room.family) ? current.inspected :
+        room.family === "deduction" ? current.branches.length === 2 : current.witnesses.length === 2;
+      current.solved = ready && index === room.answer;
+      message = !ready ? "needEvidence" : current.solved ? "solved" : "wrong";
+    }
+    if (command === "press") {
+      if (!current.inspected) message = "needEvidence";
+      else if (index !== room.order[current.sequence.length]) {
+        current.sequence = [];
+        message = "resetSequence";
+      } else {
+        current.sequence.push(index);
+        current.solved = current.sequence.length === room.order.length;
+        message = current.solved ? "solved" : "progress";
+      }
     }
   }
   if (room.seal !== undefined) {
@@ -198,6 +230,7 @@ export function generatedInvestigationHint(state) {
   if (state.completed) return "complete";
   if (progress.solved) return "next";
   if (room.seal !== undefined && progress.resolved) return "seal";
+  if (room.recipe) return room.family;
   if (room.concealed && !progress.revealed) return "secret";
   if (["cipher", "deduction", "exchange", "alignment"].includes(room.family)) return room.family;
   if (room.family === "assembly") return progress.parts.length === 2 ? "combine" : "take";

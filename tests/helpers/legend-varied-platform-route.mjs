@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createPlatformer, stepPlatformer, PLAYER, platformLadders, platformRoomSolved, platformAnimal, platformArrow,
-  platformHazardActive, PLATFORM_RUNES } from "../../minigames/legend-platformer.mjs";
+  platformHazardActive, platformCrate, platformBridge, PLATFORM_RUNES } from "../../minigames/legend-platformer.mjs";
 import { generatePlatformLevel } from "../../minigames/legend-layout.mjs";
 
 const floor = { x: 0, y: 288, width: 640 };
@@ -8,8 +8,8 @@ const centre = surface => surface.x + surface.width / 2 - PLAYER.width / 2;
 const supports = (surface, state) => Math.abs(state.y + PLAYER.height - surface.y) < .1 &&
   state.x + PLAYER.width > surface.x && state.x < surface.x + surface.width;
 
-export function variedPlatformRoute(seed, { tier = "modest", branches = 2, visitBranches = false, expanded = false } = {}) {
-  const level = generatePlatformLevel({ seed, tier, branches, paced: true, varied: true, expanded });
+export function variedPlatformRoute(seed, { tier = "modest", branches = 2, visitBranches = false, expanded = false, catalogue = false, decoys = false, pullFirstDecoy = false } = {}) {
+  const level = generatePlatformLevel({ seed, tier, branches, paced: true, varied: true, expanded, catalogue, decoys });
   let state = createPlatformer({ level, healthMode: "journey" });
   const actions = [];
   function record(controls) {
@@ -37,9 +37,13 @@ export function variedPlatformRoute(seed, { tier = "modest", branches = 2, visit
     return simulate(start, current => {
       const right = current.x < x;
       const animal = platformAnimal(current), arrow = platformArrow(current);
+      const crate = platformCrate(current);
+      const crateDistance = crate && (right ? crate.x - current.x - PLAYER.width : current.x - crate.x - crate.width);
+      const crossCrate = crate && (x < crate.x - PLAYER.width || x > crate.x + crate.width) &&
+        crateDistance >= -1 && crateDistance <= 32;
       const threat = [animal, arrow].filter(Boolean).some(item =>
         Math.abs(current.y - item.y) < 30 && Math.abs(current.x - item.x) < 65);
-      const jump = current.grounded && (threat || current.y >= 250 && level.rooms[current.room].hazards.some(hazard => {
+      const jump = current.grounded && (crossCrate || threat || current.y >= 250 && level.rooms[current.room].hazards.some(hazard => {
         const distance = right ? hazard.x - current.x - PLAYER.width : current.x - hazard.x - hazard.width;
         return distance >= 20 && distance <= 32 && (!expanded || platformHazardActive(hazard, current.ticks + 12));
       }));
@@ -48,7 +52,7 @@ export function variedPlatformRoute(seed, { tier = "modest", branches = 2, visit
   }
   function moveTo(point, airborne = false) {
     const room = level.rooms[state.room];
-    const surfaces = [floor, ...room.platforms];
+    const surfaces = [floor, ...room.platforms, ...[platformCrate(state), platformBridge(state)].filter(Boolean)];
     const target = surfaces.find(surface => Math.abs(surface.y - (point.y + (airborne ? 64 : 26))) < .1 &&
       point.x >= surface.x - 3 && point.x + PLAYER.width <= surface.x + surface.width + 3);
     assert.ok(target, `no support for ${JSON.stringify(point)} in ${room.archetype}`);
@@ -137,6 +141,22 @@ export function variedPlatformRoute(seed, { tier = "modest", branches = 2, visit
       if (point.family === "torch") {
         moveTo(room.flame); record({ interact: true });
       }
+      if (point.family === "crate") {
+        const recipe = room.recipes[index];
+        moveTo({ x: recipe.start - PLAYER.width - 12, y: 262 });
+        for (let tick = 0; tick < 240 && !state.activated.includes(`${room.id}:${index}`); tick++) record({ right: true });
+        assert.ok(state.activated.includes(`${room.id}:${index}`), `crate seed${seed} room${room.id}`);
+        continue;
+      }
+      if (point.family === "bridge") {
+        const recipe = room.recipes[index];
+        moveTo(recipe.lever);
+        record({ interact: true });
+        moveTo(recipe.receiver);
+        record({ interact: true });
+        assert.ok(state.activated.includes(`${room.id}:${index}`), `bridge seed${seed} room${room.id}`);
+        continue;
+      }
       moveTo(point, point.family === "jump");
       if (point.family === "plate") record({});
       else if (point.family === "crank") for (let tick = 0; tick < 60; tick++) record({ interact: true });
@@ -165,6 +185,10 @@ export function variedPlatformRoute(seed, { tier = "modest", branches = 2, visit
     }
     visit();
   }
+  if (pullFirstDecoy) {
+    moveTo(level.rooms[0].decoy);
+    record({ interact: true });
+  }
   for (let id = 0; id < level.mainRooms - 1; id++) {
     enter(level.rooms[id].connections.find(door => door.target === id + 1));
   }
@@ -172,7 +196,7 @@ export function variedPlatformRoute(seed, { tier = "modest", branches = 2, visit
   moveTo(level.rooms[state.room].treasure);
   record({ interact: true });
   assert.equal(state.completed, true);
-  assert.equal(state.metrics.trapHits, 0);
+  assert.equal(state.metrics.trapHits, Number(pullFirstDecoy && level.rooms[0].decoy.kind === "trap"));
   if (expanded) assert.equal(state.metrics.creatureHits, 0);
   return { actions, state, level };
 }

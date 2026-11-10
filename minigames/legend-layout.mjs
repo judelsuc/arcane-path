@@ -1,4 +1,6 @@
 import { adventurePacing } from "./legend-pacing.mjs";
+import { createMechanism, validateMechanismPlacement } from "./legend-mechanisms.mjs";
+import { decoyLever } from "./legend-decoys.mjs";
 
 const DIRECTIONS = Object.freeze({
   right: { col: 1, row: 0, opposite: "left" },
@@ -148,7 +150,7 @@ function deepFreeze(value) {
 
 export function isPlatformLevel(level) { return levels.has(level); }
 
-export function generatePlatformLevel({ seed = 1, mainRooms, branches = 2, tier, paced = false, varied = false, expanded = false } = {}) {
+export function generatePlatformLevel({ seed = 1, mainRooms, branches = 2, tier, paced = false, varied = false, expanded = false, catalogue = false, decoys = false } = {}) {
   if (tier !== undefined && (!Object.hasOwn(PLATFORM_PROFILES, tier) || mainRooms !== undefined)) {
     throw new RangeError("Choose a platform reward tier or a custom main path length.");
   }
@@ -157,6 +159,7 @@ export function generatePlatformLevel({ seed = 1, mainRooms, branches = 2, tier,
       !Number.isSafeInteger(mainRooms) || mainRooms < 4 || mainRooms > 32 ||
       !Number.isSafeInteger(branches) || branches < 0 || branches > 4 ||
       typeof paced !== "boolean" || typeof varied !== "boolean" || typeof expanded !== "boolean" ||
+      typeof catalogue !== "boolean" || catalogue && !expanded || typeof decoys !== "boolean" || decoys && !catalogue ||
       expanded && (!varied || !paced) || paced && mainRooms < 8) {
     throw new RangeError("Invalid platform level seed, main path length or branch count.");
   }
@@ -336,6 +339,33 @@ export function generatePlatformLevel({ seed = 1, mainRooms, branches = 2, tier,
             delay: 48, cooldown: 240 };
         }
       }
+      if (catalogue) for (const room of rooms.filter(room => room.main)) {
+        const family = room.id % 8 === 1 ? "crate" : room.id % 8 === 3 ? "bridge" : null;
+        if (family) {
+          room.challenge = { family, x: family === "crate" ? 256 + seed % 3 * 16 : 128,
+            y: family === "crate" ? 262 : 166 };
+          room.challenges = [room.challenge];
+          room.hazards = []; room.animal = null; room.arrowTrap = null;
+          delete room.runeOrder;
+          delete room.flame;
+          if (family === "crate") for (const door of room.connections.filter(door => door.direction === "down")) {
+            door.x = 528;
+          }
+          if (family === "bridge") {
+            const recipe = createMechanism("platform", family, seed % 3);
+            room.platforms = [{ x: 80, y: 192, width: 144, height: 12 },
+              { x: recipe.span.x + recipe.span.width, y: 192, width: 144, height: 12 }];
+            room.ladders = [{ x: 128, top: 192, bottom: 288 }];
+            for (const door of room.connections.filter(door => door.direction === "up")) {
+              door.x = 88; door.y = 166;
+            }
+            if (room.treasure) Object.assign(room.treasure, { x: recipe.receiver.x + 32, y: 166 });
+          }
+        }
+        room.recipes = room.challenges.map(point => ["switch", "key", "plate", "crank", "crate", "bridge"].includes(point.family)
+          ? createMechanism("platform", point.family, seed % 3) : null);
+        room.recipes.filter(Boolean).forEach(recipe => validateMechanismPlacement(recipe, room));
+      }
     }
     for (const room of rooms) for (const door of room.connections) {
       const back = rooms[door.target].connections.find(item => item.target === room.id);
@@ -343,7 +373,15 @@ export function generatePlatformLevel({ seed = 1, mainRooms, branches = 2, tier,
       door.arrivalY = back.y;
     }
   }
-  const level = deepFreeze({ version: expanded ? 5 : varied ? 4 : paced ? 3 : 2, seed, mainRooms, tier: tier ?? null,
+  if (decoys) for (const room of rooms.filter(room => room.main && room.id % 2 === 0)) {
+    const reserved = [...room.connections, ...room.challenges, room.flame, room.treasure,
+      ...(room.runeOrder ? PLATFORM_RUNES : [])].filter(Boolean);
+    const x = Array.from({ length: 18 }, (_, i) => 40 + i * 32).find(x =>
+      reserved.every(point => Math.abs(point.x - x) >= 56 || Math.abs(point.y - 262) >= 56) &&
+      room.hazards.every(hazard => x + 24 < hazard.x || x > hazard.x + hazard.width + 24));
+    if (x !== undefined) room.decoy = { ...decoyLever(seed, room.id), x, y: 262 };
+  }
+  const level = deepFreeze({ version: decoys ? 7 : catalogue ? 6 : expanded ? 5 : varied ? 4 : paced ? 3 : 2, seed, mainRooms, tier: tier ?? null,
     rewardBudget: tier === undefined ? null : PLATFORM_PROFILES[tier].rewardBudget,
     start: 0, treasureRoom: mainRooms - 1,
     rooms, edges, spawn: { x: 311, y: 262 } });

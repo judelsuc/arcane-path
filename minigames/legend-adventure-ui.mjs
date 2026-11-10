@@ -1,18 +1,22 @@
 import { createInvestigation, investigate, investigationHint, INVESTIGATION_ACTIONS } from "../legend-adventure.mjs";
 import { COPY } from "../legend-adventure-copy.mjs";
 import { createPlatformer, stepPlatformer, platformHazardActive, platformRoomSolved, platformLadders,
-  platformAnimal, platformArrow, PLATFORM_RUNES, ROOMS, WIDTH, HEIGHT, STEP } from "./legend-platformer.mjs";
+  platformAnimal, platformArrow, platformCrate, platformBridge, PLATFORM_RUNES, ROOMS, WIDTH, HEIGHT, STEP } from "./legend-platformer.mjs";
 import { generatePlatformLevel } from "./legend-layout.mjs";
 import { adventureCosts, encounterCosts } from "../adventure-costs.mjs";
 import { replayInvestigation, replayLegendSession, isDungeonSession,
-  hasDungeonFood, isPlatformSession, isGeneratedInvestigation, isTreasureSession, isExpandedLegendSession } from "../legend-session.mjs";
+  hasDungeonFood, isPlatformSession, isGeneratedInvestigation, isTreasureSession, isExpandedLegendSession,
+  isCatalogueLegendSession, hasDecoyLevers } from "../legend-session.mjs";
 import { createDungeon, generateDungeon, stepDungeon, dungeonCreature, dungeonGateOpen,
-  dungeonSpikesActive, DUNGEON_DIRECTIONS, dungeonMechanisms, dungeonTarget, dungeonArrow, DUNGEON_RUNES } from "./legend-dungeon.mjs";
+  dungeonSpikesActive, DUNGEON_DIRECTIONS, dungeonMechanisms, dungeonTarget, dungeonArrow, dungeonBeam, DUNGEON_RUNES } from "./legend-dungeon.mjs";
 import { drawPixelSprite, drawPixelDoor, drawStoneTile, pixelSet } from "./legend-pixel-art.mjs";
 import { generateInvestigation, createGeneratedInvestigation, stepInvestigation,
   investigationCommands, generatedInvestigationHint, investigationWitnessPresent } from "./legend-investigation.mjs";
-import { INVESTIGATION_COPY } from "./legend-investigation-copy.mjs";
+import { INVESTIGATION_COPY } from "./legend-investigation-copy.mjs?v=observational-scenes-2";
 import { ENCOUNTER_COPY } from "./legend-encounters-copy.mjs";
+import { MECHANISMS, MECHANISM_COPY, investigationHotspots } from "./legend-mechanisms.mjs";
+import { investigationScene, drawInvestigationScenery } from "./legend-investigation-scenery.mjs";
+import { DECOY_COPY } from "./legend-decoys.mjs";
 
 function rectangle(ctx, color, x, y, width, height) {
   ctx.fillStyle = color;
@@ -67,12 +71,29 @@ function backdrop(ctx, image, set) {
 function drawPlatform(ctx, state, images, set) {
   const room = (state.level?.rooms ?? ROOMS)[state.room];
   backdrop(ctx, images[room.background ?? "passage"] ?? images.passage ?? images.interior, set);
-  for (const platform of room.platforms) {
+  for (const platform of [...room.platforms, ...[platformBridge(state)].filter(Boolean)]) {
     rectangle(ctx, "#141827", platform.x, platform.y, platform.width, platform.height);
     rectangle(ctx, "#e8b65c", platform.x, platform.y, platform.width, 3);
     rectangle(ctx, "#b87848", platform.x, platform.y + 3, platform.width, platform.height - 5);
     for (let x = platform.x + 16; x < platform.x + platform.width; x += 24) {
       rectangle(ctx, "#704333", x, platform.y + 4, 2, platform.height - 4);
+    }
+    const crate = platformCrate(state);
+    if (crate) {
+      drawPixelSprite(ctx, "crate", crate.x, crate.y, 2);
+      const recipe = room.recipes[0];
+      rectangle(ctx, "#e8b65c", recipe.rail.min, 286, recipe.rail.max - recipe.rail.min + recipe.width, 2);
+      drawPixelSprite(ctx, "plate", recipe.target, 280, 2);
+    }
+    const bridge = room.recipes?.find(recipe => recipe?.kind === "bridge");
+    if (bridge) {
+      drawPixelSprite(ctx, "receiver", bridge.receiver.x, bridge.receiver.y, 1, { active: platformRoomSolved(state) });
+      const remaining = Math.max(0, state.mechanisms[room.id][0].until - state.ticks) / bridge.duration;
+      rectangle(ctx, "#a4acc2", 112, 142, 32, 6);
+      rectangle(ctx, "#e8b65c", 112, 142, Math.min(1, remaining) * 32, 6);
+      if (!platformBridge(state)) for (let x = bridge.span.x; x < bridge.span.x + bridge.span.width; x += 24) {
+        rectangle(ctx, "#38434b", x, bridge.span.y, 16, 2);
+      }
     }
   }
   for (const ladder of platformLadders(room)) {
@@ -111,24 +132,26 @@ function drawPlatform(ctx, state, images, set) {
       for (const [index, point] of (room.challenges ?? [room.challenge]).entries()) {
         if (state.activated?.includes(`${room.id}:${index}`)) continue;
         const sprite = { switch: "lever", key: "key", jump: "bell", timing: "lever",
-          plate: "plate", crank: "lever", torch: "vase", runes: "crystal" }[point.family];
+          plate: "plate", crank: "lever", torch: "vase", runes: "crystal", crate: "plate", bridge: "lever" }[point.family];
         drawPixelSprite(ctx, sprite, point.x - 6, point.y + (point.family === "plate" ? 22 : -4));
         rectangle(ctx, "#a4acc2", point.x - 28, point.y + 20, 20, 14);
         for (let line = 0; line < 3; line++) rectangle(ctx, "#38434b", point.x - 25, point.y + 23 + line * 3, 14, 1);
       }
       if (room.runeOrder) PLATFORM_RUNES.forEach(({ x }, i) => numberedRune(ctx, x, 266, i, state.runes.includes(i)));
       if (room.flame && !state.flames.includes(room.id)) drawPixelSprite(ctx, "crystal", room.flame.x, room.flame.y, 1);
-      if (room.stash && !state.stashes.includes(room.id)) drawPixelSprite(ctx, "supply", room.stash.x, room.stash.y, 1);
-      if (room.arrowTrap) {
-        const trap = room.arrowTrap;
-        rectangle(ctx, state.trapTick !== null && state.ticks - state.trapTick < trap.delay ? "#fff09b" : "#db6656",
-          trap.plate.x, trap.plate.y, trap.plate.width, trap.plate.height);
-        rectangle(ctx, "#141827", trap.x, trap.y - 6, 12, 16);
-      }
-      const arrow = platformArrow(state), animal = platformAnimal(state);
-      if (arrow) projectile(ctx, arrow.x, arrow.y);
-      if (animal) drawPixelSprite(ctx, set[animal.kind], animal.x, animal.y, 1, { set });
     }
+    if (room.stash && !state.stashes.includes(room.id)) drawPixelSprite(ctx, "supply", room.stash.x, room.stash.y, 1);
+    if (room.arrowTrap) {
+      const trap = room.arrowTrap;
+      rectangle(ctx, state.trapTick !== null && state.ticks - state.trapTick < trap.delay ? "#fff09b" : "#db6656",
+        trap.plate.x, trap.plate.y, trap.plate.width, trap.plate.height);
+      rectangle(ctx, "#141827", trap.x, trap.y - 6, 12, 16);
+    }
+    const arrow = platformArrow(state), animal = platformAnimal(state);
+    if (arrow) projectile(ctx, arrow.x, arrow.y);
+    if (animal) drawPixelSprite(ctx, set[animal.kind], animal.x, animal.y, 1, { set });
+    if (room.decoy) drawPixelSprite(ctx, "lever", room.decoy.x - 6, room.decoy.y - 4, 2,
+      { active: state.spentDecoys.includes(room.id) });
     if (room.treasure && !state.completed) reel(ctx, room.treasure.x + 9, room.treasure.y + 9);
     if (room.pickup && state.health !== null && !state.collected.includes(state.room)) {
       drawPixelSprite(ctx, "supply", room.pickup.x - 6, room.pickup.y - 4);
@@ -213,9 +236,14 @@ function drawInvestigation(ctx, state, images, set) {
 }
 
 export function mount(container, { format, language = "en", seed = 1, backgrounds = {},
-  tier = "modest", weapon = "none", generatedInvestigation = false, paced = false, expanded = false,
+  tier = "modest", weapon = "none", generatedInvestigation = false, paced = false, expanded = false, catalogue = false, decoys = false,
+  previewDungeonActions = [],
   onFinish = () => {}, onError = () => {}, authoritative, helpText = [], onLeave, leaveLabel } = {}) {
   if (!["platform", "investigation", "dungeon"].includes(format)) throw new RangeError("Unknown legend adventure format.");
+  if (!Array.isArray(previewDungeonActions) || previewDungeonActions.length > 1024 ||
+      previewDungeonActions.length && (format !== "dungeon" || authoritative)) {
+    throw new RangeError("Dungeon resume inputs are available only in the isolated preview.");
+  }
   if (generatedInvestigation && (format !== "investigation" || authoritative)) {
     throw new Error("Generated investigation is available only in the isolated preview.");
   }
@@ -242,6 +270,15 @@ export function mount(container, { format, language = "en", seed = 1, background
     target.addEventListener(event, callback);
     listeners.push(() => target.removeEventListener(event, callback));
   }
+  function transientEvents() {
+    const cleanup = [];
+    const clear = () => cleanup.splice(0).forEach(remove => remove());
+    listeners.push(clear);
+    return { clear, listen(node, type, callback) {
+      node.addEventListener(type, callback);
+      cleanup.push(() => node.removeEventListener(type, callback));
+    } };
+  }
   function element(tag, text, parent = root) {
     const node = doc.createElement(tag);
     if (text) node.textContent = text;
@@ -253,6 +290,45 @@ export function mount(container, { format, language = "en", seed = 1, background
     node.type = "button";
     listen(node, "click", callback);
     return node;
+  }
+  function graphicalInventory(onItem) {
+    const events = transientEvents();
+    const tray = element("section");
+    tray.className = "legend-inventory";
+    tray.setAttribute("aria-label", copy.inventory);
+    element("h3", copy.inventory, tray);
+    const list = element("ul", undefined, tray);
+    const empty = element("p", copy.empty, tray);
+    empty.className = "legend-inventory-empty";
+    return items => {
+      events.clear();
+      list.replaceChildren();
+      empty.hidden = items.length > 0;
+      list.hidden = items.length === 0;
+      for (const { label, sprite, index } of items) {
+        const slot = element("li", undefined, list);
+        slot.setAttribute("tabindex", "0");
+        slot.setAttribute("aria-label", label);
+        if (onItem) {
+          slot.setAttribute("role", "button");
+          events.listen(slot, "click", () => onItem(index));
+          events.listen(slot, "keydown", event => {
+            if (!["Enter", " "].includes(event.key)) return;
+            event.preventDefault(); event.stopPropagation(); onItem(index);
+          });
+        }
+        const icon = element("canvas", undefined, slot);
+        icon.width = 32; icon.height = 32;
+        icon.setAttribute("style", "width:32px;height:32px;max-width:32px;max-height:32px;flex:0 0 32px");
+        icon.setAttribute("aria-hidden", "true");
+        const context = icon.getContext("2d");
+        if (!context) throw new Error("Inventory rendering is unavailable.");
+        drawPixelSprite(context, sprite, 8, 8, 1, { set: art });
+        const tooltip = element("span", label, slot);
+        tooltip.className = "legend-inventory-tooltip";
+        tooltip.setAttribute("aria-hidden", "true");
+      }
+    };
   }
   function shortcut(node, label, key, display = key) {
     node.textContent = label;
@@ -313,6 +389,11 @@ export function mount(container, { format, language = "en", seed = 1, background
     element("p", encounter.help, help);
     element("p", encounter[`${format}Help`], help);
   }
+  if (catalogue || isCatalogueLegendSession(authoritative?.contentVersion)) {
+    element("p", Object.values(MECHANISMS).filter(definition => definition.formats.includes(format))
+      .map(definition => definition.help[language]).join(" "), help);
+  }
+  if (decoys || hasDecoyLevers(authoritative?.contentVersion)) element("p", DECOY_COPY[language].help, help);
   for (const paragraph of helpText) element("p", paragraph, help);
   if (onLeave) {
     const leave = button(leaveLabel, onLeave, help);
@@ -322,7 +403,14 @@ export function mount(container, { format, language = "en", seed = 1, background
   if (hasDungeonFood(authoritative?.contentVersion)) element("p", copy.dungeonFoodHelp, help);
   const pacing = element("p", undefined, help);
   pacing.className = "legend-pacing";
-  const canvas = element("canvas");
+  const introduction = generated ? element("p") : null;
+  if (introduction) introduction.className = "legend-site-introduction";
+  const objective = generated ? element("p") : null;
+  if (objective) objective.className = "legend-site-objective";
+  const sceneBubble = generated ? element("p") : null;
+  const stage = generated ? element("div") : null;
+  if (stage) stage.className = "legend-point-scene";
+  const canvas = element("canvas", undefined, stage ?? root);
   canvas.width = format === "dungeon" ? 360 : WIDTH;
   canvas.height = format === "dungeon" ? 280 : HEIGHT;
   canvas.setAttribute("role", "img");
@@ -368,9 +456,9 @@ export function mount(container, { format, language = "en", seed = 1, background
     } else drawPixelSprite(iconContext, name, 0, 0, 2, { set: art });
     element("span", label, item);
   }
-  let level = format === "platform" ? generatePlatformLevel({ seed, tier, paced, expanded, varied: !authoritative }) :
-    format === "dungeon" ? generateDungeon({ seed, tier, paced, expanded }) :
-    generated ? generateInvestigation({ seed, tier, paced, expanded }) : null;
+  let level = format === "platform" ? generatePlatformLevel({ seed, tier, paced, expanded, catalogue, decoys, varied: !authoritative }) :
+    format === "dungeon" ? generateDungeon({ seed, tier, paced, expanded, catalogue }) :
+    generated ? generateInvestigation({ seed, tier, paced, expanded, catalogue, decoys }) : null;
   if (authoritative && format !== "investigation" && !liveDungeon && !livePlatform) throw new Error("Unsupported live adventure.");
   let state = format === "platform" ? livePlatform ? replayLegendSession({ ...authoritative, seed }) : createPlatformer({ level }) :
     format === "dungeon" ? liveDungeon ? replayLegendSession({ ...authoritative, seed }) : createDungeon({ level, weapon }) :
@@ -378,6 +466,21 @@ export function mount(container, { format, language = "en", seed = 1, background
       seed, actions: authoritative.actions }) : createGeneratedInvestigation({ level }) :
     authoritative ? replayInvestigation(authoritative.actions) : createInvestigation();
   if (authoritative && state.level) level = state.level;
+  for (const action of previewDungeonActions) state = stepDungeon(state, action);
+  let shownTrapHits = state.metrics.trapHits;
+  let shownWrongAttempts = state.metrics.wrongAttempts ?? 0;
+  let shownMetrics = state.metrics;
+  const impact = element("div", undefined, stage ?? root);
+  impact.className = "legend-impact";
+  impact.setAttribute("role", "alert");
+  impact.hidden = true;
+  const impactTitle = element("strong", undefined, impact);
+  const impactCosts = element("span", undefined, impact);
+  let trapFlashTimer = null;
+  let impactTimer = null;
+  let trapFlashSerial = 0;
+  listeners.push(() => clearTimeout(trapFlashTimer));
+  listeners.push(() => clearTimeout(impactTimer));
   let images = backgrounds;
   let redraw = () => {};
   let reported = false;
@@ -399,6 +502,31 @@ export function mount(container, { format, language = "en", seed = 1, background
     }
   }
   function showAccounting() {
+    const trapHit = state.metrics.trapHits > shownTrapHits;
+    const jammed = state.message === "decoyMistake" && (state.metrics.wrongAttempts ?? 0) > shownWrongAttempts;
+    if (trapHit || jammed) {
+      const costs = metrics => {
+        const raw = encounterCosts(metrics);
+        return authoritative?.costModifier ? authoritative.costModifier(raw) : raw;
+      };
+      const before = costs(shownMetrics), after = costs(state.metrics);
+      impactTitle.textContent = language === "fr"
+        ? trapHit ? "PIÈGE DÉCLENCHÉ !" : "MÉCANISME BLOQUÉ !"
+        : trapHit ? "TRAP TRIGGERED!" : "MECHANISM JAMMED!";
+      impactCosts.textContent = language === "fr"
+        ? `+${after.minutes - before.minutes} min · +${after.fatigue - before.fatigue} fatigue · −${after.health - before.health} santé`
+        : `+${after.minutes - before.minutes} min · +${after.fatigue - before.fatigue} fatigue · −${after.health - before.health} health`;
+      impact.dataset.kind = trapHit ? "trap" : "mistake";
+      impact.hidden = false;
+      clearTimeout(impactTimer);
+      impactTimer = setTimeout(() => { impact.hidden = true; }, 3000);
+      canvas.dataset.trapFlash = ++trapFlashSerial % 2 ? "a" : "b";
+      clearTimeout(trapFlashTimer);
+      trapFlashTimer = setTimeout(() => { canvas.dataset.trapFlash = ""; }, 1400);
+    }
+    shownTrapHits = state.metrics.trapHits;
+    shownWrongAttempts = state.metrics.wrongAttempts ?? 0;
+    shownMetrics = state.metrics;
     const beat = state.level?.rooms[state.room]?.pacing;
     pacing.hidden = !beat;
     pacing.textContent = beat ? copy.pacing[beat.stage] : "";
@@ -438,10 +566,16 @@ export function mount(container, { format, language = "en", seed = 1, background
   if (generated) {
     const original = INVESTIGATION_COPY[language];
     const expanded = level.version >= 3;
+    const mechanismCopy = MECHANISM_COPY[language];
     const c = expanded ? { ...original, families: { ...original.families, ...encounter.families },
       messages: { ...original.messages, ...encounter.messages, complete: language === "fr" ? "Le trésor est retrouvé." : "The treasure is found.",
         wrong: language === "fr" ? "L'indice ne correspond pas." : "The evidence does not fit." },
       hints: { ...original.hints, ...encounter.hints } } : original;
+    if (level.version >= 4) {
+      Object.assign(c.families, mechanismCopy.families);
+      Object.assign(c.messages, mechanismCopy.messages);
+      for (const kind of ["tool", "repair", "overlay"]) c.hints[kind] = MECHANISMS[kind].help[language];
+    }
     const progress = element("p");
     const navigation = element("nav");
     navigation.setAttribute("aria-label", c.title);
@@ -450,7 +584,34 @@ export function mount(container, { format, language = "en", seed = 1, background
     previous.dataset.legendAction = "previous";
     next.dataset.legendAction = "next";
     const evidence = element("p");
-    const inventory = element("p");
+    const point = mechanismCopy.point;
+    element("p", point.help, help);
+    const hotspots = element("div", undefined, stage);
+    hotspots.className = "legend-hotspots";
+    const bubble = sceneBubble;
+    bubble.className = "legend-scene-bubble";
+    bubble.setAttribute("role", "status");
+    bubble.setAttribute("aria-live", "polite");
+    bubble.hidden = true;
+    function sceneFeedback(text) {
+      status.textContent = text;
+      bubble.textContent = text;
+      bubble.hidden = !text;
+    }
+    const contextMenu = element("div");
+    const sceneEvents = transientEvents(), menuEvents = transientEvents();
+    contextMenu.className = "legend-context";
+    contextMenu.setAttribute("role", "group");
+    contextMenu.hidden = true;
+    const selectionText = element("p");
+    selectionText.className = "legend-selection";
+    selectionText.setAttribute("role", "status");
+    selectionText.hidden = true;
+    let selected = null;
+    let returnFocus = null;
+    const renderInventory = graphicalInventory(inventoryItem);
+    const puzzleProgress = element("p");
+    puzzleProgress.hidden = true;
     const actions = element("div");
     actions.className = "legend-actions";
     const actionButtons = Array.from({ length: 5 }, (_, i) => button("", () => act(i), actions));
@@ -462,10 +623,141 @@ export function mount(container, { format, language = "en", seed = 1, background
       if (["choose", "sequence", "seal"].includes(step)) hint.textContent += ` ${evidence.textContent}`;
     }, help), copy.hint, "I");
     hintButton.dataset.legendAction = "hint";
+    const stopped = () => state.completed || help.open ||
+      Boolean(authoritative && (authoritative.disabled || authoritative.status !== "active"));
+    function cancelSelection() {
+      selected = null;
+      selectionText.hidden = true;
+      contextMenu.hidden = true;
+      menuEvents.clear();
+      contextMenu.replaceChildren();
+    }
+    function command(value) {
+      if (stopped() || !investigationCommands(state).includes(value) &&
+          !(value === "decoy:pull" && level.rooms[state.room].decoy)) return;
+      cancelSelection();
+      submit({ type: "act", command: value });
+    }
+    function menu(label, entries) {
+      if (stopped()) return;
+      returnFocus = doc.activeElement;
+      menuEvents.clear();
+      contextMenu.replaceChildren();
+      contextMenu.setAttribute("aria-label", label);
+      element("strong", label, contextMenu);
+      for (const [verb, callback] of [...entries, [point.cancel, () => {
+        cancelSelection(); returnFocus?.focus?.();
+      }]]) {
+        const node = element("button", verb, contextMenu);
+        node.type = "button";
+        menuEvents.listen(node, "click", () => { if (!stopped()) callback(); });
+      }
+      contextMenu.hidden = false;
+      contextMenu.children[1]?.focus?.();
+    }
+    function inventoryItem(index) {
+      const room = level.rooms[state.room], progress = state.progress[state.room];
+      if (stopped() || !room.recipe && room.family !== "assembly") return;
+      const supplies = room.family === "assembly" ? c.parts[room.variant] :
+        room.family === "tool" ? mechanismCopy.tools : mechanismCopy.parts[room.family];
+      const itemLabel = room.family === "repair" && progress.mechanism.assembled ||
+        room.family === "overlay" && progress.mechanism.revealed
+        ? mechanismCopy.combined[room.family] : supplies[index];
+      if (selected) {
+        if (selected.mode === "combine" && selected.index !== index && room.family !== "tool") command("combine");
+        else { cancelSelection(); sceneFeedback(point.noMatch); }
+        return;
+      }
+      const select = mode => {
+        contextMenu.hidden = true;
+        returnFocus?.focus?.();
+        selected = { index, mode };
+        selectionText.hidden = false;
+        selectionText.textContent = mode === "combine" ? point.combineWith(itemLabel) : point.useWith(itemLabel);
+      };
+      menu(itemLabel, [
+        [point.examine, () => {
+          contextMenu.hidden = true;
+          sceneFeedback(room.family === "overlay" && progress.mechanism.revealed
+            ? mechanismCopy.overlayReading(c.symbols[room.variant][room.answer]) : itemLabel);
+          returnFocus?.focus?.();
+        }],
+        ...(progress.solved || progress.resolved || room.family === "overlay" && progress.mechanism.revealed ? [] :
+          room.family === "tool" || room.family === "repair" && progress.mechanism.assembled
+          ? [[point.use, () => select("use")]] : [[point.combine, () => select("combine")]]),
+      ]);
+    }
+    function targetItem() {
+      const room = level.rooms[state.room], current = state.progress[state.room];
+      if (stopped() || current.solved) return;
+      if (selected) {
+        if (selected.mode === "use" && room.family === "tool") command(`use:${selected.index}`);
+        else if (selected.mode === "use" && room.family === "repair") command("install");
+        else if (selected.mode === "combine" && room.family === "assembly") command("combine");
+        else { cancelSelection(); sceneFeedback(point.noMatch); }
+        return;
+      }
+      const entries = current.resolved ? [0, 1, 2].map(i => [
+        `${c.verify}: ${c.symbols[level.rooms[room.reference].variant][i]}`, () => command(`verify:${i}`),
+      ]) : room.family === "overlay" && current.mechanism.revealed ? [
+        [point.examine, () => {
+          contextMenu.hidden = true;
+          sceneFeedback(mechanismCopy.overlayReading(c.symbols[room.variant][room.answer]));
+          returnFocus?.focus?.();
+        }],
+        ...[0, 1, 2].map(i => [
+        `${c.choose}: ${c.symbols[room.variant][i]}`, () => command(`choose:${i}`),
+      ])] : room.family === "assembly" ? [
+        [point.examine, () => {
+          contextMenu.hidden = true; sceneFeedback(c.families.assembly[room.variant]); returnFocus?.focus?.();
+        }],
+        ...(current.parts.length === 2 ? [[point.combine, () => command("combine")]] : []),
+      ] : [
+        [point.examine, () => {
+          if (investigationCommands(state).includes("inspect")) command("inspect");
+          else {
+            contextMenu.hidden = true; sceneFeedback(mechanismCopy.overlayClue); returnFocus?.focus?.();
+          }
+        }],
+        ...(room.family === "repair" && current.mechanism.assembled ? [[mechanismCopy.install, () => command("install")]] : []),
+      ];
+      menu(point.target[room.family] ?? c.families[room.family][room.variant], entries);
+    }
+    function hotspot(id, label, box, callback, disabled = false) {
+      const node = element("button", undefined, hotspots);
+      node.type = "button";
+      node.className = "legend-hotspot";
+      node.dataset.hotspot = id;
+      node.setAttribute("aria-label", label);
+      node.setAttribute("style", `left:${box.x / 6.4}%;top:${box.y / 3.2}%;width:${box.width / 6.4}%;height:${box.height / 3.2}%`);
+      node.disabled = disabled;
+      element("span", label, node);
+      const describe = () => {
+        if (!selected) return;
+        const room = level.rooms[state.room], items = room.family === "assembly" ? c.parts[room.variant] :
+          room.family === "tool" ? mechanismCopy.tools : mechanismCopy.parts[room.family];
+        const selectedLabel = room.family === "repair" && state.progress[state.room].mechanism.assembled
+          ? mechanismCopy.combined.repair : items[selected.index];
+        selectionText.textContent = point.with(selectedLabel, label);
+      };
+      sceneEvents.listen(node, "pointerenter", describe);
+      sceneEvents.listen(node, "focus", describe);
+      sceneEvents.listen(node, "click", () => { if (!stopped() && !node.disabled) callback(); });
+    }
+    listen(canvas, "click", cancelSelection);
+    listen(root, "keydown", event => {
+      if (event.key === "Escape") {
+        cancelSelection(); returnFocus?.focus?.();
+        event.preventDefault(); event.stopPropagation();
+      }
+    });
     function submit(action) {
+      cancelSelection();
+      impact.hidden = true;
+      returnFocus = canvas;
       if (authoritative) {
         if (!authoritative.disabled && authoritative.status === "active") {
-          if (local) { localInput(action); hint.textContent = ""; render(); }
+          if (local) { localInput(action); hint.textContent = ""; render(); canvas.focus?.(); }
           else authoritative.onAction(action);
         }
         return;
@@ -473,6 +765,7 @@ export function mount(container, { format, language = "en", seed = 1, background
       state = stepInvestigation(state, action);
       hint.textContent = "";
       render();
+      canvas.focus?.();
     }
     function travel(room) {
       submit({ type: "travel", room });
@@ -484,13 +777,54 @@ export function mount(container, { format, language = "en", seed = 1, background
     }
     function render() {
       const room = level.rooms[state.room], current = state.progress[state.room];
-      const symbols = c.symbols[room.variant], supplies = c.parts[room.variant], controls = c.controls[room.variant];
+      const scene = investigationScene(seed, state.room);
+      const symbols = c.symbols[room.variant], supplies = room.recipe
+        ? room.family === "tool" ? mechanismCopy.tools : mechanismCopy.parts[room.family]
+        : c.parts[room.variant], controls = c.controls[room.variant];
+      introduction.textContent = `${scene[language]}. ${c.introductions[room.family][room.variant]}`;
+      if (room.concealed && !current.revealed) introduction.textContent = `${scene[language]}. ${
+        language === "fr" ? "Trois panneaux de bois recouvrent le mur." : "Three wooden panels cover the wall."}`;
+      const sealPending = current.resolved && !current.solved && room.seal !== undefined;
+      const objectiveKey = state.completed ? "complete" : current.solved ? "next" :
+        sealPending ? "seal" : room.concealed && !current.revealed ? "secret" :
+        room.family === "repair" && !current.inspected ? "repairPlan" :
+        room.family === "repair" && current.mechanism.assembled ? "install" :
+        room.family === "overlay" && current.mechanism.revealed ? "overlay" :
+        ["repair", "overlay", "assembly"].includes(room.family) ? current.parts.length === 2 ? "assemble" : "parts" :
+        room.family === "witnesses" ? current.witnesses.length === 2 ? "answer" : "witnesses" :
+        room.family === "exchange" ? "exchange" :
+        room.family === "tool" && current.inspected ? "tool" :
+        current.inspected && ["sequence", "alignment"].includes(room.family) ? room.family :
+        current.inspected || current.branches?.length === 2 ? "answer" : "inspect";
+      let objectiveText = c.objectives[objectiveKey];
+      if (sealPending) {
+        const reference = level.rooms[room.reference], marks = c.symbols[reference.variant];
+        objectiveText += ` ${c.sealContext(reference.id + 1, marks[reference.answer], marks, room.shift)}`;
+      }
+      objective.textContent = `${c.objectives.label} : ${objectiveText}`;
+      objective.hidden = !sealPending && !current.solved && !state.completed;
       heading.textContent = `${c.title} — ${c.site} ${state.room + 1}/${level.rooms.length}: ${c.families[room.family][room.variant]}`;
       progress.textContent = authoritative
         ? `${c.liveProgress}: ${state.progress.filter(entry => entry.solved).length}/${level.rooms.length}`
         : `${copy.tiers[tier]}: ${level.rooms.length} ${copy.rooms}, ${copy.rewardBudget} ${level.rewardBudget}/3 | ${state.progress.filter(entry => entry.solved).length}/${level.rooms.length}`;
-      status.textContent = c.messages[state.message];
+      sceneFeedback(state.message.startsWith("decoy") ? DECOY_COPY[language][{
+        decoyTrap: "trap", decoyMistake: "mistake", decoySpent: "spent",
+      }[state.message]] : state.message === "needParts" && room.family === "repair" && current.parts.length === 2
+        ? mechanismCopy.messages[current.inspected ? "assembleRepair" : "inspectRepair"] : c.messages[state.message]);
+      if (state.message === "arrival") sceneFeedback(introduction.textContent);
+      if (["sealReady", "wrongSeal"].includes(state.message)) {
+        sceneFeedback(`${c.messages[state.message]} ${objectiveText}`);
+      }
+      if (state.message === "overlayRevealed") sceneFeedback(mechanismCopy.overlayReading(symbols[room.answer]));
       const clues = [];
+      if (room.recipe) {
+        clues.push(MECHANISMS[room.family].clue[language]);
+        if (current.inspected && room.family === "tool") clues.push(mechanismCopy.toolClue(mechanismCopy.shapes[room.answer]));
+        if (current.inspected && room.family === "repair") clues.push(mechanismCopy.repairClue);
+        if (room.family === "overlay") clues.push(current.mechanism.revealed
+          ? mechanismCopy.revealed(symbols[room.answer]) : mechanismCopy.overlayClue);
+        if ((current.resolved || current.solved) && room.family !== "overlay") clues.push(mechanismCopy.revealed(symbols[room.answer]));
+      }
       if (room.concealed && !current.revealed) {
         if (current.inspected) clues.push(encounter.secretClue(encounter.panel[room.order[0]]));
       } else if (expanded) {
@@ -519,9 +853,39 @@ export function mount(container, { format, language = "en", seed = 1, background
         if (notes.length) clues.push(`${c.archive}: ${notes.join("; ")}.`);
       }
       evidence.textContent = `${c.clues}: ${clues.join(" ") || copy.empty}`;
-      inventory.textContent = `${copy.inventory}: ${current.parts.map(index => supplies[index]).join(", ") || copy.empty}${room.family === "sequence" ? ` | ${c.step}: ${current.sequence.length}/${room.order.length}` : ""}`;
-      if (room.family === "alignment") inventory.textContent += ` | ${encounter.dials}: ${current.dials.map(i => symbols[i]).join(" · ")}`;
+      if (state.message === "clue" || state.message.startsWith("witness:")) {
+        sceneFeedback(clues.filter(clue => !clue.startsWith(`${c.archive}:`)).join(" ") || status.textContent);
+      }
+      const sprites = room.family === "tool" ? ["roundKey", "squareKey", "starKey"] :
+        room.family === "repair" ? ["wheel", "axle"] :
+        room.family === "overlay" || room.variant === 1 ? ["document", room.family === "overlay" ? "document" : "paste"] :
+        ["handle", "oil"];
+      const used = ["repair", "assembly"].includes(room.family) && (current.solved || current.resolved);
+      const combined = room.family === "repair" && current.mechanism.assembled ||
+        room.family === "overlay" && current.mechanism.revealed;
+      renderInventory(used ? [] : combined ? [{
+        index: 0, label: mechanismCopy.combined[room.family],
+        sprite: room.family === "repair" ? "wheelAxle" : "document",
+      }] : current.parts.map(index => ({ index, label: supplies[index], sprite: sprites[index] })));
+      puzzleProgress.hidden = !["sequence", "alignment"].includes(room.family);
+      puzzleProgress.textContent = room.family === "sequence" ? `${c.step}: ${current.sequence.length}/${room.order.length}` :
+        room.family === "alignment" ? `${encounter.dials}: ${current.dials.map(i => symbols[i]).join(" · ")}` : "";
       const disabled = state.completed || Boolean(authoritative && (authoritative.disabled || authoritative.status !== "active"));
+      navigation.hidden = true;
+      const pointEnabled = (!!room.recipe || room.family === "assembly") && (!room.concealed || current.revealed);
+      const spots = !pointEnabled ? [] : room.recipe ? investigationHotspots(room.recipe, current.mechanism, {
+        items: supplies, target: point.target[room.family],
+      }) : [
+        ...supplies.flatMap((label, index) => current.parts.includes(index) ? [] : [{
+          id: `item:${index}`, label, sprite: sprites[index], x: 72 + index * 64, y: 196,
+          width: 48, height: 48, command: `take:${index}`,
+        }]),
+        { id: "target", label: c.families.assembly[room.variant],
+          sprite: room.variant ? "document" : "crate", x: 328, y: 192, width: 48, height: 48 },
+      ];
+      actions.hidden = true;
+      const sceneControls = new Map();
+      const runCommand = command;
       previous.disabled = disabled || state.room === 0;
       next.disabled = disabled || state.room === level.rooms.length - 1 || !current.solved;
       for (let index = 0; index < actionButtons.length; index++) {
@@ -532,48 +896,113 @@ export function mount(container, { format, language = "en", seed = 1, background
         if (!command) continue;
         const [type, indexText] = command.split(":"), item = Number(indexText);
         const label = type === "search" ? `${encounter.search}: ${encounter.panel[item]}` :
-          type === "rotate" ? `${encounter.rotate} ${item + 1}` :
+          type === "use" ? `${mechanismCopy.use}: ${supplies[item]}` :
+          type === "install" ? mechanismCopy.install :
+          type === "combine" && room.family === "overlay" ? mechanismCopy.align :
+          type === "rotate" ? `${encounter.rotate} ${item + 1} : ${symbols[current.dials[item]]}` :
           type === "offer" ? `${encounter.offer}: ${symbols[item]}` :
           type === "wait" ? encounter.wait :
           type === "combine" && room.family === "alignment" ? encounter.test :
-          type === "inspect" && room.family === "deduction" ? `${c.inspect} ${item + 1}` :
+          type === "inspect" && room.family === "deduction" && indexText !== undefined ? `${c.inspect} ${item + 1}` :
           type === "verify" ? `${c.verify}: ${c.symbols[level.rooms[room.reference].variant][item]}` :
           type === "inspect" ? c.inspect : type === "combine" ? c.combine :
           type === "witness" ? c.witness[item] :
           `${type === "choose" ? c.choose : type === "press" ? c.press : c.take}: ${type === "choose" ? symbols[item] : type === "press" ? controls[item] : supplies[item]}`;
         shortcut(node, label, String.fromCharCode(65 + index));
+        if (room.recipe || pointEnabled || room.concealed && !current.revealed) continue;
+        const individual = ["witness", "press", "rotate", "take"].includes(type) ||
+          type === "inspect" && indexText !== undefined;
+        const id = individual ? command : type === "wait" ? "wait" : "puzzle";
+        if (!sceneControls.has(id)) {
+          const x = type === "witness" ? 320 + item * 80 :
+            ["press", "rotate"].includes(type) ? 300 + item * 56 :
+            individual ? 72 + item * 64 : type === "wait" ? 160 : 328;
+          const sprite = type === "witness" ? item ? "repairer" : "caretaker" :
+            type === "press" ? room.variant ? "bell" : "lever" :
+            type === "rotate" || type === "wait" ? "wheel" :
+            type === "take" ? sprites[item] :
+            ({ evidence: "books", exchange: "crate", alignment: "lever" })[room.family] ?? "document";
+          sceneControls.set(id, { id, x, y: individual || type === "wait" ? 196 : 128, width: 48, height: 48, sprite,
+            label: individual || type === "wait" ? label : c.families[room.family][room.variant], entries: [] });
+        }
+        sceneControls.get(id).entries.push([label, () => runCommand(command)]);
       }
-      backdrop(ctx, images.interior ?? images.passage, art);
-      drawPixelDoor(ctx, 534, 192, { set: art, scale: 6, open: current.solved });
+      if (current.resolved && !current.solved && room.seal !== undefined) {
+        sceneControls.clear();
+        sceneControls.set("seal", { id: "seal", x: 328, y: 128, width: 48, height: 48,
+          sprite: "starKey", label: c.verify, entries: [0, 1, 2].map(index => [
+            `${c.verify}: ${c.symbols[level.rooms[room.reference].variant][index]}`,
+            () => command(`verify:${index}`),
+          ]) });
+      }
+      const sceneArt = drawInvestigationScenery(ctx, scene, {
+        image: images[scene.id] ?? images.interior ?? images.passage, variant: room.variant,
+      });
+      drawPixelDoor(ctx, 534, 192, { set: sceneArt, scale: 6, open: current.solved });
+      if (state.room > 0) drawPixelDoor(ctx, 8, 192, { set: sceneArt, scale: 3, open: true });
       person(ctx, 220, 262, "explorer", 3);
       if (room.concealed && !current.revealed) for (let i = 0; i < 3; i++) {
         rectangle(ctx, "#704333", 290 + i * 66, 142, 52, 126);
         if (i === room.order[0]) crack(ctx, 310 + i * 66, 186);
       }
-      if (room.family === "witnesses") {
-        person(ctx, investigationWitnessPresent(state, 0) ? 330 : 530, 262, "caretaker", 3);
-        person(ctx, investigationWitnessPresent(state, 1) ? 430 : 560, 262, "repairer", 3);
-      } else if (room.family === "alignment") {
-        current.dials.forEach((value, i) => numberedRune(ctx, 306 + i * 48, 204, value));
-      } else {
+      const concealed = room.concealed && !current.revealed;
+      if (!concealed) {
         rectangle(ctx, "#141827", 300, 240, 160, 12);
         rectangle(ctx, "#b87848", 304, 240, 152, 8);
         rectangle(ctx, "#704333", 308, 252, 8, 36);
         rectangle(ctx, "#704333", 440, 252, 8, 36);
-        if (room.family === "assembly") {
-          drawPixelSprite(ctx, room.variant ? "books" : "crate", 318, 196, 3);
-          drawPixelSprite(ctx, "lever", 388, 208, 2, { active: current.solved });
-        } else if (room.family === "sequence") {
-          for (let index = 0; index < 3; index++) {
-            drawPixelSprite(ctx, room.variant ? "bell" : "lever", 306 + index * 48, 204, 2,
-              { active: current.sequence.includes(index) });
-          }
-        } else {
-          drawPixelSprite(ctx, room.variant ? "books" : "bell", 350, 190, 3);
+        if (pointEnabled) {
+          for (const spot of spots) drawPixelSprite(ctx, spot.sprite, spot.x, spot.y, 3, { active: current.solved });
+        }
+      }
+      for (const control of sceneControls.values()) {
+        drawPixelSprite(ctx, control.sprite, control.x, control.y, 3, { active: current.solved });
+        if (control.id.startsWith("rotate:")) {
+          const symbol = symbols[current.dials[Number(control.id.split(":")[1])]];
+          rectangle(ctx, "#141827", control.x - 4, control.y - 19, 56, 16);
+          ctx.fillStyle = "#fff09b";
+          ctx.font = "9px monospace";
+          ctx.fillText(symbol, control.x - 2, control.y - 7);
         }
       }
       if (state.room === level.rooms.length - 1 && !state.completed) reel(ctx, 498, 266);
-      canvas.setAttribute("aria-label", `${heading.textContent}. ${evidence.textContent}`);
+      const lever = room.decoy ? { x: 472, y: 176 } : null;
+      if (lever) drawPixelSprite(ctx, "lever", lever.x, lever.y, 2,
+        { active: state.spentDecoys.includes(room.id) });
+      sceneEvents.clear();
+      hotspots.replaceChildren();
+      for (const control of sceneControls.values()) hotspot(`scene:${control.id}`, control.label, control, () => {
+        cancelSelection();
+        menu(control.label, control.entries);
+      }, disabled || current.solved);
+      if (room.concealed && !current.revealed) for (let index = 0; index < 3; index++) {
+        const label = `${encounter.search}: ${encounter.panel[index]}`;
+        hotspot(`panel:${index}`, label, { x: 290 + index * 66, y: 142, width: 52, height: 126 }, () => {
+          cancelSelection();
+          menu(encounter.panel[index], [
+            [point.examine, () => command("inspect")],
+            [encounter.search, () => command(`search:${index}`)],
+          ]);
+        }, disabled);
+      }
+      if (room.decoy) hotspot("decoy", DECOY_COPY[language].name,
+        { x: lever.x - 8, y: lever.y - 8, width: 48, height: 48 }, () => {
+          const d = DECOY_COPY[language];
+          cancelSelection();
+          menu(d.name, [
+            [d.examine, () => { contextMenu.hidden = true; sceneFeedback(d.description); returnFocus?.focus?.(); }],
+            [d.operate, () => command("decoy:pull")],
+          ]);
+        }, disabled);
+      if (state.room > 0) hotspot("previous", c.previous, { x: 4, y: 184, width: 52, height: 104 },
+        () => travel(state.room - 1), disabled);
+      if (state.room < level.rooms.length - 1) hotspot("next", c.next, { x: 530, y: 184, width: 104, height: 104 },
+        () => travel(state.room + 1), disabled || !current.solved);
+      if (pointEnabled) for (const spot of spots) hotspot(spot.id, spot.label, spot, spot.command ? () => {
+        if (selected) { cancelSelection(); sceneFeedback(point.noMatch); }
+        else command(spot.command);
+      } : targetItem, disabled || current.solved);
+      canvas.setAttribute("aria-label", `${scene[language]}. ${heading.textContent}. ${evidence.textContent}`);
       showAccounting();
       finish();
     }
@@ -593,7 +1022,7 @@ export function mount(container, { format, language = "en", seed = 1, background
   } else if (format === "investigation") {
     const navigation = element("nav");
     navigation.setAttribute("aria-label", copy.investigation);
-    const inventory = element("p");
+    const renderInventory = graphicalInventory();
     const actions = element("div");
     actions.className = "legend-actions";
     const hint = element("p", undefined, help);
@@ -603,7 +1032,8 @@ export function mount(container, { format, language = "en", seed = 1, background
     function render() {
       heading.textContent = `${copy.investigation} - ${copy.locations[state.location]}`;
       status.textContent = copy.messages[state.message];
-      inventory.textContent = `${copy.inventory}: ${state.inventory.map(item => copy.items[item]).join(", ") || copy.empty}`;
+      renderInventory(state.inventory.map(item => ({ label: copy.items[item],
+        sprite: { handle: "handle", oil: "oil", key: "key" }[item] })));
       for (const [location, node] of navButtons) {
         node.setAttribute("aria-current", location === state.location ? "location" : "false");
         node.disabled = state.completed || Boolean(authoritative && (authoritative.disabled || authoritative.status !== "active"));
@@ -682,7 +1112,9 @@ export function mount(container, { format, language = "en", seed = 1, background
     const pause = shortcut(button(copy.pause, () => {
       paused = !paused;
       render();
-    }, help), copy.pause, "P");
+      canvas.focus?.();
+    }, controls), copy.pause, "P");
+    pause.dataset.legendAction = "pause";
     pause.setAttribute("aria-pressed", "false");
     const bindings = { ArrowUp: "up", ArrowRight: "right", ArrowDown: "down", ArrowLeft: "left",
       e: "interact", E: "interact", x: "attack", X: "attack", " ": "wait", r: "retry", R: "retry" };
@@ -704,12 +1136,13 @@ export function mount(container, { format, language = "en", seed = 1, background
       heading.textContent = `${copy.dungeon} - ${copy.room} ${state.room + 1}/${level.rooms.length}`;
       const room = level.rooms[state.room];
       status.textContent = paused ? copy.paused :
-        encounter.messages[state.message] || liveDungeon && copy.dungeonLiveHits[state.message] || copy.dungeonMessages[state.message];
+        MECHANISM_COPY[language].messages[state.message] || encounter.messages[state.message] || liveDungeon && copy.dungeonLiveHits[state.message] || copy.dungeonMessages[state.message];
       if (!paused && state.message === "defeated" && hasDungeonFood(authoritative?.contentVersion)) {
         status.textContent = copy.dungeonFoodDefeated(authoritative.foodKcal);
       }
       const mechanisms = dungeonMechanisms(room);
       inscriptionText.textContent = mechanisms.map(mechanism =>
+        room.recipes?.[mechanism] ? MECHANISMS[mechanism].clue[language] :
         (level.version >= 3 && mechanism !== "block" ? encounter.riddles[mechanism] : undefined) ??
         copy.riddles[mechanism === "block" ? "plate" : mechanism === "spikes" ? "timing" : mechanism] ??
         copy.riddles.final).join(" ");
@@ -718,7 +1151,9 @@ export function mount(container, { format, language = "en", seed = 1, background
       if (room.trap) inscriptionText.textContent += ` ${encounter.arrowRiddle}`;
       const patrolling = room.creature && !state.defeated.includes(state.room);
       objective.textContent = `${mechanisms.map(mechanism => room.mechanisms && ["switch", "key"].includes(mechanism)
-        ? copy.dungeonTarget(mechanism, dungeonTarget(room, mechanism)) : copy.mechanisms[mechanism] ?? encounter.riddles[mechanism]).join(" ")} ${
+        ? copy.dungeonTarget(mechanism, dungeonTarget(room, mechanism)) :
+        room.recipes?.[mechanism] ? MECHANISMS[mechanism].help[language] :
+        copy.mechanisms[mechanism] ?? encounter.riddles[mechanism]).join(" ")} ${
         patrolling ? (room.mechanisms ? copy.creatureNames : copy.creatures)[room.creature] : copy.noCreature}${
         room.mechanisms && patrolling ? `; ${copy.patrols[room.patrol]}` : ""}. ${copy.exits}: ${room.connections.map(door =>
         copy.directions[door.direction]).join(", ")}. ${copy.gate}: ${dungeonGateOpen(state) ? copy.open : copy.closed}`;
@@ -751,6 +1186,22 @@ export function mount(container, { format, language = "en", seed = 1, background
         });
       }
       for (const wall of room.walls ?? []) drawStoneTile(ctx, wall.x * tile, wall.y * tile, tile, true, true, art);
+      if (room.recipes?.mirror) {
+        const recipe = room.recipes.mirror;
+        const beam = dungeonBeam(state);
+        for (let i = 1; i < beam.length; i++) {
+          const a = beam[i - 1], b = beam[i];
+          rectangle(ctx, "#fff09b", Math.min(a.x, b.x) * tile + 18, Math.min(a.y, b.y) * tile + 18,
+            Math.abs(a.x - b.x) * tile + 3, Math.abs(a.y - b.y) * tile + 3);
+        }
+        drawPixelSprite(ctx, "crystal", recipe.source.x * tile + 4, recipe.source.y * tile + 4, 2);
+        drawPixelSprite(ctx, "receiver", recipe.receiver.x * tile + 4, recipe.receiver.y * tile + 4, 2,
+          { active: state.activated.includes(`${room.id}:mirror`) });
+        drawPixelSprite(ctx, "mirror", recipe.mirror.x * tile + 4, recipe.mirror.y * tile + 4, 2);
+        const direction = DUNGEON_DIRECTIONS[["right", "down", "left", "up"][state.mechanisms[room.id].mirror.angle]];
+        rectangle(ctx, "#e8b65c", recipe.mirror.x * tile + 18 + direction.x * 10,
+          recipe.mirror.y * tile + 18 + direction.y * 10, 5, 5);
+      }
       for (const mechanism of ["torch", "crank", "plate"]) if (mechanisms.includes(mechanism)) {
         const target = dungeonTarget(room, mechanism);
         drawPixelSprite(ctx, { torch: "vase", crank: "lever", plate: "plate" }[mechanism],
@@ -773,14 +1224,16 @@ export function mount(container, { format, language = "en", seed = 1, background
         const target = dungeonTarget(room, "key");
         drawPixelSprite(ctx, "key", target.x * tile + 4, target.y * tile + 4);
       }
-      if (mechanisms.includes("block")) {
+      if (mechanisms.includes("block") || mechanisms.includes("weight")) {
         drawPixelSprite(ctx, "plate", 204, 124);
-        drawPixelSprite(ctx, "crate", state.blocks[state.room].x * tile + 4, 124);
       }
       if (mechanisms.includes("spikes")) {
         square("#141827", 4, 3, 4);
         if (dungeonSpikesActive(state)) drawPixelSprite(ctx, "spikes", 164, 124);
         else for (const x of [170, 182]) rectangle(ctx, "#a4acc2", x, 146, 6, 4);
+      }
+      if (mechanisms.includes("block") || mechanisms.includes("weight")) {
+        drawPixelSprite(ctx, "crate", state.blocks[state.room].x * tile + 4, 124);
       }
       if (state.room === level.treasureRoom && !state.completed) reel(ctx, ox + 6.5 * tile, oy + 3.5 * tile);
       const creature = dungeonCreature(state);
@@ -801,7 +1254,8 @@ export function mount(container, { format, language = "en", seed = 1, background
         Boolean(authoritative && (authoritative.disabled || authoritative.status !== "active"));
       for (const node of [...pad.values(), interact, wait, retry]) node.disabled = stopped;
       attack.disabled = stopped || dungeonWeapon === "none";
-      pause.disabled = state.completed || state.failed;
+      pause.disabled = state.completed || state.failed ||
+        Boolean(authoritative && (authoritative.disabled || authoritative.status !== "active"));
       shortcut(pause, paused ? copy.resume : copy.pause, "P");
       pause.setAttribute("aria-pressed", String(paused));
       showAccounting();
@@ -906,7 +1360,9 @@ export function mount(container, { format, language = "en", seed = 1, background
     function render() {
       heading.textContent = `${copy.platformArchitectures[level.rooms[state.room].archetype] ?? copy.platform} - ${copy.room} ${state.room + 1}/${level.rooms.length}`;
       if (!paused && status.dataset.message !== state.message) {
-        status.textContent = encounter.messages[state.message] ?? copy.platformMessages[state.message];
+        status.textContent = state.message === "decoyTrap" ? DECOY_COPY[language].trap :
+          state.message === "decoyMistake" ? DECOY_COPY[language].mistake :
+          MECHANISM_COPY[language].messages[state.message] ?? encounter.messages[state.message] ?? copy.platformMessages[state.message];
         status.dataset.message = state.message;
       }
       progress.textContent = livePlatform
@@ -915,7 +1371,8 @@ export function mount(container, { format, language = "en", seed = 1, background
       const room = level.rooms[state.room];
       status.hidden = ["route", "branch"].includes(state.message) && !paused;
       inscriptionText.textContent = (room.challenges ?? (room.challenge ? [room.challenge] : []))
-        .map(point => level.version >= 5 && encounter.riddles[point.family] || copy.riddles[point.family]).join(" ") || copy.riddles.final;
+        .map((point, index) => room.recipes?.[index] ? MECHANISMS[point.family].clue[language] :
+          level.version >= 5 && encounter.riddles[point.family] || copy.riddles[point.family]).join(" ") || copy.riddles.final;
       if (room.runeOrder) inscriptionText.textContent += ` ${encounter.runeRiddle(room.runeOrder)}`;
       if (room.connections.some(door => door.secret)) inscriptionText.textContent += ` ${encounter.secretRiddle}`;
       if (room.arrowTrap) inscriptionText.textContent += ` ${encounter.arrowRiddle}`;
@@ -923,6 +1380,7 @@ export function mount(container, { format, language = "en", seed = 1, background
         .map((point, index) => `${point.family === "timing" && room.pacing && room.hazards.length
           ? `${copy.platformTiming(room.hazards[0].activeTicks * STEP, (room.hazards[0].period - room.hazards[0].activeTicks) * STEP)} ${copy.platformLever}`
           : point.family === "timing" && room.pacing ? copy.platformLever :
+            room.recipes?.[index] ? MECHANISMS[point.family].help[language] :
             (room.archetype ? copy.variedPlatformChallenges : copy.platformChallenges)[point.family] ?? encounter.riddles[point.family]}${
           state.activated?.includes(`${room.id}:${index}`) ? ` (${copy.open})` : ""}`).join(" ") + ". " +
         copy.gate + ": " + (platformRoomSolved(state, room) ? copy.open : copy.closed) + ". " : ""}${copy.exits}: ${room.connections.map(door =>

@@ -1,4 +1,5 @@
 import { adventurePacing } from "./legend-pacing.mjs";
+import { createMechanism, advanceMechanism, initialMechanismState, validateMechanismPlacement } from "./legend-mechanisms.mjs";
 
 export const DUNGEON_PROFILES = Object.freeze({
   modest: Object.freeze({ rooms: 8, rewardBudget: 1 }),
@@ -26,10 +27,11 @@ function freeze(value) {
 }
 function retain(state) { freeze(state); states.add(state); return state; }
 
-export function generateDungeon({ seed = 1, tier = "modest", roomCount = DUNGEON_PROFILES[tier]?.rooms, paced = false, expanded = false } = {}) {
+export function generateDungeon({ seed = 1, tier = "modest", roomCount = DUNGEON_PROFILES[tier]?.rooms, paced = false, expanded = false, catalogue = false } = {}) {
   if (!Number.isSafeInteger(seed) || seed < 0 || seed > 0xffffffff || !Object.hasOwn(DUNGEON_PROFILES, tier) ||
       !Number.isSafeInteger(roomCount) || roomCount < 4 || roomCount > 32 || roomCount % 4 ||
-      typeof paced !== "boolean" || typeof expanded !== "boolean" || expanded && !paced || paced && roomCount < 8) {
+      typeof paced !== "boolean" || typeof expanded !== "boolean" || typeof catalogue !== "boolean" ||
+      catalogue && !expanded || expanded && !paced || paced && roomCount < 8) {
     throw new RangeError("Invalid dungeon seed or reward tier.");
   }
   let value = seed;
@@ -95,7 +97,19 @@ export function generateDungeon({ seed = 1, tier = "modest", roomCount = DUNGEON
         connections: [{ direction: opposite[direction], target: id }] });
     }
   }
-  const level = freeze({ version: expanded ? 3 : paced ? 2 : 1, seed, tier, rewardBudget: DUNGEON_PROFILES[tier].rewardBudget,
+  if (catalogue) for (const room of rooms.filter(room => !room.hidden)) {
+    const kind = room.id % 8 === 1 ? "mirror" : room.id % 8 === 3 ? "weight" : null;
+    if (kind) {
+      room.mechanism = kind;
+      room.mechanisms = [kind, ...(room.pacing.complexity ? ["key"] : [])];
+      room.walls = []; room.trap = null; room.creature = null;
+    }
+    room.recipes = Object.fromEntries(room.mechanisms.filter(kind =>
+      ["switch", "key", "plate", "crank", "mirror", "weight"].includes(kind))
+      .map(kind => [kind, createMechanism("dungeon", kind, (seed + room.id) % 3)]));
+    Object.values(room.recipes).forEach(recipe => validateMechanismPlacement(recipe, room));
+  }
+  const level = freeze({ version: catalogue ? 4 : expanded ? 3 : paced ? 2 : 1, seed, tier, rewardBudget: DUNGEON_PROFILES[tier].rewardBudget,
     rooms, treasureRoom: roomCount - 1 });
   levels.add(level);
   return level;
@@ -111,6 +125,8 @@ export function createDungeon({ level = generateDungeon(), weapon = "none", heal
     solved: [], blocks: level.rooms.map(() => ({ x: 3, y: 3 })), defeated: [], invulnerable: 0,
     ...(level.version >= 2 ? { activated: [] } : {}),
     ...(level.version >= 3 ? { secrets: [], stashes: [], flames: [], crank: 0, runes: [], trapTick: null } : {}),
+    ...(level.version >= 4 ? { mechanisms: Object.fromEntries(level.rooms.filter(room => room.recipes)
+      .map(room => [room.id, Object.fromEntries(Object.keys(room.recipes).map(kind => [kind, initialMechanismState()]))])) } : {}),
     completed: false, failed: false, message: "arrival",
     metrics: { roomEntries: 1, roomsVisited: [0], trapHits: 0, creatureHits: 0,
       ...(level.version >= 3 ? { wrongAttempts: 0 } : {}) } });
@@ -137,8 +153,19 @@ export function dungeonGateOpen(state) {
 
 export const dungeonMechanisms = room => room.mechanisms ?? [room.mechanism];
 export function dungeonTarget(room, mechanism) {
+  if (mechanism === "mirror") return room.recipes.mirror.mirror;
   if (mechanism === "runes") return DUNGEON_RUNES[0];
   return { x: room.patrol === 1 ? 6 : 2, y: mechanism === "switch" ? 2 : 4 };
+}
+export function dungeonBeam(state) {
+  const room = state.level.rooms[state.room], recipe = room.recipes?.mirror;
+  if (!recipe) return [];
+  const angle = state.mechanisms[room.id].mirror.angle, points = [];
+  for (let x = recipe.source.x; x <= recipe.mirror.x; x++) points.push({ x, y: recipe.source.y });
+  const direction = [{ x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 0, y: -1 }][angle];
+  for (let x = recipe.mirror.x + direction.x, y = recipe.mirror.y + direction.y;
+    x > 0 && x < 8 && y > 0 && y < 6; x += direction.x, y += direction.y) points.push({ x, y });
+  return points;
 }
 export const DUNGEON_RUNES = Object.freeze([{ x: 2, y: 1 }, { x: 4, y: 2 }, { x: 6, y: 1 }].map(Object.freeze));
 export function dungeonArrow(state) {
@@ -165,6 +192,15 @@ export function stepDungeon(state, action) {
     if (opened && !next.solved.includes(next.room)) next.solved.push(next.room);
     next.message = opened ? "opened" : "mechanismProgress";
   };
+  const operateRecipe = (kind, input) => {
+    const recipe = room.recipes?.[kind];
+    if (!recipe) return false;
+    const result = advanceMechanism(recipe, next.mechanisms[room.id][kind], input);
+    next.mechanisms = { ...next.mechanisms, [room.id]: { ...next.mechanisms[room.id], [kind]: result.state } };
+    if (result.state.solved) solve(kind);
+    else if (result.message !== "nothing") next.message = result.message;
+    return true;
+  };
   const direction = DUNGEON_DIRECTIONS[action.type];
   if (direction) {
     next.facing = action.type;
@@ -189,13 +225,14 @@ export function stepDungeon(state, action) {
       }
     } else if (target.x > 0 && target.x < 8 && target.y > 0 && target.y < 6) {
       let blocked = !!room.walls?.some(wall => same(wall, target));
-      if (dungeonMechanisms(room).includes("block") && same(target, next.blocks[state.room])) {
+      if ((dungeonMechanisms(room).includes("block") || room.recipes?.weight) && same(target, next.blocks[state.room])) {
         const pushed = { x: target.x + direction.x, y: target.y + direction.y };
         // The block's rail prevents irreversible corner traps.
         blocked = direction.y !== 0 || pushed.x < 2 || pushed.x > 5;
         if (!blocked) {
           next.blocks[state.room] = pushed;
-          if (pushed.x === 5) solve("block");
+          if (room.recipes?.weight) operateRecipe("weight", { weight: pushed.x === 5 });
+          else if (pushed.x === 5) solve("block");
         }
       }
       if (!blocked) Object.assign(next, target);
@@ -233,12 +270,13 @@ export function stepDungeon(state, action) {
     }
     const mechanism = !handled && dungeonMechanisms(room).find(mechanism => {
       const target = dungeonTarget(room, mechanism);
-      return ["switch", "key", "torch", "crank"].includes(mechanism) && !state.activated?.includes(`${room.id}:${mechanism}`) &&
+      return ["switch", "key", "torch", "crank", "mirror"].includes(mechanism) && !state.activated?.includes(`${room.id}:${mechanism}`) &&
         Math.abs(state.x - target.x) + Math.abs(state.y - target.y) <= 1;
     });
-    if (mechanism === "torch" && !state.flames.includes(room.id)) next.message = "needFlame";
-    else if (mechanism === "crank" && ++next.crank < 3) next.message = "cranking";
-    else if (mechanism) solve(mechanism);
+    const recipeHandled = mechanism && operateRecipe(mechanism, { operate: true });
+    if (!recipeHandled && mechanism === "torch" && !state.flames.includes(room.id)) next.message = "needFlame";
+    else if (!recipeHandled && mechanism === "crank" && ++next.crank < 3) next.message = "cranking";
+    else if (!recipeHandled && mechanism) solve(mechanism);
     else if (!handled && state.room === state.level.treasureRoom && dungeonGateOpen(state) &&
         Math.abs(state.x - 6) + Math.abs(state.y - 3) <= 1) {
       next.completed = true;
@@ -257,13 +295,18 @@ export function stepDungeon(state, action) {
   } else if (action.type === "retry") {
     next.x = 4;
     next.y = 5;
-    if (room.mechanisms ? !next.activated.includes(`${room.id}:block`) : !next.solved.includes(state.room)) {
+    if (room.recipes) next.mechanisms = { ...next.mechanisms, [room.id]: Object.fromEntries(
+      Object.entries(next.mechanisms[room.id]).map(([kind, progress]) =>
+        [kind, progress.solved ? progress : initialMechanismState()])) };
+    if (room.mechanisms ? !next.activated.includes(`${room.id}:${room.recipes?.weight ? "weight" : "block"}`) : !next.solved.includes(state.room)) {
       next.blocks[state.room] = { x: 3, y: 3 };
     }
     next.message = "retry";
   }
   if (state.level.version >= 3 && next.room === state.room) {
-    if (room.mechanisms.includes("plate") && same(next, dungeonTarget(room, "plate"))) solve("plate");
+    if (room.mechanisms.includes("plate") && same(next, dungeonTarget(room, "plate"))) {
+      if (!operateRecipe("plate", { weight: true })) solve("plate");
+    }
     if (room.trap && same(next, room.trap) && (next.trapTick === null || next.tick - next.trapTick > 10)) {
       next.trapTick = next.tick; next.message = "trapWarning";
     }

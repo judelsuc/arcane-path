@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Town legend playtest</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./styles.css?v=unobstructed-scene-4">
     <style>
       main { max-width: 960px; margin: 1rem auto; padding: 1rem; }
       h1 { color: #ead9ac; }
@@ -14,7 +14,8 @@
       button { min-height: 48px; margin: .25rem; padding: .6rem .9rem; }
       button[aria-pressed="true"], button[aria-current="location"] { outline: 2px solid #e5c779; background: #526444; }
       button:focus-visible, canvas:focus-visible, a:focus-visible { outline: 3px solid #f4d18c; outline-offset: 3px; }
-      canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; border: 1px solid #b19b70; box-sizing: border-box; }
+      canvas { display: block; image-rendering: pixelated; box-sizing: border-box; }
+      .legend-game > canvas, .legend-point-scene > canvas { width: 100%; height: auto; border: 1px solid #b19b70; }
       .legend-actions { display: flex; flex-wrap: wrap; gap: .25rem; }
       #preview-dungeon-settings { display: flex; flex-wrap: wrap; gap: .75rem; }
       #preview-dungeon-settings label { display: grid; grid-template-columns: minmax(0, 1fr); gap: .25rem; flex: 1 1 18rem; min-width: 0; max-width: 100%; }
@@ -60,6 +61,6 @@
       <div id="legend-board"></div>
       <p><a href="?lang=en">English</a> / <a href="?lang=fr">Français</a></p>
     </main>
-    <script type="module" src="./legend-preview.mjs"></script>
+    <script type="module" src="./legend-preview.mjs?v=visible-resume-7"></script>
   </body>
 </html>

@@ -1,6 +1,11 @@
 {
-  "version": "0.22.8",
+  "version": "0.22.9",
   "entries": [
+    {
+      "version": "0.22.9",
+      "fr": "Les nouvelles aventures ajoutent caisses, ponts temporisés, miroirs et mécanismes à assembler. Les enquêtes se jouent directement dans huit décors variés : objets à ramasser, inventaire graphique, menus contextuels et indices à observer sans dévoiler la solution à l'arrivée. Certains leviers réservent une mauvaise surprise. Les pièges ont un retour visuel marqué et temporaire ; les messages ne masquent plus le décor. Dans les donjons, les caisses restent visibles sur les pointes et le bouton Reprendre est accessible près des déplacements. Les essais déjà commencés gardent leurs règles.",
+      "en": "New adventures add crates, timed bridges, mirrors and mechanisms to assemble. Investigations are played directly within eight varied scenes, with collectible objects, a graphical inventory, contextual menus and clues to observe without revealing the solution on arrival. Some levers hold an unpleasant surprise. Traps have prominent, temporary visual feedback, and messages no longer cover the scene. In dungeons, crates remain visible over spikes and Resume is accessible beside the movement controls. Attempts already underway retain their rules."
+    },
     {
       "version": "0.22.8",
       "fr": "Les nouvelles aventures multiplient les situations : seize architectures de plateformes, dalles à flèches, animaux, manivelles, braseros, runes et passages secrets ; donjons à murs variés et chambres cachées ; enquêtes à chiffres, déductions, échanges, cadrans et témoins mobiles. Certaines issues secrètes sont obligatoires et annoncées par des indices dans le décor. Les blessures touchent le voyage ; une erreur d'énigme coûte 2 minutes et 1 fatigue. Les caches rapportent 1 € ou 150 kcal chacune lors de la première récupération réussie du trésor. Les essais déjà commencés gardent leurs anciennes règles.",

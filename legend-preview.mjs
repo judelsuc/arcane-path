@@ -1,11 +1,11 @@
 import { LEGEND } from "./legend-adventure.mjs";
 import { COPY } from "./legend-adventure-copy.mjs";
-import { mount } from "./minigames/legend-adventure-ui.mjs";
+import { mount } from "./minigames/legend-adventure-ui.mjs?v=visible-resume-7";
 import { loadLegendBackgrounds } from "./legend-backgrounds.mjs";
 import { DUNGEON_PROFILES } from "./minigames/legend-dungeon.mjs";
 import { PLATFORM_PROFILES } from "./minigames/legend-layout.mjs";
 import { INVESTIGATION_PROFILES } from "./minigames/legend-investigation.mjs";
-import { INVESTIGATION_COPY } from "./minigames/legend-investigation-copy.mjs";
+import { INVESTIGATION_COPY } from "./minigames/legend-investigation-copy.mjs?v=observational-scenes-2";
 
 const params = new URLSearchParams(location.search);
 const language = params.get("lang") === "fr" ? "fr" : "en";
@@ -60,8 +60,15 @@ function restart() {
     document.querySelector(`#format-${name}`).setAttribute("aria-pressed", String(name === format));
   }
   try {
+    const resume = format === "dungeon" ? params.get("resume") ?? "" : "";
+    const commands = { u: "up", r: "right", d: "down", l: "left", e: "interact", w: "wait", x: "attack" };
+    if (resume.length > 1024 || [...resume].some(key => !Object.hasOwn(commands, key))) {
+      throw new Error("Invalid dungeon preview resume route.");
+    }
     ui = mount(document.querySelector("#legend-board"), { format, language, seed, tier, weapon, backgrounds,
-      generatedInvestigation: format === "investigation", paced: true, expanded: true, onError: showError });
+      previewDungeonActions: [...resume].map(key => ({ type: commands[key] })),
+      generatedInvestigation: format === "investigation", paced: true, expanded: true, catalogue: true,
+      decoys: format !== "dungeon", onError: showError });
   } catch (error) {
     showError(error);
   }

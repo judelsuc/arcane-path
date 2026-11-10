@@ -26,20 +26,28 @@ export const TREASURE_DUNGEON_VERSION = "treasure-dungeon-v1";
 export const EXPANDED_PLATFORM_VERSION = "treasure-platform-v3";
 export const EXPANDED_INVESTIGATION_VERSION = "treasure-investigation-v2";
 export const EXPANDED_DUNGEON_VERSION = "treasure-dungeon-v2";
+export const CATALOGUE_PLATFORM_VERSION = "treasure-platform-v4";
+export const CATALOGUE_INVESTIGATION_VERSION = "treasure-investigation-v3";
+export const CATALOGUE_DUNGEON_VERSION = "treasure-dungeon-v3";
+export const DECOY_PLATFORM_VERSION = "treasure-platform-v5";
+export const DECOY_INVESTIGATION_VERSION = "treasure-investigation-v4";
+export const hasDecoyLevers = version => [DECOY_PLATFORM_VERSION, DECOY_INVESTIGATION_VERSION].includes(version);
+export const isCatalogueLegendSession = version =>
+  hasDecoyLevers(version) || [CATALOGUE_PLATFORM_VERSION, CATALOGUE_INVESTIGATION_VERSION, CATALOGUE_DUNGEON_VERSION].includes(version);
 export const isExpandedLegendSession = version =>
-  [EXPANDED_PLATFORM_VERSION, EXPANDED_INVESTIGATION_VERSION, EXPANDED_DUNGEON_VERSION].includes(version);
+  isCatalogueLegendSession(version) || [EXPANDED_PLATFORM_VERSION, EXPANDED_INVESTIGATION_VERSION, EXPANDED_DUNGEON_VERSION].includes(version);
 export const isTreasureSession = version =>
   isExpandedLegendSession(version) ||
   [TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION].includes(version);
 export const isPacedLegendSession = version =>
   [PACED_PLATFORM_VERSION, PACED_INVESTIGATION_VERSION, PACED_DUNGEON_VERSION].includes(version) || isTreasureSession(version);
 export const isPlatformSession = version =>
-  [LOCAL_PLATFORM_VERSION, PACED_PLATFORM_VERSION, TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION, EXPANDED_PLATFORM_VERSION].includes(version);
+  [LOCAL_PLATFORM_VERSION, PACED_PLATFORM_VERSION, TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION, EXPANDED_PLATFORM_VERSION, CATALOGUE_PLATFORM_VERSION, DECOY_PLATFORM_VERSION].includes(version);
 export const isLocalLegendSession = version =>
   [LOCAL_PLATFORM_VERSION, LOCAL_INVESTIGATION_VERSION, LOCAL_DUNGEON_VERSION].includes(version) || isPacedLegendSession(version);
-export const isDungeonSession = version => [DUNGEON_SESSION_VERSION, DUNGEON_FOOD_VERSION, LOCAL_DUNGEON_VERSION, PACED_DUNGEON_VERSION, TREASURE_DUNGEON_VERSION, EXPANDED_DUNGEON_VERSION].includes(version);
-export const isGeneratedInvestigation = version => [GENERATED_INVESTIGATION_VERSION, LOCAL_INVESTIGATION_VERSION, PACED_INVESTIGATION_VERSION, TREASURE_INVESTIGATION_VERSION, EXPANDED_INVESTIGATION_VERSION].includes(version);
-export const hasDungeonFood = version => [DUNGEON_FOOD_VERSION, LOCAL_DUNGEON_VERSION, PACED_DUNGEON_VERSION, TREASURE_DUNGEON_VERSION, EXPANDED_DUNGEON_VERSION].includes(version);
+export const isDungeonSession = version => [DUNGEON_SESSION_VERSION, DUNGEON_FOOD_VERSION, LOCAL_DUNGEON_VERSION, PACED_DUNGEON_VERSION, TREASURE_DUNGEON_VERSION, EXPANDED_DUNGEON_VERSION, CATALOGUE_DUNGEON_VERSION].includes(version);
+export const isGeneratedInvestigation = version => [GENERATED_INVESTIGATION_VERSION, LOCAL_INVESTIGATION_VERSION, PACED_INVESTIGATION_VERSION, TREASURE_INVESTIGATION_VERSION, EXPANDED_INVESTIGATION_VERSION, CATALOGUE_INVESTIGATION_VERSION, DECOY_INVESTIGATION_VERSION].includes(version);
+export const hasDungeonFood = version => isDungeonSession(version) && version !== DUNGEON_SESSION_VERSION;
 const supportedVersion = version => [LEGEND_SESSION_VERSION, GENERATED_INVESTIGATION_VERSION].includes(version) ||
   isLocalLegendSession(version) || isDungeonSession(version);
 export const MAX_INVESTIGATION_ACTIONS = 1024;
@@ -86,6 +94,8 @@ export function replayLegendSession({ contentVersion, seed, actions, weapon }) {
   const platform = isPlatformSession(contentVersion);
   const paced = isPacedLegendSession(contentVersion);
   const expanded = isExpandedLegendSession(contentVersion);
+  const catalogue = isCatalogueLegendSession(contentVersion);
+  const decoys = hasDecoyLevers(contentVersion);
   if ((!dungeon && !platform && !isGeneratedInvestigation(contentVersion)) ||
       dungeon && !["none", "knife", ...(isTreasureSession(contentVersion) ? ["sword"] : [])].includes(weapon) ||
       !Number.isSafeInteger(seed) || seed < 0 || seed > 0xffffffff ||
@@ -94,11 +104,11 @@ export function replayLegendSession({ contentVersion, seed, actions, weapon }) {
   }
   try {
     let state = platform ? createPlatformer({ level: generatePlatformLevel({
-      seed, tier: "modest", paced, expanded, varied: expanded || contentVersion === VARIED_PLATFORM_VERSION,
+      seed, tier: "modest", paced, expanded, catalogue, decoys, varied: expanded || contentVersion === VARIED_PLATFORM_VERSION,
     }), healthMode: "journey" }) : dungeon
-      ? createDungeon({ level: generateDungeon({ seed, tier: "modest", paced, expanded,
+      ? createDungeon({ level: generateDungeon({ seed, tier: "modest", paced, expanded, catalogue,
         ...(isLocalLegendSession(contentVersion) ? {} : { roomCount: 4 }) }), weapon, healthMode: "journey" })
-      : createGeneratedInvestigation({ level: generateInvestigation({ seed, tier: "modest", paced, expanded,
+      : createGeneratedInvestigation({ level: generateInvestigation({ seed, tier: "modest", paced, expanded, catalogue, decoys,
         ...(isLocalLegendSession(contentVersion) ? {} : { roomCount: 4 }) }) });
     let ticks = 0;
     for (const action of actions) {

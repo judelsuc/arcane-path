@@ -1,5 +1,6 @@
 import { isPlatformLevel, PLATFORM_RUNES } from "./legend-layout.mjs";
 export { PLATFORM_RUNES } from "./legend-layout.mjs";
+import { advanceMechanism, initialMechanismState } from "./legend-mechanisms.mjs";
 
 export const WIDTH = 640;
 export const HEIGHT = 320;
@@ -27,6 +28,14 @@ export const ROOMS = Object.freeze([
 
 const states = new WeakSet();
 function freeze(state) {
+  if (state.mechanisms) {
+    for (const entries of Object.values(state.mechanisms)) {
+      for (const entry of entries) if (entry) { Object.freeze(entry.items); Object.freeze(entry); }
+      Object.freeze(entries);
+    }
+    Object.freeze(state.mechanisms);
+    Object.freeze(state.crates);
+  }
   Object.freeze(state.metrics.roomsVisited);
   Object.freeze(state.metrics);
   Object.freeze(state);
@@ -43,6 +52,11 @@ export function createPlatformer({ level = null, healthMode = "preview" } = {}) 
     ...(level.version >= 3 ? { activated: Object.freeze([]) } : {}),
     ...(level.version >= 5 ? { secrets: Object.freeze([]), stashes: Object.freeze([]),
       flames: Object.freeze([]), runes: Object.freeze([]), crank: 0, trapTick: null } : {}),
+    ...(level.version >= 6 ? { mechanisms: Object.fromEntries(level.rooms.filter(room => room.recipes)
+      .map(room => [room.id, room.recipes.map(recipe => recipe ? initialMechanismState() : null)])),
+    crates: Object.fromEntries(level.rooms.filter(room => room.challenge?.family === "crate")
+      .map(room => [room.id, room.recipes[0].start])) } : {}),
+    ...(level.version >= 7 ? { spentDecoys: Object.freeze([]) } : {}),
     retries: 0, completed: false, message: "route",
     metrics: { roomEntries: 1, roomsVisited: [level.start], trapHits: 0,
       ...(level.version >= 5 ? { creatureHits: 0, wrongAttempts: 0 } : {}) } });
@@ -59,6 +73,15 @@ export const platformHazardActive = (hazard, ticks) =>
 export const platformRoomSolved = (state, room = state.level?.rooms[state.room]) =>
   !room?.challenge || state.solved.includes(room.id);
 export const platformLadders = room => room.ladders ?? [room.ladder, room.challengeLadder].filter(Boolean);
+export function platformBridge(state) {
+  const room = state.level?.rooms[state.room], recipe = room?.recipes?.find(recipe => recipe?.kind === "bridge");
+  return recipe && (state.mechanisms[room.id][0].solved || state.ticks < state.mechanisms[room.id][0].until)
+    ? recipe.span : null;
+}
+export function platformCrate(state) {
+  const room = state.level?.rooms[state.room], recipe = room?.recipes?.find(recipe => recipe?.kind === "crate");
+  return recipe ? { x: state.crates[room.id], y: recipe.y, width: recipe.width, height: recipe.height } : null;
+}
 export function platformAnimal(state) {
   const animal = state.level?.rooms[state.room].animal;
   if (!animal) return null;
@@ -80,9 +103,16 @@ export function stepPlatformer(state, controls = {}) {
     typeof controls[key] !== "boolean")) throw new TypeError("Invalid platform controls.");
   if (state.completed) return state;
   const next = { ...state };
+  let mechanismMessage = null;
   if (state.level) next.ticks++;
   const retry = (damage = false, creature = false) => {
     const health = state.level ? state.health === null ? null : state.health - Number(damage) : undefined;
+    if (state.level?.version >= 6 && !platformRoomSolved(state)) {
+      const room = state.level.rooms[state.room];
+      if (room.recipes) next.mechanisms = { ...state.mechanisms, [room.id]: room.recipes.map((recipe, i) =>
+        recipe && !state.activated.includes(`${room.id}:${i}`) ? initialMechanismState() : state.mechanisms[room.id][i]) };
+      if (room.challenge?.family === "crate") next.crates = { ...state.crates, [room.id]: room.recipes[0].start };
+    }
     return freeze({ ...next, ...(state.level ? { health: health === null ? null : health || 3 } : {}),
       metrics: { ...next.metrics, trapHits: next.metrics.trapHits + Number(damage && !creature),
         ...(creature ? { creatureHits: next.metrics.creatureHits + 1 } : {}) },
@@ -94,6 +124,15 @@ export function stepPlatformer(state, controls = {}) {
   const room = (state.level?.rooms ?? ROOMS)[state.room];
   next.x = Math.max(0, Math.min(WIDTH - PLAYER.width,
     state.x + (Number(!!controls.right) - Number(!!controls.left)) * PLAYER.speed * STEP));
+  const crate = platformCrate(state);
+  if (crate && overlaps(body({ ...state, x: next.x }), crate)) {
+    const recipe = room.recipes[0], dx = next.x - state.x;
+    const pushing = state.grounded && state.y + PLAYER.height > crate.y + 4 &&
+      !state.activated.includes(`${room.id}:0`);
+    const x = pushing ? Math.max(recipe.rail.min, Math.min(recipe.target, crate.x + dx)) : crate.x;
+    next.crates = { ...state.crates, [room.id]: x };
+    next.x = dx > 0 ? x - PLAYER.width : dx < 0 ? x + crate.width : state.x;
+  }
   const ladder = platformLadders(room).find(item =>
     next.x + PLAYER.width > item.x - 12 && next.x < item.x + 12);
   const climbing = ladder && next.x + PLAYER.width > ladder.x - 12 && next.x < ladder.x + 12 &&
@@ -114,8 +153,10 @@ export function stepPlatformer(state, controls = {}) {
     const oldBottom = next.y + PLAYER.height;
     next.y += next.vy * STEP;
     next.grounded = false;
-    for (const platform of [{ x: 0, y: 288, width: WIDTH, height: 32 }, ...room.platforms]) {
-      if (state.level && controls.down && platform.y !== 288) continue;
+    const activeCrate = platformCrate(next);
+    for (const platform of [{ x: 0, y: 288, width: WIDTH, height: 32 }, ...room.platforms,
+      ...[activeCrate, platformBridge(next)].filter(Boolean)]) {
+      if (state.level && controls.down && platform.y !== 288 && platform !== activeCrate) continue;
       if (next.vy >= 0 && oldBottom <= platform.y && next.y + PLAYER.height >= platform.y &&
           next.x + PLAYER.width > platform.x && next.x < platform.x + platform.width) {
         next.y = platform.y - PLAYER.height;
@@ -137,8 +178,37 @@ export function stepPlatformer(state, controls = {}) {
     if (arrow && overlaps(body(next), arrow)) return retry(true);
     if (animal && overlaps(body(next), animal)) return retry(true, true);
     const near = point => Math.abs(next.x - point.x) < 28 && Math.abs(next.y - point.y) < 28;
+    if (controls.interact && room.decoy && near(room.decoy) && !state.spentDecoys.includes(room.id)) {
+      next.spentDecoys = Object.freeze([...state.spentDecoys, room.id]);
+      if (room.decoy.kind === "trap") {
+        const hit = retry(true);
+        return freeze({ ...hit, message: "decoyTrap" });
+      }
+      next.metrics = { ...next.metrics, wrongAttempts: next.metrics.wrongAttempts + 1 };
+      next.message = "decoyMistake";
+      return freeze(next);
+    }
+    if (room.recipes) {
+      const entries = [...state.mechanisms[room.id]];
+      for (const [index, recipe] of room.recipes.entries()) {
+        if (!recipe || state.activated.includes(`${room.id}:${index}`)) continue;
+        const point = room.challenges[index];
+        const result = advanceMechanism(recipe, entries[index], {
+          operate: !!controls.interact && near(recipe.lever ?? point),
+          receive: recipe.receiver && !!controls.interact && near(recipe.receiver),
+          weight: recipe.kind === "crate" ? next.crates[room.id] === recipe.target : near(point) && next.grounded,
+          tick: next.ticks,
+        });
+        entries[index] = result.state;
+        if (result.message !== "nothing") next.message = mechanismMessage = result.message;
+        if (result.state.solved) next.activated = Object.freeze([...next.activated, `${room.id}:${index}`]);
+      }
+      next.mechanisms = { ...state.mechanisms, [room.id]: entries };
+      if (room.challenges.every((_, index) => next.activated.includes(`${room.id}:${index}`)) &&
+          !next.solved.includes(room.id)) next.solved = Object.freeze([...next.solved, room.id]);
+    }
     if (!controls.interact || !near(room.challenge ?? {})) next.crank = 0;
-    if (room.challenge?.family === "plate" && !next.activated.includes(`${room.id}:0`) &&
+    if (!room.recipes && room.challenge?.family === "plate" && !next.activated.includes(`${room.id}:0`) &&
         near(room.challenge) && next.grounded) {
       next.activated = Object.freeze([...next.activated, `${room.id}:0`]);
       if (room.challenges.every((_, index) => next.activated.includes(`${room.id}:${index}`))) {
@@ -188,7 +258,7 @@ export function stepPlatformer(state, controls = {}) {
       if (room.challenge?.family === "torch" && near(room.challenge) && !state.flames.includes(room.id)) {
         next.message = "needFlame"; return freeze(next);
       }
-      if (room.challenge?.family === "crank" && near(room.challenge) && !state.activated.includes(`${room.id}:0`)) {
+      if (!room.recipes && room.challenge?.family === "crank" && near(room.challenge) && !state.activated.includes(`${room.id}:0`)) {
         next.crank++;
         if (next.crank < 60) { next.message = "cranking"; return freeze(next); }
       }
@@ -198,7 +268,7 @@ export function stepPlatformer(state, controls = {}) {
     const near = point => Math.abs(next.x - point.x) < 28 && Math.abs(next.y - point.y) < 28;
     const door = room.connections.find(near);
     if (door) {
-      if (room.main && door.target > room.id && !platformRoomSolved(state, room)) {
+      if (room.main && door.target > room.id && !platformRoomSolved(state.level.version >= 6 ? next : state, room)) {
         next.message = "challengeLocked";
         return freeze(next);
       }
@@ -216,11 +286,11 @@ export function stepPlatformer(state, controls = {}) {
       }
     } else if (room.challenge && !platformRoomSolved(state, room) &&
         (room.challenges ?? [room.challenge]).some((point, index) =>
-          !state.activated?.includes(`${room.id}:${index}`) && near(point) &&
+          !room.recipes?.[index] && !state.activated?.includes(`${room.id}:${index}`) && near(point) &&
           (!["plate", "runes"].includes(point.family) &&
             (point.family !== "jump" || !next.grounded && next.vy < 0)))) {
       if (room.challenges) {
-        const index = room.challenges.findIndex((point, index) => !state.activated.includes(`${room.id}:${index}`) &&
+        const index = room.challenges.findIndex((point, index) => !room.recipes?.[index] && !state.activated.includes(`${room.id}:${index}`) &&
           near(point) && !["plate", "runes"].includes(point.family) &&
           (point.family !== "jump" || !next.grounded && next.vy < 0));
         next.activated = Object.freeze([...next.activated, `${room.id}:${index}`]);
@@ -238,7 +308,8 @@ export function stepPlatformer(state, controls = {}) {
         next.collected = Object.freeze([...state.collected, state.room]);
         next.message = "health";
       }
-    } else next.message = room.reward === "empty" ? "emptyBranch" : "nothing";
+    } else next.message = mechanismMessage ?? (state.level.version >= 7 && state.message.startsWith("decoy")
+      ? state.message : room.reward === "empty" ? "emptyBranch" : "nothing");
     return freeze(next);
   }
   if (controls.interact) {

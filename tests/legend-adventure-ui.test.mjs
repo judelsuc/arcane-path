@@ -7,14 +7,24 @@ import { GENERATED_INVESTIGATION_VERSION, replayLegendSession, DUNGEON_SESSION_V
   isPacedLegendSession, PACED_INVESTIGATION_VERSION, PACED_DUNGEON_VERSION, PACED_PLATFORM_VERSION,
   TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION, TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION } from "../legend-session.mjs";
 import { EXPANDED_PLATFORM_VERSION, EXPANDED_DUNGEON_VERSION, EXPANDED_INVESTIGATION_VERSION } from "../legend-session.mjs";
+import { CATALOGUE_PLATFORM_VERSION, CATALOGUE_DUNGEON_VERSION, CATALOGUE_INVESTIGATION_VERSION } from "../legend-session.mjs";
 import { stepDungeon } from "../minigames/legend-dungeon.mjs";
 import { stepInvestigation } from "../minigames/legend-investigation.mjs";
-import { stepPlatformer } from "../minigames/legend-platformer.mjs";
+import { stepPlatformer, platformRoomSolved, platformAnimal, platformArrow } from "../minigames/legend-platformer.mjs";
+import { drawPixelSprite, pixelSet } from "../minigames/legend-pixel-art.mjs";
 import { dungeonCompletionActions, findDungeonRoute } from "./helpers/legend-dungeon-route.mjs";
 import { setupLegendSession } from "../legend-session-ui.mjs";
 import { composedReward, treasureId } from "../legend-rewards.mjs";
 import { generatePlatformLevel } from "../minigames/legend-layout.mjs";
 import { COPY } from "../legend-adventure-copy.mjs";
+import { MECHANISMS, MECHANISM_COPY } from "../minigames/legend-mechanisms.mjs";
+import { variedPlatformRoute } from "./helpers/legend-varied-platform-route.mjs";
+import { expandedDungeonRoute, expandedInvestigationRoute } from "./helpers/legend-expanded-route.mjs";
+import { investigationScene } from "../minigames/legend-investigation-scenery.mjs";
+import { DECOY_INVESTIGATION_VERSION } from "../legend-session.mjs";
+import { DECOY_COPY } from "../minigames/legend-decoys.mjs";
+import { ENCOUNTER_COPY } from "../minigames/legend-encounters-copy.mjs";
+import { INVESTIGATION_COPY } from "../minigames/legend-investigation-copy.mjs";
 
 class Target {
   listeners = new Map();
@@ -39,7 +49,16 @@ class Element extends Target {
   remove() { this.parent.children = this.parent.children.filter(node => node !== this); }
   setAttribute(name, value) { this.attributes[name] = value; }
   getAttribute(name) { return this.attributes[name]; }
-  getContext() { return { fillRect() {}, fillText() {}, drawImage() {}, beginPath() {}, arc() {}, fill() {}, moveTo() {}, lineTo() {} }; }
+  getContext() {
+    if (!this.context) {
+      const rectangles = this.rectangles = [];
+      const capture = this.ownerDocument.captureCanvas;
+      this.context = { fillRect(x, y, width, height) {
+        if (capture) rectangles.push([this.fillStyle, x, y, width, height]);
+      }, fillText() {}, drawImage() {}, beginPath() {}, arc() {}, fill() {}, moveTo() {}, lineTo() {} };
+    }
+    return this.context;
+  }
   click() { if (!this.disabled) this.dispatch("click"); }
   setPointerCapture() {}
   showModal() { this.open = true; }
@@ -47,7 +66,7 @@ class Element extends Target {
   focus() { this.ownerDocument.activeElement = this; }
 }
 
-function fixture(format, language = "en", options = {}) {
+function fixture(format, language = "en", { captureCanvas = false, ...options } = {}) {
   const win = new Target();
   const frames = new Map();
   let serial = 0;
@@ -56,6 +75,7 @@ function fixture(format, language = "en", options = {}) {
   const doc = new Target();
   doc.defaultView = win;
   doc.hidden = false;
+  doc.captureCanvas = captureCanvas;
   doc.createElement = tag => new Element(tag, doc);
   const container = new Element("div", doc);
   const results = [];
@@ -71,6 +91,770 @@ function fixture(format, language = "en", options = {}) {
   };
   return { win, doc, container, api, frames, nodes, results, errors, button, run };
 }
+
+test("isolated dungeon preview can resume a replayed route at room eight", () => {
+  const commands = { u: "up", r: "right", d: "down", l: "left", e: "interact" };
+  const previewDungeonActions = [..."uleurrrrrurreeerddddddldeeeullelullllldrrddddrdrerrdeeerrrdeddddllull"]
+    .map(key => ({ type: commands[key] }));
+  const f = fixture("dungeon", "fr", { seed: 0, paced: true, expanded: true, catalogue: true, previewDungeonActions });
+  assert.ok(f.nodes.find(node => node.tagName === "h2").textContent.includes("8/10"));
+  const right = f.nodes.find(node => node.dataset.legendAction === "right");
+  assert.equal(right.disabled, false);
+  right.click();
+  f.win.dispatch("blur");
+  assert.equal(right.disabled, true);
+  const resume = f.nodes.find(node => node.dataset.legendAction === "pause");
+  assert.equal(resume.parent.className, "legend-controls");
+  assert.equal(resume.disabled, false);
+  resume.click();
+  assert.equal(right.disabled, false);
+  assert.equal(f.doc.activeElement.tagName, "canvas");
+  right.click();
+  assert.deepEqual(f.errors, []);
+  f.api.destroy();
+  assert.throws(() => fixture("investigation", "en", { previewDungeonActions }), /isolated preview/);
+});
+
+test("optional levers use neutral bilingual hotspots and menus, stay visible and obey Help and pending controls", t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  for (const language of ["en", "fr"]) for (let seed = 0; seed < 2; seed++) {
+    const sent = [], d = DECOY_COPY[language];
+    let progress = replayLegendSession({ contentVersion: DECOY_INVESTIGATION_VERSION, seed, actions: [] });
+    const authoritative = {
+      contentVersion: DECOY_INVESTIGATION_VERSION, local: true, actions: [], status: "active", health: 85,
+      onAction(action) {
+        sent.push(action);
+        progress = stepInvestigation(progress, action);
+        return { progress, state: { health: 85 }, foodKcal: 0, interrupted: false };
+      },
+    };
+    const f = fixture("investigation", language, { seed, authoritative });
+    const screen = f.nodes.find(node => node.width === 640);
+    assert.equal(screen.dataset.trapFlash, undefined);
+    const all = () => {
+      const visit = node => [node, ...node.children.flatMap(visit)];
+      return visit(f.container);
+    };
+    const lever = () => all().find(node => node.dataset.hotspot === "decoy");
+    const menu = () => all().find(node => node.className === "legend-context");
+    const verb = label => menu().children.find(node => node.textContent === label);
+    assert.equal(lever().getAttribute("aria-label"), d.name);
+    assert.equal(lever().children[0].textContent, d.name);
+    lever().focus();
+    lever().click();
+    assert.equal(menu().hidden, false);
+    verb(d.examine).click();
+    assert.equal(sent.length, 0);
+    assert.ok(all().some(node => node.textContent === d.description));
+    lever().click();
+    const pull = verb(d.operate);
+    f.nodes.find(node => node.tagName === "dialog").showModal();
+    pull.click();
+    assert.equal(sent.length, 0);
+    f.nodes.find(node => node.tagName === "dialog").close();
+    lever().click();
+    verb(d.operate).click();
+    assert.deepEqual(sent, [{ type: "act", command: "decoy:pull" }]);
+    assert.equal(progress.metrics.trapHits, seed);
+    assert.equal(progress.metrics.wrongAttempts, 1 - seed);
+    assert.equal(screen.dataset.trapFlash, "a");
+    const impact = all().find(node => node.className === "legend-impact");
+    assert.equal(impact.hidden, false);
+    t.mock.timers.tick(3000);
+    assert.equal(impact.hidden, true);
+    assert.equal(screen.dataset.trapFlash, "");
+    assert.equal(impact.getAttribute("role"), "alert");
+    assert.equal(impact.dataset.kind, seed ? "trap" : "mistake");
+    assert.ok(impact.children[1].textContent.includes(seed ? "−5" : "−0"));
+    assert.ok(impact.children[1].textContent.includes(seed ? "+3" : "+1"));
+    f.api.setBackgrounds({});
+    assert.equal(screen.dataset.trapFlash, "");
+    assert.equal(impact.hidden, true);
+    assert.ok(all().some(node => node.textContent === (seed ? d.trap : d.mistake)));
+    const bubble = all().find(node => node.className === "legend-scene-bubble");
+    assert.equal(bubble.hidden, false);
+    assert.equal(bubble.textContent, seed ? d.trap : d.mistake);
+    assert.equal(bubble.getAttribute("role"), "status");
+    assert.equal(bubble.parent.className, "legend-game");
+    assert.ok(bubble.parent.children.indexOf(bubble) < bubble.parent.children.indexOf(screen.parent));
+    assert.equal(lever().getAttribute("style"), "left:72.5%;top:52.5%;width:7.5%;height:15%");
+    assert.ok(lever());
+    lever().click();
+    verb(d.operate).click();
+    assert.equal(progress.message, "decoySpent");
+    assert.equal(progress.metrics.trapHits + progress.metrics.wrongAttempts, 1);
+    assert.equal(screen.dataset.trapFlash, "");
+    assert.equal(impact.hidden, true);
+    const old = lever();
+    authoritative.disabled = true;
+    f.api.setBackgrounds({});
+    assert.equal(lever().disabled, true);
+    lever().click();
+    assert.equal(sent.length, 2);
+    f.api.destroy();
+    for (const node of [...f.nodes, old, pull, ...all()]) for (const handlers of node.listeners.values()) {
+      assert.equal(handlers.size, 0);
+    }
+    assert.deepEqual(f.errors, []);
+  }
+});
+
+test("alignment dials name their current symbols and the clue explains how to set and test them", () => {
+  for (const language of ["en", "fr"]) {
+    const seed = 0, route = expandedInvestigationRoute(seed);
+    const actions = [];
+    let checked = 0;
+    for (const action of route.actions) {
+      actions.push(action);
+      const state = replayLegendSession({ contentVersion: EXPANDED_INVESTIGATION_VERSION, seed, actions });
+      const room = state.level.rooms[state.room], current = state.progress[state.room];
+      if (room.family !== "alignment" || current.resolved || current.solved ||
+          room.concealed && !current.revealed) continue;
+      const f = fixture("investigation", language, { seed, authoritative: {
+        contentVersion: EXPANDED_INVESTIGATION_VERSION, actions: [...actions], status: "active", onAction() {},
+      } });
+      for (let index = 0; index < 3; index++) {
+        const spot = f.nodes.find(node => node.dataset.hotspot === `scene:rotate:${index}`);
+        const symbol = INVESTIGATION_COPY[language].symbols[room.variant][current.dials[index]];
+        assert.ok(spot.getAttribute("aria-label").endsWith(`: ${symbol}`));
+      }
+      if (current.inspected) {
+        const clue = ENCOUNTER_COPY[language].alignmentClue(room.order.map(index =>
+          INVESTIGATION_COPY[language].symbols[room.variant][index]));
+        assert.ok(f.nodes.some(node => node.textContent.includes(clue)));
+      }
+      checked++;
+      f.api.destroy();
+    }
+    assert.ok(checked > 0);
+  }
+});
+
+test("each site introduces its setting and distinguishes a pending archive seal from the completed main puzzle", () => {
+  for (const language of ["en", "fr"]) {
+    const seed = 0, route = expandedInvestigationRoute(seed, { catalogue: true });
+    const actions = [];
+    for (const action of route.actions) {
+      actions.push(action);
+      if (action.command?.startsWith("verify:")) continue;
+      const progress = replayLegendSession({ contentVersion: CATALOGUE_INVESTIGATION_VERSION, seed, actions });
+      if (action.type !== "travel" && progress.message !== "sealReady") continue;
+      const f = fixture("investigation", language, { seed, authoritative: {
+        contentVersion: CATALOGUE_INVESTIGATION_VERSION, actions: [...actions], status: "active",
+        onAction() {},
+      } });
+      const introduction = f.nodes.find(node => node.className === "legend-site-introduction");
+      const objective = f.nodes.find(node => node.className === "legend-site-objective");
+      const bubble = f.nodes.find(node => node.className === "legend-scene-bubble");
+      const room = progress.level.rooms[progress.room];
+      if (!room.concealed || progress.progress[progress.room].revealed) {
+        assert.ok(introduction.textContent.includes(INVESTIGATION_COPY[language].introductions[room.family][room.variant]));
+      } else {
+        assert.ok(introduction.textContent.includes(language === "fr" ? "panneaux de bois" : "wooden panels"));
+      }
+      assert.equal(bubble.hidden, false);
+      if (progress.message === "arrival") {
+        assert.equal(bubble.textContent, introduction.textContent);
+        assert.equal(objective.hidden, !progress.progress[progress.room].resolved &&
+          !progress.progress[progress.room].solved);
+      }
+      if (progress.message === "sealReady") {
+        const reference = progress.level.rooms[room.reference], marks = INVESTIGATION_COPY[language].symbols[reference.variant];
+        const context = INVESTIGATION_COPY[language].sealContext(reference.id + 1, marks[reference.answer], marks, room.shift);
+        assert.ok(objective.textContent.includes(context));
+        assert.ok(bubble.textContent.includes(context));
+        assert.ok(objective.textContent.includes(INVESTIGATION_COPY[language].objectives.seal));
+      }
+      f.api.destroy();
+    }
+  }
+});
+
+test("repair feedback distinguishes missing parts from the unread plan and allows recovery without losing items", () => {
+  for (const language of ["en", "fr"]) {
+    const seed = 0, route = expandedInvestigationRoute(seed, { catalogue: true });
+    const entry = route.actions.findIndex(action => action.type === "travel" && action.room === 3);
+    const actions = [...route.actions.slice(0, entry + 1),
+      { type: "act", command: "take:0" }, { type: "act", command: "take:1" },
+      { type: "act", command: "combine" }];
+    let progress = replayLegendSession({ contentVersion: CATALOGUE_INVESTIGATION_VERSION, seed, actions });
+    const f = fixture("investigation", language, { seed, authoritative: {
+      contentVersion: CATALOGUE_INVESTIGATION_VERSION, local: true, actions, status: "active", health: 85,
+      onAction(action) {
+        progress = stepInvestigation(progress, action);
+        return { progress, state: { health: 85 }, foodKcal: 0, interrupted: false };
+      },
+    } });
+    const all = () => {
+      const visit = node => [node, ...node.children.flatMap(visit)];
+      return visit(f.container);
+    };
+    const bubble = () => all().find(node => node.className === "legend-scene-bubble");
+    const menuClick = label => all().find(node => node.className === "legend-context")
+      .children.find(node => node.textContent === label).click();
+    assert.equal(bubble().textContent, MECHANISM_COPY[language].messages.inspectRepair);
+    assert.deepEqual(progress.progress[3].parts, [0, 1]);
+    all().find(node => node.dataset.hotspot === "target").click();
+    menuClick(MECHANISM_COPY[language].point.examine);
+    assert.ok(bubble().textContent.includes(MECHANISM_COPY[language].repairClue));
+    const slots = () => all().find(node => node.className === "legend-inventory")
+      .children.find(node => node.tagName === "ul").children;
+    slots()[0].click();
+    menuClick(MECHANISM_COPY[language].point.combine);
+    slots()[1].click();
+    assert.equal(progress.progress[3].mechanism.assembled, true);
+    assert.equal(slots().length, 1);
+    assert.equal(progress.metrics.wrongAttempts, 0);
+    f.api.destroy();
+    assert.deepEqual(f.errors, []);
+  }
+});
+
+test("every procedural puzzle family completes through scenery and contextual menus without bottom buttons", () => {
+  const families = new Set();
+  for (const language of ["en", "fr"]) for (let seed = 0; seed < 4; seed++) {
+    const route = expandedInvestigationRoute(seed);
+    let progress = replayLegendSession({ contentVersion: EXPANDED_INVESTIGATION_VERSION, seed, actions: [] });
+    const sent = [];
+    const f = fixture("investigation", language, { seed, authoritative: {
+      contentVersion: EXPANDED_INVESTIGATION_VERSION, local: true, actions: [], status: "active", health: 85,
+      onAction(action) {
+        sent.push(action);
+        progress = stepInvestigation(progress, action);
+        return { progress, state: { health: 85 }, foodKcal: 0, interrupted: false };
+      },
+    } });
+    const all = () => {
+      const visit = node => [node, ...node.children.flatMap(visit)];
+      return visit(f.container);
+    };
+    for (const action of route.actions) {
+      families.add(progress.level.rooms[progress.room].family);
+      assert.equal(all().find(node => node.className === "legend-actions").hidden, true);
+      if (action.type === "travel") {
+        all().find(node => node.dataset.hotspot === "next").click();
+        continue;
+      }
+      const label = all().find(node => node.dataset.legendAction === `act:${action.command}`).textContent;
+      let dispatched = false;
+      for (const spot of all().filter(node => node.dataset.hotspot &&
+          !["next", "previous", "decoy"].includes(node.dataset.hotspot) && !node.disabled)) {
+        if (action.command.startsWith("search:") && spot.dataset.hotspot !==
+            `panel:${action.command.split(":")[1]}`) continue;
+        if (spot.dataset.hotspot.startsWith("item:") &&
+            spot.dataset.hotspot !== `item:${action.command.split(":")[1]}`) continue;
+        const before = sent.length;
+        spot.click();
+        if (sent.length > before) { dispatched = true; break; }
+        const menu = all().find(node => node.className === "legend-context");
+        const verb = !menu.hidden && menu.children.find(node => node.tagName === "button" &&
+          (node.textContent === label || action.command === "inspect" &&
+            node.textContent === MECHANISM_COPY[language].point.examine ||
+            action.command.startsWith("search:") && node.textContent === ENCOUNTER_COPY[language].search ||
+            action.command === "combine" && node.textContent === MECHANISM_COPY[language].point.combine));
+        if (verb) { verb.click(); dispatched = true; break; }
+      }
+      assert.ok(dispatched, `${progress.room} ${action.command}`);
+      assert.deepEqual(sent.at(-1), action);
+    }
+    assert.ok(progress.completed);
+    assert.deepEqual(sent, route.actions);
+    assert.deepEqual(f.errors, []);
+    f.api.destroy();
+  }
+  assert.equal(families.size, 8);
+});
+
+test("concealed panels offer canonical observe/search clicks, exact bounds and safe pending/Help behavior", () => {
+  for (const language of ["en", "fr"]) {
+    const seed = 0, route = expandedInvestigationRoute(seed, { catalogue: true, decoys: true });
+    const end = route.actions.findIndex(action => action.type === "travel" && action.room === 2);
+    const actions = route.actions.slice(0, end + 1), sent = [];
+    let progress = replayLegendSession({ contentVersion: DECOY_INVESTIGATION_VERSION, seed, actions });
+    const correct = progress.level.rooms[2].order[0];
+    const authoritative = {
+      contentVersion: DECOY_INVESTIGATION_VERSION, local: true, actions, status: "active", health: 85,
+      onAction(action) {
+        sent.push(action);
+        progress = stepInvestigation(progress, action);
+        return { progress, state: { health: 85 }, foodKcal: 0, interrupted: false };
+      },
+    };
+    const f = fixture("investigation", language, { seed, authoritative });
+    const all = () => {
+      const visit = node => [node, ...node.children.flatMap(visit)];
+      return visit(f.container);
+    };
+    const panel = index => all().find(node => node.dataset.hotspot === `panel:${index}`);
+    const choose = index => {
+      panel(index).click();
+      return all().find(node => node.className === "legend-context").children
+        .filter(node => node.tagName === "button");
+    };
+    assert.ok(all().every(node => !node.textContent.includes("NaN")));
+    for (let index = 0; index < 3; index++) assert.equal(panel(index).getAttribute("style"),
+      `left:${(290 + index * 66) / 6.4}%;top:${142 / 3.2}%;width:${52 / 6.4}%;height:${126 / 3.2}%`);
+    const wrong = (correct + 1) % 3;
+    choose(wrong)[1].click();
+    assert.equal(progress.message, "needEvidence");
+    assert.equal(progress.metrics.wrongAttempts, 0);
+    choose(correct)[0].click();
+    assert.equal(progress.progress[2].inspected, true);
+    const old = panel(wrong);
+    choose(wrong)[1].click();
+    assert.equal(progress.metrics.wrongAttempts, 1);
+    assert.ok(panel(correct));
+    const pull = choose(correct)[1];
+    f.nodes.find(node => node.tagName === "dialog").showModal();
+    pull.click();
+    assert.equal(sent.length, 3);
+    f.nodes.find(node => node.tagName === "dialog").close();
+    authoritative.disabled = true;
+    f.api.setBackgrounds({});
+    assert.equal(panel(correct).disabled, true);
+    panel(correct).click();
+    assert.equal(sent.length, 3);
+    authoritative.disabled = false;
+    f.api.setBackgrounds({});
+    choose(correct)[1].click();
+    assert.equal(progress.progress[2].revealed, true);
+    assert.equal(all().some(node => node.dataset.hotspot?.startsWith("panel:")), false);
+    assert.equal(progress.metrics.wrongAttempts, 1);
+    assert.deepEqual(sent, ["search:" + wrong, "inspect", "search:" + wrong, "search:" + correct]
+      .map(command => ({ type: "act", command })));
+    f.api.destroy();
+    for (const node of [old, pull]) for (const handlers of node.listeners.values()) assert.equal(handlers.size, 0);
+    assert.deepEqual(f.errors, []);
+  }
+});
+
+test("ordinary assembly supplies have matching visible sprites and collectible hotspots, including map and paste", () => {
+  const variants = new Set();
+  for (const language of ["en", "fr"]) for (let seed = 0; seed < 32; seed++) {
+    const initial = replayLegendSession({ contentVersion: DECOY_INVESTIGATION_VERSION, seed, actions: [] });
+    if (initial.level.rooms[0].family !== "assembly") continue;
+    let progress = initial;
+    const sent = [];
+    const f = fixture("investigation", language, { seed, captureCanvas: true, authoritative: {
+      contentVersion: DECOY_INVESTIGATION_VERSION, local: true, actions: [], status: "active", health: 85,
+      onAction(action) {
+        sent.push(action);
+        progress = stepInvestigation(progress, action);
+        return { progress, state: { health: 85 }, foodKcal: 0, interrupted: false };
+      },
+    } });
+    const all = () => {
+      const visit = node => [node, ...node.children.flatMap(visit)];
+      return visit(f.container);
+    };
+    const canvas = all().find(node => node.width === 640);
+    const variant = initial.level.rooms[0].variant;
+    variants.add(variant);
+    for (let index = 0; index < 2; index++) {
+      const spot = all().find(node => node.dataset.hotspot === `item:${index}`);
+      assert.ok(spot && !spot.disabled);
+      assert.equal(spot.getAttribute("style"), `left:${(72 + index * 64) / 6.4}%;top:61.25%;width:7.5%;height:15%`);
+      const pixels = [];
+      drawPixelSprite({ fillRect(x, y, w, h) { pixels.push([this.fillStyle, x, y, w, h]); } },
+        (variant ? ["document", "paste"] : ["handle", "oil"])[index], 72 + index * 64, 196, 3);
+      assert.ok(pixels.every(pixel => canvas.rectangles.some(actual => JSON.stringify(actual) === JSON.stringify(pixel))));
+      spot.click();
+      assert.equal(all().some(node => node.dataset.hotspot === `item:${index}`), false);
+    }
+    assert.deepEqual(sent, [{ type: "act", command: "take:0" }, { type: "act", command: "take:1" }]);
+    all().find(node => node.dataset.hotspot === "target").click();
+    const menu = all().find(node => node.className === "legend-context");
+    menu.children.find(node => node.textContent === MECHANISM_COPY[language].point.combine).click();
+    assert.equal(progress.progress[0].solved, true);
+    assert.equal(sent.at(-1).command, "combine");
+    f.api.destroy();
+    assert.deepEqual(f.errors, []);
+  }
+  assert.deepEqual([...variants].sort(), [0, 1]);
+});
+
+test("point-and-click recipes and visible doors replay the same canonical route using only scene, inventory and context clicks", () => {
+  const { actions } = expandedInvestigationRoute(1, { catalogue: true, mistakes: true });
+  for (const language of ["en", "fr"]) {
+    let progress = replayLegendSession({ contentVersion: CATALOGUE_INVESTIGATION_VERSION, seed: 1, actions: [] });
+    const sent = [];
+    const f = fixture("investigation", language, { seed: 1, authoritative: {
+      contentVersion: CATALOGUE_INVESTIGATION_VERSION, local: true, actions: [], status: "active", health: 85,
+      onAction(action) {
+        sent.push(action);
+        progress = stepInvestigation(progress, action);
+        return { progress, state: { health: 85 }, foodKcal: 0, interrupted: false };
+      },
+    } });
+    const all = () => {
+      const visit = node => [node, ...node.children.flatMap(visit)];
+      return visit(f.container);
+    };
+    const clickSpot = id => {
+      const node = all().find(node => node.dataset.hotspot === id);
+      assert.ok(node && !node.disabled, id);
+      node.click();
+    };
+    const menuClick = label => {
+      const menu = all().find(node => node.className === "legend-context");
+      assert.equal(menu.hidden, false);
+      const node = menu.children.find(node => node.tagName === "button" && node.textContent === label);
+      assert.ok(node, label);
+      node.click();
+    };
+    const inventoryClick = index => {
+      const tray = all().find(node => node.className === "legend-inventory");
+      const list = tray.children.find(node => node.tagName === "ul");
+      const position = progress.progress[progress.room].parts.indexOf(index);
+      assert.ok(position >= 0);
+      list.children[position].dispatch("click");
+    };
+    const point = MECHANISM_COPY[language].point;
+    for (const action of actions) {
+      const room = progress.level.rooms[progress.room], current = progress.progress[progress.room];
+      if (action.type === "travel") {
+        clickSpot("next");
+        continue;
+      }
+      if (!room.recipe || room.concealed && !current.revealed) {
+        all().find(node => node.dataset.legendAction === `act:${action.command}`).click();
+        continue;
+      }
+      assert.equal(all().find(node => node.className === "legend-actions").hidden, true);
+      const [type, index] = action.command.split(":");
+      if (type === "take") clickSpot(`item:${index}`);
+      if (type === "inspect") { clickSpot("target"); menuClick(point.examine); }
+      if (type === "use" || type === "install") {
+        inventoryClick(type === "use" ? Number(index) : 0);
+        menuClick(point.use);
+        clickSpot("target");
+      }
+      if (type === "combine") {
+        inventoryClick(0); menuClick(point.combine); inventoryClick(1);
+        if (room.family === "overlay") {
+          const bubble = () => all().find(node => node.className === "legend-scene-bubble");
+          const symbols = language === "en" ? [["bell", "portrait", "lantern"], ["star", "moon", "sun"]] :
+            [["cloche", "portrait", "lanterne"], ["étoile", "lune", "soleil"]];
+          const reading = MECHANISM_COPY[language].overlayReading(symbols[room.variant][room.answer]);
+          assert.equal(bubble().textContent, reading);
+          assert.equal(bubble().hidden, false);
+          const before = sent.length;
+          inventoryClick(0); menuClick(point.examine);
+          assert.equal(bubble().textContent, reading);
+          clickSpot("target"); menuClick(point.examine);
+          assert.equal(bubble().textContent, reading);
+          assert.equal(sent.length, before);
+        }
+      }
+      if (type === "choose" || type === "verify") {
+        clickSpot("target");
+        const labels = type === "verify" ? progress.level.rooms[room.reference] : room;
+        const symbols = (language === "en" ? [["bell", "portrait", "lantern"], ["star", "moon", "sun"]] :
+          [["cloche", "portrait", "lanterne"], ["étoile", "lune", "soleil"]])[labels.variant];
+        menuClick(`${type === "verify" ? language === "en" ? "Set archive seal" : "Régler le sceau" :
+          language === "en" ? "Answer" : "Répondre"}: ${symbols[Number(index)]}`);
+      }
+    }
+    assert.deepEqual(sent, actions);
+    assert.equal(progress.completed, true);
+    assert.deepEqual(f.errors, []);
+    f.api.destroy();
+  }
+});
+
+test("point-and-click selection cancels safely, blocks during Help/pending, and keeps doors reversible", () => {
+  const route = expandedInvestigationRoute(1, { catalogue: true });
+  const entrance = route.actions.findIndex(action => action.type === "travel" && action.room === 1);
+  const actions = route.actions.slice(0, entrance + 1);
+  let progress = replayLegendSession({ contentVersion: CATALOGUE_INVESTIGATION_VERSION, seed: 1, actions });
+  const sent = [], authoritative = {
+    contentVersion: CATALOGUE_INVESTIGATION_VERSION, local: true, actions, status: "active", health: 85,
+    onAction(action) {
+      sent.push(action); progress = stepInvestigation(progress, action);
+      return { progress, state: { health: 85 }, foodKcal: 0, interrupted: false };
+    },
+  };
+  const f = fixture("investigation", "en", { seed: 1, authoritative });
+  const root = f.nodes.find(node => node.className === "legend-game");
+  const menu = f.nodes.find(node => node.className === "legend-context");
+  const selection = f.nodes.find(node => node.className === "legend-selection");
+  const tray = f.nodes.find(node => node.className === "legend-inventory");
+  const list = tray.children.find(node => node.tagName === "ul");
+  const hotspots = f.nodes.find(node => node.className === "legend-hotspots");
+  const scene = f.nodes.find(node => node.tagName === "canvas" && node.width === 640 && node.height === 320);
+  const spot = id => hotspots.children.find(node => node.dataset.hotspot === id);
+  assert.equal(spot("next").disabled, true);
+  spot("previous").click();
+  assert.equal(progress.room, 0);
+  spot("next").click();
+  assert.equal(progress.room, 1);
+  spot("item:0").click();
+  assert.equal(sent.at(-1).command, "take:0");
+  let calls = sent.length;
+  const item = list.children[0];
+  assert.equal(item.getAttribute("role"), "button");
+  item.focus();
+  item.dispatch("keydown", { key: "Enter", preventDefault() {}, stopPropagation() {} });
+  assert.equal(menu.hidden, false);
+  menu.children.find(node => node.textContent === "Examine").click();
+  assert.equal(sent.length, calls);
+  item.focus();
+  item.dispatch("click");
+  menu.children.find(node => node.textContent === "Use").click();
+  assert.equal(selection.hidden, false);
+  spot("target").dispatch("pointerenter");
+  assert.match(selection.textContent, /Use round key with Lock fitting/);
+  root.dispatch("keydown", { key: "Escape", preventDefault() {}, stopPropagation() {} });
+  assert.equal(selection.hidden, true);
+  assert.equal(menu.hidden, true);
+  assert.equal(sent.length, calls);
+  assert.equal(f.doc.activeElement === item, true);
+  item.dispatch("click");
+  menu.children.find(node => node.textContent === "Use").click();
+  scene.dispatch("click");
+  assert.equal(selection.hidden, true);
+  assert.equal(sent.length, calls);
+  root.dispatch("keydown", { key: "h", preventDefault() {}, stopPropagation() {} });
+  spot("item:1").click();
+  item.dispatch("click");
+  assert.equal(sent.length, calls);
+  assert.equal(menu.hidden, true);
+  f.nodes.find(node => node.dataset.legendAction === "help-close").click();
+  authoritative.disabled = true;
+  spot("item:1").click();
+  assert.equal(sent.length, calls);
+  authoritative.disabled = false;
+  spot("item:1").click();
+  assert.equal(sent.length, calls + 1);
+  assert.deepEqual(progress.progress[1].parts, [0, 1]);
+  // Removed hotspots and inventory slots must release their handlers too.
+  assert.equal([...item.listeners.values()].reduce((sum, entries) => sum + entries.size, 0), 0);
+  f.api.destroy();
+  for (const node of hotspots.children) {
+    assert.equal([...node.listeners.values()].reduce((sum, entries) => sum + entries.size, 0), 0);
+  }
+});
+
+test("investigation inventory renders labelled pixel objects and stays synchronized through collection, mistakes and revisits", () => {
+  for (const language of ["en", "fr"]) {
+    const f = fixture("investigation", language, { captureCanvas: true });
+    const tray = f.nodes.find(node => node.className === "legend-inventory");
+    assert.equal(tray.getAttribute("aria-label"), COPY[language].inventory);
+    const list = tray.children.find(node => node.tagName === "ul");
+    const empty = tray.children.find(node => node.className === "legend-inventory-empty");
+    assert.equal(empty.hidden, false);
+    for (const target of ["handle", "oil"]) {
+      f.nodes.find(node => node.dataset.legendAction === `act:${target}`).click();
+      const slot = list.children.at(-1), icon = slot.children[0];
+      assert.equal(slot.children[1].textContent, COPY[language].items[target]);
+      assert.equal(slot.getAttribute("tabindex"), "0");
+      assert.equal(slot.getAttribute("aria-label"), COPY[language].items[target]);
+      assert.equal(slot.children[1].className, "legend-inventory-tooltip");
+      assert.equal(slot.children[1].getAttribute("aria-hidden"), "true");
+      assert.equal(icon.width, 32);
+      assert.equal(icon.height, 32);
+      assert.equal(icon.getAttribute("style"), "width:32px;height:32px;max-width:32px;max-height:32px;flex:0 0 32px");
+      assert.equal(icon.getAttribute("aria-hidden"), "true");
+      assert.ok(icon.rectangles.length > 10);
+      assert.ok(icon.rectangles.every(([, , , width, height]) => width === 1 && height === 1));
+    }
+    assert.equal(list.children.length, 2);
+    assert.equal(empty.hidden, true);
+    f.nodes.find(node => node.dataset.legendAction === "act:handle").click();
+    assert.equal(list.children.length, 2);
+    f.nodes.find(node => node.dataset.legendAction === "travel:archive").click();
+    assert.equal(list.children.length, 2);
+    f.api.destroy();
+  }
+  const { actions } = expandedInvestigationRoute(1, { catalogue: true, mistakes: true });
+  for (const language of ["en", "fr"]) {
+    let progress = replayLegendSession({ contentVersion: CATALOGUE_INVESTIGATION_VERSION, seed: 1, actions: [] });
+    const f = fixture("investigation", language, { captureCanvas: true, seed: 1, authoritative: {
+      contentVersion: CATALOGUE_INVESTIGATION_VERSION, local: true, health: 85, actions: [], status: "active",
+      onAction(action) {
+        progress = stepInvestigation(progress, action);
+        return { progress, state: { health: 85 }, foodKcal: 0, interrupted: false };
+      },
+    } });
+    const tray = f.nodes.find(node => node.className === "legend-inventory");
+    const list = tray.children.find(node => node.tagName === "ul");
+    const empty = tray.children.find(node => node.className === "legend-inventory-empty");
+    const iconDrawings = new Map();
+    for (const action of actions) {
+      const target = action.type === "travel" ? "next" : `act:${action.command}`;
+      f.nodes.find(node => node.dataset.legendAction === target && !node.hidden).click();
+      const current = progress.progress[progress.room], room = progress.level.rooms[progress.room];
+      const used = ["repair", "assembly"].includes(room.family) && (current.solved || current.resolved);
+      const combined = room.family === "repair" && current.mechanism.assembled ||
+        room.family === "overlay" && current.mechanism.revealed;
+      const count = used ? 0 : combined ? 1 : current.parts.length;
+      assert.equal(list.children.length, count);
+      assert.equal(empty.hidden, count > 0);
+      assert.equal(list.hidden, count === 0);
+      const supplies = room.recipe ? room.family === "tool" ? MECHANISM_COPY[language].tools :
+        MECHANISM_COPY[language].parts[room.family] : null;
+      list.children.forEach((slot, index) => {
+        const [icon, label] = slot.children;
+        if (supplies) assert.equal(label.textContent, combined ? MECHANISM_COPY[language].combined[room.family] :
+          supplies[current.parts[index]]);
+        assert.ok(icon.rectangles.length > 10);
+        if (room.recipe && !combined) iconDrawings.set(`${room.family}:${current.parts[index]}`, JSON.stringify(icon.rectangles));
+      });
+    }
+    assert.notEqual(iconDrawings.get("repair:0"), iconDrawings.get("repair:1"));
+    assert.notEqual(iconDrawings.get("tool:0"), iconDrawings.get("tool:1"));
+    assert.deepEqual(f.errors, []);
+    f.api.destroy();
+  }
+});
+
+test("solved platform rooms still render live traps, projectiles, animals and uncollected side-room stashes", () => {
+  for (const [contentVersion, catalogue] of [[EXPANDED_PLATFORM_VERSION, false], [CATALOGUE_PLATFORM_VERSION, true]]) {
+    const { actions } = variedPlatformRoute(0, { expanded: true, catalogue, visitBranches: true });
+    let state = replayLegendSession({ contentVersion, seed: 0, actions: [] });
+    const prefix = [], snapshots = new Map();
+    for (const packet of actions) {
+      for (let tick = 0; tick < packet.ticks; tick++) {
+        state = stepPlatformer(state, packet.controls);
+        prefix.push({ controls: packet.controls, ticks: 1 });
+        const room = state.level.rooms[state.room];
+        const key = room.stash && !state.stashes.includes(room.id) ? "stash" :
+          room.main && platformRoomSolved(state) && platformArrow(state) && platformAnimal(state) ? "solved-arrow" : null;
+        if (key && !snapshots.has(key)) snapshots.set(key, { state, actions: [...prefix] });
+      }
+      if (snapshots.size === 2) break;
+    }
+    assert.equal(snapshots.size, 2);
+    for (const { state, actions } of snapshots.values()) {
+      assert.deepEqual(replayLegendSession({ contentVersion, seed: 0, actions }), state);
+      const f = fixture("platform", "en", { captureCanvas: true, seed: 0, authoritative: {
+        contentVersion, actions, local: true, health: 85, status: "active", onAction() {},
+      } });
+      const rectangles = f.nodes.find(node => node.tagName === "canvas" && node.width === 640 && node.height === 320).rectangles;
+      const contains = expected => assert.ok(rectangles.some(actual => JSON.stringify(actual) === JSON.stringify(expected)),
+        `missing visible pixels ${JSON.stringify(expected)}`);
+      const room = state.level.rooms[state.room], animal = platformAnimal(state), arrow = platformArrow(state);
+      const expectSprite = (name, x, y, set) => drawPixelSprite({
+        fillRect(x, y, width, height) { contains([this.fillStyle, x, y, width, height]); },
+      }, name, x, y, 1, { set });
+      if (room.stash && !state.stashes.includes(room.id)) expectSprite("supply", room.stash.x, room.stash.y);
+      if (room.arrowTrap) {
+        const trap = room.arrowTrap;
+        contains(["#db6656", trap.plate.x, trap.plate.y, trap.plate.width, trap.plate.height]);
+        contains(["#141827", trap.x, trap.y - 6, 12, 16]);
+      }
+      if (arrow) contains(["#e8b65c", arrow.x, arrow.y, 20, 3]);
+      if (animal) { const set = pixelSet(0); expectSprite(set[animal.kind], animal.x, animal.y, set); }
+      assert.deepEqual(f.errors, []);
+      f.api.destroy();
+    }
+  }
+});
+
+test("dungeon crates remain visible over active and retracted spikes", () => {
+  for (const contentVersion of [EXPANDED_DUNGEON_VERSION, CATALOGUE_DUNGEON_VERSION]) {
+    const catalogue = contentVersion === CATALOGUE_DUNGEON_VERSION;
+    const route = expandedDungeonRoute(0, { catalogue, secrets: false });
+    const actions = [];
+    let state, checked = 0;
+    for (const action of route.actions) {
+      actions.push(action);
+      state = replayLegendSession({ contentVersion, seed: 0, weapon: "none", actions });
+      if (!state.level.rooms[state.room].mechanisms.includes("block") ||
+          !state.level.rooms[state.room].mechanisms.includes("spikes") ||
+          state.blocks[state.room].x !== 4) continue;
+      for (let wait = 0; wait < 4; wait++) {
+        const history = [...actions, ...Array.from({ length: wait }, () => ({ type: "wait" }))];
+        const f = fixture("dungeon", "en", { seed: 0, captureCanvas: true, authoritative: {
+          contentVersion, weapon: "none", actions: history, status: "active", onAction() {},
+        } });
+        const rectangles = f.nodes.find(node => node.width === 360).rectangles;
+        const expected = [];
+        drawPixelSprite({ fillRect(x, y, w, h) { expected.push([this.fillStyle, x, y, w, h]); } },
+          "crate", 164, 124, 2);
+        for (const [color, x, y] of expected) {
+          const top = rectangles.findLast(([, left, top, width, height]) =>
+            x >= left && x < left + width && y >= top && y < top + height);
+          assert.equal(top?.[0], color, `crate pixel covered at ${x},${y}`);
+        }
+        assert.deepEqual(f.errors, []);
+        f.api.destroy();
+        checked++;
+      }
+      break;
+    }
+    assert.equal(checked, 4);
+  }
+});
+
+test("catalogue investigation and dungeon controls complete actual routes with localized clues and Help", () => {
+  for (const [format, contentVersion, route] of [
+    ["investigation", CATALOGUE_INVESTIGATION_VERSION, expandedInvestigationRoute(1, { catalogue: true, mistakes: true })],
+    ["dungeon", CATALOGUE_DUNGEON_VERSION, expandedDungeonRoute(1, { catalogue: true })],
+  ]) for (const language of ["en", "fr"]) {
+    let progress = replayLegendSession({ contentVersion, seed: 1, weapon: "none", actions: [] });
+    const f = fixture(format, language, { seed: 1, authoritative: {
+      contentVersion, local: true, weapon: "none", health: 85, actions: [], status: "active",
+      onAction(action) {
+        progress = format === "dungeon" ? stepDungeon(progress, action) : stepInvestigation(progress, action);
+        return { progress, state: { health: 85 }, foodKcal: 0, interrupted: false };
+      },
+    } });
+    const help = f.nodes.find(node => node.className === "legend-help");
+    for (const action of route.actions) {
+      const target = format === "dungeon" ? action.type : action.type === "travel" ? "next" : `act:${action.command}`;
+      const node = f.nodes.find(node => node.dataset.legendAction === target && !node.hidden);
+      assert.ok(node && !node.disabled, target);
+      node.click();
+      const room = progress.level.rooms[progress.room];
+      if (format === "investigation") {
+        const scene = f.nodes.find(node => node.tagName === "canvas" && node.width === 640 && node.height === 320);
+        assert.ok(scene.getAttribute("aria-label").startsWith(investigationScene(1, progress.room)[language]));
+      }
+      if (format === "investigation" && room.recipe && progress.progress[progress.room].inspected &&
+          room.family === "tool") {
+        const text = f.nodes.map(node => node.textContent).join(" ");
+        assert.ok(text.includes(MECHANISM_COPY[language].toolClue(MECHANISM_COPY[language].shapes[room.answer])));
+      }
+      for (const node of f.nodes) assert.doesNotMatch(String(node.textContent), /undefined|\[object Object\]/);
+    }
+    assert.ok(help.children.some(node => node.textContent.includes(MECHANISMS[format === "dungeon" ? "mirror" : "repair"].help[language])));
+    assert.equal(progress.completed, true);
+    assert.deepEqual(f.errors, []);
+    assert.deepEqual(f.results, [{ completed: true }]);
+    f.api.destroy();
+  }
+});
+
+test("catalogue platform recipes draw their crate and timed crossing with diegetic clues and paused-only instructions", () => {
+  const { actions } = variedPlatformRoute(0, { expanded: true, catalogue: true });
+  let state = replayLegendSession({ contentVersion: CATALOGUE_PLATFORM_VERSION, seed: 0, actions: [] });
+  const prefix = [], snapshots = new Map();
+  for (const packet of actions) {
+    for (let tick = 0; tick < packet.ticks; tick++) {
+      state = stepPlatformer(state, packet.controls);
+      prefix.push({ controls: packet.controls, ticks: 1 });
+      const family = state.level.rooms[state.room].challenge?.family;
+      const key = family === "crate" ? family : family === "bridge" && state.mechanisms[state.room][0].until > state.ticks ? family : null;
+      if (key && !snapshots.has(key)) snapshots.set(key, [...prefix]);
+      if (snapshots.size === 2) break;
+    }
+    if (snapshots.size === 2) break;
+  }
+  assert.equal(snapshots.size, 2);
+  for (const language of ["en", "fr"]) for (const [kind, actions] of snapshots) {
+    const f = fixture("platform", language, { seed: 0, authoritative: {
+      contentVersion: CATALOGUE_PLATFORM_VERSION, actions, local: true, health: 85, status: "active", onAction() {},
+    } });
+    const inscription = f.nodes.find(node => node.className === "legend-inscription");
+    assert.ok(inscription.children[1].textContent.includes(MECHANISMS[kind].clue[language]));
+    const help = f.nodes.find(node => node.className === "legend-help");
+    assert.ok(help.children.some(node => node.textContent.includes(MECHANISMS[kind].help[language])));
+    for (const node of f.nodes) assert.doesNotMatch(String(node.textContent), /undefined|\[object Object\]/);
+    assert.deepEqual(f.errors, []);
+    f.api.destroy();
+  }
+});
 
 test("expanded adventures render new mechanics and journey stakes in both languages without leaking instructions outside Help", () => {
   const families = new Set();
@@ -698,10 +1482,11 @@ test("generated investigation renders all eight settings and ignores modified/na
     const root = nodes.find(node => node.className === "legend-game");
     const heading = nodes.find(node => node.tagName === "h2").textContent;
     const status = nodes.find(node => node.attributes.role === "status");
+    const initialStatus = status.textContent;
     for (const data of [{ key: " ", target: { tagName: "BUTTON" } }, { key: "a", ctrlKey: true },
       { key: "a", metaKey: true }, { key: "a", altKey: true }, { key: "a", repeat: true }]) {
       root.dispatch("keydown", { ...data, preventDefault: () => assert.fail("not a game command") });
-      assert.equal(status.textContent, "Inspect this site's evidence. Nothing essential can be lost.");
+      assert.equal(status.textContent, initialStatus);
     }
     api.setBackgrounds({ interior: { naturalWidth: 1024, naturalHeight: 1024 } });
     assert.equal(nodes.find(node => node.tagName === "h2").textContent, heading);

@@ -190,6 +190,177 @@
   safe. Retain recent template signatures per journey to favour variety between
   newly prepared adventures, without rerolling existing sites. Validate actual
   traversal, solvability and damage-free creature avoidance, not a visual proxy.
+- **10 November expansion direction:** draw on the mechanical traditions of
+  classic action/puzzle platformers, LucasArts-style adventures and
+  Zelda/Sokoban-style dungeons. Implement a broad staged expansion across all
+  three formats, keeping existing controls and simple graphics. Historical
+  references guide original encounters, not copies of levels, artwork or text.
+  Prioritize distinct player decisions and combinations over a large catalogue
+  of visually different switches.
+  Keep mechanisms small, readable and reusable: movement, pushing, carrying,
+  rotation, triggering, revealing and exchanging. Prefer composing a few tested
+  primitives over adding a bespoke subsystem for each encounter. Candidate
+  families include timed traversal, pressure/weight puzzles, delayed projectiles,
+  predictable patrols, concealed routes, ember transport and ordered mechanisms;
+  investigation adds evidence comparison, ciphers, object/recipient exchanges
+  and alignment. These examples are a staged design library, not a claim that
+  every historical mechanic is implemented or appropriate.
+  Procedural generation is a first-class constraint: each template declares
+  its prerequisites, supported placement, interaction rules, completion state,
+  clue requirements and safe reset. Combine only compatible templates with
+  bounded dependency depth and difficulty. Generate the authoritative solution
+  and essential clue facts before decorative prose; reject invalid compositions
+  rather than publish an untested random puzzle. Test seeded actual traversal,
+  reversible detours, required secrets, damage-free solutions and retry behavior
+  across representative seeds and all length profiles. Required secrets must
+  have discoverable in-world clues; explanations and solutions belong in Help.
+  New geometry or mechanics require a new replay protocol/content version;
+  attempts already started must retain their original rules and costs.
+  Solving a platform-room mechanism opens its gate, but never hides or disables
+  independent traps, live projectiles or patrolling creatures. Their rendering
+  must continue to match their collision state, including on revisits. Optional
+  stashes remain visible until collected, even in rooms without a gate puzzle.
+  Dungeon pushable crates render above floor spikes, including their retracted
+  tile background, so a crate crossing a trap remains visible and pushable.
+  This drawing order must not alter trap damage or collision rules.
+  Dungeon auto-pause on focus loss must expose a visible Resume button beside
+  movement controls, not only inside Help; resuming restores canvas focus.
+- **Reusable-mechanism first tranche:** a small shared catalogue owns stable
+  IDs/versions, format compatibility, supported geometry slots, bounded recipe
+  variants, reset rules, dependency/connection descriptions, solution milestones,
+  pure state transitions and bilingual clue/help facts. Keep platform physics,
+  dungeon movement and investigation presentation separate; do not introduce a
+  universal scripting language. Migrate existing switches, keys, pressure
+  stones and cranks onto the same transition contract in new protocols only.
+  Platform recipes add a pushable rail-bound crate that latches a weight plate,
+  and a rearmable twelve-second bridge with a far-side seal. Reserve crate rails
+  from door arrivals; keep bridge approaches, falls and return paths safe.
+  Dungeon recipes add a rotating mirror routing a harmless beam into a
+  receiver, and reuse rail-bound weight puzzles, optionally combined with a
+  separate key. Investigation recipes add matching tools to visible fittings,
+  assembling/installing a two-part repair, and superimposing two documents to
+  reveal an answer. Retain all essential items after mistakes; keep action sets
+  within five existing console buttons. Test real movement, exact timer expiry,
+  rearming/retry, beam bounds, recoverable item states, authoritative journey
+  settlement and French/English controls. These are authored trusted recipes,
+  not an activated external recipe importer or LLM generation service.
+  Investigation inventory uses a visible retro pixel-art tray with labelled
+  item slots, not a text-only list. Icons distinguish tools, repair components
+  and document supplies; localized names appear in tooltips on hover or keyboard
+  focus and remain available to assistive technology. Show only items actually retained by the current puzzle (or
+  the legacy adventure's inventory); collection, mistakes and revisits must
+  remain synchronized with canonical state without changing item-use controls.
+  Procedural investigation locations must also differ in silhouette and set
+  dressing, not just colour: archive, workshop, observatory, conservatory,
+  vault, gallery, canal warehouse and theatre. Each eight-site chapter visits
+  all eight in a stable seed-dependent order. Preserve visible puzzle objects
+  and exits; shared decorative illustrations must not erase location identity.
+  Scenery is presentation-only and cannot reroll puzzles or alter replay.
+  Point-and-click presentation covers every procedural investigation family,
+  including witnesses, evidence, ciphers, deductions, sequences, exchanges,
+  alignment, assembly, tools, repairs and document overlays.
+  Draw the actual collectible objects in the scene; generous keyboard-focusable
+  hotspots highlight on hover/focus and expose their localized names. Clicking
+  a loose object collects it; targets and inventory items offer a small contextual
+  set of relevant verbs (observe, use, assemble). Select an inventory item and
+  then a scene target or second item; Escape or empty scenery cancels without
+  costs. Translate interactions into existing canonical commands; no drag/drop,
+  arbitrary combinations, item loss or new puzzle rules. Hide the bottom A–E
+  row throughout; every valid action has a matching scene object/contextual
+  menu, including waiting for witnesses and setting archive seals. Retain
+  keyboard shortcuts in Help. Examination and testimony bubbles include the
+  actual clue text, not just a notice referring the player below the scene.
+  Across procedural investigation sites, visible left/right doors replace the
+  previous/next navigation bar. The forward door remains locked until the site
+  and any archive seal are solved; earlier sites remain accessible. Keep bracket
+  keyboard navigation and readable door names.
+  Ordinary two-part assembly puzzles must also draw each uncollected supply
+  with a matching named hotspot (including map fragments and paste), and allow
+  collection/assembly through the same contextual interface. Keep decorative
+  papers out of lever hotspots and distinguish them from collectible supplies.
+  Show action results in a readable bubble in normal document flow above the
+  investigation scene, retained until the next interaction, as well as the
+  existing status. Even long messages must never obscure scene objects or seals.
+  Inventory presentation reflects assembly: show one named combined object
+  instead of its two loose components (wheel on axle or aligned chart). Once
+  an assembly is installed/used, hide its components, including while an archive
+  seal remains pending and on revisits. Retain canonical ownership/progress for
+  replay and recovery; failed actions must not consume essential supplies.
+  Repair feedback must distinguish missing parts from an unread repair plan:
+  if both parts are held, direct the player to observe the broken drive rather
+  than incorrectly asking them to collect the same parts again.
+  Superimposing documents must immediately show the actual revealed symbol and
+  the reading desk's question in the scene bubble. Examining the combined pages
+  or reading desk repeats that evidence without cost or a new engine command;
+  never require guessing from a generic "symbol revealed" notification.
+  Each procedural site opens with a short localized sentence describing only
+  the setting and visible objects, never their purpose, relationships or solution.
+  Concealed puzzles describe only the covering panels until revealed. Do not
+  append procedural objectives to arrivals or display them during the unsolved
+  main puzzle; discoverable clues come from observation and optional Help.
+  Once the main puzzle is resolved, explicitly distinguish the remaining archive
+  seal: identify its golden scene object, referenced site's retained mark and
+  same-symbol/next-symbol rule. Repeat that context after a wrong seal answer;
+  never imply the overlay's revealed symbol is necessarily the seal answer.
+  Alignment dials display their current localized symbol above each wheel and
+  in its accessible name, not an unexplained numeric code. The inscription gives
+  the target order and identifies the separate lever used to test the alignment.
+  Concealed passages expose three clickable panels matching their drawn bounds.
+  Their contextual Observe/Search actions reuse canonical inspection and search
+  commands, including clues, mistake costs and reveal state. Hidden puzzle
+  objects must not be drawn over the panels before the passage is revealed.
+- **Trap feedback:**
+  A trap hit in any adventure format must produce a brief red-tinted screen
+  pulse, triggered by a new canonical trap hit rather than repeated rendering.
+  Reduced-motion preferences replace the pulse with a temporary static border.
+  Reloading past hits or ordinary wrong puzzle answers must not trigger the effect.
+  Optional faulty levers also need visible feedback: an amber mechanism-jammed
+  alert rather than an injury claim. Investigation impacts show a prominent
+  scene banner with equipment-adjusted cost deltas; new hits tint and frame the
+  scene for 1.4 seconds. The banner disappears after 3 seconds, or earlier on
+  the next canonical investigation action.
+- **Optional surprise levers:** new platform and investigation protocols may add
+  neutral-looking decoy levers with no advance danger marking or revealing
+  inspection text. This is a deliberate exception to telegraphing ordinary
+  hazards, not a change to those hazards. Mix faulty-mechanism penalties
+  (+2 minutes/+1 fatigue) and concealed-dart hits (normal trap costs). Activation
+  is explicit: E near the platform lever, or a contextual Pull action in the
+  investigation. Each lever acts once per attempt, retaining its spent state on
+  retry and revisit. Never consume essential items, gate progress behind a
+  decoy, or make injury necessary. Reserve platform placements away from required
+  controls and doors; retain damage-free solution routes. Keep all older
+  protocols unchanged and settle both penalties through canonical journey replay.
+- **Journey stakes, confirmed 10 November:** new encounters must affect the
+  actual journey through authoritative replay, not preview-only feedback.
+  Arrows use trap penalties; animal contact uses creature penalties. Wrong
+  answers, seals, sequences and rune attempts cost 2 minutes and 1 fatigue,
+  without extra injury. Equipment modifiers and ordinary survival still apply.
+  Optional secret stashes grant 100 cents or up to 150 kcal each, capped by
+  normal reserves, only alongside the town's first successful original-treasure
+  recovery. Abandonment, interruption, restarting, repeated finish requests and
+  losing the shared claim race grant no stash reward. Existing creature-food
+  rules remain separate. Show stakes before entry, provisional accounting in
+  Help and accepted charges/rewards on completion.
+- **Future LLM encounter generation (deferred, not activated):** eventually
+  support daily generation of riddles, encounter variations and assets using
+  a powerful model. Paid daily generation is currently too expensive:
+  do not enable jobs, provision paid services or dispatch paid calls as part of
+  this expansion. Do not build an elaborate generation framework prematurely.
+  A first future stage may generate bilingual riddles from an already validated
+  mechanism, fixed solution and explicit essential-clue facts. Generated prose
+  must preserve those facts and remain solvable without guessing or external
+  knowledge; it cannot change the solution or executable effects.
+  Subsequent daily candidates should describe new combinations of trusted
+  engine primitives as schema-validated data, never automatically executed
+  LLM-written JavaScript. Truly new primitives require deliberate engine
+  implementation, review and tests before entering the generator's vocabulary.
+  The future publication pipeline must validate references, dependencies,
+  clue/solution consistency, difficulty and reachable solutions; automatically
+  test encounters and preview/review assets before approving publication.
+  Asset decoration must remain distinct from collision and actionable clues.
+  Publish approved immutable content versions and retain existing adventures'
+  versions. Rejected, pending or failed generation must be explicit, must not
+  replace playable retained content and must not silently retry paid calls.
 - **Reward/length contract:** choose a bounded treasure-value/power budget first,
   then assign a versioned adventure-length profile. Bigger rewards require a
   strictly longer mandatory route and more meaningful required encounters or

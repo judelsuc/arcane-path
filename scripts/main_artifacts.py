@@ -17,7 +17,9 @@ from town_legends import TOWN_ID
 WORLD = "main-artifacts-v1"
 COMMANDS = {"inquire", "claim", "cache", "share", "use", "pack", "interpret-clue", "archive"}
 TREASURE_VERSIONS = ("treasure-platform-v1", "treasure-investigation-v1", "treasure-dungeon-v1", "treasure-platform-v2",
-                     "treasure-platform-v3", "treasure-investigation-v2", "treasure-dungeon-v2")
+                     "treasure-platform-v3", "treasure-investigation-v2", "treasure-dungeon-v2",
+                     "treasure-platform-v4", "treasure-investigation-v3", "treasure-dungeon-v3",
+                     "treasure-platform-v5", "treasure-investigation-v4")
 TREASURE_ID = re.compile(r"treasure:(?:node|way|relation)/[1-9]\d{0,19}:(0|[1-9]\d{0,9})(?::v[23])?")
 EUROPE_DISTRIBUTION_VERSION = 1
 EUROPE_ANCHORS = (
@@ -239,9 +241,9 @@ class MainArtifacts(LorePlaytest):
                 if definition["townId"] != action["townId"]:
                     raise JourneyConflict("This investigation belongs to a different town.")
                 if action["contentVersion"] in TREASURE_VERSIONS:
-                    assigned = {"platform": ("treasure-platform-v1", "treasure-platform-v2", "treasure-platform-v3"),
-                                "investigation": ("treasure-investigation-v1", "treasure-investigation-v2"),
-                                "dungeon": ("treasure-dungeon-v1", "treasure-dungeon-v2")}[definition["format"]]
+                    assigned = {"platform": ("treasure-platform-v1", "treasure-platform-v2", "treasure-platform-v3", "treasure-platform-v4", "treasure-platform-v5"),
+                                "investigation": ("treasure-investigation-v1", "treasure-investigation-v2", "treasure-investigation-v3", "treasure-investigation-v4"),
+                                "dungeon": ("treasure-dungeon-v1", "treasure-dungeon-v2", "treasure-dungeon-v3")}[definition["format"]]
                     if action["contentVersion"] not in assigned:
                         raise JourneyConflict("This legend's gameplay was permanently assigned by the game.")
             row = db.execute(f"SELECT * FROM {self.world_table} WHERE id=?", (WORLD,)).fetchone()

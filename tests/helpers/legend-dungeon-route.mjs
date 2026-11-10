@@ -19,8 +19,9 @@ export function findDungeonRoute(initial, predicate, { attack = false, damage = 
       state.activated?.filter(id => id.startsWith(`${state.room}:`)).sort()]);
     const expandedKey = state.level.version >= 3 ? JSON.stringify([state.secrets, state.stashes,
       state.flames, state.crank, state.runes, state.trapTick === null ? null : Math.min(11, state.tick - state.trapTick)]) : "";
-    if (seen.has(key + expandedKey)) continue;
-    seen.add(key + expandedKey);
+    const mechanismKey = JSON.stringify(state.mechanisms?.[state.room] ?? "");
+    if (seen.has(key + expandedKey + mechanismKey)) continue;
+    seen.add(key + expandedKey + mechanismKey);
     for (const type of ["up", "right", "down", "left", "interact", "wait", ...(attack ? ["attack"] : [])]) {
       const action = { type };
       queue.push({ state: stepDungeon(state, action), previous: node, action });
