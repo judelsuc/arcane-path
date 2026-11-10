@@ -228,6 +228,38 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Empty-building shelter and collector removal, 0.22.17 (10 November 2026)
+
+Deployed runtime `e5d24b86e4cf3973b31bb039d9c1b3f4309cb6da`, tagged
+`deploy-2026-11-10-building-shelter`. Loaded building cells offer a fictional
+empty-building search, ten simulated minutes and one QTE attempt per cell/day.
+Success gives normal sheltered sleep without meals or washing. Failure,
+skipping and abandoned active attempts add five vigilance points and can
+trigger normal placement. Saves retain attempts and validated QTE receipts.
+The main-game collector action is removed and rejected by the backend;
+existing journal knowledge and isolated lore playtests remain unchanged.
+
+Validation: 191 targeted JavaScript tests and 20 backend tests passed.
+Isolated browser checks verified held-key preparation, hard-letter success,
+save receipts, interrupted-attempt failure and exactly five added vigilance
+points for failure/skipping. No real journey saves were modified.
+All 14 installed disk hashes and 13 public-file loopback HTTP hashes matched
+the baseline-guarded package; the Python module was checked on disk and imported
+from the service module directory. The release manifest mtime was refreshed.
+The backend change required one restart: PID 349176 became 355400.
+Application, Nginx and prefetch timer are active, `nginx -t` passed, HTTPS
+returns expected authentication status 401, and the service error journal is clear.
+No database schema, provider quota or paid-call changes were required.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.17-e5d24b8/runtime.tar.gz`,
+SHA-256 `3b91576b1aac479f25f8c2cc59b913222c9224bd1ef1bc5ec4779e0eb9eaabf1`.
+Restore its 12 existing files under `/opt/arcane-path`, remove only the newly
+added `building-sleep.mjs` and `building-sleep-ui.mjs`, refresh
+`public/release.json` mtime and restart the application. Retain player saves:
+older clients do not enforce the new shelter attempt lock or penalty, so
+do not resume shelter-bearing saves on the old rules without reconciliation.
+
 ## QTE preparation and letter keys, 0.22.16 (10 November 2026)
 
 Deployed runtime `96c95f4706bf34a7f5521ac94abdfb6c148c27eb`, tagged
