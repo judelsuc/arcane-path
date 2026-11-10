@@ -44,6 +44,9 @@ export function validateEconomy(data) {
         !source(m.source) || !positive(m.reserveKcal) || !positive(m.mealUnits) ||
         !Array.isArray(m.bounds) || m.bounds.length !== 4 || !m.bounds.every(Number.isFinite) ||
         m.bounds[0] >= m.bounds[2] || m.bounds[1] >= m.bounds[3] ||
+        (m.towns !== undefined && (!Array.isArray(m.towns) || !m.towns.length ||
+          m.towns.some(id => typeof id !== "string" || !/^(node|way|relation)\/\d+$/.test(id)) ||
+          !m.scope)) ||
         (m.scope !== undefined && (!["regional", "national"].includes(m.scope) ||
           typeof m.area !== "string" || !m.area.trim() ||
           !Array.isArray(m.countries) || !m.countries.length ||
@@ -86,9 +89,11 @@ export function acknowledgeDailyTarot(state) {
   return { ...state, dailyTarotSeenDay: state.tarotDay };
 }
 
-export function localMeals(info, data, countryCodes = []) {
+export function localMeals(info, data, countryCodes = [], townIds = []) {
   const countries = [...new Set(countryCodes)];
-  return data.meals.filter(({ bounds: [west, south, east, north], countries: allowed, scope }) => {
+  return data.meals.filter(({ bounds: [west, south, east, north], countries: allowed, scope, towns }) => {
+    if (towns) return towns.some(id => townIds.includes(id)) &&
+      (!countries.length || countries.length === 1 && allowed.includes(countries[0]));
     if (scope && (countries.length !== 1 || !allowed.includes(countries[0]))) return false;
     return info.longitude >= west && info.longitude <= east && info.latitude >= south && info.latitude <= north;
   }).sort((a, b) => Number(a.scope === "national") - Number(b.scope === "national"));
@@ -106,7 +111,8 @@ export function mealOptions(cell, info, data) {
     /^(node|way|relation)\/\d+$/.test(p.osmId) &&
     ["restaurant", "fast_food", "cafe", "food_court"].includes(p.tags?.amenity))
     .map(p => [p.osmId, p])).values()];
-  return [basic, ...localMeals(info, data, cell.countryCodes).map(meal => ({ ...meal, kind: "specialty" })),
+  const townIds = (cell.settlements ?? []).map(town => town.osmId);
+  return [basic, ...localMeals(info, data, cell.countryCodes, townIds).map(meal => ({ ...meal, kind: "specialty" })),
     ...restaurants.map(venue => ({ ...basic, id: `basic-meal@${venue.osmId}`, kind: "restaurant", venue }))];
 }
 
@@ -161,6 +167,19 @@ export function refreshMeals(savedEconomy, currentEconomy) {
     if (!meals.has(meal.id)) meals.set(meal.id, structuredClone(meal));
   }
   return validateEconomy({ ...structuredClone(savedEconomy), meals: [...meals.values()] });
+}
+
+export function mergeDiscoveredMeals(savedEconomy, meals, town) {
+  if (!Array.isArray(meals) || meals.length > 6 || meals.some(meal =>
+    !meal || typeof meal.id !== "string" || !/^discovered-[a-f0-9]{24}$/.test(meal.id) ||
+    meal.towns?.length !== 1 || meal.towns[0] !== town || meal.scope !== "regional" ||
+    meal.countries?.length !== 1 || meal.mealUnits !== 1 || meal.reserveKcal !== 900 ||
+    !/^https:\/\/en\.wikipedia\.org\/wiki\/[^?#]+$/.test(meal.source) ||
+    !/^https:\/\/www\.wikidata\.org\/wiki\/Q[1-9]\d*$/.test(meal.originSource))) {
+    throw new Error("Invalid discovered regional dishes.");
+  }
+  validateEconomy({ ...savedEconomy, meals: meals.length ? meals : savedEconomy.meals });
+  return refreshMeals(savedEconomy, { ...savedEconomy, meals: meals.length ? meals : savedEconomy.meals });
 }
 
 export function refreshNightRest(savedEconomy, currentEconomy) {

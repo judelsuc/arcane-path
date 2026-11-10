@@ -3615,6 +3615,24 @@
 
 ## R-081 - More frequent European specialty meals
 
+- European discovery now includes on-demand culinary documentation for mapped
+  towns, not just expansion of the offline catalogue. Resolve the actual town
+  and current administrative ancestry through Wikidata, ignoring historical
+  affiliations; search town and regional Wikipedia culinary articles.
+- Retain up to six source-grounded model selections with original FR/EN
+  descriptions. Require exact documentary evidence for the selected origin;
+  prefer regional cuisine categories and reject incidental person-name matches.
+  Never let the model invent URLs, places, costs, calories or restaurant menus.
+- Cache results once per town/version across players and pin additions in saved
+  economies without replacing existing meals. Town-bound additions must not
+  leak to other towns or a contradictory mapped country. Preserve ordinary
+  meals, stable prices, portions, time costs and existing catalogue behavior.
+- Optionally display the associated Wikimedia dish photograph after verifying
+  reusability, with author, source and license links. Missing/unavailable photos
+  must not suppress the dish; do not generate substitute illustrations.
+- Show loading, absence and failure explicitly; keep existing meals usable.
+  Use the configured text provider only after verifying zero pricing. Persist
+  interrupted/failed attempts without automatic redispatch or a paid fallback.
 - Expand documented dishes across Europe, not just French sources or areas.
 - Current catalogue: 19 dishes, including 15 additions covering 15 European
   countries. Each has a documentary URL and original short FR/EN description.
@@ -3625,8 +3643,9 @@
   boundaries. National dishes are not claims about a particular town's menu.
 - Refresh additions when resuming old saves while preserving their existing
   meals, rules, tarot and progress. Basic meals and mapped restaurants remain.
-- This is a curated catalogue, not live web discovery or verified restaurant
-  availability. Portions, energy and prices remain fictional game rules.
+- The curated catalogue remains a fallback alongside dynamic documentary
+  discovery, not verified restaurant availability. Portions, energy and prices
+  remain fictional game rules.
 
 ## R-080 - Layer 15 personal journey journal
 
@@ -4127,9 +4146,9 @@ This file records additions to the design without modifying the source PDF,
 
 - **User decision:** Starting money depends on a randomly drawn tarot card.
   Initial 22-card budget table is provisional; daily draws do not award money.
-- **Meals:** Manually curate internet-sourced local specialties now, with
+- **Meals:** Retain manually curated internet-sourced local specialties, with
   source/publisher/check date, coordinates and original short summaries.
-  Later a source-grounded LLM will populate this database. Meals replenish
+  Source-grounded, town-bound LLM additions complement this database (R-081). Meals replenish
   hunger reserves; nutritional values are explicit gameplay approximations.
 - **Pricing:** Use the Big Mac Index rather than Eurostat for this prototype.
   Prices remain fictional index-scaled game tariffs, never real venue offers.

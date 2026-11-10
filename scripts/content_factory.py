@@ -157,6 +157,27 @@ def validate_response(response):
     return {"drafts": output, "usage": usage, "responseModel": actual_model}
 
 
+def verify_free_text_model(opener, model):
+    try:
+        with opener.open("https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/models", timeout=15) as response:
+            raw = response.read(64 * 1024 + 1)
+            if response.status != 200 or len(raw) > 64 * 1024:
+                raise WorkshopError("Cannot verify text model pricing; no generation sent.", 503)
+            catalogue = json.loads(raw)
+        models = catalogue.get("data") if isinstance(catalogue, dict) else None
+        matches = [m for m in models if isinstance(m, dict) and m.get("id") == model] if isinstance(models, list) else []
+        pricing = matches[0].get("pricing") if len(matches) == 1 else None
+        if (not isinstance(pricing, dict) or pricing.get("currency_unit") != "USD"
+                or any(pricing.get(key) != "0" for key in
+                       ("completion", "prompt", "request", "input_cache_reads", "input_cache_writes"))):
+            raise WorkshopError("Text model is not confirmed free; no generation or paid fallback.", 503)
+    except urllib.error.HTTPError as error:
+        error.close()
+        raise WorkshopError("Cannot verify text model pricing; no generation sent.", 503) from None
+    except (OSError, ValueError) as error:
+        raise WorkshopError("Cannot verify text model pricing; no generation sent.", 503) from error
+
+
 class OvhWriter:
     def __init__(self, token, model, request_builder=provider_request, timeout=45):
         self.token, self.model = token, model

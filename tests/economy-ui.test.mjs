@@ -114,7 +114,7 @@ class Element {
   scrollIntoView(options) { this.scrolled = options; }
   setAttribute(name, value) { this[name] = value; }
 }
-function harness(t, language = "en", findAccommodations, selectAccommodation, narrative) {
+function harness(t, language = "en", findAccommodations, selectAccommodation, narrative, findSpecialties) {
   const original = globalThis.document;
   const elements = new Map();
   const element = selector => {
@@ -136,6 +136,7 @@ function harness(t, language = "en", findAccommodations, selectAccommodation, na
   const actions = [];
   const ui = setupEconomyUI((key, args) => translate(language, key, args), {
     narrative,
+    findSpecialties,
     findAccommodations,
     selectAccommodation,
     context: () => current,
@@ -149,6 +150,73 @@ function harness(t, language = "en", findAccommodations, selectAccommodation, na
   return { ui, element, actions, set: value => { current = { ...current, ...value }; },
     current: () => current, buttons: () => element("#economy-options").children.map(li => li.children[0]) };
 }
+
+for (const language of ["fr", "en"]) {
+  test(`${language} culinary discovery keeps meals usable and displays sourced dishes with photo credits`, async t => {
+    let finish;
+    const pending = new Promise(resolve => { finish = resolve; });
+    const h = harness(t, language, undefined, undefined, undefined, () => pending);
+    h.set({ cell: { terrain: "place", countryCodes: ["IT"],
+      settlements: [{ osmId: "node/10", name: "Firenze" }] },
+    info: { latitude: 43.7696, longitude: 11.2558 },
+    state: { ...start(0), walletCents: 10000 } });
+    const opening = h.ui.open("eat");
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(h.buttons()[0].disabled, false);
+    assert.match(h.element("#economy-specialties-status").textContent,
+      language === "fr" ? /découverte/ : /Discovering/);
+    const dish = { ...economy.meals[0], id: `discovered-${"a".repeat(24)}`,
+      name: "Bistecca alla fiorentina", scope: "regional", countries: ["IT"], towns: ["node/10"],
+      bounds: [-180, -90, 180, 90], area: "Tuscany",
+      source: "https://en.wikipedia.org/wiki/Bistecca_alla_fiorentina",
+      originSource: "https://www.wikidata.org/wiki/Q1273",
+      photo: { attribution: "Photo Author", license: "CC BY-SA 4.0",
+        sourceUrl: "https://commons.wikimedia.org/wiki/File:Steak.jpg",
+        licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/" } };
+    h.set({ data: { ...economy, meals: [...economy.meals, dish] } });
+    const revoked = [];
+    t.mock.method(URL, "createObjectURL", () => "blob:dish");
+    t.mock.method(URL, "revokeObjectURL", url => revoked.push(url));
+    finish({ meals: [dish], photos: [{ id: dish.id, blob: new Blob(["photo"]) }], warnings: [] });
+    await opening;
+    assert.match(h.buttons()[1].textContent, /Bistecca alla fiorentina/);
+    const figure = h.element("#economy-options").children[1].children[1].siblings[0];
+    assert.equal(figure.children[0].src, "blob:dish");
+    assert.equal(figure.children[0].alt, "Bistecca alla fiorentina");
+    assert.match(figure.children[1].children[0].textContent, /Photo Author · CC BY-SA 4.0/);
+    assert.equal(figure.children[1].children[0].href, dish.photo.sourceUrl);
+    h.buttons()[1].click();
+    assert.deepEqual(h.actions.at(-1), { kind: "meal", id: dish.id });
+    h.ui.reset();
+    assert.deepEqual(revoked, ["blob:dish"]);
+  });
+
+  test(`${language} failed culinary lookup leaves ordinary food usable with explicit feedback`, async t => {
+    t.mock.method(console, "error", () => {});
+    const h = harness(t, language, undefined, undefined, undefined, async () => { throw new Error("Sources offline"); });
+    await h.ui.open("eat");
+    assert.match(h.element("#economy-specialties-status").textContent, /Sources offline/);
+    assert.equal(h.element("#economy-specialties-status").dataset.feedback, "failure");
+    assert.ok(h.buttons().length > 0);
+    const before = h.actions.length;
+    h.buttons()[0].click();
+    assert.equal(h.actions.length, before + 1);
+  });
+}
+
+test("closing the food panel aborts documentary lookup and ignores late photo results", async t => {
+  let finish, signal;
+  const pending = new Promise(resolve => { finish = resolve; });
+  const h = harness(t, "en", undefined, undefined, undefined, current => { signal = current; return pending; });
+  const opening = h.ui.open("eat");
+  await new Promise(resolve => setImmediate(resolve));
+  h.element("#economy-dialog").close();
+  h.element("#economy-dialog").events.close();
+  assert.equal(signal.aborted, true);
+  t.mock.method(URL, "createObjectURL", () => { throw new Error("Stale photo rendered"); });
+  finish({ meals: [], photos: [{ id: "ignored", blob: new Blob(["photo"]) }], warnings: [] });
+  await opening;
+});
 
 function rulesFor(h, index = 0) {
   const description = h.element("#economy-options").children[index].children[1];

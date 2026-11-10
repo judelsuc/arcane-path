@@ -5,10 +5,16 @@ import { setFeedback, setGenerating } from "./feedback.mjs";
 import { NARRATIVE_BRIEFS } from "./live-narrative.mjs";
 import { mergeAccommodations } from "./accommodations.mjs";
 
-export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodations, selectAccommodation, narrative, illustrations }) {
+export function setupEconomyUI(t, { context, act, resolveCountry, findSpecialties, findAccommodations, selectAccommodation, narrative, illustrations }) {
   const dialog = document.querySelector("#economy-dialog");
   let mode = "eat";
   let resolving = false, countryError = "", generation = 0;
+  let specialtyController, specialtyStatus = "", specialtyError = "";
+  const dishPhotos = new Map();
+  function clearDishPhotos() {
+    for (const url of dishPhotos.values()) URL.revokeObjectURL(url);
+    dishPhotos.clear();
+  }
   let accommodationController, accommodationResult, accommodationError = "", accommodationLoading = false;
   let accommodationCancelled = false;
   let accommodationProgress;
@@ -57,6 +63,12 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       hours: (state.outdoorNightMinutes / 60).toFixed(1),
     });
     if (!dialog.open) return;
+    const specialtyNotice = document.querySelector("#economy-specialties-status");
+    specialtyNotice.hidden = mode !== "eat" || !specialtyStatus;
+    specialtyNotice.textContent = specialtyStatus ? t(`specialtyDiscovery.${specialtyStatus}`) : "";
+    if (specialtyError) specialtyNotice.textContent += ` ${specialtyError}`;
+    setGenerating(specialtyNotice, specialtyStatus === "loading");
+    setFeedback(specialtyNotice, specialtyStatus === "error" ? "failure" : "");
     if (illustration) illustration.hidden = true;
     const dreamHelp = document.querySelector("#economy-dream-help");
     dreamHelp.hidden = mode !== "sleep";
@@ -197,6 +209,38 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
         effects.className = "window-help-text";
         effects.textContent = t("mealEffect", { kcal: meal.reserveKcal, minutes: survival.meal_minutes });
         description.after(effects);
+        const photo = dishPhotos.get(meal.id);
+        if (meal.kind === "specialty" && meal.originSource) {
+          const origin = document.createElement("a");
+          origin.href = meal.originSource;
+          origin.textContent = t("mealOriginSource", { area: meal.area });
+          origin.target = "_blank";
+          origin.rel = "noopener noreferrer";
+          origin.className = "technical-text";
+          description.after(origin);
+        }
+        if (photo && meal.photo) {
+          const figure = document.createElement("figure"), image = document.createElement("img");
+          image.src = photo;
+          image.alt = meal.name;
+          image.loading = "lazy";
+          image.width = 320;
+          image.className = "meal-documentary-photo";
+          const caption = document.createElement("figcaption"), source = document.createElement("a");
+          source.href = meal.photo.sourceUrl;
+          source.target = "_blank";
+          source.rel = "noopener noreferrer";
+          source.textContent = `${meal.photo.attribution} · ${meal.photo.license}`;
+          caption.append(source);
+          const license = document.createElement("a");
+          license.href = meal.photo.licenseUrl;
+          license.target = "_blank";
+          license.rel = "noopener noreferrer";
+          license.textContent = t("mealPhotoLicense");
+          caption.append(" · ", license);
+          figure.append(image, caption);
+          description.after(figure);
+        }
       }
     } else {
       document.querySelector("#economy-empty").hidden = true;
@@ -295,6 +339,10 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
   async function open(nextMode) {
     if (!context() || context().blocked || document.querySelector("dialog[open]")) return;
     mode = nextMode;
+    specialtyController?.abort();
+    clearDishPhotos();
+    specialtyStatus = "";
+    specialtyError = "";
     speechKey = undefined;
     speechBrief = undefined;
     if (npcSpeech) npcSpeech.hidden = npcStatus.hidden = mode !== "sleep";
@@ -325,6 +373,28 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
       }
     }
     await accommodationSearch;
+    if (request === generation && dialog.open && mode === "eat" && findSpecialties) {
+      specialtyController = new AbortController();
+      const controller = specialtyController;
+      specialtyStatus = "loading";
+      localize();
+      try {
+        const result = await findSpecialties(controller.signal);
+        if (controller.signal.aborted || request !== generation) return;
+        if (result) {
+          for (const photo of result.photos) dishPhotos.set(photo.id, URL.createObjectURL(photo.blob));
+          specialtyStatus = result.warnings.length ? "partial" : result.meals.length ? "ready" : "empty";
+          specialtyError = result.warnings.join(" ");
+        } else specialtyStatus = "";
+      } catch (error) {
+        if (controller.signal.aborted || request !== generation) return;
+        console.error("Culinary discovery failed:", error);
+        specialtyStatus = "error";
+        specialtyError = error.message;
+      } finally {
+        if (!controller.signal.aborted && request === generation) localize();
+      }
+    }
   }
   function showAccommodationProgress() {
     document.querySelector("#accommodation-status").textContent = t("accommodationLoading");
@@ -382,7 +452,13 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
   }
   document.querySelector("#accommodation-search").addEventListener("click", () =>
     accommodationLoading ? cancelAccommodationSearch() : searchAccommodations());
-  dialog.addEventListener("close", () => { if (!dialog.open) cancelAccommodationSearch(); });
+  dialog.addEventListener("close", () => {
+    if (!dialog.open) {
+      cancelAccommodationSearch();
+      specialtyController?.abort();
+      clearDishPhotos();
+    }
+  });
   dialog.addEventListener("keydown", event => {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -399,6 +475,10 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findAccommodat
   });
   return { open, localize, reset() {
     generation++; resolving = false; countryError = "";
+    specialtyController?.abort();
+    specialtyStatus = "";
+    specialtyError = "";
+    clearDishPhotos();
     accommodationController?.abort();
     accommodationLoading = false;
     accommodationCancelled = false;

@@ -1,6 +1,11 @@
 {
-  "version": "0.22.11",
+  "version": "0.22.12",
   "entries": [
+    {
+      "version": "0.22.12",
+      "fr": "Les repas locaux explorent désormais les spécialités documentées de la ville et de sa région, au-delà du petit catalogue initial. Les sources géographiques et culinaires guident la sélection et les descriptions bilingues. Les plats et leurs photos réutilisables, avec crédits et licences, sont conservés sur le serveur et partagés entre les visites. Les repas habituels restent disponibles pendant la recherche ou en cas d'erreur.",
+      "en": "Local meals now explore documented town and regional specialties beyond the small initial catalogue. Geographic and culinary sources guide selection and bilingual descriptions. Dishes and their reusable photographs, with credits and licenses, are cached on the server across visits. Usual meals remain available while discovery runs or if it fails."
+    },
     {
       "version": "0.22.11",
       "fr": "Une alerte apparaît dès 80/100 de vigilance des adultes : elle rappelle le risque de placement à 100 et explique comment réduire l'attention. Elle attend la fermeture des autres fenêtres, ne se répète qu'après une baisse sous 80 et fonctionne aussi à la reprise d'un voyage.",

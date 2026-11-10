@@ -20,12 +20,13 @@ import { citedTownDirections } from "./trail-ui.mjs";
 import { nearestSettlement } from "./towns.mjs";
 import { distanceMeters } from "./cell-content.mjs";
 import { withNearbyMappedPois } from "./cell-nearby.mjs";
-import { refreshPricing, refreshMeals, refreshNightRest, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, restEffect, finishAction, washEconomy, marketPrice } from "./economy.mjs";
+import { refreshPricing, refreshMeals, mergeDiscoveredMeals, refreshNightRest, tarotEventChance, acknowledgeDailyTarot, buyMeal, sleepEconomy, restEconomy, restEffect, finishAction, washEconomy, marketPrice } from "./economy.mjs";
 import { setupDailyTarot } from "./daily-tarot-ui.mjs";
 import { survivalChoice, beginTheft, settleTheft, choiceAvailable } from "./survival-choices.mjs";
 import { setupTheft } from "./theft-ui.mjs";
 import { setupSurvivalChoices } from "./survival-choices-ui.mjs";
 import { setupEconomyUI } from "./economy-ui.mjs";
+import { discoverTownMeals } from "./town-meals.mjs";
 import { beginBusking, settleBusking, musicMistakeLimit, musicDifficulty } from "./music.mjs";
 import { beginCafe, settleCafe } from "./cafe.mjs";
 import { setupCafe } from "./cafe-ui.mjs";
@@ -527,6 +528,20 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     illustrations: encounterIllustrations,
     narrative: liveNarrative,
     context: economyContext, act: economyAction,
+    async findSpecialties(signal) {
+      const current = economyContext(), currentToken = token;
+      const town = current?.cell.settlements?.filter(s => s.name && /^(node|way|relation)\/\d+$/.test(s.osmId))
+        .sort((a, b) => a.osmId.localeCompare(b.osmId))[0];
+      if (!current || current.blocked || !town) return null;
+      const result = await discoverTownMeals(structuredClone(state), town.osmId, economyData, signal);
+      signal.throwIfAborted();
+      if (currentToken !== token || state.col !== current.state.col || state.row !== current.state.row) {
+        throw new Error("Journey changed during culinary discovery.");
+      }
+      economyData = mergeDiscoveredMeals(economyData, result.meals, town.osmId);
+      autosave();
+      return result;
+    },
     selectAccommodation(place) {
       lodgingTarget = place;
       draw();

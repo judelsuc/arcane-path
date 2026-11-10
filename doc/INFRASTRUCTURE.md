@@ -174,6 +174,29 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
+## Source-grounded town meals (implementation, not yet deployed)
+
+Culinary discovery uses authenticated POST `/api/town-content` with `kind: meals`,
+the existing private journey capability and a server-verified mapped town.
+No new public endpoint, Nginx route or schema is required. Versioned meal results
+and dispatch leases use a separate key namespace in `town_documents`; dish photos
+use durable `town-meal-photographs` assets with license provenance.
+
+The existing `ARCANE_LIVE_TEXT_TOKEN_FILE` configures the writer. Each new
+town/version has at most one attempt and the model must have confirmed zero USD
+pricing immediately before dispatch. Shared claims prevent duplicate calls;
+expired leases and failed attempts remain explicit and are never redispatched
+automatically. Two workers bound simultaneous research. Only public town facts
+and bounded documentary excerpts reach the model, not private journey content.
+Results are shared across players; local journey saves retain the acquired
+catalogue additions. Application errors and optional photo failures are logged.
+
+The model selects source indices and original bilingual descriptions, never
+URLs, geography or economy values. Server-built meal records bind each result
+to its verified town/country, its Wikipedia article and Wikidata regional source.
+Documentary photos are fetched through the existing Wikimedia allowlist and
+served only after checking town membership and the private capability.
+
 ## Adult vigilance warning, 0.22.11 (10 November 2026)
 
 Deployed runtime `26d5d5891ffb919b965cbe8f1e1329137cac8c16`, tagged

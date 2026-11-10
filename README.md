@@ -1908,6 +1908,33 @@ sans nouvelle dotation. Aucun tirage n'est payant.
 aligot autour de Firmi/Aveyron, croque-monsieur a Paris, tartiflette autour
 de Chamonix/Savoie, poisson cru au lait de coco a Tahiti. Sources touristiques
 et descriptions originales dans [public/economy.json](./public/economy.json).
+Le catalogue de secours contient 19 plats dans 15 pays europeens. A l'ouverture
+du menu dans une ville cartographiee, une recherche serveur complete ce catalogue :
+identite et rattachements administratifs actuels dans Wikidata, articles culinaires
+Wikipedia de la ville et de sa region, puis selection de six plats au maximum
+par le modele avec des descriptions originales en francais et en anglais.
+Une simple mention du nom de la ville ne suffit pas : lien geographique ou
+categorie culinaire regionale, puis preuve textuelle exacte, sont requis.
+La bistecca alla fiorentina peut ainsi etre retrouvee autour de Florence et de
+Fiesole via la cuisine toscane, sans proposer la pizza napolitaine comme locale.
+La couverture reste documentaire, non exhaustive, et les associations culinaires
+ne constituent pas des frontieres administratives ou des menus de restaurants.
+
+Les resultats sont conserves par ville dans le catalogue partage, puis dans la
+sauvegarde du joueur sans remplacer les anciens plats. Les nouvelles specialites
+sont liees a l'identite OSM de cette ville, pas a un grand rectangle. Leur pays
+vient des sources serveur ; un pays cartographie contradictoire les exclut.
+Les repas habituels restent utilisables pendant la recherche et en cas d'erreur,
+signalee explicitement. Les photos associees aux articles sont facultatives :
+uniquement des fichiers Wikimedia reutilisables, avec auteur, source et licence,
+servis par le serveur. Aucune image n'est generee pour remplacer une photo absente.
+
+La recherche utilise la cle privee de texte deja configuree
+(`ARCANE_LIVE_TEXT_TOKEN_FILE`) et verifie que le modele est gratuit avant
+toute generation. Une seule tentative par ville et version est conservee,
+y compris les echecs et interruptions ; aucun nouvel essai automatique ou
+modele payant de secours. La file comporte au plus deux recherches simultanees.
+Sans configuration, le menu indique l'indisponibilite et conserve le catalogue.
 Chaque repas a une offre fictive stable par partie, case et jour UTC :
 prix tire entre 70 et 150 % de son tarif local et portion proportionnelle au
 prix (900 kcal pour une unite de repas locale). Les plats et etablissements

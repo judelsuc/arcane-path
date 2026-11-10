@@ -51,6 +51,7 @@ from content_storage import clock
 from quest_destinations import QuestDestinations
 from characters import Characters
 from town_content import TownContent
+from town_meals import TownMeals, FreeMealWriter
 from change_requests import ChangeRequests, report_storage
 from admin_console import AdminConsole, AdminDenied, COOKIE
 from inscriptions import Inscriptions, moderation_request
@@ -875,6 +876,8 @@ def make_handler(store, jobs, path_pool=None):
                             artifacts=main_artifacts)
     main_artifacts.characters = characters
     town_content = TownContent(journeys, lore)
+    town_meals = TownMeals(town_content, FreeMealWriter(live_narrative.writer.token, LIVE_TEXT_MODEL)
+                          if live_narrative.writer else None)
     town_legends = TownLegends(journeys, lore)
     live_narrative.town_legends = town_legends
     main_artifacts.town_legends = town_legends
@@ -975,7 +978,8 @@ def make_handler(store, jobs, path_pool=None):
                 if endpoint == "/api/town-legends":
                     return self.send_json(200, town_legends.request(request, capability))
                 if endpoint == "/api/town-content":
-                    result = town_content.request(request, capability)
+                    result = (town_meals if isinstance(request, dict) and request.get("kind") == "meals"
+                              else town_content).request(request, capability)
                     if isinstance(result, tuple):
                         body, media_type = result
                         self.send_response(200)
@@ -1254,6 +1258,7 @@ def make_handler(store, jobs, path_pool=None):
     Handler.live_narrative = live_narrative
     Handler.characters = characters
     Handler.town_content = town_content
+    Handler.town_meals = town_meals
     Handler.town_legends = town_legends
     Handler.inscriptions = inscriptions
     Handler.change_requests = change_requests
@@ -1281,6 +1286,7 @@ def main():
         server.RequestHandlerClass.journal_art.close()
         server.RequestHandlerClass.encounter_art.close()
         server.RequestHandlerClass.characters.close()
+        server.RequestHandlerClass.town_meals.close()
         server.RequestHandlerClass.town_content.close()
         server.RequestHandlerClass.town_legends.close()
         server.RequestHandlerClass.inscriptions.close()

@@ -107,6 +107,31 @@ class Wikimedia:
         return result
 
 
+def documentary_photo(page):
+    image = next(iter(page.get("imageinfo", [])), {})
+    metadata = image.get("extmetadata", {})
+    source_url, url = image.get("descriptionurl", ""), image.get("thumburl", "")
+    author = plain(metadata.get("Artist", {}).get("value"))
+    license_name = plain(metadata.get("LicenseShortName", {}).get("value"))
+    license_url = metadata.get("LicenseUrl", {}).get("value", "")
+    categories = metadata.get("Categories", {}).get("value", "")
+    reusable = re.fullmatch(r"CC(?: BY(?:-SA)? [1-4]\.[05]|0(?: 1\.0)?)|Public domain",
+                            license_name, re.IGNORECASE)
+    if (re.search(r"AI.generated|synthetic media|drawings|paintings|maps of|flags of|coats of arms",
+                  categories, re.IGNORECASE)
+            or not author or not reusable or not re.match(r"^https?://", license_url)
+            or not allowed_url(source_url)
+            or urllib.parse.urlsplit(source_url).hostname != "commons.wikimedia.org"
+            or not allowed_url(url, True)
+            or image.get("mime") not in {"image/jpeg", "image/png", "image/webp"}):
+        return None
+    return url, {"title": page.get("title", ""),
+                 "caption": plain(metadata.get("ImageDescription", {}).get("value"))[:500]
+                 or page.get("title", ""),
+                 "sourceUrl": source_url, "attribution": author[:1000],
+                 "license": license_name, "licenseUrl": license_url}
+
+
 class DocumentarySources:
     def __init__(self, source):
         self.source = source
@@ -259,33 +284,16 @@ class DocumentarySources:
                 if len(result["photos"]) >= MAX_PHOTOS:
                     break
                 image = next(iter(page.get("imageinfo", [])), {})
-                metadata = image.get("extmetadata", {})
-                source_url, url = image.get("descriptionurl", ""), image.get("thumburl", "")
+                source_url = image.get("descriptionurl", "")
                 sha = image.get("sha1") or source_url
                 if sha in seen or source_url in seen:
                     continue
                 seen.update((sha, source_url))
-                author = plain(metadata.get("Artist", {}).get("value"))
-                license_name = plain(metadata.get("LicenseShortName", {}).get("value"))
-                license_url = metadata.get("LicenseUrl", {}).get("value", "")
-                categories = metadata.get("Categories", {}).get("value", "")
-                if re.search(r"AI.generated|synthetic media|drawings|paintings|maps of|flags of|coats of arms",
-                             categories, re.IGNORECASE):
+                photo = documentary_photo(page)
+                if photo is None:
                     continue
-                reusable = re.fullmatch(r"CC(?: BY(?:-SA)? [1-4]\.[05]|0(?: 1\.0)?)|Public domain",
-                                        license_name, re.IGNORECASE)
-                if (not author or not license_name or not re.match(r"^https?://", license_url)
-                        or not reusable
-                        or not allowed_url(source_url)
-                        or urllib.parse.urlsplit(source_url).hostname != "commons.wikimedia.org"
-                        or not allowed_url(url, True)
-                        or image.get("mime") not in {"image/jpeg", "image/png", "image/webp"}):
-                    continue
-                caption = plain(metadata.get("ImageDescription", {}).get("value"))[:500] or page.get("title", "")
-                photograph = {"title": page.get("title", ""), "caption": caption,
-                              "sourceUrl": source_url, "attribution": author[:1000],
-                              "license": license_name, "licenseUrl": license_url,
-                              "association": association}
+                url, photograph = photo
+                photograph["association"] = association
                 if article and association == "town":
                     photograph["associationUrl"] = article["fullurl"]
                 published = attempt("Photo download", lambda: publish_photo(url, photograph))
