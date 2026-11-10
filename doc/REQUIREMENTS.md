@@ -19,8 +19,10 @@
 
 ## Empty-building shelter (10 November 2026)
 
-- Offer a fictional empty-building sleep scene only on loaded building cells,
-  without asserting real vacancy or providing entry instructions.
+- Offer an empty-building sleep scene only on loaded building cells.
+- Keep player-facing copy immersive: no reminders that scenes or actions are
+  fictional, or disclaimers about real building occupancy. Show relevant gameplay
+  rules and consequences instead.
 - Searching consumes ten simulated minutes, once per cell per game day.
 - Reuse reaction QTE preparation, held-key release and condition-based difficulty.
 - Success gives normal free sheltered sleep without food or washing.

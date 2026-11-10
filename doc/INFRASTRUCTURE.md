@@ -228,6 +228,24 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Immersive gameplay text, 0.22.18 (10 November 2026)
+
+Deployed runtime `baaf075268ffc26256538c32daa879ecfedc2c82`, tagged
+`deploy-2026-11-10-immersive-copy`. Shelter, survival-action and town text
+retains gameplay rules without fiction/real-occupancy disclaimers in either
+language. The changelog uses the same immersive wording.
+
+Validation: 64 targeted tests passed. All three installed disk and loopback HTTP
+hashes matched the baseline-guarded package. The release manifest mtime was
+refreshed; application PID 355400 remained unchanged, with no restart.
+Application, Nginx and prefetch timer are active; `nginx -t` passed.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.18-baaf075/runtime.tar.gz`,
+SHA-256 `c65d5d812dd7e70119d440043f98e8e435263c4a30ae0234e6fc282529574d77`.
+Restore its three files under `/opt/arcane-path` and refresh
+`public/release.json` mtime; no application restart is required.
+
 ## Empty-building shelter and collector removal, 0.22.17 (10 November 2026)
 
 Deployed runtime `e5d24b86e4cf3973b31bb039d9c1b3f4309cb6da`, tagged
