@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from asset_storage import AssetError, local_storage
 from content_factory import WorkshopError
 from journeys import JourneyRequest
-from town_meals import FreeMealWriter, MealSources, TownMeals, selected_meals
+from town_meals import MealWriter, MealSources, TownMeals, selected_meals, MODEL, PROVIDER
 
 
 STEAK = ("Bistecca alla fiorentina is an Italian steak dish that is one of the most "
@@ -70,7 +70,7 @@ class Sources:
 def response(brief):
     origin = next(i for i, o in enumerate(brief["origins"]) if o["name"] == "Tuscany")
     return {"choices": [{"finish_reason": "stop", "message": {"content": json.dumps({"dishes": [{
-        "document": 0, "origin": origin, "evidence": STEAK.split(". ")[0] + ".",
+        "document": 0, "origin": origin, "evidence": 0,
         "fr": "Une épaisse pièce de bœuf avec son os, cuite au gril.",
         "en": "A thick bone-in cut of beef, cooked over a grill.",
     }]})}}]}
@@ -124,7 +124,7 @@ class MealSourceTests(unittest.TestCase):
         brief = MealSources(source).discover(TOWN)
         raw = response(brief)
         value = json.loads(raw["choices"][0]["message"]["content"])
-        value["dishes"][0]["evidence"] = "Wikipedia category: Cuisine of Tuscany."
+        value["dishes"][0]["evidence"] = 1
         raw["choices"][0]["message"]["content"] = json.dumps(value)
         self.assertEqual(selected_meals(raw, brief, TOWN)[0]["area"], "Tuscany")
 
@@ -134,6 +134,8 @@ class MealSourceTests(unittest.TestCase):
             lambda value: value["dishes"][0].update(document=-1),
             lambda value: value["dishes"][0].update(origin=0),
             lambda value: value["dishes"][0].update(evidence="Made up Tuscan origin."),
+            lambda value: value["dishes"][0].update(evidence=99),
+            lambda value: value["dishes"][0].update(evidence=True),
             lambda value: value["dishes"][0].update(fr="<script>untrusted text here</script>"),
             lambda value: value["dishes"].append(value["dishes"][0]),
         ):
@@ -163,18 +165,35 @@ class MealSourceTests(unittest.TestCase):
         source.api = api
         self.assertEqual(len(MealSources(source).discover(TOWN)["documents"]), 1)
 
-    def test_paid_or_unknown_offer_never_dispatches_generation(self):
-        writer = FreeMealWriter("fixture", "fixture-model")
-        writer.writer = Mock(model="fixture-model")
+    def test_unknown_or_more_expensive_offer_never_dispatches_generation(self):
+        writer = MealWriter("fixture", MODEL)
+        self.assertEqual(writer.writer.timeout, 180)
+        writer.writer = Mock(model=MODEL)
         offer = Mock()
         offer.__enter__ = Mock(return_value=offer)
         offer.__exit__ = Mock(return_value=False)
         offer.status = 200
-        offer.read.return_value = json.dumps({"data": [{"id": "fixture-model", "pricing": {}}]}).encode()
+        offer.read.return_value = json.dumps({"data": [{"id": MODEL, "pricing": {}}]}).encode()
         writer.writer.opener.open.return_value = offer
         with self.assertRaises(WorkshopError):
             writer({})
         writer.writer.assert_not_called()
+        pricing = {"currency_unit": "USD", "prompt": "0.0000001", "completion": "0.00000031",
+                   "request": "0", "input_cache_reads": "0", "input_cache_writes": "0"}
+        for invalid in (
+            {**pricing, "prompt": "0.00000011"},
+            {**pricing, "completion": "0.00000032"},
+            {**pricing, "request": "0.001"},
+            {**pricing, "currency_unit": "EUR"},
+            {**pricing, "prompt": "NaN"},
+        ):
+            offer.read.return_value = json.dumps({"data": [{"id": MODEL, "pricing": invalid}]}).encode()
+            with self.assertRaises(WorkshopError):
+                writer({})
+            writer.writer.assert_not_called()
+        offer.read.return_value = json.dumps({"data": [{"id": MODEL, "pricing": pricing}]}).encode()
+        writer({"documents": []})
+        writer.writer.assert_called_once_with({"documents": []})
 
 
 class TownMealTests(unittest.TestCase):
@@ -188,6 +207,7 @@ class TownMealTests(unittest.TestCase):
                                      town=lambda data, token: copy.deepcopy(TOWN))
         self.writer = Mock(side_effect=response)
         self.service = TownMeals(self.towns, self.writer)
+        self.service.jobs.configure_quota(PROVIDER, daily=100, monthly=3000)
         self.addCleanup(self.service.close)
         self.payload = {"kind": "meals", "town": "node/10", "journey": "a" * 32,
                         "location": {"col": 0, "row": 0}}
@@ -214,6 +234,9 @@ class TownMealTests(unittest.TestCase):
         self.addCleanup(other.close)
         self.assertEqual(other.request(self.payload, "other-player"), result)
         self.writer.assert_called_once()
+        with self.towns.assets.catalogue.connection() as db:
+            usage = db.execute("SELECT calls FROM provider_usage WHERE provider=?", (PROVIDER,)).fetchall()
+        self.assertEqual([row[0] for row in usage], [1, 1])
 
     def test_concurrent_requests_claim_once_and_errors_do_not_retry(self):
         entered, release = threading.Event(), threading.Event()
@@ -254,6 +277,34 @@ class TownMealTests(unittest.TestCase):
         self.assertIn("not configured", disabled.request(self.payload, "capability")["error"])
         with self.assertRaises(JourneyRequest):
             self.service.request({**self.payload, "url": "https://example.com"}, "capability")
+
+    def test_unconfigured_exhausted_daily_or_monthly_quota_prevents_any_model_call(self):
+        for limits in (None, (0, 3000), (100, 0)):
+            with self.subTest(limits=limits):
+                with self.towns.assets.catalogue.connection() as db:
+                    db.execute("DELETE FROM provider_quotas WHERE provider=?", (PROVIDER,))
+                    db.execute("DELETE FROM worker_jobs WHERE kind='town-meals'")
+                    db.execute("DELETE FROM town_documents")
+                if limits is not None:
+                    self.service.jobs.configure_quota(PROVIDER, daily=limits[0], monthly=limits[1])
+                with self.assertLogs(level="ERROR"):
+                    result = self.settled()
+                self.assertTrue(result["error"])
+                self.writer.assert_not_called()
+                self.assertEqual(self.settled(), result)
+
+    def test_paid_dispatch_is_counted_even_if_the_provider_fails(self):
+        self.writer.side_effect = OSError("Uncertain provider response")
+        with self.assertLogs(level="ERROR"):
+            result = self.settled()
+        self.assertTrue(result["error"])
+        self.assertEqual(self.settled(), result)
+        with self.towns.assets.catalogue.connection() as db:
+            self.assertEqual([r[0] for r in db.execute(
+                "SELECT calls FROM provider_usage WHERE provider=?", (PROVIDER,))], [1, 1])
+            self.assertEqual(db.execute("SELECT status,attempts FROM worker_jobs WHERE kind='town-meals'").fetchone(),
+                             ("failed", 1))
+        self.writer.assert_called_once()
 
     def test_town_authorization_is_required_even_for_cached_results_and_photos(self):
         self.settled()

@@ -2,6 +2,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
 import hashlib
 import json
 import logging
@@ -11,12 +12,16 @@ import unicodedata
 import uuid
 
 from asset_storage import AssetError
-from content_factory import OvhWriter, verify_free_text_model
+from content_factory import OvhWriter, WorkshopError
 from content_storage import clock
+from durable_jobs import DurableJobs
 from journeys import JourneyCapacity, JourneyRequest
 from town_content import (allowed_url, coordinate, digest, distance, documentary_photo)
 
-VERSION = "town-meals-v1"
+VERSION = "town-meals-v2"
+MODEL = "Mistral-Small-3.2-24B-Instruct-2506"
+PROVIDER = "ovh-town-meals"
+KIND = "town-meals"
 MAX_MEALS = 6
 LEASE_SECONDS = 600
 
@@ -43,7 +48,7 @@ def provider_request(brief, model):
             "properties": {
                 "document": {"type": "integer", "minimum": 0, "maximum": 15},
                 "origin": {"type": "integer", "minimum": 0, "maximum": 4},
-                "evidence": {"type": "string", "minLength": 10, "maxLength": 600},
+                "evidence": {"type": "integer", "minimum": 0, "maximum": 3},
                 **{lang: {"type": "string", "minLength": 20, "maxLength": 400} for lang in ("fr", "en")},
             }}
     return {
@@ -56,9 +61,11 @@ def provider_request(brief, model):
                 "generic food categories or whole cuisines. A place being mentioned is NOT enough: "
                 "the excerpt must explicitly associate the dish's tradition or origin with one supplied "
                 "origin or its demonym, or explicitly categorize it in that region's cuisine. "
+                "Choose the origin index ONLY from that document's allowedOrigins. "
                 "Reject dishes invented elsewhere, incidental mentions, restaurants "
-                "and people. Return document and origin indices and an EXACT short quotation from that "
-                "document establishing this association. Write your own concise equivalent French and English "
+                "and people. Return document, allowed origin and evidence indices. Evidence is an index "
+                "into that document's evidence array, not a quotation or rewritten text. Prefer a regional "
+                "cuisine category when it establishes the association. Write your own concise equivalent French and English "
                 "ingredient/preparation descriptions using only the supplied facts. Do not copy article prose "
                 "into descriptions. No invented history, health claims, availability, prices, URLs or markup. "
                 "Return an empty dishes array if the sources do not establish any local dish."
@@ -73,12 +80,34 @@ def provider_request(brief, model):
     }
 
 
-class FreeMealWriter:
+class MealWriter:
     def __init__(self, token, model):
-        self.writer = OvhWriter(token, model, provider_request, timeout=60)
+        self.writer = OvhWriter(token, model, provider_request, timeout=180)
 
     def __call__(self, brief):
-        verify_free_text_model(self.writer.opener, self.writer.model)
+        if self.writer.model != MODEL:
+            raise WorkshopError("Unapproved culinary model; no generation sent.", 503)
+        try:
+            with self.writer.opener.open(
+                    "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/models", timeout=15) as response:
+                raw = response.read(64 * 1024 + 1)
+                if response.status != 200 or len(raw) > 64 * 1024:
+                    raise ValueError("Invalid model catalogue response.")
+                catalogue = json.loads(raw)
+            models = catalogue.get("data") if isinstance(catalogue, dict) else None
+            matches = [m for m in models if isinstance(m, dict) and m.get("id") == MODEL] if isinstance(models, list) else []
+            pricing = matches[0].get("pricing") if len(matches) == 1 else None
+            limits = {"prompt": Decimal("0.0000001"), "completion": Decimal("0.00000031"),
+                      "request": Decimal(0), "input_cache_reads": Decimal(0),
+                      "input_cache_writes": Decimal(0)}
+            if not isinstance(pricing, dict) or pricing.get("currency_unit") != "USD":
+                raise ValueError("Missing or unsupported culinary model pricing.")
+            for key, limit in limits.items():
+                price = Decimal(str(pricing.get(key)))
+                if not price.is_finite() or not 0 <= price <= limit:
+                    raise ValueError("Culinary model pricing exceeds the approved rates.")
+        except (OSError, ValueError, InvalidOperation) as error:
+            raise WorkshopError("Cannot confirm approved culinary pricing; no generation or fallback sent.", 503) from error
         return self.writer(brief)
 
 
@@ -171,11 +200,18 @@ class MealSources:
                             and any(mentions(category, alias) for o in origins for alias in o["aliases"])]
                 evidence = text + "".join("\nWikipedia category: " + category + "." for category in regional[:3])
                 linked = {normalized(link.get("title", "")) for link in page.get("links", [])}
-                if text and allowed_url(url) and (regional or any(
-                        normalized(o["article"]) in linked for o in origins)) and any(
+                allowed_origins = [i for i, o in enumerate(origins)
+                                   if normalized(o["article"]) in linked or any(
+                                       mentions(category, alias) for category in regional
+                                       for alias in o["aliases"])]
+                if text and allowed_url(url) and allowed_origins and any(
                         mentions(evidence, alias) for o in origins for alias in o["aliases"]):
                     documents.setdefault(url, {"title": page["title"], "text": evidence,
                                                "url": url, "image": page.get("pageimage"),
+                                               "allowedOrigins": allowed_origins,
+                                               "evidence": [text[:600], *(
+                                                   "Wikipedia category: " + category + "."
+                                                   for category in regional[:3])],
                                                "_priority": bool(regional)})
         ordered = sorted(documents.values(), key=lambda doc: not doc["_priority"])[:16]
         for doc in ordered:
@@ -201,10 +237,12 @@ def selected_meals(response, brief, town):
                     or doc_id in used):
                 raise ValueError()
             doc, origin = brief["documents"][doc_id], brief["origins"][origin_id]
-            evidence = dish["evidence"]
-            if (not isinstance(evidence, str) or not 10 <= len(evidence) <= 600
-                    or evidence not in doc["text"]
-                    or not any(mentions(evidence, a) for a in origin["aliases"])
+            evidence_id = dish["evidence"]
+            if (type(evidence_id) is not int or not 0 <= evidence_id < len(doc["evidence"])
+                    or origin_id not in doc["allowedOrigins"]):
+                raise ValueError()
+            evidence = doc["evidence"][evidence_id]
+            if (evidence_id > 0 and not any(mentions(evidence, alias) for alias in origin["aliases"])
                     or any(not isinstance(dish[lang], str) or not 20 <= len(dish[lang]) <= 400
                            or re.search(r"[<>\x00-\x1f]|https?://", dish[lang]) for lang in ("fr", "en"))):
                 raise ValueError()
@@ -229,6 +267,7 @@ class TownMeals:
     def __init__(self, towns, writer=None):
         self.towns, self.writer = towns, writer
         self.assets = towns.assets
+        self.jobs = DurableJobs(self.assets.catalogue)
         self.pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="town-meals")
         self.lock = threading.Lock()
         self.tasks = set()
@@ -306,7 +345,25 @@ class TownMeals:
         try:
             brief = MealSources(self.towns.source).discover(town)
             if brief["documents"]:
-                result["meals"] = selected_meals(self.writer(brief), brief, town)
+                request = digest([VERSION, town["osmId"]])
+                self.jobs.enqueue(KIND, request, {"town": town["osmId"], "version": VERSION,
+                                                 "model": MODEL}, provider=PROVIDER, max_attempts=1)
+                job = self.jobs.acquire(KIND, request=request, seconds=LEASE_SECONDS)
+                if job is None:
+                    raise AssetError("Culinary generation was already attempted; no automatic retry.")
+                try:
+                    self.jobs.dispatch(job)
+                    result["meals"] = selected_meals(self.writer(brief), brief, town)
+                    self.jobs.finish(job)
+                except Exception as error:
+                    catalogue = self.assets.catalogue
+                    with catalogue.connection() as db:
+                        db.execute(catalogue.sql(
+                            "UPDATE worker_jobs SET status='failed',error=? "
+                            "WHERE kind=? AND request=? AND token=? AND status IN ('leased','dispatched') "
+                            "AND expires>(" + clock(catalogue) + ")"),
+                            (str(error)[:2000], KIND, request, job["token"]))
+                    raise
             for meal in result["meals"]:
                 image = meal.pop("_image")
                 if image:

@@ -1,6 +1,11 @@
 {
-  "version": "0.22.12",
+  "version": "0.22.13",
   "entries": [
+    {
+      "version": "0.22.13",
+      "fr": "La découverte culinaire est activée avec le modèle texte autorisé et des quotas serveur partagés : 100 nouvelles recherches par jour et 3 000 par mois. Les villes déjà documentées et leurs photos sont réutilisées depuis le cache. Les tarifs du fournisseur sont vérifiés avant chaque appel ; aucun nouvel essai automatique.",
+      "en": "Culinary discovery is enabled with the approved text model and shared server quotas: 100 new searches per day and 3,000 per month. Documented towns and their photographs are reused from the cache. Provider rates are checked before every call; there are no automatic retries."
+    },
     {
       "version": "0.22.12",
       "fr": "Les repas locaux explorent désormais les spécialités documentées de la ville et de sa région, au-delà du petit catalogue initial. Les sources géographiques et culinaires guident la sélection et les descriptions bilingues. Les plats et leurs photos réutilisables, avec crédits et licences, sont conservés sur le serveur et partagés entre les visites. Les repas habituels restent disponibles pendant la recherche ou en cas d'erreur.",

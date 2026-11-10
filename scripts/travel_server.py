@@ -51,7 +51,7 @@ from content_storage import clock
 from quest_destinations import QuestDestinations
 from characters import Characters
 from town_content import TownContent
-from town_meals import TownMeals, FreeMealWriter
+from town_meals import TownMeals, MealWriter
 from change_requests import ChangeRequests, report_storage
 from admin_console import AdminConsole, AdminDenied, COOKIE
 from inscriptions import Inscriptions, moderation_request
@@ -876,7 +876,7 @@ def make_handler(store, jobs, path_pool=None):
                             artifacts=main_artifacts)
     main_artifacts.characters = characters
     town_content = TownContent(journeys, lore)
-    town_meals = TownMeals(town_content, FreeMealWriter(live_narrative.writer.token, LIVE_TEXT_MODEL)
+    town_meals = TownMeals(town_content, MealWriter(live_narrative.writer.token, LIVE_TEXT_MODEL)
                           if live_narrative.writer else None)
     town_legends = TownLegends(journeys, lore)
     live_narrative.town_legends = town_legends

@@ -31,7 +31,7 @@ export async function discoverTownMeals(state, town, economy, signal, {
     }
     return details.image ? response.blob() : response.json();
   }
-  for (let poll = 0; poll < 180; poll++) {
+  for (let poll = 0; poll < 360; poll++) {
     const result = await send();
     if (result.identity !== town || typeof result.loading !== "boolean" ||
         typeof result.error !== "string" || !Array.isArray(result.meals) ||

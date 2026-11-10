@@ -174,7 +174,7 @@ donnée supprimée. La cible peut démarrer vide, sans migration des données ex
 Le stockage partagé a ensuite été provisionné et activé avec l'autorisation
 explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
-## Source-grounded town meals (implementation, not yet deployed)
+## Source-grounded town meals
 
 Culinary discovery uses authenticated POST `/api/town-content` with `kind: meals`,
 the existing private journey capability and a server-verified mapped town.
@@ -183,16 +183,34 @@ and dispatch leases use a separate key namespace in `town_documents`; dish photo
 use durable `town-meal-photographs` assets with license provenance.
 
 The existing `ARCANE_LIVE_TEXT_TOKEN_FILE` configures the writer. Each new
-town/version has at most one attempt and the model must have confirmed zero USD
-pricing immediately before dispatch. Shared claims prevent duplicate calls;
+town/version has at most one attempt. On 10 November the user approved paid
+Mistral Small culinary calls at maximum 0.10 USD/million input tokens and
+0.31 USD/million output tokens, with zero request/cache fees. The writer verifies
+these ceilings before each call; no substitute model is used.
+The existing durable-job ledger reserves calls before dispatch, against the
+dedicated `ovh-town-meals` quota of 100/day UTC and 3,000/month UTC.
+Configure it explicitly with the application's shared storage environment:
+
+```sh
+.venv/bin/python scripts/durable_jobs.py quota --provider ovh-town-meals --daily 100 --monthly 3000
+```
+
+Missing/exhausted quotas prevent the call; reserved attempts are not refunded
+after a provider failure. Version `town-meals-v2` avoids retaining the earlier
+free-only refusal as a permanent result after this explicit approval.
+Shared claims prevent duplicate calls;
 expired leases and failed attempts remain explicit and are never redispatched
 automatically. Two workers bound simultaneous research. Only public town facts
 and bounded documentary excerpts reach the model, not private journey content.
 Results are shared across players; local journey saves retain the acquired
 catalogue additions. Application errors and optional photo failures are logged.
 
-The model selects source indices and original bilingual descriptions, never
-URLs, geography or economy values. Server-built meal records bind each result
+The model selects source, allowed origin and documentary evidence indices,
+plus original bilingual descriptions, never URLs, geography or economy values.
+Evidence is copied from the server's original excerpt or regional cuisine
+categories, not reconstructed from a model quotation. Generation has a
+180-second timeout; the client polls for up to six minutes without blocking
+ordinary meals. Server-built meal records bind each result
 to its verified town/country, its Wikipedia article and Wikidata regional source.
 Documentary photos are fetched through the existing Wikimedia allowlist and
 served only after checking town membership and the private capability.

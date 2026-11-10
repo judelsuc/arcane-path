@@ -66,6 +66,22 @@ test("discovery polls with capability and uses only server-derived dishes", asyn
   });
 });
 
+test("slow generation stays pending beyond three minutes but stops after six", async () => {
+  let polls = 0;
+  const found = await discoverTownMeals(state, "node/10", economy, controller().signal, {
+    fetcher: async () => response(++polls <= 190 ? { ...result([]), loading: true } : result([dish])),
+    wait: async () => {},
+  });
+  assert.deepEqual(found.meals, [dish]);
+  assert.equal(polls, 191);
+  polls = 0;
+  await assert.rejects(discoverTownMeals(state, "node/10", economy, controller().signal, {
+    fetcher: async () => { polls++; return response({ ...result([]), loading: true }); },
+    wait: async () => {},
+  }), /still pending/);
+  assert.equal(polls, 360);
+});
+
 test("discovery rejects mismatched towns, unsafe sources, forged associations and errors", async () => {
   for (const value of [
     { ...result([dish]), identity: "node/other" },

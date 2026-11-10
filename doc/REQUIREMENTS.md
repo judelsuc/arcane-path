@@ -3631,8 +3631,11 @@
   reusability, with author, source and license links. Missing/unavailable photos
   must not suppress the dish; do not generate substitute illustrations.
 - Show loading, absence and failure explicitly; keep existing meals usable.
-  Use the configured text provider only after verifying zero pricing. Persist
-  interrupted/failed attempts without automatic redispatch or a paid fallback.
+  User-approved culinary provider: Mistral Small, maximum 0.10 USD/million input
+  tokens and 0.31 USD/million output tokens, no per-request or cache fees.
+  Verify rates before each call and reserve shared quotas of 100 calls per UTC
+  day and 3,000 per UTC month before dispatch. Missing/exhausted quota blocks
+  generation. Count failed attempts; never automatically redispatch or switch models.
 - Expand documented dishes across Europe, not just French sources or areas.
 - Current catalogue: 19 dishes, including 15 additions covering 15 European
   countries. Each has a documentary URL and original short FR/EN description.

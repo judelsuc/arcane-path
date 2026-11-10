@@ -1930,10 +1930,15 @@ uniquement des fichiers Wikimedia reutilisables, avec auteur, source et licence,
 servis par le serveur. Aucune image n'est generee pour remplacer une photo absente.
 
 La recherche utilise la cle privee de texte deja configuree
-(`ARCANE_LIVE_TEXT_TOKEN_FILE`) et verifie que le modele est gratuit avant
-toute generation. Une seule tentative par ville et version est conservee,
-y compris les echecs et interruptions ; aucun nouvel essai automatique ou
-modele payant de secours. La file comporte au plus deux recherches simultanees.
+(`ARCANE_LIVE_TEXT_TOKEN_FILE`). Mistral Small est autorise pour cette fonction
+avec un plafond de 0,10 USD par million de jetons d'entree et 0,31 USD par million
+de sortie, verifies avant chaque appel. Le quota partage `ovh-town-meals` limite
+les appels a 100 par jour UTC et 3 000 par mois UTC. Il doit etre configure
+explicitement ; son absence ou son epuisement bloque la generation.
+Une seule tentative par ville et version est conservee, y compris les echecs
+et interruptions ; aucun nouvel essai automatique ni modele de secours.
+Les tentatives reservees restent comptees meme si la reponse echoue.
+La file comporte au plus deux recherches simultanees.
 Sans configuration, le menu indique l'indisponibilite et conserve le catalogue.
 Chaque repas a une offre fictive stable par partie, case et jour UTC :
 prix tire entre 70 et 150 % de son tarif local et portion proportionnelle au
