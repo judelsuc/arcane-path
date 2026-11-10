@@ -113,8 +113,8 @@ modest **eight-room** profile. New paced protocols are `seeded-platform-v2`,
 `seeded-investigation-v3` and `seeded-dungeon-v4`; retained town format assignments
 do not change.
 
-On loaded **building cells**, the Sleep menu also offers a fictional
-**Sneak into an empty building** scene (not a statement about real occupancy).
+On loaded **building cells**, the Sleep menu also offers
+**Sneak into an empty building**.
 Searching costs ten simulated minutes, once per cell per game day. A reaction
 QTE uses the usual three-second preparation and held-key release. Success grants
 normal free sheltered sleep, without food or washing. Failure, skipping or

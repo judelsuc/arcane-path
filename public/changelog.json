@@ -1,10 +1,15 @@
 {
-  "version": "0.22.17",
+  "version": "0.22.18",
   "entries": [
     {
+      "version": "0.22.18",
+      "fr": "Les textes des abris, des actions de survie et des localités vont à l'essentiel : les possibilités, les règles et leurs conséquences, sans interrompre l'immersion.",
+      "en": "Shelter, survival-action and town text focuses on available choices, rules and consequences without breaking immersion."
+    },
+    {
       "version": "0.22.17",
-      "fr": "Sur les cases bâtiment, cherchez un abri vide dans une scène fictive : dix minutes de recherche et un QTE, un essai par case et par jour. Réussir permet de dormir gratuitement à l'abri, sans repas ni toilette ; échouer, passer ou abandonner le défi ajoute 5 points de vigilance. Les essais sont conservés à la reprise. Le collecteur est retiré du jeu principal : les informations recueillies auprès des habitants restent dans le journal.",
-      "en": "On building cells, search for an empty shelter in a fictional scene: ten minutes of searching and a QTE, once per cell per day. Success grants free sheltered sleep without food or washing; failing, skipping or abandoning the challenge adds 5 vigilance points. Attempts persist on resume. The collector is removed from the main game: information gathered from inhabitants remains in the journal."
+      "fr": "Sur les cases bâtiment, cherchez un abri vide : dix minutes de recherche et un QTE, un essai par case et par jour. Réussir permet de dormir gratuitement à l'abri, sans repas ni toilette ; échouer, passer ou abandonner le défi ajoute 5 points de vigilance. Les essais sont conservés à la reprise. Le collecteur est retiré du jeu principal : les informations recueillies auprès des habitants restent dans le journal.",
+      "en": "On building cells, search for an empty shelter: ten minutes of searching and a QTE, once per cell per day. Success grants free sheltered sleep without food or washing; failing, skipping or abandoning the challenge adds 5 vigilance points. Attempts persist on resume. The collector is removed from the main game: information gathered from inhabitants remains in the journal."
     },
     {
       "version": "0.22.16",

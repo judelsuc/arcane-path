@@ -11,6 +11,19 @@ test("selects a supported browser language with French as default", () => {
   assert.equal(resolveLocale([]), "fr");
 });
 
+test("shelter, survival and town copy stays immersive while retaining gameplay rules", () => {
+  for (const language of ["en", "fr"]) {
+    for (const key of ["buildingSleepNote", "buildingSleepAction", "survivalChoicesFiction", "townFiction"]) {
+      assert.doesNotMatch(translate(language, key, { minutes: 10, hours: 8 }),
+        /fiction|ficti[fnv]|occupancy|occupation réelle|accusation/i);
+    }
+    const note = translate(language, "buildingSleepNote", { minutes: 10, hours: 8 });
+    assert.match(note, /10 min/);
+    assert.match(note, /8 h/);
+    assert.match(note, /\+5 vigilance/);
+  }
+});
+
 test("catalogs contain the same keys and interpolation parameters", () => {
   assert.deepEqual(Object.keys(translations.en).sort(), Object.keys(translations.fr).sort());
   for (const key of Object.keys(translations.fr)) {
