@@ -215,6 +215,19 @@ to its verified town/country, its Wikipedia article and Wikidata regional source
 Documentary photos are fetched through the existing Wikimedia allowlist and
 served only after checking town membership and the private capability.
 
+When the writer is absent, unavailable, out of quota, rejects pricing, or returns
+invalid output, a deterministic source-only fallback accepts at most six dishes.
+It requires a prepared-food definition in the article lead and either explicit
+regional wording or a matching regional cuisine category; incidental place
+mentions do not qualify. It uses generic original FR/EN source-invitation text,
+not copied article descriptions or invented ingredients. The result carries
+`mode: documentary`, displayed with localized degraded/empty feedback; photos,
+meal identifiers and shared persistence use the same path as model results.
+Existing successful cache entries are unchanged. Old cached failures can claim
+one source-only recovery under the existing lease, never another paid attempt.
+Documentary failures are retained without retries. Provider failures remain
+logged and reserved calls remain counted even when fallback succeeds.
+
 ## Culinary discovery activation, 0.22.13 (10 November 2026)
 
 Deployed runtime `2487e7e16b2eafb18d0fa0f119d1d51afc25999d`, tagged

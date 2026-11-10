@@ -383,7 +383,8 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findSpecialtie
         if (controller.signal.aborted || request !== generation) return;
         if (result) {
           for (const photo of result.photos) dishPhotos.set(photo.id, URL.createObjectURL(photo.blob));
-          specialtyStatus = result.warnings.length ? "partial" : result.meals.length ? "ready" : "empty";
+          specialtyStatus = result.mode === "documentary" ? result.meals.length ? "documentary" : "documentaryEmpty"
+            : result.warnings.length ? "partial" : result.meals.length ? "ready" : "empty";
           specialtyError = result.warnings.join(" ");
         } else specialtyStatus = "";
       } catch (error) {

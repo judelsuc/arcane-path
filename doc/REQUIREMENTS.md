@@ -3636,6 +3636,12 @@
   Verify rates before each call and reserve shared quotas of 100 calls per UTC
   day and 3,000 per UTC month before dispatch. Missing/exhausted quota blocks
   generation. Count failed attempts; never automatically redispatch or switch models.
+- If culinary generation is unavailable, use a conservative source-only fallback:
+  require a prepared-dish definition and explicit regional evidence, not incidental
+  geographic mentions. Offer at most six dishes, generic original FR/EN text and
+  licensed photos through the same shared server cache. Explain documentary mode
+  and empty results in the menu. Allow one source-only recovery of old cached
+  failures without retrying paid generation; retain documentary source failures.
 - Expand documented dishes across Europe, not just French sources or areas.
 - Current catalogue: 19 dishes, including 15 additions covering 15 European
   countries. Each has a documentary URL and original short FR/EN description.

@@ -152,6 +152,23 @@ function harness(t, language = "en", findAccommodations, selectAccommodation, na
 }
 
 for (const language of ["fr", "en"]) {
+  test(`${language} documentary fallback explains degraded or empty results without hiding usual meals`, async t => {
+    let meals = [economy.meals[0]];
+    const h = harness(t, language, undefined, undefined, undefined, async () => ({
+      meals, mode: "documentary", photos: [], warnings: [],
+    }));
+    await h.ui.open("eat");
+    assert.equal(h.element("#economy-specialties-status").textContent,
+      translate(language, "specialtyDiscovery.documentary"));
+    assert.equal(h.buttons()[0].disabled, false);
+    h.ui.reset();
+    meals = [];
+    await h.ui.open("eat");
+    assert.equal(h.element("#economy-specialties-status").textContent,
+      translate(language, "specialtyDiscovery.documentaryEmpty"));
+    assert.equal(h.buttons()[0].disabled, false);
+  });
+
   test(`${language} culinary discovery keeps meals usable and displays sourced dishes with photo credits`, async t => {
     let finish;
     const pending = new Promise(resolve => { finish = resolve; });

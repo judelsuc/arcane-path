@@ -35,7 +35,8 @@ export async function discoverTownMeals(state, town, economy, signal, {
     const result = await send();
     if (result.identity !== town || typeof result.loading !== "boolean" ||
         typeof result.error !== "string" || !Array.isArray(result.meals) ||
-        result.meals.length > 6 || result.warnings !== undefined && (
+        result.meals.length > 6 || result.mode !== undefined && result.mode !== "documentary" ||
+        result.warnings !== undefined && (
           !Array.isArray(result.warnings) || result.warnings.some(w => typeof w !== "string"))) {
       throw new Error("Invalid culinary discovery response.");
     }
@@ -64,7 +65,7 @@ export async function discoverTownMeals(state, town, economy, signal, {
         return null;
       }
     }));
-    return { meals: result.meals, warnings, photos: photos.filter(Boolean) };
+    return { meals: result.meals, warnings, photos: photos.filter(Boolean), mode: result.mode };
   }
   throw new Error("Culinary discovery is still pending. Please try again later.");
 }

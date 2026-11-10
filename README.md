@@ -1939,7 +1939,16 @@ Une seule tentative par ville et version est conservee, y compris les echecs
 et interruptions ; aucun nouvel essai automatique ni modele de secours.
 Les tentatives reservees restent comptees meme si la reponse echoue.
 La file comporte au plus deux recherches simultanees.
-Sans configuration, le menu indique l'indisponibilite et conserve le catalogue.
+Si le modele est absent, refuse, en erreur, hors quota ou renvoie une reponse
+invalide, un secours documentaire conservateur cherche au plus six plats :
+l'introduction doit definir un plat prepare et une categorie culinaire regionale
+ou une formulation explicite doit etablir son association avec la region.
+Une simple mention geographique ne suffit pas. Le menu indique ce mode degrade,
+y compris si aucun plat n'est confirme. Les descriptions bilingues sont des
+textes generiques invitant a consulter la source, sans ingredients inventes.
+Les memes photos licenciees et caches serveur sont utilises. Un ancien echec
+en cache peut recevoir une seule recuperation documentaire, sans nouvel appel
+au modele. Les echecs des sources restent explicites et conserves.
 Chaque repas a une offre fictive stable par partie, case et jour UTC :
 prix tire entre 70 et 150 % de son tarif local et portion proportionnelle au
 prix (900 kcal pour une unite de repas locale). Les plats et etablissements

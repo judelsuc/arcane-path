@@ -247,20 +247,69 @@ def selected_meals(response, brief, town):
                            or re.search(r"[<>\x00-\x1f]|https?://", dish[lang]) for lang in ("fr", "en"))):
                 raise ValueError()
             used.add(doc_id)
-            meals.append({
-                "id": "discovered-" + digest([VERSION, town["osmId"], doc["url"]])[:24],
-                "name": doc["title"], "area": origin["name"], "scope": "regional",
-                "countries": [brief["country"]], "towns": [town["osmId"]],
-                "bounds": [-180, -90, 180, 90], "mealUnits": 1, "reserveKcal": 900,
-                "fr": dish["fr"], "en": dish["en"], "source": doc["url"],
-                "publisher": "Wikipedia contributors", "originSource": origin["source"],
-                "originEvidence": evidence,
-                "checked": datetime.now(timezone.utc).date().isoformat(),
-                "_image": doc["image"],
-            })
+            meals.append(meal_record(doc, origin, evidence, brief, town, dish["fr"], dish["en"]))
         return meals
     except (KeyError, TypeError, ValueError, IndexError) as error:
         raise ValueError("Invalid or ungrounded culinary model response; no retry was made.") from error
+
+
+def meal_record(doc, origin, evidence, brief, town, fr, en):
+    return {
+        "id": "discovered-" + digest([VERSION, town["osmId"], doc["url"]])[:24],
+        "name": doc["title"], "area": origin["name"], "scope": "regional",
+        "countries": [brief["country"]], "towns": [town["osmId"]],
+        "bounds": [-180, -90, 180, 90], "mealUnits": 1, "reserveKcal": 900,
+        "fr": fr, "en": en, "source": doc["url"],
+        "publisher": "Wikipedia contributors", "originSource": origin["source"],
+        "originEvidence": evidence,
+        "checked": datetime.now(timezone.utc).date().isoformat(),
+        "_image": doc["image"],
+    }
+
+
+def documentary_meals(brief, town):
+    meals = []
+    for doc in brief["documents"]:
+        lead = re.sub(r"\([^()]*\)", "", doc["evidence"][0])
+        definition = re.match(re.escape(doc["title"]) + r"\s+(?:is|are)\s+(?:an?|the)\s+([^.!?;]+)",
+                              lead, re.IGNORECASE)
+        if not definition:
+            continue
+        text = definition[1]
+        food = re.search(r"\b(dish|soup|stew|steak|cake|pastry|bread|sausage|dessert)\b",
+                         text, re.IGNORECASE)
+        if (not food or re.search(r"\b(cuisine|restaurant|person|chef|town|city|region|ingredient)\b",
+                                  text[:food.start()], re.IGNORECASE)
+                or re.search(r"\b(not|never|unlike|outside)\b", text, re.IGNORECASE)):
+            continue
+        associations = []
+        for origin_id in doc["allowedOrigins"]:
+            origin = brief["origins"][origin_id]
+            for evidence in doc["evidence"][1:]:
+                if any(mentions(evidence, alias) for alias in origin["aliases"]):
+                    associations.append((origin_id, evidence))
+                    break
+            else:
+                for alias in origin["aliases"]:
+                    relation = (r"\b(?:from|originating in|originated in|traditional in)\s+"
+                                + re.escape(alias) + r"(?!\w)|(?<!\w)"
+                                + re.escape(alias) + r"\s+cuisine\b")
+                    if re.search(relation, text, re.IGNORECASE):
+                        associations.append((origin_id, doc["evidence"][0]))
+                        break
+        if not associations:
+            continue
+        origin_id, evidence = min(associations, key=lambda match: match[0])
+        origin = brief["origins"][origin_id]
+        meals.append(meal_record(
+            doc, origin, evidence, brief, town,
+            "Spécialité associée à cette région par la source documentaire. "
+            "Consultez la source pour sa préparation.",
+            "A specialty associated with this region by the documentary source. "
+            "See the source for its preparation."))
+        if len(meals) == MAX_MEALS:
+            break
+    return meals
 
 
 class TownMeals:
@@ -294,6 +343,7 @@ class TownMeals:
                 raise JourneyRequest("Photograph does not belong to this town's discovered dishes.")
             record, body = self.assets.read("town-meal-photographs", image)
             return body, record.media_type
+        source_only = False
         if row:
             result = json.loads(row[0])
             if row[1] and row[2] <= row[3]:
@@ -303,24 +353,35 @@ class TownMeals:
                         "UPDATE town_documents SET payload=?,token=NULL,lease=0 "
                         "WHERE cache_key=? AND token=? AND lease<=(" + clock(catalogue) + ")"),
                         (json.dumps(result), key, row[1]))
-            return result
-        if not self.writer:
-            return {"identity": town["osmId"], "loading": False, "meals": [],
-                    "error": "Source-grounded culinary generation is not configured."}
+                    row = db.execute(catalogue.sql(
+                        "SELECT payload,token,lease," + clock(catalogue) +
+                        " FROM town_documents WHERE cache_key=?"), (key,)).fetchone()
+                result = json.loads(row[0])
+            source_only = bool(result.get("error")) and result.get("mode") != "documentary" and not row[1]
+            if not source_only:
+                return result
         result = {"identity": town["osmId"], "loading": True, "meals": [], "error": "", "warnings": []}
+        if source_only:
+            result["mode"] = "documentary"
         with self.lock:
             if len(self.tasks) >= 2:
                 raise JourneyCapacity("Culinary discovery is busy; please try again later.")
             token = uuid.uuid4().hex
             with catalogue.connection() as db:
                 now = float(db.execute("SELECT " + clock(catalogue)).fetchone()[0])
-                claimed = db.execute(catalogue.sql(
-                    "INSERT INTO town_documents(cache_key,payload,fetched,expires,token,lease) "
-                    "VALUES(?,?,?,0,?,?) ON CONFLICT(cache_key) DO NOTHING RETURNING cache_key"),
-                    (key, json.dumps(result), now, token, now + LEASE_SECONDS)).fetchone()
+                if source_only:
+                    claimed = db.execute(catalogue.sql(
+                        "UPDATE town_documents SET payload=?,token=?,lease=? "
+                        "WHERE cache_key=? AND token IS NULL AND payload=? RETURNING cache_key"),
+                        (json.dumps(result), token, now + LEASE_SECONDS, key, row[0])).fetchone()
+                else:
+                    claimed = db.execute(catalogue.sql(
+                        "INSERT INTO town_documents(cache_key,payload,fetched,expires,token,lease) "
+                        "VALUES(?,?,?,0,?,?) ON CONFLICT(cache_key) DO NOTHING RETURNING cache_key"),
+                        (key, json.dumps(result), now, token, now + LEASE_SECONDS)).fetchone()
             if claimed:
                 self.tasks.add(key)
-                self.pool.submit(self._resolve, key, token, town)
+                self.pool.submit(self._resolve, key, token, town, source_only)
         return result
 
     def _photo(self, title):
@@ -340,30 +401,20 @@ class TownMeals:
                                                               "version": VERSION})
         return {**metadata, "imageId": image_id}
 
-    def _resolve(self, key, token, town):
+    def _resolve(self, key, token, town, source_only=False):
         result = {"identity": town["osmId"], "loading": False, "meals": [], "error": "", "warnings": []}
+        if source_only or not self.writer:
+            result["mode"] = "documentary"
         try:
             brief = MealSources(self.towns.source).discover(town)
-            if brief["documents"]:
-                request = digest([VERSION, town["osmId"]])
-                self.jobs.enqueue(KIND, request, {"town": town["osmId"], "version": VERSION,
-                                                 "model": MODEL}, provider=PROVIDER, max_attempts=1)
-                job = self.jobs.acquire(KIND, request=request, seconds=LEASE_SECONDS)
-                if job is None:
-                    raise AssetError("Culinary generation was already attempted; no automatic retry.")
+            if brief["documents"] and result.get("mode") != "documentary":
                 try:
-                    self.jobs.dispatch(job)
-                    result["meals"] = selected_meals(self.writer(brief), brief, town)
-                    self.jobs.finish(job)
-                except Exception as error:
-                    catalogue = self.assets.catalogue
-                    with catalogue.connection() as db:
-                        db.execute(catalogue.sql(
-                            "UPDATE worker_jobs SET status='failed',error=? "
-                            "WHERE kind=? AND request=? AND token=? AND status IN ('leased','dispatched') "
-                            "AND expires>(" + clock(catalogue) + ")"),
-                            (str(error)[:2000], KIND, request, job["token"]))
-                    raise
+                    result["meals"] = self._generate(brief, town)
+                except (OSError, ValueError, AssetError, WorkshopError):
+                    logging.exception("Culinary model unavailable for %s; using documentary fallback", town["osmId"])
+                    result["mode"] = "documentary"
+            if result.get("mode") == "documentary":
+                result["meals"] = documentary_meals(brief, town)
             for meal in result["meals"]:
                 image = meal.pop("_image")
                 if image:
@@ -376,7 +427,8 @@ class TownMeals:
                         result["warnings"].append("A dish photograph could not be retrieved.")
         except Exception:
             logging.exception("Culinary discovery failed for %s", town["osmId"])
-            result.update(meals=[], error="Culinary sources or generation failed; no automatic retry. Check server logs.")
+            result.update(meals=[], mode="documentary",
+                          error="Culinary sources or generation failed; no automatic retry. Check server logs.")
         finally:
             try:
                 catalogue = self.assets.catalogue
@@ -391,3 +443,25 @@ class TownMeals:
             finally:
                 with self.lock:
                     self.tasks.discard(key)
+
+    def _generate(self, brief, town):
+        request = digest([VERSION, town["osmId"]])
+        self.jobs.enqueue(KIND, request, {"town": town["osmId"], "version": VERSION,
+                                         "model": MODEL}, provider=PROVIDER, max_attempts=1)
+        job = self.jobs.acquire(KIND, request=request, seconds=LEASE_SECONDS)
+        if job is None:
+            raise AssetError("Culinary generation was already attempted; no automatic retry.")
+        try:
+            self.jobs.dispatch(job)
+            meals = selected_meals(self.writer(brief), brief, town)
+            self.jobs.finish(job)
+            return meals
+        except Exception as error:
+            catalogue = self.assets.catalogue
+            with catalogue.connection() as db:
+                db.execute(catalogue.sql(
+                    "UPDATE worker_jobs SET status='failed',error=? "
+                    "WHERE kind=? AND request=? AND token=? AND status IN ('leased','dispatched') "
+                    "AND expires>(" + clock(catalogue) + ")"),
+                    (str(error)[:2000], KIND, request, job["token"]))
+            raise

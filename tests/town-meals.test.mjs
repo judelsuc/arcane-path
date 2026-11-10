@@ -82,6 +82,16 @@ test("slow generation stays pending beyond three minutes but stops after six", a
   assert.equal(polls, 360);
 });
 
+test("documentary fallback preserves dishes, photographs and explicit mode including empty results", async () => {
+  for (const meals of [[dish], []]) {
+    const found = await discoverTownMeals(state, "node/10", economy, controller().signal, {
+      fetcher: async () => response({ ...result(meals), mode: "documentary" }),
+    });
+    assert.equal(found.mode, "documentary");
+    assert.deepEqual(found.meals, meals);
+  }
+});
+
 test("discovery rejects mismatched towns, unsafe sources, forged associations and errors", async () => {
   for (const value of [
     { ...result([dish]), identity: "node/other" },
@@ -89,6 +99,7 @@ test("discovery rejects mismatched towns, unsafe sources, forged associations an
     result([{ ...dish, source: "https://evil.example/food" }]),
     result([{ ...dish, mealUnits: 100 }]),
     { ...result([]), error: "Source offline" },
+    { ...result([]), mode: "invented" },
   ]) await assert.rejects(discoverTownMeals(state, "node/10", economy, controller().signal, {
     fetcher: async () => response(value),
   }));

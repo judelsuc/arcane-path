@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from asset_storage import AssetError, local_storage
 from content_factory import WorkshopError
 from journeys import JourneyRequest
-from town_meals import MealWriter, MealSources, TownMeals, selected_meals, MODEL, PROVIDER
+from town_meals import MealWriter, MealSources, TownMeals, selected_meals, documentary_meals, MODEL, PROVIDER
 
 
 STEAK = ("Bistecca alla fiorentina is an Italian steak dish that is one of the most "
@@ -77,6 +77,39 @@ def response(brief):
 
 
 class MealSourceTests(unittest.TestCase):
+    def test_documentary_fallback_requires_dish_definition_and_explicit_regional_association(self):
+        brief = MealSources(Sources()).discover(TOWN)
+        meals = documentary_meals(brief, TOWN)
+        self.assertEqual([m["name"] for m in meals], ["Bistecca alla fiorentina"])
+        self.assertEqual(meals[0]["area"], "Tuscany")
+        self.assertEqual(meals[0]["originEvidence"], STEAK[:600])
+        self.assertEqual(meals[0]["_image"], "Steak.jpg")
+        self.assertNotIn("beef", meals[0]["en"])
+        for text in (
+            "Bistecca alla fiorentina is a dish mentioned by a chef in Tuscany.",
+            "Bistecca alla fiorentina is a restaurant serving a steak in Tuscan cuisine.",
+            "Bistecca alla fiorentina is an ingredient used in a Tuscan cuisine dish.",
+            "Bistecca alla fiorentina is a dish not originating in Tuscany.",
+            "Bistecca alla fiorentina is a chef known for a Tuscan cuisine dish.",
+        ):
+            with self.subTest(text=text):
+                other = copy.deepcopy(brief)
+                other["documents"][0]["evidence"] = [text]
+                self.assertEqual(documentary_meals(other, TOWN), [])
+        brief["documents"][0]["evidence"] = [
+            "Bistecca alla fiorentina is a steak cooked on a grill.",
+            "Wikipedia category: Cuisine of Tuscany.",
+        ]
+        self.assertEqual(documentary_meals(brief, TOWN)[0]["area"], "Tuscany")
+
+    def test_documentary_fallback_is_bounded_and_uses_same_stable_ids_as_model(self):
+        brief = MealSources(Sources()).discover(TOWN)
+        self.assertEqual(documentary_meals(brief, TOWN)[0]["id"],
+                         selected_meals(response(brief), brief, TOWN)[0]["id"])
+        doc = brief["documents"][0]
+        brief["documents"] = [{**doc, "url": doc["url"] + str(i)} for i in range(10)]
+        self.assertEqual(len(documentary_meals(brief, TOWN)), 6)
+
     def test_florence_and_neighbour_resolve_tuscan_steak_without_naples_leak(self):
         for name in ("Firenze", "Fiesole"):
             source = Sources()
@@ -252,8 +285,10 @@ class TownMealTests(unittest.TestCase):
                 self.assertTrue(self.service.request(self.payload, "capability")["loading"])
             release.set()
             result = self.settled()
-        self.assertTrue(result["error"])
-        self.assertEqual(result["meals"], [])
+        self.assertEqual(result["error"], "")
+        self.assertEqual(result["mode"], "documentary")
+        self.assertEqual(len(result["meals"]), 1)
+        self.assertIn("photo", result["meals"][0])
         self.assertEqual(self.settled(), result)
         self.writer.assert_called_once()
 
@@ -274,7 +309,13 @@ class TownMealTests(unittest.TestCase):
     def test_disabled_and_invalid_requests_are_explicit(self):
         disabled = TownMeals(self.towns)
         self.addCleanup(disabled.close)
-        self.assertIn("not configured", disabled.request(self.payload, "capability")["error"])
+        disabled.request(self.payload, "capability")
+        result = self.settled()
+        self.assertEqual(result["mode"], "documentary")
+        self.assertEqual(len(result["meals"]), 1)
+        self.writer.assert_not_called()
+        with self.towns.assets.catalogue.connection() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM provider_usage").fetchone()[0], 0)
         with self.assertRaises(JourneyRequest):
             self.service.request({**self.payload, "url": "https://example.com"}, "capability")
 
@@ -289,7 +330,9 @@ class TownMealTests(unittest.TestCase):
                     self.service.jobs.configure_quota(PROVIDER, daily=limits[0], monthly=limits[1])
                 with self.assertLogs(level="ERROR"):
                     result = self.settled()
-                self.assertTrue(result["error"])
+                self.assertEqual(result["error"], "")
+                self.assertEqual(result["mode"], "documentary")
+                self.assertEqual(len(result["meals"]), 1)
                 self.writer.assert_not_called()
                 self.assertEqual(self.settled(), result)
 
@@ -297,7 +340,9 @@ class TownMealTests(unittest.TestCase):
         self.writer.side_effect = OSError("Uncertain provider response")
         with self.assertLogs(level="ERROR"):
             result = self.settled()
-        self.assertTrue(result["error"])
+        self.assertEqual(result["error"], "")
+        self.assertEqual(result["mode"], "documentary")
+        self.assertEqual(len(result["meals"]), 1)
         self.assertEqual(self.settled(), result)
         with self.towns.assets.catalogue.connection() as db:
             self.assertEqual([r[0] for r in db.execute(
@@ -305,6 +350,50 @@ class TownMealTests(unittest.TestCase):
             self.assertEqual(db.execute("SELECT status,attempts FROM worker_jobs WHERE kind='town-meals'").fetchone(),
                              ("failed", 1))
         self.writer.assert_called_once()
+
+    def test_invalid_model_output_uses_fallback_and_persists_it_across_instances(self):
+        self.writer.side_effect = lambda brief: {"choices": []}
+        with self.assertLogs(level="ERROR"):
+            result = self.settled()
+        self.assertEqual(result["mode"], "documentary")
+        self.assertEqual(len(result["meals"]), 1)
+        other = TownMeals(self.towns, self.writer)
+        self.addCleanup(other.close)
+        self.assertEqual(other.request(self.payload, "another-player"), result)
+        self.writer.assert_called_once()
+
+    def test_fallback_with_no_proven_dish_is_explicit_empty_and_cached(self):
+        self.writer.side_effect = OSError("offline")
+        brief = MealSources(self.source).discover(TOWN)
+        brief["documents"][0]["evidence"] = ["A restaurant in Tuscany."]
+        with patch("town_meals.MealSources.discover", return_value=brief), self.assertLogs(level="ERROR"):
+            result = self.settled()
+        self.assertEqual(result["mode"], "documentary")
+        self.assertEqual(result["meals"], [])
+        self.assertEqual(result["error"], "")
+        self.assertEqual(self.settled(), result)
+
+    def test_source_failure_remains_explicit_and_never_redispatched(self):
+        with patch("town_meals.MealSources.discover", side_effect=OSError("sources offline")) as discover:
+            with self.assertLogs(level="ERROR"):
+                result = self.settled()
+            self.assertTrue(result["error"])
+            self.assertEqual(self.settled(), result)
+            discover.assert_called_once()
+            self.writer.assert_not_called()
+
+    def test_old_cached_failure_gets_one_source_only_recovery_without_paid_dispatch(self):
+        from town_meals import VERSION, digest
+        with self.towns.assets.catalogue.connection() as db:
+            db.execute("INSERT INTO town_documents(cache_key,payload,fetched,expires,token,lease) "
+                       "VALUES(?,?,0,0,NULL,0)", (VERSION + ":" + digest(TOWN["osmId"]),
+                       json.dumps({"identity": TOWN["osmId"], "loading": False, "meals": [],
+                                   "error": "Old provider failure", "warnings": []})))
+        result = self.settled()
+        self.assertEqual(result["mode"], "documentary")
+        self.assertEqual(len(result["meals"]), 1)
+        self.assertEqual(self.settled(), result)
+        self.writer.assert_not_called()
 
     def test_town_authorization_is_required_even_for_cached_results_and_photos(self):
         self.settled()
@@ -316,7 +405,7 @@ class TownMealTests(unittest.TestCase):
                 self.service.request({**self.payload, **details}, "wrong")
         self.writer.assert_called_once()
 
-    def test_expired_discovery_is_explicit_and_never_redispatched(self):
+    def test_expired_discovery_gets_source_only_recovery_without_paid_redispatch(self):
         catalogue = self.service.assets.catalogue
         with catalogue.connection() as db:
             from town_content import digest
@@ -327,7 +416,8 @@ class TownMealTests(unittest.TestCase):
                        (key, json.dumps({"identity": TOWN["osmId"], "loading": True,
                                          "meals": [], "error": "", "warnings": []})))
         result = self.settled()
-        self.assertIn("interrupted", result["error"])
+        self.assertEqual(result["mode"], "documentary")
+        self.assertEqual(len(result["meals"]), 1)
         self.assertEqual(self.settled(), result)
         self.writer.assert_not_called()
 

@@ -1,6 +1,11 @@
 {
-  "version": "0.22.13",
+  "version": "0.22.14",
   "entries": [
+    {
+      "version": "0.22.14",
+      "fr": "Si le modèle texte est indisponible, la découverte culinaire utilise les sources documentaires pour confirmer les spécialités régionales, sans nouvel appel payant. Le menu indique ce mode de secours. Les plats, leurs photos et leurs crédits restent conservés dans le cache serveur.",
+      "en": "If the text model is unavailable, culinary discovery uses documentary sources to confirm regional specialties without another paid call. The menu explains this fallback mode. Dishes, photographs and credits remain cached on the server."
+    },
     {
       "version": "0.22.13",
       "fr": "La découverte culinaire est activée avec le modèle texte autorisé et des quotas serveur partagés : 100 nouvelles recherches par jour et 3 000 par mois. Les villes déjà documentées et leurs photos sont réutilisées depuis le cache. Les tarifs du fournisseur sont vérifiés avant chaque appel ; aucun nouvel essai automatique.",
