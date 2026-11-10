@@ -5,7 +5,7 @@ import { generateInvestigation } from "../minigames/legend-investigation.mjs";
 import { GENERATED_INVESTIGATION_VERSION, replayLegendSession, DUNGEON_SESSION_VERSION, DUNGEON_FOOD_VERSION,
   LOCAL_DUNGEON_VERSION, LOCAL_INVESTIGATION_VERSION, LOCAL_PLATFORM_VERSION, isDungeonSession,
   isPacedLegendSession, PACED_INVESTIGATION_VERSION, PACED_DUNGEON_VERSION, PACED_PLATFORM_VERSION,
-  TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION, TREASURE_PLATFORM_VERSION } from "../legend-session.mjs";
+  TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION, TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION } from "../legend-session.mjs";
 import { stepDungeon } from "../minigames/legend-dungeon.mjs";
 import { stepInvestigation } from "../minigames/legend-investigation.mjs";
 import { stepPlatformer } from "../minigames/legend-platformer.mjs";
@@ -70,6 +70,28 @@ function fixture(format, language = "en", options = {}) {
   };
   return { win, doc, container, api, frames, nodes, results, errors, button, run };
 }
+
+test("new platform adventures render their varied architecture and keep location-neutral guidance inside Help", () => {
+  for (const language of ["fr", "en"]) {
+    const names = new Set();
+    for (let seed = 0; seed < 32; seed++) {
+      const room = replayLegendSession({ contentVersion: VARIED_PLATFORM_VERSION, seed, actions: [] }).level.rooms[0];
+      const f = fixture("platform", language, { seed,
+        authoritative: { contentVersion: VARIED_PLATFORM_VERSION, local: true, health: 85,
+          actions: [], status: "active", onAction() {} },
+      });
+      const heading = f.nodes.find(node => node.tagName === "h2");
+      assert.ok(heading.textContent.startsWith(COPY[language].platformArchitectures[room.archetype]));
+      names.add(room.archetype);
+      const help = f.nodes.find(node => node.className === "legend-help");
+      const descriptions = help.children.map(node => node.textContent).join(" ");
+      assert.doesNotMatch(descriptions, /left ladder|échelle de gauche|key on the right|clé en laiton à droite/);
+      assert.deepEqual(f.errors, []);
+      f.api.destroy();
+    }
+    assert.equal(names.size, 8);
+  }
+});
 
 test("bell rooms offer an in-world riddle while commands, solutions and accounting live only in Help", () => {
   const seed = Array.from({ length: 64 }, (_, index) => index)

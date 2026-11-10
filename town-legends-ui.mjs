@@ -1,5 +1,5 @@
 import { createTownLegendsClient, townLegendIdentity } from "./town-legends.mjs";
-import { TREASURE_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION } from "./legend-session.mjs";
+import { VARIED_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION } from "./legend-session.mjs";
 import { treasureId, treasureItem, treasureEquipment } from "./legend-rewards.mjs";
 import { createTownLegendNarratives } from "./legend-narrative.mjs";
 
@@ -92,7 +92,7 @@ export function setupTownLegends({ context, host = document.getElementById("ques
       if (reward.effect) node("p", reward.effect[language]);
       const effect = treasureEquipment(context()?.state).jewel?.effect;
       const modifiers = effect ? ` ${effect[language]}` : "";
-      const version = { platform: TREASURE_PLATFORM_VERSION, investigation: TREASURE_INVESTIGATION_VERSION,
+      const version = { platform: VARIED_PLATFORM_VERSION, investigation: TREASURE_INVESTIGATION_VERSION,
         dungeon: TREASURE_DUNGEON_VERSION }[entrance.format];
       button(c.recover, () => {
         if (atEntrance(entrance) && !context()?.blocked && confirmTrial(c.rewardTerms + modifiers + c.localTerms)) {

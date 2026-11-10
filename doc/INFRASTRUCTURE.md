@@ -176,6 +176,39 @@ explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
 ## Checkpoint deployed: town legends and composed treasures (9 November 2026)
 
+### Varied platform architecture, 0.22.7
+
+New platform treasure attempts use `treasure-platform-v2`. The town's permanent
+gameplay assignment, seed, entrance, reward and costs are unchanged. Existing
+`treasure-platform-v1` attempts, including restart/replay, retain version-3 geometry
+and original physics; changing their generator in place would invalidate saved
+input transcripts and accounting.
+
+Version-4 platform geometry deals a shuffled deck of eight room architectures:
+terraces, stepping stones, split shafts, hanging galleries, low vaults, twin
+balconies, zigzags and high bridges. Each eight-room main path uses all eight,
+with no repeated architecture across deck boundaries. Rooms can be mirrored;
+some have no ladders, others have multiple offset or short staged ladders.
+Ledges, mechanism positions, upper exits, treasure and supplies follow the
+selected geometry. Reciprocal arrivals are relinked after room construction.
+Traps avoid entrances, the initial spawn and floor-level ladder feet.
+
+The physics and renderer share the same ladder collection. Short ladders stop
+at their actual lower landing only in the new geometry; legacy ladders retain
+their original behavior. Both localized room names and Help guidance follow the
+new architecture rather than referring to a fixed left ladder or right-hand key.
+Environmental riddles remain on the playfield; explicit guidance stays in Help.
+
+Physical traversal tests cover 288 seeded adventures, every forward/reverse
+doorway, optional branches, all mechanisms and the final treasure, across
+8/16/32-room profiles, with zero trap damage. Sampled v2 action transcripts replay
+identically, and v2 completion is tested through actual treasure settlement.
+Validation: 1,702 JavaScript tests and 41 focused Python tests pass. Actual-browser
+checks cover all eight architectures in French/English at 320×568, 390×844,
+844×390 and 1100×800: 64 combinations with no horizontal overflow, off-screen
+movement controls or HUD/canvas overlap. Help returns focus to the canvas
+and no longer gives location-specific instructions from the legacy room layout.
+
 ### Console adventures and permanent gameplay, 0.22.6
 
 New eligible towns permanently receive platform, investigation or dungeon

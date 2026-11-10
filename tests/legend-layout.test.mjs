@@ -160,7 +160,7 @@ test("health supplies recover once, full-health supplies remain available and ch
 });
 
 test("generator bounds inputs and platform engine rejects forged layouts", () => {
-  for (const options of [{ seed: -1 }, { seed: NaN }, { seed: 2 ** 32 }, { mainRooms: 3 }, { branches: 5 }]) {
+  for (const options of [{ seed: -1 }, { seed: NaN }, { seed: 2 ** 32 }, { mainRooms: 3 }, { branches: 5 }, { varied: "yes" }]) {
     assert.throws(() => generatePlatformLevel(options), RangeError);
   }
   for (const mainRooms of [4, 16]) {

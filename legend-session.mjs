@@ -20,13 +20,15 @@ export const PACED_PLATFORM_VERSION = "seeded-platform-v2";
 export const PACED_INVESTIGATION_VERSION = "seeded-investigation-v3";
 export const PACED_DUNGEON_VERSION = "seeded-dungeon-v4";
 export const TREASURE_PLATFORM_VERSION = "treasure-platform-v1";
+export const VARIED_PLATFORM_VERSION = "treasure-platform-v2";
 export const TREASURE_INVESTIGATION_VERSION = "treasure-investigation-v1";
 export const TREASURE_DUNGEON_VERSION = "treasure-dungeon-v1";
 export const isTreasureSession = version =>
-  [TREASURE_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION].includes(version);
+  [TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION].includes(version);
 export const isPacedLegendSession = version =>
   [PACED_PLATFORM_VERSION, PACED_INVESTIGATION_VERSION, PACED_DUNGEON_VERSION].includes(version) || isTreasureSession(version);
-export const isPlatformSession = version => [LOCAL_PLATFORM_VERSION, PACED_PLATFORM_VERSION, TREASURE_PLATFORM_VERSION].includes(version);
+export const isPlatformSession = version =>
+  [LOCAL_PLATFORM_VERSION, PACED_PLATFORM_VERSION, TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION].includes(version);
 export const isLocalLegendSession = version =>
   [LOCAL_PLATFORM_VERSION, LOCAL_INVESTIGATION_VERSION, LOCAL_DUNGEON_VERSION].includes(version) || isPacedLegendSession(version);
 export const isDungeonSession = version => [DUNGEON_SESSION_VERSION, DUNGEON_FOOD_VERSION, LOCAL_DUNGEON_VERSION, PACED_DUNGEON_VERSION, TREASURE_DUNGEON_VERSION].includes(version);
@@ -84,7 +86,9 @@ export function replayLegendSession({ contentVersion, seed, actions, weapon }) {
     throw new Error("Invalid investigation content or input history.");
   }
   try {
-    let state = platform ? createPlatformer({ level: generatePlatformLevel({ seed, tier: "modest", paced }), healthMode: "journey" }) : dungeon
+    let state = platform ? createPlatformer({ level: generatePlatformLevel({
+      seed, tier: "modest", paced, varied: contentVersion === VARIED_PLATFORM_VERSION,
+    }), healthMode: "journey" }) : dungeon
       ? createDungeon({ level: generateDungeon({ seed, tier: "modest", paced,
         ...(isLocalLegendSession(contentVersion) ? {} : { roomCount: 4 }) }), weapon, healthMode: "journey" })
       : createGeneratedInvestigation({ level: generateInvestigation({ seed, tier: "modest", paced,

@@ -1,6 +1,6 @@
 import { createInvestigation, investigate, investigationHint, INVESTIGATION_ACTIONS } from "../legend-adventure.mjs";
 import { COPY } from "../legend-adventure-copy.mjs";
-import { createPlatformer, stepPlatformer, platformHazardActive, platformRoomSolved,
+import { createPlatformer, stepPlatformer, platformHazardActive, platformRoomSolved, platformLadders,
   ROOMS, WIDTH, HEIGHT, STEP } from "./legend-platformer.mjs";
 import { generatePlatformLevel } from "./legend-layout.mjs";
 import { adventureCosts, dungeonCosts } from "../adventure-costs.mjs";
@@ -63,7 +63,7 @@ function drawPlatform(ctx, state, images, set) {
       rectangle(ctx, "#704333", x, platform.y + 4, 2, platform.height - 4);
     }
   }
-  for (const ladder of [room.ladder, room.challengeLadder].filter(Boolean)) {
+  for (const ladder of platformLadders(room)) {
     const { x, top, bottom } = ladder;
     rectangle(ctx, "#141827", x - 13, top, 6, bottom - top);
     rectangle(ctx, "#141827", x + 9, top, 6, bottom - top);
@@ -334,7 +334,7 @@ export function mount(container, { format, language = "en", seed = 1, background
     } else drawPixelSprite(iconContext, name, 0, 0, 2, { set: art });
     element("span", label, item);
   }
-  let level = format === "platform" ? generatePlatformLevel({ seed, tier, paced }) :
+  let level = format === "platform" ? generatePlatformLevel({ seed, tier, paced, varied: !authoritative }) :
     format === "dungeon" ? generateDungeon({ seed, tier, paced }) :
     generated ? generateInvestigation({ seed, tier, paced }) : null;
   if (authoritative && format !== "investigation" && !liveDungeon && !livePlatform) throw new Error("Unsupported live adventure.");
@@ -812,7 +812,7 @@ export function mount(container, { format, language = "en", seed = 1, background
     listen(win, "blur", clear);
     listen(doc, "visibilitychange", clear);
     function render() {
-      heading.textContent = `${copy.platform} - ${copy.room} ${state.room + 1}/${level.rooms.length}`;
+      heading.textContent = `${copy.platformArchitectures[level.rooms[state.room].archetype] ?? copy.platform} - ${copy.room} ${state.room + 1}/${level.rooms.length}`;
       if (!paused && status.dataset.message !== state.message) {
         status.textContent = copy.platformMessages[state.message];
         status.dataset.message = state.message;
@@ -827,7 +827,8 @@ export function mount(container, { format, language = "en", seed = 1, background
       exits.textContent = `${room.challenge ? (room.challenges ?? [room.challenge])
         .map((point, index) => `${point.family === "timing" && room.pacing && room.hazards.length
           ? `${copy.platformTiming(room.hazards[0].activeTicks * STEP, (room.hazards[0].period - room.hazards[0].activeTicks) * STEP)} ${copy.platformLever}`
-          : point.family === "timing" && room.pacing ? copy.platformLever : copy.platformChallenges[point.family]}${
+          : point.family === "timing" && room.pacing ? copy.platformLever :
+            (room.archetype ? copy.variedPlatformChallenges : copy.platformChallenges)[point.family]}${
           state.activated?.includes(`${room.id}:${index}`) ? ` (${copy.open})` : ""}`).join(" ") + ". " +
         copy.gate + ": " + (platformRoomSolved(state, room) ? copy.open : copy.closed) + ". " : ""}${copy.exits}: ${room.connections.map(door =>
         `${copy.directions[door.direction]} (${door.target + 1})`).join(", ")}${room.main ? "" : ` - ${copy.deadEnd}`}`;

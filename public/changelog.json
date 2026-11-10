@@ -1,6 +1,11 @@
 {
-  "version": "0.22.6",
+  "version": "0.22.7",
   "entries": [
+    {
+      "version": "0.22.7",
+      "fr": "Les nouvelles aventures de plateformes alternent huit architectures : terrasses, marches brisées, puits décalés, galeries suspendues, voûtes basses, balcons jumeaux, zigzags et ponts hauts. Variantes en miroir, échelles décentrées ou absentes, mécanismes et trésors en hauteur remplacent l'échelle centrale répétitive. Les essais déjà commencés gardent leur géométrie d'origine.",
+      "en": "New platform adventures alternate eight architectures: terraces, broken steps, split shafts, hanging galleries, low vaults, twin balconies, zigzags and high bridges. Mirrored variants, offset or absent ladders, and elevated mechanisms and treasures replace the repetitive central ladder. Attempts already underway retain their original geometry."
+    },
     {
       "version": "0.22.6",
       "fr": "Les aventures de légende occupent tout l'écran, dans une interface de console épurée. Le jeu attribue définitivement l'un des trois modes à chaque nouvelle légende ; les anciennes gardent leur mode. Des inscriptions énigmatiques accompagnent les mécanismes, dont la cloche. Commandes, solutions et détails techniques se trouvent dans Aide, qui suspend le jeu.",

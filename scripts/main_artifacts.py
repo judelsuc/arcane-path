@@ -16,7 +16,7 @@ from town_legends import TOWN_ID
 
 WORLD = "main-artifacts-v1"
 COMMANDS = {"inquire", "claim", "cache", "share", "use", "pack", "interpret-clue", "archive"}
-TREASURE_VERSIONS = ("treasure-platform-v1", "treasure-investigation-v1", "treasure-dungeon-v1")
+TREASURE_VERSIONS = ("treasure-platform-v1", "treasure-investigation-v1", "treasure-dungeon-v1", "treasure-platform-v2")
 TREASURE_ID = re.compile(r"treasure:(?:node|way|relation)/[1-9]\d{0,19}:(0|[1-9]\d{0,9})(?::v[23])?")
 EUROPE_DISTRIBUTION_VERSION = 1
 EUROPE_ANCHORS = (
@@ -238,9 +238,10 @@ class MainArtifacts(LorePlaytest):
                 if definition["townId"] != action["townId"]:
                     raise JourneyConflict("This investigation belongs to a different town.")
                 if action["contentVersion"] in TREASURE_VERSIONS:
-                    assigned = {"platform": TREASURE_VERSIONS[0], "investigation": TREASURE_VERSIONS[1],
-                                "dungeon": TREASURE_VERSIONS[2]}[definition["format"]]
-                    if action["contentVersion"] != assigned:
+                    assigned = {"platform": ("treasure-platform-v1", "treasure-platform-v2"),
+                                "investigation": ("treasure-investigation-v1",),
+                                "dungeon": ("treasure-dungeon-v1",)}[definition["format"]]
+                    if action["contentVersion"] not in assigned:
                         raise JourneyConflict("This legend's gameplay was permanently assigned by the game.")
             row = db.execute(f"SELECT * FROM {self.world_table} WHERE id=?", (WORLD,)).fetchone()
             if row is None:

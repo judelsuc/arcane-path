@@ -55,12 +55,13 @@ class MainArtifactTests(unittest.TestCase):
         for assigned in ("platform", "investigation", "dungeon"):
             self.api.town_legends = SimpleNamespace(trial_definition=lambda *args, **kwargs: {
                 "townId": "node/42", "eligible": True, "format": assigned, "seed": 1})
-            for requested in ("platform", "investigation", "dungeon"):
-                if requested == assigned:
+            for requested in ("treasure-platform-v1", "treasure-platform-v2",
+                              "treasure-investigation-v1", "treasure-dungeon-v1"):
+                if requested.startswith(f"treasure-{assigned}-"):
                     continue
                 with self.assertRaisesRegex(JourneyConflict, "permanently assigned"):
                     self.request({"type": "legend-start", "townId": "node/42",
-                                  "contentVersion": f"treasure-{requested}-v1"})
+                                  "contentVersion": requested})
 
     def test_opencache_query_is_adapted_exactly_once_by_shared_store_connection(self):
         from journey_storage import StoreConnection

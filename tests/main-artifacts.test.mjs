@@ -26,7 +26,8 @@ import { dungeonCosts } from "../adventure-costs.mjs";
 import { createEquipment } from "../equipment.mjs";
 import { journeyActionBlocker } from "../travel.mjs";
 import { createJourneyStore } from "../journey-save.mjs";
-import { TREASURE_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION } from "../legend-session.mjs";
+import { TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION } from "../legend-session.mjs";
+import { variedPlatformRoute } from "./helpers/legend-varied-platform-route.mjs";
 import { treasureId, treasureItem, composedReward, awardTreasure, treasureAction } from "../legend-rewards.mjs";
 
 const json = path => JSON.parse(readFileSync(new URL(path, import.meta.url)));
@@ -109,11 +110,12 @@ test("cache opening consumes an actual carried lockpick and cannot use an arbitr
 });
 
 test("all three treasure formats award a real bag item only on successful final settlement", async () => {
-  for (const version of [TREASURE_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION]) {
+  for (const version of [TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION]) {
     const { request, result: first } = await startInvestigation({}, version);
     assert.equal(first.view.state.treasures.inventory.length, 0);
     const session = first.view.adventure, seed = session.seed;
-    const actions = isPlatformSession(version) ? platformCompletionActions(seed, { paced: true }) :
+    const actions = version === VARIED_PLATFORM_VERSION ? variedPlatformRoute(seed).actions :
+      isPlatformSession(version) ? platformCompletionActions(seed, { paced: true }) :
       isDungeonSession(version) ? dungeonCompletionActions(seed, "none", 8, true) :
         replayLegendSession(session).level.rooms.flatMap(room => [
           ...generatedCommands(room).map(command => ({ type: "act", command })),
@@ -136,7 +138,7 @@ test("all three treasure formats award a real bag item only on successful final 
 });
 
 test("survival interruption in every treasure format creates no original and grants no item", async () => {
-  for (const version of [TREASURE_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION]) {
+  for (const version of [TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION]) {
     const source = input();
     const { result } = await startInvestigation({
       snapshot: { ...source.snapshot, health: .1, reserveKcal: 0 },

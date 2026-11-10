@@ -14,6 +14,94 @@ export const PLATFORM_PROFILES = Object.freeze({
   exceptional: Object.freeze({ rooms: 32, rewardBudget: 3 }),
 });
 export const PLATFORM_CHALLENGES = Object.freeze(["jump", "switch", "key", "timing"]);
+export const PLATFORM_ARCHETYPES = Object.freeze([
+  "terraces", "stepping-stones", "split-shafts", "hanging-gallery",
+  "low-vault", "twin-balconies", "zigzag", "high-bridge",
+]);
+
+function variedRoom(room, archetype, mirrored, random) {
+  const shelf = (x, y, width) => ({ x, y, width, height: 12 });
+  const ladder = (x, top, bottom = 288) => ({ x, top, bottom });
+  const geometry = {
+    terraces: { platforms: [shelf(48, 240, 128), shelf(176, 192, 128),
+      shelf(304, 144, 128), shelf(432, 96, 176)], ladders: [] },
+    "stepping-stones": { platforms: [shelf(56, 240, 80), shelf(160, 192, 80),
+      shelf(264, 144, 80), shelf(368, 96, 112), shelf(512, 144, 96)], ladders: [] },
+    "split-shafts": { platforms: [shelf(48, 192, 544), shelf(456, 96, 152)],
+      ladders: [ladder(112, 192), ladder(512, 96, 192)] },
+    "hanging-gallery": { platforms: [shelf(32, 96, 208), shelf(248, 192, 128), shelf(384, 144, 224)],
+      ladders: [ladder(80, 96), ladder(560, 144)] },
+    "low-vault": { platforms: [shelf(48, 192, 144), shelf(224, 240, 112),
+      shelf(336, 144, 96), shelf(448, 96, 160)], ladders: [ladder(560, 96)] },
+    "twin-balconies": { platforms: [shelf(32, 144, 208), shelf(272, 192, 96), shelf(400, 96, 208)],
+      ladders: [ladder(96, 144), ladder(544, 96)] },
+    zigzag: { platforms: [shelf(48, 240, 272), shelf(232, 192, 272),
+      shelf(416, 144, 192), shelf(504, 96, 104)],
+      ladders: [ladder(96, 240), ladder(280, 192, 240), ladder(464, 144, 192), ladder(560, 96, 144)] },
+    "high-bridge": { platforms: [shelf(32, 96, 576), shelf(80, 192, 128), shelf(432, 240, 128)],
+      ladders: [ladder(80, 96), ladder(560, 96)] },
+  }[archetype];
+  room.archetype = archetype;
+  room.mirrored = mirrored;
+  room.platforms = geometry.platforms;
+  room.ladder = null;
+  room.challengeLadder = null;
+  room.ladders = geometry.ladders;
+  const surfaces = [{ x: 16, y: 288, width: 608 }, ...room.platforms];
+  const points = room.challenges ?? (room.challenge ? [room.challenge] : []);
+  points.forEach((point, index) => {
+    const surface = surfaces[1 + (room.id + index) % room.platforms.length];
+    point.x = Math.round(surface.x + surface.width * (.3 + random() * .4) - 9);
+    point.y = surface.y - (point.family === "jump" ? 64 : 26);
+  });
+  if (points.length) {
+    room.challenges = points;
+    room.challenge = points[0];
+  }
+  for (const object of [room.treasure, room.pickup].filter(Boolean)) {
+    const surface = surfaces.at(-1);
+    object.x = Math.round(surface.x + surface.width / 2 - 9);
+    object.y = surface.y - 26;
+  }
+  for (const door of room.connections) {
+    if (door.direction === "up") {
+      const top = room.platforms.find(surface => surface.y === 96);
+      door.x = top.x + 8;
+      door.y = 70;
+      for (const point of [...points, room.treasure, room.pickup].filter(Boolean)) {
+        if (Math.abs(point.x - door.x) < 60 && Math.abs(point.y - door.y) < 66) {
+          const surface = surfaces.find(surface => surface.y === point.y + (point.family === "jump" ? 64 : 26));
+          const ends = [surface.x + 8, surface.x + surface.width - 30];
+          point.x = ends.sort((a, b) => Math.abs(b - door.x) - Math.abs(a - door.x))[0];
+        }
+      }
+    } else if (door.direction === "down") {
+      door.x = 280 + Math.floor(random() * 80);
+      door.y = 262;
+    } else {
+      door.y = 262;
+    }
+  }
+  room.hazards = room.hazards.map((hazard, index) => {
+    const candidates = [208, 352, 464, 96];
+    const safe = [...room.connections.filter(door => door.y === 262),
+      ...room.ladders.filter(ladder => ladder.bottom === 288).map(ladder => ({ x: ladder.x - 9 })),
+      { x: 311 }];
+    const x = candidates.map((_, offset) => candidates[(room.id + index + offset) % candidates.length])
+      .find(x => safe.every(point => point.x + 18 + 24 <= x || point.x >= x + hazard.width + 24));
+    if (x === undefined) throw new Error("Unable to place a trap clear of platform entrances.");
+    return { ...hazard, x };
+  });
+  if (mirrored) {
+    for (const platform of room.platforms) platform.x = 640 - platform.x - platform.width;
+    for (const item of room.ladders) item.x = 640 - item.x;
+    for (const point of [...points, room.treasure, room.pickup].filter(Boolean)) point.x = 622 - point.x;
+    for (const hazard of room.hazards) hazard.x = 640 - hazard.x - hazard.width;
+    for (const door of room.connections) {
+      if (["up", "down"].includes(door.direction)) door.x = 622 - door.x;
+    }
+  }
+}
 
 function randomSource(seed) {
   let value = seed;
@@ -35,7 +123,7 @@ function deepFreeze(value) {
 
 export function isPlatformLevel(level) { return levels.has(level); }
 
-export function generatePlatformLevel({ seed = 1, mainRooms, branches = 2, tier, paced = false } = {}) {
+export function generatePlatformLevel({ seed = 1, mainRooms, branches = 2, tier, paced = false, varied = false } = {}) {
   if (tier !== undefined && (!Object.hasOwn(PLATFORM_PROFILES, tier) || mainRooms !== undefined)) {
     throw new RangeError("Choose a platform reward tier or a custom main path length.");
   }
@@ -43,7 +131,7 @@ export function generatePlatformLevel({ seed = 1, mainRooms, branches = 2, tier,
   if (!Number.isSafeInteger(seed) || seed < 0 || seed > 0xffffffff ||
       !Number.isSafeInteger(mainRooms) || mainRooms < 4 || mainRooms > 32 ||
       !Number.isSafeInteger(branches) || branches < 0 || branches > 4 ||
-      typeof paced !== "boolean" || paced && mainRooms < 8) {
+      typeof paced !== "boolean" || typeof varied !== "boolean" || paced && mainRooms < 8) {
     throw new RangeError("Invalid platform level seed, main path length or branch count.");
   }
   const random = randomSource(seed);
@@ -174,7 +262,25 @@ export function generatePlatformLevel({ seed = 1, mainRooms, branches = 2, tier,
         ? [{ x: 416, y: 278, width: room.pacing.complexity === 2 ? 40 : 24,
           height: 10, period: 240, activeTicks: room.pacing.complexity === 2 ? 100 : 60, phase: seed % 240 }] : [];
   }
-  const level = deepFreeze({ version: paced ? 3 : 2, seed, mainRooms, tier: tier ?? null,
+  if (varied) {
+    let archetypes = [];
+    let previous;
+    for (const room of rooms) {
+      if (!archetypes.length) {
+        archetypes = shuffled(PLATFORM_ARCHETYPES);
+        if (archetypes[0] === previous) [archetypes[0], archetypes[1]] = [archetypes[1], archetypes[0]];
+      }
+      const archetype = archetypes.shift();
+      variedRoom(room, archetype, random() < .5, random);
+      previous = archetype;
+    }
+    for (const room of rooms) for (const door of room.connections) {
+      const back = rooms[door.target].connections.find(item => item.target === room.id);
+      door.arrivalX = back.x;
+      door.arrivalY = back.y;
+    }
+  }
+  const level = deepFreeze({ version: varied ? 4 : paced ? 3 : 2, seed, mainRooms, tier: tier ?? null,
     rewardBudget: tier === undefined ? null : PLATFORM_PROFILES[tier].rewardBudget,
     start: 0, treasureRoom: mainRooms - 1,
     rooms, edges, spawn: { x: 311, y: 262 } });

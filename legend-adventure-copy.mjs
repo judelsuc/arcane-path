@@ -192,6 +192,17 @@ export const COPY = {
       key: "Find the brass key on the right and collect it with E",
       timing: "Cross the flashing spike patch (1.5 seconds active / 1.5 safe), then use the right lever",
     },
+    platformArchitectures: {
+      terraces: "Stone terraces", "stepping-stones": "Broken steps", "split-shafts": "Split shafts",
+      "hanging-gallery": "Hanging gallery", "low-vault": "Low vault", "twin-balconies": "Twin balconies",
+      zigzag: "Zigzag ascent", "high-bridge": "High bridge",
+    },
+    variedPlatformChallenges: {
+      jump: "Reach the bell's ledge, jump, then press E while rising beside it",
+      switch: "Reach the brass lever and operate it with E",
+      key: "Find the brass key among the ledges and collect it with E",
+      timing: "Watch the spike rhythm and reach the lever; operate it with E",
+    },
   },
   fr: {
     helpTitle: "Aide", helpClose: "Retour au jeu", inscription: "Inscription",
@@ -385,6 +396,17 @@ export const COPY = {
       switch: "Montez à l'échelle de gauche et actionnez le levier avec E",
       key: "Trouvez la clé en laiton à droite et prenez-la avec E",
       timing: "Traversez les pointes intermittentes (1,5 seconde actives / 1,5 sûres), puis actionnez le levier de droite",
+    },
+    platformArchitectures: {
+      terraces: "Terrasses de pierre", "stepping-stones": "Marches brisées", "split-shafts": "Puits décalés",
+      "hanging-gallery": "Galerie suspendue", "low-vault": "Voûte basse", "twin-balconies": "Balcons jumeaux",
+      zigzag: "Montée en zigzag", "high-bridge": "Pont haut",
+    },
+    variedPlatformChallenges: {
+      jump: "Rejoignez la tablette de la cloche, sautez puis appuyez sur E en montant près d'elle",
+      switch: "Rejoignez le levier en laiton et actionnez-le avec E",
+      key: "Trouvez la clé en laiton parmi les plateformes et prenez-la avec E",
+      timing: "Observez le rythme des pointes et rejoignez le levier ; actionnez-le avec E",
     },
   },
 };

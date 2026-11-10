@@ -39,7 +39,7 @@ export function createPlatformer({ level = null, healthMode = "preview" } = {}) 
   if (level) return freeze({ level, room: level.start, ...level.spawn, vy: 0, grounded: true,
     ticks: 0, solved: Object.freeze([]),
     health: healthMode === "journey" ? null : 3, collected: Object.freeze([]), checkpoint: level.spawn,
-    ...(level.version === 3 ? { activated: Object.freeze([]) } : {}),
+    ...(level.version >= 3 ? { activated: Object.freeze([]) } : {}),
     retries: 0, completed: false, message: "route",
     metrics: { roomEntries: 1, roomsVisited: [level.start], trapHits: 0 } });
   return freeze({ room: 0, x: 32, y: 262, vy: 0, grounded: true,
@@ -54,6 +54,7 @@ export const platformHazardActive = (hazard, ticks) =>
   !hazard.period || (ticks + hazard.phase) % hazard.period < hazard.activeTicks;
 export const platformRoomSolved = (state, room = state.level?.rooms[state.room]) =>
   !room?.challenge || state.solved.includes(room.id);
+export const platformLadders = room => room.ladders ?? [room.ladder, room.challengeLadder].filter(Boolean);
 
 export function stepPlatformer(state, controls = {}) {
   if (!states.has(state)) throw new TypeError("Expected a platform adventure state.");
@@ -74,7 +75,7 @@ export function stepPlatformer(state, controls = {}) {
   const room = (state.level?.rooms ?? ROOMS)[state.room];
   next.x = Math.max(0, Math.min(WIDTH - PLAYER.width,
     state.x + (Number(!!controls.right) - Number(!!controls.left)) * PLAYER.speed * STEP));
-  const ladder = [room.ladder, room.challengeLadder].find(item => item &&
+  const ladder = platformLadders(room).find(item =>
     next.x + PLAYER.width > item.x - 12 && next.x < item.x + 12);
   const climbing = ladder && next.x + PLAYER.width > ladder.x - 12 && next.x < ladder.x + 12 &&
     next.y + PLAYER.height >= ladder.top && next.y < ladder.bottom && (controls.up || controls.down);
@@ -84,9 +85,11 @@ export function stepPlatformer(state, controls = {}) {
   }
   if (climbing && !controls.jump) {
     next.y = Math.max(ladder.top - PLAYER.height,
-      Math.min(288 - PLAYER.height, next.y + (controls.down ? 1 : -1) * 130 * STEP));
+      Math.min((state.level?.version >= 4 ? ladder.bottom : 288) - PLAYER.height,
+        next.y + (controls.down ? 1 : -1) * 130 * STEP));
     next.vy = 0;
-    next.grounded = next.y === ladder.top - PLAYER.height || next.y === 288 - PLAYER.height;
+    next.grounded = next.y === ladder.top - PLAYER.height ||
+      next.y === (state.level?.version >= 4 ? ladder.bottom : 288) - PLAYER.height;
   } else {
     next.vy += PLAYER.gravity * STEP;
     const oldBottom = next.y + PLAYER.height;
