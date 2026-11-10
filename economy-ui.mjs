@@ -4,6 +4,7 @@ import { socialFailureChance } from "./pressures.mjs";
 import { setFeedback, setGenerating } from "./feedback.mjs";
 import { NARRATIVE_BRIEFS } from "./live-narrative.mjs";
 import { mergeAccommodations } from "./accommodations.mjs";
+import { buildingSleepStatus, BUILDING_SEARCH_MINUTES } from "./building-sleep.mjs";
 
 export function setupEconomyUI(t, { context, act, resolveCountry, findSpecialties, findAccommodations, selectAccommodation, narrative, illustrations }) {
   const dialog = document.querySelector("#economy-dialog");
@@ -246,6 +247,13 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findSpecialtie
       document.querySelector("#economy-empty").hidden = true;
       const mapped = shelters(cell, state);
       const places = worshipPlaces(cell);
+      if (cell?.terrain === "building" && !cell.unavailable && !cell.downloading) {
+        const status = buildingSleepStatus(state, cell);
+        add(t("buildingSleepAsk"), 0, { kind: "building-sleep" },
+          t(status.attempt ? "buildingSleepAlready" : "buildingSleepNote", {
+            minutes: BUILDING_SEARCH_MINUTES, hours: survival.sleep_hours,
+          }), undefined, undefined, !status.available).className = "window-help-text";
+      }
       document.querySelector("#economy-shelter-context").textContent =
         t(mapped.length || places.length ? "shelterCellOnly" : "shelterNoneInCell");
       const addShelter = shelter => {

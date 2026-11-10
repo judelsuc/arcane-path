@@ -4,6 +4,7 @@ import { chunkPosition } from "./travel.mjs";
 import { validateTownTrail } from "./trail.mjs";
 import { CLUE_ACTIONS } from "./trail-actions.mjs";
 import { validateHospitality } from "./hospitality.mjs";
+import { validateBuildingSleep } from "./building-sleep.mjs";
 import { validateStoryProgress } from "./parent-story.mjs";
 import { validateExploration } from "./trail-search.mjs";
 import { validatePressures } from "./pressures.mjs";
@@ -232,6 +233,7 @@ export function validateSave(save) {
   if (s.ended === null && (s.reserveKcal <= 0 && s.health === undefined || s.fatigue >= 100 ||
       s.awakeHours >= save.survival.sleep_limit_hours)) fail();
   validateHospitality(s, save.survival);
+  validateBuildingSleep(s, save.survival);
   validateFainting(s);
   return save;
 }

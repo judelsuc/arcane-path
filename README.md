@@ -47,6 +47,10 @@ remains usable without prose. The provider receives only a bounded public memory
 premise, not private player data or the hidden entrance. Generated prose is
 decorative, not a source of mechanics or reward promises.
 
+Artifact information earned from inhabitants is retained in the journal.
+The main game has no collector contact or daily archive-copy action; existing
+recorded knowledge remains intact.
+
 **Treasure rewards:** at an inspected entrance, **Recover the treasure** offers
 platforms, investigation or dungeon, each with eight required rooms and confirmed
 journey costs. The first successful final settlement recovers one globally unique
@@ -108,6 +112,14 @@ and award no treasure or money. The server pins the permanent town seed and the
 modest **eight-room** profile. New paced protocols are `seeded-platform-v2`,
 `seeded-investigation-v3` and `seeded-dungeon-v4`; retained town format assignments
 do not change.
+
+On loaded **building cells**, the Sleep menu also offers a fictional
+**Sneak into an empty building** scene (not a statement about real occupancy).
+Searching costs ten simulated minutes, once per cell per game day. A reaction
+QTE uses the usual three-second preparation and held-key release. Success grants
+normal free sheltered sleep, without food or washing. Failure, skipping or
+abandoning a started QTE gives no sleep and adds **5 vigilance points**; reaching
+100 triggers the normal placement rules. Attempts and results survive saving.
 
 Adventure length is separate from mechanical difficulty. The first four rooms
 introduce one family each, followed by development and combinations of familiar

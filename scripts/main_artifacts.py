@@ -15,7 +15,7 @@ from journey_storage import StoreConnection, geographic_position, grid_position
 from town_legends import TOWN_ID
 
 WORLD = "main-artifacts-v1"
-COMMANDS = {"inquire", "claim", "cache", "share", "use", "pack", "interpret-clue", "archive"}
+COMMANDS = {"inquire", "claim", "cache", "share", "use", "pack", "interpret-clue"}
 TREASURE_VERSIONS = ("treasure-platform-v1", "treasure-investigation-v1", "treasure-dungeon-v1", "treasure-platform-v2",
                      "treasure-platform-v3", "treasure-investigation-v2", "treasure-dungeon-v2",
                      "treasure-platform-v4", "treasure-investigation-v3", "treasure-dungeon-v3",
@@ -155,6 +155,9 @@ class MainArtifacts(LorePlaytest):
             raise JourneyRequest("Invalid main artifact request.")
         journey, action, snapshot = data["journey"], data["action"], data["state"]
         genesis = self.authorize(journey, token)
+        if isinstance(action, dict) and action.get("type") == "archive":
+            raise JourneyRequest("Collector archives are not part of the main game. "
+                                 "Gather information from inhabitants and keep it in the journal.")
         prepare_route = action == {"type": "prepare-route"}
         character_rumour = isinstance(action, dict) and action.get("type") == "character-rumour"
         cache_open = isinstance(action, dict) and action.get("type") == "cache-open"

@@ -1,6 +1,11 @@
 {
-  "version": "0.22.16",
+  "version": "0.22.17",
   "entries": [
+    {
+      "version": "0.22.17",
+      "fr": "Sur les cases bâtiment, cherchez un abri vide dans une scène fictive : dix minutes de recherche et un QTE, un essai par case et par jour. Réussir permet de dormir gratuitement à l'abri, sans repas ni toilette ; échouer, passer ou abandonner le défi ajoute 5 points de vigilance. Les essais sont conservés à la reprise. Le collecteur est retiré du jeu principal : les informations recueillies auprès des habitants restent dans le journal.",
+      "en": "On building cells, search for an empty shelter in a fictional scene: ten minutes of searching and a QTE, once per cell per day. Success grants free sheltered sleep without food or washing; failing, skipping or abandoning the challenge adds 5 vigilance points. Attempts persist on resume. The collector is removed from the main game: information gathered from inhabitants remains in the journal."
+    },
     {
       "version": "0.22.16",
       "fr": "Les rencontres laissent trois secondes pour se préparer et attendent le relâchement des touches avant de lancer les signaux du QTE. Les touches de marche ne peuvent plus faire échouer le défi pendant cette préparation. En difficulté élevée, les nouveaux défis ajoutent les lettres A, F, J, P, V et N aux flèches et à Espace, avec boutons tactiles et compatibilité des anciens résultats.",

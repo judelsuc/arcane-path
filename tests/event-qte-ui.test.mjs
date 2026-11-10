@@ -96,6 +96,23 @@ test("the tracker remembers keys held before the event opens and releases them o
   assert.equal(held.size, 0);
 });
 
+test("a sheltered-sleep challenge can supply its own scene and result without journey-event rewards", async () => {
+  const f = await fixture("delay", "en", {
+    presentation: { action: "Find a fictional empty shelter.", social: false },
+    backdrop: "[fictional building]",
+    outcomeText: () => "Stay outside. Vigilance +5.",
+  });
+  assert.equal(f.nodes.find(node => node.className === "event-qte-action").textContent,
+    "Find a fictional empty shelter.");
+  assert.equal(f.nodes.find(node => node.className === "event-qte-backdrop").textContent,
+    "[fictional building]");
+  f.button("Skip challenge").click();
+  assert.equal(f.nodes.find(node => node.className === "event-qte-result").textContent,
+    "Stay outside. Vigilance +5.");
+  assert.equal(f.outcomes.length, 1);
+  f.api.destroy();
+});
+
 test("Help freezes preparation and skipping during preparation settles once with an empty trace", async () => {
   const f = await fixture("coins", "en", { preparation: true });
   f.tick(1000);

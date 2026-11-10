@@ -17,6 +17,18 @@
 - Preserve real OSM geometry and grid identity. Missing data remains missing
   until verified; do not fabricate terrain or remove usable cached cells.
 
+## Empty-building shelter (10 November 2026)
+
+- Offer a fictional empty-building sleep scene only on loaded building cells,
+  without asserting real vacancy or providing entry instructions.
+- Searching consumes ten simulated minutes, once per cell per game day.
+- Reuse reaction QTE preparation, held-key release and condition-based difficulty.
+- Success gives normal free sheltered sleep without food or washing.
+- Failure, skipping or abandoning an active QTE gives no sleep and adds five
+  vigilance points; normal placement rules still apply at 100.
+- Persist attempts and outcomes; reloading cannot reroll an active attempt.
+- Retain the usual survival interruptions, sleep dreams and existing sleep options.
+
 ## R-191 - Quick-time challenges for journey events (after legends)
 
 - Implement after the town legends work (R-190).
@@ -2102,9 +2114,13 @@
   Strength, Hanged, Nameless, Devil, Tower, Star, Moon, Judgement and World,
   with the approved prices, prerequisites, durations, packing and cooldowns.
 - Include actual ordinary earning proof via server-replayed bookshop play,
-  exact linked refunds, fixed canonical fragment provenance, collector copies
+  exact linked refunds, fixed canonical fragment provenance
   and four-thread progression; no fabricated cash/work/inscription evidence.
   Normal work is repeatable under host rules, not a new daily local limit.
+- **10 November correction:** no collector/archive-copy contact in the main
+  game. Players gather information from inhabitants and retain it in their
+  journal. Do not invent an archivist or a timed source of inscription copies.
+  Preserve already recorded knowledge and historical provenance in existing saves.
 - Support real distant parent targets through free, private asynchronous
   terrain/route preparation using server position and immutable genesis.
   Bound providers explicitly, block water and reject unavailable routes before

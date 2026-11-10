@@ -35,6 +35,7 @@ export function journeyActionBlocker(state, { busy = false, cell, artifactPendin
   if (artifactPending) return "artifact";
   if (state.transport?.booking?.status === "active") return "transport";
   if (state.events?.pending) return "event";
+  if (["ready", "active"].includes(state.buildingSleepAttempts?.at(-1)?.qte.status)) return "event";
   if (state.equipment?.dogEncounter === "pending") return "dog";
   if (state.performancePending) return "music";
   if (state.cafePending) return "cafe";

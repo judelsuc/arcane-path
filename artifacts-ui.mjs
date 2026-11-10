@@ -11,7 +11,7 @@ const WORDS = {
   fr: { refresh: "Actualiser les objets", retry: "Réessayer la commande en attente",
     claim: "Chercher et recueillir",
     use: "Utiliser le pouvoir", cache: "Déposer dans une cache", share: "Partager l'inscription",
-    archive: "Consulter les archives du collectionneur", empty: "Aucune piste d'objet acquise.",
+    empty: "Aucune piste d'objet acquise.",
     loading: "Échange avec le monde des objets…", saved: "Action enregistrée.",
     stale: "Actualisez les objets à votre position pour consulter les actions disponibles.",
     confirm: "Confirmer l'utilisation et son coût ?", target: "Cible du pouvoir",
@@ -29,7 +29,7 @@ const WORDS = {
   en: { refresh: "Refresh artifacts", retry: "Retry pending command",
     claim: "Search and collect",
     use: "Use power", cache: "Leave in a cache", share: "Share inscription",
-    archive: "Consult the collector's archives", empty: "No artifact leads earned.",
+    empty: "No artifact leads earned.",
     loading: "Contacting the artifact world…", saved: "Action saved.",
     stale: "Refresh artifacts at your position to see available actions.",
     confirm: "Confirm activation and its cost?", target: "Power target",
@@ -215,7 +215,6 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
     for (const host of [talk, book]) {
       const status = text(host, error || (working ? c.loading : feedback ? c[feedback] : "")); status.setAttribute("role", error ? "alert" : "status");
     }
-    button(talk, c.archive, () => void request({ type: "archive" }), blocked);
     const entries = discoveryNotebookEntries(state, t).filter(entry => entry.id.includes('"artifact"'));
     if (!entries.length) text(book, c.empty);
     for (const entry of entries) text(book, entry.text);

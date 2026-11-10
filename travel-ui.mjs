@@ -26,6 +26,8 @@ import { survivalChoice, beginTheft, settleTheft, choiceAvailable } from "./surv
 import { setupTheft } from "./theft-ui.mjs";
 import { setupSurvivalChoices } from "./survival-choices-ui.mjs";
 import { setupEconomyUI } from "./economy-ui.mjs";
+import { setupBuildingSleep } from "./building-sleep-ui.mjs";
+import { buildingSleepPending, startBuildingSleep, beginBuildingSleep, settleBuildingSleep } from "./building-sleep.mjs";
 import { discoverTownMeals } from "./town-meals.mjs";
 import { beginBusking, settleBusking, musicMistakeLimit, musicDifficulty } from "./music.mjs";
 import { beginCafe, settleCafe } from "./cafe.mjs";
@@ -403,7 +405,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const cell = withNearbyMappedPois(discoveredCell, info, stream.chunks);
     return { state, cell, map: base, mapTerrain: stream.journeyTerrain, info,
       data: economyData, survival: survivalConfig, blocked: busy || (!allowLook && Boolean(cursor)) || Boolean(state.ended) ||
-        Boolean(artifactsUI?.pending(state) || transitActive(state) || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending ||
+        Boolean(buildingSleepPending(state) || artifactsUI?.pending(state) || transitActive(state) || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending ||
           state.equipment?.dogEncounter === "pending") };
   }
   function finishJourneyArrival() {
@@ -495,7 +497,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     context() {
       const current = economyContext();
       return current && active ? { ...current, saveStatus: saveStatus.textContent,
-        blocked: busy || artifactsUI?.pending(state) || transitActive(state) || Boolean(cursor) || Boolean(state.ended || state.performancePending ||
+        blocked: busy || buildingSleepPending(state) || artifactsUI?.pending(state) || transitActive(state) || Boolean(cursor) || Boolean(state.ended || state.performancePending ||
           state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending) } : null;
     },
     act(action) {
@@ -1017,7 +1019,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const chunk = position && stream?.get(position.x, position.y);
     const cell = chunk?.rows[position.row][position.col];
     const ended = Boolean(state?.ended);
-    const activityPending = Boolean(artifactsUI.pending(state) || state?.performancePending || state?.cafePending || state?.theftPending ||
+    const activityPending = Boolean(buildingSleepPending(state) || artifactsUI.pending(state) || state?.performancePending || state?.cafePending || state?.theftPending ||
       transitActive(state) || state?.miniGamePending || state?.events?.pending || state?.equipment?.dogEncounter === "pending");
     const marker = document.querySelector(".tile--player");
     if (marker && state) renderJourneyMarker(marker, state, t);
@@ -1268,6 +1270,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     needsNotices.update();
     dailyTarotUI.update();
     journeyEventsUI.update();
+    queueMicrotask(() => buildingSleepUI.update());
     equipmentUI.update();
     trailArrivalUI.update();
     trailDreamUI.update();
@@ -1394,7 +1397,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
 
   async function move(dc, dr) {
-    if (!state || busy || !active || artifactsUI.pending(state) || transitActive(state) || state.ended || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending ||
+    if (!state || busy || !active || buildingSleepPending(state) || artifactsUI.pending(state) || transitActive(state) || state.ended || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending ||
         state.events?.pending || state.equipment?.dogEncounter === "pending") return;
     heading = [dc, dr];
     stream.prioritize(visibleDownloads(state.col, state.row, ...heading));
@@ -1641,6 +1644,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     trailUI.reset();
     towns.reset();
     economyUI.reset();
+    buildingSleepUI.reset();
     choicesUI.reset();
     inscriptionsUI.reset();
     stream?.stop();
@@ -1701,17 +1705,25 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       report(reason);
     }
   }
+  const buildingSleepUI = setupBuildingSleep(t, { context: economyContext, act: economyAction });
   function economyAction(action) {
     const current = economyContext();
-    if (!current || current.blocked) return false;
+    const buildingSettlement = ["building-sleep-begin", "building-sleep-settle"].includes(action.kind);
+    if (!current || current.blocked && !(buildingSettlement && buildingSleepPending(state))) return false;
+    const previous = state;
     try {
-      const previous = state;
-      let next = action.kind === "meal"
+      let next = action.kind === "building-sleep"
+        ? startBuildingSleep(state, current.cell, current.info, survivalConfig, economyData)
+        : action.kind === "building-sleep-begin"
+        ? beginBuildingSleep(state)
+        : action.kind === "building-sleep-settle"
+        ? settleBuildingSleep(state, current.cell, current.info, survivalConfig, economyData, action.result)
+        : action.kind === "meal"
         ? buyMeal(state, current.cell, current.info, action.id, survivalConfig, economyData)
         : action.kind === "hospitality"
         ? askHospitality(state, current.cell, current.info, survivalConfig, economyData, Math.random, action.id)
         : sleepEconomy(state, current.cell, current.info, action.id, survivalConfig, economyData);
-      if (action.kind !== "meal") {
+      if (["sleep", "hospitality", "building-sleep-settle"].includes(action.kind)) {
         const hosted = action.kind === "hospitality" && next.hospitalityAttempts?.at(-1)?.outcome === "hosted";
         next = settleTrailDream(previous, next, {
           startedMinutes: previous.elapsedMinutes + (hosted ? HOSPITALITY_RULES.minutes : 0),
@@ -1719,10 +1731,13 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       }
       state = next;
       autosave();
+      if (action.kind.startsWith("building-sleep") && saveError) throw new Error(t("saveError", { error: saveError }));
       error = "";
       localize();
+      if (action.kind === "building-sleep") queueMicrotask(() => buildingSleepUI.show());
       return true;
     } catch (reason) {
+      if (action.kind.startsWith("building-sleep")) state = previous;
       report(reason);
       document.querySelector("#economy-action-error").textContent = reason.message;
       return false;

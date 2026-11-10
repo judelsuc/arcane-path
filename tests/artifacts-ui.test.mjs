@@ -60,6 +60,17 @@ const rumour = { characterId: "b".repeat(32), eventId: "00000000-0000-4000-8000-
   artifactId: "hermit" };
 const speaker = { id: "b".repeat(32), name: "Camille" };
 
+test("artifact dialogue never offers a collector or an archive-copy action in either language", t => {
+  const f = fixture(t);
+  const texts = node => [node.textContent, ...node.children.flatMap(texts)];
+  for (const language of ["fr", "en"]) {
+    document.documentElement.lang = language;
+    f.ui.localize();
+    assert.doesNotMatch(texts(f.get("dialogue-artifacts")).join(" "), /collector|collectionneur|archives/i);
+  }
+  assert.deepEqual(f.calls, []);
+});
+
 test("active adventures open a dedicated modal, retain errors, and only return after settlement or reset", () => {
   const host = new Element(), dialog = new Element(), quests = new Element();
   const doc = { createElement: () => new Element(), querySelectorAll: () => [quests], activeElement: null };

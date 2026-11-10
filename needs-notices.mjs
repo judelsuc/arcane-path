@@ -53,7 +53,8 @@ export function createNeedsNotices(restoredState) {
 export function placementReason(placement, t) {
   const trigger = placement.trigger;
   if (!trigger) return t("placementReasonLegacy");
-  const factors = PLACEMENT_FACTORS.filter(key => trigger.factors[key] !== 0)
+  const causes = [...PLACEMENT_FACTORS, ...(Object.hasOwn(trigger.factors, "buildingSearch") ? ["buildingSearch"] : [])];
+  const factors = causes.filter(key => trigger.factors[key] !== 0)
     .map(key => t("placementFactor", { cause: t(`placementCause.${key}`),
       points: `${trigger.factors[key] > 0 ? "+" : ""}${trigger.factors[key].toFixed(2)}` }));
   return t("placementReason", { before: trigger.vigilanceBefore.toFixed(2),

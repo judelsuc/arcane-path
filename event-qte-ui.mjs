@@ -48,9 +48,10 @@ export function trackEventQteKeys(doc) {
 }
 
 export function mountEventChallenge(host, { event, language, begin, settle, illustration,
-  heldKeys = new Set(), onError = console.error }) {
+  heldKeys = new Set(), presentation = eventQtePresentation(event, language),
+  outcomeText = outcome => eventQteResult(event, language, outcome),
+  backdrop = journeyEventArt(event.kind), onError = console.error }) {
   const doc = host.ownerDocument, view = doc.defaultView ?? globalThis, c = COPY[language];
-  const presentation = eventQtePresentation(event, language);
   const root = doc.createElement("section");
   root.className = "event-qte";
   root.lang = language;
@@ -81,7 +82,7 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
     scene.append(illustration);
   }
   const art = doc.createElement("pre");
-  art.textContent = journeyEventArt(event.kind);
+  art.textContent = backdrop;
   scene.append(art);
   art.className = "event-qte-backdrop";
   art.setAttribute("aria-hidden", "true");
@@ -242,7 +243,7 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
     actionButtons.forEach(element => element.setAttribute("aria-pressed", "false"));
     target.textContent = c.finished;
     status.textContent = `${c.progress}: ${trace.length}/${rules.keys.length}`;
-    narrativeResult.textContent = eventQteResult(event, language,
+    narrativeResult.textContent = outcomeText(
       challengeOutcome(event, rules.mode, result.trace, result.elapsedMs, skipped));
     saveResult();
   }

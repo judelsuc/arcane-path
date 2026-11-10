@@ -122,13 +122,14 @@ export function advancePressures(previous, next, info, { sheltered, activity, su
     shelter: sheltered ? -hours * 2 : 0,
     movement: -moving * 2,
     wash: activity === "wash" ? -5 : 0,
+    ...(activity === "buildingSearch" ? { buildingSearch: 5 } : {}),
   };
   const rate = (urban ? 3 : 0.5) + (next.fatigue >= 70 ? 2 : 0) +
     (cleanliness < 30 ? 2 : 0) + (info.police ? 5 : 0);
   const vigilance = clamp(p.vigilance + (sheltered ? -hours * 2 : (unprotectedHours * rate + lingeringHours * 2) * p.tarotFactor) -
     moving * 2 + (activity === "steal" ? 20 : activity === "beg" ? 4 : activity === "music" ? 2 : 0) *
       p.tarotFactor * unprotectedFraction -
-    (activity === "wash" ? 5 : 0));
+    (activity === "wash" ? 5 : 0) + (activity === "buildingSearch" ? 5 : 0));
   next = { ...next, pressures: { ...p, locality, localMinutes, cleanliness, vigilance } };
   if (activity === "steal") next = changeReputation(next, -15);
   if (activity === "beg") next = changeReputation(next, -1);
@@ -200,7 +201,9 @@ export function validatePressures(state, economy) {
       if (!finite(vigilanceBefore) || vigilanceBefore > 100 || !finite(minutes) ||
           minutes > placement.startedMinutes - end + 1e-6 ||
           !finite(tarotFactor) || tarotFactor < 0.5 || tarotFactor > 1.5 ||
-          !factors || Object.keys(factors).length !== PLACEMENT_FACTORS.length ||
+          !factors || Object.keys(factors).length !== PLACEMENT_FACTORS.length +
+            (Object.hasOwn(factors, "buildingSearch") ? 1 : 0) ||
+          (Object.hasOwn(factors, "buildingSearch") && factors.buildingSearch !== 5) ||
           PLACEMENT_FACTORS.some(key => !Number.isFinite(factors[key]) ||
             (["shelter", "movement", "wash"].includes(key) ? factors[key] > 0 : factors[key] < 0)) ||
           vigilanceBefore + Object.values(factors).reduce((sum, value) => sum + value, 0) < 100 - 1e-6) fail();

@@ -18,6 +18,28 @@ const town = { terrain: "place", countryCodes: ["FR"],
 const start = offset => applyBirthTarot(startEconomy(startSurvival(14, 10,
   Date.UTC(2026, 9, 17, 12) + offset, "balanced", survival), economy, () => 0), economy);
 
+for (const language of ["en", "fr"]) {
+  test(`${language} empty-building sleep is offered only on loaded building cells`, async t => {
+    const h = harness(t, language);
+    for (const cell of [town, { terrain: "church" }, { terrain: "plain" },
+      { terrain: "building", unavailable: true }, { terrain: "building", downloading: true }]) {
+      h.set({ cell });
+      await h.ui.open("sleep");
+      assert.equal(h.buttons().some(button => button.textContent.includes(translate(language, "buildingSleepAsk"))), false);
+      h.element("#economy-dialog").close();
+    }
+    h.set({ cell: { terrain: "building" } });
+    await h.ui.open("sleep");
+    const button = h.buttons().find(button => button.textContent.includes(translate(language, "buildingSleepAsk")));
+    assert.ok(button);
+    assert.equal(button.disabled, false);
+    button.click();
+    assert.deepEqual(h.actions, [{ kind: "building-sleep" }]);
+    assert.equal(h.element("#economy-dialog").open, false);
+    assert.ok(h.buttons().some(button => button.textContent.includes(translate(language, "outdoorSleep"))));
+  });
+}
+
 test("nearby accommodation POIs are in a closed drawer after local actions", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const options = html.indexOf('<ul id="economy-options">');

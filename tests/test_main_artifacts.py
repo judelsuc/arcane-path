@@ -50,6 +50,16 @@ class MainArtifactTests(unittest.TestCase):
         with self.fixture.lore.connect() as db:
             self.assertEqual(db.execute("SELECT count(*) FROM sessions").fetchone()[0], 0)
 
+    def test_collector_archive_is_not_a_main_game_action_and_cannot_change_saved_knowledge(self):
+        self.request()
+        before = copy.deepcopy(self.state)
+        with self.assertRaisesRegex(JourneyRequest, "not part of the main game"):
+            self.request({"type": "archive"})
+        self.assertEqual(self.state, before)
+        result, _ = self.request()
+        self.assertEqual(result["state"]["discovery"], before["discovery"])
+        self.assertEqual(result["state"]["elapsedMinutes"], before["elapsedMinutes"])
+
     def test_treasure_gameplay_cannot_override_the_permanent_assignment(self):
         from types import SimpleNamespace
         for assigned in ("platform", "investigation", "dungeon"):
