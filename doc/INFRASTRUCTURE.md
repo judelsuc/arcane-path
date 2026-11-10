@@ -194,6 +194,24 @@ guidance cannot match an entrance, enable inspection, or become a persisted
 candidate observation. The search plan, entrance and existing records are
 unchanged. Candidate-cell descriptions still use their original retained facts.
 
+Deployed on 10 November 2026 as
+`aacffcb8f9d31086d8560723e148e85f8cb25cd6`. The six-file package contains
+the four changed runtime modules, changelog and release metadata. Travel UI
+was patched onto the previously deployed 0.22.4 file, excluding event QTE
+changes. Previous/installed/served hashes and application, nginx and map-timer
+health were verified.
+
+Validation: 1,694 JavaScript tests and 21 backend legend tests pass. A browser
+check uses the actual travel context with a Look cursor, actual client and
+isolated server: town guidance and all eight neighboring descriptions appear,
+in both languages, without losing Wikipedia. A deployed read-only check of
+Vergoignan's retained legend returns arrival guidance; all 21 candidate positions
+round-trip correctly. No player records or entrance facts were modified.
+
+Rollback archive `/home/ubuntu/before-0.22.5-aacffcb.tar.gz`, root-owned 0600:
+SHA-256 `689d6f5c8832fcf5e3059c7190074eb045e06e88570ebd96ec31c6da2a7f7123`.
+Restore its six files, touch `public/release.json` and restart the application.
+
 ### Cell-description clues and route transport recovery, 0.22.4
 
 Entrance-search descriptions now occupy their own section
