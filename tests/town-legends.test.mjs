@@ -101,3 +101,17 @@ test("Look and inspect send only positions/identity and validate retained biling
     await assert.rejects(forged.inspect(state, entry.townId), /Invalid retained adventure/);
   }
 });
+
+test("arrival guidance validates as context only and cannot claim to be an entrance", async () => {
+  const observation = { townId: entry.townId, town: entry.town, location: { col: 3, row: 4 },
+    description: { en: "Look north of town.", fr: "Regardez au nord du bourg." },
+    contextual: true, matches: false, found: false };
+  const clientFor = value => createTownLegendsClient({ fetcher: async () => ({
+    ok: true, json: async () => ({ version: 1, observations: [value] }),
+  }) });
+  assert.deepEqual((await clientFor(observation).look(state, observation.location)).observations, [observation]);
+  for (const extra of [{ contextual: "yes" }, { matches: true }, { found: true }]) {
+    await assert.rejects(clientFor({ ...observation, ...extra }).look(state, observation.location),
+      /Invalid adventure look/);
+  }
+});

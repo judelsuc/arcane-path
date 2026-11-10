@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { setupLegendLook } from "../legend-look-ui.mjs";
+import { chunkPosition } from "../travel.mjs";
 
 class Element {
   children = [];
@@ -159,5 +160,65 @@ test("newly learned legends refresh the same cell and keep inspection explicit",
   f.ui.update(observation.location);
   assert.match(f.text(), /rondelle/);
   assert.equal(calls, 2);
+  f.ui.reset();
+});
+
+test("town arrival guidance stays visible beside the description without inventing an entrance observation", async () => {
+  const guidance = { ...observation, matches: false, contextual: true, description: {
+    en: "The story points north of town. Use Look to examine the surrounding ground.",
+    fr: "L'histoire mène au nord du bourg. Utilisez Regarder pour examiner les environs.",
+  } };
+  const f = fixture({ look: async () => ({ observations: [guidance] }),
+    inspect: () => assert.fail("town guidance cannot inspect") });
+  f.ui.update(observation.location);
+  await flush();
+  assert.equal(f.host.hidden, false);
+  assert.match(f.text(), /story points north.*Use Look/);
+  assert.deepEqual(f.observed, []);
+  assert.deepEqual(f.entries, []);
+  assert.equal(f.button("Inspect the passage"), undefined);
+  f.doc.documentElement.lang = "fr";
+  f.ui.update(observation.location);
+  assert.match(f.text(), /nord du bourg.*Utilisez Regarder/);
+  f.ui.reset();
+});
+
+test("the actual travel context permits remote Look requests without permitting ordinary actions or pending activities", async () => {
+  const source = readFileSync(new URL("../travel-ui.mjs", import.meta.url), "utf8");
+  const start = source.indexOf("  function economyContext(");
+  const end = source.indexOf("  function finishJourneyArrival()", start);
+  assert.ok(start >= 0 && end > start);
+  assert.match(source, /const legendLookUI = setupLegendLook\(\{\s*context: \(\) => active \? economyContext\(\{ allowLook: true \}\)/);
+  const f = fixture({ look: async () => ({ observations: [observation] }) });
+  const state = f.getContext().state;
+  const terrain = { rows: Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => ({ terrain: "forest" }))) };
+  const values = {
+    state, stream: { get: () => terrain, chunks: new Map() }, economyData: {},
+    chunkPosition, pricingCountries: new Map(), exposureInfo: () => ({}),
+    withDiscoveredAccommodations: cell => cell, discoveredLodging: new Map(),
+    withNearbyMappedPois: cell => cell, base: {}, survivalConfig: {},
+    busy: false, cursor: { col: 9, row: 8 }, artifactsUI: { pending: () => false },
+    transitActive: () => false,
+  };
+  const context = overrides => {
+    const inputs = { ...values, ...overrides };
+    return new Function(...Object.keys(inputs), `${source.slice(start, end)}; return economyContext;`)(...Object.values(inputs));
+  };
+  const economy = context();
+  assert.equal(economy().blocked, true, "ordinary actions stay blocked by the Look cursor");
+  assert.equal(economy({ allowLook: true }).blocked, false);
+  f.setContext(economy({ allowLook: true }));
+  f.ui.update(observation.location);
+  await flush();
+  assert.equal(f.observed.length, 1, "the remote clue request actually completes while Look is active");
+  assert.match(f.text(), /slate disc.*Come closer/);
+  assert.equal(f.button("Inspect the passage"), undefined, "remote inspection still requires presence");
+  for (const override of [{ busy: true }, { artifactsUI: { pending: () => true } },
+    { transitActive: () => true }, ...["ended", "performancePending", "cafePending", "theftPending", "miniGamePending"]
+      .map(key => ({ state: { ...state, [key]: true } })),
+    { state: { ...state, events: { pending: true } } },
+    { state: { ...state, equipment: { dogEncounter: "pending" } } }]) {
+    assert.equal(context(override)({ allowLook: true }).blocked, true);
+  }
   f.ui.reset();
 });

@@ -176,6 +176,24 @@ explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
 ## Checkpoint deployed: town legends and composed treasures (9 November 2026)
 
+### Arrival-cell legend guidance, 0.22.5
+
+The principal missing-clue bug was the shared economy context: it marks
+the Look cursor as blocked to prevent ordinary actions, and the legend viewer
+used that blocker before sending its Look request. Only the legend viewer now
+opts into `economyContext({ allowLook: true })`. Busy state, ended journeys,
+pending artifact commands, travel and event/activity blockers remain enforced;
+other economy consumers keep the default cursor blocker.
+
+The retained search deliberately excludes the discovery origin from entrance
+candidates. Consequently, 0.22.4 still hid the entire in-game description at
+the town's arrival cell. Look now returns contextual, bilingual guidance there,
+including all three existing canonical clues and how to search nearby cells.
+This only applies to privately discovered, prepared legends. Contextual
+guidance cannot match an entrance, enable inspection, or become a persisted
+candidate observation. The search plan, entrance and existing records are
+unchanged. Candidate-cell descriptions still use their original retained facts.
+
 ### Cell-description clues and route transport recovery, 0.22.4
 
 Entrance-search descriptions now occupy their own section

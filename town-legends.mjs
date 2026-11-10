@@ -63,7 +63,9 @@ export function createTownLegendsClient({ fetcher = fetch } = {}) {
             typeof item.town !== "string" || !item.town.trim() || item.town.length > 200 ||
             !location(item.location) || item.location.col !== details.target.col || item.location.row !== details.target.row ||
             !bilingual(item.description) || typeof item.matches !== "boolean" ||
-            typeof item.found !== "boolean" || item.found && !item.matches) ||
+            typeof item.found !== "boolean" || item.found && !item.matches ||
+            item.contextual !== undefined && (typeof item.contextual !== "boolean" ||
+              item.contextual && (item.matches || item.found))) ||
           new Set(result.observations.map(item => item.townId)).size !== result.observations.length) {
         throw new Error("Invalid adventure look response.");
       }

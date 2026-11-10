@@ -105,6 +105,31 @@ class LegendSearchStorageTests(unittest.TestCase):
         with self.fixture.assets.catalogue.connection() as db:
             return self.service.search(db, "node/42")[1]
 
+    def test_arrival_cell_describes_known_search_without_becoming_a_false_entrance_or_recorded_trace(self):
+        entry = self.call("discover")["entry"]
+        before = copy.deepcopy(self.plan())
+        observations = self.call("look", target=self.origin)["observations"]
+        self.assertEqual(len(observations), 1)
+        observation = observations[0]
+        self.assertTrue(observation["contextual"])
+        self.assertFalse(observation["matches"])
+        self.assertFalse(observation["found"])
+        self.assertNotIn("entry", observation)
+        self.assertEqual(observation["location"], self.origin)
+        for language in ("en", "fr"):
+            for clue in entry["exploration"]["clues"][language]:
+                self.assertIn(clue, observation["description"][language])
+        self.assertIn("Use Look", observation["description"]["en"])
+        self.assertIn("Utilisez Regarder", observation["description"]["fr"])
+        self.assertEqual(self.call("look", player=2, target=self.origin)["observations"], [])
+        self.assertEqual(self.call("list")["entries"][0]["exploration"]["observations"], [])
+        with self.assertRaises(JourneyConflict):
+            self.call("inspect", townId="node/42")
+        self.assertEqual(self.plan(), before)
+        entrance = self.call("look", target=before["entrance"])["observations"][0]
+        self.assertTrue(entrance["matches"])
+        self.assertNotIn("contextual", entrance)
+
     def test_one_retained_shared_entrance_private_look_and_inspection_survive_restart(self):
         entry = self.call("discover")["entry"]
         self.assertEqual(entry["exploration"]["status"], "searching")

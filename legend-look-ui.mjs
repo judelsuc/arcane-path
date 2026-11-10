@@ -85,7 +85,7 @@ export function setupLegendLook({ context, host, client = createTownLegendsClien
         observations = result.observations;
         for (const observation of observations) {
           if (observation.entry) onEntry?.(observation.entry);
-          onObservation?.(observation);
+          if (!observation.contextual) onObservation?.(observation);
         }
       }
     } catch (reason) {

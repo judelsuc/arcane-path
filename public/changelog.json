@@ -1,6 +1,11 @@
 {
-  "version": "0.22.4",
+  "version": "0.22.5",
   "entries": [
+    {
+      "version": "0.22.5",
+      "fr": "Le mode Regarder ne bloque plus les demandes de descriptions de légende dans les cases voisines. Les blocages d'activité restent respectés. La case d'arrivée d'un bourg à légende affiche les indices connus et explique comment examiner les alentours. L'emplacement de l'entrée et les observations restent inchangés.",
+      "en": "Look mode no longer blocks requests for legend descriptions in nearby cells. Activity blockers remain enforced. A legend town's arrival cell shows known clues and explains how to examine the surroundings. Retained entrances and observations are unchanged."
+    },
     {
       "version": "0.22.4",
       "fr": "Les traces des légendes apparaissent avec la description de la case, en complément de Wikipédia, y compris à votre position sans activer Regarder. Une légende nouvellement découverte actualise ces détails. Les erreurs réseau temporaires du chemin de référence sont réessayées deux fois, sans relancer le calcul serveur.",

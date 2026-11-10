@@ -388,7 +388,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       if (!controller.signal.aborted) localize();
     });
   }
-  function economyContext() {
+  function economyContext({ allowLook = false } = {}) {
     if (!state || !stream || !economyData) return null;
     const p = chunkPosition(state.col, state.row);
     const chunk = stream.get(p.x, p.y);
@@ -401,7 +401,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const discoveredCell = withDiscoveredAccommodations(pricedCell, discoveredLodging, state.col, state.row);
     const cell = withNearbyMappedPois(discoveredCell, info, stream.chunks);
     return { state, cell, map: base, mapTerrain: stream.journeyTerrain, info,
-      data: economyData, survival: survivalConfig, blocked: busy || Boolean(cursor) || Boolean(state.ended) ||
+      data: economyData, survival: survivalConfig, blocked: busy || (!allowLook && Boolean(cursor)) || Boolean(state.ended) ||
         Boolean(artifactsUI?.pending(state) || transitActive(state) || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending ||
           state.equipment?.dogEncounter === "pending") };
   }
@@ -650,7 +650,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     onDiscovery: () => updateLegendLook(true),
   });
   const legendLookUI = setupLegendLook({
-    context: () => active ? economyContext() : null,
+    context: () => active ? economyContext({ allowLook: true }) : null,
     host: document.querySelector("#legend-look"),
     onEntry: entry => townLegendsUI.acceptEntry(entry),
     onObservation: observation => townLegendsUI.observe(observation),

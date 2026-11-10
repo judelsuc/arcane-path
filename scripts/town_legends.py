@@ -250,6 +250,18 @@ class TownLegends:
                     continue
                 geometry, plan = self.search(db, row[0])
                 position = self.position_in(base, geometry, target)
+                if data["action"] == "look" and position == plan["origin"]:
+                    clues = search_clues(plan)
+                    description = {
+                        "en": "The story told here points beyond the town. " + " ".join(clues["en"]) +
+                              " Use Look to examine the surrounding ground, then approach the matching passage to inspect it.",
+                        "fr": "L'histoire racontée ici mène aux alentours du bourg. " + " ".join(clues["fr"]) +
+                              " Utilisez Regarder pour examiner les environs, puis rejoignez le passage correspondant pour l'inspecter.",
+                    }
+                    observations.append({"townId": row[0], "town": row[1], "location": target,
+                                         "description": description, "matches": False, "found": False,
+                                         "contextual": True})
+                    continue
                 detail = next((cell for cell in plan["cells"]
                                if (cell["col"], cell["row"]) == (position["col"], position["row"])), None)
                 if detail is None:
