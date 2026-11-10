@@ -6,6 +6,7 @@ import { GENERATED_INVESTIGATION_VERSION, replayLegendSession, DUNGEON_SESSION_V
   LOCAL_DUNGEON_VERSION, LOCAL_INVESTIGATION_VERSION, LOCAL_PLATFORM_VERSION, isDungeonSession,
   isPacedLegendSession, PACED_INVESTIGATION_VERSION, PACED_DUNGEON_VERSION, PACED_PLATFORM_VERSION,
   TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION, TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION } from "../legend-session.mjs";
+import { EXPANDED_PLATFORM_VERSION, EXPANDED_DUNGEON_VERSION, EXPANDED_INVESTIGATION_VERSION } from "../legend-session.mjs";
 import { stepDungeon } from "../minigames/legend-dungeon.mjs";
 import { stepInvestigation } from "../minigames/legend-investigation.mjs";
 import { stepPlatformer } from "../minigames/legend-platformer.mjs";
@@ -38,7 +39,7 @@ class Element extends Target {
   remove() { this.parent.children = this.parent.children.filter(node => node !== this); }
   setAttribute(name, value) { this.attributes[name] = value; }
   getAttribute(name) { return this.attributes[name]; }
-  getContext() { return { fillRect() {}, drawImage() {}, beginPath() {}, arc() {}, fill() {}, moveTo() {}, lineTo() {} }; }
+  getContext() { return { fillRect() {}, fillText() {}, drawImage() {}, beginPath() {}, arc() {}, fill() {}, moveTo() {}, lineTo() {} }; }
   click() { if (!this.disabled) this.dispatch("click"); }
   setPointerCapture() {}
   showModal() { this.open = true; }
@@ -70,6 +71,35 @@ function fixture(format, language = "en", options = {}) {
   };
   return { win, doc, container, api, frames, nodes, results, errors, button, run };
 }
+
+test("expanded adventures render new mechanics and journey stakes in both languages without leaking instructions outside Help", () => {
+  const families = new Set();
+  for (const language of ["fr", "en"]) for (let seed = 0; seed < 256; seed++) {
+    for (const [format, contentVersion] of [["platform", EXPANDED_PLATFORM_VERSION],
+      ["investigation", EXPANDED_INVESTIGATION_VERSION], ["dungeon", EXPANDED_DUNGEON_VERSION]]) {
+      const state = replayLegendSession({ contentVersion, seed, actions: [], weapon: "none" });
+      if (format === "investigation") families.add(state.level.rooms[0].family);
+      const f = fixture(format, language, { seed,
+        authoritative: { contentVersion, local: true, health: 85, weapon: "none", actions: [],
+          status: "active", onAction() {} },
+      });
+      const help = f.nodes.find(node => node.className === "legend-help");
+      const helpText = help.children.map(node => node.textContent).join(" ");
+      assert.match(helpText, /150 kcal/);
+      assert.match(helpText, language === "en" ? /wrong answer.*2 minutes.*1 fatigue/ : /fausse.*2 minutes.*1 fatigue/);
+      assert.match(helpText, language === "en" ? /first successful recovery/ : /première récupération réussie/);
+      for (const node of f.nodes) assert.doesNotMatch(String(node.textContent), /undefined|\[object Object\]/);
+      if (format !== "investigation") {
+        const inscription = f.nodes.find(node => node.className === "legend-inscription");
+        assert.ok(inscription.children[1].textContent.length);
+        assert.doesNotMatch(inscription.children[1].textContent, /Hold E|maintenez E|press E|appuyez/);
+      }
+      assert.deepEqual(f.errors, []);
+      f.api.destroy();
+    }
+  }
+  assert.equal(families.size, 8);
+});
 
 test("new platform adventures render their varied architecture and keep location-neutral guidance inside Help", () => {
   for (const language of ["fr", "en"]) {
@@ -248,6 +278,24 @@ test("adventure accounting shows equipment-adjusted totals without changing cano
     f.api.destroy();
   }
 });
+test("completed treasure console receipts report journey charges and accepted stash gains, including a full bag", () => {
+  for (const language of ["en", "fr"]) for (const outcome of ["collected", "left", "taken"]) {
+    const doc = { createElement: tag => new Element(tag, doc) }, host = new Element("section", doc);
+    const ui = setupLegendSession({ host, request() {} });
+    ui.render({ language, state: { serverJourney: { id: "a".repeat(32) }, artifactRevision: 1,
+      treasures: { version: 1, inventory: [], equipped: null } },
+    session: { runId: "c".repeat(32), town: "Firmi", status: "completed", contentVersion: EXPANDED_INVESTIGATION_VERSION,
+      costs: { minutes: 34, fatigue: 14, health: 5, dirt: 12 } },
+    rewardResult: { outcome, ...(outcome === "taken" ? {} : { stash: { cents: 100, foodKcal: 150 } }) } });
+    const text = host.children.map(node => node.textContent).join(" ");
+    assert.match(text, /34 min, 14 fatigue, 5/);
+    if (outcome !== "taken") assert.match(text, /1.00.*150 kcal/);
+    else assert.doesNotMatch(text, /150 kcal/);
+    if (outcome === "left") assert.match(text, language === "en" ? /treasure waits at the entrance/ : /trésor attend à l'entrée/);
+    ui.reset();
+  }
+});
+
 test("reloaded adventure restart labels show the actual rounded entry costs of equipped jewellery", () => {
   for (const language of ["en", "fr"]) for (const { seed, minutes, fatigue } of [
     { seed: 1, minutes: 3, fatigue: 2 },

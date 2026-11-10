@@ -6,19 +6,21 @@ export function findDungeonRoute(initial, predicate, { attack = false, damage = 
   const seen = new Set();
   for (let index = 0; index < queue.length; index++) {
     const node = queue[index], state = node.state;
+    if (!damage && (state.metrics.trapHits > initial.metrics.trapHits ||
+        state.metrics.creatureHits > initial.metrics.creatureHits)) continue;
     if (predicate(state)) {
       const actions = [];
       for (let current = node; current.previous; current = current.previous) actions.unshift(current.action);
       return { state, actions };
     }
-    if (state.room !== initial.room || state.failed || state.completed ||
-        !damage && (state.metrics.trapHits > initial.metrics.trapHits ||
-          state.metrics.creatureHits > initial.metrics.creatureHits)) continue;
+    if (state.room !== initial.room || state.failed || state.completed) continue;
     const key = JSON.stringify([state.x, state.y, state.facing, state.tick % 12, state.health,
       state.invulnerable, state.blocks[state.room].x, state.solved.includes(state.room), state.defeated.includes(state.room),
       state.activated?.filter(id => id.startsWith(`${state.room}:`)).sort()]);
-    if (seen.has(key)) continue;
-    seen.add(key);
+    const expandedKey = state.level.version >= 3 ? JSON.stringify([state.secrets, state.stashes,
+      state.flames, state.crank, state.runes, state.trapTick === null ? null : Math.min(11, state.tick - state.trapTick)]) : "";
+    if (seen.has(key + expandedKey)) continue;
+    seen.add(key + expandedKey);
     for (const type of ["up", "right", "down", "left", "interact", "wait", ...(attack ? ["attack"] : [])]) {
       const action = { type };
       queue.push({ state: stepDungeon(state, action), previous: node, action });

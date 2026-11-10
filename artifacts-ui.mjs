@@ -155,6 +155,7 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
       legendStartRevision = undefined;
     }
     legendSession.render({ state, session: snapshot && snapshot.revision === state?.artifactRevision ? snapshot.adventure : null,
+      rewardResult: snapshot && snapshot.revision === state?.artifactRevision ? snapshot.treasures?.result : null,
       blocked: working || Boolean(current?.blocked && !activeLegend), pending, language: lang,
       runtime: { survival: current?.survival, economy: current?.data, info: current?.info },
       startRevision: legendStartRevision, error });
@@ -234,6 +235,9 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
       taken: lang === "en" ? "Another explorer has already recovered the original treasure."
         : "Un autre explorateur a déjà recueilli le trésor original.",
     })[outcome.outcome]);
+    if (outcome?.stash) text(book, lang === "en"
+      ? `Secret finds: €${(outcome.stash.cents / 100).toFixed(2)}, +${Math.round(outcome.stash.foodKcal)} kcal.`
+      : `Caches secrètes : ${(outcome.stash.cents / 100).toFixed(2)} €, +${Math.round(outcome.stash.foodKcal)} kcal.`);
     for (const offer of snapshot.treasures?.offers ?? []) {
       for (const host of [book, talk]) {
         text(host, `${treasureItem(offer.id, offer.reward)[lang]} — ${offer.place}`, "h3");

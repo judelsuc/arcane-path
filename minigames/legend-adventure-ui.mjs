@@ -1,17 +1,18 @@
 import { createInvestigation, investigate, investigationHint, INVESTIGATION_ACTIONS } from "../legend-adventure.mjs";
 import { COPY } from "../legend-adventure-copy.mjs";
 import { createPlatformer, stepPlatformer, platformHazardActive, platformRoomSolved, platformLadders,
-  ROOMS, WIDTH, HEIGHT, STEP } from "./legend-platformer.mjs";
+  platformAnimal, platformArrow, PLATFORM_RUNES, ROOMS, WIDTH, HEIGHT, STEP } from "./legend-platformer.mjs";
 import { generatePlatformLevel } from "./legend-layout.mjs";
-import { adventureCosts, dungeonCosts } from "../adventure-costs.mjs";
+import { adventureCosts, encounterCosts } from "../adventure-costs.mjs";
 import { replayInvestigation, replayLegendSession, isDungeonSession,
-  hasDungeonFood, isPlatformSession, isGeneratedInvestigation, isTreasureSession } from "../legend-session.mjs";
+  hasDungeonFood, isPlatformSession, isGeneratedInvestigation, isTreasureSession, isExpandedLegendSession } from "../legend-session.mjs";
 import { createDungeon, generateDungeon, stepDungeon, dungeonCreature, dungeonGateOpen,
-  dungeonSpikesActive, DUNGEON_DIRECTIONS, dungeonMechanisms, dungeonTarget } from "./legend-dungeon.mjs";
+  dungeonSpikesActive, DUNGEON_DIRECTIONS, dungeonMechanisms, dungeonTarget, dungeonArrow, DUNGEON_RUNES } from "./legend-dungeon.mjs";
 import { drawPixelSprite, drawPixelDoor, drawStoneTile, pixelSet } from "./legend-pixel-art.mjs";
 import { generateInvestigation, createGeneratedInvestigation, stepInvestigation,
-  investigationCommands, generatedInvestigationHint } from "./legend-investigation.mjs";
+  investigationCommands, generatedInvestigationHint, investigationWitnessPresent } from "./legend-investigation.mjs";
 import { INVESTIGATION_COPY } from "./legend-investigation-copy.mjs";
+import { ENCOUNTER_COPY } from "./legend-encounters-copy.mjs";
 
 function rectangle(ctx, color, x, y, width, height) {
   ctx.fillStyle = color;
@@ -24,6 +25,17 @@ function person(ctx, x, y, name = "explorer", scale = 2) {
 
 function reel(ctx, x, y) {
   drawPixelSprite(ctx, "reel", x - 16, y - 16);
+}
+function crack(ctx, x, y) {
+  for (let i = 0; i < 6; i++) rectangle(ctx, "#fff09b", x + (i % 2) * 5, y + i * 5, 3, 6);
+}
+function numberedRune(ctx, x, y, index, active = false) {
+  drawPixelSprite(ctx, "crystal", x, y, 1, { active });
+  ctx.fillStyle = "#fff09b"; ctx.font = "12px monospace"; ctx.fillText(String(index + 1), x + 5, y - 3);
+}
+function projectile(ctx, x, y) {
+  rectangle(ctx, "#e8b65c", x, y, 20, 3);
+  rectangle(ctx, "#f4e4c1", x + 15, y - 3, 4, 9);
 }
 
 function backdrop(ctx, image, set) {
@@ -89,17 +101,33 @@ function drawPlatform(ctx, state, images, set) {
   }
   if (state.level) {
     for (const door of room.connections) {
+      if (door.secret && !state.secrets.includes(room.id)) {
+        crack(ctx, door.x, door.y - 16); continue;
+      }
       drawPixelDoor(ctx, door.x - 14, door.y - 22, { direction: door.direction, scale: 3, set,
         open: door.target < room.id || platformRoomSolved(state, room) });
     }
     if (room.challenge && !platformRoomSolved(state, room)) {
       for (const [index, point] of (room.challenges ?? [room.challenge]).entries()) {
         if (state.activated?.includes(`${room.id}:${index}`)) continue;
-        const sprite = { switch: "lever", key: "key", jump: "bell", timing: "lever" }[point.family];
-        drawPixelSprite(ctx, sprite, point.x - 6, point.y - 4);
+        const sprite = { switch: "lever", key: "key", jump: "bell", timing: "lever",
+          plate: "plate", crank: "lever", torch: "vase", runes: "crystal" }[point.family];
+        drawPixelSprite(ctx, sprite, point.x - 6, point.y + (point.family === "plate" ? 22 : -4));
         rectangle(ctx, "#a4acc2", point.x - 28, point.y + 20, 20, 14);
         for (let line = 0; line < 3; line++) rectangle(ctx, "#38434b", point.x - 25, point.y + 23 + line * 3, 14, 1);
       }
+      if (room.runeOrder) PLATFORM_RUNES.forEach(({ x }, i) => numberedRune(ctx, x, 266, i, state.runes.includes(i)));
+      if (room.flame && !state.flames.includes(room.id)) drawPixelSprite(ctx, "crystal", room.flame.x, room.flame.y, 1);
+      if (room.stash && !state.stashes.includes(room.id)) drawPixelSprite(ctx, "supply", room.stash.x, room.stash.y, 1);
+      if (room.arrowTrap) {
+        const trap = room.arrowTrap;
+        rectangle(ctx, state.trapTick !== null && state.ticks - state.trapTick < trap.delay ? "#fff09b" : "#db6656",
+          trap.plate.x, trap.plate.y, trap.plate.width, trap.plate.height);
+        rectangle(ctx, "#141827", trap.x, trap.y - 6, 12, 16);
+      }
+      const arrow = platformArrow(state), animal = platformAnimal(state);
+      if (arrow) projectile(ctx, arrow.x, arrow.y);
+      if (animal) drawPixelSprite(ctx, set[animal.kind], animal.x, animal.y, 1, { set });
     }
     if (room.treasure && !state.completed) reel(ctx, room.treasure.x + 9, room.treasure.y + 9);
     if (room.pickup && state.health !== null && !state.collected.includes(state.room)) {
@@ -185,7 +213,7 @@ function drawInvestigation(ctx, state, images, set) {
 }
 
 export function mount(container, { format, language = "en", seed = 1, backgrounds = {},
-  tier = "modest", weapon = "none", generatedInvestigation = false, paced = false,
+  tier = "modest", weapon = "none", generatedInvestigation = false, paced = false, expanded = false,
   onFinish = () => {}, onError = () => {}, authoritative, helpText = [], onLeave, leaveLabel } = {}) {
   if (!["platform", "investigation", "dungeon"].includes(format)) throw new RangeError("Unknown legend adventure format.");
   if (generatedInvestigation && (format !== "investigation" || authoritative)) {
@@ -276,9 +304,15 @@ export function mount(container, { format, language = "en", seed = 1, background
   element("p", isTreasureSession(authoritative?.contentVersion) ? language === "fr"
     ? "Retrouvez le souvenir caché au bout des huit salles. Observez les passages, les mécanismes et les indices."
     : "Recover the hidden memento beyond the eight rooms. Watch the passages, mechanisms and clues."
-    : livePlatform ? copy.platformLiveHelp : liveDungeon ? copy[local ? "dungeonLocalHelp" : "dungeonLiveHelp"] :
+    : expanded ? `${language === "fr" ? "Simulation sans effets sur le voyage." : "Simulation without journey effects."} ${copy.treasureHelp[format]}` :
+    livePlatform ? copy.platformLiveHelp : liveDungeon ? copy[local ? "dungeonLocalHelp" : "dungeonLiveHelp"] :
     generated ? INVESTIGATION_COPY[language][local ? "localHelp" : authoritative ? "liveHelp" : "help"] : copy[`${format}Help`], help);
   if (isTreasureSession(authoritative?.contentVersion)) element("p", copy.treasureHelp[format], help);
+  const encounter = ENCOUNTER_COPY[language];
+  if (expanded || isExpandedLegendSession(authoritative?.contentVersion)) {
+    element("p", encounter.help, help);
+    element("p", encounter[`${format}Help`], help);
+  }
   for (const paragraph of helpText) element("p", paragraph, help);
   if (onLeave) {
     const leave = button(leaveLabel, onLeave, help);
@@ -334,9 +368,9 @@ export function mount(container, { format, language = "en", seed = 1, background
     } else drawPixelSprite(iconContext, name, 0, 0, 2, { set: art });
     element("span", label, item);
   }
-  let level = format === "platform" ? generatePlatformLevel({ seed, tier, paced, varied: !authoritative }) :
-    format === "dungeon" ? generateDungeon({ seed, tier, paced }) :
-    generated ? generateInvestigation({ seed, tier, paced }) : null;
+  let level = format === "platform" ? generatePlatformLevel({ seed, tier, paced, expanded, varied: !authoritative }) :
+    format === "dungeon" ? generateDungeon({ seed, tier, paced, expanded }) :
+    generated ? generateInvestigation({ seed, tier, paced, expanded }) : null;
   if (authoritative && format !== "investigation" && !liveDungeon && !livePlatform) throw new Error("Unsupported live adventure.");
   let state = format === "platform" ? livePlatform ? replayLegendSession({ ...authoritative, seed }) : createPlatformer({ level }) :
     format === "dungeon" ? liveDungeon ? replayLegendSession({ ...authoritative, seed }) : createDungeon({ level, weapon }) :
@@ -372,7 +406,7 @@ export function mount(container, { format, language = "en", seed = 1, background
       accounting.textContent = copy.dungeonAccounting(state.metrics);
       return;
     }
-    const rawCosts = liveDungeon ? dungeonCosts(state.metrics) : adventureCosts(state.metrics);
+    const rawCosts = encounterCosts(state.metrics);
     const costs = authoritative?.costModifier ? authoritative.costModifier(rawCosts) : rawCosts;
     const label = authoritative
       ? local ? language === "fr" ? "Coûts locaux à valider (survie incluse)" : "Local costs awaiting settlement (survival included)" :
@@ -382,7 +416,10 @@ export function mount(container, { format, language = "en", seed = 1, background
     accounting.textContent = language === "fr"
       ? `${label} : ${state.metrics.roomEntries} entrées (${state.metrics.roomsVisited.length} salles différentes), ${state.metrics.trapHits} pièges. ${costs.minutes} min, ${costs.fatigue} fatigue, ${costs.health} santé perdue, ${costs.dirt} saleté.`
       : `${label}: ${state.metrics.roomEntries} entries (${state.metrics.roomsVisited.length} distinct rooms), ${state.metrics.trapHits} traps. ${costs.minutes} min, ${costs.fatigue} fatigue, ${costs.health} health lost, ${costs.dirt} dirt.`;
-    if (liveDungeon) accounting.textContent += ` ${copy.dungeonHits(state.metrics.creatureHits)}`;
+    if (state.metrics.creatureHits !== undefined) accounting.textContent += ` ${copy.dungeonHits(state.metrics.creatureHits)}`;
+    if (state.metrics.wrongAttempts !== undefined) accounting.textContent += language === "fr"
+      ? ` Erreurs : ${state.metrics.wrongAttempts}. Caches à rapporter : ${state.stashes.length}.`
+      : ` Mistakes: ${state.metrics.wrongAttempts}. Stashes to carry out: ${state.stashes.length}.`;
   }
   function finish() {
     if ((state.completed || local && authoritative.status === "interrupted") && !reported) {
@@ -399,7 +436,12 @@ export function mount(container, { format, language = "en", seed = 1, background
     }
   }
   if (generated) {
-    const c = INVESTIGATION_COPY[language];
+    const original = INVESTIGATION_COPY[language];
+    const expanded = level.version >= 3;
+    const c = expanded ? { ...original, families: { ...original.families, ...encounter.families },
+      messages: { ...original.messages, ...encounter.messages, complete: language === "fr" ? "Le trésor est retrouvé." : "The treasure is found.",
+        wrong: language === "fr" ? "L'indice ne correspond pas." : "The evidence does not fit." },
+      hints: { ...original.hints, ...encounter.hints } } : original;
     const progress = element("p");
     const navigation = element("nav");
     navigation.setAttribute("aria-label", c.title);
@@ -449,6 +491,18 @@ export function mount(container, { format, language = "en", seed = 1, background
         : `${copy.tiers[tier]}: ${level.rooms.length} ${copy.rooms}, ${copy.rewardBudget} ${level.rewardBudget}/3 | ${state.progress.filter(entry => entry.solved).length}/${level.rooms.length}`;
       status.textContent = c.messages[state.message];
       const clues = [];
+      if (room.concealed && !current.revealed) {
+        if (current.inspected) clues.push(encounter.secretClue(encounter.panel[room.order[0]]));
+      } else if (expanded) {
+        if (current.inspected && room.family === "cipher") clues.push(encounter.cipherClue(symbols, room));
+        if (room.family === "deduction") for (const branch of current.branches) {
+          clues.push(encounter.deductionClue(symbols[(room.answer + 1 + branch) % 3]));
+        }
+        if (current.inspected && room.family === "exchange") clues.push(encounter.exchangeClue(supplies[room.variant], symbols[room.answer]));
+        if (current.inspected && room.family === "alignment") clues.push(encounter.alignmentClue(room.order.map(i => symbols[i])));
+        if (room.family === "witnesses") clues.push(c.witness.map((name, i) =>
+          `${name}: ${investigationWitnessPresent(state, i) ? encounter.present : encounter.away}`).join("; "));
+      }
       if (current.inspected && room.family === "evidence") clues.push(c.evidence(room.variant, symbols[room.answer]));
       if (current.inspected && room.family === "sequence") clues.push(c.sequenceClue(room.order.map(index => controls[index])));
       if (room.family === "witnesses") {
@@ -459,13 +513,14 @@ export function mount(container, { format, language = "en", seed = 1, background
         const symbols = c.symbols[reference.variant];
         clues.push(c.sealRule(room.reference + 1, symbols, room.shift));
       }
-      if (level.version === 2) {
+      if (level.version >= 2) {
         const notes = level.rooms.filter(item => state.progress[item.id].solved)
           .map(item => c.archiveEntry(item.id + 1, c.symbols[item.variant][item.answer]));
         if (notes.length) clues.push(`${c.archive}: ${notes.join("; ")}.`);
       }
       evidence.textContent = `${c.clues}: ${clues.join(" ") || copy.empty}`;
       inventory.textContent = `${copy.inventory}: ${current.parts.map(index => supplies[index]).join(", ") || copy.empty}${room.family === "sequence" ? ` | ${c.step}: ${current.sequence.length}/${room.order.length}` : ""}`;
+      if (room.family === "alignment") inventory.textContent += ` | ${encounter.dials}: ${current.dials.map(i => symbols[i]).join(" · ")}`;
       const disabled = state.completed || Boolean(authoritative && (authoritative.disabled || authoritative.status !== "active"));
       previous.disabled = disabled || state.room === 0;
       next.disabled = disabled || state.room === level.rooms.length - 1 || !current.solved;
@@ -476,7 +531,13 @@ export function mount(container, { format, language = "en", seed = 1, background
         node.dataset.legendAction = `act:${command}`;
         if (!command) continue;
         const [type, indexText] = command.split(":"), item = Number(indexText);
-        const label = type === "verify" ? `${c.verify}: ${c.symbols[level.rooms[room.reference].variant][item]}` :
+        const label = type === "search" ? `${encounter.search}: ${encounter.panel[item]}` :
+          type === "rotate" ? `${encounter.rotate} ${item + 1}` :
+          type === "offer" ? `${encounter.offer}: ${symbols[item]}` :
+          type === "wait" ? encounter.wait :
+          type === "combine" && room.family === "alignment" ? encounter.test :
+          type === "inspect" && room.family === "deduction" ? `${c.inspect} ${item + 1}` :
+          type === "verify" ? `${c.verify}: ${c.symbols[level.rooms[room.reference].variant][item]}` :
           type === "inspect" ? c.inspect : type === "combine" ? c.combine :
           type === "witness" ? c.witness[item] :
           `${type === "choose" ? c.choose : type === "press" ? c.press : c.take}: ${type === "choose" ? symbols[item] : type === "press" ? controls[item] : supplies[item]}`;
@@ -485,9 +546,15 @@ export function mount(container, { format, language = "en", seed = 1, background
       backdrop(ctx, images.interior ?? images.passage, art);
       drawPixelDoor(ctx, 534, 192, { set: art, scale: 6, open: current.solved });
       person(ctx, 220, 262, "explorer", 3);
+      if (room.concealed && !current.revealed) for (let i = 0; i < 3; i++) {
+        rectangle(ctx, "#704333", 290 + i * 66, 142, 52, 126);
+        if (i === room.order[0]) crack(ctx, 310 + i * 66, 186);
+      }
       if (room.family === "witnesses") {
-        person(ctx, 330, 262, "caretaker", 3);
-        person(ctx, 430, 262, "repairer", 3);
+        person(ctx, investigationWitnessPresent(state, 0) ? 330 : 530, 262, "caretaker", 3);
+        person(ctx, investigationWitnessPresent(state, 1) ? 430 : 560, 262, "repairer", 3);
+      } else if (room.family === "alignment") {
+        current.dials.forEach((value, i) => numberedRune(ctx, 306 + i * 48, 204, value));
       } else {
         rectangle(ctx, "#141827", 300, 240, 160, 12);
         rectangle(ctx, "#b87848", 304, 240, 152, 8);
@@ -637,17 +704,21 @@ export function mount(container, { format, language = "en", seed = 1, background
       heading.textContent = `${copy.dungeon} - ${copy.room} ${state.room + 1}/${level.rooms.length}`;
       const room = level.rooms[state.room];
       status.textContent = paused ? copy.paused :
-        liveDungeon && copy.dungeonLiveHits[state.message] || copy.dungeonMessages[state.message];
+        encounter.messages[state.message] || liveDungeon && copy.dungeonLiveHits[state.message] || copy.dungeonMessages[state.message];
       if (!paused && state.message === "defeated" && hasDungeonFood(authoritative?.contentVersion)) {
         status.textContent = copy.dungeonFoodDefeated(authoritative.foodKcal);
       }
       const mechanisms = dungeonMechanisms(room);
       inscriptionText.textContent = mechanisms.map(mechanism =>
+        (level.version >= 3 && mechanism !== "block" ? encounter.riddles[mechanism] : undefined) ??
         copy.riddles[mechanism === "block" ? "plate" : mechanism === "spikes" ? "timing" : mechanism] ??
         copy.riddles.final).join(" ");
+      if (room.runeOrder && mechanisms.includes("runes")) inscriptionText.textContent += ` ${encounter.runeRiddle(room.runeOrder)}`;
+      if (room.connections.some(door => door.secret)) inscriptionText.textContent += ` ${encounter.secretRiddle}`;
+      if (room.trap) inscriptionText.textContent += ` ${encounter.arrowRiddle}`;
       const patrolling = room.creature && !state.defeated.includes(state.room);
       objective.textContent = `${mechanisms.map(mechanism => room.mechanisms && ["switch", "key"].includes(mechanism)
-        ? copy.dungeonTarget(mechanism, dungeonTarget(room, mechanism)) : copy.mechanisms[mechanism]).join(" ")} ${
+        ? copy.dungeonTarget(mechanism, dungeonTarget(room, mechanism)) : copy.mechanisms[mechanism] ?? encounter.riddles[mechanism]).join(" ")} ${
         patrolling ? (room.mechanisms ? copy.creatureNames : copy.creatures)[room.creature] : copy.noCreature}${
         room.mechanisms && patrolling ? `; ${copy.patrols[room.patrol]}` : ""}. ${copy.exits}: ${room.connections.map(door =>
         copy.directions[door.direction]).join(", ")}. ${copy.gate}: ${dungeonGateOpen(state) ? copy.open : copy.closed}`;
@@ -672,10 +743,26 @@ export function mount(container, { format, language = "en", seed = 1, background
       }
       for (const door of room.connections) {
         const [x, y] = DUNGEON_DIRECTIONS[door.direction].door;
+        if (door.secret && !state.secrets.includes(`${room.id}:${door.target}`)) {
+          crack(ctx, x * tile + 12, y * tile + 4); continue;
+        }
         drawPixelDoor(ctx, x * tile + 4, y * tile + 4, {
           open: door.target < state.room || dungeonGateOpen(state), direction: door.direction, set: art,
         });
       }
+      for (const wall of room.walls ?? []) drawStoneTile(ctx, wall.x * tile, wall.y * tile, tile, true, true, art);
+      for (const mechanism of ["torch", "crank", "plate"]) if (mechanisms.includes(mechanism)) {
+        const target = dungeonTarget(room, mechanism);
+        drawPixelSprite(ctx, { torch: "vase", crank: "lever", plate: "plate" }[mechanism],
+          target.x * tile + 4, target.y * tile + 4, 2, { active: state.activated.includes(`${room.id}:${mechanism}`) });
+      }
+      if (mechanisms.includes("runes")) DUNGEON_RUNES.forEach((point, i) =>
+        numberedRune(ctx, point.x * tile + 8, point.y * tile + 10, i, state.runes.includes(i)));
+      if (mechanisms.includes("torch") && !state.flames.includes(room.id)) drawPixelSprite(ctx, "crystal", 44, 204, 2);
+      if (room.stash && !state.stashes.includes(room.id)) drawPixelSprite(ctx, "supply", room.stash.x * tile + 4, room.stash.y * tile + 4);
+      if (room.trap) rectangle(ctx, "#db6656", room.trap.x * tile + 4, room.trap.y * tile + 30, 32, 6);
+      const arrow = dungeonArrow(state);
+      if (arrow) projectile(ctx, arrow.x * tile + 8, arrow.y * tile + 18);
       if (mechanisms.includes("switch")) {
         const target = dungeonTarget(room, "switch");
         drawPixelSprite(ctx, "lever", target.x * tile + 4, target.y * tile + 4, 2,
@@ -766,6 +853,10 @@ export function mount(container, { format, language = "en", seed = 1, background
       node.className = "legend-control";
       if (["jump", "interact"].includes(control)) {
         shortcut(node, copy[control], control === "jump" ? "Space" : "E", control === "jump" ? copy.space : "E");
+        if (control === "interact" && level.version >= 5) {
+          listen(node, "pointerdown", event => { event.preventDefault(); node.setPointerCapture(event.pointerId); held.add(control); });
+          for (const event of ["pointerup", "pointercancel", "lostpointercapture", "blur"]) listen(node, event, () => held.delete(control));
+        }
         continue;
       }
       const release = () => held.delete(control);
@@ -805,6 +896,7 @@ export function mount(container, { format, language = "en", seed = 1, background
       event.stopPropagation();
       if (control === "jump" || control === "interact") {
         if (!event.repeat) taps.add(control);
+        if (control === "interact" && level.version >= 5) keyboardHeld.add(control);
       } else keyboardHeld.add(control);
     });
     listen(win, "keyup", event => { keyboardHeld.delete(keyMap[event.key]); });
@@ -814,7 +906,7 @@ export function mount(container, { format, language = "en", seed = 1, background
     function render() {
       heading.textContent = `${copy.platformArchitectures[level.rooms[state.room].archetype] ?? copy.platform} - ${copy.room} ${state.room + 1}/${level.rooms.length}`;
       if (!paused && status.dataset.message !== state.message) {
-        status.textContent = copy.platformMessages[state.message];
+        status.textContent = encounter.messages[state.message] ?? copy.platformMessages[state.message];
         status.dataset.message = state.message;
       }
       progress.textContent = livePlatform
@@ -823,12 +915,15 @@ export function mount(container, { format, language = "en", seed = 1, background
       const room = level.rooms[state.room];
       status.hidden = ["route", "branch"].includes(state.message) && !paused;
       inscriptionText.textContent = (room.challenges ?? (room.challenge ? [room.challenge] : []))
-        .map(point => copy.riddles[point.family]).join(" ") || copy.riddles.final;
+        .map(point => level.version >= 5 && encounter.riddles[point.family] || copy.riddles[point.family]).join(" ") || copy.riddles.final;
+      if (room.runeOrder) inscriptionText.textContent += ` ${encounter.runeRiddle(room.runeOrder)}`;
+      if (room.connections.some(door => door.secret)) inscriptionText.textContent += ` ${encounter.secretRiddle}`;
+      if (room.arrowTrap) inscriptionText.textContent += ` ${encounter.arrowRiddle}`;
       exits.textContent = `${room.challenge ? (room.challenges ?? [room.challenge])
         .map((point, index) => `${point.family === "timing" && room.pacing && room.hazards.length
           ? `${copy.platformTiming(room.hazards[0].activeTicks * STEP, (room.hazards[0].period - room.hazards[0].activeTicks) * STEP)} ${copy.platformLever}`
           : point.family === "timing" && room.pacing ? copy.platformLever :
-            (room.archetype ? copy.variedPlatformChallenges : copy.platformChallenges)[point.family]}${
+            (room.archetype ? copy.variedPlatformChallenges : copy.platformChallenges)[point.family] ?? encounter.riddles[point.family]}${
           state.activated?.includes(`${room.id}:${index}`) ? ` (${copy.open})` : ""}`).join(" ") + ". " +
         copy.gate + ": " + (platformRoomSolved(state, room) ? copy.open : copy.closed) + ". " : ""}${copy.exits}: ${room.connections.map(door =>
         `${copy.directions[door.direction]} (${door.target + 1})`).join(", ")}${room.main ? "" : ` - ${copy.deadEnd}`}`;

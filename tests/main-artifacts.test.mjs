@@ -27,6 +27,7 @@ import { createEquipment } from "../equipment.mjs";
 import { journeyActionBlocker } from "../travel.mjs";
 import { createJourneyStore } from "../journey-save.mjs";
 import { TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION } from "../legend-session.mjs";
+import { EXPANDED_PLATFORM_VERSION, EXPANDED_DUNGEON_VERSION, EXPANDED_INVESTIGATION_VERSION } from "../legend-session.mjs";
 import { variedPlatformRoute } from "./helpers/legend-varied-platform-route.mjs";
 import { treasureId, treasureItem, composedReward, awardTreasure, treasureAction } from "../legend-rewards.mjs";
 
@@ -138,7 +139,8 @@ test("all three treasure formats award a real bag item only on successful final 
 });
 
 test("survival interruption in every treasure format creates no original and grants no item", async () => {
-  for (const version of [TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION]) {
+  for (const version of [TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION,
+    EXPANDED_PLATFORM_VERSION, EXPANDED_DUNGEON_VERSION, EXPANDED_INVESTIGATION_VERSION]) {
     const source = input();
     const { result } = await startInvestigation({
       snapshot: { ...source.snapshot, health: .1, reserveKcal: 0 },

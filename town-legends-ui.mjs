@@ -1,5 +1,5 @@
 import { createTownLegendsClient, townLegendIdentity } from "./town-legends.mjs";
-import { VARIED_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION } from "./legend-session.mjs";
+import { EXPANDED_PLATFORM_VERSION, EXPANDED_INVESTIGATION_VERSION, EXPANDED_DUNGEON_VERSION } from "./legend-session.mjs";
 import { treasureId, treasureItem, treasureEquipment } from "./legend-rewards.mjs";
 import { createTownLegendNarratives } from "./legend-narrative.mjs";
 
@@ -24,7 +24,7 @@ const WORDS = {
     discovered: "Discovered towns",
     recover: "Recover the treasure",
     rewardTerms: "Eight rooms. Base room entry: 3 minutes, 1 fatigue, 1 dirt. Trap: +2 minutes, +3 fatigue, -5 health, +4 dirt. Creature hit: +1 minute, +1 fatigue, -2 health, +1 dirt. Equipped jewellery modifies these cumulative costs as described in Inventory. Normal journey survival applies. Only the first successful explorer recovers the original treasure. The object takes space and weight in your bag; if your bag is full, it stays at the entrance. Any appearance works only while carried; equipment effects require equipping it. Money and charts are consumed when used. Confirm entry?",
-    localTerms: " Gameplay runs locally; effects settle on completion or leaving. Reload discards unfinished damage, progress and food, but retains the entry cost. Restarting charges entry again.",
+    localTerms: " Wrong puzzle attempts cost +2 minutes and +1 fatigue. Secret stashes grant €1 or 150 kcal each, only on the first successful recovery; leaving, interruption and restarting grant none. Gameplay runs locally; costs settle on completion or leaving. Reload discards unfinished damage, progress and food, but retains the entry cost. Restarting charges entry again.",
   },
   fr: {
     title: "Légendes locales", loading: "Enregistrement de la légende de cette ville…",
@@ -46,7 +46,7 @@ const WORDS = {
     discovered: "Villes découvertes",
     recover: "Retrouver le trésor",
     rewardTerms: "Huit salles. Entrée de base : 3 minutes, 1 fatigue, 1 saleté. Piège : +2 minutes, +3 fatigue, -5 santé, +4 saleté. Créature : +1 minute, +1 fatigue, -2 santé, +1 saleté. Les bijoux équipés modifient ces coûts cumulés comme indiqué dans l'inventaire. Survie habituelle du voyage. Seul le premier explorateur qui réussit recueille le trésor original. L'objet prend de la place et du poids dans le sac ; si le sac est plein, il reste à l'entrée. Une apparence fonctionne uniquement tant qu'il est porté ; les effets d'équipement nécessitent de l'équiper. Argent et cartes se consomment à l'utilisation. Confirmer l'entrée ?",
-    localTerms: " Jeu local ; effets validés en terminant ou en quittant. Recharger abandonne dégâts, progression et nourriture non validés, mais conserve le coût d'entrée. Recommencer facture une nouvelle entrée.",
+    localTerms: " Une erreur d'énigme coûte +2 minutes et +1 fatigue. Les caches rapportent 1 € ou 150 kcal chacune, uniquement lors de la première récupération réussie ; quitter, être interrompu ou recommencer ne rapporte rien. Jeu local ; coûts validés en terminant ou en quittant. Recharger abandonne dégâts, progression et nourriture non validés, mais conserve le coût d'entrée. Recommencer facture une nouvelle entrée.",
   },
 };
 
@@ -92,8 +92,8 @@ export function setupTownLegends({ context, host = document.getElementById("ques
       if (reward.effect) node("p", reward.effect[language]);
       const effect = treasureEquipment(context()?.state).jewel?.effect;
       const modifiers = effect ? ` ${effect[language]}` : "";
-      const version = { platform: VARIED_PLATFORM_VERSION, investigation: TREASURE_INVESTIGATION_VERSION,
-        dungeon: TREASURE_DUNGEON_VERSION }[entrance.format];
+      const version = { platform: EXPANDED_PLATFORM_VERSION, investigation: EXPANDED_INVESTIGATION_VERSION,
+        dungeon: EXPANDED_DUNGEON_VERSION }[entrance.format];
       button(c.recover, () => {
         if (atEntrance(entrance) && !context()?.blocked && confirmTrial(c.rewardTerms + modifiers + c.localTerms)) {
           startTrial({ type: "legend-start", townId: entrance.townId, contentVersion: version });

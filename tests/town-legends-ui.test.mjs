@@ -81,7 +81,7 @@ test("the assigned treasure adventure requires confirmation and respects activit
   assert.equal(started.length, 0);
   accepted = true;
   trial().click();
-  assert.deepEqual(started, [{ type: "legend-start", townId: entry.townId, contentVersion: "treasure-platform-v2" }]);
+  assert.deepEqual(started, [{ type: "legend-start", townId: entry.townId, contentVersion: "treasure-platform-v3" }]);
   assert.match(confirmations[0], /3 minutes.*1 fatigue.*1 dirt.*-5 health/);
   assert.match(confirmations[0], /Reload discards.*entry again/);
   f.setContext({ ...f.getContext(), blocked: true });
@@ -103,7 +103,7 @@ test("each retained format offers exactly one treasure action and no trial menu 
         assert.equal(f.button(`${label} — ${language === "en" ? "Platforms" : "Plateformes"}`), undefined);
         enter(f, undefined, format);
         f.button(label).click();
-        assert.deepEqual(actions.map(action => action.contentVersion), [`treasure-${format}-v${format === "platform" ? 2 : 1}`]);
+        assert.deepEqual(actions.map(action => action.contentVersion), [`treasure-${format}-v${format === "platform" ? 3 : 2}`]);
         assert.doesNotMatch(f.text(), /Try platforms|Try a dungeon|Try a generated|Essayer|No item or money/);
         assert.ok(confirmations.every(message => message.includes("3 minutes")));
         assert.match(confirmations[0], language === "en" ? /first successful.*bag is full.*only while carried/ :

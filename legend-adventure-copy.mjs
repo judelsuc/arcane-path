@@ -196,6 +196,9 @@ export const COPY = {
       terraces: "Stone terraces", "stepping-stones": "Broken steps", "split-shafts": "Split shafts",
       "hanging-gallery": "Hanging gallery", "low-vault": "Low vault", "twin-balconies": "Twin balconies",
       zigzag: "Zigzag ascent", "high-bridge": "High bridge",
+      "bell-tower": "Bell tower", "sunken-stairs": "Sunken stairway", "broken-aqueduct": "Broken aqueduct",
+      "crossing-galleries": "Crossing galleries", well: "The well", rooftops: "Old rooftops",
+      switchback: "Switchback", "three-islands": "Three islands",
     },
     variedPlatformChallenges: {
       jump: "Reach the bell's ledge, jump, then press E while rising beside it",
@@ -401,6 +404,9 @@ export const COPY = {
       terraces: "Terrasses de pierre", "stepping-stones": "Marches brisées", "split-shafts": "Puits décalés",
       "hanging-gallery": "Galerie suspendue", "low-vault": "Voûte basse", "twin-balconies": "Balcons jumeaux",
       zigzag: "Montée en zigzag", "high-bridge": "Pont haut",
+      "bell-tower": "Beffroi", "sunken-stairs": "Escalier englouti", "broken-aqueduct": "Aqueduc brisé",
+      "crossing-galleries": "Galeries croisées", well: "Le puits", rooftops: "Vieux toits",
+      switchback: "Lacets", "three-islands": "Trois îlots",
     },
     variedPlatformChallenges: {
       jump: "Rejoignez la tablette de la cloche, sautez puis appuyez sur E en montant près d'elle",

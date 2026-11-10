@@ -35,7 +35,7 @@ export function setupLegendSession({ host = document.getElementById("quests-lege
   function reset() { clear(); active = false; dialog?.close(); key = owner = focusTarget = attempt = undefined; }
   return {
     reset,
-    render({ state, session, blocked, pending, language, runtime, startRevision, error }) {
+    render({ state, session, rewardResult, blocked, pending, language, runtime, startRevision, error }) {
       const next = JSON.stringify([state?.serverJourney?.id, state?.artifactRevision, state?.legendAdventure,
         session?.runId, session?.status, blocked, pending, language, error]);
       if (key === next) return;
@@ -102,6 +102,21 @@ export function setupLegendSession({ host = document.getElementById("quests-lege
               : fr ? "Aventure quittée." : "Adventure left.";
           text("p", `${session.town} — ${outcome} ${treasure ? "" : fr ? "Coûts conservés. Aucun trésor attribué." :
             "Costs retained. No treasure awarded."}`).setAttribute("role", "status");
+          if (treasure) {
+            const costs = effectiveAdventureCosts(state, session.costs);
+            text("p", fr
+              ? `Coûts conservés : ${costs.minutes} min, ${costs.fatigue} fatigue, ${costs.health} santé perdue, ${costs.dirt} saleté. Survie habituelle en supplément.`
+              : `Charges retained: ${costs.minutes} min, ${costs.fatigue} fatigue, ${costs.health} health lost, ${costs.dirt} dirt. Normal survival also applies.`);
+            if (rewardResult) {
+              text("p", rewardResult.outcome === "collected"
+                ? fr ? "Trésor ajouté au sac." : "Treasure added to your bag."
+                : rewardResult.outcome === "left" ? fr ? "Sac plein : le trésor attend à l'entrée." : "Bag full: the treasure waits at the entrance."
+                  : fr ? "Le trésor a déjà été retrouvé par un autre explorateur." : "Another explorer has already recovered the treasure.");
+              if (rewardResult.stash) text("p", fr
+                ? `Caches rapportées : ${(rewardResult.stash.cents / 100).toFixed(2)} €, +${Math.round(rewardResult.stash.foodKcal)} kcal.`
+                : `Stashes carried out: €${(rewardResult.stash.cents / 100).toFixed(2)}, +${Math.round(rewardResult.stash.foodKcal)} kcal.`);
+            }
+          }
           return;
         }
         if (!attempt) {

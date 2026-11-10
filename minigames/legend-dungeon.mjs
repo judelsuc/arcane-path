@@ -6,6 +6,7 @@ export const DUNGEON_PROFILES = Object.freeze({
   exceptional: Object.freeze({ rooms: 32, rewardBudget: 3 }),
 });
 export const DUNGEON_MECHANISMS = Object.freeze(["switch", "block", "key", "spikes"]);
+export const EXPANDED_DUNGEON_MECHANISMS = Object.freeze([...DUNGEON_MECHANISMS, "torch", "crank", "runes", "plate"]);
 export const DUNGEON_DIRECTIONS = Object.freeze({
   up: Object.freeze({ x: 0, y: -1, door: [4, 0] }),
   right: Object.freeze({ x: 1, y: 0, door: [8, 3] }),
@@ -25,10 +26,10 @@ function freeze(value) {
 }
 function retain(state) { freeze(state); states.add(state); return state; }
 
-export function generateDungeon({ seed = 1, tier = "modest", roomCount = DUNGEON_PROFILES[tier]?.rooms, paced = false } = {}) {
+export function generateDungeon({ seed = 1, tier = "modest", roomCount = DUNGEON_PROFILES[tier]?.rooms, paced = false, expanded = false } = {}) {
   if (!Number.isSafeInteger(seed) || seed < 0 || seed > 0xffffffff || !Object.hasOwn(DUNGEON_PROFILES, tier) ||
       !Number.isSafeInteger(roomCount) || roomCount < 4 || roomCount > 32 || roomCount % 4 ||
-      typeof paced !== "boolean" || paced && roomCount < 8) {
+      typeof paced !== "boolean" || typeof expanded !== "boolean" || expanded && !paced || paced && roomCount < 8) {
     throw new RangeError("Invalid dungeon seed or reward tier.");
   }
   let value = seed;
@@ -41,7 +42,7 @@ export function generateDungeon({ seed = 1, tier = "modest", roomCount = DUNGEON
   let creatures = [];
   for (let id = 0; id < roomCount; id++) {
     if (!bag.length) {
-      bag = [...DUNGEON_MECHANISMS];
+      bag = [...(expanded ? EXPANDED_DUNGEON_MECHANISMS : DUNGEON_MECHANISMS)];
       for (let i = bag.length - 1; i > 0; i--) {
         const j = Math.floor(random() * (i + 1));
         [bag[i], bag[j]] = [bag[j], bag[i]];
@@ -67,8 +68,35 @@ export function generateDungeon({ seed = 1, tier = "modest", roomCount = DUNGEON
     if (room.pacing.stage === "rest" || room.pacing.stage === "introduce") room.creature = null;
     if (room.pacing.stage === "rest" && room.mechanism === "spikes") room.mechanisms = ["key"];
   }
-  const level = freeze({ version: paced ? 2 : 1, seed, tier, rewardBudget: DUNGEON_PROFILES[tier].rewardBudget,
-    rooms, treasureRoom: rooms.length - 1 });
+  if (expanded) {
+    const patterns = [
+      [[3, 1], [5, 1], [3, 5], [5, 5]], [[4, 1], [4, 4]],
+      [[1, 2], [7, 4], [3, 1], [5, 5]], [[3, 2], [5, 2], [3, 4], [5, 4]],
+    ];
+    for (const room of rooms) {
+      const reserved = [[4, 1], [4, 5], [1, 3], [7, 3], [4, 4], ...DUNGEON_RUNES.map(point => [point.x, point.y])];
+      room.walls = patterns[(room.id + seed) % patterns.length]
+        .filter(([x, y]) => !reserved.some(([rx, ry]) => x === rx && y === ry) &&
+          !(room.patrol === 1 ? x === 6 : room.patrol === 2 ? y === 3 : y === (room.creature === "bat" ? 2 : 4)))
+        .map(([x, y]) => ({ x, y }));
+      room.runeOrder = [0, 1, 2].sort((a, b) => ((a + seed + room.id) % 3) - ((b + seed + room.id) % 3));
+      room.flame = { x: 1, y: 5 };
+      room.trap = room.pacing.stage === "rest" ? null : { x: 4, y: 4 };
+      const forward = room.connections.find(door => door.target === room.id + 1);
+      if (forward && room.id % 3 === 2) forward.secret = true;
+    }
+    for (let id = 1; id < roomCount; id += 4) {
+      const room = rooms[id];
+      const direction = mirrored ? "left" : "right";
+      const target = rooms.length;
+      room.connections.push({ direction, target, secret: true });
+      rooms.push({ id: target, mechanism: "key", mechanisms: [], phase: 0, creature: null, walls: [],
+        hidden: true, stash: { x: 6, y: 4, kind: id % 8 === 1 ? "money" : "food" },
+        connections: [{ direction: opposite[direction], target: id }] });
+    }
+  }
+  const level = freeze({ version: expanded ? 3 : paced ? 2 : 1, seed, tier, rewardBudget: DUNGEON_PROFILES[tier].rewardBudget,
+    rooms, treasureRoom: roomCount - 1 });
   levels.add(level);
   return level;
 }
@@ -81,9 +109,11 @@ export function createDungeon({ level = generateDungeon(), weapon = "none", heal
   return retain({ level, weapon, healthMode, room: 0, x: 4, y: 5, facing: "up",
     health: healthMode === "preview" ? 3 : null, tick: 0,
     solved: [], blocks: level.rooms.map(() => ({ x: 3, y: 3 })), defeated: [], invulnerable: 0,
-    ...(level.version === 2 ? { activated: [] } : {}),
+    ...(level.version >= 2 ? { activated: [] } : {}),
+    ...(level.version >= 3 ? { secrets: [], stashes: [], flames: [], crank: 0, runes: [], trapTick: null } : {}),
     completed: false, failed: false, message: "arrival",
-    metrics: { roomEntries: 1, roomsVisited: [0], trapHits: 0, creatureHits: 0 } });
+    metrics: { roomEntries: 1, roomsVisited: [0], trapHits: 0, creatureHits: 0,
+      ...(level.version >= 3 ? { wrongAttempts: 0 } : {}) } });
 }
 
 export function dungeonCreature(state) {
@@ -107,7 +137,14 @@ export function dungeonGateOpen(state) {
 
 export const dungeonMechanisms = room => room.mechanisms ?? [room.mechanism];
 export function dungeonTarget(room, mechanism) {
+  if (mechanism === "runes") return DUNGEON_RUNES[0];
   return { x: room.patrol === 1 ? 6 : 2, y: mechanism === "switch" ? 2 : 4 };
+}
+export const DUNGEON_RUNES = Object.freeze([{ x: 2, y: 1 }, { x: 4, y: 2 }, { x: 6, y: 1 }].map(Object.freeze));
+export function dungeonArrow(state) {
+  if (state.trapTick === null || state.trapTick === undefined) return null;
+  const age = state.tick - state.trapTick - 2;
+  return age >= 0 && age < 7 ? { x: 1 + age, y: 4 } : null;
 }
 
 export function stepDungeon(state, action) {
@@ -137,7 +174,8 @@ export function stepDungeon(state, action) {
       return target.x === x && target.y === y;
     });
     if (edge) {
-      if (edge.target > state.room && !dungeonGateOpen(state)) next.message = "locked";
+      if (edge.secret && !state.secrets.includes(`${room.id}:${edge.target}`)) next.message = "hiddenDoor";
+      else if (edge.target > state.room && !dungeonGateOpen(state)) next.message = "locked";
       else {
         next.room = edge.target;
         const arrival = DUNGEON_DIRECTIONS[opposite[edge.direction]];
@@ -147,9 +185,10 @@ export function stepDungeon(state, action) {
         if (!next.metrics.roomsVisited.includes(next.room)) next.metrics.roomsVisited.push(next.room);
         next.invulnerable = 2;
         next.message = "arrival";
+        if (state.level.version >= 3) { next.trapTick = null; next.crank = 0; next.runes = []; }
       }
     } else if (target.x > 0 && target.x < 8 && target.y > 0 && target.y < 6) {
-      let blocked = false;
+      let blocked = !!room.walls?.some(wall => same(wall, target));
       if (dungeonMechanisms(room).includes("block") && same(target, next.blocks[state.room])) {
         const pushed = { x: target.x + direction.x, y: target.y + direction.y };
         // The block's rail prevents irreversible corner traps.
@@ -163,17 +202,48 @@ export function stepDungeon(state, action) {
       else next.message = "blocked";
     } else next.message = "blocked";
   } else if (action.type === "interact") {
-    const mechanism = dungeonMechanisms(room).find(mechanism => {
+    let handled = false;
+    if (state.level.version >= 3) {
+      const near = point => Math.abs(state.x - point.x) + Math.abs(state.y - point.y) <= 1;
+      const secret = room.connections.find(door => door.secret &&
+        !state.secrets.includes(`${room.id}:${door.target}`) &&
+        near({ x: DUNGEON_DIRECTIONS[door.direction].door[0], y: DUNGEON_DIRECTIONS[door.direction].door[1] }));
+      if (secret) {
+        next.secrets = [...state.secrets, `${room.id}:${secret.target}`];
+        next.message = "secret"; handled = true;
+      }
+      if (!handled && room.stash && near(room.stash) && !state.stashes.includes(room.id)) {
+        next.stashes = [...state.stashes, room.id]; next.message = "stash"; handled = true;
+      }
+      if (!handled && room.mechanisms.includes("torch") && near(room.flame) && !state.flames.includes(room.id)) {
+        next.flames = [...state.flames, room.id]; next.message = "flame"; handled = true;
+      }
+      if (!handled && room.mechanisms.includes("runes") && !state.activated.includes(`${room.id}:runes`)) {
+        const index = DUNGEON_RUNES.findIndex(near);
+        if (index >= 0) {
+          handled = true;
+          if (index !== room.runeOrder[state.runes.length]) {
+            next.runes = []; next.metrics.wrongAttempts++; next.message = "runeReset";
+          } else {
+            next.runes = [...state.runes, index]; next.message = "mechanismProgress";
+            if (next.runes.length === 3) solve("runes");
+          }
+        }
+      }
+    }
+    const mechanism = !handled && dungeonMechanisms(room).find(mechanism => {
       const target = dungeonTarget(room, mechanism);
-      return ["switch", "key"].includes(mechanism) && !state.activated?.includes(`${room.id}:${mechanism}`) &&
+      return ["switch", "key", "torch", "crank"].includes(mechanism) && !state.activated?.includes(`${room.id}:${mechanism}`) &&
         Math.abs(state.x - target.x) + Math.abs(state.y - target.y) <= 1;
     });
-    if (mechanism) solve(mechanism);
-    else if (state.room === state.level.treasureRoom && dungeonGateOpen(state) &&
+    if (mechanism === "torch" && !state.flames.includes(room.id)) next.message = "needFlame";
+    else if (mechanism === "crank" && ++next.crank < 3) next.message = "cranking";
+    else if (mechanism) solve(mechanism);
+    else if (!handled && state.room === state.level.treasureRoom && dungeonGateOpen(state) &&
         Math.abs(state.x - 6) + Math.abs(state.y - 3) <= 1) {
       next.completed = true;
       next.message = "complete";
-    } else next.message = "nothing";
+    } else if (next.message === "move") next.message = "nothing";
   } else if (action.type === "attack") {
     const creature = dungeonCreature(state);
     const reach = state.weapon === "sword" ? 2 : 1;
@@ -192,11 +262,18 @@ export function stepDungeon(state, action) {
     }
     next.message = "retry";
   }
+  if (state.level.version >= 3 && next.room === state.room) {
+    if (room.mechanisms.includes("plate") && same(next, dungeonTarget(room, "plate"))) solve("plate");
+    if (room.trap && same(next, room.trap) && (next.trapTick === null || next.tick - next.trapTick > 10)) {
+      next.trapTick = next.tick; next.message = "trapWarning";
+    }
+    if (action.type === "retry") { next.trapTick = null; next.crank = 0; next.runes = []; }
+  }
   if (!next.completed && !next.invulnerable) {
     const creature = dungeonCreature(next);
     const creatureHit = creature && same(next, creature);
-    const trapHit = dungeonMechanisms(next.level.rooms[next.room]).includes("spikes") &&
-      next.x === 4 && next.y === 3 && dungeonSpikesActive(next);
+    const trapHit = (dungeonMechanisms(next.level.rooms[next.room]).includes("spikes") &&
+      next.x === 4 && next.y === 3 && dungeonSpikesActive(next)) || same(next, dungeonArrow(next) ?? { x: -1, y: -1 });
     if (creatureHit || trapHit) {
       if (next.healthMode === "preview") next.health--;
       if (trapHit) next.metrics.trapHits++;

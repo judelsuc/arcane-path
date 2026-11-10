@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { createPlatformer, stepPlatformer, PLAYER, platformLadders, platformRoomSolved } from "../../minigames/legend-platformer.mjs";
+import { createPlatformer, stepPlatformer, PLAYER, platformLadders, platformRoomSolved, platformAnimal, platformArrow,
+  platformHazardActive, PLATFORM_RUNES } from "../../minigames/legend-platformer.mjs";
 import { generatePlatformLevel } from "../../minigames/legend-layout.mjs";
 
 const floor = { x: 0, y: 288, width: 640 };
@@ -7,15 +8,18 @@ const centre = surface => surface.x + surface.width / 2 - PLAYER.width / 2;
 const supports = (surface, state) => Math.abs(state.y + PLAYER.height - surface.y) < .1 &&
   state.x + PLAYER.width > surface.x && state.x < surface.x + surface.width;
 
-export function variedPlatformRoute(seed, { tier = "modest", branches = 2, visitBranches = false } = {}) {
-  const level = generatePlatformLevel({ seed, tier, branches, paced: true, varied: true });
+export function variedPlatformRoute(seed, { tier = "modest", branches = 2, visitBranches = false, expanded = false } = {}) {
+  const level = generatePlatformLevel({ seed, tier, branches, paced: true, varied: true, expanded });
   let state = createPlatformer({ level, healthMode: "journey" });
   const actions = [];
   function record(controls) {
     const last = actions.at(-1);
     if (last?.ticks < 60 && JSON.stringify(last.controls) === JSON.stringify(controls)) last.ticks++;
     else actions.push({ controls, ticks: 1 });
+    const previous = state;
     state = stepPlatformer(state, controls);
+    if (expanded) assert.equal(state.metrics.creatureHits, previous.metrics.creatureHits,
+      `seed${seed} room${previous.room} tick${previous.ticks} ${previous.x},${previous.y} ${JSON.stringify(controls)} animal ${JSON.stringify(platformAnimal(previous))}`);
   }
   function simulate(start, controls, predicate, limit = 240) {
     let current = start;
@@ -24,17 +28,21 @@ export function variedPlatformRoute(seed, { tier = "modest", branches = 2, visit
       const input = controls(current, tick);
       inputs.push(input);
       current = stepPlatformer(current, input);
-      if (current.metrics.trapHits !== start.metrics.trapHits || current.room !== start.room) return null;
+      if (current.metrics.trapHits !== start.metrics.trapHits ||
+          current.metrics.creatureHits !== start.metrics.creatureHits || current.room !== start.room) return null;
     }
     return predicate(current) ? { state: current, inputs } : null;
   }
   function walk(start, x) {
     return simulate(start, current => {
       const right = current.x < x;
-      const jump = current.grounded && current.y >= 250 && level.rooms[current.room].hazards.some(hazard => {
+      const animal = platformAnimal(current), arrow = platformArrow(current);
+      const threat = [animal, arrow].filter(Boolean).some(item =>
+        Math.abs(current.y - item.y) < 30 && Math.abs(current.x - item.x) < 65);
+      const jump = current.grounded && (threat || current.y >= 250 && level.rooms[current.room].hazards.some(hazard => {
         const distance = right ? hazard.x - current.x - PLAYER.width : current.x - hazard.x - hazard.width;
-        return distance >= 20 && distance <= 32;
-      });
+        return distance >= 20 && distance <= 32 && (!expanded || platformHazardActive(hazard, current.ticks + 12));
+      }));
       return { ...(Math.abs(current.x - x) > 2 ? right ? { right: true } : { left: true } : {}), ...(jump ? { jump: true } : {}) };
     }, current => Math.abs(current.x - x) <= 3 && current.grounded);
   }
@@ -50,7 +58,7 @@ export function variedPlatformRoute(seed, { tier = "modest", branches = 2, visit
       const node = queue.shift();
       const source = surfaces.find(surface => supports(surface, node.state));
       if (!source) continue;
-      const key = `${source.x}:${source.y}:${Math.round(node.state.x / 40)}`;
+      const key = `${source.x}:${source.y}:${Math.round(node.state.x / 40)}${expanded ? `:${Math.floor(node.state.ticks % 3600 / 60)}` : ""}`;
       if (source === target) {
         const result = walk(node.state, point.x);
         if (result && supports(target, result.state)) {
@@ -71,6 +79,10 @@ export function variedPlatformRoute(seed, { tier = "modest", branches = 2, visit
       }
       if (visited.has(key)) continue;
       visited.add(key);
+      if (expanded) {
+        const waited = simulate(node.state, () => ({}), current => current.ticks >= node.state.ticks + 60);
+        if (waited) queue.push({ state: waited.state, inputs: [...node.inputs, ...waited.inputs] });
+      }
       for (const destination of surfaces) {
         if (destination === source || destination.y < source.y - 62) continue;
         const landings = [centre(source), centre(destination), destination.x + 12,
@@ -109,27 +121,41 @@ export function variedPlatformRoute(seed, { tier = "modest", branches = 2, visit
         if (result) queue.push({ state: result.state, inputs: [...node.inputs, ...walked.inputs, ...result.inputs] });
       }
     }
-    assert.fail(`seed ${seed}: unreachable ${JSON.stringify(point)} from ${state.x},${state.y} in ${room.id}:${room.archetype}:${room.mirrored}; visited ${[...visited]}`);
+    assert.fail(`seed ${seed}: unreachable ${JSON.stringify(point)} from ${state.x},${state.y} in ${room.id}:${room.archetype}:${room.mirrored}; ${visited.size} regions searched`);
   }
   function solve() {
     const room = level.rooms[state.room];
     for (const [index, point] of (room.challenges ?? []).entries()) {
       if (state.activated.includes(`${room.id}:${index}`)) continue;
+      if (index === 0 && point.family === "runes") {
+        for (const rune of room.runeOrder) {
+          moveTo(PLATFORM_RUNES[rune]);
+          record({ interact: true }); record({});
+        }
+        continue;
+      }
+      if (point.family === "torch") {
+        moveTo(room.flame); record({ interact: true });
+      }
       moveTo(point, point.family === "jump");
-      if (point.family !== "jump") record({ interact: true });
+      if (point.family === "plate") record({});
+      else if (point.family === "crank") for (let tick = 0; tick < 60; tick++) record({ interact: true });
+      else if (point.family !== "jump") record({ interact: true });
       assert.ok(state.activated.includes(`${room.id}:${index}`), `mechanism ${point.family} ${room.archetype}`);
     }
-    assert.ok(platformRoomSolved(state, room));
+    assert.ok(platformRoomSolved(state, room), `seed${seed} room${room.id} ${room.archetype} mechanisms ${JSON.stringify(room.challenges)} activated ${state.activated} runes ${state.runes}`);
   }
   function enter(door) {
     solve();
     moveTo(door);
     record({ interact: true });
+    if (door.secret && state.room !== door.target) record({ interact: true });
     assert.equal(state.room, door.target, `door in ${level.rooms[state.room].archetype}`);
   }
   if (visitBranches) {
     function visit(parent = null) {
       const room = level.rooms[state.room];
+      if (room.stash) { moveTo(room.stash); record({ interact: true }); }
       for (const door of room.connections) {
         if (door.target === parent) continue;
         enter(door);
@@ -147,5 +173,6 @@ export function variedPlatformRoute(seed, { tier = "modest", branches = 2, visit
   record({ interact: true });
   assert.equal(state.completed, true);
   assert.equal(state.metrics.trapHits, 0);
+  if (expanded) assert.equal(state.metrics.creatureHits, 0);
   return { actions, state, level };
 }

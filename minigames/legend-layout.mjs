@@ -18,6 +18,14 @@ export const PLATFORM_ARCHETYPES = Object.freeze([
   "terraces", "stepping-stones", "split-shafts", "hanging-gallery",
   "low-vault", "twin-balconies", "zigzag", "high-bridge",
 ]);
+export const EXPANDED_PLATFORM_ARCHETYPES = Object.freeze([
+  ...PLATFORM_ARCHETYPES, "bell-tower", "sunken-stairs", "broken-aqueduct", "crossing-galleries",
+  "well", "rooftops", "switchback", "three-islands",
+]);
+export const EXPANDED_PLATFORM_CHALLENGES = Object.freeze([
+  "jump", "switch", "key", "timing", "plate", "crank", "torch", "runes",
+]);
+export const PLATFORM_RUNES = Object.freeze([144, 432, 528].map(x => Object.freeze({ x, y: 262 })));
 
 function variedRoom(room, archetype, mirrored, random) {
   const shelf = (x, y, width) => ({ x, y, width, height: 12 });
@@ -40,6 +48,23 @@ function variedRoom(room, archetype, mirrored, random) {
       ladders: [ladder(96, 240), ladder(280, 192, 240), ladder(464, 144, 192), ladder(560, 96, 144)] },
     "high-bridge": { platforms: [shelf(32, 96, 576), shelf(80, 192, 128), shelf(432, 240, 128)],
       ladders: [ladder(80, 96), ladder(560, 96)] },
+    "bell-tower": { platforms: [shelf(264, 240, 112), shelf(160, 192, 120), shelf(280, 144, 120), shelf(384, 96, 160)],
+      ladders: [ladder(320, 240), ladder(440, 96)] },
+    "sunken-stairs": { platforms: [shelf(32, 96, 144), shelf(176, 144, 128), shelf(304, 192, 128), shelf(432, 240, 160)],
+      ladders: [] },
+    "broken-aqueduct": { platforms: [shelf(32, 96, 176), shelf(256, 96, 128), shelf(432, 96, 176), shelf(208, 192, 224)],
+      ladders: [ladder(80, 96), ladder(560, 96)] },
+    "crossing-galleries": { platforms: [shelf(48, 240, 208), shelf(352, 240, 240), shelf(192, 192, 240),
+      shelf(80, 144, 144), shelf(400, 144, 144), shelf(224, 96, 192)],
+      ladders: [ladder(112, 144), ladder(496, 144)] },
+    well: { platforms: [shelf(48, 96, 160), shelf(432, 96, 160), shelf(160, 192, 112), shelf(336, 240, 112)],
+      ladders: [ladder(96, 96), ladder(544, 96)] },
+    rooftops: { platforms: [shelf(32, 240, 128), shelf(176, 192, 128), shelf(320, 144, 128), shelf(464, 96, 144)],
+      ladders: [] },
+    switchback: { platforms: [shelf(64, 240, 192), shelf(208, 192, 192), shelf(352, 144, 192), shelf(208, 96, 192)],
+      ladders: [ladder(112, 240), ladder(256, 192, 240), ladder(400, 144, 192), ladder(384, 96, 144)] },
+    "three-islands": { platforms: [shelf(32, 144, 176), shelf(240, 96, 192), shelf(464, 192, 144)],
+      ladders: [ladder(80, 144), ladder(296, 96), ladder(560, 192)] },
   }[archetype];
   room.archetype = archetype;
   room.mirrored = mirrored;
@@ -123,7 +148,7 @@ function deepFreeze(value) {
 
 export function isPlatformLevel(level) { return levels.has(level); }
 
-export function generatePlatformLevel({ seed = 1, mainRooms, branches = 2, tier, paced = false, varied = false } = {}) {
+export function generatePlatformLevel({ seed = 1, mainRooms, branches = 2, tier, paced = false, varied = false, expanded = false } = {}) {
   if (tier !== undefined && (!Object.hasOwn(PLATFORM_PROFILES, tier) || mainRooms !== undefined)) {
     throw new RangeError("Choose a platform reward tier or a custom main path length.");
   }
@@ -131,7 +156,8 @@ export function generatePlatformLevel({ seed = 1, mainRooms, branches = 2, tier,
   if (!Number.isSafeInteger(seed) || seed < 0 || seed > 0xffffffff ||
       !Number.isSafeInteger(mainRooms) || mainRooms < 4 || mainRooms > 32 ||
       !Number.isSafeInteger(branches) || branches < 0 || branches > 4 ||
-      typeof paced !== "boolean" || typeof varied !== "boolean" || paced && mainRooms < 8) {
+      typeof paced !== "boolean" || typeof varied !== "boolean" || typeof expanded !== "boolean" ||
+      expanded && (!varied || !paced) || paced && mainRooms < 8) {
     throw new RangeError("Invalid platform level seed, main path length or branch count.");
   }
   const random = randomSource(seed);
@@ -267,12 +293,49 @@ export function generatePlatformLevel({ seed = 1, mainRooms, branches = 2, tier,
     let previous;
     for (const room of rooms) {
       if (!archetypes.length) {
-        archetypes = shuffled(PLATFORM_ARCHETYPES);
+        archetypes = shuffled(expanded ? EXPANDED_PLATFORM_ARCHETYPES : PLATFORM_ARCHETYPES);
         if (archetypes[0] === previous) [archetypes[0], archetypes[1]] = [archetypes[1], archetypes[0]];
       }
       const archetype = archetypes.shift();
       variedRoom(room, archetype, random() < .5, random);
       previous = archetype;
+    }
+    if (expanded) {
+      const families = shuffled(EXPANDED_PLATFORM_CHALLENGES);
+      for (const room of rooms) {
+        if (room.main) {
+          const point = room.challenges[0];
+          const supportY = point.y + (point.family === "jump" ? 64 : 26);
+          room.challenges[0].family = families[room.id % families.length];
+          room.challenge = room.challenges[0];
+          point.y = supportY - (point.family === "jump" ? 64 : 26);
+          if (room.challenge.family === "torch") room.flame = { x: 311, y: 262 };
+          if (room.challenge.family === "runes") {
+            room.runeOrder = shuffled([0, 1, 2]);
+            room.hazards = [];
+          }
+          const forward = room.connections.find(door => door.target === room.id + 1);
+          if (forward && room.id % 3 === 2) forward.secret = true;
+        }
+        if (!room.main) room.stash = { x: room.pickup?.x ?? 311, y: room.pickup?.y ?? 262,
+          kind: room.id % 2 ? "food" : "money" };
+        if (room.pacing?.stage !== "rest") {
+          const lanes = room.platforms.filter(surface => surface.width >= 160 && [...(room.challenges ?? []), room.treasure,
+            ...room.connections].filter(Boolean).every(point =>
+            !([point.y + 26, point.y + 64].includes(surface.y) ||
+              point.family === "jump" && Math.abs(surface.y - point.y - 64) <= 96) ||
+              point.x < surface.x - 40 || point.x > surface.x + surface.width + 40));
+          const flightX = [32, 544, 280].find(x => (room.challenges ?? []).every(point =>
+            point.family !== "jump" || point.x < x - 48 || point.x > x + 112));
+          if (!lanes.length && flightX === undefined) throw new Error("Unable to keep a bat clear of bell jumps.");
+          const lane = lanes[(room.id + 1) % lanes.length] ?? { x: flightX, y: 288, width: 64 };
+          room.animal = { kind: lanes.length && room.id % 2 ? "rat" : "bat", x: lane.x + 8,
+            y: lanes.length ? lane.y - 18 : 32, range: Math.max(24, lane.width - 32), period: 240 + room.id % 3 * 60 };
+          room.arrowTrap = { plate: { x: 240 + room.id % 3 * 56, y: 284, width: 24, height: 4 },
+            x: room.mirrored ? 608 : 16, y: 267, direction: room.mirrored ? -1 : 1,
+            delay: 48, cooldown: 240 };
+        }
+      }
     }
     for (const room of rooms) for (const door of room.connections) {
       const back = rooms[door.target].connections.find(item => item.target === room.id);
@@ -280,7 +343,7 @@ export function generatePlatformLevel({ seed = 1, mainRooms, branches = 2, tier,
       door.arrivalY = back.y;
     }
   }
-  const level = deepFreeze({ version: varied ? 4 : paced ? 3 : 2, seed, mainRooms, tier: tier ?? null,
+  const level = deepFreeze({ version: expanded ? 5 : varied ? 4 : paced ? 3 : 2, seed, mainRooms, tier: tier ?? null,
     rewardBudget: tier === undefined ? null : PLATFORM_PROFILES[tier].rewardBudget,
     start: 0, treasureRoom: mainRooms - 1,
     rooms, edges, spawn: { x: 311, y: 262 } });

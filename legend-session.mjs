@@ -1,5 +1,5 @@
 import { createInvestigation, investigate } from "./legend-adventure.mjs";
-import { adventureCosts, dungeonCosts } from "./adventure-costs.mjs";
+import { encounterCosts } from "./adventure-costs.mjs";
 import { restSurvival } from "./survival.mjs";
 import { actionInterrupted, finishAction } from "./economy.mjs";
 import { generateInvestigation, createGeneratedInvestigation, stepInvestigation } from "./minigames/legend-investigation.mjs";
@@ -23,17 +23,23 @@ export const TREASURE_PLATFORM_VERSION = "treasure-platform-v1";
 export const VARIED_PLATFORM_VERSION = "treasure-platform-v2";
 export const TREASURE_INVESTIGATION_VERSION = "treasure-investigation-v1";
 export const TREASURE_DUNGEON_VERSION = "treasure-dungeon-v1";
+export const EXPANDED_PLATFORM_VERSION = "treasure-platform-v3";
+export const EXPANDED_INVESTIGATION_VERSION = "treasure-investigation-v2";
+export const EXPANDED_DUNGEON_VERSION = "treasure-dungeon-v2";
+export const isExpandedLegendSession = version =>
+  [EXPANDED_PLATFORM_VERSION, EXPANDED_INVESTIGATION_VERSION, EXPANDED_DUNGEON_VERSION].includes(version);
 export const isTreasureSession = version =>
+  isExpandedLegendSession(version) ||
   [TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION].includes(version);
 export const isPacedLegendSession = version =>
   [PACED_PLATFORM_VERSION, PACED_INVESTIGATION_VERSION, PACED_DUNGEON_VERSION].includes(version) || isTreasureSession(version);
 export const isPlatformSession = version =>
-  [LOCAL_PLATFORM_VERSION, PACED_PLATFORM_VERSION, TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION].includes(version);
+  [LOCAL_PLATFORM_VERSION, PACED_PLATFORM_VERSION, TREASURE_PLATFORM_VERSION, VARIED_PLATFORM_VERSION, EXPANDED_PLATFORM_VERSION].includes(version);
 export const isLocalLegendSession = version =>
   [LOCAL_PLATFORM_VERSION, LOCAL_INVESTIGATION_VERSION, LOCAL_DUNGEON_VERSION].includes(version) || isPacedLegendSession(version);
-export const isDungeonSession = version => [DUNGEON_SESSION_VERSION, DUNGEON_FOOD_VERSION, LOCAL_DUNGEON_VERSION, PACED_DUNGEON_VERSION, TREASURE_DUNGEON_VERSION].includes(version);
-export const isGeneratedInvestigation = version => [GENERATED_INVESTIGATION_VERSION, LOCAL_INVESTIGATION_VERSION, PACED_INVESTIGATION_VERSION, TREASURE_INVESTIGATION_VERSION].includes(version);
-export const hasDungeonFood = version => [DUNGEON_FOOD_VERSION, LOCAL_DUNGEON_VERSION, PACED_DUNGEON_VERSION, TREASURE_DUNGEON_VERSION].includes(version);
+export const isDungeonSession = version => [DUNGEON_SESSION_VERSION, DUNGEON_FOOD_VERSION, LOCAL_DUNGEON_VERSION, PACED_DUNGEON_VERSION, TREASURE_DUNGEON_VERSION, EXPANDED_DUNGEON_VERSION].includes(version);
+export const isGeneratedInvestigation = version => [GENERATED_INVESTIGATION_VERSION, LOCAL_INVESTIGATION_VERSION, PACED_INVESTIGATION_VERSION, TREASURE_INVESTIGATION_VERSION, EXPANDED_INVESTIGATION_VERSION].includes(version);
+export const hasDungeonFood = version => [DUNGEON_FOOD_VERSION, LOCAL_DUNGEON_VERSION, PACED_DUNGEON_VERSION, TREASURE_DUNGEON_VERSION, EXPANDED_DUNGEON_VERSION].includes(version);
 const supportedVersion = version => [LEGEND_SESSION_VERSION, GENERATED_INVESTIGATION_VERSION].includes(version) ||
   isLocalLegendSession(version) || isDungeonSession(version);
 export const MAX_INVESTIGATION_ACTIONS = 1024;
@@ -79,6 +85,7 @@ export function replayLegendSession({ contentVersion, seed, actions, weapon }) {
   const dungeon = isDungeonSession(contentVersion);
   const platform = isPlatformSession(contentVersion);
   const paced = isPacedLegendSession(contentVersion);
+  const expanded = isExpandedLegendSession(contentVersion);
   if ((!dungeon && !platform && !isGeneratedInvestigation(contentVersion)) ||
       dungeon && !["none", "knife", ...(isTreasureSession(contentVersion) ? ["sword"] : [])].includes(weapon) ||
       !Number.isSafeInteger(seed) || seed < 0 || seed > 0xffffffff ||
@@ -87,11 +94,11 @@ export function replayLegendSession({ contentVersion, seed, actions, weapon }) {
   }
   try {
     let state = platform ? createPlatformer({ level: generatePlatformLevel({
-      seed, tier: "modest", paced, varied: contentVersion === VARIED_PLATFORM_VERSION,
+      seed, tier: "modest", paced, expanded, varied: expanded || contentVersion === VARIED_PLATFORM_VERSION,
     }), healthMode: "journey" }) : dungeon
-      ? createDungeon({ level: generateDungeon({ seed, tier: "modest", paced,
+      ? createDungeon({ level: generateDungeon({ seed, tier: "modest", paced, expanded,
         ...(isLocalLegendSession(contentVersion) ? {} : { roomCount: 4 }) }), weapon, healthMode: "journey" })
-      : createGeneratedInvestigation({ level: generateInvestigation({ seed, tier: "modest", paced,
+      : createGeneratedInvestigation({ level: generateInvestigation({ seed, tier: "modest", paced, expanded,
         ...(isLocalLegendSession(contentVersion) ? {} : { roomCount: 4 }) }) });
     let ticks = 0;
     for (const action of actions) {
@@ -139,12 +146,14 @@ export function validateLegendSessionView(session, state) {
     throw new Error("Invalid authoritative legend session.");
   }
   const progress = replayLegendSession(session);
-  const costs = isDungeonSession(session.contentVersion) ? dungeonCosts(progress.metrics) : adventureCosts(progress.metrics);
+  const costs = encounterCosts(progress.metrics);
   if (!exact(session.costs, Object.keys(costs)) ||
       Object.keys(costs).some(key => session.costs[key] !== costs[key]) ||
       !exact(session.metrics, ["roomEntries", "roomsVisited", "trapHits",
-        ...(isDungeonSession(session.contentVersion) ? ["creatureHits"] : [])]) ||
+        ...(progress.metrics.creatureHits !== undefined ? ["creatureHits"] : []),
+        ...(isExpandedLegendSession(session.contentVersion) ? ["wrongAttempts"] : [])]) ||
       session.metrics.creatureHits !== progress.metrics.creatureHits ||
+      session.metrics.wrongAttempts !== progress.metrics.wrongAttempts ||
       session.metrics.roomEntries !== progress.metrics.roomEntries ||
       session.metrics.trapHits !== progress.metrics.trapHits ||
       JSON.stringify(session.metrics.roomsVisited) !== JSON.stringify(progress.metrics.roomsVisited) ||
@@ -208,7 +217,7 @@ export function advanceLegendSession(runtime, action, { definition, runId, info 
       if (action.type === "legend-restart") {
         session.actions = [];
         const progress = replayLegendSession(session);
-        const costs = isDungeonSession(session.contentVersion) ? dungeonCosts(progress.metrics) : adventureCosts(progress.metrics);
+        const costs = encounterCosts(progress.metrics);
         const before = runtime.state;
         const state = settleAdventureCosts(before, costs, { ...runtime, info });
         session = { ...session, costs, metrics: progress.metrics,
@@ -246,7 +255,7 @@ export function advanceLegendSession(runtime, action, { definition, runId, info 
     } else throw new Error("Unknown investigation command.");
   }
 
-  const costs = isDungeonSession(session.contentVersion) ? dungeonCosts(progress.metrics) : adventureCosts(progress.metrics);
+  const costs = encounterCosts(progress.metrics);
   const paid = action.type === "legend-start"
     ? { minutes: 0, fatigue: 0, health: 0, dirt: 0 } : previous.costs;
   const increment = Object.fromEntries(Object.keys(costs).map(key => [key, costs[key] - paid[key]]));
@@ -305,7 +314,7 @@ export function stepLocalLegendAttempt(attempt, input) {
       }
       next.progress = stepDungeon(previous, input);
     } else next.progress = stepInvestigation(previous, input);
-    const costs = isDungeonSession(attempt.contentVersion) ? dungeonCosts(next.progress.metrics) : adventureCosts(next.progress.metrics);
+    const costs = encounterCosts(next.progress.metrics);
     const increment = Object.fromEntries(Object.keys(costs).map(key => [key, costs[key] - next.costs[key]]));
     const before = next.state;
     next.state = settleAdventureCosts(before, increment, { ...next, paidCosts: next.costs });

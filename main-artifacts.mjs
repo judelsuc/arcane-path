@@ -1,5 +1,5 @@
 import { applyLoreAction, createArtifactProgress, deliverMoonDream, loreView, infoAt } from "./lore-engine.mjs";
-import { advanceLegendSession, isTreasureSession } from "./legend-session.mjs";
+import { advanceLegendSession, isTreasureSession, isExpandedLegendSession, replayLegendSession } from "./legend-session.mjs";
 import { syncTreasures, treasureAction, awardTreasure } from "./legend-rewards.mjs";
 import { mapIdentity, SAVE_VERSION, validateSave } from "./journey-save.mjs";
 import { beginEquipment } from "./equipment.mjs";
@@ -147,6 +147,19 @@ export async function mainArtifactRequest(input) {
         input.legendReward ?? input.legendDefinition?.reward);
       result.runtime.state = awarded.state;
       treasureOutcome = { id: awarded.id, outcome: awarded.outcome };
+      if (awarded.outcome !== "taken" && isExpandedLegendSession(session.contentVersion)) {
+        const progress = replayLegendSession(session);
+        const finds = progress.stashes.map(id => progress.level.rooms[id].stash);
+        const cents = finds.filter(stash => stash.kind === "money").length * 100;
+        const kcal = finds.filter(stash => stash.kind === "food").length * 150;
+        const state = result.runtime.state;
+        if (!Number.isSafeInteger(state.walletCents) || state.walletCents + cents > 1_000_000_000) {
+          throw new Error("This purse cannot receive the secret stash.");
+        }
+        const reserveKcal = Math.min(genesis.survival.reserve_kcal, state.reserveKcal + kcal);
+        result.runtime.state = { ...state, walletCents: state.walletCents + cents, reserveKcal };
+        treasureOutcome.stash = { cents, foodKcal: reserveKcal - state.reserveKcal };
+      }
     }
   } else if (action?.type === "cache-open") {
     const cache = input.geocache;

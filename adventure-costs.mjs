@@ -2,6 +2,7 @@ export const ADVENTURE_COSTS = Object.freeze({
   room: Object.freeze({ minutes: 3, fatigue: 1, health: 0, dirt: 1 }),
   trap: Object.freeze({ minutes: 2, fatigue: 3, health: 5, dirt: 4 }),
   creature: Object.freeze({ minutes: 1, fatigue: 1, health: 2, dirt: 1 }),
+  mistake: Object.freeze({ minutes: 2, fatigue: 1, health: 0, dirt: 0 }),
 });
 
 export function adventureCosts(metrics) {
@@ -17,9 +18,14 @@ export function adventureCosts(metrics) {
     throw new Error("Invalid adventure room/trap accounting.");
   }
 
+  const mistakes = metrics.wrongAttempts ?? 0;
+  if (!Number.isSafeInteger(mistakes) || mistakes < 0 || mistakes > 10000) {
+    throw new Error("Invalid adventure encounter accounting.");
+  }
   return Object.fromEntries(Object.keys(ADVENTURE_COSTS.room).map(resource => [
     resource, metrics.roomEntries * ADVENTURE_COSTS.room[resource] +
-      metrics.trapHits * ADVENTURE_COSTS.trap[resource],
+      metrics.trapHits * ADVENTURE_COSTS.trap[resource] +
+      mistakes * ADVENTURE_COSTS.mistake[resource],
   ]));
 }
 
@@ -32,3 +38,5 @@ export function dungeonCosts(metrics) {
     resource, costs[resource] + metrics.creatureHits * ADVENTURE_COSTS.creature[resource],
   ]));
 }
+
+export const encounterCosts = metrics => metrics.creatureHits === undefined ? adventureCosts(metrics) : dungeonCosts(metrics);

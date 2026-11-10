@@ -176,6 +176,64 @@ explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
 ## Checkpoint deployed: town legends and composed treasures (9 November 2026)
 
+### Expanded encounters and journey stakes, 0.22.8
+
+New entries request `treasure-platform-v3`, `treasure-investigation-v2` or
+`treasure-dungeon-v2`, according to the town's unchanged permanent assignment.
+These pin platform geometry 5, investigation 3 and dungeon 3. Older protocols,
+including restarts, retain their generators, physics, puzzles and accounting.
+No town, entrance, reward-identity or database-schema migration is required.
+
+Platform encounters combine sixteen mirrored architectures and eight mechanism
+families. New pressure stones latch underfoot; cranks require a sustained hold
+(also available on touchscreens); braziers require carrying an ember; numbered
+runes require the inscribed procession. Marked floor plates arm delayed arrows,
+with a visible warning. Rats and bats patrol eligible ledges, avoiding mechanism
+workspaces, bell landing zones and narrow jump steps; rooms without a suitable
+ledge use a high-flying bat. Rune rooms reserve the floor from spikes, but retain
+triggered arrows. Some forward doors are cracked walls requiring discovery;
+optional branches contain stashes.
+
+Dungeons add four wall patterns, pressure stones, three-turn cranks, ember
+transport, rune sequences, delayed arrows and optional concealed stash chambers.
+Door approach tiles, trap plates and rune positions remain clear. Required
+secret exits and optional chamber entrances have visible cracks and inscriptions.
+Investigation decks add cyclic ciphers, two independent exclusion records,
+object/recipient exchanges, three-dial alignment, concealed panels and witnesses
+following a deterministic three-turn circuit. Evidence and solved archive marks
+remain available; wrong offers return the object to its shelf.
+
+All effects use the existing bounded transcript and authoritative replay:
+
+- Room entry: 3 minutes, 1 fatigue, 1 dirt.
+- Trap/arrow hit: 2 minutes, 3 fatigue, 5 health, 4 dirt.
+- Animal/creature contact: 1 minute, 1 fatigue, 2 health, 1 dirt.
+- Wrong answer, seal, sequence or rune: 2 minutes, 1 fatigue, no injury.
+- Equipment modifiers and ordinary survival still apply cumulatively.
+
+Secret stashes are replay-derived, never client-supplied. Each money stash grants
+100 cents; each food stash grants up to 150 kcal, capped by the journey reserve.
+They settle only alongside the town's first successful original-treasure award,
+inside the existing shared-world transaction. Leaving, interruption, restarting,
+lost races and repeated finish requests grant no stash reward. A full bag leaves
+the original at the entrance as before; the successful explorer still carries out
+their small finds. Existing creature-food rules remain separate. Pending stashes
+cannot rescue a character interrupted before the successful exit.
+
+Help contains controls, solutions, stakes and provisional accounting; only
+inscriptions, evidence, essential HUD and terse feedback remain on the playfield.
+The terminal console receipt reports retained charges and recovered finds.
+The isolated preview also uses the expanded engines, without main-save effects.
+Rollback must retain support for all three new protocols after any new attempt
+has started.
+
+Validation: 1,710 JavaScript tests and 41 focused Python tests passed. Expanded
+coverage includes 48 physical platform completions, 24 unarmed dungeon routes
+and 72 investigation completions across all tiers, plus authoritative settlement,
+lost-race/abandonment checks, legacy replay and 1,536 bilingual console mounts.
+The integrated browser's CDP connection timed out on both the existing page and
+a new page; no real-browser visual verification is claimed for this release.
+
 ### Varied platform architecture, 0.22.7
 
 New platform treasure attempts use `treasure-platform-v2`. The town's permanent

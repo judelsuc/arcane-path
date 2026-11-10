@@ -1,4 +1,5 @@
-import { isPlatformLevel } from "./legend-layout.mjs";
+import { isPlatformLevel, PLATFORM_RUNES } from "./legend-layout.mjs";
+export { PLATFORM_RUNES } from "./legend-layout.mjs";
 
 export const WIDTH = 640;
 export const HEIGHT = 320;
@@ -40,8 +41,11 @@ export function createPlatformer({ level = null, healthMode = "preview" } = {}) 
     ticks: 0, solved: Object.freeze([]),
     health: healthMode === "journey" ? null : 3, collected: Object.freeze([]), checkpoint: level.spawn,
     ...(level.version >= 3 ? { activated: Object.freeze([]) } : {}),
+    ...(level.version >= 5 ? { secrets: Object.freeze([]), stashes: Object.freeze([]),
+      flames: Object.freeze([]), runes: Object.freeze([]), crank: 0, trapTick: null } : {}),
     retries: 0, completed: false, message: "route",
-    metrics: { roomEntries: 1, roomsVisited: [level.start], trapHits: 0 } });
+    metrics: { roomEntries: 1, roomsVisited: [level.start], trapHits: 0,
+      ...(level.version >= 5 ? { creatureHits: 0, wrongAttempts: 0 } : {}) } });
   return freeze({ room: 0, x: 32, y: 262, vy: 0, grounded: true,
     switchOn: false, key: false, retries: 0, completed: false, message: "passage",
     metrics: { roomEntries: 1, roomsVisited: [0], trapHits: 0 } });
@@ -55,6 +59,19 @@ export const platformHazardActive = (hazard, ticks) =>
 export const platformRoomSolved = (state, room = state.level?.rooms[state.room]) =>
   !room?.challenge || state.solved.includes(room.id);
 export const platformLadders = room => room.ladders ?? [room.ladder, room.challengeLadder].filter(Boolean);
+export function platformAnimal(state) {
+  const animal = state.level?.rooms[state.room].animal;
+  if (!animal) return null;
+  const phase = state.ticks % animal.period / animal.period;
+  return { ...animal, x: animal.x + animal.range * (1 - Math.abs(phase * 2 - 1)), width: 20, height: 18 };
+}
+export function platformArrow(state) {
+  const trap = state.level?.rooms[state.room].arrowTrap;
+  if (!trap || state.trapTick === null || state.trapTick === undefined) return null;
+  const age = state.ticks - state.trapTick - trap.delay;
+  if (age < 0 || age > 120) return null;
+  return { x: trap.x + age * 5 * trap.direction, y: trap.y, width: 20, height: 4 };
+}
 
 export function stepPlatformer(state, controls = {}) {
   if (!states.has(state)) throw new TypeError("Expected a platform adventure state.");
@@ -64,10 +81,12 @@ export function stepPlatformer(state, controls = {}) {
   if (state.completed) return state;
   const next = { ...state };
   if (state.level) next.ticks++;
-  const retry = (damage = false) => {
+  const retry = (damage = false, creature = false) => {
     const health = state.level ? state.health === null ? null : state.health - Number(damage) : undefined;
     return freeze({ ...next, ...(state.level ? { health: health === null ? null : health || 3 } : {}),
-      metrics: { ...state.metrics, trapHits: state.metrics.trapHits + Number(damage) },
+      metrics: { ...next.metrics, trapHits: next.metrics.trapHits + Number(damage && !creature),
+        ...(creature ? { creatureHits: next.metrics.creatureHits + 1 } : {}) },
+      ...(state.level?.version >= 5 ? { trapTick: null, crank: 0, runes: Object.freeze([]) } : {}),
       x: state.checkpoint?.x ?? 32, y: state.checkpoint?.y ?? 262, vy: 0, grounded: true,
       retries: next.retries + 1, message: health === 0 ? "recovered" : "retry" });
   };
@@ -107,6 +126,74 @@ export function stepPlatformer(state, controls = {}) {
   }
   if (room.hazards.some(hazard => platformHazardActive(hazard, next.ticks ?? 0) &&
       overlaps(body(next), hazard))) return retry(true);
+  if (state.level?.version >= 5) {
+    const trap = room.arrowTrap;
+    if (trap && overlaps(body(next), trap.plate) &&
+        (state.trapTick === null || next.ticks - state.trapTick > trap.cooldown)) {
+      next.trapTick = next.ticks;
+      next.message = "trapWarning";
+    }
+    const arrow = platformArrow(next), animal = platformAnimal(next);
+    if (arrow && overlaps(body(next), arrow)) return retry(true);
+    if (animal && overlaps(body(next), animal)) return retry(true, true);
+    const near = point => Math.abs(next.x - point.x) < 28 && Math.abs(next.y - point.y) < 28;
+    if (!controls.interact || !near(room.challenge ?? {})) next.crank = 0;
+    if (room.challenge?.family === "plate" && !next.activated.includes(`${room.id}:0`) &&
+        near(room.challenge) && next.grounded) {
+      next.activated = Object.freeze([...next.activated, `${room.id}:0`]);
+      if (room.challenges.every((_, index) => next.activated.includes(`${room.id}:${index}`))) {
+        next.solved = Object.freeze([...state.solved, room.id]);
+      }
+      next.message = "challengeProgress";
+    }
+    if (controls.interact) {
+      const stash = room.stash;
+      if (stash && near(stash) && !state.stashes.includes(room.id)) {
+        next.stashes = Object.freeze([...state.stashes, room.id]);
+        next.message = "stash";
+        return freeze(next);
+      }
+      if (room.flame && near(room.flame) && !state.flames.includes(room.id)) {
+        next.flames = Object.freeze([...state.flames, room.id]); next.message = "flame";
+        return freeze(next);
+      }
+      const secret = room.connections.find(door => door.secret && near(door) && !state.secrets.includes(room.id));
+      if (secret) {
+        next.secrets = Object.freeze([...state.secrets, room.id]); next.message = "secret";
+        return freeze(next);
+      }
+      if (room.runeOrder && !state.activated.includes(`${room.id}:0`)) {
+        const index = PLATFORM_RUNES.findIndex(near);
+        if (index >= 0) {
+          // A held button must not press the same stone every simulation tick.
+          if (state.runeHeld !== index) {
+            if (index === room.runeOrder[state.runes.length]) next.runes = Object.freeze([...state.runes, index]);
+            else {
+              next.runes = Object.freeze([]);
+              next.metrics = { ...next.metrics, wrongAttempts: next.metrics.wrongAttempts + 1 };
+              next.message = "runeReset";
+            }
+            if (next.runes.length === 3) {
+              next.activated = Object.freeze([...state.activated, `${room.id}:0`]);
+              if (room.challenges.every((_, i) => next.activated.includes(`${room.id}:${i}`))) {
+                next.solved = Object.freeze([...state.solved, room.id]);
+              }
+              next.message = "challengeProgress";
+            }
+          }
+          next.runeHeld = index;
+          return freeze(next);
+        }
+      }
+      if (room.challenge?.family === "torch" && near(room.challenge) && !state.flames.includes(room.id)) {
+        next.message = "needFlame"; return freeze(next);
+      }
+      if (room.challenge?.family === "crank" && near(room.challenge) && !state.activated.includes(`${room.id}:0`)) {
+        next.crank++;
+        if (next.crank < 60) { next.message = "cranking"; return freeze(next); }
+      }
+    } else next.runeHeld = null;
+  }
   if (state.level && controls.interact) {
     const near = point => Math.abs(next.x - point.x) < 28 && Math.abs(next.y - point.y) < 28;
     const door = room.connections.find(near);
@@ -124,14 +211,19 @@ export function stepPlatformer(state, controls = {}) {
       next.vy = 0;
       next.grounded = true;
       next.message = state.level.rooms[next.room].name;
+      if (state.level.version >= 5) {
+        next.trapTick = null; next.crank = 0; next.runes = Object.freeze([]); next.runeHeld = null;
+      }
     } else if (room.challenge && !platformRoomSolved(state, room) &&
         (room.challenges ?? [room.challenge]).some((point, index) =>
           !state.activated?.includes(`${room.id}:${index}`) && near(point) &&
-          (point.family !== "jump" || !next.grounded && next.vy < 0))) {
+          (!["plate", "runes"].includes(point.family) &&
+            (point.family !== "jump" || !next.grounded && next.vy < 0)))) {
       if (room.challenges) {
         const index = room.challenges.findIndex((point, index) => !state.activated.includes(`${room.id}:${index}`) &&
-          near(point) && (point.family !== "jump" || !next.grounded && next.vy < 0));
-        next.activated = Object.freeze([...state.activated, `${room.id}:${index}`]);
+          near(point) && !["plate", "runes"].includes(point.family) &&
+          (point.family !== "jump" || !next.grounded && next.vy < 0));
+        next.activated = Object.freeze([...next.activated, `${room.id}:${index}`]);
       }
       const solved = !room.challenges || room.challenges.every((_, index) => next.activated.includes(`${room.id}:${index}`));
       if (solved) next.solved = Object.freeze([...state.solved, room.id]);

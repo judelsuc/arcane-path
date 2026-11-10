@@ -6,6 +6,7 @@ export const INVESTIGATION_PROFILES = Object.freeze({
   exceptional: Object.freeze({ rooms: 32, rewardBudget: 3 }),
 });
 export const PUZZLE_FAMILIES = Object.freeze(["evidence", "witnesses", "assembly", "sequence"]);
+export const EXPANDED_PUZZLE_FAMILIES = Object.freeze([...PUZZLE_FAMILIES, "cipher", "deduction", "exchange", "alignment"]);
 const levels = new WeakSet(), states = new WeakSet();
 function freeze(value) {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
@@ -16,11 +17,11 @@ function freeze(value) {
 }
 function retain(state) { freeze(state); states.add(state); return state; }
 
-export function generateInvestigation({ seed = 1, tier = "modest", roomCount = INVESTIGATION_PROFILES[tier]?.rooms, paced = false } = {}) {
+export function generateInvestigation({ seed = 1, tier = "modest", roomCount = INVESTIGATION_PROFILES[tier]?.rooms, paced = false, expanded = false } = {}) {
   if (!Number.isSafeInteger(seed) || seed < 0 || seed > 0xffffffff ||
       !Object.hasOwn(INVESTIGATION_PROFILES, tier) || !Number.isSafeInteger(roomCount) ||
       roomCount < 4 || roomCount > 32 || roomCount % 4 || typeof paced !== "boolean" ||
-      paced && roomCount < 8) throw new RangeError("Invalid investigation seed or tier.");
+      typeof expanded !== "boolean" || expanded && !paced || paced && roomCount < 8) throw new RangeError("Invalid investigation seed or tier.");
   let value = seed;
   const random = () => {
     value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
@@ -38,7 +39,7 @@ export function generateInvestigation({ seed = 1, tier = "modest", roomCount = I
   const rooms = [];
   for (let id = 0; id < roomCount; id++) {
     if (!bag.length) {
-      bag = shuffle(PUZZLE_FAMILIES);
+      bag = shuffle(expanded ? EXPANDED_PUZZLE_FAMILIES : PUZZLE_FAMILIES);
       if (bag[0] === rooms.at(-1)?.family) [bag[0], bag[1]] = [bag[1], bag[0]];
     }
     rooms.push({ id, family: bag.shift(), variant: Math.floor(random() * 2),
@@ -53,7 +54,12 @@ export function generateInvestigation({ seed = 1, tier = "modest", roomCount = I
       if (room.family === "sequence") room.order.push(...room.order.slice(0, room.pacing.complexity));
     }
   }
-  const level = freeze({ version: paced ? 2 : 1, seed, tier, ...INVESTIGATION_PROFILES[tier], rooms });
+  if (expanded) for (const room of rooms) {
+    room.concealed = room.id % 4 === 2;
+    room.cipherShift = 1 + room.id % 2;
+    room.stash = room.concealed ? { kind: room.id % 8 === 2 ? "money" : "food" } : null;
+  }
+  const level = freeze({ version: expanded ? 3 : paced ? 2 : 1, seed, tier, ...INVESTIGATION_PROFILES[tier], rooms });
   levels.add(level);
   return level;
 }
@@ -62,20 +68,34 @@ export function createGeneratedInvestigation({ level = generateInvestigation() }
   if (!levels.has(level)) throw new TypeError("Expected a generated investigation.");
   return retain({ level, room: 0, progress: level.rooms.map(() => ({
     solved: false, inspected: false, witnesses: [], parts: [], sequence: [],
-    ...(level.version === 2 ? { resolved: false } : {}),
+    ...(level.version >= 2 ? { resolved: false } : {}),
+    ...(level.version >= 3 ? { revealed: false, branches: [], dials: [0, 0, 0] } : {}),
   })), completed: false, message: "arrival",
-  metrics: { roomEntries: 1, roomsVisited: [0], trapHits: 0 } });
+  ...(level.version >= 3 ? { tick: 0, stashes: [] } : {}),
+  metrics: { roomEntries: 1, roomsVisited: [0], trapHits: 0, ...(level.version >= 3 ? { wrongAttempts: 0 } : {}) } });
 }
+
+export const investigationWitnessPresent = (state, witness) => state.level.version < 3 ||
+  (state.tick + state.room) % 3 !== witness;
 
 export function investigationCommands(state) {
   if (!states.has(state)) throw new TypeError("Expected a generated investigation state.");
   const room = state.level.rooms[state.room];
+  if (room.concealed && !state.progress[state.room].revealed) return ["inspect", "search:0", "search:1", "search:2"];
   if (room.seal !== undefined && state.progress[state.room].resolved) return ["verify:0", "verify:1", "verify:2"];
+  if (room.family === "witnesses" && state.level.version >= 3) {
+    return state.progress[state.room].witnesses.length < 2 ? ["witness:0", "witness:1", "wait"] : ["choose:0", "choose:1", "choose:2"];
+  }
   return ({
     evidence: ["inspect", "choose:0", "choose:1", "choose:2"],
     witnesses: ["witness:0", "witness:1", "choose:0", "choose:1", "choose:2"],
     assembly: ["take:0", "take:1", "combine"],
     sequence: ["inspect", "press:0", "press:1", "press:2"],
+    cipher: ["inspect", "choose:0", "choose:1", "choose:2"],
+    deduction: ["inspect:0", "inspect:1", "choose:0", "choose:1", "choose:2"],
+    exchange: state.progress[state.room].parts.length ? ["inspect", "offer:0", "offer:1", "offer:2"] :
+      ["inspect", "take:0", "take:1"],
+    alignment: ["inspect", "rotate:0", "rotate:1", "rotate:2", "combine"],
   })[room.family];
 }
 
@@ -103,21 +123,42 @@ export function stepInvestigation(state, action) {
   let message = "progress";
   const [command, indexText] = action.command.split(":");
   const index = Number(indexText);
-  if (command === "inspect") { current.inspected = true; message = "clue"; }
+  if (command === "inspect") {
+    current.inspected = true; message = "clue";
+    if (room.family === "deduction" && indexText !== undefined) current.branches = [...new Set([...old.branches, index])];
+  }
+  if (command === "search") {
+    if (!current.inspected) message = "needEvidence";
+    else if (index !== room.order[0]) message = "wrong";
+    else { current.revealed = true; current.inspected = false; message = "secret"; }
+  }
   if (command === "witness") {
-    if (!current.witnesses.includes(index)) current.witnesses.push(index);
-    message = `witness:${index}`;
+    if (!investigationWitnessPresent(state, index)) message = "witnessAway";
+    else {
+      if (!current.witnesses.includes(index)) current.witnesses.push(index);
+      message = `witness:${index}`;
+    }
   }
   if (command === "take") {
     if (!current.parts.includes(index)) current.parts.push(index);
     message = "supplies";
   }
   if (command === "combine") {
-    current.solved = current.parts.length === 2;
+    current.solved = room.family === "alignment" ? current.inspected && current.dials.every((value, i) => value === room.order[i]) :
+      current.parts.length === 2;
+    if (room.family === "alignment" && !current.solved) message = "wrong";
+    else
     message = current.solved ? "solved" : "needParts";
   }
+  if (command === "rotate") current.dials = old.dials.map((value, i) => i === index ? (value + 1) % 3 : value);
+  if (command === "offer") {
+    current.solved = current.inspected && current.parts.includes(room.variant) && index === room.answer;
+    message = current.solved ? "solved" : "wrong";
+    if (!current.solved) current.parts = [];
+  }
   if (command === "choose") {
-    const ready = room.family === "evidence" ? current.inspected : current.witnesses.length === 2;
+    const ready = ["evidence", "cipher"].includes(room.family) ? current.inspected :
+      room.family === "deduction" ? current.branches.length === 2 : current.witnesses.length === 2;
     current.solved = ready && index === room.answer;
     message = !ready ? "needEvidence" : current.solved ? "solved" : "wrong";
   }
@@ -144,7 +185,11 @@ export function stepInvestigation(state, action) {
   }
   const progress = state.progress.map((entry, id) => id === state.room ? current : entry);
   const completed = progress.every(entry => entry.solved);
-  return retain({ ...state, progress, completed, message: completed ? "complete" : message });
+  return retain({ ...state, progress, completed, message: completed ? "complete" : message,
+    ...(state.level.version >= 3 ? { tick: state.tick + 1,
+      stashes: current.revealed && room.stash ? [...new Set([...state.stashes, room.id])] : state.stashes,
+      metrics: { ...state.metrics, wrongAttempts: state.metrics.wrongAttempts +
+        Number(["wrong", "wrongSeal", "resetSequence"].includes(message)) } } : {}) });
 }
 
 export function generatedInvestigationHint(state) {
@@ -153,6 +198,8 @@ export function generatedInvestigationHint(state) {
   if (state.completed) return "complete";
   if (progress.solved) return "next";
   if (room.seal !== undefined && progress.resolved) return "seal";
+  if (room.concealed && !progress.revealed) return "secret";
+  if (["cipher", "deduction", "exchange", "alignment"].includes(room.family)) return room.family;
   if (room.family === "assembly") return progress.parts.length === 2 ? "combine" : "take";
   if (room.family === "sequence") return progress.inspected ? "sequence" : "inspect";
   if (room.family === "witnesses") return progress.witnesses.length === 2 ? "choose" : "witnesses";

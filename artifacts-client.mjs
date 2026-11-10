@@ -45,6 +45,13 @@ export function createArtifactsClient({ storage = localStorage, fetcher = fetch 
               !["collected", "left", "taken"].includes(rewards.result.outcome) || !treasureItem(rewards.result.id))) {
           throw new Error("Invalid treasure response; retry the pending request.");
         }
+        const stash = rewards.result?.stash;
+        if (stash !== undefined && (!stash || Object.keys(stash).sort().join() !== "cents,foodKcal" ||
+            rewards.result.outcome === "taken" ||
+            !Number.isSafeInteger(stash.cents) || stash.cents < 0 || stash.cents > 3200 ||
+            !Number.isFinite(stash.foodKcal) || stash.foodKcal < 0 || stash.foodKcal > 4800)) {
+          throw new Error("Invalid secret stash response; retry the pending request.");
+        }
         if (result.caches !== undefined && (!result.caches || !Array.isArray(result.caches.offers) ||
             result.caches.offers.length > 20 || result.caches.offers.some(cache =>
               !cache || !/^(?:de|pl|uk):[A-Z]{2}[A-Z0-9]{1,14}$/.test(cache.id) ||

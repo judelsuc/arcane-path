@@ -1,6 +1,11 @@
 {
-  "version": "0.22.7",
+  "version": "0.22.8",
   "entries": [
+    {
+      "version": "0.22.8",
+      "fr": "Les nouvelles aventures multiplient les situations : seize architectures de plateformes, dalles à flèches, animaux, manivelles, braseros, runes et passages secrets ; donjons à murs variés et chambres cachées ; enquêtes à chiffres, déductions, échanges, cadrans et témoins mobiles. Certaines issues secrètes sont obligatoires et annoncées par des indices dans le décor. Les blessures touchent le voyage ; une erreur d'énigme coûte 2 minutes et 1 fatigue. Les caches rapportent 1 € ou 150 kcal chacune lors de la première récupération réussie du trésor. Les essais déjà commencés gardent leurs anciennes règles.",
+      "en": "New adventures add genuinely different encounters: sixteen platform architectures, triggered arrow traps, animals, cranks, braziers, runes and secret passages; dungeons with varied walls and hidden chambers; investigations with ciphers, deductions, exchanges, dials and roaming witnesses. Some secret exits are required and signposted through in-world clues. Injuries affect the journey; a puzzle mistake costs 2 minutes and 1 fatigue. Stashes grant €1 or 150 kcal each on the first successful treasure recovery. Attempts already underway retain their original rules."
+    },
     {
       "version": "0.22.7",
       "fr": "Les nouvelles aventures de plateformes alternent huit architectures : terrasses, marches brisées, puits décalés, galeries suspendues, voûtes basses, balcons jumeaux, zigzags et ponts hauts. Variantes en miroir, échelles décentrées ou absentes, mécanismes et trésors en hauteur remplacent l'échelle centrale répétitive. Les essais déjà commencés gardent leur géométrie d'origine.",

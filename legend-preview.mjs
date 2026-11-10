@@ -61,7 +61,7 @@ function restart() {
   }
   try {
     ui = mount(document.querySelector("#legend-board"), { format, language, seed, tier, weapon, backgrounds,
-      generatedInvestigation: format === "investigation", paced: true, onError: showError });
+      generatedInvestigation: format === "investigation", paced: true, expanded: true, onError: showError });
   } catch (error) {
     showError(error);
   }
