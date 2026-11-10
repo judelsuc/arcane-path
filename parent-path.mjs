@@ -41,16 +41,17 @@ export async function prepareParentPaths(state, { signal = new AbortController()
 
 export function createParentPathLoader({ fetcher = fetch, onUpdate = () => {},
   setTimer = setTimeout, clearTimer = clearTimeout } = {}) {
-  let key, controller, timer, generation = 0, status = { status: "legacy" };
+  let key, controller, timer, generation = 0, transportRetries = 0, status = { status: "legacy" };
   function stop() {
     generation++;
     controller?.abort();
     clearTimer(timer);
     timer = controller = undefined;
+    transportRetries = 0;
   }
   async function poll(journey, stage, retry = false) {
     const current = generation;
-    let retryable = false;
+    let retryable = false, receiving = true;
     controller = new AbortController();
     try {
       const query = new URLSearchParams({ journey, stage: String(stage) });
@@ -58,6 +59,9 @@ export function createParentPathLoader({ fetcher = fetch, onUpdate = () => {},
       const response = await fetcher(`/api/parent-path?${query}`, {
         signal: AbortSignal.any([controller.signal, AbortSignal.timeout(30_000)]),
       });
+      if (current !== generation) return;
+      receiving = false;
+      transportRetries = 0;
       if (!(response.headers.get("content-type") ?? "").includes("application/json")) {
         throw new Error("The updated game server is required to prepare parent paths.");
       }
@@ -86,6 +90,13 @@ export function createParentPathLoader({ fetcher = fetch, onUpdate = () => {},
     } catch (error) {
       if (current !== generation) return;
       console.error("Parent path preparation failed:", error);
+      if (receiving && ["TypeError", "TimeoutError"].includes(error.name) && transportRetries < 2) {
+        transportRetries++;
+        status = { status: "queued" };
+        onUpdate(status);
+        timer = setTimer(() => { void poll(journey, stage); }, 3000);
+        return;
+      }
       status = { status: "error", error: error.message, retryable };
       onUpdate(status);
     }

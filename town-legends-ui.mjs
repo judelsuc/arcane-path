@@ -65,7 +65,7 @@ const WORDS = {
 
 export function setupTownLegends({ context, host = document.getElementById("quests-legend-discovery"),
   client = createTownLegendsClient(), startTrial, confirmTrial = message => confirm(message),
-  narrative = createTownLegendNarratives(), onNarrative = () => {} } = {}) {
+  narrative = createTownLegendNarratives(), onNarrative = () => {}, onDiscovery = () => {} } = {}) {
   let owner, position, current, error = "", loading = false, historyLoading = false;
   let controller, historyController, cursor = null, historyLoaded = false;
   const entries = new Map();
@@ -244,6 +244,7 @@ export function setupTownLegends({ context, host = document.getElementById("ques
       if (request.signal.aborted || position !== requestedPosition) return;
       if (result.entry.townId !== townLegendIdentity(captured.cell)) throw new Error("Town legend response belongs to a different town.");
       current = retainEntry(result.entry);
+      onDiscovery();
     } catch (reason) {
       if (request.signal.aborted) return;
       console.error("Town legend discovery unavailable:", reason);

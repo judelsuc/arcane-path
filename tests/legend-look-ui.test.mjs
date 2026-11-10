@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { setupLegendLook } from "../legend-look-ui.mjs";
 
 class Element {
@@ -125,5 +126,38 @@ test("already found entrance reloads its entry without relying on the first hist
   await flush();
   assert.deepEqual(f.entries, [entry]);
   assert.ok(f.button("Open the adventure entrance"));
+  f.ui.reset();
+});
+
+test("cell descriptions include independent legend content and the current position is checked without Look", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(html, /id="cell-description"[^>]*><\/div>\s*<section id="legend-look" aria-live="polite"/);
+  assert.equal((html.match(/id="legend-look"/g) ?? []).length, 1);
+  const travel = readFileSync(new URL("../travel-ui.mjs", import.meta.url), "utf8");
+  assert.match(travel, /cursor \?\? \{ col: p.col \+ 8, row: p.row \+ 8 \}/);
+  assert.match(travel, /legendLookUI.update\(active && cell && !cell.unavailable/);
+  assert.match(travel, /onDiscovery: \(\) => updateLegendLook\(true\)/);
+});
+
+test("newly learned legends refresh the same cell and keep inspection explicit", async () => {
+  let learned = false, calls = 0;
+  const f = fixture({ look: async () => {
+    calls++;
+    return { observations: learned ? [observation] : [] };
+  }, inspect: () => assert.fail("description must not inspect automatically") });
+  f.setContext({ ...f.getContext(), state: { ...f.getContext().state, col: 1 } });
+  f.ui.update(observation.location);
+  await flush();
+  assert.equal(f.host.hidden, true);
+  learned = true;
+  f.ui.update(observation.location, true);
+  await flush();
+  assert.equal(calls, 2);
+  assert.match(f.text(), /slate disc/);
+  assert.ok(f.button("Inspect the passage"));
+  f.doc.documentElement.lang = "fr";
+  f.ui.update(observation.location);
+  assert.match(f.text(), /rondelle/);
+  assert.equal(calls, 2);
   f.ui.reset();
 });

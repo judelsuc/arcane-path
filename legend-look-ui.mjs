@@ -102,10 +102,10 @@ export function setupLegendLook({ context, host, client = createTownLegendsClien
     await request(observation);
   }
   return {
-    update(position) {
+    update(position, refresh = false) {
       const captured = context(), owner = identity(captured?.state);
       const next = owner && position ? `${owner}:${captured.state.col},${captured.state.row}:${position.col},${position.row}` : null;
-      if (next !== key) {
+      if (next !== key || refresh) {
         controller?.abort();
         controller = undefined;
         key = next;

@@ -178,6 +178,21 @@ explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
 ### Regression repair, 0.22.3
 
+Follow-up, 0.22.4: entrance-search descriptions now occupy their own section
+immediately after the selected cell's Wikipedia description. External content
+refreshes cannot overwrite this in-game content. Prepared current cells are
+checked without enabling Look; remote cursor inspection still works and
+entrance inspection still requires physical presence and an explicit action.
+A completed town discovery refreshes the selected cell to avoid retaining an
+empty pre-discovery result.
+
+The reference-path client retries transient fetch `TypeError`/`TimeoutError`
+failures at most twice, three seconds apart, polling the same assignment without
+`retry=1`. Persistent failures stay visible with the existing explicit retry.
+HTTP 422 routing-budget failures remain explicit; they are not fabricated
+successful routes or straight-line distance fallbacks. Stage changes and stop
+cancel pending polls.
+
 The artifact command failure reported as `Asset storage unavailable` was a
 PostgreSQL placeholder-adaptation error, not missing S3 credentials:
 `opencaches.offers` received SQL already adapted before `StoreConnection`

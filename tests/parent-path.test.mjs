@@ -128,6 +128,52 @@ test("malformed routes, progress, HTML and network errors are surfaced, never ac
   }
 });
 
+test("transient Load failed and request timeouts retry the same route without spending a server retry", async () => {
+  for (const error of [new TypeError("Load failed"), new DOMException("Timed out", "TimeoutError")]) {
+    const timers = [], urls = [];
+    const loader = createParentPathLoader({ setTimer: callback => timers.push(callback),
+      clearTimer: () => {}, fetcher: async url => {
+        urls.push(url);
+        if (urls.length < 3) throw error;
+        return response(ready(0));
+      } });
+    loader.update(state(0));
+    loader.prepare();
+    await settle();
+    for (let retry = 0; retry < 2; retry++) {
+      assert.equal(loader.status.status, "queued");
+      timers.shift()();
+      await settle();
+    }
+    assert.equal(loader.status.status, "ready");
+    assert.equal(new Set(urls).size, 1);
+    assert.doesNotMatch(urls[0], /retry=/);
+    loader.stop();
+  }
+});
+
+test("persistent transport failures stop after two retries, remain visible and cancel on stage changes", async () => {
+  const timers = [], cancelled = [];
+  let calls = 0;
+  const loader = createParentPathLoader({ setTimer: callback => { timers.push(callback); return timers.length; },
+    clearTimer: timer => cancelled.push(timer),
+    fetcher: async () => { calls++; throw new TypeError("Load failed"); } });
+  loader.update(state(0));
+  loader.prepare();
+  await settle();
+  for (let retry = 0; retry < 2; retry++) { timers.shift()(); await settle(); }
+  assert.equal(calls, 3);
+  assert.equal(loader.status.status, "error");
+  assert.equal(loader.status.error, "Load failed");
+  assert.equal(timers.length, 0);
+  loader.retry();
+  await settle();
+  assert.equal(timers.length, 1);
+  loader.update(state(1));
+  assert.ok(cancelled.includes(1));
+  assert.equal(loader.status.status, "idle");
+  loader.stop();
+});
 const automaticState = () => ({ ...state(0), trail: { ...state(0).trail,
   stages: Array.from({ length: 13 }, () => ({})) } });
 

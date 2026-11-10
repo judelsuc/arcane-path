@@ -647,6 +647,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     context: () => active ? economyContext() : null,
     startTrial: action => { void artifactsUI.startLegend(action); },
     onNarrative: () => conversations.localize(),
+    onDiscovery: () => updateLegendLook(true),
   });
   const legendLookUI = setupLegendLook({
     context: () => active ? economyContext() : null,
@@ -1339,12 +1340,14 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     updateLegendLook();
   }
 
-  function updateLegendLook() {
+  function updateLegendLook(refresh = false) {
     const p = state && chunkPosition(state.col, state.row);
-    legendLookUI.update(active && cursor && cameraData ? {
-      col: (p.x - 1) * 8 + cursor.col,
-      row: (p.y - 1) * 8 + cursor.row,
-    } : null);
+    const position = p && (cursor ?? { col: p.col + 8, row: p.row + 8 });
+    const cell = position && cameraData?.rows[position.row]?.[position.col];
+    legendLookUI.update(active && cell && !cell.unavailable ? {
+      col: (p.x - 1) * 8 + position.col,
+      row: (p.y - 1) * 8 + position.row,
+    } : null, refresh);
   }
 
   function toggleLook() {

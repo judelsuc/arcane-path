@@ -53,6 +53,18 @@ function fixture(client, options = {}) {
     button: text => descendants(host).find(node => node.tagName === "button" && node.textContent === text) };
 }
 
+test("a completed discovery refreshes local descriptions once without an observation feedback loop", async () => {
+  let discoveries = 0;
+  const f = fixture({ discover: async () => ({ entry }) }, { onDiscovery: () => discoveries++ });
+  f.ui.localize();
+  await flush();
+  assert.equal(discoveries, 1);
+  f.ui.acceptEntry(entry);
+  f.ui.localize();
+  assert.equal(discoveries, 1);
+  f.ui.reset();
+});
+
 test("eligible towns offer an explicitly confirmed local platform trial", async () => {
   const started = [], confirmations = [];
   let accepted = false;
