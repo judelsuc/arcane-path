@@ -31,6 +31,12 @@
   not separate timing, observation or static-sequence modes. No Start button.
   One key among Up, Down, Left, Right and Space lights up at a time; reproduce
   it during a short window, with keyboard or labelled touch controls.
+  On opening, allow three seconds of preparation and then wait until held
+  keys are released; movement input during preparation must not answer/fail
+  the challenge. Start cue timing only after preparation/release completes.
+  At fatigue >=60 or health <=50, new challenges alternate arrows/Space with
+  scattered letters A, F, J, P, V and N. Accept either letter case and retain
+  labelled touch controls. Lower difficulty keeps arrows/Space.
   Keep an event-specific background drawing and explanatory text visible.
   Highlight the key with a border and a textual cue, not colour alone.
 - The event's retained narrative is central, with its existing model-generated
@@ -62,9 +68,10 @@
   windows. Early, wrong or late input fails; holding a key does not count again.
   These bounds are provisional playtest tuning, not an automatic journey-level
   difficulty ramp. No extra random success roll follows the input.
-- New events retain version-2 QTE rules and condition snapshots; old version-1
-  transcripts retain their timing, sequence/observation and relaxed-mode outcome
-  validation. Do not reinterpret saved results under the new rules.
+- New events retain version-3 QTE rules and condition snapshots; version-2
+  transcripts retain arrows/Space only, and version-1 transcripts retain their
+  timing, sequence/observation and relaxed-mode outcome validation.
+  Do not reinterpret saved results under the new rules.
 - Save the ready event before interaction and the active attempt before starting
   its timer. Resolve once through existing client-owned journey accounting,
   retaining the bounded input trace and validated result. A started attempt

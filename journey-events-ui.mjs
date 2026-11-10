@@ -3,12 +3,13 @@ import { journeyEventTextParts, journeyEventEffectParts, eventPlaytestEnabled, J
 import { journeyEventArt } from "./journey-event-art.mjs";
 import { NARRATIVE_BRIEFS, LOST_PLAYER_DREAM } from "./live-narrative.mjs";
 import { setGenerating } from "./feedback.mjs";
-import { mountEventChallenge } from "./event-qte-ui.mjs";
+import { mountEventChallenge, trackEventQteKeys } from "./event-qte-ui.mjs";
 import { eventQteResult } from "./event-qte-copy.mjs";
 
 export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrative, rememberWording, illustrations,
   beginChallenge, settleChallenge }) {
   const dialog = document.querySelector("#journey-event-dialog");
+  const heldKeys = trackEventQteKeys(document);
   const proceed = document.querySelector("#journey-event-continue");
   const illustration = illustrations ? document.createElement("figure") : null;
   if (illustration) proceed.before(illustration);
@@ -85,7 +86,7 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
         challengeHost ??= document.createElement("div");
         proceed.before(challengeHost);
         dialog.setAttribute("data-native-controls", "");
-        challenge = mountEventChallenge(challengeHost, { event, language, illustration,
+        challenge = mountEventChallenge(challengeHost, { event, language, illustration, heldKeys,
           begin: mode => {
             if (identity(context()?.state) !== owner) throw new Error(t("eventQte.unavailable"));
             return beginChallenge(event.id, mode);

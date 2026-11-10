@@ -849,8 +849,16 @@ Il ne s'agit pas d'une nouvelle jauge de sante ; recharger ne change pas ses bes
 ### Couche 13 : evenements du voyage
 
 Chaque nouvel evenement, y compris les rencontres d'ambiance, propose un defi
-contextuel qui demarre automatiquement : reproduire chaque touche illuminee
-(fleches ou Espace) avant qu'elle ne s'eteigne. La nature de l'evenement fixe
+contextuel qui demarre automatiquement apres trois secondes de preparation
+et le relachement des touches maintenues. Les touches de marche pendant cette
+preparation ne comptent pas comme reponses et le chronometre du defi attend.
+Reproduire chaque touche illuminee (fleches ou Espace) avant qu'elle ne
+s'eteigne. A partir de 60/100 de fatigue ou avec une sante de 50/100 ou moins,
+les nouveaux defis alternent ces touches avec A, F, J, P, V et N, egalement
+disponibles en boutons tactiles. Les lettres suivent le caractere du clavier
+utilise, sans distinction majuscule/minuscule. Les regles version 3 sont
+sauvegardees ; les anciennes versions 1 et 2 conservent leurs touches et resultats.
+La nature de l'evenement fixe
 la longueur de base, la fatigue raccourcit le delai et une mauvaise sante
 allonge la sequence. Le texte de la rencontre et son illustration generee
 restent centraux, avec un dessin ASCII si l'image est indisponible.

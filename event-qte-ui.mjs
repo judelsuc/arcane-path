@@ -1,4 +1,5 @@
-import { eventChallenge, challengeOutcome, QTE_KEYS, REACTION_KEYS, reactionCue } from "./event-qte.mjs";
+import { eventChallenge, challengeOutcome, REACTION_KEYS, QTE_LETTERS, QTE_PREPARATION_MS,
+  eventInputKeys, reactionCue } from "./event-qte.mjs";
 import { journeyEventArt } from "./journey-event-art.mjs";
 import { eventQtePresentation, eventQteResult } from "./event-qte-copy.mjs";
 
@@ -7,7 +8,8 @@ const COPY = {
     title: "React to the encounter", skip: "Skip challenge", retry: "Retry saving the result",
     retryStart: "Retry starting the encounter", act: "Space",
     help: "Help", close: "Resume", paused: "Paused",
-    controls: "React as each key lights up. Arrow keys or Space; you can also tap the matching button. One attempt.",
+    controls: "After three seconds of preparation, release all held keys. React as each key lights up: arrows or Space, plus A, F, J, P, V and N at high difficulty. You can also tap the matching button. One attempt.",
+    preparing: "Get ready…", release: "Release held keys to begin.",
     timing: "Press Space when the marker reaches the outlined middle zone.",
     waiting: "Watch the keys…", now: "Now:", progress: "Signals", finished: "Attempt finished.",
     benefits: "Success earns the reward or avoids the penalty. Failure or skipping gives no reward or the normal penalty. Story events remain mechanically neutral.",
@@ -19,7 +21,8 @@ const COPY = {
     title: "Réagir à la rencontre", skip: "Passer le défi", retry: "Réessayer d'enregistrer le résultat",
     retryStart: "Réessayer de lancer la rencontre", act: "Espace",
     help: "Aide", close: "Reprendre", paused: "En pause",
-    controls: "Réagissez à chaque touche illuminée : flèches ou Espace, ou touchez le bouton correspondant. Un seul essai.",
+    controls: "Après trois secondes de préparation, relâchez toutes les touches. Réagissez à chaque touche illuminée : flèches ou Espace, et A, F, J, P, V et N en difficulté élevée. Vous pouvez aussi toucher le bouton correspondant. Un seul essai.",
+    preparing: "Préparez-vous…", release: "Relâchez les touches pour commencer.",
     timing: "Appuyez sur Espace quand le repère atteint la zone centrale encadrée.",
     waiting: "Surveillez les touches…", now: "Maintenant :", progress: "Signaux", finished: "Essai terminé.",
     benefits: "Réussir donne la récompense ou évite la pénalité. Échouer ou passer ne donne rien ou applique la pénalité habituelle. Les récits restent sans effet mécanique.",
@@ -29,7 +32,23 @@ const COPY = {
   },
 };
 
-export function mountEventChallenge(host, { event, language, begin, settle, illustration, onError = console.error }) {
+function inputKey(key) {
+  return key === " " ? "Space" : key?.length === 1 ? key.toLowerCase() : key;
+}
+
+export function trackEventQteKeys(doc) {
+  const held = new Set();
+  doc.addEventListener("keydown", event => {
+    const key = inputKey(event.key);
+    if (key) held.add(key);
+  }, true);
+  doc.addEventListener("keyup", event => held.delete(inputKey(event.key)), true);
+  doc.defaultView?.addEventListener("blur", () => held.clear());
+  return held;
+}
+
+export function mountEventChallenge(host, { event, language, begin, settle, illustration,
+  heldKeys = new Set(), onError = console.error }) {
   const doc = host.ownerDocument, view = doc.defaultView ?? globalThis, c = COPY[language];
   const presentation = eventQtePresentation(event, language);
   const root = doc.createElement("section");
@@ -39,6 +58,7 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
   root.setAttribute("aria-label", c.title);
   host.append(root);
   let running = false, disposed = false, result, trace = [], startedAt, timer, rules, pausedAt;
+  let preparing = true, readyAt;
   const buttons = [];
   function node(tag, value) {
     const element = doc.createElement(tag);
@@ -87,9 +107,12 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
   const marker = doc.createElement("span");
   marker.className = "event-qte-marker";
   meter.append(marker);
-  const labels = [...c.directions, c.act], symbols = ["←", "↑", "→", "↓", "␣"];
-  const actionButtons = REACTION_KEYS.map((key, index) => {
-    const element = button(`${symbols[index]} ${labels[index]}`, () => input(key));
+  const keys = eventInputKeys(event);
+  const labels = [...c.directions, c.act, ...QTE_LETTERS.map(key => key.toUpperCase())];
+  const symbols = ["←", "↑", "→", "↓", "␣", ...QTE_LETTERS.map(key => key.toUpperCase())];
+  const actionButtons = keys.map((key, index) => {
+    const element = button(index < REACTION_KEYS.length ? `${symbols[index]} ${labels[index]}` : labels[index],
+      () => input(key));
     element.className = "event-qte-key";
     element.setAttribute("aria-keyshortcuts", key);
     element.setAttribute("aria-pressed", "false");
@@ -130,13 +153,16 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
   function resume() {
     if (disposed) return;
     if (pausedAt !== undefined) {
-      startedAt += view.performance.now() - pausedAt;
+      const pause = view.performance.now() - pausedAt;
+      startedAt += pause;
+      readyAt += pause;
       pausedAt = undefined;
       tick();
       root.focus({ preventScroll: true });
     } else if (!running && !result) launch();
   }
-  function elapsed() { return Math.min(86400000, Math.max(0, (pausedAt ?? view.performance.now()) - startedAt)); }
+  function elapsed() { return preparing ? 0 :
+    Math.min(86400000, Math.max(0, (pausedAt ?? view.performance.now()) - startedAt)); }
   function error(reason) {
     onError(reason);
     status.textContent = reason.message;
@@ -151,8 +177,8 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
     if (disposed) return;
     running = true;
     startedAt = view.performance.now();
+    readyAt = startedAt + QTE_PREPARATION_MS;
     retryStart.hidden = true;
-    actionButtons.forEach(element => { element.disabled = false; });
     meter.hidden = rules.type !== "timing";
     root.focus({ preventScroll: true });
     tick();
@@ -161,6 +187,17 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
   function tick() {
     if (!running || disposed) return;
     if (pausedAt !== undefined) { status.textContent = c.paused; return; }
+    if (preparing) {
+      const remaining = readyAt - view.performance.now();
+      if (remaining > 0 || heldKeys.size) {
+        target.textContent = remaining > 0 ? `${c.preparing} ${Math.ceil(remaining / 1000)}` : c.release;
+        status.textContent = "";
+        return;
+      }
+      preparing = false;
+      startedAt = view.performance.now();
+      actionButtons.forEach(element => { element.disabled = false; });
+    }
     const time = elapsed();
     if (rules.durationMs !== null && time >= rules.durationMs ||
         rules.type === "reaction" && time >= reactionCue(rules, trace.length).endMs) { finish(); return; }
@@ -172,14 +209,14 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
       if (time % 2000 >= 700 && time % 2000 <= 1300) key = "Space";
     } else key = rules.keys[trace.length];
     actionButtons.forEach((element, index) => {
-      element.setAttribute("aria-pressed", String(REACTION_KEYS[index] === key));
+      element.setAttribute("aria-pressed", String(keys[index] === key));
     });
     target.textContent = rules.type === "timing" ? c.timing :
-      key ? `${c.now} ${labels[REACTION_KEYS.indexOf(key)]}` : c.waiting;
+      key ? `${c.now} ${labels[keys.indexOf(key)]}` : c.waiting;
     status.textContent = `${c.progress}: ${trace.length}/${rules.keys.length}`;
   }
   function input(key) {
-    if (!running || disposed || pausedAt !== undefined) return;
+    if (!running || disposed || preparing || pausedAt !== undefined) return;
     const atMs = elapsed();
     if (rules.durationMs !== null && atMs >= rules.durationMs) { finish(); return; }
     trace.push({ key, atMs });
@@ -217,18 +254,23 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
     } catch (reason) { error(reason); retry.hidden = false; retry.disabled = false; }
   }
   function keydown(event) {
+    const key = inputKey(event.key);
+    if (key) heldKeys.add(key);
     if (!running || help.open || event.target?.tagName === "BUTTON" && event.target.className !== "event-qte-key" ||
-        event.repeat || event.altKey || event.ctrlKey || event.metaKey ||
-        !["Space", " ", ...QTE_KEYS].includes(event.key)) return;
+        event.altKey || event.ctrlKey || event.metaKey ||
+        !keys.includes(key)) return;
     event.preventDefault();
     event.stopPropagation();
-    input(event.key === " " ? "Space" : event.key);
+    if (event.repeat) return;
+    input(key);
   }
   function visibility() {
     if (doc.hidden && running) finish();
     else if (!doc.hidden && !running && !result) launch();
   }
   root.addEventListener("keydown", keydown);
+  const keyup = event => heldKeys.delete(inputKey(event.key));
+  doc.addEventListener("keyup", keyup);
   doc.addEventListener("visibilitychange", visibility);
   if (event.qte.status === "active") {
     status.textContent = c.reloaded;
@@ -250,6 +292,7 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
       if (help.open) help.close();
       view.clearInterval(timer);
       root.removeEventListener("keydown", keydown);
+      doc.removeEventListener("keyup", keyup);
       doc.removeEventListener("visibilitychange", visibility);
       root.remove();
     },

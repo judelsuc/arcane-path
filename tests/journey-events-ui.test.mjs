@@ -33,6 +33,7 @@ for (const language of ["fr", "en"]) {
     };
     let observe;
     globalThis.document = { documentElement: { lang: language }, createElement: () => new Element(),
+      addEventListener() {},
       querySelector: id => id === "dialog[open]" ? [...nodes.values()].find(e => e.open) : el(id) };
     globalThis.MutationObserver = class {
       constructor(fn) { observe = fn; }
@@ -139,7 +140,8 @@ test("QTE dialog blocks continue, preserves active attempts during localization,
   const timers = new Set();
   let time = 0;
   doc = { documentElement: { lang: "en" }, createElement: tag => new Element(tag),
-    defaultView: { performance: { now: () => time }, setInterval: fn => { timers.add(fn); return fn; }, clearInterval: fn => timers.delete(fn) },
+    defaultView: { performance: { now: () => time }, setInterval: fn => { timers.add(fn); return fn; }, clearInterval: fn => timers.delete(fn),
+      addEventListener() {} },
     addEventListener() {}, removeEventListener() {},
     querySelector: selector => selector === "dialog[open]" ? [...nodes.values()].find(e => e.open) : el(selector) };
   globalThis.document = doc;
@@ -200,7 +202,9 @@ test("QTE dialog blocks continue, preserves active attempts during localization,
   ui.update(); await flush();
   assert.equal(all(dialog).find(node => node.tag === "section"), activeSection, "language switch cannot restart an active attempt");
   assert.equal(timers.size, 1);
-  time = 1000;
+  time = 3000;
+  for (const tick of timers) tick();
+  time = 4000;
   activeSection.handlers.keydown({ key: " ", preventDefault() {}, stopPropagation() {} });
   assert.equal(starts, 1);
   assert.equal(settlements, 1);

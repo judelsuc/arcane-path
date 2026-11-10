@@ -263,6 +263,7 @@ for (const language of ["en", "fr"]) {
       return nodes.get(id);
     };
     globalThis.document = { documentElement: { lang: language }, createElement: () => new Element(),
+      addEventListener() {},
       querySelector: id => id === "dialog[open]" ? [...nodes.values()].find(e => e.open) : el(id) };
     globalThis.MutationObserver = class { observe() {} };
     let cached = null, subscriber;

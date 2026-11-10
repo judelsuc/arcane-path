@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { EVENT_QTES, QTE_PROMPTS, eventChallenge, challengeOutcome, reactionCue, validateEventChallenge } from "../event-qte.mjs";
+import { EVENT_QTES, QTE_PROMPTS, QTE_LETTERS, REACTION_KEYS, eventChallenge, challengeOutcome,
+  reactionCue, validateEventChallenge } from "../event-qte.mjs";
 import { EVENT_CATALOGUE, advanceJourneyEvents, beginJourneyEventChallenge, settleJourneyEventChallenge,
   acknowledgeJourneyEvent, validateJourneyEvents, journeyEventText, journeyEventEffectParts } from "../journey-events.mjs";
 import { eventQtePresentation, eventQteResult } from "../event-qte-copy.mjs";
@@ -185,6 +186,7 @@ test("reaction difficulty depends on event, fatigue shortens deadlines and poor 
 test("reaction condition snapshots and successful transcripts survive save/load without recalculation", () => {
   const { queued, context } = fixture("forestBoar");
   const event = queued.events.history.at(-1), condition = structuredClone(event.qte);
+  assert.equal(condition.version, 3);
   assert.equal(condition.fatigue, queued.fatigue);
   assert.equal(condition.health, queued.health);
   const active = beginJourneyEventChallenge(queued, event.id);
@@ -199,6 +201,31 @@ test("reaction condition snapshots and successful transcripts survive save/load 
   invalid.events.history.at(-1).qte.trace[0].atMs = 0;
   assert.throws(() => validateJourneyEvents(invalid, economy, survival), /result/);
   assert.equal(trace[0].atMs, 1000);
+});
+
+test("version-3 letters start at fatigue 60 or health 50 and never reinterpret version-2 results", () => {
+  for (const kind of Object.keys(EVENT_QTES)) {
+    const make = (version, fatigue, health) => ({ kind, id: 1, opportunity: 1,
+      qte: { version, status: "ready", fatigue, health } });
+    const low = make(3, 59, 51);
+    assert.ok(eventChallenge(low).keys.every(key => REACTION_KEYS.includes(key)));
+    assert.throws(() => challengeOutcome(low, "normal", [{ key: "a", atMs: 1000 }], 1000), /inputs/);
+    for (const [fatigue, health] of [[60, 100], [0, 50], [100, 0]]) {
+      const event = make(3, fatigue, health), rule = eventChallenge(event);
+      assert.deepEqual(eventChallenge(event), rule);
+      assert.ok(rule.keys.some(key => QTE_LETTERS.includes(key)));
+      const trace = win(event), elapsedMs = trace.at(-1).atMs;
+      assert.equal(challengeOutcome(event, "normal", trace, elapsedMs), "success");
+      validateEventChallenge({ ...event,
+        qte: { ...event.qte, status: "success", mode: "normal", trace, elapsedMs } });
+      const legacy = make(2, fatigue, health);
+      assert.ok(eventChallenge(legacy).keys.every(key => REACTION_KEYS.includes(key)));
+      const oldTrace = win(legacy), oldElapsed = oldTrace.at(-1).atMs;
+      validateEventChallenge({ ...legacy,
+        qte: { ...legacy.qte, status: "success", mode: "normal", trace: oldTrace, elapsedMs: oldElapsed } });
+      assert.throws(() => challengeOutcome(legacy, "normal", trace, elapsedMs), /inputs/);
+    }
+  }
 });
 
 test("contextual actions cover every event and social impressions survive receipts without new reputation penalties", () => {

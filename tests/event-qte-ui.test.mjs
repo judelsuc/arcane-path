@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mountEventChallenge } from "../event-qte-ui.mjs";
-import { eventChallenge, challengeOutcome, reactionCue } from "../event-qte.mjs";
+import { mountEventChallenge, trackEventQteKeys } from "../event-qte-ui.mjs";
+import { eventChallenge, challengeOutcome, reactionCue, QTE_PREPARATION_MS, QTE_LETTERS } from "../event-qte.mjs";
 
 class Target {
   listeners = new Map();
@@ -41,11 +41,100 @@ async function fixture(kind = "coins", language = "en", options = {}) {
   const all = node => [node, ...node.children.flatMap(all)], root = host.children[0];
   const nodes = all(host);
   await Promise.resolve();
+  const offset = options.preparation ? 0 : QTE_PREPARATION_MS;
+  if (offset) {
+    time = offset;
+    for (const fn of [...timers.values()]) fn();
+  }
   return { api, doc, host, nodes, timers, starts, outcomes, errors, root, event,
     button: text => nodes.find(node => node.tagName === "button" && node.textContent === text),
-    tick(value) { time = value; for (const fn of [...timers.values()]) fn(); },
-    key(key, extra = {}) { root.dispatch("keydown", { key, preventDefault() {}, stopPropagation() {}, ...extra }); } };
+    tick(value) { time = value + offset; for (const fn of [...timers.values()]) fn(); },
+    key(key, extra = {}) { root.dispatch("keydown", { key, preventDefault() {}, stopPropagation() {}, ...extra }); },
+    release(key) { doc.dispatch("keyup", { key }); } };
 }
+test("three-second preparation ignores walking input, waits for release and starts the clock only afterwards", async () => {
+  const heldKeys = new Set(["ArrowRight"]);
+  const f = await fixture("coins", "en", { preparation: true, heldKeys });
+  const rule = eventChallenge(f.event);
+  assert.deepEqual(f.starts, ["normal"]);
+  for (const time of [0, 1000, 2999]) {
+    f.tick(time);
+    f.key("ArrowRight", { repeat: true });
+    f.key("ArrowLeft");
+    f.release("ArrowLeft");
+    assert.deepEqual(f.outcomes, []);
+    assert.ok(f.nodes.filter(n => n.className === "event-qte-key").every(n => n.disabled));
+  }
+  f.tick(3000);
+  assert.equal(f.nodes.find(n => n.className === "event-qte-target").textContent, "Release held keys to begin.");
+  f.tick(20000);
+  assert.deepEqual(f.outcomes, []);
+  f.release("ArrowRight");
+  f.tick(20001);
+  assert.equal(f.nodes.find(n => n.className === "event-qte-target").textContent, "Watch the keys…");
+  for (const [index, key] of rule.keys.entries()) {
+    f.tick(20001 + reactionCue(rule, index).startMs + 50);
+    f.key(key);
+    f.release(key);
+  }
+  assert.equal(f.outcomes[0].outcome, "success");
+  assert.equal(f.outcomes[0].trace[0].atMs, 950);
+  f.api.destroy();
+  assert.equal(f.doc.listeners.get("keyup").size, 0);
+});
+
+test("the tracker remembers keys held before the event opens and releases them outside the panel", () => {
+  const doc = new Target();
+  doc.defaultView = new Target();
+  const held = trackEventQteKeys(doc);
+  doc.dispatch("keydown", { key: "ArrowUp" });
+  doc.dispatch("keydown", { key: "A" });
+  assert.deepEqual([...held], ["ArrowUp", "a"]);
+  doc.dispatch("keyup", { key: "ArrowUp" });
+  assert.deepEqual([...held], ["a"]);
+  doc.defaultView.dispatch("blur");
+  assert.equal(held.size, 0);
+});
+
+test("Help freezes preparation and skipping during preparation settles once with an empty trace", async () => {
+  const f = await fixture("coins", "en", { preparation: true });
+  f.tick(1000);
+  f.button("Help").click();
+  f.tick(11000);
+  f.key("ArrowUp");
+  f.release("ArrowUp");
+  f.button("Resume").click();
+  f.tick(12999);
+  assert.ok(f.nodes.filter(n => n.className === "event-qte-key").every(n => n.disabled));
+  f.tick(13000);
+  assert.ok(f.nodes.filter(n => n.className === "event-qte-key").every(n => !n.disabled));
+  f.api.destroy();
+  const skipped = await fixture("coins", "en", { preparation: true });
+  skipped.button("Skip challenge").click();
+  assert.equal(skipped.outcomes[0].outcome, "skipped");
+  assert.deepEqual(skipped.outcomes[0].trace, []);
+  assert.equal(skipped.outcomes[0].elapsedMs, 0);
+  assert.equal(skipped.timers.size, 0);
+  skipped.api.destroy();
+});
+
+test("high difficulty displays scattered letter buttons and accepts uppercase keyboard or touch", async () => {
+  for (const touch of [false, true]) {
+    const f = await fixture("forestBoar", "en", { event: { id: 1, opportunity: 1, kind: "forestBoar",
+      qte: { version: 3, status: "ready", fatigue: 60, health: 100 } } });
+    const rule = eventChallenge(f.event);
+    assert.ok(rule.keys.some(key => QTE_LETTERS.includes(key)));
+    for (const [index, key] of rule.keys.entries()) {
+      f.tick(reactionCue(rule, index).startMs + 50);
+      const lit = f.nodes.find(n => n.attributes["aria-pressed"] === "true");
+      assert.equal(lit.attributes["aria-keyshortcuts"], key);
+      if (touch) lit.click();
+      else f.key(key.length === 1 ? key.toUpperCase() : key);
+    }
+    assert.equal(f.outcomes[0].outcome, "success");
+    f.api.destroy();
+  }
+});
 test("reaction starts automatically, lights one key at a time and accepts keyboard/touch in both languages", async () => {
   for (const language of ["en", "fr"]) for (const touch of [false, true]) {
     const f = await fixture("coins", language);
@@ -78,8 +167,8 @@ test("reaction starts automatically, lights one key at a time and accepts keyboa
 test("Help owns the rules, freezes the exact cue instant and resumes without restarting or accepting paused input", async () => {
   const f = await fixture("stars", "fr");
   const rules = eventChallenge(f.event), help = f.nodes.find(node => node.tagName === "dialog");
-  assert.ok(help.children.some(node => node.textContent.startsWith("Réagissez")));
-  assert.ok(!f.root.children.some(node => node.textContent.startsWith("Réagissez")));
+  assert.ok(help.children.some(node => node.textContent.includes("chaque touche illuminée")));
+  assert.ok(!f.root.children.some(node => node.textContent.includes("chaque touche illuminée")));
   f.tick(1000);
   f.button("Aide").click();
   assert.ok(help.open);

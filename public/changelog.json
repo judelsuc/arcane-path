@@ -1,6 +1,11 @@
 {
-  "version": "0.22.15",
+  "version": "0.22.16",
   "entries": [
+    {
+      "version": "0.22.16",
+      "fr": "Les rencontres laissent trois secondes pour se préparer et attendent le relâchement des touches avant de lancer les signaux du QTE. Les touches de marche ne peuvent plus faire échouer le défi pendant cette préparation. En difficulté élevée, les nouveaux défis ajoutent les lettres A, F, J, P, V et N aux flèches et à Espace, avec boutons tactiles et compatibilité des anciens résultats.",
+      "en": "Encounters allow three seconds to prepare and wait for held keys to be released before starting QTE cues. Walking keys cannot fail the challenge during preparation. At high difficulty, new challenges add A, F, J, P, V and N alongside arrows and Space, with touch buttons and compatibility for saved results."
+    },
     {
       "version": "0.22.15",
       "fr": "Les localités se distinguent par un fin cadre doré et une légère teinte, en ASCII comme en pixels, même lorsqu'elles partagent une case avec une route. Le terrain, le joueur et les marqueurs de destination restent visibles.",

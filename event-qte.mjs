@@ -52,6 +52,13 @@ export const QTE_PROMPTS = Object.freeze({
 export const QTE_KEYS = Object.freeze(["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown"]);
 export const QTE_DURATION_MS = 6000;
 export const REACTION_KEYS = Object.freeze([...QTE_KEYS, "Space"]);
+export const QTE_LETTERS = Object.freeze(["a", "f", "j", "p", "v", "n"]);
+export const QTE_PREPARATION_MS = 3000;
+
+export function eventInputKeys(event) {
+  return event.qte?.version === 3 && (event.qte.fatigue >= 60 || event.qte.health <= 50)
+    ? [...REACTION_KEYS, ...QTE_LETTERS] : REACTION_KEYS;
+}
 
 export function reactionCue(challenge, index) {
   const startMs = 900 + index * (challenge.reactionMs + 250);
@@ -66,15 +73,17 @@ export function eventChallenge(event, mode = "normal") {
   for (const char of `${event.kind}:${event.id}:${event.opportunity}`) {
     seed = Math.imul(seed ^ char.charCodeAt(0), 16777619) >>> 0;
   }
-  if (event.qte?.version === 2) {
+  if ([2, 3].includes(event.qte?.version)) {
     const { fatigue, health } = event.qte;
     if (mode !== "normal" || ![fatigue, health].every(value =>
       Number.isFinite(value) && value >= 0 && value <= 100)) throw new Error("Invalid event challenge condition.");
     const count = ({ observe: 3, timing: 4, sequence: 5 })[EVENT_QTES[event.kind]] + Math.ceil((100 - health) / 25);
     const reactionMs = Math.round(1100 - fatigue * 5);
-    const keys = Array.from({ length: count }, () => {
+    const harder = eventInputKeys(event).length > REACTION_KEYS.length;
+    const keys = Array.from({ length: count }, (_, index) => {
       seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5;
-      return REACTION_KEYS[(seed >>> 0) % REACTION_KEYS.length];
+      const pool = harder && index % 2 === 1 ? QTE_LETTERS : REACTION_KEYS;
+      return pool[(seed >>> 0) % pool.length];
     });
     const challenge = { type: "reaction", mode, keys, reactionMs };
     return { ...challenge, durationMs: reactionCue(challenge, count - 1).endMs };
@@ -89,7 +98,7 @@ export function challengeOutcome(event, mode, trace, elapsedMs, skipped = false)
   if (!Array.isArray(trace) || trace.length > (challenge.type === "reaction" ? 9 : 3) || !Number.isFinite(elapsedMs) || elapsedMs < 0 ||
       elapsedMs > 86400000 || typeof skipped !== "boolean" ||
       trace.some((input, index) => !input || Object.keys(input).sort().join() !== "atMs,key" ||
-        !["Space", ...QTE_KEYS].includes(input.key) || !Number.isFinite(input.atMs) ||
+        !eventInputKeys(event).includes(input.key) || !Number.isFinite(input.atMs) ||
         input.atMs < 0 || input.atMs > elapsedMs || index > 0 && input.atMs < trace[index - 1].atMs)) {
     throw new Error("Invalid event challenge inputs.");
   }
@@ -110,10 +119,10 @@ export function challengeOutcome(event, mode, trace, elapsedMs, skipped = false)
 
 export function validateEventChallenge(event) {
   const qte = event.qte;
-  if (!qte || ![1, 2].includes(qte.version) || !["ready", "active", "success", "failure", "skipped"].includes(qte.status)) {
+  if (!qte || ![1, 2, 3].includes(qte.version) || !["ready", "active", "success", "failure", "skipped"].includes(qte.status)) {
     throw new Error("Invalid saved event challenge.");
   }
-  const expected = ["version", "status", ...(qte.version === 2 ? ["fatigue", "health"] : []),
+  const expected = ["version", "status", ...([2, 3].includes(qte.version) ? ["fatigue", "health"] : []),
     ...(qte.status !== "ready" ? ["mode"] : []),
     ...(["success", "failure", "skipped"].includes(qte.status) ? ["trace", "elapsedMs"] : [])].sort().join();
   if (Object.keys(qte).sort().join() !== expected) throw new Error("Invalid saved event challenge fields.");
