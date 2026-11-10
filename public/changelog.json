@@ -1,6 +1,11 @@
 {
-  "version": "0.22.10",
+  "version": "0.22.11",
   "entries": [
+    {
+      "version": "0.22.11",
+      "fr": "Une alerte apparaît dès 80/100 de vigilance des adultes : elle rappelle le risque de placement à 100 et explique comment réduire l'attention. Elle attend la fermeture des autres fenêtres, ne se répète qu'après une baisse sous 80 et fonctionne aussi à la reprise d'un voyage.",
+      "en": "A warning appears at 80/100 adult vigilance, explaining the placement risk at 100 and how to reduce attention. It waits for other dialogs to close, only repeats after vigilance drops below 80 and also works when resuming a journey."
+    },
     {
       "version": "0.22.10",
       "fr": "Les rencontres du voyage deviennent interactives : reproduisez les flèches ou Espace qui s'illuminent, sans bouton de départ. La difficulté dépend de l'événement, de la fatigue et de la santé. Le récit et l'illustration de la rencontre accompagnent les gestes ; les échanges sociaux déroulent des répliques. Aide met le défi en pause. Le résultat et les récompenses ou pénalités réelles s'affichent au-dessus du panneau. Les anciens événements gardent leurs effets.",

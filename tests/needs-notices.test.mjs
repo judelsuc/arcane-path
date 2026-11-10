@@ -34,6 +34,26 @@ test("terminal notice replaces hunger warning, supports ended saves, and does no
   assert.equal(createNeedsNotices().pending({ ...state(100), ended: "reunion" }, config), null);
 });
 
+test("adult vigilance warns at exactly 80, rearms below 80 and respects higher-priority notices", () => {
+  const notices = createNeedsNotices();
+  const at = vigilance => ({ ...state(20), fatigue: 0, awakeHours: 0,
+    pressures: { vigilance, placements: [] } });
+  const before = at(80), snapshot = structuredClone(before);
+  assert.equal(notices.pending(at(79.99), config), null);
+  assert.equal(notices.pending(before, config), "vigilanceWarning");
+  assert.equal(notices.pending(before, config), "vigilanceWarning");
+  notices.shown("vigilanceWarning");
+  assert.equal(notices.pending(at(99), config), null);
+  assert.equal(notices.pending(at(79.99), config), null);
+  assert.equal(notices.pending(before, config), "vigilanceWarning");
+  assert.equal(createNeedsNotices(before).pending(before, config), "vigilanceWarning");
+  assert.equal(notices.pending({ ...before, health: 25 }, config), "healthWarning");
+  assert.equal(notices.pending({ ...before, faints: 1 }, config), "fainted");
+  assert.equal(notices.pending({ ...before, pressures: { vigilance: 80, placements: [{}] } }, config), "placed");
+  assert.equal(notices.pending({ ...before, ended: "placement" }, config), "placement");
+  assert.deepEqual(before, snapshot);
+});
+
 for (const [kind, field, threshold] of [
   ["fatigueWarning", "fatigue", config.warning_percent],
   ["sleepWarning", "awakeHours", config.sleep_warning_hours],
@@ -202,6 +222,25 @@ for (const locale of ["fr", "en"]) {
       await tick();
       assert.equal(element("#needs-notice-dialog").open, false);
     }
+    ui.reset();
+    current.state = { ...state(20), pressures: { vigilance: 80, placements: [] } };
+    otherDialog = true;
+    await tick();
+    assert.equal(element("#needs-notice-dialog").open, false);
+    otherDialog = false;
+    await tick();
+    assert.equal(element("#needs-notice-title").textContent, tr("vigilanceWarningTitle"));
+    assert.equal(element("#needs-notice-text").textContent, tr("vigilanceWarningText"));
+    assert.match(element("#needs-notice-text").textContent, /80\/100/);
+    assert.equal(element("#needs-notice-actions").hidden, true);
+    element("#needs-notice-dialog").close();
+    await tick();
+    assert.equal(element("#needs-notice-dialog").open, false);
+    current.state.pressures.vigilance = 79;
+    await tick();
+    current.state.pressures.vigilance = 80;
+    await tick();
+    assert.equal(element("#needs-notice-dialog").open, true);
     ui.reset();
     const placement = { lostCents: 250, recovery: { col: 17, row: 10, town: "Recovery Town" }, trigger: {
       vigilanceBefore: 99.5, minutes: 10, tarotFactor: 1,

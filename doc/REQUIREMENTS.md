@@ -1828,6 +1828,11 @@
 
 ## R-148 - Always-visible vigilance level
 
+- At adult vigilance 80/100 or above, show a localized warning dialog explaining
+  the placement risk at 100 and ways to reduce attention. Warn once per episode,
+  rearm below 80 and defer behind other dialogs and higher-priority needs notices.
+  Restored journeys with current high vigilance still warn. Do not change
+  vigilance accounting or placement rules.
 - Move the existing live vigilance meter and numeric percentage into the
   player-status overview below the calendar, outside collapsed pressure details.
 - Keep a single meter/value pair and preserve the existing thresholds, updates,

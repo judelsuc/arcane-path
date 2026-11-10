@@ -10,10 +10,12 @@ const WARNING_MESSAGES = {
   healthWarning: ["healthWarningTitle", "healthWarningText"],
   fatigueWarning: ["fatigueWarningTitle", "fatigueWarningText"],
   sleepWarning: ["sleepWarningTitle", "sleepWarningText"],
+  vigilanceWarning: ["vigilanceWarningTitle", "vigilanceWarningText"],
 };
 
 export function createNeedsNotices(restoredState) {
   let hungerSeen = false, healthSeen = false, fatigueSeen = false, sleepSeen = false, endedSeen;
+  let vigilanceSeen = false;
   let faintSeen = restoredState?.faints ?? 0;
   let placementSeen = restoredState?.pressures?.placements.length ?? 0;
   return {
@@ -22,19 +24,22 @@ export function createNeedsNotices(restoredState) {
       if (healthValue(state) > 25) healthSeen = false;
       if (state.fatigue < config.warning_percent) fatigueSeen = false;
       if (state.awakeHours < config.sleep_warning_hours) sleepSeen = false;
+      if ((state.pressures?.vigilance ?? 0) < 80) vigilanceSeen = false;
       if (state.ended) return state.ended !== "reunion" && state.ended !== endedSeen ? state.ended : null;
       if ((state.pressures?.placements.length ?? 0) > placementSeen) return "placed";
       if ((state.faints ?? 0) > faintSeen) return "fainted";
       if (!healthSeen && healthValue(state) <= 25) return "healthWarning";
       if (!hungerSeen && hungerPercent(state, config) >= 75) return "warning";
       if (!fatigueSeen && state.fatigue >= config.warning_percent) return "fatigueWarning";
-      return !sleepSeen && state.awakeHours >= config.sleep_warning_hours ? "sleepWarning" : null;
+      if (!sleepSeen && state.awakeHours >= config.sleep_warning_hours) return "sleepWarning";
+      return !vigilanceSeen && (state.pressures?.vigilance ?? 0) >= 80 ? "vigilanceWarning" : null;
     },
     shown(kind, state) {
       if (kind === "warning") hungerSeen = true;
       else if (kind === "healthWarning") healthSeen = true;
       else if (kind === "fatigueWarning") fatigueSeen = true;
       else if (kind === "sleepWarning") sleepSeen = true;
+      else if (kind === "vigilanceWarning") vigilanceSeen = true;
       else if (kind === "placed") {
         placementSeen = state.pressures.placements.length;
         faintSeen = state.faints ?? 0;
@@ -89,7 +94,7 @@ export function setupNeedsNotices(t, { context }) {
       : kind === "fainted" ? faintText : kind === "placed" ? placementText
         : kind === "placement" ? `${placementText} ${t("journeyEnded.placement")} ${t("needsEndedHelp")}`
         : `${faint?.finishedMinutes === state.elapsedMinutes ? `${faintText} ` : ""}${t(`journeyEnded.${kind}`)} ${t("needsEndedHelp")}`;
-    document.querySelector("#needs-notice-actions").hidden = !warning;
+    document.querySelector("#needs-notice-actions").hidden = !warning || kind === "vigilanceWarning";
     document.querySelector("#needs-notice-cell").hidden = !["warning", "healthWarning"].includes(kind);
     document.querySelector("#needs-notice-rest").hidden = kind !== "fatigueWarning";
     document.querySelector("#needs-notice-sleep").hidden = !["fatigueWarning", "sleepWarning"].includes(kind);
