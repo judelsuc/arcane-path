@@ -209,6 +209,20 @@ checks cover all eight architectures in French/English at 320×568, 390×844,
 movement controls or HUD/canvas overlap. Help returns focus to the canvas
 and no longer gives location-specific instructions from the legacy room layout.
 
+Deployed runtime: `f3f273294d46049dcce596b1a833cb0454c577e2`.
+All nine files match expected disk hashes; the eight public files also match
+through loopback HTTP. A read-only live Node replay check confirms eight distinct
+v2 main-room architectures while v1 retains version-3 geometry. Application,
+nginx and travel-prefetch timer remain active, and nginx configuration validates.
+No shared schema, town assignment, entrance or player save was modified.
+The deployment excludes the separately committed event QTE work.
+
+Rollback archive `/home/ubuntu/before-0.22.7-f3f2732.tar.gz`, root-owned 0600:
+`9aabc65710182793442578cc78e85595912701cf03ded7474520581fd7242914`.
+Refresh the release-manifest timestamp after restoring files. After any v2
+attempt has started, retain v2 replay support during rollback; the pre-update
+runtime cannot validate those new transcripts.
+
 ### Console adventures and permanent gameplay, 0.22.6
 
 New eligible towns permanently receive platform, investigation or dungeon
