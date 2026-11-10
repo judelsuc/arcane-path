@@ -234,6 +234,24 @@ lost-race/abandonment checks, legacy replay and 1,536 bilingual console mounts.
 The integrated browser's CDP connection timed out on both the existing page and
 a new page; no real-browser visual verification is claimed for this release.
 
+Deployed as **0.22.8**, runtime
+`13b8b81c588e5b4cd3a55383485b1a6c90d4aebf`. The package applied only this
+change set to the exact 0.22.7 live baseline: 18 files, including its generated
+release manifest. Installed checksums and all 17 public HTTP asset checksums
+matched; the backend script was verified on disk, not exposed over HTTP.
+The release manifest mtime was refreshed. Application, Nginx and prefetch timer
+are active; `nginx -t` passed and public HTTPS retains the preview-auth 401.
+Read-only deployed replays completed each new format with matching stash counts,
+mistake counts and costs, and accepted all 14 legacy protocols. No live journey
+save, paid generation job, town decision, entrance or schema was changed.
+Unrelated event-QTE work remains undeployed.
+
+Pre-deployment backup: `/home/ubuntu/before-0.22.8-13b8b81.tar.gz`, mode 0600,
+SHA-256 `c33d7f77477ff11bb02e9ce6c1dbbfde88b5059721f173e77b6b623d0d8eb67d`.
+This is a forensic pre-release backup, not a safe full-runtime rollback after
+new attempts have started: retain the new replay engines and their dependencies
+when disabling new entry versions.
+
 ### Varied platform architecture, 0.22.7
 
 New platform treasure attempts use `treasure-platform-v2`. The town's permanent
