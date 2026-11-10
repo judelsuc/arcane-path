@@ -228,6 +228,35 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Illustrated shelter feedback, 0.22.19 (10 November 2026)
+
+Deployed runtime `cc89710c31b22e56000c3146e6c3afd80671d48f`, tagged
+`deploy-2026-11-10-shelter-illustrations`. Saved shelter outcomes open a
+separate feedback popup. The registered `shelter.building.search` scene
+replaces the QTE ASCII backdrop only once ready; `shelter.building.slept`
+illustrates successful sleep. Both reuse the existing private observations,
+free-only generation policy, shared scene cache, credits and error feedback.
+Only registered scene/occurrence identifiers are sent, not map coordinates.
+
+Validation: 93 targeted JavaScript tests and 19 backend tests passed.
+Browser validation of the popup confirmed the French successful-sleep result
+opens above the QTE and stays dismissed after closing. Image-ready/failed
+transitions, unchanged QTE attempts and shared image reuse were tested with
+fixtures; no real provider generation or paid call was performed for validation.
+All six installed disk hashes and five public-file loopback HTTP hashes matched
+the baseline-guarded package. Both installed image scenes imported successfully.
+The release manifest mtime was refreshed. Backend registration required a
+restart: PID 355400 became 356474. Application, Nginx and prefetch timer are
+active; `nginx -t` passed, HTTPS returns expected authentication status 401,
+and the service error journal is clear. No player saves or schemas were changed.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.19-cc89710/runtime.tar.gz`,
+SHA-256 `14383ebe38807eb12b5e63cded1950fc6ab2411bf78414ad9c81939424b947ef`.
+Restore its six files under `/opt/arcane-path`, refresh
+`public/release.json` mtime and restart the application. Retain shared images,
+observations and provider-job receipts; do not delete cached illustration data.
+
 ## Immersive gameplay text, 0.22.18 (10 November 2026)
 
 Deployed runtime `baaf075268ffc26256538c32daa879ecfedc2c82`, tagged
