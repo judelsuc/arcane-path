@@ -176,6 +176,41 @@ explicite décrite ci-dessous ; les sections suivantes conservent l'historique.
 
 ## Checkpoint deployed: town legends and composed treasures (9 November 2026)
 
+### Console adventures and permanent gameplay, 0.22.6
+
+New eligible towns permanently receive platform, investigation or dungeon
+gameplay. Players enter through one treasure action, not a format or trial menu.
+Existing towns without an override retain their original format, and active
+sessions can still finish using their saved protocol. The server rejects a new
+treasure attempt whose protocol differs from its town's retained assignment.
+
+The additive `town_legend_gameplay` table holds new assignments because the
+legacy `town_legends.format` constraint only accepts platform/investigation.
+New dungeon towns retain `platform` in that compatibility column; all gameplay
+and public legend views resolve the canonical override. Only the winning town
+insertion writes an assignment, so concurrent discoveries cannot reroll it.
+Initialize this table explicitly on shared storage before activating the code;
+configured storage does not create schemas during startup.
+
+Adventures use their own full-viewport dialog. Active attempts cannot be silently
+closed with Escape; leaving explicitly settles their existing accounting.
+Mechanisms have in-world inscriptions, including a riddle for the airborne bell.
+Control instructions, explicit solutions, sprite keys, maps, accounting and
+reload/equipment details belong in the game's Help dialog, not the playfield.
+Help suspends platform simulation, clears held controls, blocks dungeon commands
+and restores canvas focus on close. Help dialogs contain their keyboard events.
+Pause, checkpoint retry and explicit leave/settlement are also available there;
+checkpoint retry closes Help before issuing its gameplay command.
+Windows providing their own Help opt out of generic window Help with
+`data-custom-help="true"`.
+
+Validation: 1,697 JavaScript tests and 41 focused backend tests pass.
+Browser checks cover the real game mount in French/English and full-viewport
+geometry at 320×568, 390×844, 844×390 and 1100×800, with reachable controls and
+no horizontal overflow. Help contains the bell solution while the playfield
+only shows its riddle. The deployment is an isolated delta over the live 0.22.5
+files; the separately committed event QTE work remains excluded.
+
 ### Arrival-cell legend guidance, 0.22.5
 
 The principal missing-clue bug was the shared economy context: it marks

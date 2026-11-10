@@ -1450,6 +1450,78 @@ dialog p { margin: 12px 0; }
 }
 #quests-legend-session .legend-game button { min-height: 48px; }
 #quests-legend-session button[aria-current="location"] { outline: 2px solid currentColor; }
+.legend-console[open] {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  box-sizing: border-box;
+  border: 0;
+  padding: clamp(.5rem, 2vw, 1.5rem);
+  overflow: auto;
+  background: #101619;
+  color: #eee9dc;
+}
+.legend-console::backdrop { background: #101619; }
+.legend-console #quests-legend-session { max-width: 1440px; margin-inline: auto; }
+.legend-console #quests-legend-session .legend-game > canvas {
+  width: min(100%, calc((100dvh - 27rem) * 2));
+  max-height: max(80px, calc(100dvh - 27rem));
+  object-fit: contain;
+  margin-inline: auto;
+}
+.legend-console #quests-legend-session > p { font-size: .85rem; }
+.legend-help { width: min(90vw, 680px); max-height: 85dvh; overflow: auto; }
+.legend-help-button { float: right; }
+.legend-inscription {
+  max-width: 64ch;
+  margin: .5rem auto;
+  padding: .5rem 1rem;
+  border: 3px ridge #8e8879;
+  background: #303833;
+  color: #eee3bf;
+}
+.legend-inscription h3 { margin: 0; font-size: .8rem; }
+.legend-inscription p { margin: .4rem 0 0; font-style: italic; }
+.legend-console .legend-game[data-format="platform"],
+.legend-console .legend-game[data-format="dungeon"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .35rem;
+}
+.legend-console .legend-game > h2 { margin: 0; font-size: 1rem; align-self: center; }
+.legend-console .legend-game > .legend-help-button { float: none; grid-column: 2; grid-row: 1; }
+.legend-console .legend-game > :not(h2, .legend-help-button, dialog) { grid-column: 1 / -1; }
+.legend-console .legend-game > p { margin: .15rem 0; font-size: .75rem; }
+.legend-console .legend-inscription { margin: .2rem auto; padding: .35rem .5rem; font-size: .8rem; }
+.legend-console .legend-inscription h3 { font-size: .7rem; }
+.legend-console .legend-inscription p { margin-top: .2rem; }
+.legend-console .legend-game .legend-controls { margin: .2rem 0; gap: .4rem; }
+.legend-console .legend-game .legend-dpad { width: 9.5rem; }
+.legend-console .legend-dpad button { font-size: 0; }
+.legend-console .legend-dpad kbd { font-size: 1rem; }
+.legend-console .legend-game .legend-action-controls { flex-basis: 7rem; }
+.legend-console .legend-action-controls kbd { display: none; }
+@media (orientation: landscape) and (max-height: 500px) {
+  .legend-console .legend-game[data-format="platform"],
+  .legend-console .legend-game[data-format="dungeon"] { grid-template-columns: minmax(0, 1fr) 19rem; }
+  .legend-console #quests-legend-session .legend-game > canvas {
+    grid-column: 1;
+    grid-row: 2 / span 4;
+    width: 100%;
+    max-height: calc(100dvh - 6rem);
+  }
+  .legend-console .legend-game > .legend-inscription,
+  .legend-console .legend-game > p,
+  .legend-console .legend-game > .legend-controls { grid-column: 2; }
+  .legend-console .legend-game > .legend-inscription { grid-row: 2; }
+  .legend-console .legend-game > p[role="status"] { grid-row: 3; }
+  .legend-console .legend-game > p:not([role]) { grid-row: 4; }
+  .legend-console .legend-game > .legend-controls { grid-row: 5; }
+}
 .legend-game .legend-controls {
   display: flex;
   flex-wrap: wrap;

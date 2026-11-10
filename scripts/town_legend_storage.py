@@ -23,4 +23,7 @@ SCHEMAS = (
     """CREATE TABLE IF NOT EXISTS town_legend_rewards (
         town_id TEXT PRIMARY KEY REFERENCES town_legends(town_id),
         payload TEXT NOT NULL)""",
+    """CREATE TABLE IF NOT EXISTS town_legend_gameplay (
+        town_id TEXT PRIMARY KEY REFERENCES town_legends(town_id),
+        format TEXT NOT NULL CHECK(format IN ('platform','investigation','dungeon')))""",
 )

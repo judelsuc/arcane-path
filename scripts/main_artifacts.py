@@ -237,6 +237,11 @@ class MainArtifacts(LorePlaytest):
                                                       "seeded-platform-v2", "seeded-investigation-v3", "seeded-dungeon-v4") + TREASURE_VERSIONS)
                 if definition["townId"] != action["townId"]:
                     raise JourneyConflict("This investigation belongs to a different town.")
+                if action["contentVersion"] in TREASURE_VERSIONS:
+                    assigned = {"platform": TREASURE_VERSIONS[0], "investigation": TREASURE_VERSIONS[1],
+                                "dungeon": TREASURE_VERSIONS[2]}[definition["format"]]
+                    if action["contentVersion"] != assigned:
+                        raise JourneyConflict("This legend's gameplay was permanently assigned by the game.")
             row = db.execute(f"SELECT * FROM {self.world_table} WHERE id=?", (WORLD,)).fetchone()
             if row is None:
                 world = self.initial_world(self.journeys.chunks.bases[genesis["region"]], genesis["state"])

@@ -18,8 +18,8 @@ class Element {
 
 const entry = { townId: "node/42", town: "Firmi", eligible: true, seed: 1, format: "platform", contentStatus: "unprepared" };
 const flush = () => new Promise(resolve => setImmediate(resolve));
-function enter(f, reward) {
-  f.ui.acceptEntry({ ...entry, ...(reward ? { reward } : {}), exploration: { status: "found", clues: {
+function enter(f, reward, format = "platform") {
+  f.ui.acceptEntry({ ...entry, format, ...(reward ? { reward } : {}), exploration: { status: "found", clues: {
     en: ["Search the woodland.", "Find a slate disc.", "Match the bell and four dots."],
     fr: ["Cherchez dans les bois.", "Trouvez une rondelle en ardoise.", "Cloche et quatre points."],
   }, observations: [{ col: 1, row: 0, found: true, description: { en: "A bell.", fr: "Une cloche." } }] } });
@@ -65,7 +65,7 @@ test("a completed discovery refreshes local descriptions once without an observa
   f.ui.reset();
 });
 
-test("eligible towns offer an explicitly confirmed local platform trial", async () => {
+test("the assigned treasure adventure requires confirmation and respects activity blockers", async () => {
   const started = [], confirmations = [];
   let accepted = false;
   const f = fixture({ discover: async () => ({ entry: { ...entry, format: "investigation" } }) }, {
@@ -76,30 +76,21 @@ test("eligible towns offer an explicitly confirmed local platform trial", async 
   await flush();
   assert.equal(f.button("Try platforms (real costs, no treasure)"), undefined, "town arrival does not bypass search");
   enter(f);
-  const trial = () => f.button("Try platforms (real costs, no treasure)");
+  const trial = () => f.button("Recover the treasure");
   trial().click();
   assert.equal(started.length, 0);
   accepted = true;
   trial().click();
-  assert.deepEqual(started, [{ type: "legend-start", townId: entry.townId, contentVersion: "seeded-platform-v2" }]);
-  assert.match(confirmations[0], /3 minutes.*1 fatigue.*1 dirt.*-5 health.*No item/);
+  assert.deepEqual(started, [{ type: "legend-start", townId: entry.townId, contentVersion: "treasure-platform-v1" }]);
+  assert.match(confirmations[0], /3 minutes.*1 fatigue.*1 dirt.*-5 health/);
   assert.match(confirmations[0], /Reload discards.*entry again/);
   f.setContext({ ...f.getContext(), blocked: true });
   f.ui.localize();
   assert.equal(trial().disabled, true);
 });
 
-test("generated trial entry is explicitly confirmed, fixed-length and separate from the authored version", async () => {
-  for (const language of ["en", "fr"]) {
-    const started = [], confirmations = [];
-    let accepted = false;
-    const f = fixture({ discover: async () => ({ entry: { ...entry, format: "investigation" } }) }, {
-      startTrial: action => started.push(action),
-      confirmTrial: message => { confirmations.push(message); return accepted; },
-    });
-
-    test("inspected entrances offer three separately confirmed treasure recoveries, never on town arrival", async () => {
-      for (const language of ["en", "fr"]) {
+test("each retained format offers exactly one treasure action and no trial menu in both languages", async () => {
+      for (const language of ["en", "fr"]) for (const format of ["platform", "investigation", "dungeon"]) {
         const actions = [], confirmations = [];
         const f = fixture({ discover: async () => ({ entry }) }, {
           startTrial: action => actions.push(action),
@@ -110,44 +101,18 @@ test("generated trial entry is explicitly confirmed, fixed-length and separate f
         await flush();
         const label = language === "en" ? "Recover the treasure" : "Retrouver le trésor";
         assert.equal(f.button(`${label} — ${language === "en" ? "Platforms" : "Plateformes"}`), undefined);
-        enter(f);
-        for (const format of language === "en" ? ["Platforms", "Investigation", "Dungeon"]
-          : ["Plateformes", "Enquête", "Donjon"]) f.button(`${label} — ${format}`).click();
-        assert.deepEqual(actions.map(action => action.contentVersion),
-          ["treasure-platform-v1", "treasure-investigation-v1", "treasure-dungeon-v1"]);
+        enter(f, undefined, format);
+        f.button(label).click();
+        assert.deepEqual(actions.map(action => action.contentVersion), [`treasure-${format}-v1`]);
+        assert.doesNotMatch(f.text(), /Try platforms|Try a dungeon|Try a generated|Essayer|No item or money/);
         assert.ok(confirmations.every(message => message.includes("3 minutes")));
         assert.match(confirmations[0], language === "en" ? /first successful.*bag is full.*only while carried/ :
           /premier explorateur.*sac est plein.*uniquement tant qu'il est porté/);
         assert.doesNotMatch(confirmations[0], /No item|Aucun objet/);
         f.setContext({ ...f.getContext(), state: { ...f.getContext().state, col: 2 } });
         f.ui.localize();
-        assert.equal(f.button(`${label} — ${language === "en" ? "Platforms" : "Plateformes"}`), undefined);
+        assert.equal(f.button(label), undefined);
       }
-    });
-    f.doc.documentElement.lang = language;
-    f.ui.localize();
-    await flush();
-    enter(f);
-    const label = language === "en" ? "Try a generated investigation (real costs, no reward)"
-      : "Essayer une enquête procédurale (coûts réels, sans récompense)";
-    f.button(label).click();
-    assert.deepEqual(started, []);
-    accepted = true;
-    f.button(label).click();
-    assert.deepEqual(started, [{ type: "legend-start", townId: entry.townId, contentVersion: "seeded-investigation-v3" }]);
-    assert.ok(confirmations.every(message => message.includes("8") && message.includes("3 minutes")));
-    f.setContext({ ...f.getContext(), blocked: true });
-    f.ui.localize();
-    assert.equal(f.button(label).disabled, true);
-    f.button(label).click();
-    assert.equal(started.length, 1);
-  }
-  for (const status of [{ ...entry, eligible: false }]) {
-    const f = fixture({ discover: async () => ({ entry: status }) }, { startTrial: () => assert.fail("unavailable") });
-    f.ui.localize();
-    await flush();
-    assert.equal(f.button("Try a generated investigation (real costs, no reward)"), undefined);
-  }
 });
 test("arrival records the town once per position and shows actual unprepared status in both languages", async () => {
   let calls = 0;
@@ -166,30 +131,6 @@ test("arrival records the town once per position and shows actual unprepared sta
   assert.equal(calls, 1);
 });
 
-test("eligible towns offer a separate confirmed dungeon trial without changing their retained format", async () => {
-  for (const language of ["en", "fr"]) for (const format of ["platform", "investigation"]) {
-    const starts = [], terms = [];
-    let accepted = false;
-    const f = fixture({ discover: async () => ({ entry: { ...entry, format } }) }, {
-      startTrial: action => starts.push(action), confirmTrial: message => { terms.push(message); return accepted; },
-    });
-    f.doc.documentElement.lang = language;
-    f.ui.localize();
-    await flush();
-    enter(f);
-    const label = language === "en" ? "Try a dungeon (real costs, food caches, no treasure)" : "Essayer un donjon (coûts réels, nourriture, sans trésor)";
-    f.button(label).click();
-    assert.deepEqual(starts, []);
-    accepted = true;
-    f.button(label).click();
-    assert.deepEqual(starts, [{ type: "legend-start", townId: entry.townId, contentVersion: "seeded-dungeon-v4" }]);
-    assert.match(terms[0], /-2/);
-    assert.match(terms[0], /-5/);
-    f.setContext({ ...f.getContext(), blocked: true });
-    f.ui.localize();
-    assert.equal(f.button(label).disabled, true);
-  }
-});
 
 test("late replies cannot show a town left behind or another journey's private history", async () => {
   let resolve;
@@ -281,19 +222,19 @@ test("late history cannot erase a newly inspected entrance and old buttons canno
   await flush();
   f.button("Load discovery history").click();
   enter(f);
-  const trial = f.button("Try platforms (real costs, no treasure)");
+  const trial = f.button("Recover the treasure");
   assert.ok(trial);
   resolve({ entries: [{ ...entry, exploration: { status: "searching", clues: {
     en: ["Search the woodland.", "Find a slate disc.", "Match the bell and four dots."],
     fr: ["Cherchez dans les bois.", "Trouvez une rondelle en ardoise.", "Cloche et quatre points."],
   }, observations: [] } }], cursor: null });
   await flush();
-  assert.ok(f.button("Try platforms (real costs, no treasure)"));
+  assert.ok(f.button("Recover the treasure"));
   f.setContext({ ...f.getContext(), state: { ...f.getContext().state, col: 2 } });
   trial.click();
   assert.deepEqual(starts, []);
   f.ui.localize();
-  assert.equal(f.button("Try platforms (real costs, no treasure)"), undefined);
+  assert.equal(f.button("Recover the treasure"), undefined);
 });
 
 test("shared story and stable NPC voices always retain all canonical clues in both languages", async () => {

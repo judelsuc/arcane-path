@@ -157,7 +157,7 @@ export function setupArtifactQuests(t, { context, mutate, lock, beforeRequest, c
     legendSession.render({ state, session: snapshot && snapshot.revision === state?.artifactRevision ? snapshot.adventure : null,
       blocked: working || Boolean(current?.blocked && !activeLegend), pending, language: lang,
       runtime: { survival: current?.survival, economy: current?.data, info: current?.info },
-      startRevision: legendStartRevision });
+      startRevision: legendStartRevision, error });
     talk.replaceChildren(); book.replaceChildren();
     spoken.replaceChildren();
     const speaker = character();

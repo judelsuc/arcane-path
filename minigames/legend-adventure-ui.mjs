@@ -97,6 +97,8 @@ function drawPlatform(ctx, state, images, set) {
         if (state.activated?.includes(`${room.id}:${index}`)) continue;
         const sprite = { switch: "lever", key: "key", jump: "bell", timing: "lever" }[point.family];
         drawPixelSprite(ctx, sprite, point.x - 6, point.y - 4);
+        rectangle(ctx, "#a4acc2", point.x - 28, point.y + 20, 20, 14);
+        for (let line = 0; line < 3; line++) rectangle(ctx, "#38434b", point.x - 25, point.y + 23 + line * 3, 14, 1);
       }
     }
     if (room.treasure && !state.completed) reel(ctx, room.treasure.x + 9, room.treasure.y + 9);
@@ -184,7 +186,7 @@ function drawInvestigation(ctx, state, images, set) {
 
 export function mount(container, { format, language = "en", seed = 1, backgrounds = {},
   tier = "modest", weapon = "none", generatedInvestigation = false, paced = false,
-  onFinish = () => {}, onError = () => {}, authoritative } = {}) {
+  onFinish = () => {}, onError = () => {}, authoritative, helpText = [], onLeave, leaveLabel } = {}) {
   if (!["platform", "investigation", "dungeon"].includes(format)) throw new RangeError("Unknown legend adventure format.");
   if (generatedInvestigation && (format !== "investigation" || authoritative)) {
     throw new Error("Generated investigation is available only in the isolated preview.");
@@ -206,6 +208,7 @@ export function mount(container, { format, language = "en", seed = 1, background
   const art = pixelSet(seed);
   const root = doc.createElement("section");
   root.className = "legend-game";
+  root.dataset.format = format;
   const listeners = [];
   function listen(target, event, callback) {
     target.addEventListener(event, callback);
@@ -250,13 +253,40 @@ export function mount(container, { format, language = "en", seed = 1, background
     return nodes;
   }
   const heading = element("h2", copy[format]);
+  const help = doc.createElement("dialog");
+  help.className = "legend-help";
+  help.dataset.customHelp = "true";
+  help.setAttribute("aria-label", copy.helpTitle);
+  help.setAttribute("data-native-controls", "");
+  const helpButton = shortcut(button(copy.helpTitle, () => help.showModal()), copy.helpTitle, "H");
+  helpButton.className = "legend-help-button";
+  helpButton.dataset.legendAction = "help";
+  element("h2", copy.helpTitle, help);
+  const closeHelp = shortcut(button(copy.helpClose, () => help.close(), help), copy.helpClose, "Escape");
+  closeHelp.dataset.legendAction = "help-close";
+  listen(help, "keydown", event => event.stopPropagation());
+  listen(help, "keyup", event => event.stopPropagation());
+  listen(help, "close", () => { canvas.focus?.(); });
+  listen(root, "keydown", event => {
+    if (event.key.toLowerCase() !== "h" || event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (!help.open) help.showModal();
+  });
   element("p", isTreasureSession(authoritative?.contentVersion) ? language === "fr"
     ? "Retrouvez le souvenir caché au bout des huit salles. Observez les passages, les mécanismes et les indices."
     : "Recover the hidden memento beyond the eight rooms. Watch the passages, mechanisms and clues."
     : livePlatform ? copy.platformLiveHelp : liveDungeon ? copy[local ? "dungeonLocalHelp" : "dungeonLiveHelp"] :
-    generated ? INVESTIGATION_COPY[language][local ? "localHelp" : authoritative ? "liveHelp" : "help"] : copy[`${format}Help`]);
-  if (hasDungeonFood(authoritative?.contentVersion)) element("p", copy.dungeonFoodHelp);
-  const pacing = element("p");
+    generated ? INVESTIGATION_COPY[language][local ? "localHelp" : authoritative ? "liveHelp" : "help"] : copy[`${format}Help`], help);
+  if (isTreasureSession(authoritative?.contentVersion)) element("p", copy.treasureHelp[format], help);
+  for (const paragraph of helpText) element("p", paragraph, help);
+  if (onLeave) {
+    const leave = button(leaveLabel, onLeave, help);
+    leave.dataset.legendAction = "leave";
+    leave.disabled = Boolean(authoritative?.disabled);
+  }
+  if (hasDungeonFood(authoritative?.contentVersion)) element("p", copy.dungeonFoodHelp, help);
+  const pacing = element("p", undefined, help);
   pacing.className = "legend-pacing";
   const canvas = element("canvas");
   canvas.width = format === "dungeon" ? 360 : WIDTH;
@@ -267,15 +297,20 @@ export function mount(container, { format, language = "en", seed = 1, background
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas rendering is unavailable.");
   ctx.imageSmoothingEnabled = false;
+  const inscription = element("aside");
+  inscription.className = "legend-inscription";
+  element("h3", copy.inscription, inscription);
+  const inscriptionText = element("p", undefined, inscription);
+  inscription.hidden = format === "investigation";
   const status = element("p");
   status.setAttribute("role", "status");
   const receipt = element("p");
   receipt.className = "legend-receipt";
   receipt.setAttribute("role", "status");
   receipt.hidden = true;
-  const accounting = element("p");
+  const accounting = element("p", undefined, help);
   accounting.className = "legend-accounting";
-  const symbols = element("details");
+  const symbols = element("details", undefined, help);
   symbols.className = "legend-symbols";
   element("summary", `${copy.symbols} — ${copy.artSets[art.id]}`, symbols);
   const symbolList = element("div", undefined, symbols);
@@ -377,13 +412,13 @@ export function mount(container, { format, language = "en", seed = 1, background
     const actions = element("div");
     actions.className = "legend-actions";
     const actionButtons = Array.from({ length: 5 }, (_, i) => button("", () => act(i), actions));
-    const hint = element("p");
+    const hint = element("p", undefined, help);
     hint.setAttribute("role", "status");
     const hintButton = shortcut(button(copy.hint, () => {
       const step = generatedInvestigationHint(state);
       hint.textContent = c.hints[step];
       if (["choose", "sequence", "seal"].includes(step)) hint.textContent += ` ${evidence.textContent}`;
-    }), copy.hint, "I");
+    }, help), copy.hint, "I");
     hintButton.dataset.legendAction = "hint";
     function submit(action) {
       if (authoritative) {
@@ -481,6 +516,7 @@ export function mount(container, { format, language = "en", seed = 1, background
       const node = [...actionButtons, previous, next, hintButton]
         .find(item => item.getAttribute("aria-keyshortcuts") === key);
       if (!node || node.hidden || node.disabled) return;
+      if (node === hintButton) { event.preventDefault(); event.stopPropagation(); help.showModal(); node.click(); return; }
       event.preventDefault();
       event.stopPropagation();
       node.click();
@@ -493,7 +529,7 @@ export function mount(container, { format, language = "en", seed = 1, background
     const inventory = element("p");
     const actions = element("div");
     actions.className = "legend-actions";
-    const hint = element("p");
+    const hint = element("p", undefined, help);
     hint.setAttribute("role", "status");
     const navButtons = new Map();
     const actionButtons = new Map();
@@ -533,13 +569,14 @@ export function mount(container, { format, language = "en", seed = 1, background
     }
     const hintButton = shortcut(button(copy.hint, () => {
       hint.textContent = copy.hints[investigationHint(state)];
-    }), copy.hint, "I");
+    }, help), copy.hint, "I");
     listen(root, "keydown", event => {
       if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
       const key = event.key.toUpperCase();
       const node = [...navButtons.values(), ...actionButtons.values(), hintButton]
         .find(item => item.getAttribute("aria-keyshortcuts") === key);
       if (!node || node.hidden || node.disabled) return;
+      if (node === hintButton) { event.preventDefault(); event.stopPropagation(); help.showModal(); node.click(); return; }
       event.preventDefault();
       event.stopPropagation();
       node.click();
@@ -548,13 +585,13 @@ export function mount(container, { format, language = "en", seed = 1, background
     render();
   } else if (format === "dungeon") {
     const progress = element("p");
-    const objective = element("p");
+    const objective = element("p", undefined, help);
     const controls = element("div");
     controls.className = "legend-controls";
     let paused = false;
     const dungeonWeapon = state.weapon;
     function act(type) {
-      if (paused || state.completed || state.failed || type === "attack" && dungeonWeapon === "none" ||
+      if (help.open || paused || state.completed || state.failed || type === "attack" && dungeonWeapon === "none" ||
           authoritative && (authoritative.disabled || authoritative.status !== "active")) return;
       if (liveDungeon) {
         if (local) { localInput({ type }); render(); }
@@ -571,14 +608,14 @@ export function mount(container, { format, language = "en", seed = 1, background
     const interact = shortcut(button(copy.interact, () => act("interact"), actions), copy.interact, "E");
     const attack = shortcut(button(copy.attack, () => act("attack"), actions), copy.attack, "X");
     const wait = shortcut(button(copy.wait, () => act("wait"), actions), copy.wait, "Space", copy.space);
-    const retry = shortcut(button(copy.retry, () => act("retry")), copy.retry, "R");
+    const retry = shortcut(button(copy.retry, () => { help.close(); act("retry"); }, help), copy.retry, "R");
     for (const [node, action] of [[interact, "interact"], [attack, "attack"], [wait, "wait"], [retry, "retry"]]) {
       node.dataset.legendAction = action;
     }
     const pause = shortcut(button(copy.pause, () => {
       paused = !paused;
       render();
-    }), copy.pause, "P");
+    }, help), copy.pause, "P");
     pause.setAttribute("aria-pressed", "false");
     const bindings = { ArrowUp: "up", ArrowRight: "right", ArrowDown: "down", ArrowLeft: "left",
       e: "interact", E: "interact", x: "attack", X: "attack", " ": "wait", r: "retry", R: "retry" };
@@ -605,6 +642,9 @@ export function mount(container, { format, language = "en", seed = 1, background
         status.textContent = copy.dungeonFoodDefeated(authoritative.foodKcal);
       }
       const mechanisms = dungeonMechanisms(room);
+      inscriptionText.textContent = mechanisms.map(mechanism =>
+        copy.riddles[mechanism === "block" ? "plate" : mechanism === "spikes" ? "timing" : mechanism] ??
+        copy.riddles.final).join(" ");
       const patrolling = room.creature && !state.defeated.includes(state.room);
       objective.textContent = `${mechanisms.map(mechanism => room.mechanisms && ["switch", "key"].includes(mechanism)
         ? copy.dungeonTarget(mechanism, dungeonTarget(room, mechanism)) : copy.mechanisms[mechanism]).join(" ")} ${
@@ -669,7 +709,7 @@ export function mount(container, { format, language = "en", seed = 1, background
       const facing = DUNGEON_DIRECTIONS[state.facing];
       rectangle(ctx, "#f5e1b5", (state.x + .5) * tile + facing.x * 15 - 2,
         (state.y + .5) * tile + facing.y * 15 - 2, 4, 4);
-      canvas.setAttribute("aria-label", `${copy.scene}. ${objective.textContent}`);
+      canvas.setAttribute("aria-label", `${copy.scene}. ${copy.room} ${state.room + 1}. ${inscriptionText.textContent}`);
       const stopped = paused || state.completed || state.failed ||
         Boolean(authoritative && (authoritative.disabled || authoritative.status !== "active"));
       for (const node of [...pad.values(), interact, wait, retry]) node.disabled = stopped;
@@ -684,8 +724,8 @@ export function mount(container, { format, language = "en", seed = 1, background
     render();
   } else {
     const progress = element("p");
-    const exits = element("p");
-    const map = element("canvas");
+    const exits = element("p", undefined, help);
+    const map = element("canvas", undefined, help);
     map.width = WIDTH;
     map.height = 144;
     map.className = "legend-map";
@@ -712,10 +752,12 @@ export function mount(container, { format, language = "en", seed = 1, background
       pause.setAttribute("aria-pressed", String(paused));
       status.textContent = paused ? copy.paused : copy.platformMessages[state.message];
       render();
-    });
+    }, help);
     shortcut(pause, copy.pause, "P");
     pause.setAttribute("aria-pressed", "false");
-    const retry = button(copy.retry, () => { if (!paused && !state.completed) taps.add("retry"); });
+    const retry = button(copy.retry, () => {
+      if (!paused && !state.completed) { help.close(); taps.add("retry"); }
+    }, help);
     shortcut(retry, copy.retry, "R");
     for (const control of ["left", "right", "up", "down", "jump", "interact"]) {
       const node = pad.get(control) ?? button(copy[control], () => {
@@ -779,6 +821,9 @@ export function mount(container, { format, language = "en", seed = 1, background
         ? `${copy.health}: ${authoritative.health}/100 | ${copy.checkpoint}: ${state.retries} | ${level.mainRooms} ${copy.rooms}`
         : `${copy.health}: ${state.health}/3 | ${copy.checkpoint}: ${state.retries} | ${copy.seed}: ${seed} | ${copy.tiers[tier]}: ${level.mainRooms} ${copy.rooms}, ${copy.rewardBudget} ${level.rewardBudget}/3`;
       const room = level.rooms[state.room];
+      status.hidden = ["route", "branch"].includes(state.message) && !paused;
+      inscriptionText.textContent = (room.challenges ?? (room.challenge ? [room.challenge] : []))
+        .map(point => copy.riddles[point.family]).join(" ") || copy.riddles.final;
       exits.textContent = `${room.challenge ? (room.challenges ?? [room.challenge])
         .map((point, index) => `${point.family === "timing" && room.pacing && room.hazards.length
           ? `${copy.platformTiming(room.hazards[0].activeTicks * STEP, (room.hazards[0].period - room.hazards[0].activeTicks) * STEP)} ${copy.platformLever}`
@@ -821,7 +866,7 @@ export function mount(container, { format, language = "en", seed = 1, background
     function tick(now) {
       if (destroyed) return;
       try {
-        const visible = !doc.hidden && (!root.checkVisibility || root.checkVisibility());
+        const visible = !help.open && !doc.hidden && (!root.checkVisibility || root.checkVisibility());
         if (!visible) clear();
         if (!paused && visible && !(authoritative && (authoritative.disabled || authoritative.status !== "active"))) {
           if (last !== null) accumulator += Math.min((now - last) / 1000, 0.1);
@@ -847,6 +892,7 @@ export function mount(container, { format, language = "en", seed = 1, background
     render();
     frame = win.requestAnimationFrame(tick);
   }
+  root.append(help);
   container.append(root);
   return {
     setBackgrounds(value) {

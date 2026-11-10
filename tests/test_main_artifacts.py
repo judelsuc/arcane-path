@@ -50,6 +50,18 @@ class MainArtifactTests(unittest.TestCase):
         with self.fixture.lore.connect() as db:
             self.assertEqual(db.execute("SELECT count(*) FROM sessions").fetchone()[0], 0)
 
+    def test_treasure_gameplay_cannot_override_the_permanent_assignment(self):
+        from types import SimpleNamespace
+        for assigned in ("platform", "investigation", "dungeon"):
+            self.api.town_legends = SimpleNamespace(trial_definition=lambda *args, **kwargs: {
+                "townId": "node/42", "eligible": True, "format": assigned, "seed": 1})
+            for requested in ("platform", "investigation", "dungeon"):
+                if requested == assigned:
+                    continue
+                with self.assertRaisesRegex(JourneyConflict, "permanently assigned"):
+                    self.request({"type": "legend-start", "townId": "node/42",
+                                  "contentVersion": f"treasure-{requested}-v1"})
+
     def test_opencache_query_is_adapted_exactly_once_by_shared_store_connection(self):
         from journey_storage import StoreConnection
         from types import SimpleNamespace

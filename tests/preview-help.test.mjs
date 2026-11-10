@@ -347,6 +347,20 @@ test("a newly created window gets contextual Help without adding a Help button t
   f.api.destroy();
 });
 
+test("adventure windows with custom Help do not get a duplicate generic Help button", () => {
+  const f = fixture("en", false, true);
+  for (const className of ["legend-console", "legend-help"]) {
+    const added = f.doc.createElement("dialog");
+    added.className = className;
+    added.dataset.customHelp = "true";
+    added.append(f.doc.createElement("h2"));
+    f.doc.body.append(added);
+    f.update(f.doc.body, [added]);
+    assert.equal(added.querySelectorAll(".window-help-button").length, 0);
+  }
+  f.api.destroy();
+});
+
 test("integrated game Help collects native game instructions and refreshes rerendered controls in FR/EN", () => {
   for (const language of ["fr", "en"]) {
     const f = fixture(language, false, true);

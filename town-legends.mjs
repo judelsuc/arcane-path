@@ -12,7 +12,7 @@ function validateEntry(entry) {
   if (!entry || !townIdentity.test(entry.townId) || typeof entry.town !== "string" ||
       !entry.town.trim() || entry.town.length > 200 || typeof entry.eligible !== "boolean" ||
       (entry.eligible ? !Number.isSafeInteger(entry.seed) || entry.seed < 0 || entry.seed > 0xffffffff ||
-        !["platform", "investigation"].includes(entry.format) || entry.contentStatus !== "unprepared"
+        !["platform", "investigation", "dungeon"].includes(entry.format) || entry.contentStatus !== "unprepared"
         : entry.seed !== null || entry.format !== null || entry.contentStatus !== "none")) {
     throw new Error("Invalid retained town legend entry.");
   }

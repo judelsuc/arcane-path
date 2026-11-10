@@ -1,6 +1,11 @@
 {
-  "version": "0.22.5",
+  "version": "0.22.6",
   "entries": [
+    {
+      "version": "0.22.6",
+      "fr": "Les aventures de légende occupent tout l'écran, dans une interface de console épurée. Le jeu attribue définitivement l'un des trois modes à chaque nouvelle légende ; les anciennes gardent leur mode. Des inscriptions énigmatiques accompagnent les mécanismes, dont la cloche. Commandes, solutions et détails techniques se trouvent dans Aide, qui suspend le jeu.",
+      "en": "Legend adventures fill the screen with a clean console interface. The game permanently assigns one of three modes to each new legend; existing legends retain theirs. Riddling inscriptions accompany mechanisms, including the bell. Controls, solutions and technical details live in Help, which pauses gameplay."
+    },
     {
       "version": "0.22.5",
       "fr": "Le mode Regarder ne bloque plus les demandes de descriptions de légende dans les cases voisines. Les blocages d'activité restent respectés. La case d'arrivée d'un bourg à légende affiche les indices connus et explique comment examiner les alentours. L'emplacement de l'entrée et les observations restent inchangés.",

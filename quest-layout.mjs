@@ -33,7 +33,15 @@ export function setupQuestLayout(t) {
   const legendDiscovery = document.createElement("section"), legendSession = document.createElement("section");
   legendDiscovery.id = "quests-legend-discovery";
   legendSession.id = "quests-legend-session";
-  legends.append(legendDiscovery, legendSession);
+  legends.append(legendDiscovery);
+  const gameDialog = document.createElement("dialog");
+  gameDialog.id = "legend-game-dialog";
+  gameDialog.className = "legend-console";
+  gameDialog.dataset.customHelp = "true";
+  gameDialog.setAttribute("aria-label", t("quests.legends"));
+  gameDialog.setAttribute("data-native-controls", "");
+  gameDialog.append(legendSession);
+  document.body.append(gameDialog);
   const journals = $("abandoned-journals");
   journals.id = "abandoned-journals";
   const journalPane = document.createElement("section");

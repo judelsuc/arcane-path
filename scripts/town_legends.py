@@ -54,12 +54,18 @@ class TownLegends:
             "SELECT map_geometry,payload FROM town_legend_searches WHERE town_id=?"), (town_id,)).fetchone()
         return (json.loads(row[0]), json.loads(row[1])) if row else None
 
+    def gameplay(self, db, row):
+        retained = db.execute(self.assets.catalogue.sql(
+            "SELECT format FROM town_legend_gameplay WHERE town_id=?"), (row[0],)).fetchone()
+        return (*row[:4], retained[0]) if retained else row
+
     @staticmethod
     def position_in(source, target, location):
         col, row = grid_position(target, *geographic_position(source, location["col"], location["row"]))
         return {"col": col, "row": row}
 
     def exploration_view(self, db, row, journey, base):
+        row = self.gameplay(db, row)
         result = self.view(row)
         if not row[2]:
             return result
@@ -116,6 +122,8 @@ class TownLegends:
                 "SELECT t.town_id,t.town_name,t.eligible,t.seed,t.format FROM town_legends t "
                 "JOIN town_legend_discoveries d ON d.town_id=t.town_id "
                 "WHERE d.journey=? AND t.town_id=?"), (journey, town_id)).fetchone()
+            if row is not None:
+                row = self.gameplay(db, row)
             if entrance and row is not None:
                 retained = self.search(db, town_id)
                 if retained is None:
@@ -196,12 +204,16 @@ class TownLegends:
             if row is None:
                 eligible = self.randbelow(10) == 0
                 seed = self.randbelow(2**32) if eligible else None
-                format_name = ("platform", "investigation")[self.randbelow(2)] if eligible else None
+                format_name = ("platform", "investigation", "dungeon")[self.randbelow(3)] if eligible else None
                 now = float(db.execute("SELECT " + clock(catalogue)).fetchone()[0])
-                db.execute(sql(
+                inserted = db.execute(sql(
                     "INSERT INTO town_legends(town_id,town_name,eligible,seed,format,created) "
-                    "VALUES(?,?,?,?,?,?) ON CONFLICT(town_id) DO NOTHING"),
-                    (town["osmId"], town["name"].strip(), int(eligible), seed, format_name, now))
+                    "VALUES(?,?,?,?,?,?) ON CONFLICT(town_id) DO NOTHING RETURNING town_id"),
+                    (town["osmId"], town["name"].strip(), int(eligible), seed,
+                     "platform" if format_name == "dungeon" else format_name, now)).fetchone()
+                if eligible and inserted:
+                    db.execute(sql("INSERT INTO town_legend_gameplay(town_id,format) VALUES(?,?)"),
+                               (town["osmId"], format_name))
                 row = db.execute(sql(
                     "SELECT town_id,town_name,eligible,seed,format FROM town_legends WHERE town_id=?"),
                     (town["osmId"],)).fetchone()

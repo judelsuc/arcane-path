@@ -87,7 +87,7 @@ export function setupWindowHelp(doc, {
       } else if (button.textContent !== words.help) button.textContent = words.help;
     }
     for (const host of doc.querySelectorAll(hostSelector)) {
-      if (host === dialog || dialog.contains(host) || triggers.has(host)) continue;
+      if (host === dialog || dialog.contains(host) || host.dataset.customHelp === "true" || triggers.has(host)) continue;
       const button = doc.createElement("button");
       button.type = "button";
       button.className = "window-help-button preview-help-button";

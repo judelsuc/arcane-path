@@ -1,6 +1,5 @@
 import { createTownLegendsClient, townLegendIdentity } from "./town-legends.mjs";
-import { PACED_PLATFORM_VERSION, PACED_INVESTIGATION_VERSION, PACED_DUNGEON_VERSION,
-  TREASURE_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION } from "./legend-session.mjs";
+import { TREASURE_PLATFORM_VERSION, TREASURE_INVESTIGATION_VERSION, TREASURE_DUNGEON_VERSION } from "./legend-session.mjs";
 import { treasureId, treasureItem, treasureEquipment } from "./legend-rewards.mjs";
 import { createTownLegendNarratives } from "./legend-narrative.mjs";
 
@@ -22,16 +21,10 @@ const WORDS = {
     private: "Town legend history requires a private server journey.",
     retry: "Retry discovery", history: "Load discovery history", more: "Load more towns",
     error: "Town legend discovery failed:",
-    discovered: "Discovered towns", format: { platform: "Platform exploration", investigation: "Investigation" },
-    generatedTrial: "Try a generated investigation (real costs, no reward)",
-    dungeonTrial: "Try a dungeon (real costs, food caches, no treasure)",
-    platformTrial: "Try platforms (real costs, no treasure)",
+    discovered: "Discovered towns",
     recover: "Recover the treasure",
     rewardTerms: "Eight rooms. Base room entry: 3 minutes, 1 fatigue, 1 dirt. Trap: +2 minutes, +3 fatigue, -5 health, +4 dirt. Creature hit: +1 minute, +1 fatigue, -2 health, +1 dirt. Equipped jewellery modifies these cumulative costs as described in Inventory. Normal journey survival applies. Only the first successful explorer recovers the original treasure. The object takes space and weight in your bag; if your bag is full, it stays at the entrance. Any appearance works only while carried; equipment effects require equipping it. Money and charts are consumed when used. Confirm entry?",
-    platformTerms: "Eight required platform rooms with local real-time physics. Each room entry: 3 minutes, 1 fatigue, 1 dirt. Each trap: +2 minutes, +3 fatigue, -5 health, +4 dirt. Normal journey health and survival apply, without preview healing supplies. No item or money awarded.",
     localTerms: " Gameplay runs locally; effects settle on completion or leaving. Reload discards unfinished damage, progress and food, but retains the entry cost. Restarting charges entry again.",
-    dungeonTerms: "Eight-room dungeon trial, not this town's local legend. Entry: 3 minutes, 1 fatigue, 1 dirt. Trap: +2 minutes, +3 fatigue, -5 health, +4 dirt. Creature hit: +1 minute, +1 fatigue, -2 health, +1 dirt. Normal survival and journey health apply; no three-heart limit. Creatures can be avoided; combat requires your usable inventory knife. Leaving refunds nothing. No item or money awarded.",
-    generatedTerms: "Generated trial with 8 required sites, using this town's permanent seed, not a local legend or a treasure claim. Each room entry costs 3 minutes, 1 fatigue and 1 dirt, plus normal survival. Zero health follows ordinary journey-end rules. Leaving does not refund costs. No item or money is awarded.",
   },
   fr: {
     title: "Légendes locales", loading: "Enregistrement de la légende de cette ville…",
@@ -50,16 +43,10 @@ const WORDS = {
     private: "L'historique des légendes nécessite un voyage privé sur le serveur.",
     retry: "Réessayer la découverte", history: "Charger l'historique", more: "Charger d'autres villes",
     error: "Échec de découverte de légende :",
-    discovered: "Villes découvertes", format: { platform: "Exploration de plateformes", investigation: "Enquête" },
-    generatedTrial: "Essayer une enquête procédurale (coûts réels, sans récompense)",
-    dungeonTrial: "Essayer un donjon (coûts réels, nourriture, sans trésor)",
-    platformTrial: "Essayer les plateformes (coûts réels, sans trésor)",
+    discovered: "Villes découvertes",
     recover: "Retrouver le trésor",
     rewardTerms: "Huit salles. Entrée de base : 3 minutes, 1 fatigue, 1 saleté. Piège : +2 minutes, +3 fatigue, -5 santé, +4 saleté. Créature : +1 minute, +1 fatigue, -2 santé, +1 saleté. Les bijoux équipés modifient ces coûts cumulés comme indiqué dans l'inventaire. Survie habituelle du voyage. Seul le premier explorateur qui réussit recueille le trésor original. L'objet prend de la place et du poids dans le sac ; si le sac est plein, il reste à l'entrée. Une apparence fonctionne uniquement tant qu'il est porté ; les effets d'équipement nécessitent de l'équiper. Argent et cartes se consomment à l'utilisation. Confirmer l'entrée ?",
-    platformTerms: "Huit salles de plateformes obligatoires, physique locale en temps réel. Entrée de salle : 3 minutes, 1 fatigue, 1 saleté. Piège : +2 minutes, +3 fatigue, -5 santé, +4 saleté. Santé et survie du voyage habituelles, sans réserves de soin de l'aperçu. Aucun objet ni argent attribué.",
     localTerms: " Jeu local ; effets validés en terminant ou en quittant. Recharger abandonne dégâts, progression et nourriture non validés, mais conserve le coût d'entrée. Recommencer facture une nouvelle entrée.",
-    dungeonTerms: "Essai de huit salles, pas la légende locale. Entrée : 3 minutes, 1 fatigue, 1 saleté. Piège : +2 minutes, +3 fatigue, -5 santé, +4 saleté. Créature : +1 minute, +1 fatigue, -2 santé, +1 saleté. Survie et santé du voyage habituelles, sans limite de trois coeurs. Créatures évitables ; combat avec votre couteau utilisable. Aucun remboursement en quittant, ni objet ou argent attribué.",
-    generatedTerms: "Essai procédural de 8 lieux obligatoires, avec la graine permanente de cette ville, pas une légende locale ni une acquisition de trésor. Chaque entrée coûte 3 minutes, 1 fatigue et 1 saleté, en plus de la survie habituelle. Une santé nulle suit les règles normales de fin de voyage. Quitter ne rembourse rien. Aucun objet ni argent attribué.",
   },
 };
 
@@ -105,39 +92,11 @@ export function setupTownLegends({ context, host = document.getElementById("ques
       if (reward.effect) node("p", reward.effect[language]);
       const effect = treasureEquipment(context()?.state).jewel?.effect;
       const modifiers = effect ? ` ${effect[language]}` : "";
-      for (const [version, label] of [
-        [TREASURE_PLATFORM_VERSION, language === "en" ? "Platforms" : "Plateformes"],
-        [TREASURE_INVESTIGATION_VERSION, language === "en" ? "Investigation" : "Enquête"],
-        [TREASURE_DUNGEON_VERSION, language === "en" ? "Dungeon" : "Donjon"],
-      ]) button(`${c.recover} — ${label}`, () => {
+      const version = { platform: TREASURE_PLATFORM_VERSION, investigation: TREASURE_INVESTIGATION_VERSION,
+        dungeon: TREASURE_DUNGEON_VERSION }[entrance.format];
+      button(c.recover, () => {
         if (atEntrance(entrance) && !context()?.blocked && confirmTrial(c.rewardTerms + modifiers + c.localTerms)) {
           startTrial({ type: "legend-start", townId: entrance.townId, contentVersion: version });
-        }
-      }, !!context()?.blocked);
-      const platformTerms = c.platformTerms + c.localTerms;
-      node("p", platformTerms);
-      button(c.platformTrial, () => {
-        if (atEntrance(entrance) && !context()?.blocked && confirmTrial(platformTerms)) {
-          startTrial({ type: "legend-start", townId: entrance.townId, contentVersion: PACED_PLATFORM_VERSION });
-        }
-      }, !!context()?.blocked);
-      const foodTerms = doc.documentElement.lang === "en"
-        ? " Defeating a creature uncovers up to 150 kcal, capped at normal reserves, without healing. Creatures stay gone during an attempt; a new attempt respawns them and allows food again."
-        : " Vaincre une créature révèle jusqu'à 150 kcal, limitées aux réserves habituelles, sans soin. Elles restent absentes durant l'essai ; un nouvel essai les fait réapparaître et permet de nouveaux gains.";
-      const dungeonTerms = c.dungeonTerms + foodTerms + c.localTerms;
-      node("p", dungeonTerms);
-      button(c.dungeonTrial, () => {
-        if (atEntrance(entrance) && !context()?.blocked && confirmTrial(dungeonTerms)) {
-          startTrial({ type: "legend-start", townId: entrance.townId, contentVersion: PACED_DUNGEON_VERSION });
-        }
-      }, !!context()?.blocked);
-    }
-    if (entrance && startTrial) {
-      const generatedTerms = c.generatedTerms + c.localTerms;
-      node("p", generatedTerms);
-      button(c.generatedTrial, () => {
-        if (atEntrance(entrance) && !context()?.blocked && confirmTrial(generatedTerms)) {
-          startTrial({ type: "legend-start", townId: entrance.townId, contentVersion: PACED_INVESTIGATION_VERSION });
         }
       }, !!context()?.blocked);
     }

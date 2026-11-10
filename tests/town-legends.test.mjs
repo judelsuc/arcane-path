@@ -51,6 +51,14 @@ test("negative decisions and valid paginated history remain explicit", async () 
   assert.equal((await client.discover(state)).entry.eligible, false);
   assert.equal((await client.list(state)).cursor, entry.townId);
 });
+
+test("permanently assigned dungeon discoveries are valid retained legend entries", async () => {
+  const dungeon = { ...entry, format: "dungeon" };
+  const client = createTownLegendsClient({ fetcher: async () => ({
+    ok: true, json: async () => ({ version: 1, entry: dungeon }),
+  }) });
+  assert.deepEqual((await client.discover(state)).entry, dungeon);
+});
 test("composed discoveries retain exact names and reject forged mechanics or rewards on ineligible towns", async () => {
   const named = { ...entry, reward: { ...composedReward(entry.seed),
     name: { en: "Copper Vigil", fr: "Veille de cuivre" } } };

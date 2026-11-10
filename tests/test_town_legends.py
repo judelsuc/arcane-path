@@ -72,6 +72,25 @@ class TownLegendsTests(unittest.TestCase):
         self.assertEqual(self.request(player=2), first)
         self.random.assert_called_once_with(10)
 
+    def test_all_three_gameplay_assignments_are_permanent_and_existing_legacy_assignments_stay_unchanged(self):
+        for index, format_name in enumerate(("platform", "investigation", "dungeon")):
+            self.cell["settlements"][0]["osmId"] = f"node/{700 + index}"
+            self.random.side_effect = [0, 123, index]
+            first = self.request()
+            self.assertEqual(first["entry"]["format"], format_name)
+            journey = f"{1:032x}"
+            definition = self.service.trial_definition(journey, {"col": 0, "row": 0},
+                                                       f"private-{journey}", local=True)
+            self.assertEqual(definition["format"], format_name)
+            self.assertEqual(self.request(player=2)["entry"]["format"], format_name)
+            self.assertEqual(self.random.call_count, (index + 1) * 3)
+        with self.assets.catalogue.connection() as db:
+            db.execute("INSERT INTO town_legends(town_id,town_name,eligible,seed,format,created) "
+                       "VALUES('node/800','Old town',1,456,'platform',0)")
+        self.cell["settlements"][0]["osmId"] = "node/800"
+        self.random.side_effect = AssertionError("existing format must not reroll")
+        self.assertEqual(self.request()["entry"]["format"], "platform")
+
     def test_existing_cached_town_without_eligibility_is_new_for_legends(self):
         cached = {"width": 8, "height": 8, "rows": [[{"terrain": "water"} for _ in range(8)] for _ in range(8)]}
         cached["rows"][0][0] = self.cell

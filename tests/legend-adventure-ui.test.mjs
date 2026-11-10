@@ -12,6 +12,8 @@ import { stepPlatformer } from "../minigames/legend-platformer.mjs";
 import { dungeonCompletionActions, findDungeonRoute } from "./helpers/legend-dungeon-route.mjs";
 import { setupLegendSession } from "../legend-session-ui.mjs";
 import { composedReward, treasureId } from "../legend-rewards.mjs";
+import { generatePlatformLevel } from "../minigames/legend-layout.mjs";
+import { COPY } from "../legend-adventure-copy.mjs";
 
 class Target {
   listeners = new Map();
@@ -39,6 +41,9 @@ class Element extends Target {
   getContext() { return { fillRect() {}, drawImage() {}, beginPath() {}, arc() {}, fill() {}, moveTo() {}, lineTo() {} }; }
   click() { if (!this.disabled) this.dispatch("click"); }
   setPointerCapture() {}
+  showModal() { this.open = true; }
+  close() { this.open = false; this.dispatch("close"); }
+  focus() { this.ownerDocument.activeElement = this; }
 }
 
 function fixture(format, language = "en", options = {}) {
@@ -65,6 +70,84 @@ function fixture(format, language = "en", options = {}) {
   };
   return { win, doc, container, api, frames, nodes, results, errors, button, run };
 }
+
+test("bell rooms offer an in-world riddle while commands, solutions and accounting live only in Help", () => {
+  const seed = Array.from({ length: 64 }, (_, index) => index)
+    .find(seed => generatePlatformLevel({ seed, tier: "modest", paced: true }).rooms[0].challenge.family === "jump");
+  assert.notEqual(seed, undefined);
+  for (const language of ["en", "fr"]) {
+    let actions = 0;
+    let progress = replayLegendSession({ contentVersion: TREASURE_PLATFORM_VERSION, seed, actions: [] });
+    const f = fixture("platform", language, { seed,
+      authoritative: { contentVersion: TREASURE_PLATFORM_VERSION, local: true, health: 85, actions: [], status: "active",
+        onAction(input) {
+          actions++;
+          for (let tick = 0; tick < input.ticks; tick++) progress = stepPlatformer(progress, input.controls);
+          return { progress, state: { health: 85 }, foodKcal: 0 };
+        } } });
+    const help = f.nodes.find(node => node.className === "legend-help");
+    const inscription = f.nodes.find(node => node.className === "legend-inscription");
+    assert.equal(inscription.children[1].textContent, COPY[language].riddles.jump);
+    assert.doesNotMatch(inscription.children[1].textContent, /press|appuyez|Espace|Space|E\b/);
+    const insideHelp = node => { for (let parent = node.parent; parent; parent = parent.parent) if (parent === help) return true; return false; };
+    for (const name of ["legend-pacing", "legend-accounting", "legend-symbols", "legend-map"]) {
+      assert.ok(insideHelp(f.nodes.find(node => node.className === name)), name);
+    }
+    const solution = f.nodes.find(node => node.textContent.includes(language === "fr" ? "appuyez sur E en montant" : "press E while rising"));
+    assert.ok(solution && insideHelp(solution));
+    f.run(0);
+    f.run(100);
+    const before = actions;
+    f.button(COPY[language].helpTitle).click();
+    assert.equal(help.open, true);
+    f.run(200);
+    f.run(300);
+    assert.equal(actions, before, "reading Help does not advance physics or journey costs");
+    f.button(COPY[language].helpClose).click();
+    assert.equal(help.open, false);
+    assert.equal(f.doc.activeElement, f.nodes.find(node => node.tagName === "canvas"));
+    f.run(400);
+    f.run(500);
+    assert.ok(actions > before);
+    f.api.destroy();
+  }
+});
+
+test("dungeon Help contains shortcuts, blocks gameplay and preserves explicit settlement", () => {
+  for (const language of ["en", "fr"]) {
+    const sent = [];
+    let left = false;
+    const f = fixture("dungeon", language, {
+      leaveLabel: "Leave adventure", onLeave: () => { left = true; },
+      authoritative: { contentVersion: TREASURE_DUNGEON_VERSION, weapon: "none", health: 85, actions: [], status: "active",
+        onAction: action => sent.push(action) },
+    });
+    const root = f.nodes.find(node => node.className === "legend-game");
+    const help = f.nodes.find(node => node.className === "legend-help");
+    const key = value => root.dispatch("keydown", { key: value, preventDefault() {}, stopPropagation() {} });
+    key("h");
+    assert.equal(help.open, true);
+    key("ArrowUp");
+    f.nodes.find(node => node.dataset.direction === "left").click();
+    assert.deepEqual(sent, []);
+    let contained = false;
+    help.dispatch("keydown", { key: "Escape", stopPropagation() { contained = true; } });
+    assert.equal(contained, true);
+    f.button(COPY[language].helpClose).click();
+    key("ArrowUp");
+    assert.deepEqual(sent, [{ type: "up" }]);
+    key("h");
+    f.button(COPY[language].retry).click();
+    assert.equal(help.open, false);
+    assert.deepEqual(sent, [{ type: "up" }, { type: "retry" }]);
+    const leave = f.button("Leave adventure");
+    assert.equal(leave.parent, help);
+    key("h");
+    leave.click();
+    assert.equal(left, true);
+    f.api.destroy();
+  }
+});
 
 test("local investigation and dungeon controls advance immediately and finish once without per-action requests", () => {
   for (const language of ["en", "fr"]) for (const contentVersion of [
@@ -506,7 +589,7 @@ test("live generated UI renders canonical replay and sends only inputs without o
         onAction: () => assert.fail("disabled input"),
       } });
       assert.ok(paused.nodes.filter(node => node.tagName === "button" &&
-        node.dataset.legendAction !== "hint").every(node => node.disabled));
+        !["hint", "help", "help-close"].includes(node.dataset.legendAction)).every(node => node.disabled));
       paused.api.destroy();
     }
   }
@@ -581,7 +664,8 @@ test("live dungeon UI derives equipment from canonical replay, locks pending inp
         contentVersion: DUNGEON_SESSION_VERSION, weapon, health: 87, actions: [], status: sessionStatus,
         disabled: true, onAction: () => assert.fail("disabled"),
       } });
-      assert.ok(paused.nodes.filter(node => node.dataset.legendAction).every(node => node.disabled));
+      assert.ok(paused.nodes.filter(node => node.dataset.legendAction &&
+        !["help", "help-close"].includes(node.dataset.legendAction)).every(node => node.disabled));
       const game = paused.nodes.find(node => node.className === "legend-game");
       game.dispatch("keydown", { key: "ArrowUp", preventDefault() {}, stopPropagation() {} });
       paused.api.destroy();

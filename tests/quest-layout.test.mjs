@@ -32,6 +32,7 @@ function fixture(t, hasParentTrail) {
     return nodes.get(id);
   };
   globalThis.document = {
+    body: new Element(),
     getElementById: get,
     createElement: () => new Element(),
     querySelector: selector => selector === "dialog[open]"
@@ -70,6 +71,16 @@ test("map investigation opens clue groups without requiring a parent-trail quest
   assert.equal(f.get("open-investigation").focused, true);
 });
 
+test("adventure gameplay has its own dialog outside the quest tabs", t => {
+  const f = fixture(t, true);
+  const dialog = document.body.children.find(node => node.id === "legend-game-dialog");
+  assert.ok(dialog);
+  assert.equal(dialog.className, "legend-console");
+  assert.equal(dialog.children[0].id, "quests-legend-session");
+  const legendPane = f.get("trail-dialog").children.find(node => node.id === "quests-legends");
+  assert.deepEqual(legendPane.children.map(node => node.id), ["quests-legend-discovery"]);
+});
+
 test("quest offers belong to the conversation itself, not the closed investigation dialog", t => {
   const f = fixture(t, true);
   const conversation = f.get("conversation-dialog");
@@ -100,7 +111,8 @@ test("legend recovery can reopen its quest pane even when ordinary quest actions
   assert.equal(f.get("trail-dialog").open, true);
   const legends = f.get("trail-dialog").children.find(node => node.id === "quests-legends");
   assert.equal(legends.hidden, false);
-  assert.ok(legends.children.some(node => node.id === "quests-legend-session"));
+  assert.ok(document.body.children.some(node => node.id === "legend-game-dialog" &&
+    node.children.some(child => child.id === "quests-legend-session")));
   f.get("trail-dialog").close();
   f.get("conversation-dialog").showModal();
   f.layout.openLegends();

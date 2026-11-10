@@ -26,13 +26,18 @@ const WORDS = {
 
 export function setupLegendSession({ host = document.getElementById("quests-legend-session"), request } = {}) {
   let game, key, owner, focusTarget, attempt;
+  const dialog = host.closest?.("#legend-game-dialog");
+  let active = false;
+  dialog?.addEventListener("cancel", event => {
+    if (active) event.preventDefault();
+  });
   function clear() { game?.destroy(); game = undefined; host.replaceChildren(); }
-  function reset() { clear(); key = owner = focusTarget = attempt = undefined; }
+  function reset() { clear(); active = false; dialog?.close(); key = owner = focusTarget = attempt = undefined; }
   return {
     reset,
-    render({ state, session, blocked, pending, language, runtime, startRevision }) {
+    render({ state, session, blocked, pending, language, runtime, startRevision, error }) {
       const next = JSON.stringify([state?.serverJourney?.id, state?.artifactRevision, state?.legendAdventure,
-        session?.runId, session?.status, blocked, pending, language]);
+        session?.runId, session?.status, blocked, pending, language, error]);
       if (key === next) return;
       if (owner !== state?.serverJourney?.id) reset();
       owner = state?.serverJourney?.id;
@@ -42,7 +47,12 @@ export function setupLegendSession({ host = document.getElementById("quests-lege
       }
       clear();
       key = next;
-      if (!state?.legendAdventure && !session) return;
+      active = Boolean(state?.legendAdventure || session?.status === "active");
+      if (!active && !session) { dialog?.close(); return; }
+      if (active && dialog && !dialog.open) {
+        for (const other of doc.querySelectorAll("dialog[open]")) if (other !== dialog) other.close();
+        dialog.showModal();
+      }
       const c = WORDS[language];
       const dungeon = isDungeonSession(session?.contentVersion);
       const local = isLocalLegendSession(session?.contentVersion);
@@ -54,8 +64,17 @@ export function setupLegendSession({ host = document.getElementById("quests-lege
         const node = text("button", label); node.type = "button"; node.disabled = blocked || pending;
         node.addEventListener("click", () => { void request(action); });
       };
+      if (!active && dialog) {
+        const back = text("button", language === "fr" ? "Retour au voyage" : "Back to the journey");
+        back.type = "button";
+        back.addEventListener("click", () => dialog.close());
+      }
+      if (error) {
+        text("p", error).setAttribute("role", "alert");
+        button(language === "fr" ? "Réessayer la commande" : "Retry command", null);
+      }
       const treasure = isTreasureSession(session?.contentVersion);
-      text("h3", treasure ? language === "fr" ? "À la recherche du trésor" : "Seeking the treasure" :
+      if (!treasure || !active) text("h3", treasure ? language === "fr" ? "À la recherche du trésor" : "Seeking the treasure" :
         platform ? language === "fr" ? "Essai de plateformes (coûts réels, sans trésor)" :
         "Platform trial (real costs, no treasure)" :
         dungeon ? c.dungeonTitle : local || session?.contentVersion === GENERATED_INVESTIGATION_VERSION ? c.generatedTitle : c.title);
@@ -67,14 +86,14 @@ export function setupLegendSession({ host = document.getElementById("quests-lege
         const fr = language === "fr";
         const active = session.status === "active";
         const jewel = treasureEquipment(state).jewel;
-        if (jewel) text("p", jewel.effect[language]);
         if (active && !attempt && startRevision === state.artifactRevision) {
           attempt = { runId: session.runId, simulation: createLocalLegendAttempt(session, { ...runtime, state }),
             actions: [], settling: false };
         }
-        text("p", fr
+        const helpText = [fr
           ? "Jeu local. Coûts et nourriture validés en terminant ou en quittant. Recharger abandonne les effets non validés et impose une nouvelle entrée payante."
-          : "Local gameplay. Costs and food settle on completion or leaving. Reload discards unfinished effects and requires another paid entry.");
+          : "Local gameplay. Costs and food settle on completion or leaving. Reload discards unfinished effects and requires another paid entry.",
+          ...(jewel ? [jewel.effect[language]] : [])];
         if (!active) {
           attempt = undefined;
           const outcome = session.status === "interrupted"
@@ -101,12 +120,10 @@ export function setupLegendSession({ host = document.getElementById("quests-lege
           current.settling = true;
           void request({ type: "legend-finish", runId: session.runId, actions: structuredClone(current.actions) });
         };
-        const leave = text("button", fr ? "Quitter et valider les coûts" : "Leave and settle costs");
-        leave.type = "button";
-        leave.disabled = blocked || pending;
-        leave.addEventListener("click", () => { current.settling = false; settle(); });
         game = mount(host, { format: platform ? "platform" : dungeon ? "dungeon" : "investigation",
-          language, seed: session.seed, onFinish: () => { queueMicrotask(settle); },
+          language, seed: session.seed, helpText, onFinish: () => { queueMicrotask(settle); },
+          leaveLabel: fr ? "Quitter et valider les coûts" : "Leave and settle costs",
+          onLeave: () => { current.settling = false; settle(); },
           onError: error => { console.error("Local legend adventure failed:", error); },
           authoritative: { contentVersion: session.contentVersion, local: true,
             costModifier: costs => effectiveAdventureCosts(state, costs),
@@ -126,14 +143,15 @@ export function setupLegendSession({ host = document.getElementById("quests-lege
               return current.simulation;
             },
           } });
+        if (!blocked && !pending) host.querySelector?.("canvas")?.focus();
         return;
       }
       const sessionText = dungeon && session.status !== "active"
         ? c[{ completed: "dungeonCompleted", left: "dungeonLeft", interrupted: "dungeonInterrupted" }[session.status]]
         : c[session.status];
-      text("p", `${session.town} — ${sessionText}`).setAttribute("role", "status");
+      text("p", session.status === "active" ? session.town : `${session.town} — ${sessionText}`).setAttribute("role", "status");
       if (session.status === "active") button(dungeon ? c.dungeonLeave : c.leave, { type: "legend-leave", runId: session.runId });
-      game = mount(host, { format: dungeon ? "dungeon" : "investigation", language, seed: session.seed, authoritative: {
+      game = mount(host, { format: dungeon ? "dungeon" : "investigation", language, seed: session.seed, helpText: [c.active], authoritative: {
         costModifier: costs => effectiveAdventureCosts(state, costs),
         contentVersion: session.contentVersion,
         weapon: session.weapon, health: state.health,

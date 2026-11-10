@@ -60,6 +60,36 @@ const rumour = { characterId: "b".repeat(32), eventId: "00000000-0000-4000-8000-
   artifactId: "hermit" };
 const speaker = { id: "b".repeat(32), name: "Camille" };
 
+test("active adventures open a dedicated modal, retain errors, and only return after settlement or reset", () => {
+  const host = new Element(), dialog = new Element(), quests = new Element();
+  const doc = { createElement: () => new Element(), querySelectorAll: () => [quests], activeElement: null };
+  host.ownerDocument = doc;
+  host.closest = () => dialog;
+  dialog.showModal = () => { dialog.open = true; };
+  dialog.close = () => { dialog.open = false; };
+  quests.open = true;
+  quests.close = () => { quests.open = false; };
+  const ui = setupLegendSession({ host, request() {} });
+  const state = { serverJourney: { id: "a".repeat(32) }, legendAdventure: { runId: "test" } };
+  ui.render({ state, language: "en", error: "Connection lost" });
+  assert.equal(quests.open, false);
+  assert.equal(dialog.open, true);
+  assert.ok(host.children.some(node => node.textContent === "Connection lost"));
+  let prevented = false;
+  dialog.events.cancel({ preventDefault() { prevented = true; } });
+  assert.equal(prevented, true, "Escape cannot abandon unpaid local effects");
+  ui.render({ state: { ...state, legendAdventure: null }, session: { status: "left", town: "Firmi", actions: [] },
+    language: "en" });
+  const back = host.children.find(node => node.textContent === "Back to the journey");
+  assert.ok(back);
+  back.events.click();
+  assert.equal(dialog.open, false);
+  ui.render({ state, language: "en" });
+  assert.equal(dialog.open, true);
+  ui.reset();
+  assert.equal(dialog.open, false);
+});
+
 test("live investigation stays activity-blocking after acknowledgement and accepts only server-rendered progress", async t => {
   const runId = "00000000-0000-4000-8000-000000000001";
   let actions = [];
