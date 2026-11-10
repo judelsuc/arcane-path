@@ -228,6 +228,31 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## QTE preparation and letter keys, 0.22.16 (10 November 2026)
+
+Deployed runtime `96c95f4706bf34a7f5521ac94abdfb6c148c27eb`, tagged
+`deploy-2026-11-10-qte-preparation`. QTEs allow three seconds of preparation
+and then wait for held keys to be released before starting cue timing.
+New version-3 events alternate arrows/Space with A, F, J, P, V and N at
+fatigue >=60 or health <=50. Version-1/2 saved results retain their original
+validation. No journey saves or server schema were modified.
+
+Validation: 83 targeted tests passed. An isolated browser preview verified
+an arrow held before opening cannot answer during preparation, release
+starts cue timing, and uppercase letter input completes a hard sequence.
+All six installed and loopback HTTP hashes matched the baseline-guarded
+package. The release manifest mtime was refreshed. Application PID 349176
+remained unchanged; no restart or active-dialogue interruption was required.
+Application, Nginx and prefetch timer are active, `nginx -t` passed, HTTPS
+returns expected authentication status 401, and the error journal is clear.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.16-96c95f4/runtime.tar.gz`,
+SHA-256 `65cc2c790f15bfa992e21c132444bb2f0ef5e0f9130c9d4c72f9936541b4ffcc`.
+Restore its six files under `/opt/arcane-path` and refresh `public/release.json`
+mtime; no application restart is required. Saves created with version-3 QTEs
+require this release's validator and must not be reinterpreted by old clients.
+
 ## Settlement highlighting, 0.22.15 (10 November 2026)
 
 Deployed runtime `e31cae20dc26827248418a8a2b6a4dfcc4c858f8`, tagged
