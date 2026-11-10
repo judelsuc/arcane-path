@@ -120,6 +120,12 @@ QTE uses the usual three-second preparation and held-key release. Success grants
 normal free sheltered sleep, without food or washing. Failure, skipping or
 abandoning a started QTE gives no sleep and adds **5 vigilance points**; reaching
 100 triggers the normal placement rules. Attempts and results survive saving.
+The saved shelter outcome appears in a separate feedback popup above the QTE.
+Successful shelter popups use the existing generated encounter illustrations
+and shared scene cache, with credits and non-blocking loading/error feedback.
+Only the registered shelter scene is sent, not the building's coordinates.
+The search QTE also uses a cached generated exterior illustration, replacing
+ASCII once loaded; ASCII remains available while loading or on image failure.
 
 Adventure length is separate from mechanical difficulty. The first four rooms
 introduce one family each, followed by development and combinations of familiar

@@ -9,6 +9,11 @@ export function encounterIllustrationRecords(state) {
     ...(state?.hospitalityAttempts ?? []).filter(attempt => ["hosted", "refused"].includes(attempt.outcome))
       .map(attempt => ({ scene: `npc.hospitality.${attempt.outcome}`,
         occurrence: `hospitality:${attempt.startedMinutes}` })),
+    ...(state?.buildingSleepAttempts ?? []).map(attempt =>
+      ({ scene: "shelter.building.search", occurrence: `building-search:${attempt.startedMinutes}` })),
+    ...(state?.buildingSleepAttempts ?? []).filter(attempt => attempt.outcome === "slept")
+      .map(attempt => ({ scene: "shelter.building.slept",
+        occurrence: `building-sleep:${attempt.startedMinutes}` })),
   ];
 }
 

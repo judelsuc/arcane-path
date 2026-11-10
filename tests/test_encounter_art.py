@@ -39,6 +39,25 @@ class EncounterArtTests(unittest.TestCase):
         return self.art.request({"journey": "journey", "operation": "sync",
                                  "items": list(items or [self.item])}, "private")
 
+    def test_building_shelter_scene_uses_shared_cached_image(self):
+        scene = "shelter.building.slept"
+        first = {"scene": scene, "occurrence": "building-sleep:10"}
+        second = {"scene": scene, "occurrence": "building-sleep:100"}
+        self.assertEqual(self.sync(first)["entries"][0]["status"], "pending")
+        identity = self.art.generate(scene, self.writer)
+        self.assertEqual(self.sync(first)["entries"][0]["id"], identity)
+        self.auth.authorize.return_value = ("other", {})
+        self.assertEqual(self.sync(second)["entries"][0]["id"], identity)
+        self.assertEqual(self.writer.call_count, 1)
+
+    def test_building_search_scene_is_registered_and_separate_from_sleep_success(self):
+        scene = "shelter.building.search"
+        item = {"scene": scene, "occurrence": "building-search:10"}
+        self.assertEqual(self.sync(item)["entries"][0]["status"], "pending")
+        identity = self.art.generate(scene, self.writer)
+        self.assertEqual(self.sync(item)["entries"][0]["id"], identity)
+        self.assertNotEqual(SCENES[scene], SCENES["shelter.building.slept"])
+
     def test_occurrences_and_owners_reuse_scene_images_with_private_observations(self):
         self.assertEqual(self.sync()["entries"][0]["status"], "pending")
         first = self.art.generate("event.food", self.writer)

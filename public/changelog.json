@@ -1,6 +1,11 @@
 {
-  "version": "0.22.18",
+  "version": "0.22.19",
   "entries": [
+    {
+      "version": "0.22.19",
+      "fr": "Le résultat de la recherche d'abri s'affiche dans une fenêtre de retour dédiée. Une illustration générée et mise en cache remplace le décor ASCII du défi dès qu'elle est prête ; une autre accompagne le sommeil réussi. Le défi et son résultat restent disponibles pendant le chargement ou en cas d'indisponibilité des images.",
+      "en": "Shelter-search results appear in a dedicated feedback popup. A cached generated illustration replaces the challenge's ASCII backdrop once ready; another accompanies successful sheltered sleep. The challenge and its outcome remain available while images load or if illustrations are unavailable."
+    },
     {
       "version": "0.22.18",
       "fr": "Les textes des abris, des actions de survie et des localités vont à l'essentiel : les possibilités, les règles et leurs conséquences, sans interrompre l'immersion.",

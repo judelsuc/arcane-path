@@ -30,6 +30,10 @@
   vigilance points; normal placement rules still apply at 100.
 - Persist attempts and outcomes; reloading cannot reroll an active attempt.
 - Retain the usual survival interruptions, sleep dreams and existing sleep options.
+- Show saved outcomes in a separate feedback popup above the challenge.
+- Use the existing generated-image service and shared scene cache for the
+  search backdrop and successful-sleep popup. Replace ASCII only after image
+  readiness; preserve loading/error feedback and a playable ASCII fallback.
 
 ## R-191 - Quick-time challenges for journey events (after legends)
 

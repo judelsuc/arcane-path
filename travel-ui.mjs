@@ -1705,7 +1705,9 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       report(reason);
     }
   }
-  const buildingSleepUI = setupBuildingSleep(t, { context: economyContext, act: economyAction });
+  const buildingSleepUI = setupBuildingSleep(t, {
+    context: economyContext, act: economyAction, illustrations: encounterIllustrations,
+  });
   function economyAction(action) {
     const current = economyContext();
     const buildingSettlement = ["building-sleep-begin", "building-sleep-settle"].includes(action.kind);

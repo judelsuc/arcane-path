@@ -30,10 +30,16 @@ MAX_BYTES = 2 * 1024**3
 MIN_FREE = 2 * 1024**3
 SCENES = {f"event.{key}": value for key, value in EVENT_FACTS.items()}
 SCENES.update({
+    "shelter.building.search": "An ordinary quiet building at dusk seen from the street, "
+                              "soft light on its facade and a peaceful atmosphere. "
+                              "No people, signs, text, entry instructions or implication of a successful stay.",
     "dream.lost-player": "A dream of a fading thread becoming visible again, without a direction or destination.",
     "npc.hospitality.greeting": "An open doorway and a lantern, before any offer or refusal of hospitality.",
     "npc.hospitality.hosted": "A quiet sheltered place for the night, with a welcoming light.",
     "npc.hospitality.refused": "A closed doorway beside an ordinary road, with no menace or invented reason.",
+    "shelter.building.slept": "A quiet empty building interior with a simple dry sleeping corner, "
+                             "a folded coat and soft moonlight through a window. A peaceful shelter "
+                             "for the night, without people, food, bathroom facilities, signs or text.",
 })
 
 

@@ -14,12 +14,18 @@ const image = () => ({ ok: true, blob: async () => new Blob(["webp fixture"], { 
 test("encounters have per-occurrence identities without private narrative or coordinates", () => {
   const records = encounterIllustrationRecords({ ...owner,
     trail: { dreams: { checks: [{ outcome: "guidance", checkMinutes: 40 }, { outcome: "miss", checkMinutes: 10 }] } },
-    hospitalityAttempts: [{ outcome: "hosted", startedMinutes: 50 }, { outcome: "refused", startedMinutes: 60 }] });
+    hospitalityAttempts: [{ outcome: "hosted", startedMinutes: 50 }, { outcome: "refused", startedMinutes: 60 }],
+    buildingSleepAttempts: [{ outcome: "slept", startedMinutes: 70, col: 123 },
+      { outcome: "outside", startedMinutes: 80 }, { outcome: "searching", startedMinutes: 90 }] });
   assert.deepEqual(records, [
     { scene: "event.food", occurrence: "event:one" },
     { scene: "dream.lost-player", occurrence: "dream:40" },
     { scene: "npc.hospitality.hosted", occurrence: "hospitality:50" },
     { scene: "npc.hospitality.refused", occurrence: "hospitality:60" },
+    { scene: "shelter.building.search", occurrence: "building-search:70" },
+    { scene: "shelter.building.search", occurrence: "building-search:80" },
+    { scene: "shelter.building.search", occurrence: "building-search:90" },
+    { scene: "shelter.building.slept", occurrence: "building-sleep:70" },
   ]);
   assert.doesNotMatch(JSON.stringify(records), /PRIVATE|123/);
 });
