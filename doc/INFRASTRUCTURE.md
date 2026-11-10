@@ -215,6 +215,31 @@ to its verified town/country, its Wikipedia article and Wikidata regional source
 Documentary photos are fetched through the existing Wikimedia allowlist and
 served only after checking town membership and the private capability.
 
+## Culinary discovery activation, 0.22.13 (10 November 2026)
+
+Deployed runtime `2487e7e16b2eafb18d0fa0f119d1d51afc25999d`, tagged
+`deploy-2026-11-10-culinary-activation`, over installed 0.22.12 runtime
+`d3979701a5da580b2ba284549596f65db654e7f9`.
+The user explicitly approved deployment despite provider timeouts. The final
+indexed-evidence contract has not completed a successful real-provider
+end-to-end run; passing fixture tests do not establish provider availability.
+Existing meals remain available on discovery failure. There is no alternative
+model or source-only discovery fallback in this release.
+
+All five installed and loopback HTTP checksums matched; the release manifest
+mtime was refreshed. Shared culinary quotas were verified read-only at 100/day
+and 3,000/month. Application, Nginx and prefetch timer are active, `nginx -t`
+passed, public HTTPS returns the expected authentication status 401, and the
+post-deployment application error journal is clear. No journey saves or schema
+were modified. Validation: 82 targeted JavaScript/Python tests passed.
+
+The private rollback backup is
+`/home/ubuntu/before-0.22.13-2487e7e/runtime.tar.gz` (directory 0700, archive 0600),
+SHA-256 `b4dd789460efc8db7dc77b671a87a02aeb82a782de3073a8da9ce2aa166bd247`.
+Stop the application, restore the archived runtime files under `/opt/arcane-path`,
+refresh `public/release.json` mtime and restart to roll back. Shared quota
+reservations and attempted jobs must remain retained.
+
 ## Adult vigilance warning, 0.22.11 (10 November 2026)
 
 Deployed runtime `26d5d5891ffb919b965cbe8f1e1329137cac8c16`, tagged
