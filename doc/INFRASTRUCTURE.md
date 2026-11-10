@@ -185,7 +185,7 @@ route for local room playtests only; authoritative mounts reject resume inputs.
 New entry controls and the local preview select `treasure-platform-v5`,
 `treasure-dungeon-v3` and `treasure-investigation-v4`. Their layout versions are
 7 / 4 / 5 respectively. These additive protocols retain all previous replay
-paths, including the currently deployed 0.22.8 protocols. No database or town
+paths, including the previous 0.22.8 protocols. No database or town
 assignment migration is required. The 0.22.9 deployment is prepared as an isolated
 delta over the verified 0.22.8 runtime, excluding unrelated event-QTE work.
 
@@ -295,8 +295,32 @@ damage-free routes, legacy replay and exact journey settlement, including
 interruption for fragile characters.
 Integrated-browser visual verification is
 unavailable because the browser's CDP connection times out; no visual acceptance
-is claimed. Production installation and verification are recorded below after
-deployment.
+is claimed.
+
+Deployed as **0.22.9**, runtime
+`7a79da71ef114b5c0ba20bef19b9e8b3f0788f6d`, tagged
+`deploy-2026-11-10-legend-recipes`. The isolated package updates 19 files over
+the exact 0.22.8 baseline. All 19 installed checksums and 18 public loopback HTTP
+checksums matched; the Python backend was checked on disk, not served publicly.
+The release manifest mtime was refreshed. Application, Nginx and the travel
+prefetch timer are active, `nginx -t` passed, the application error journal is
+clear and public HTTPS retains the preview-auth 401.
+
+The exact packaged minigame runtime passed 76 targeted JavaScript tests.
+Four read-only deployed replay checks completed all three new formats,
+including both investigation lever consequences, with matching metrics, costs
+and stash counts. All 21 exported replay protocols passed initialization checks.
+No live journey, schema, town assignment, paid call or generation job was changed.
+Unrelated event-QTE work remains undeployed.
+
+Pre-deployment backup: `/home/ubuntu/before-0.22.9-7a79da7/runtime.tar.gz`,
+mode 0600 in a mode-0700 directory, SHA-256
+`511a853750716eaed667e39766111880868c42aad97e56aec01108ecbca76574`.
+The sibling manifest records every previous and installed file checksum;
+`checksums.json` verifies the backup and manifest. A full runtime restore is
+safe only before any new-protocol attempt has started. Afterwards, an emergency
+backout must disable new entries while retaining support for all new replay
+protocols, rather than removing modules needed by retained adventures.
 
 ### Expanded encounters and journey stakes, 0.22.8
 
