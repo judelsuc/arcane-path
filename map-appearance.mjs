@@ -189,6 +189,9 @@ export function setupMapAppearance(t, { onChange = () => {}, doc = document,
 
 export function decorateMapTile(tile, cell, { doc = document } = {}) {
   tile.dataset.mapKind = visualKind(cell);
+  tile.dataset.settlement = String(!cell.unavailable && !cell.downloading && (
+    cell.terrain === "place" || (cell.settlements ?? []).some(settlement =>
+      settlement.name?.trim() && /^(node|way|relation)\/\d+$/.test(settlement.osmId))));
   const site = mappedSites(cell)[0];
   if (!site || cell.unavailable) return;
   tile.dataset.siteKind = site.kind;

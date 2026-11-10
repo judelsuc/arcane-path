@@ -526,6 +526,21 @@ h1 {
   position: relative;
   cursor: default;
 }
+.ascii-map .tile[data-settlement="true"]::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border: 1px solid #d6bd7e;
+  border-radius: 2px;
+  background-color: rgb(214 189 126 / 10%);
+  pointer-events: none;
+}
+@media (forced-colors: active) {
+  .ascii-map .tile[data-settlement="true"]::before {
+    border-color: Highlight;
+    background-color: transparent;
+  }
+}
 .map-site-badge {
   position: absolute;
   right: 0;

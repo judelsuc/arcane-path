@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { APPEARANCE_KEY, SITE_GLYPHS, TILE_KINDS, mappedSites, visualKind,
-  validatePixelPack, drawPixelTile, setupMapAppearance, mapAppearance } from "../map-appearance.mjs";
+  validatePixelPack, drawPixelTile, setupMapAppearance, mapAppearance, decorateMapTile } from "../map-appearance.mjs";
 import { diagnosticSnapshot } from "../change-request-snapshot.mjs";
 import { translate } from "../i18n.mjs";
 import { drawJourneyMap, journeyMapView } from "../journey-map.mjs";
@@ -13,6 +13,37 @@ import { pixelSet, drawPixelSprite } from "../minigames/legend-pixel-art.mjs";
 import { PLAYER_ICONS, themePlayerIcon } from "../player-icons.mjs";
 
 const pack = JSON.parse(readFileSync(new URL("../public/tilesets/path-pixel.json", import.meta.url)));
+
+test("settlements get an independent highlight without replacing terrain or site badges", () => {
+  const doc = { createElement: () => ({ setAttribute() {} }) };
+  const settlement = { osmId: "node/42", name: "Fiesole" };
+  for (const [cell, highlighted] of [
+    [{ terrain: "place" }, true],
+    [{ terrain: "road", settlements: [settlement] }, true],
+    [{ terrain: "forest", settlements: [settlement],
+      sites: [{ osmId: "way/7", kind: "castle" }] }, true],
+    [{ terrain: "road" }, false],
+    [{ terrain: "forest", settlements: [{ name: "Fiesole" }] }, false],
+    [{ terrain: "plain", settlements: [{ ...settlement, name: " " }] }, false],
+    [{ terrain: "place", unavailable: true }, false],
+    [{ terrain: "place", downloading: true }, false],
+  ]) {
+    const tile = { dataset: {}, children: [], append(child) { this.children.push(child); } };
+    const before = structuredClone(cell);
+    decorateMapTile(tile, cell, { doc });
+    assert.equal(tile.dataset.settlement, String(highlighted));
+    assert.equal(tile.dataset.mapKind, visualKind(cell));
+    assert.deepEqual(cell, before);
+  }
+  const tile = { dataset: {}, children: [], append(child) { this.children.push(child); } };
+  decorateMapTile(tile, { terrain: "road", settlements: [settlement],
+    sites: [{ osmId: "way/7", kind: "castle" }] }, { doc });
+  assert.equal(tile.dataset.mapKind, "road");
+  assert.equal(tile.dataset.siteKind, "castle");
+  assert.equal(tile.children.length, 1);
+  decorateMapTile(tile, { terrain: "plain" }, { doc });
+  assert.equal(tile.dataset.settlement, "false");
+});
 
 test("generated carried icons render on ASCII maps and captured notebooks and are cleared on drop", async t => {
   const f = fixture(t), artwork = { ...PLAYER_ICONS[0], id: "generated:daily-fixture:role-1" };

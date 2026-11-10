@@ -1,6 +1,11 @@
 {
-  "version": "0.22.14",
+  "version": "0.22.15",
   "entries": [
+    {
+      "version": "0.22.15",
+      "fr": "Les localités se distinguent par un fin cadre doré et une légère teinte, en ASCII comme en pixels, même lorsqu'elles partagent une case avec une route. Le terrain, le joueur et les marqueurs de destination restent visibles.",
+      "en": "Settlements stand out with a thin gold frame and subtle tint in both ASCII and pixel views, even when sharing a road cell. Terrain, player and destination markers remain visible."
+    },
     {
       "version": "0.22.14",
       "fr": "Si le modèle texte est indisponible, la découverte culinaire utilise les sources documentaires pour confirmer les spécialités régionales, sans nouvel appel payant. Le menu indique ce mode de secours. Les plats, leurs photos et leurs crédits restent conservés dans le cache serveur.",

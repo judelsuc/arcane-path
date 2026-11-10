@@ -54,6 +54,10 @@ physical memento. Sixteen collectible looks combine distinct map tile patterns,
 adventure sprites/masonry and interface skins for panels, controls and colours.
 Choose the **UI skin** and **map/adventure look** independently in Inventory,
 including mixing two carried treasures or using a UI skin with the ASCII map.
+Mapped settlement cells have a subtle gold frame and tint in both ASCII and
+pixel views, including settlements sharing a road or landmark cell. Terrain,
+player, focus and destination markers remain unchanged; unavailable/loading
+cells are not highlighted.
 Treasures also supply eight original pixel **player icons**: lantern wanderer,
 star watcher, woodland ranger, copper smith, tide sailor, travelling bard, letter
 courier and wandering alchemist. Preview and equip an icon separately in Inventory;
