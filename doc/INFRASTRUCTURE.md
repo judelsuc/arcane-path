@@ -228,6 +228,27 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Settlement highlighting, 0.22.15 (10 November 2026)
+
+Deployed runtime `e31cae20dc26827248418a8a2b6a4dfcc4c858f8`, tagged
+`deploy-2026-11-10-settlement-highlight`. Mapped settlements have a subtle
+gold frame and tint in ASCII and pixel maps without replacing terrain or
+player, focus, site and destination markers. Loading/unavailable cells are
+excluded. Validation: 26 targeted tests passed; the browser preview verified
+ASCII/pixel rendering at 18px and 44px cell sizes.
+
+The four-file static delta over 0.22.14 passed baseline checks and all disk/
+loopback HTTP hashes. The release manifest mtime was refreshed. Application
+PID remained 349176: no restart, journey mutation, schema or quota changes.
+Application, Nginx and prefetch timer are active, `nginx -t` passed, HTTPS
+returns expected authentication status 401, and the error journal is clear.
+
+Private rollback archive:
+`/home/ubuntu/before-0.22.15-e31cae2/runtime.tar.gz`,
+SHA-256 `4a385328c4017806859ae9a33ec13ea7bf77397aeafc94b04de82b0f068c993c`.
+Restore its four files under `/opt/arcane-path` and refresh `public/release.json`
+mtime; no application restart is required.
+
 ## Documentary culinary fallback, 0.22.14 (10 November 2026)
 
 Deployed runtime `8a37e33f286568a543b0f842394f84e2c150e062`, tagged
