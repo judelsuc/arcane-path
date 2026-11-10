@@ -199,9 +199,31 @@ server-authoritative travel system. Production opportunity frequency stays at
 90 walking minutes; accelerated testing is localhost-only. No schema, paid
 generation call, illustration job or pursuer activation is part of this release.
 
-The deployment uses a checksum-verified delta over 0.22.9, adding the previously
-excluded QTE entry wiring and bilingual copy. Verification details follow after
-installation.
+Deployed as **0.22.10**, runtime
+`cfbe4bac59c33a4c26aaeb0a84feb07b0caa78ad`, tagged
+`deploy-2026-11-10-journey-qte`. The checksum-verified delta over 0.22.9 adds
+the previously excluded QTE entry wiring and bilingual copy: all ten installed
+and loopback HTTP checksums matched. The release manifest mtime was refreshed.
+Application, Nginx and the travel prefetch timer are active, `nginx -t` passed,
+the application error journal is clear and public HTTPS retains preview-auth 401.
+
+Validation: 1,750 JavaScript tests and the Python deployment-packager test passed.
+Browser checks exercised the integrated journey-event dialog through automatic
+start, exactly-once settlement, a focused result modal, dismissal and normal
+acknowledgement; earlier browser playtests covered reaction success, social
+dialogue and frozen Help cues. Read-only checks on the deployed runtime settled
+74 success/failure outcomes across all 37 event kinds, validated save roundtrips,
+bilingual actual-effect receipts and duplicate-settlement rejection, and checked
+74 legacy normal/relaxed challenge outcomes. No live journey was created or
+changed by these checks.
+
+Pre-deployment backup: `/home/ubuntu/before-0.22.10-cfbe4ba/runtime.tar.gz`,
+mode 0600 in a mode-0700 directory, SHA-256
+`64a48deb76c1e90b87ffff99e90c3466dbfbacf4112bbd994156ef454aa1917f`.
+The sibling manifest records previous and installed hashes; `checksums.json`
+verifies both backup and manifest. After any version-2 event is saved, a backout
+must preserve version-2 save validation and settlement. Do not restore the old
+non-QTE runtime wholesale over journeys containing unresolved challenges.
 
 ## Checkpoint deployed: town legends and composed treasures (9 November 2026)
 
