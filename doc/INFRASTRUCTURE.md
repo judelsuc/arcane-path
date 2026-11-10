@@ -213,14 +213,21 @@ the canvas, not over it, with at least 44px touch targets.
 The deployment is an isolated delta over the live 0.22.5
 files; the separately committed event QTE work remains excluded.
 
-Deployed runtime: `8e3513f8bb44d1c36da4bfee5e4368b7771a05dc`.
+Deployed runtime: `3fd69d655a733bf50860fd2ca91b5d72149e5f23`.
+The initial adventure update was `8e3513f8bb44d1c36da4bfee5e4368b7771a05dc`;
+the follow-up changes only landscape CSS and deployment metadata.
 All 14 packaged files match their expected disk hashes, and all public runtime
 files also match through the loopback HTTP application. The additive table was
 initialized explicitly: all 18 existing town decisions are unchanged, with zero
 initial overrides. Application, nginx and the travel-prefetch timer remain
 active; nginx configuration validation succeeds.
 
-Rollback archive `/home/ubuntu/before-0.22.6-8e3513f.tar.gz`, root-owned 0600:
+The latest rollback archive, restoring the initial 0.22.6 styling, is
+`/home/ubuntu/before-0.22.6-3fd69d6.tar.gz`, root-owned 0600:
+`1aefe8f7ee0ee5cd1b3f673aacb91e2bfe01998c3909331350b459857e9c0035`.
+
+The original pre-0.22.6 rollback archive is
+`/home/ubuntu/before-0.22.6-8e3513f.tar.gz`, root-owned 0600:
 `e3d8d57cb9de62b082ea5455f0cf0049b3f942ca8e9804d1c694c5a71430f8fa`.
 Restore its files and refresh the manifest timestamp. Preserve the additive
 table and any subsequent assignments: a later rollback after new dungeon
