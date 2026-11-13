@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arcane Path — Escape playtest</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./pursuit-playtest.mjs"></script>
+</head>
+<body>
+  <main class="game-shell">
+    <h1 id="test-title"></h1>
+    <p id="test-scope"></p>
+    <div id="test-controls-anchor">
+      <div id="test-controls">
+        <label><span id="test-language"></span>
+          <select id="language"><option value="fr">Français</option><option value="en">English</option></select>
+        </label>
+        <label><span id="test-terrain"></span>
+          <select id="terrain">
+            <option value="forest"></option><option value="building"></option>
+            <option value="hill"></option><option value="plain"></option>
+          </select>
+        </label>
+        <label><span id="test-completed"></span>
+          <input id="completed" type="number" min="0" max="40" step="1" value="0" required>
+        </label>
+        <label><span id="test-condition"></span>
+          <select id="condition">
+            <option value="fresh"></option><option value="good"></option>
+            <option value="normal" selected></option><option value="tired"></option>
+            <option value="exhausted"></option>
+          </select>
+        </label>
+        <label><span id="test-time"></span>
+          <select id="time">
+            <option value="day"></option><option value="dawn"></option>
+            <option value="dusk"></option><option value="night"></option>
+          </select>
+        </label>
+        <label><span id="test-weather"></span>
+          <select id="weather">
+            <option value="clear"></option><option value="cloudy"></option>
+            <option value="rain"></option><option value="storm"></option><option value="snow"></option>
+          </select>
+        </label>
+        <label><span id="test-fog"></span>
+          <select id="fog">
+            <option value="auto"></option><option value="none"></option>
+            <option value="light"></option><option value="dense"></option>
+          </select>
+        </label>
+        <button id="restart-test" type="button"></button>
+      </div>
+    </div>
+    <p id="test-error" role="alert"></p>
+    <p id="needs-warning"></p>
+    <div id="ascii-map" tabindex="-1"></div>
+  </main>
+</body>
+</html>

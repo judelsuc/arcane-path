@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { setupLegendLook } from "../legend-look-ui.mjs";
 import { chunkPosition } from "../travel.mjs";
+import { pursuitPending } from "../pursuit.mjs";
+import { buildingSleepPending } from "../building-sleep.mjs";
 
 class Element {
   children = [];
@@ -198,7 +200,7 @@ test("the actual travel context permits remote Look requests without permitting 
     withDiscoveredAccommodations: cell => cell, discoveredLodging: new Map(),
     withNearbyMappedPois: cell => cell, base: {}, survivalConfig: {},
     busy: false, cursor: { col: 9, row: 8 }, artifactsUI: { pending: () => false },
-    transitActive: () => false,
+    transitActive: () => false, pursuitPending, buildingSleepPending,
   };
   const context = overrides => {
     const inputs = { ...values, ...overrides };
@@ -217,6 +219,7 @@ test("the actual travel context permits remote Look requests without permitting 
     { transitActive: () => true }, ...["ended", "performancePending", "cafePending", "theftPending", "miniGamePending"]
       .map(key => ({ state: { ...state, [key]: true } })),
     { state: { ...state, events: { pending: true } } },
+    { state: { ...state, pursuit: { pending: { status: "ready" } } } },
     { state: { ...state, equipment: { dogEncounter: "pending" } } }]) {
     assert.equal(context(override)({ allowLook: true }).blocked, true);
   }

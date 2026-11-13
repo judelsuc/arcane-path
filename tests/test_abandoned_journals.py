@@ -51,6 +51,13 @@ class JournalsTests(unittest.TestCase):
     def publish(self):
         return self.call(ended="hunger", index=2)
 
+    def test_capture_publishes_notebook_without_changing_genesis(self):
+        result = self.call(ended="captured", index=2)
+        self.assertTrue(result["published"])
+        self.heard(1, self.ids[0])
+        self.assertEqual(len(self.call(1)["nearby"]), 1)
+        self.assertEqual(self.genesis, self.records)
+
     def heard(self, finder, *journals):
         with self.store.connect() as db:
             for journal in journals:

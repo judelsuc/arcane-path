@@ -127,6 +127,92 @@ Only the registered shelter scene is sent, not the building's coordinates.
 The search QTE also uses a cached generated exterior illustration, replacing
 ASCII once loaded; ASCII remains available while loading or on image failure.
 
+### Pursuit and escape
+
+R-192 introduces a pursuer who advances only with simulated journey time.
+New and resumed legacy journeys receive a protected 24-hour day; pursuit then
+starts 30 km behind, moving at 2 km/h toward the player's action trajectory.
+The HUD shows the gap, with warnings at 10 km and 2 km. Resting and sleeping
+do not stop pursuit; transport and walking can increase or reduce separation.
+There are no permanent safe zones and reading dialogs does not advance time.
+
+Contact queues a short, terrain-matched auto-running platform escape. Press
+Space, Up or the touch Jump button to cross low obstacles, crates, holes and
+raised platforms with elevated crates. Falling into a hole costs one stumble
+and recovers the runner on the far side. Three stumbles
+end the journey; success restores a 30 km lead. Choose normal or slower
+accessible pacing before starting. Three-second preparation waits for held keys
+to be released; Help pauses the simulation. Reloading or backgrounding a started
+attempt counts as capture. Save failures retry the same result rather than
+restarting. Escape outcomes are replayed from versioned jump transcripts;
+ordinary journey pursuit is still client-owned accounting.
+Terrain scenery uses layered pixel-art landscapes, textured obstacles and an
+animated backpack-carrying runner. A visible pursuer runs behind the player,
+closing in with each stumble. After a successful result is saved, a short
+victory scene shows the pursuer tripping and falling while the boy runs away.
+Continue can skip the scene; reduced-motion users see its final still frame.
+After capture is successfully saved, a static pixel-art close-up of the
+pursuer's face replaces the course. It contains no gore, flashes or audio;
+image-loading failures are reported without changing the saved outcome.
+This presentation does not advance journey time or change the saved transcript.
+These visual details do not change collision
+geometry, jump timing or saved escape replays.
+Escapes have ten automatic difficulty levels. The base is
+`min(10, 1 + floor(previous completed escapes / 2))` within the same journey.
+Condition adjusts it by -2 to +2, clamped to levels 1–10: good health and rest
+ease the route; low health, fatigue and sleep deprivation make it harder.
+The condition score averages lost health, fatigue and waking hours normalized
+to 24 hours (capped at 100%). Scores below 15/30/50/70% select -2/-1/0/+1;
+70% or more selects +2. This bounded adjustment leaves repeated escapes as the
+main long-term progression factor.
+
+The selected level, base, modifier and condition snapshot are retained at
+contact, shown before starting, and reused after reload. Normal running speed
+is 222/224/226 px/s at levels 1–3 and 260/285/310/320 px/s at levels 4–7;
+expert levels 8/9/10 run at 330/350/370 px/s,
+with courses sized for about 34 seconds of running. Higher levels increase obstacle density,
+gap widths and stack heights without changing the three-stumble limit.
+Accessible pacing remains available at every level.
+New escapes use protocol 7 with 20–48 obstacles: low barriers, stacked and wide
+crates, gaps, raised platforms with crates, paired hurdles, stepping ledges,
+and suspended obstacles that require staying on the ground.
+From level 4, seeded encounter shuffles replace the repeating eight-family
+cycle. Low ceilings before tall stacks force running underneath before
+jumping; three-step ledges and elevated crates require follow-up jumps.
+Recovery between separate impacts is 0.4 seconds instead of 1.5, but continuous
+contact with one obstacle counts only once. Level 6 runs over 30% faster with
+over 30% more obstacles than protocol 6; tested constant-timing winning windows
+are less than half as wide. Levels 8–10 retain faster carts and high bounces.
+Some barriers/crates become horizontally moving carts and bouncing obstacles.
+Their seed- and tick-based movement is shared by drawing,
+collision checks and transcript replay; it never depends on wall-clock time.
+Protocol-1 through protocol-6 attempts retain their original geometry,
+speed and replay behavior.
+Protocol 6 keeps protocol-5 collision physics and adds a retained atmosphere:
+solar day/dawn/dusk/night follows the journey date and cell coordinates; rain,
+storms and snow reuse the cached monthly weather. Fog uses existing fog
+summaries or a seeded cool/wet time-of-day rule, not live local measurements.
+Missing weather or solar data is explicitly labelled rather than invented.
+Conditions are pinned at contact and persist through queued activities,
+reload and settlement. Health, fatigue and sleep deprivation modestly reduce
+contrast and the clear viewing distance. The combined effects always preserve
+at least 1.2 seconds of readable approach at normal pace, accounting for player
+width and the fastest oncoming carts (longer in accessible pacing),
+with no more than 20% full-area foreground dimming inside
+that zone. Rain is low-opacity detail rather than an opaque mask.
+Rain and fog motion follow simulation ticks and pause with Help; reduced-motion
+users receive static weather detail. Atmosphere does not add damage or time.
+For an escape-only playtest, open [pursuit-playtest.html](./pursuit-playtest.html)
+on the local server. It uses the real engine/UI with in-memory state, terrain
+selection, simulated previous escape counts, condition presets, time of day,
+weather/fog selectors and restart controls, without reading or writing journey saves.
+
+Named settlements offer **Newspaper** and inhabitants' reports about the
+pursuer and missing children. Daily editions use the existing cached text
+generation service, with authored text and explicit provider status while
+generation is pending or unavailable. Reports cannot invent the pursuer's
+position, victims' identities or mechanical outcomes.
+
 Adventure length is separate from mechanical difficulty. The first four rooms
 introduce one family each, followed by development and combinations of familiar
 mechanisms; rooms 7, 15, 23 and 31 are safe breathing rooms, before a final

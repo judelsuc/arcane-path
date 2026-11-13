@@ -1,6 +1,11 @@
 {
-  "version": "0.22.19",
+  "version": "0.22.20",
   "entries": [
+    {
+      "version": "0.22.20",
+      "fr": "Après une journée protégée, un poursuivant avance avec le temps du voyage. Surveillez son écart : s'il vous rejoint, fuyez dans un parcours de plateformes adapté au terrain. Dix difficultés progressent avec les tentatives et votre état ; obstacles variés, pièges mobiles aux niveaux experts, pluie, brouillard et nuit rythment la fuite. Réussir redonne 30 km d'avance ; trois trébuchements terminent le voyage. Préparation, aide en pause et rythme accessible sont disponibles. Journaux et habitants évoquent la menace ; les anciens voyages reçoivent une journée de répit à la reprise.",
+      "en": "After a protected day, a pursuer advances as journey time passes. Watch the gap: if he catches up, escape through a terrain-themed platform course. Ten difficulty levels progress with previous attempts and your condition, featuring varied obstacles, expert moving hazards, rain, fog and night. Success restores a 30 km lead; three stumbles end the journey. Preparation, paused Help and accessible pacing are available. Newspapers and inhabitants discuss the threat; resumed legacy journeys receive a protected day."
+    },
     {
       "version": "0.22.19",
       "fr": "Le résultat de la recherche d'abri s'affiche dans une fenêtre de retour dédiée. Une illustration générée et mise en cache remplace le décor ASCII du défi dès qu'elle est prête ; une autre accompagne le sommeil réussi. Le défi et son résultat restent disponibles pendant le chargement ou en cas d'indisponibilité des images.",

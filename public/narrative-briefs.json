@@ -1,4 +1,34 @@
 {
+  "pursuit.news.headline.0": {
+    "kind": "pursuit-news",
+    "facts": "Write only a short newspaper headline about a dangerous pursuer being sought. No additional facts. No names, places, precise positions, victims, accusations against residents or real people, graphic violence, capture or resolution. Do not remind the reader this is fictional.",
+    "en": "Dangerous pursuer sought",
+    "fr": "Un dangereux poursuivant est recherché"
+  },
+  "pursuit.news.headline.1": {
+    "kind": "pursuit-news",
+    "facts": "Write only a short newspaper headline about reports of missing children. Preserve that these are reports. No additional facts. No names, places, precise positions, victims, accusations against residents or real people, graphic violence, capture or resolution. Do not remind the reader this is fictional.",
+    "en": "Missing children reported",
+    "fr": "Des disparitions d'enfants sont signalées"
+  },
+  "pursuit.news.headline.2": {
+    "kind": "pursuit-news",
+    "facts": "Write only a short newspaper headline advising travellers to stay alert. No additional facts. No names, places, precise positions, victims, accusations against residents or real people, graphic violence, capture or resolution. Do not remind the reader this is fictional.",
+    "en": "Travellers advised to stay alert",
+    "fr": "Les voyageurs sont invités à rester vigilants"
+  },
+  "pursuit.news.report": {
+    "kind": "pursuit-news",
+    "facts": "Write a short newspaper report using only these three facts: a dangerous pursuer is sought; missing children are reported; travellers are advised to stay alert. Preserve uncertainty. Do not assert the pursuer caused the disappearances. No names, places, precise positions, victims, accusations against residents or real people, graphic violence, capture or resolution. Do not remind the reader this is fictional.",
+    "en": "A dangerous pursuer is sought. Missing children have been reported. Travellers are advised to stay alert.",
+    "fr": "Un dangereux poursuivant est recherché. Des disparitions d'enfants sont signalées. Les voyageurs sont invités à rester vigilants."
+  },
+  "pursuit.inhabitant.report": {
+    "kind": "pursuit-news",
+    "facts": "Write an inhabitant's spoken public warning: a dangerous pursuer is sought; missing children are reported; travellers are advised to stay alert. Not a personal sighting or evidence. Do not link the disappearances to the pursuer. No names, places, precise positions, victims, accusations against residents or real people, graphic violence, capture or resolution. Do not remind the reader this is fictional.",
+    "en": "“The warning says a dangerous pursuer is sought and children are reported missing. Travellers are advised to stay alert.”",
+    "fr": "« L'avis indique qu'un dangereux poursuivant est recherché et que des enfants sont portés disparus. Les voyageurs sont invités à rester vigilants. »"
+  },
   "dream.lost-player": {
     "kind": "dream",
     "facts": "While asleep, the traveller dreams of a fading thread becoming visible again. Write only a gentle, dreamlike introduction. This is a dream, not a real sighting or evidence. The game appends its own authoritative guidance. No parent, people, places, landmarks, compass directions, routes, distances, promises or instructions."

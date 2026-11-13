@@ -21,6 +21,20 @@ test("zero-health death is durably queued and flushed without publishing extra p
     calls.push(JSON.parse(options.body));
     return response({});
   });
+
+  test("capture queues the final notebook once without sending the escape transcript or pursuit position", async () => {
+    const calls = [];
+    const client = createJournalClient(storage(), async (_, options) => {
+      calls.push(JSON.parse(options.body));
+      return response({});
+    });
+    client.queueDeath({ ...state, ended: "captured", pursuit: { x: 123, history: [{ jumps: [10] }] } });
+    await client.flush();
+    await client.flush();
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].ended, "captured");
+    assert.equal(calls[0].pursuit, undefined);
+  });
   client.queueDeath({ ...state, health: 0, ended: "health" });
   await client.flush();
   await client.flush();

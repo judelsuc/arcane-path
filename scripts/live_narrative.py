@@ -33,9 +33,10 @@ MODEL = "Mistral-Small-3.2-24B-Instruct-2506"
 CATALOGUE = json.loads((Path(__file__).resolve().parents[1] / "public/narrative-briefs.json").read_text())
 DREAM_BRIEF = "dream.lost-player"
 COVER_BRIEF = "journal.subtitle"
-# New dream prose must not invalidate already paid event and hospitality wording.
+# Independent brief additions must not invalidate cached event and hospitality wording.
 VERSION = hashlib.sha256(json.dumps({key: value for key, value in CATALOGUE.items()
-                                    if key != DREAM_BRIEF}, sort_keys=True).encode()).hexdigest()[:16] + "-2"
+                                    if key != DREAM_BRIEF and not key.startswith("pursuit.")},
+                                   sort_keys=True).encode()).hexdigest()[:16] + "-2"
 QUEUE_LIMIT = 32
 MAX_TOKENS = 500
 VARIANT_COUNT = 3
@@ -56,6 +57,8 @@ def event_context(value, record, name_flavour):
 
 
 def version_for(brief):
+    if brief.startswith("pursuit.") and brief in CATALOGUE:
+        return hashlib.sha256(json.dumps(CATALOGUE[brief], sort_keys=True).encode()).hexdigest()[:16] + "-pursuit-1"
     if brief == legend_wording.BRIEF:
         return legend_wording.VERSION
     if brief == parent_wording.BRIEF:
@@ -124,7 +127,9 @@ def provider_request(brief, model):
         "messages": [
             {"role": "system", "content": (
                 "Write conservative, short fictional travel prose in English and French. "
-                "Return only JSON matching the schema. Each en/fr string is one short sentence, at most 400 characters. "
+                "Return only JSON matching the schema. Each en/fr string is "
+                + ("a short headline or report" if brief.get("kind") == "pursuit-news" else "one short sentence")
+                + ", at most 400 characters. "
                 "Use ONLY the supplied public facts. Introductions address the traveller as 'you'. "
                 "Dialogue is direct NPC speech. Preserve tense and uncertainty. "
                 "Use varied natural phrasing and sentence structures, not scene expansion. No added setting, street surface, "
@@ -144,6 +149,15 @@ def provider_request(brief, model):
                 "the traveller as the original character, print the name, or infer sensitive attributes. "
                 "The three versions must vary in imagery, perspective and sentence structure, not just synonyms. "
                 "No HTML, URLs, code, commentary or instruction to the player. "
+                + ("For pursuit-news, write only the requested headline or brief report. "
+                   "The only canonical facts are: a dangerous pursuer is sought; missing children are reported; "
+                   "travellers are advised to stay alert. Include only the subset requested by the brief. "
+                   "Do not connect the disappearances to the pursuer as established fact. "
+                   "No personal sightings, precise position, direction, time, identity, named victims, real-person "
+                   "allegations, suspicions about residents, graphic violence, capture or invented outcomes. "
+                   "Do not add police actions, witnesses, evidence or instructions beyond staying alert. "
+                   "Do not mention fiction, AI or game mechanics in the prose. "
+                   if brief.get("kind") == "pursuit-news" else "")
                 + ("Include two alternatives, each with en and fr strings, in an alternatives array. "
                    "The main sentence and both alternatives describe the SAME supplied situation, "
                    "but must be distinctly worded in each language. Each pair has equivalent meaning. "

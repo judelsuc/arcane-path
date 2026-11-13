@@ -102,23 +102,121 @@
   Event effects still obey existing survival, companion and midnight rules.
   This does not make ordinary client-owned travel server-authoritative.
 
-## R-192 - Pursuer pressure and terrain-grounded escape (design only)
+## R-192 - Pursuer pressure and terrain-grounded escape
 
-- Proposed pressure: a persistent, fictional serial-killer pursuer can eventually
+- A persistent serial-killer pursuer can eventually
   find the player and trigger a jump-and-run escape. The user's chosen consequence
   of capture is the end of the journey, presented without graphic violence.
-- Implementation is deferred until the pressure rules are agreed. Do not activate
-  surprise lethal encounters while implementing event QTEs.
-- Proposed direction, not yet approved: visible warning stages, a grace period,
-  deterministic retained pursuit progress rather than rerolling on reload,
-  opportunities to gain distance, and a cooldown after a successful escape.
-  Decide whether movement, resting, settlements and transport alter the pressure.
+- **13 November approved rules:** protect the first 24 simulated hours after
+  activation, including a full day for resumed legacy journeys. At the end of
+  that grace period the initial gap is 30 km. The pursuer moves toward the
+  player's position at 2 km/h; he does not advance merely because the player
+  travelled a number of cells.
+- User decisions: the pursuer moves at his own pace, independently of player
+  displacement. Remaining in the same place lets him organically close the gap;
+  successfully completing the escape mini-game increases that gap again.
+  Pursuit advances with simulated journey time, including rest, sleep and
+  time-consuming actions. Reading dialogs, real-world idle time and closing
+  the game do not advance it.
+- Local people can discuss the pursuer and reports of child
+  abductions, without graphic depictions or allegations about real people.
+  Named settlement cells also offer newspapers with LLM-generated varied
+  headlines and inhabitants' reports. Select a stable edition by simulated day;
+  reuse the existing cached narrative service, provider policy and explicit
+  authored fallback/status rather than issuing calls on every render.
+  Generated accounts must follow retained story facts, not invent mechanical
+  pursuit positions, victim identities or outcomes independently.
+- Show the gap persistently, with closer warnings at 10 km and 2 km. There are
+  no permanent safe zones: rest, sleep and shelters do not stop pursuit.
+  Transport changes player position normally, without adding walked-distance
+  credit. Reading dialogs, paused Help and real-world idle time do not advance it.
+- At contact, queue a deterministic terrain-based platform escape after any
+  existing activity/modal finishes; block new travel/actions meanwhile.
+  The normal route lasts roughly 34 seconds and offers 20–48 obstacles:
+  low barriers, stacked/wide crates, holes, raised platforms with elevated
+  crates, paired hurdles, stepping ledges and suspended obstacles to run beneath.
+  Players can land on raised surfaces and jump again. A fall into a hole costs
+  one stumble and recovers the runner on the far side, not immediate capture.
+  Auto-run with keyboard/touch jumps; three stumbles mean capture. Before
+  starting, offer slower accessible pacing with the same route and outcomes.
+- Save ready and active attempts before interaction. Allow three seconds to
+  prepare and wait for held keys to be released. Help pauses the exact simulation.
+  Reloading or backgrounding an active escape counts as capture, not a replay.
+  Save errors stay visible and retry the same start/result, never rerolling.
+- Replay the bounded jump transcript to determine success, not client-reported
+  success. Success restores exactly 30 km of separation once. Capture ends the
+  journey non-graphically and publishes its notebook under existing rules.
+  Keep the protocol version and validated history in the journey save.
+- After successful persistence, show a short happy ending: the pursuer trips
+  and falls while the boy runs away safely. Keep this non-graphic and purely
+  presentational, with no extra journey time or replay inputs. Continue may
+  skip it; reduced-motion users see the final still. Never present victory
+  while a result save is still failing.
+- Once capture is successfully saved, replace the course with a frightening
+  static pixel-art close-up of the pursuer's face. No victims, gore, flashing
+  effects or audio. Do not reveal it while settlement is failing, or on success.
+  Keep Continue and replay-test controls available; report image-loading errors
+  explicitly without losing the saved capture or preventing continuation.
 - Escape backgrounds and obstacles must reflect the actual cell terrain:
   woodland, settlement streets, open country or rocky ground. Scenery must not
   invent real mapped landmarks or change terrain/collision facts accidentally.
-- Before implementation, agree encounter cadence, escape length/difficulty,
-  accessibility options, safe zones and what persists across reloads. A fatal
-  outcome requires clear advance warning and a tested, achievable escape route.
+- A fatal outcome requires clear advance warning and a tested, achievable route.
+  Terrain changes scenery, not collision rules. Verify routes across seeds and
+  a non-zero jump-timing window, normal/accessible input, saves and reloads.
+  Ordinary pursuit remains client-owned journey accounting, not newly
+  server-authoritative gameplay.
+- Ten automatic difficulty levels: the base rises one level every two completed
+  escapes in the same journey (`min(10, 1 + floor(history.length / 2))`).
+  Health, fatigue and lack of sleep adjust the base by -2 to +2; poor condition
+  makes escape harder, good condition eases it. Clamp the final result to 1–10.
+  Use the average of lost health, fatigue and waking hours divided by 24
+  (the sleep contribution is capped at 100%). Scores below 15/30/50/70%
+  select modifiers -2/-1/0/+1; scores of 70% or more select +2.
+  Retain the level, base, modifier and condition snapshot at contact; display
+  them before starting and never recalculate on reload or queued-event deferral.
+- Normal pace is 222/224/226 px/s at levels 1–3 and 260/285/310/320 px/s
+  at levels 4–7. Expert levels 8/9/10 run at 330/350/370 px/s.
+  Scale course length to preserve roughly
+  34 seconds of running. Harder levels increase obstacle density, hole widths
+  and stack heights; preserve jump physics, three stumbles and optional
+  accessible pacing. Test damage-free solutions and non-zero timing windows
+  at every level, including run-under rather than jump-only decisions.
+- Levels 8–10 introduce moving carts and bouncing obstacles, with deterministic
+  seed/tick movement used identically for rendering, collisions and replay.
+  Lower levels have no moving obstacles. Expert routes also have taller stacks,
+  wider gaps, longer paired hurdles, faster carts and higher bounces, requiring
+  tighter, obstacle-dependent timing. Verify a measurable reduction in forgiving
+  jump timings while preserving damage-free solutions across seeds.
+- Version expert tuning as escape protocol 5; retain protocol-1/2/3/4 pending
+  attempts and replay their original geometry and pace.
+- Protocol 7 strengthens levels 4–10 with seeded encounter-order shuffles,
+  low ceilings guarding tall stacks, three-step ledges and appropriately
+  spaced two-jump platforms. Level 6 must run over 30% faster with over 30%
+  more obstacles than protocol 6, and have at most half the former winning
+  constant-timing window measured in seconds. Test damage-free solutions
+  across seeds; do not make challenge depend on obscuring unavoidable hazards.
+  Shorten recovery between distinct impacts from 1.5 to 0.4 seconds at these
+  levels, while charging continuous contact with one obstacle only once.
+  Keep the three-stumble limit, accessible pacing and protocols 1–6 unchanged.
+- Protocol 6 adds retained atmospheric conditions without changing protocol-5
+  collision physics. Derive day/dawn/dusk/night from journey time and actual
+  cell coordinates. Reuse cached monthly rain/storm/snow/fog summaries; additional
+  fog follows a deterministic seed/date/cell rule in cool, wet or mist-prone
+  hours. This is game atmosphere, not measured current local visibility.
+  Pin phase, precipitation, fog and effect seed at contact; retain them through
+  deferral, reload and settlement. Missing data must be explicitly labelled.
+- Night darkens the scene with moonlit actors; rain and fog move with simulation
+  ticks and pause with Help. Low health, fatigue and sleep deprivation modestly
+  worsen contrast and clear viewing distance. Cap combined penalties: preserve
+  at least 1.2 seconds of approach including player width and the fastest
+  oncoming carts, across the
+  full obstacle height, with full-area foreground dimming capped at 20% inside
+  that zone. Fine rain detail stays low-opacity; no flashing or blur.
+  Accessible pacing lengthens the real-time warning interval. Reduced-motion
+  users see static atmospheric detail. No additional damage or simulated time.
+- Keep protocol-1 through protocol-5 saves and replays unchanged, with no
+  retroactively invented atmosphere. The isolated preview offers time, weather
+  and fog controls alongside player-condition and difficulty controls.
 
 ## R-190 - Town legends and treasure adventures
 

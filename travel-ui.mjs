@@ -27,6 +27,9 @@ import { setupTheft } from "./theft-ui.mjs";
 import { setupSurvivalChoices } from "./survival-choices-ui.mjs";
 import { setupEconomyUI } from "./economy-ui.mjs";
 import { setupBuildingSleep } from "./building-sleep-ui.mjs";
+import { setupPursuit } from "./pursuit-ui.mjs";
+import { setupPursuitNews } from "./pursuit-news-ui.mjs";
+import { beginPursuit, advancePursuit, pursuitPending, beginPursuitEscape, settlePursuitEscape } from "./pursuit.mjs";
 import { buildingSleepPending, startBuildingSleep, beginBuildingSleep, settleBuildingSleep } from "./building-sleep.mjs";
 import { discoverTownMeals } from "./town-meals.mjs";
 import { beginBusking, settleBusking, musicMistakeLimit, musicDifficulty } from "./music.mjs";
@@ -344,6 +347,11 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     if (state) state = recordJourneyPosition(recordTrailArrival(state));
     try {
       if (!saveStore) throw new Error(t("saveStorageUnavailable"));
+      if (state?.pursuit && stream) {
+        const p = chunkPosition(state.col, state.row);
+        const chunk = stream.get(p.x, p.y);
+        state = advancePursuit(state, chunk?.rows[p.row]?.[p.col], chunk ? exposureInfo(chunk, p.row, p.col) : undefined);
+      }
       state = recordParentRecollection(synchronizeParentDiscovery(state));
       const saved = saveStore.write({ region, map: base, state,
         survival: survivalConfig, economy: economyData });
@@ -405,7 +413,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const cell = withNearbyMappedPois(discoveredCell, info, stream.chunks);
     return { state, cell, map: base, mapTerrain: stream.journeyTerrain, info,
       data: economyData, survival: survivalConfig, blocked: busy || (!allowLook && Boolean(cursor)) || Boolean(state.ended) ||
-        Boolean(buildingSleepPending(state) || artifactsUI?.pending(state) || transitActive(state) || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending ||
+        Boolean(pursuitPending(state) || buildingSleepPending(state) || artifactsUI?.pending(state) || transitActive(state) || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending ||
           state.equipment?.dogEncounter === "pending") };
   }
   function finishJourneyArrival() {
@@ -497,7 +505,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     context() {
       const current = economyContext();
       return current && active ? { ...current, saveStatus: saveStatus.textContent,
-        blocked: busy || buildingSleepPending(state) || artifactsUI?.pending(state) || transitActive(state) || Boolean(cursor) || Boolean(state.ended || state.performancePending ||
+        blocked: busy || pursuitPending(state) || buildingSleepPending(state) || artifactsUI?.pending(state) || transitActive(state) || Boolean(cursor) || Boolean(state.ended || state.performancePending ||
           state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending) } : null;
     },
     act(action) {
@@ -1019,7 +1027,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const chunk = position && stream?.get(position.x, position.y);
     const cell = chunk?.rows[position.row][position.col];
     const ended = Boolean(state?.ended);
-    const activityPending = Boolean(buildingSleepPending(state) || artifactsUI.pending(state) || state?.performancePending || state?.cafePending || state?.theftPending ||
+    const activityPending = Boolean(pursuitPending(state) || buildingSleepPending(state) || artifactsUI.pending(state) || state?.performancePending || state?.cafePending || state?.theftPending ||
       transitActive(state) || state?.miniGamePending || state?.events?.pending || state?.equipment?.dogEncounter === "pending");
     const marker = document.querySelector(".tile--player");
     if (marker && state) renderJourneyMarker(marker, state, t);
@@ -1271,6 +1279,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     dailyTarotUI.update();
     journeyEventsUI.update();
     queueMicrotask(() => buildingSleepUI.update());
+    queueMicrotask(() => pursuitUI.update());
+    pursuitNewsUI.update();
     equipmentUI.update();
     trailArrivalUI.update();
     trailDreamUI.update();
@@ -1397,7 +1407,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
 
   async function move(dc, dr) {
-    if (!state || busy || !active || buildingSleepPending(state) || artifactsUI.pending(state) || transitActive(state) || state.ended || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending ||
+    if (!state || busy || !active || pursuitPending(state) || buildingSleepPending(state) || artifactsUI.pending(state) || transitActive(state) || state.ended || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending ||
         state.events?.pending || state.equipment?.dogEncounter === "pending") return;
     heading = [dc, dr];
     stream.prioritize(visibleDownloads(state.col, state.row, ...heading));
@@ -1550,6 +1560,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       state = beginEquipment(state);
       state = beginExploration(state, Boolean(restored));
       state = beginPressures(state, economyData);
+      state = beginPursuit(state, base.cellSizeMeters);
       needsNotices.reset(restored ? state : undefined);
       trailArrivalUI.reset(restored ? state : undefined);
       trailDreamUI.reset(restored ? state : undefined);
@@ -1645,6 +1656,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     towns.reset();
     economyUI.reset();
     buildingSleepUI.reset();
+    pursuitUI.reset();
+    pursuitNewsUI.reset();
     choicesUI.reset();
     inscriptionsUI.reset();
     stream?.stop();
@@ -1705,6 +1718,32 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       report(reason);
     }
   }
+  const pursuitNewsUI = setupPursuitNews(t, { context: economyContext, narrative: liveNarrative });
+  const pursuitUI = setupPursuit({
+    context() {
+      const current = economyContext();
+      return current && active ? { ...current, busy,
+        otherPending: Boolean(buildingSleepPending(state) || artifactsUI?.pending(state) ||
+          transitActive(state) || state.performancePending || state.cafePending ||
+          state.theftPending || state.miniGamePending || state.events?.pending ||
+          state.equipment?.dogEncounter === "pending") } : null;
+    },
+    act(action) {
+      const previous = state;
+      try {
+        state = action.type === "begin" ? beginPursuitEscape(state, action.mode)
+          : settlePursuitEscape(state, action.result);
+        autosave();
+        if (saveError) throw new Error(t("saveError", { error: saveError }));
+        localize();
+        return true;
+      } catch (reason) {
+        state = previous;
+        report(reason);
+        throw reason;
+      }
+    },
+  });
   const buildingSleepUI = setupBuildingSleep(t, {
     context: economyContext, act: economyAction, illustrations: encounterIllustrations,
   });

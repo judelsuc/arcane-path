@@ -203,6 +203,12 @@ test("registry excludes all story events, dog choices and lore; NPC authored spe
     } else if (id === LOST_PLAYER_DREAM) {
       assert.equal(brief.kind, "dream");
       assert.match(brief.facts, /not a real sighting/);
+    } else if (id.startsWith("pursuit.")) {
+      assert.equal(brief.kind, "pursuit-news");
+      for (const language of ["en", "fr"]) {
+        assert.equal(typeof brief[language], "string");
+        assert.ok(brief[language].length >= 5 && brief[language].length <= 400);
+      }
     } else {
       assert.ok(id.startsWith("npc.hospitality."));
       assert.equal(typeof brief.en, "string");

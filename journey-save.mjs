@@ -5,6 +5,7 @@ import { validateTownTrail } from "./trail.mjs";
 import { CLUE_ACTIONS } from "./trail-actions.mjs";
 import { validateHospitality } from "./hospitality.mjs";
 import { validateBuildingSleep } from "./building-sleep.mjs";
+import { validatePursuit } from "./pursuit.mjs";
 import { validateStoryProgress } from "./parent-story.mjs";
 import { validateExploration } from "./trail-search.mjs";
 import { validatePressures } from "./pressures.mjs";
@@ -66,6 +67,7 @@ export function validateSave(save) {
   validateSurvivalConfig(save.survival);
   validateEconomy(save.economy);
   const s = save.state;
+  validatePursuit(s);
   validateLegendActivity(s);
   if (s) validateTreasures(s);
   validateParentWording(s);
@@ -141,7 +143,7 @@ export function validateSave(save) {
       (s.performances !== undefined && (!integer(s.performances) || s.performances < 0)) ||
       (s.cafeShifts !== undefined && (!integer(s.cafeShifts) || s.cafeShifts < 0)) ||
       (s.lastEarningsCents !== undefined && (!integer(s.lastEarningsCents) || s.lastEarningsCents < 0)) ||
-      ![null, "health", "hunger", "fatigue", "sleep", "reunion", "placement"].includes(s.ended) ||
+      ![null, "health", "hunger", "fatigue", "sleep", "reunion", "placement", "captured"].includes(s.ended) ||
       (s.performancePending !== undefined && s.performancePending !== null) ||
       (s.cafePending !== undefined && s.cafePending !== null) ||
       (s.theftPending !== undefined && s.theftPending !== null) ||

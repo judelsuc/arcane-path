@@ -41,6 +41,48 @@ def response(en="A passer-by offers you a few coins.", fr="Un passant vous offre
 
 
 class LiveNarrativeTests(unittest.TestCase):
+    def test_pursuit_bulletins_are_static_private_bilingual_and_cached_across_reload(self):
+        before = self.journeys.read(self.owner)
+        ids = [brief for brief in CATALOGUE if brief.startswith("pursuit.")]
+        self.assertEqual(len(ids), 5)
+        for brief in ids:
+            authored = {lang: CATALOGUE[brief][lang] for lang in ("en", "fr")}
+            self.writer.return_value = response(**authored)
+            self.request(brief)
+            self.service.future.result(timeout=5)
+            result = self.request(brief)
+            self.assertEqual(result["status"], "ready")
+            self.assertEqual(result["text"], authored)
+            self.assertEqual(result["alternatives"], [])
+            self.assertEqual(self.writer.call_args.args, (CATALOGUE[brief],))
+            payload = provider_request(CATALOGUE[brief], MODEL)
+            self.assertEqual(json.loads(payload["messages"][1]["content"]), CATALOGUE[brief])
+            prompt = payload["messages"][0]["content"]
+            for rule in ("No personal sightings", "named victims", "real-person",
+                         "graphic violence", "invented outcomes", "Do not mention fiction"):
+                self.assertIn(rule, prompt)
+            self.assertEqual(set(payload["response_format"]["json_schema"]["schema"]["properties"]), {"en", "fr"})
+            with self.assertRaises(JourneyRequest):
+                self.request(brief, context={"town": "PRIVATE", "x": 1})
+        self.assertEqual(self.journeys.read(self.owner), before)
+        self.service.close()
+        reopened = LiveNarrative(self.journeys, self.auth, self.writer)
+        self.addCleanup(reopened.close)
+        for brief in ids:
+            self.assertEqual(reopened.request({"journey": self.owner, "brief": brief}, self.token)["status"], "ready")
+        self.assertEqual(self.writer.call_count, len(ids))
+
+    def test_pursuit_brief_versions_are_independent_of_existing_cached_wording(self):
+        legacy = {key: value for key, value in CATALOGUE.items()
+                  if key != DREAM_BRIEF and not key.startswith("pursuit.")}
+        self.assertEqual(VERSION, hashlib.sha256(json.dumps(legacy, sort_keys=True).encode()).hexdigest()[:16] + "-2")
+        first = version_for("pursuit.news.headline.0")
+        with patch("live_narrative.VERSION", "future-unrelated-version"):
+            self.assertEqual(version_for("pursuit.news.headline.0"), first)
+        with patch.dict(CATALOGUE, {"pursuit.news.headline.0": {"kind": "pursuit-news", "facts": "Changed."}}):
+            self.assertNotEqual(version_for("pursuit.news.headline.0"), first)
+            self.assertEqual(version_for("npc.hospitality.hosted"), VERSION)
+
     def test_parent_witnesses_use_the_canonical_intimacy_and_persist_without_progress(self):
         before = self.journeys.read(self.owner)
         profile = INTIMACY[before["state"]["trail"]["story"]["intimacy"]["card"]]
@@ -576,7 +618,8 @@ class LiveNarrativeTests(unittest.TestCase):
         self.assertEqual(len(validate_output(valid, closing=True)["fr"]), 3000)
 
     def test_dream_variants_are_private_durable_and_do_not_reversion_existing_content(self):
-        old_catalogue = {key: value for key, value in CATALOGUE.items() if key != DREAM_BRIEF}
+        old_catalogue = {key: value for key, value in CATALOGUE.items()
+                         if key != DREAM_BRIEF and not key.startswith("pursuit.")}
         self.assertEqual(VERSION, hashlib.sha256(json.dumps(old_catalogue, sort_keys=True).encode()).hexdigest()[:16] + "-2")
         self.assertEqual(version_for("event.coins"), VERSION + "-variants-1")
         self.assertEqual(version_for("npc.hospitality.greeting"), VERSION)

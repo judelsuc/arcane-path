@@ -289,7 +289,7 @@ class AbandonedJournals:
             raise JourneyRequest("Invalid notebook keeper.")
         position = self.position(record, data.get("col"), data.get("row"))
         ended = data.get("ended")
-        if ended not in (None, "health", "hunger", "fatigue", "sleep", "reunion", "placement"):
+        if ended not in (None, "health", "hunger", "fatigue", "sleep", "reunion", "placement", "captured"):
             raise JourneyRequest("Invalid journey outcome.")
         action = data.get("action", "sync")
         if action not in ("sync", "claim", "advance", "register", "publish", "read", "rumours"):
@@ -328,7 +328,7 @@ class AbandonedJournals:
                 raise JourneyConflict("Ask about notebooks in a mapped named settlement.")
             db.execute("""UPDATE journals SET finder=NULL,touched=NULL
                           WHERE delivered=0 AND touched<=?""", (now - LEASE_SECONDS,))
-            if action == "publish" or ended in ("health", "hunger", "fatigue", "sleep", "placement"):
+            if action == "publish" or ended in ("health", "hunger", "fatigue", "sleep", "placement", "captured"):
                 index = data.get("index")
                 stages = record["state"]["trail"]["stages"]
                 if type(index) is not int or not 0 <= index < len(stages):
@@ -413,5 +413,5 @@ class AbandonedJournals:
                         position, (row["latitude"], row["longitude"])) <= 200 and db.execute(
                             "SELECT 1 FROM rumours WHERE finder=? AND journal=? AND evidence LIKE 'town:%' LIMIT 1",
                             (journey, row["id"])).fetchone()],
-                    "published": bool(action == "publish" or ended in ("health", "hunger", "fatigue", "sleep", "placement")),
+                    "published": bool(action == "publish" or ended in ("health", "hunger", "fatigue", "sleep", "placement", "captured")),
                     "rumours": rumours, "indications": indications}

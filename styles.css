@@ -1821,6 +1821,18 @@ dialog p { margin: 12px 0; }
 }
 .event-qte-receipt::backdrop { background: #0009; }
 .event-qte-help { max-width: min(90vw, 560px); }
+.pursuit-dialog { width: min(95vw, 760px); max-height: 92vh; overflow-y: auto; }
+.pursuit-dialog canvas {
+  display: block; width: 100%; max-height: 48vh; object-fit: contain; image-rendering: pixelated;
+  border: 1px solid #b9a68c; border-radius: 4px; background: #263f4c;
+}
+.pursuit-capture {
+  display: block; width: 100%; max-height: 60vh; object-fit: contain; image-rendering: pixelated;
+  border: 1px solid #b9a68c; border-radius: 4px; background: #080d10;
+}
+.pursuit-dialog canvas[hidden], .pursuit-capture[hidden] { display: none; }
+.pursuit-dialog button { min-height: 44px; margin: .3rem; }
+#pursuit-status { font-weight: bold; }
 .event-qte .event-qte-key { min-width: 84px; border: 3px solid #8e8879; }
 .event-qte .event-qte-key[aria-pressed="true"] {
   background: #fff09b; color: #141827; border-color: #fff;
