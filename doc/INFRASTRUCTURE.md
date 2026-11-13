@@ -228,6 +228,50 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Persistent pursuit and escape, 0.22.20 (13 November 2026)
+
+Deployed runtime `dc905713c92bfddb1b55daf01f5530bca01db47b`, tagged
+`deploy-2026-11-13-pursuit-escape`. New and resumed legacy journeys receive a
+protected simulated day before pursuit starts 30 km behind at 2 km/h.
+Contact queues a terrain-themed escape after existing activities finish.
+Protocol 7 retains ten adaptive difficulty levels, shuffled obstacle sequences,
+expert moving hazards, normal/accessible pacing and paused Help. Rain, fog,
+snow and solar lighting are retained at contact, using existing cached weather
+and location data. Success restores 30 km; three stumbles mean capture.
+Saved outcomes show either the pursuer falling or a static, non-graphic
+close-up. Captured notebooks use the existing publication flow. Five registered
+newspaper/inhabitant briefs reuse existing narrative caching and provider policy.
+
+Validation: 70 targeted JavaScript tests and 80 directly related Python tests
+passed. The full JavaScript run passed 1,843/1,845: an unchanged dream-wiring
+source assertion also fails on the pristine baseline; an accommodations polling
+timeout passed in the isolated rerun with the Look suite (18/18). The broader
+100-test backend run had three existing travel-cache migration failures,
+reproduced on the pristine baseline. No unrelated runtime fixes were included.
+
+All 19 installed disk hashes and 17 public-file loopback HTTP hashes matched
+the baseline-guarded package. Read-only deployed-module smoke verified four
+damage-free replays, capture replay across protocols 1–7, retained atmosphere,
+both pacing settlements, exact 30 km reset and captured-state validation.
+Fresh backend imports confirmed all five registered pursuit briefs. No live
+journey was created or modified for verification, and no provider call, quota
+change or schema migration was performed by the deployment.
+
+The manifest mtime was refreshed; a conditional GET using the old release date
+returned 200 with the new manifest. Application PID 395963 became 402203.
+Application, Nginx and prefetch timer are active; `nginx -t` passed, HTTPS
+returns expected unauthenticated status 401, and the new process journal has no
+errors or tracebacks.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.20-dc90571/runtime.tar.gz`,
+SHA-256 `57e8fc123ffd77bc9d30ec75b8f729ccb7876ad28e19d0c1c8302d50748163d6`.
+Its sibling manifest identifies newly introduced files as well as replaced
+files. After pursuit saves exist, prefer a forward fix: any rollback must retain
+support for those saves, capture outcomes and versioned transcripts. Do not
+restore or delete player databases, cached narratives, images or provider-job
+receipts. Refresh the release manifest mtime and restart after runtime changes.
+
 ## Illustrated shelter feedback, 0.22.19 (10 November 2026)
 
 Deployed runtime `cc89710c31b22e56000c3146e6c3afd80671d48f`, tagged
