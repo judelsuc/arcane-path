@@ -1,0 +1,1945 @@
+{
+ "version": 1,
+ "source": "Open Library",
+ "sourceUrl": "https://openlibrary.org",
+ "license": "Open Library catalogue metadata; works first published in or before 1928.",
+ "retrievedAt": "2026-11-19T18:52:33.139388+00:00",
+ "genres": {
+  "voyages": [
+   {
+    "title": "Adventures of Huckleberry Finn",
+    "author": "Mark Twain",
+    "year": 1876,
+    "key": "/works/OL53908W"
+   },
+   {
+    "title": "Gulliver's Travels",
+    "author": "Jonathan Swift",
+    "year": 1726,
+    "key": "/works/OL20600W"
+   },
+   {
+    "title": "A Midsummer Night's Dream",
+    "author": "William Shakespeare",
+    "year": 1600,
+    "key": "/works/OL259010W"
+   },
+   {
+    "title": "The Wind in the Willows",
+    "author": "Kenneth Grahame",
+    "year": 1908,
+    "key": "/works/OL28570037W"
+   },
+   {
+    "title": "Kim",
+    "author": "Rudyard Kipling",
+    "year": 1901,
+    "key": "/works/OL19908W"
+   },
+   {
+    "title": "The Emerald City of Oz",
+    "author": "L. Frank Baum",
+    "year": 1910,
+    "key": "/works/OL18409W"
+   },
+   {
+    "title": "Heart of Darkness",
+    "author": "Joseph Conrad",
+    "year": 1899,
+    "key": "/works/OL38663W"
+   },
+   {
+    "title": "Glinda of Oz",
+    "author": "L. Frank Baum",
+    "year": 1920,
+    "key": "/works/OL262391W"
+   },
+   {
+    "title": "Roughing It",
+    "author": "Mark Twain",
+    "year": 1872,
+    "key": "/works/OL54059W"
+   },
+   {
+    "title": "Two years before the mast",
+    "author": "Richard Henry Dana",
+    "year": 1000,
+    "key": "/works/OL1815550W"
+   },
+   {
+    "title": "Kidnapped",
+    "author": "Robert Louis Stevenson",
+    "year": 1886,
+    "key": "/works/OL24166W"
+   },
+   {
+    "title": "Tom Sawyer Abroad",
+    "author": "Mark Twain",
+    "year": 1894,
+    "key": "/works/OL413674W"
+   },
+   {
+    "title": "The life of Olaudah Equiano, or Gustavus Vassa, the African",
+    "author": "Olaudah Equiano",
+    "year": 1789,
+    "key": "/works/OL743333W"
+   },
+   {
+    "title": "Sailing alone around the world",
+    "author": "Joshua Slocum",
+    "year": 1800,
+    "key": "/works/OL59979W"
+   },
+   {
+    "title": "The light that failed",
+    "author": "Rudyard Kipling",
+    "year": 1890,
+    "key": "/works/OL20169W"
+   },
+   {
+    "title": "Sylvie and Bruno",
+    "author": "Lewis Carroll",
+    "year": 1889,
+    "key": "/works/OL151430W"
+   },
+   {
+    "title": "The principall navigations, voiages, and discoveries of the English nations",
+    "author": "Richard Hakluyt",
+    "year": 1589,
+    "key": "/works/OL3639910W"
+   },
+   {
+    "title": "The Story of Doctor Dolittle",
+    "author": "Hugh Lofting",
+    "year": 1920,
+    "key": "/works/OL1449046W"
+   },
+   {
+    "title": "De la terre à la lune",
+    "author": "Jules Verne",
+    "year": 1865,
+    "key": "/works/OL1099479W"
+   },
+   {
+    "title": "Voyage au Centre de la Terre",
+    "author": "Jules Verne",
+    "year": 1867,
+    "key": "/works/OL1099513W"
+   },
+   {
+    "title": "A Tramp Abroad",
+    "author": "Mark Twain",
+    "year": 1878,
+    "key": "/works/OL53918W"
+   },
+   {
+    "title": "The Innocents Abroad",
+    "author": "Mark Twain",
+    "year": 1800,
+    "key": "/works/OL54041W"
+   },
+   {
+    "title": "What Katy Did Next (Best Loved Stories)",
+    "author": "Susan Coolidge",
+    "year": 1886,
+    "key": "/works/OL5114588W"
+   },
+   {
+    "title": "Mademoiselle Fifi",
+    "author": "Guy de Maupassant",
+    "year": 1882,
+    "key": "/works/OL93833W"
+   },
+   {
+    "title": "The Master Key",
+    "author": "L. Frank Baum",
+    "year": 1901,
+    "key": "/works/OL262383W"
+   },
+   {
+    "title": "The Voyages of Doctor Dolittle",
+    "author": "Hugh Lofting",
+    "year": 1922,
+    "key": "/works/OL1449063W"
+   },
+   {
+    "title": "Rime of the ancient mariner",
+    "author": "Samuel Taylor Coleridge",
+    "year": 1827,
+    "key": "/works/OL26130W"
+   },
+   {
+    "title": "A Tangled Tale",
+    "author": "Lewis Carroll",
+    "year": 1881,
+    "key": "/works/OL151445W"
+   },
+   {
+    "title": "A diversity of creatures",
+    "author": "Rudyard Kipling",
+    "year": 1917,
+    "key": "/works/OL20159W"
+   },
+   {
+    "title": "Gascoyne",
+    "author": "Robert Michael Ballantyne",
+    "year": 1800,
+    "key": "/works/OL2320011W"
+   },
+   {
+    "title": "Columbus",
+    "author": "Washington Irving",
+    "year": 1800,
+    "key": "/works/OL63945W"
+   },
+   {
+    "title": "The Travels of Marco Polo",
+    "author": "Marco Polo",
+    "year": 1818,
+    "key": "/works/OL15584860W"
+   },
+   {
+    "title": "The red true story book",
+    "author": "Henry Justice Ford",
+    "year": 1895,
+    "key": "/works/OL1088960W"
+   },
+   {
+    "title": "Through the Brazilian wilderness",
+    "author": "Theodore Roosevelt",
+    "year": 1904,
+    "key": "/works/OL20525W"
+   },
+   {
+    "title": "From sea to sea; letters of travel",
+    "author": "Rudyard Kipling",
+    "year": 1889,
+    "key": "/works/OL19875W"
+   },
+   {
+    "title": "Ungava, a tale of the Esquimaux land",
+    "author": "Robert Michael Ballantyne",
+    "year": 1800,
+    "key": "/works/OL2320045W"
+   },
+   {
+    "title": "Travels in Arabia Deserta",
+    "author": "Charles Montagu Doughty",
+    "year": 1888,
+    "key": "/works/OL2295102W"
+   },
+   {
+    "title": "Charles Darwin's The Voyage of the Beagle:",
+    "author": "Charles Darwin",
+    "year": 1839,
+    "key": "/works/OL515065W"
+   },
+   {
+    "title": "The cruise of the Cachalot around the world after sperm whales",
+    "author": "Frank Thomas Bullen",
+    "year": 1897,
+    "key": "/works/OL2345179W"
+   },
+   {
+    "title": "Treasure Island",
+    "author": "Robert Louis Stevenson",
+    "year": 1880,
+    "key": "/works/OL24034W"
+   }
+  ],
+  "nature": [
+   {
+    "title": "Walden",
+    "author": "Henry David Thoreau",
+    "year": 1854,
+    "key": "/works/OL55649W"
+   },
+   {
+    "title": "De rerum natura",
+    "author": "Titus Lucretius Carus",
+    "year": 1486,
+    "key": "/works/OL1548597W"
+   },
+   {
+    "title": "Civil Disobedience",
+    "author": "Henry David Thoreau",
+    "year": 1800,
+    "key": "/works/OL55631W"
+   },
+   {
+    "title": "Poems",
+    "author": "Percy Bysshe Shelley",
+    "year": 1800,
+    "key": "/works/OL14853463W"
+   },
+   {
+    "title": "Histoire naturelle",
+    "author": "Georges-Louis Leclerc, comte de Buffon",
+    "year": 1749,
+    "key": "/works/OL1356870W"
+   },
+   {
+    "title": "Salomé",
+    "author": "Oscar Wilde",
+    "year": 1893,
+    "key": "/works/OL14877882W"
+   },
+   {
+    "title": "The song of Hiawatha",
+    "author": "Henry Wadsworth Longfellow",
+    "year": 1855,
+    "key": "/works/OL495872W"
+   },
+   {
+    "title": "The gorilla hunters",
+    "author": "Robert Michael Ballantyne",
+    "year": 1858,
+    "key": "/works/OL2320091W"
+   },
+   {
+    "title": "Green Mansions",
+    "author": "W. H. Hudson",
+    "year": 1900,
+    "key": "/works/OL879164W"
+   },
+   {
+    "title": "The Land of Little Rain",
+    "author": "Mary Austin",
+    "year": 1903,
+    "key": "/works/OL1917146W"
+   },
+   {
+    "title": "Backwoods of Canada",
+    "author": "Catherine Parr Traill",
+    "year": 1836,
+    "key": "/works/OL2802649W"
+   },
+   {
+    "title": "Naturalis historia",
+    "author": "Pliny the Elder",
+    "year": 1469,
+    "key": "/works/OL1257866W"
+   },
+   {
+    "title": "Physico-theology",
+    "author": "William Derham",
+    "year": 1713,
+    "key": "/works/OL5949084W"
+   },
+   {
+    "title": "The animal kingdom",
+    "author": "Baron Georges Cuvier",
+    "year": 1827,
+    "key": "/works/OL198898W"
+   },
+   {
+    "title": "My first summer in the Sierra",
+    "author": "John Reid Muir",
+    "year": 1911,
+    "key": "/works/OL1618182W"
+   },
+   {
+    "title": "Parables from nature",
+    "author": "Margaret Gatty",
+    "year": 1855,
+    "key": "/works/OL6022487W"
+   },
+   {
+    "title": "The story of my heart",
+    "author": "Richard Jefferies",
+    "year": 1883,
+    "key": "/works/OL1133483W"
+   },
+   {
+    "title": "An history of the earth, and animated nature",
+    "author": "Oliver Goldsmith",
+    "year": 1774,
+    "key": "/works/OL18010098W"
+   },
+   {
+    "title": "Nova Atlantis",
+    "author": "Francis Bacon",
+    "year": 1627,
+    "key": "/works/OL69453W"
+   },
+   {
+    "title": "The Natural History of Selborne",
+    "author": "Gilbert White",
+    "year": 1822,
+    "key": "/works/OL13103677W"
+   },
+   {
+    "title": "The history of Sandford and Merton",
+    "author": "Thomas Day",
+    "year": 1786,
+    "key": "/works/OL3717033W"
+   },
+   {
+    "title": "Astro-theology",
+    "author": "William Derham",
+    "year": 1715,
+    "key": "/works/OL5949083W"
+   },
+   {
+    "title": "Journey to the shores of the Polar sea, in 1819-20-21-22",
+    "author": "John Franklin",
+    "year": 1823,
+    "key": "/works/OL677132W"
+   },
+   {
+    "title": "The Life of the Fields",
+    "author": "Richard Jefferies",
+    "year": 1884,
+    "key": "/works/OL1176834W"
+   },
+   {
+    "title": "Systema naturae",
+    "author": "Carl Linnaeus",
+    "year": 1748,
+    "key": "/works/OL1380461W"
+   },
+   {
+    "title": "Proceedings of the Linnean Society of New South Wales",
+    "author": "Linnean Society of New South Wales",
+    "year": 1875,
+    "key": "/works/OL241358W"
+   },
+   {
+    "title": "Canadian Crusoes",
+    "author": "Catherine Parr Traill",
+    "year": 1852,
+    "key": "/works/OL2802650W"
+   },
+   {
+    "title": "The descent of man, and selection in relation to sex",
+    "author": "Charles Darwin",
+    "year": 1870,
+    "key": "/works/OL15330328W"
+   },
+   {
+    "title": "A Girl of the Limberlost",
+    "author": "Gene Stratton-Porter",
+    "year": 1909,
+    "key": "/works/OL42384W"
+   },
+   {
+    "title": "The Open Air",
+    "author": "Richard Jefferies",
+    "year": 1885,
+    "key": "/works/OL1176835W"
+   },
+   {
+    "title": "Natural theology",
+    "author": "William Paley",
+    "year": 1802,
+    "key": "/works/OL3716636W"
+   },
+   {
+    "title": "Travels to discover the source of the Nile",
+    "author": "James Bruce",
+    "year": 1790,
+    "key": "/works/OL5647645W"
+   },
+   {
+    "title": "Alice's Adventures in Wonderland",
+    "author": "Lewis Carroll",
+    "year": 1865,
+    "key": "/works/OL138052W"
+   },
+   {
+    "title": "Little Women",
+    "author": "Louisa May Alcott",
+    "year": 1848,
+    "key": "/works/OL29983W"
+   },
+   {
+    "title": "Through the Looking-Glass",
+    "author": "Lewis Carroll",
+    "year": 1865,
+    "key": "/works/OL151406W"
+   },
+   {
+    "title": "The Hound of the Baskervilles",
+    "author": "Arthur Conan Doyle",
+    "year": 1900,
+    "key": "/works/OL262454W"
+   },
+   {
+    "title": "The Second Jungle Book",
+    "author": "Rudyard Kipling",
+    "year": 1887,
+    "key": "/works/OL19926W"
+   },
+   {
+    "title": "The Jungle Book",
+    "author": "Rudyard Kipling",
+    "year": 1893,
+    "key": "/works/OL19870W"
+   },
+   {
+    "title": "La Poetica",
+    "author": "Aristotle",
+    "year": 1479,
+    "key": "/works/OL151515W"
+   },
+   {
+    "title": "Fables",
+    "author": "Jean de La Fontaine",
+    "year": 1678,
+    "key": "/works/OL50348W"
+   }
+  ],
+  "mystery": [
+   {
+    "title": "The Secret Garden",
+    "author": "Frances Hodgson Burnett",
+    "year": 1911,
+    "key": "/works/OL69612W"
+   },
+   {
+    "title": "A Study in Scarlet",
+    "author": "Arthur Conan Doyle",
+    "year": 1887,
+    "key": "/works/OL262496W"
+   },
+   {
+    "title": "The Adventures of Sherlock Holmes",
+    "author": "Arthur Conan Doyle",
+    "year": 1892,
+    "key": "/works/OL262421W"
+   },
+   {
+    "title": "The Man Who Was Thursday",
+    "author": "Gilbert Keith Chesterton",
+    "year": 1908,
+    "key": "/works/OL76487W"
+   },
+   {
+    "title": "The Moonstone",
+    "author": "Wilkie Collins",
+    "year": 1800,
+    "key": "/works/OL176092W"
+   },
+   {
+    "title": "The Sign of Four",
+    "author": "Arthur Conan Doyle",
+    "year": 1889,
+    "key": "/works/OL262438W"
+   },
+   {
+    "title": "The Secret Adversary",
+    "author": "Agatha Christie",
+    "year": 1922,
+    "key": "/works/OL471789W"
+   },
+   {
+    "title": "The Valley of Fear",
+    "author": "Arthur Conan Doyle",
+    "year": 1914,
+    "key": "/works/OL262505W"
+   },
+   {
+    "title": "Silas Marner",
+    "author": "George Eliot",
+    "year": 1800,
+    "key": "/works/OL20874W"
+   },
+   {
+    "title": "The mystery of Edwin Drood",
+    "author": "Charles Dickens",
+    "year": 1870,
+    "key": "/works/OL8763148W"
+   },
+   {
+    "title": "The Return of Sherlock Holmes",
+    "author": "Arthur Conan Doyle",
+    "year": 1903,
+    "key": "/works/OL262477W"
+   },
+   {
+    "title": "The Murders in the Rue Morgue",
+    "author": "Edgar Allan Poe",
+    "year": 1841,
+    "key": "/works/OL41072W"
+   },
+   {
+    "title": "Memoirs of Sherlock Holmes",
+    "author": "Arthur Conan Doyle",
+    "year": 1893,
+    "key": "/works/OL262463W"
+   },
+   {
+    "title": "The Wisdom of Father Brown",
+    "author": "Gilbert Keith Chesterton",
+    "year": 1913,
+    "key": "/works/OL76483W"
+   },
+   {
+    "title": "Trent's Last Case",
+    "author": "E. C. Bentley",
+    "year": 1900,
+    "key": "/works/OL1315930W"
+   },
+   {
+    "title": "Tom Sawyer, Detective",
+    "author": "Mark Twain",
+    "year": 1897,
+    "key": "/works/OL54147W"
+   },
+   {
+    "title": "The Man in Lower Ten",
+    "author": "Mary Roberts Rinehart",
+    "year": 1909,
+    "key": "/works/OL137395W"
+   },
+   {
+    "title": "The Murder of Roger Ackroyd",
+    "author": "Agatha Christie",
+    "year": 1926,
+    "key": "/works/OL471932W"
+   },
+   {
+    "title": "Poirot investigates",
+    "author": "Agatha Christie",
+    "year": 1924,
+    "key": "/works/OL471940W"
+   },
+   {
+    "title": "The Old Man in the Corner",
+    "author": "Emma Orczy",
+    "year": 1908,
+    "key": "/works/OL1253282W"
+   },
+   {
+    "title": "The Leavenworth case",
+    "author": "Anna Katharine Green",
+    "year": 1878,
+    "key": "/works/OL4885724W"
+   },
+   {
+    "title": "Le crime d'Orcival",
+    "author": "Émile Gaboriau",
+    "year": 1867,
+    "key": "/works/OL1546081W"
+   },
+   {
+    "title": "The After House",
+    "author": "Mary Roberts Rinehart",
+    "year": 1914,
+    "key": "/works/OL137397W"
+   },
+   {
+    "title": "The Man in the Brown Suit",
+    "author": "Agatha Christie",
+    "year": 1924,
+    "key": "/works/OL472549W"
+   },
+   {
+    "title": "The Bat",
+    "author": "Mary Roberts Rinehart",
+    "year": 1926,
+    "key": "/works/OL137388W"
+   },
+   {
+    "title": "The Technique of the Mystery Story",
+    "author": "Carolyn Wells",
+    "year": 1913,
+    "key": "/works/OL1202223W"
+   },
+   {
+    "title": "The Circular Staircase",
+    "author": "Mary Roberts Rinehart",
+    "year": 1908,
+    "key": "/works/OL137396W"
+   },
+   {
+    "title": "The Lodger",
+    "author": "Marie Belloc Lowndes",
+    "year": 1913,
+    "key": "/works/OL1172118W"
+   },
+   {
+    "title": "The Borough Treasurer",
+    "author": "Joseph Smith Fletcher",
+    "year": 1919,
+    "key": "/works/OL1797609W"
+   },
+   {
+    "title": "L'affaire Lerouge",
+    "author": "Émile Gaboriau",
+    "year": 1800,
+    "key": "/works/OL1546094W"
+   },
+   {
+    "title": "Le dossier no. 113",
+    "author": "Émile Gaboriau",
+    "year": 1868,
+    "key": "/works/OL1546085W"
+   },
+   {
+    "title": "The Mystery of the Blue Train",
+    "author": "Agatha Christie",
+    "year": 1928,
+    "key": "/works/OL471603W"
+   },
+   {
+    "title": "The Big Four",
+    "author": "Agatha Christie",
+    "year": 1927,
+    "key": "/works/OL471947W"
+   },
+   {
+    "title": "The Secret of Chimneys",
+    "author": "Agatha Christie",
+    "year": 1925,
+    "key": "/works/OL472542W"
+   },
+   {
+    "title": "The door with seven locks",
+    "author": "Edgar Wallace",
+    "year": 1926,
+    "key": "/works/OL1517869W"
+   },
+   {
+    "title": "The Complete Sherlock Holmes",
+    "author": "Arthur Conan Doyle",
+    "year": 1900,
+    "key": "/works/OL262554W"
+   },
+   {
+    "title": "The Talleyrand Maxim",
+    "author": "Joseph Smith Fletcher",
+    "year": 1920,
+    "key": "/works/OL1797757W"
+   },
+   {
+    "title": "The Mysterious Affair at Styles",
+    "author": "Agatha Christie",
+    "year": 1920,
+    "key": "/works/OL472715W"
+   },
+   {
+    "title": "Our Mutual Friend",
+    "author": "Charles Dickens",
+    "year": 1800,
+    "key": "/works/OL13162727W"
+   },
+   {
+    "title": "An American Tragedy",
+    "author": "Theodore Dreiser",
+    "year": 1900,
+    "key": "/works/OL100239W"
+   }
+  ],
+  "poetry": [
+   {
+    "title": "Robinson Crusoe",
+    "author": "Daniel Defoe",
+    "year": 1686,
+    "key": "/works/OL45089W"
+   },
+   {
+    "title": "La Divina Commedia",
+    "author": "Dante Alighieri",
+    "year": 1472,
+    "key": "/works/OL93082W"
+   },
+   {
+    "title": "Leaves of Grass",
+    "author": "Walt Whitman",
+    "year": 1855,
+    "key": "/works/OL16333W"
+   },
+   {
+    "title": "Metamorfosi",
+    "author": "Ovid",
+    "year": 1474,
+    "key": "/works/OL97727W"
+   },
+   {
+    "title": "The Canterbury Tales",
+    "author": "Geoffrey Chaucer",
+    "year": 1478,
+    "key": "/works/OL531767W"
+   },
+   {
+    "title": "Aeneis",
+    "author": "Publius Vergilius Maro",
+    "year": 1592,
+    "key": "/works/OL47087W"
+   },
+   {
+    "title": "Sonnets",
+    "author": "William Shakespeare",
+    "year": 1609,
+    "key": "/works/OL362706W"
+   },
+   {
+    "title": "Faust",
+    "author": "Johann Wolfgang von Goethe",
+    "year": 1800,
+    "key": "/works/OL52456W"
+   },
+   {
+    "title": "The Prophet",
+    "author": "Kahlil Gibran",
+    "year": 1923,
+    "key": "/works/OL318900W"
+   },
+   {
+    "title": "Metamorphoses",
+    "author": "Ovid",
+    "year": 1479,
+    "key": "/works/OL15292640W"
+   },
+   {
+    "title": "Flower Fables",
+    "author": "Louisa May Alcott",
+    "year": 1854,
+    "key": "/works/OL30056W"
+   },
+   {
+    "title": "Inferno",
+    "author": "Dante Alighieri",
+    "year": 1767,
+    "key": "/works/OL93227W"
+   },
+   {
+    "title": "Paradise Lost",
+    "author": "John Milton",
+    "year": 1667,
+    "key": "/works/OL810991W"
+   },
+   {
+    "title": "The Night Before Christmas",
+    "author": "Clement Clarke Moore",
+    "year": 1857,
+    "key": "/works/OL655908W"
+   },
+   {
+    "title": "The pioneers",
+    "author": "James Fenimore Cooper",
+    "year": 1800,
+    "key": "/works/OL77997W"
+   },
+   {
+    "title": "Os Lusíadas",
+    "author": "Luís de Camões",
+    "year": 1572,
+    "key": "/works/OL848771W"
+   },
+   {
+    "title": "Tender Buttons",
+    "author": "Gertrude Stein",
+    "year": 1914,
+    "key": "/works/OL35395W"
+   },
+   {
+    "title": "Les fleurs du mal",
+    "author": "Charles Baudelaire",
+    "year": 1855,
+    "key": "/works/OL1158921W"
+   },
+   {
+    "title": "Godfrey of Bulloigne",
+    "author": "Torquato Tasso",
+    "year": 1581,
+    "key": "/works/OL502943W"
+   },
+   {
+    "title": "An essay on man",
+    "author": "Alexander Pope",
+    "year": 1733,
+    "key": "/works/OL79353W"
+   },
+   {
+    "title": "The complete poetical works",
+    "author": "Robert Burns",
+    "year": 1786,
+    "key": "/works/OL766052W"
+   },
+   {
+    "title": "Milton's Poems",
+    "author": "John Milton",
+    "year": 1605,
+    "key": "/works/OL810990W"
+   },
+   {
+    "title": "Il Paradiso",
+    "author": "Dante Alighieri",
+    "year": 1595,
+    "key": "/works/OL93230W"
+   },
+   {
+    "title": "The Raven",
+    "author": "Edgar Allan Poe",
+    "year": 1845,
+    "key": "/works/OL41081W"
+   },
+   {
+    "title": "Hudibras",
+    "author": "Samuel Butler",
+    "year": 1662,
+    "key": "/works/OL3159983W"
+   },
+   {
+    "title": "Helen of Troy",
+    "author": "Andrew Lang",
+    "year": 1882,
+    "key": "/works/OL415234W"
+   },
+   {
+    "title": "Poema de mio Cid",
+    "author": "Anonymous",
+    "year": 1868,
+    "key": "/works/OL886738W"
+   },
+   {
+    "title": "The Hunting of the Snark",
+    "author": "Lewis Carroll",
+    "year": 1876,
+    "key": "/works/OL151447W"
+   },
+   {
+    "title": "Poetics",
+    "author": "Aristotle",
+    "year": 1536,
+    "key": "/works/OL13703833W"
+   },
+   {
+    "title": "The History of Rasselas, Prince of Abyssinia",
+    "author": "Samuel Johnson",
+    "year": 1759,
+    "key": "/works/OL4558936W"
+   },
+   {
+    "title": "The Georgics of Virgil translated by Thomas Neville, ..",
+    "author": "Publius Vergilius Maro",
+    "year": 1523,
+    "key": "/works/OL15237196W"
+   },
+   {
+    "title": "Moll Flanders",
+    "author": "Daniel Defoe",
+    "year": 1722,
+    "key": "/works/OL45139W"
+   },
+   {
+    "title": "The golden asse of Lucius Apuleius",
+    "author": "Ovid",
+    "year": 1469,
+    "key": "/works/OL441970W"
+   },
+   {
+    "title": "Satyricon",
+    "author": "Petronius",
+    "year": 1575,
+    "key": "/works/OL503861W"
+   },
+   {
+    "title": "The Ballad of Reading Gaol",
+    "author": "Oscar Wilde",
+    "year": 1896,
+    "key": "/works/OL8271329W"
+   },
+   {
+    "title": "The seasons",
+    "author": "James Thomson",
+    "year": 1726,
+    "key": "/works/OL1084495W"
+   },
+   {
+    "title": "Rime",
+    "author": "Francesco Petrarca",
+    "year": 1475,
+    "key": "/works/OL15469822W"
+   },
+   {
+    "title": "Gitanjali (song offerings)",
+    "author": "Rabindranath Tagore",
+    "year": 1910,
+    "key": "/works/OL308575W"
+   },
+   {
+    "title": "Works",
+    "author": "William Shakespeare",
+    "year": 1730,
+    "key": "/works/OL259028W"
+   },
+   {
+    "title": "Poems by John Keats",
+    "author": "John Keats",
+    "year": 1800,
+    "key": "/works/OL1455259W"
+   }
+  ],
+  "history": [
+   {
+    "title": "Pride and Prejudice",
+    "author": "Jane Austen",
+    "year": 1813,
+    "key": "/works/OL66554W"
+   },
+   {
+    "title": "The Picture of Dorian Gray",
+    "author": "Oscar Wilde",
+    "year": 1890,
+    "key": "/works/OL8193416W"
+   },
+   {
+    "title": "The Scarlet Letter",
+    "author": "Nathaniel Hawthorne",
+    "year": 1800,
+    "key": "/works/OL455305W"
+   },
+   {
+    "title": "Oliver Twist",
+    "author": "Charles Dickens",
+    "year": 1822,
+    "key": "/works/OL8193478W"
+   },
+   {
+    "title": "Sense and Sensibility",
+    "author": "Jane Austen",
+    "year": 1811,
+    "key": "/works/OL66562W"
+   },
+   {
+    "title": "A Tale of Two Cities",
+    "author": "Charles Dickens",
+    "year": 1800,
+    "key": "/works/OL8193465W"
+   },
+   {
+    "title": "The Wonderful Wizard of Oz",
+    "author": "L. Frank Baum",
+    "year": 1899,
+    "key": "/works/OL18417W"
+   },
+   {
+    "title": "Macbeth",
+    "author": "William Shakespeare",
+    "year": 1508,
+    "key": "/works/OL258902W"
+   },
+   {
+    "title": "The Call of the Wild",
+    "author": "Jack London",
+    "year": 1903,
+    "key": "/works/OL14942956W"
+   },
+   {
+    "title": "Don Quijote de la Mancha",
+    "author": "Miguel de Cervantes Saavedra",
+    "year": 1600,
+    "key": "/works/OL503666W"
+   },
+   {
+    "title": "Madame Bovary",
+    "author": "Gustave Flaubert",
+    "year": 1856,
+    "key": "/works/OL893707W"
+   },
+   {
+    "title": "The Art of War",
+    "author": "孙武 (Sun Tzu)",
+    "year": 1900,
+    "key": "/works/OL244537W"
+   },
+   {
+    "title": "Julius Caesar",
+    "author": "William Shakespeare",
+    "year": 1656,
+    "key": "/works/OL362702W"
+   },
+   {
+    "title": "Great Expectations",
+    "author": "Charles Dickens",
+    "year": 1861,
+    "key": "/works/OL8721462W"
+   },
+   {
+    "title": "The Prince",
+    "author": "Niccolò Machiavelli",
+    "year": 1515,
+    "key": "/works/OL1089297W"
+   },
+   {
+    "title": "Anne of Green Gables",
+    "author": "Lucy Maud Montgomery",
+    "year": 1908,
+    "key": "/works/OL77746W"
+   },
+   {
+    "title": "Jane Eyre",
+    "author": "Charlotte Brontë",
+    "year": 1847,
+    "key": "/works/OL1095427W"
+   },
+   {
+    "title": "The Taming of the Shrew",
+    "author": "William Shakespeare",
+    "year": 1631,
+    "key": "/works/OL362690W"
+   },
+   {
+    "title": "Three Men in a Boat (to say nothing of the dog)",
+    "author": "Jerome Klapka Jérôme",
+    "year": 1889,
+    "key": "/works/OL1793164W"
+   },
+   {
+    "title": "Moby Dick",
+    "author": "Herman Melville",
+    "year": 1851,
+    "key": "/works/OL102749W"
+   },
+   {
+    "title": "Les trois Mousquetaires",
+    "author": "Alexandre Dumas",
+    "year": 1844,
+    "key": "/works/OL36861W"
+   },
+   {
+    "title": "Richard III",
+    "author": "William Shakespeare",
+    "year": 1597,
+    "key": "/works/OL362684W"
+   },
+   {
+    "title": "Candide",
+    "author": "Voltaire",
+    "year": 1746,
+    "key": "/works/OL100672W"
+   },
+   {
+    "title": "Coriolanus",
+    "author": "William Shakespeare",
+    "year": 1721,
+    "key": "/works/OL362166W"
+   },
+   {
+    "title": "Narrative of the life of Frederick Douglass",
+    "author": "Frederick Douglass",
+    "year": 1845,
+    "key": "/works/OL69178W"
+   },
+   {
+    "title": "Twelve years a slave",
+    "author": "Solomon Northup",
+    "year": 1853,
+    "key": "/works/OL78871W"
+   },
+   {
+    "title": "Hard Times",
+    "author": "Charles Dickens",
+    "year": 1854,
+    "key": "/works/OL8193387W"
+   },
+   {
+    "title": "Dubliners",
+    "author": "James Joyce",
+    "year": 1914,
+    "key": "/works/OL86320W"
+   },
+   {
+    "title": "Troilus and Cressida",
+    "author": "William Shakespeare",
+    "year": 1609,
+    "key": "/works/OL362685W"
+   },
+   {
+    "title": "Captains Courageous",
+    "author": "Rudyard Kipling",
+    "year": 1896,
+    "key": "/works/OL19842W"
+   },
+   {
+    "title": "My Ántonia",
+    "author": "Willa Cather",
+    "year": 1818,
+    "key": "/works/OL12791W"
+   },
+   {
+    "title": "The Princess and the Goblin",
+    "author": "George MacDonald",
+    "year": 1872,
+    "key": "/works/OL15449W"
+   },
+   {
+    "title": "The Pilgrim's Progress",
+    "author": "John Bunyan",
+    "year": 1678,
+    "key": "/works/OL107195W"
+   },
+   {
+    "title": "The Autobiography of Benjamin Franklin",
+    "author": "Benjamin Franklin",
+    "year": 1791,
+    "key": "/works/OL26492W"
+   },
+   {
+    "title": "Henry V",
+    "author": "William Shakespeare",
+    "year": 1600,
+    "key": "/works/OL361466W"
+   },
+   {
+    "title": "Ab urbe condita",
+    "author": "Titus Livius",
+    "year": 1481,
+    "key": "/works/OL1261147W"
+   },
+   {
+    "title": "The Tenant of Wildfell Hall",
+    "author": "Anne Brontë",
+    "year": 1847,
+    "key": "/works/OL260101W"
+   },
+   {
+    "title": "Orthodoxy",
+    "author": "Gilbert Keith Chesterton",
+    "year": 1874,
+    "key": "/works/OL76350W"
+   },
+   {
+    "title": "Saint Francis of Assisi",
+    "author": "Gilbert Keith Chesterton",
+    "year": 1923,
+    "key": "/works/OL76399W"
+   },
+   {
+    "title": "My bondage and my freedom",
+    "author": "Frederick Douglass",
+    "year": 1815,
+    "key": "/works/OL69179W"
+   }
+  ],
+  "tales": [
+   {
+    "title": "Five Children and It",
+    "author": "Edith Nesbit",
+    "year": 1905,
+    "key": "/works/OL99499W"
+   },
+   {
+    "title": "The Cricket on the Hearth",
+    "author": "Charles Dickens",
+    "year": 1846,
+    "key": "/works/OL14868783W"
+   },
+   {
+    "title": "The Blue Fairy Book",
+    "author": "Andrew Lang",
+    "year": 1889,
+    "key": "/works/OL1088770W"
+   },
+   {
+    "title": "Ozma of Oz",
+    "author": "L. Frank Baum",
+    "year": 1907,
+    "key": "/works/OL18415W"
+   },
+   {
+    "title": "The Story of the Treasure Seekers",
+    "author": "Edith Nesbit",
+    "year": 1899,
+    "key": "/works/OL99522W"
+   },
+   {
+    "title": "Dorothy and the Wizard in Oz",
+    "author": "L. Frank Baum",
+    "year": 1908,
+    "key": "/works/OL18412W"
+   },
+   {
+    "title": "The Story of the Amulet",
+    "author": "Edith Nesbit",
+    "year": 1905,
+    "key": "/works/OL407476W"
+   },
+   {
+    "title": "The Road to Oz",
+    "author": "L. Frank Baum",
+    "year": 1909,
+    "key": "/works/OL262390W"
+   },
+   {
+    "title": "Baum's American Fairy Tales",
+    "author": "L. Frank Baum",
+    "year": 1901,
+    "key": "/works/OL262341W"
+   },
+   {
+    "title": "The Crimson Fairy Book",
+    "author": "Andrew Lang",
+    "year": 1903,
+    "key": "/works/OL1088783W"
+   },
+   {
+    "title": "The Happy Prince and other tales",
+    "author": "Oscar Wilde",
+    "year": 1888,
+    "key": "/works/OL8269770W"
+   },
+   {
+    "title": "The Orange Fairy Book",
+    "author": "Andrew Lang",
+    "year": 1906,
+    "key": "/works/OL1088838W"
+   },
+   {
+    "title": "The Scarecrow of Oz",
+    "author": "L. Frank Baum",
+    "year": 1915,
+    "key": "/works/OL262352W"
+   },
+   {
+    "title": "The Patchwork Girl of Oz",
+    "author": "L. Frank Baum",
+    "year": 1913,
+    "key": "/works/OL18405W"
+   },
+   {
+    "title": "At the Back of the North Wind",
+    "author": "George MacDonald",
+    "year": 1871,
+    "key": "/works/OL15451W"
+   },
+   {
+    "title": "Tik-Tok of Oz",
+    "author": "L. Frank Baum",
+    "year": 1914,
+    "key": "/works/OL18414W"
+   },
+   {
+    "title": "The Princess and Curdie",
+    "author": "George MacDonald",
+    "year": 1832,
+    "key": "/works/OL15448W"
+   },
+   {
+    "title": "The Red Fairy Book",
+    "author": "Andrew Lang",
+    "year": 1890,
+    "key": "/works/OL1088858W"
+   },
+   {
+    "title": "Phantastes",
+    "author": "George MacDonald",
+    "year": 1850,
+    "key": "/works/OL15450W"
+   },
+   {
+    "title": "The Violet Fairy Book (Large Print)",
+    "author": "Andrew Lang",
+    "year": 1901,
+    "key": "/works/OL1088883W"
+   },
+   {
+    "title": "The Yellow Fairy Book",
+    "author": "Andrew Lang",
+    "year": 1894,
+    "key": "/works/OL1088888W"
+   },
+   {
+    "title": "Peter Pan",
+    "author": "J. M. Barrie",
+    "year": 1911,
+    "key": "/works/OL462007W"
+   },
+   {
+    "title": "Le avventure di Pinocchio",
+    "author": "Carlo Collodi",
+    "year": 1883,
+    "key": "/works/OL1527356W"
+   },
+   {
+    "title": "The Grey Fairy Book",
+    "author": "Andrew Lang",
+    "year": 1900,
+    "key": "/works/OL1088798W"
+   },
+   {
+    "title": "Arabian Nights",
+    "author": "Andrew Lang",
+    "year": 1898,
+    "key": "/works/OL29464513W"
+   },
+   {
+    "title": "The Green Fairy Book",
+    "author": "Andrew Lang",
+    "year": 1892,
+    "key": "/works/OL1088797W"
+   },
+   {
+    "title": "The Lilac Fairy Book",
+    "author": "Andrew Lang",
+    "year": 1910,
+    "key": "/works/OL1088811W"
+   },
+   {
+    "title": "The Brown Fairy Book",
+    "author": "Andrew Lang",
+    "year": 1904,
+    "key": "/works/OL1088779W"
+   },
+   {
+    "title": "Dream days",
+    "author": "Kenneth Grahame",
+    "year": 1898,
+    "key": "/works/OL69601W"
+   },
+   {
+    "title": "Hans Andersen's Fairy Tales",
+    "author": "Hans Christian Andersen",
+    "year": 1846,
+    "key": "/works/OL16249171W"
+   },
+   {
+    "title": "The Pink Fairy Book",
+    "author": "Andrew Lang",
+    "year": 1897,
+    "key": "/works/OL1088846W"
+   },
+   {
+    "title": "A Christmas Carol",
+    "author": "Charles Dickens",
+    "year": 1843,
+    "key": "/works/OL32466W"
+   },
+   {
+    "title": "The Legend of Sleepy Hollow",
+    "author": "Washington Irving",
+    "year": 1820,
+    "key": "/works/OL63985W"
+   },
+   {
+    "title": "Robin Hood",
+    "author": "Howard Pyle",
+    "year": 1883,
+    "key": "/works/OL2021953W"
+   },
+   {
+    "title": "The Alhambra",
+    "author": "Washington Irving",
+    "year": 1800,
+    "key": "/works/OL63996W"
+   },
+   {
+    "title": "A Princess of Mars",
+    "author": "Edgar Rice Burroughs",
+    "year": 1912,
+    "key": "/works/OL1418187W"
+   },
+   {
+    "title": "The Golden Bough",
+    "author": "James George Frazer",
+    "year": 1890,
+    "key": "/works/OL1159648W"
+   },
+   {
+    "title": "Le Morte d'Arthur",
+    "author": "Thomas Malory",
+    "year": 1557,
+    "key": "/works/OL15450151W"
+   },
+   {
+    "title": "Twice-Told Tales",
+    "author": "Nathaniel Hawthorne",
+    "year": 1800,
+    "key": "/works/OL455489W"
+   },
+   {
+    "title": "The Age of Fable",
+    "author": "Thomas Bulfinch",
+    "year": 1800,
+    "key": "/works/OL77559W"
+   }
+  ],
+  "theatre": [
+   {
+    "title": "Wuthering Heights",
+    "author": "Emily Brontë",
+    "year": 1846,
+    "key": "/works/OL21177W"
+   },
+   {
+    "title": "Hamlet",
+    "author": "William Shakespeare",
+    "year": 1603,
+    "key": "/works/OL9170454W"
+   },
+   {
+    "title": "Othello",
+    "author": "William Shakespeare",
+    "year": 1622,
+    "key": "/works/OL258850W"
+   },
+   {
+    "title": "Dracula",
+    "author": "Bram Stoker",
+    "year": 1897,
+    "key": "/works/OL85892W"
+   },
+   {
+    "title": "King Lear",
+    "author": "William Shakespeare",
+    "year": 1608,
+    "key": "/works/OL259026W"
+   },
+   {
+    "title": "The Great Gatsby",
+    "author": "F. Scott Fitzgerald",
+    "year": 1920,
+    "key": "/works/OL468431W"
+   },
+   {
+    "title": "Mansfield Park",
+    "author": "Jane Austen",
+    "year": 1814,
+    "key": "/works/OL66530W"
+   },
+   {
+    "title": "Richard II",
+    "author": "William Shakespeare",
+    "year": 1597,
+    "key": "/works/OL362665W"
+   },
+   {
+    "title": "The Railway Children",
+    "author": "Edith Nesbit",
+    "year": 1900,
+    "key": "/works/OL99509W"
+   },
+   {
+    "title": "Romeo and Juliet",
+    "author": "William Shakespeare",
+    "year": 1597,
+    "key": "/works/OL362427W"
+   },
+   {
+    "title": "Henry IV, Part 1",
+    "author": "William Shakespeare",
+    "year": 1598,
+    "key": "/works/OL1348798W"
+   },
+   {
+    "title": "Antony and Cleopatra",
+    "author": "William Shakespeare",
+    "year": 1734,
+    "key": "/works/OL362695W"
+   },
+   {
+    "title": "Cymbeline",
+    "author": "William Shakespeare",
+    "year": 1734,
+    "key": "/works/OL258656W"
+   },
+   {
+    "title": "The Last of the Mohicans",
+    "author": "James Fenimore Cooper",
+    "year": 1826,
+    "key": "/works/OL77958W"
+   },
+   {
+    "title": "David Copperfield",
+    "author": "Charles Dickens",
+    "year": 1800,
+    "key": "/works/OL8662242W"
+   },
+   {
+    "title": "All's Well That Ends Well",
+    "author": "William Shakespeare",
+    "year": 1734,
+    "key": "/works/OL362676W"
+   },
+   {
+    "title": "The Adventures of Tom Sawyer",
+    "author": "Mark Twain",
+    "year": 1817,
+    "key": "/works/OL53919W"
+   },
+   {
+    "title": "The Merchant of Venice",
+    "author": "William Shakespeare",
+    "year": 1600,
+    "key": "/works/OL258758W"
+   },
+   {
+    "title": "Hedda Gabler",
+    "author": "Henrik Ibsen",
+    "year": 1890,
+    "key": "/works/OL25129727W"
+   },
+   {
+    "title": "Plays (36)",
+    "author": "William Shakespeare",
+    "year": 1623,
+    "key": "/works/OL362289W"
+   },
+   {
+    "title": "Diary",
+    "author": "Samuel Pepys",
+    "year": 1825,
+    "key": "/works/OL193961W"
+   },
+   {
+    "title": "Adolphe",
+    "author": "Benjamin Constant",
+    "year": 1816,
+    "key": "/works/OL55151W"
+   },
+   {
+    "title": "Arms and the Man",
+    "author": "George Bernard Shaw",
+    "year": 1898,
+    "key": "/works/OL1066525W"
+   },
+   {
+    "title": "Sei personaggi in cerca d'autore",
+    "author": "Luigi Pirandello",
+    "year": 1900,
+    "key": "/works/OL100436W"
+   },
+   {
+    "title": "Saint Joan",
+    "author": "George Bernard Shaw",
+    "year": 1924,
+    "key": "/works/OL15151190W"
+   },
+   {
+    "title": "Tartuffe",
+    "author": "Molière",
+    "year": 1707,
+    "key": "/works/OL15144788W"
+   },
+   {
+    "title": "Conversations of Goethe with Eckermann and Soret",
+    "author": "Johann Wolfgang von Goethe",
+    "year": 1828,
+    "key": "/works/OL52507W"
+   },
+   {
+    "title": "Wilhelm Meisters Lehrjahre",
+    "author": "Johann Wolfgang von Goethe",
+    "year": 1800,
+    "key": "/works/OL52667W"
+   },
+   {
+    "title": "Stage-land",
+    "author": "Jerome Klapka Jérôme",
+    "year": 1889,
+    "key": "/works/OL244479W"
+   },
+   {
+    "title": "The Spanish tragedy",
+    "author": "Thomas Kyd",
+    "year": 1594,
+    "key": "/works/OL2929850W"
+   },
+   {
+    "title": "The Regent",
+    "author": "Arnold Bennett",
+    "year": 1913,
+    "key": "/works/OL109232W"
+   },
+   {
+    "title": "The gamester",
+    "author": "Edward Moore",
+    "year": 1753,
+    "key": "/works/OL3517241W"
+   },
+   {
+    "title": "Plays (37)",
+    "author": "William Shakespeare",
+    "year": 1768,
+    "key": "/works/OL13086375W"
+   },
+   {
+    "title": "Prefaces to Shakespeare",
+    "author": "Harley Granville-Barker",
+    "year": 1900,
+    "key": "/works/OL89711W"
+   },
+   {
+    "title": "English Miracle Plays",
+    "author": "A. W. Pollard",
+    "year": 1890,
+    "key": "/works/OL6680839W"
+   },
+   {
+    "title": "Plays",
+    "author": "Titus Maccius Plautus",
+    "year": 1767,
+    "key": "/works/OL481477W"
+   },
+   {
+    "title": "The Development of the Theatre",
+    "author": "Allardyce Nicoll",
+    "year": 1927,
+    "key": "/works/OL1277635W"
+   },
+   {
+    "title": "Ubu roi",
+    "author": "Alfred Jarry",
+    "year": 1896,
+    "key": "/works/OL1264521W"
+   },
+   {
+    "title": "Iphigenia in Aulis",
+    "author": "Euripides",
+    "year": 1831,
+    "key": "/works/OL66487W"
+   },
+   {
+    "title": "Chantecler",
+    "author": "Edmond Rostand",
+    "year": 1910,
+    "key": "/works/OL551666W"
+   }
+  ],
+  "science": [
+   {
+    "title": "The Invisible Man",
+    "author": "H. G. Wells",
+    "year": 0,
+    "key": "/works/OL52266W"
+   },
+   {
+    "title": "Le Tour du Monde en Quatre-Vingts Jours",
+    "author": "Jules Verne",
+    "year": 1872,
+    "key": "/works/OL1100007W"
+   },
+   {
+    "title": "The Island of Dr. Moreau",
+    "author": "H. G. Wells",
+    "year": 1896,
+    "key": "/works/OL381550W"
+   },
+   {
+    "title": "On the origin of species by means of natural selection",
+    "author": "Charles Darwin",
+    "year": 1859,
+    "key": "/works/OL515051W"
+   },
+   {
+    "title": "Moralia",
+    "author": "Plutarch",
+    "year": 1500,
+    "key": "/works/OL723491W"
+   },
+   {
+    "title": "Essays",
+    "author": "Francis Bacon",
+    "year": 1618,
+    "key": "/works/OL69382W"
+   },
+   {
+    "title": "Mutual Aid",
+    "author": "Peter Kropotkin",
+    "year": 1891,
+    "key": "/works/OL1105375W"
+   },
+   {
+    "title": "Discours de la méthode",
+    "author": "René Descartes",
+    "year": 1644,
+    "key": "/works/OL1151518W"
+   },
+   {
+    "title": "The book of the damned",
+    "author": "Charles Fort",
+    "year": 1919,
+    "key": "/works/OL66059W"
+   },
+   {
+    "title": "A System of Logic, Ratiocinative and Inductive",
+    "author": "John Stuart Mill",
+    "year": 1843,
+    "key": "/works/OL1068214W"
+   },
+   {
+    "title": "The advancement of learning",
+    "author": "Francis Bacon",
+    "year": 1605,
+    "key": "/works/OL15403036W"
+   },
+   {
+    "title": "The ABC of atoms",
+    "author": "Bertrand Russell",
+    "year": 1923,
+    "key": "/works/OL1088556W"
+   },
+   {
+    "title": "Goethe's Werke",
+    "author": "Johann Wolfgang von Goethe",
+    "year": 1800,
+    "key": "/works/OL15116693W"
+   },
+   {
+    "title": "Über die spezielle und die allgemeine Relativitätstheorie",
+    "author": "Albert Einstein",
+    "year": 1917,
+    "key": "/works/OL1214190W"
+   },
+   {
+    "title": "Physics",
+    "author": "Aristotle",
+    "year": 1472,
+    "key": "/works/OL151632W"
+   },
+   {
+    "title": "The Worst Journey in the World",
+    "author": "Apsley Cherry-Garrard",
+    "year": 1922,
+    "key": "/works/OL3360211W"
+   },
+   {
+    "title": "The economy of machinery and manufactures",
+    "author": "Charles Babbage",
+    "year": 1832,
+    "key": "/works/OL3013355W"
+   },
+   {
+    "title": "Cosmos",
+    "author": "Alexander von Humboldt",
+    "year": 1845,
+    "key": "/works/OL1554090W"
+   },
+   {
+    "title": "The expression of emotions in man and animals",
+    "author": "Charles Darwin",
+    "year": 1872,
+    "key": "/works/OL515301W"
+   },
+   {
+    "title": "Argonauts of the western Pacific",
+    "author": "Bronisław Malinowski",
+    "year": 1922,
+    "key": "/works/OL1211011W"
+   },
+   {
+    "title": "The Nature of the Physical World",
+    "author": "Arthur Stanley Eddington",
+    "year": 1928,
+    "key": "/works/OL1107462W"
+   },
+   {
+    "title": "The Human Zoo",
+    "author": "Desmond Morris",
+    "year": 1705,
+    "key": "/works/OL104152W"
+   },
+   {
+    "title": "Science and education",
+    "author": "Thomas Henry Huxley",
+    "year": 1893,
+    "key": "/works/OL1102962W"
+   },
+   {
+    "title": "A star atlas and telescopic handbook",
+    "author": "Arthur P. Norton",
+    "year": 1910,
+    "key": "/works/OL4780748W"
+   },
+   {
+    "title": "The works of Francis Bacon",
+    "author": "Francis Bacon",
+    "year": 1740,
+    "key": "/works/OL69455W"
+   },
+   {
+    "title": "Novum organum",
+    "author": "Francis Bacon",
+    "year": 1620,
+    "key": "/works/OL69399W"
+   },
+   {
+    "title": "Literary works of Leonardo da Vinci",
+    "author": "Leonardo da Vinci",
+    "year": 1883,
+    "key": "/works/OL695407W"
+   },
+   {
+    "title": "Recherches sur les substances radioactives",
+    "author": "Marie Curie",
+    "year": 1903,
+    "key": "/works/OL723624W"
+   },
+   {
+    "title": "Vom Kriege",
+    "author": "Carl von Clausewitz",
+    "year": 1835,
+    "key": "/works/OL62744W"
+   },
+   {
+    "title": "Philosophiae naturalis principia mathematica",
+    "author": "Sir Isaac Newton",
+    "year": 1687,
+    "key": "/works/OL104736W"
+   },
+   {
+    "title": "Outlines of astronomy",
+    "author": "John Frederick William Herschel",
+    "year": 1849,
+    "key": "/works/OL1554712W"
+   },
+   {
+    "title": "Märchen",
+    "author": "Johann Wolfgang von Goethe",
+    "year": 1854,
+    "key": "/works/OL52513W"
+   },
+   {
+    "title": "Entretiens sur la pluralité des mondes",
+    "author": "Bernard Le Bovier de Fontenelle",
+    "year": 1686,
+    "key": "/works/OL1512817W"
+   },
+   {
+    "title": "Monthly Notices of the Royal Astronomical Society",
+    "author": "Royal Astronomical Society",
+    "year": 1849,
+    "key": "/works/OL13098331W"
+   },
+   {
+    "title": "A preliminary discourse on the study of natural philosophy",
+    "author": "John Frederick William Herschel",
+    "year": 1831,
+    "key": "/works/OL1554711W"
+   },
+   {
+    "title": "Astronomicon",
+    "author": "Marcus Manilius",
+    "year": 1498,
+    "key": "/works/OL2504645W"
+   },
+   {
+    "title": "Studies in Dante",
+    "author": "Moore, Edward",
+    "year": 1896,
+    "key": "/works/OL5009739W"
+   },
+   {
+    "title": "First lessons on natural philosophy for children",
+    "author": "Mary A. Swift",
+    "year": 1833,
+    "key": "/works/OL18734438W"
+   },
+   {
+    "title": "Sidereus nuncius",
+    "author": "Galileo Galilei",
+    "year": 1610,
+    "key": "/works/OL5458493W"
+   },
+   {
+    "title": "Galileo, his life and work",
+    "author": "J. J. Fahie",
+    "year": 1903,
+    "key": "/works/OL18393887W"
+   }
+  ]
+ }
+}

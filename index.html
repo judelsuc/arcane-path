@@ -143,7 +143,6 @@
         <div id="map-workspace">
         <section id="travel-overview" class="travel-overview" aria-labelledby="travel-title" hidden>
           <h3 id="travel-title" data-i18n="travelTitle"></h3>
-          <p id="journey-play-save" role="status"></p>
             <section id="journey-atmosphere" class="journey-atmosphere" aria-labelledby="weather-title" data-temperature="unknown" data-raining="false">
             <figure id="travel-sky" class="travel-sky" hidden>
               <svg viewBox="0 0 200 110" preserveAspectRatio="none" aria-hidden="true">
@@ -220,46 +219,52 @@
             </section>
             <section class="player-needs" aria-labelledby="needs-title">
               <h4 id="needs-title" data-i18n="needsTitle"></h4>
-              <label><span data-i18n="needsHealth"></span><meter id="needs-health" min="0" max="100" low="25" high="60" optimum="100"></meter><output id="needs-health-value"></output></label>
-              <label><span data-i18n="needsHunger"></span><meter id="needs-hunger" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-hunger-value"></output></label>
-              <label><span data-i18n="needsFatigue"></span><meter id="needs-fatigue" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-fatigue-value"></output></label>
-              <label><span data-i18n="needsSleep"></span><meter id="needs-sleep" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-sleep-value"></output></label>
+              <label><span class="needs-tip"><span data-i18n="needsHealth"></span><span class="needs-effect" data-i18n="needsHealthEffect"></span></span><meter id="needs-health" min="0" max="100" low="25" high="60" optimum="100"></meter><output id="needs-health-value"></output></label>
+              <label><span class="needs-tip"><span data-i18n="needsHunger"></span><span class="needs-effect" data-i18n="needsHungerEffect"></span></span><meter id="needs-hunger" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-hunger-value"></output></label>
+              <label><span class="needs-tip"><span data-i18n="needsFatigue"></span><span class="needs-effect" data-i18n="needsFatigueEffect"></span></span><meter id="needs-fatigue" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-fatigue-value"></output></label>
+              <label><span class="needs-tip"><span data-i18n="needsSleep"></span><span class="needs-effect" data-i18n="needsSleepEffect"></span></span><meter id="needs-sleep" min="0" max="100" low="40" high="70" optimum="0"></meter><output id="needs-sleep-value"></output></label>
               <div id="player-vigilance" hidden>
-                <label><span data-i18n="pressureVigilance"></span><meter id="pressure-vigilance" min="0" max="100" low="40" high="75" optimum="0"></meter><output id="pressure-vigilance-value"></output></label>
+                <label><span class="needs-tip"><span data-i18n="pressureVigilance"></span><span class="needs-effect" data-i18n="pressureVigilanceEffect"></span></span><meter id="pressure-vigilance" min="0" max="100" low="40" high="75" optimum="0"></meter><output id="pressure-vigilance-value"></output></label>
               </div>
               <div id="player-hygiene" hidden>
-                <label><span data-i18n="pressureCleanliness"></span><meter id="pressure-cleanliness" min="0" max="100" low="30" high="70" optimum="100"></meter><output id="pressure-cleanliness-value"></output></label>
+                <label><span class="needs-tip"><span data-i18n="pressureCleanliness"></span><span class="needs-effect" data-i18n="pressureCleanlinessEffect"></span></span><meter id="pressure-cleanliness" min="0" max="100" low="30" high="70" optimum="100"></meter><output id="pressure-cleanliness-value"></output></label>
                 <button id="dog-travel" type="button" hidden></button>
                 <p data-i18n="washHelp"></p>
-              </div>
-              <p id="needs-speed-effect" role="status"></p>
-              <p id="needs-warning" role="status"></p>
-              <p id="player-name"></p>
-              <p id="player-character"></p>
-              <p id="player-wallet"></p>
-              <button id="equipment-travel" type="button" data-i18n="equipmentTitle" disabled></button>
-              <p id="player-food"></p>
-              <p id="player-tarot"></p>
-              <p id="outdoor-status"></p>
-              <details id="pressure-panel" hidden>
-                <summary data-i18n="pressureTitle"></summary>
-                <label><span data-i18n="pressureSympathy"></span><meter id="pressure-sympathy" min="0" max="100" low="30" high="70" optimum="100"></meter><output id="pressure-sympathy-value"></output></label>
-                <p id="pressure-status"></p>
-                <p id="pressure-tarot"></p>
-                <p data-i18n="pressureHelp"></p>
-              </details>
-              <div id="journey-ended" role="alert" hidden>
-                <p id="journey-outcome"></p>
-                <details id="closing-story" hidden open>
-                  <summary data-i18n="closingStoryTitle"></summary>
-                  <p id="closing-story-text"></p>
-                  <p id="closing-story-status" role="status"></p>
-                </details>
-                <button id="restart-travel" type="button" data-i18n="journeyRestart"></button>
               </div>
             </section>
         </section>
         <section class="travel-panel" aria-labelledby="travel-title">
+          <section id="traveller-status" aria-labelledby="needs-title">
+            <p id="journey-play-save" role="status"></p>
+            <p id="needs-speed-effect" role="status"></p>
+            <p id="needs-warning" role="status"></p>
+            <p id="player-name"></p>
+            <p id="player-character"></p>
+            <p id="player-wallet"></p>
+            <p id="player-food"></p>
+            <p id="player-tarot"></p>
+            <p id="outdoor-status"></p>
+            <details id="pressure-panel" hidden>
+              <summary data-i18n="pressureTitle"></summary>
+              <div id="pressure-display" tabindex="0" aria-describedby="pressure-tooltip">
+                <label><span data-i18n="pressureSympathy"></span><meter id="pressure-sympathy" min="0" max="100" low="30" high="70" optimum="100"></meter><output id="pressure-sympathy-value"></output></label>
+              </div>
+              <div id="pressure-tooltip" role="tooltip">
+                <p id="pressure-status"></p>
+                <p id="pressure-tarot"></p>
+              </div>
+              <p data-i18n="pressureHelp"></p>
+            </details>
+            <div id="journey-ended" role="alert" hidden>
+              <p id="journey-outcome"></p>
+              <details id="closing-story" hidden open>
+                <summary data-i18n="closingStoryTitle"></summary>
+                <p id="closing-story-text"></p>
+                <p id="closing-story-status" role="status"></p>
+              </details>
+              <button id="restart-travel" type="button" data-i18n="journeyRestart"></button>
+            </div>
+          </section>
           <div id="travel-controls" hidden>
             <details class="journey-details">
               <summary data-i18n="journeyDetails"></summary>
@@ -281,6 +286,25 @@
           <p id="travel-diagnostics" class="technical-text"></p>
           <p id="journey-path-status" role="status"></p>
           <button id="journey-path-retry" type="button" data-i18n="journeyPath.retry" hidden></button>
+          <section class="cell-content" aria-labelledby="ascii-title">
+            <p id="content-hint" class="window-help-text" data-i18n="contentHint"></p>
+            <p id="content-position"></p>
+            <div id="cell-description" role="status"></div>
+            <section id="legend-look" aria-live="polite" hidden></section>
+            <details id="cell-pois" hidden>
+              <summary id="cell-pois-summary"></summary>
+              <ul id="cell-pois-list"></ul>
+            </details>
+            <div class="content-actions">
+              <button id="refresh-content" type="button" disabled data-i18n="refreshContent"></button>
+              <button id="clear-content" type="button" data-i18n="clearContent"></button>
+            </div>
+            <p id="cache-status" role="status"></p>
+          </section>
+          <section class="legend-card" aria-labelledby="legend-title">
+            <h2 id="legend-title" data-i18n="legendTitle">Signes de la carte</h2>
+            <ul class="legend" id="legend"></ul>
+          </section>
         </section>
         <div class="map-comparison">
           <section id="artifact-recovery" role="region" aria-label="Objets magiques" hidden></section>
@@ -300,9 +324,11 @@
               <button id="open-conversation" type="button" disabled data-i18n="conversation.title" aria-haspopup="dialog" aria-controls="conversation-dialog"></button>
               <button id="open-investigation" type="button" data-i18n="investigation.open" aria-haspopup="dialog" aria-controls="investigation-dialog"></button>
               <button id="open-quests" type="button" disabled data-i18n="quests.title" aria-haspopup="dialog" aria-controls="trail-dialog"></button>
+              <button id="equipment-travel" type="button" data-i18n="equipmentTitle" disabled></button>
               <button id="rest-travel" type="button" data-i18n="travelRest"></button>
               <button id="save-travel" type="button" disabled data-i18n="saveNow"></button>
               <button id="look-travel" type="button" aria-pressed="false" data-i18n="travelLook"></button>
+              <button id="show-photo" type="button" disabled data-i18n="showPhoto"></button>
               <button id="retry-travel" type="button" data-i18n="travelRetry"></button>
               <button id="stop-travel" type="button" data-i18n="travelStop"></button>
             </nav>
@@ -319,22 +345,6 @@
             <p class="cell-info" id="cell-info" role="status"></p>
             <button id="copy-coordinates" type="button" disabled data-i18n="copyCoordinates"></button>
             <p id="copy-coordinates-status" role="status"></p>
-            <section class="cell-content" aria-labelledby="ascii-title">
-              <p id="content-hint" class="window-help-text" data-i18n="contentHint"></p>
-              <p id="content-position"></p>
-              <div id="cell-description" role="status"></div>
-              <section id="legend-look" aria-live="polite" hidden></section>
-              <details id="cell-pois" hidden>
-                <summary id="cell-pois-summary"></summary>
-                <ul id="cell-pois-list"></ul>
-              </details>
-              <div class="content-actions">
-                <button id="show-photo" type="button" disabled data-i18n="showPhoto"></button>
-                <button id="refresh-content" type="button" disabled data-i18n="refreshContent"></button>
-                <button id="clear-content" type="button" data-i18n="clearContent"></button>
-              </div>
-              <p id="cache-status" role="status"></p>
-            </section>
           </section>
         </div>
         </div>
@@ -343,11 +353,6 @@
           <span id="map-source"></span>
         </div>
         <p class="map-attribution" id="map-attribution" hidden></p>
-      </section>
-
-      <section class="legend-card" aria-labelledby="legend-title">
-        <h2 id="legend-title" data-i18n="legendTitle">Signes de la carte</h2>
-        <ul class="legend" id="legend"></ul>
       </section>
 
       <footer class="status-line">
@@ -645,6 +650,7 @@
           <button id="conversation-transport" type="button" data-i18n="conversation.transport"></button>
           <button id="conversation-town" type="button" data-i18n="conversation.town"></button>
         </div>
+        <div id="conversation-topic-extras" class="conversation-topics"></div>
       </details>
     </dialog>
     <dialog id="investigation-dialog" aria-labelledby="investigation-title">

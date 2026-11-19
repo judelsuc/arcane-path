@@ -22,8 +22,12 @@ const colors = ["#385d72", "#8d543e", "#596b45", "#72567c", "#75613b", "#4b6d79"
 
 export function bookCoverArt(doc, id) {
   const index = Number(id.split("-")[1]) - 1;
-  if (!/^book-\d+$/.test(id) || !Number.isInteger(index) || index < 0 || index >= motifs.length)
+  if (!/^book-\d+$/.test(id) || !Number.isInteger(index) || index < 0)
     throw new RangeError("Unknown book cover.");
+  // Motifs, colours and orientation cycle out of phase so large catalogues get unique pairings.
+  const motif = motifs[index % motifs.length];
+  const color = colors[(index + Math.floor(index / motifs.length)) % colors.length];
+  const rotation = (Math.floor(index / (motifs.length * colors.length)) * 90) % 360;
   const element = (tag, attributes) => {
     const node = doc.createElementNS("http://www.w3.org/2000/svg", tag);
     for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
@@ -31,9 +35,10 @@ export function bookCoverArt(doc, id) {
   };
   const svg = element("svg", { viewBox: "0 0 100 100", "aria-hidden": "true", class: "book-cover-art" });
   svg.append(
-    element("rect", { x: 2, y: 2, width: 96, height: 96, rx: 2, fill: colors[index] }),
+    element("rect", { x: 2, y: 2, width: 96, height: 96, rx: 2, fill: color }),
     element("rect", { x: 8, y: 8, width: 84, height: 84, rx: 1, fill: "none", stroke: "#e9d5a3", "stroke-opacity": ".5" }),
-    element("path", { d: motifs[index], fill: "none", stroke: "#f0dfb5", "stroke-width": 2.3, "stroke-linecap": "round", "stroke-linejoin": "round" }),
+    element("path", { d: motif, fill: "none", stroke: "#f0dfb5", "stroke-width": 2.3, "stroke-linecap": "round", "stroke-linejoin": "round",
+      ...(rotation ? { transform: `rotate(${rotation} 50 50)` } : {}) }),
   );
   return svg;
 }

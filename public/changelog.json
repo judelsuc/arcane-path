@@ -1,6 +1,11 @@
 {
-  "version": "0.22.21",
+  "version": "0.22.22",
   "entries": [
+    {
+      "version": "0.22.22",
+      "fr": "L'écran de voyage devient une interface de jeu : barre d'état translucide (agenda, jauges à icônes avec infobulles d'effets, menu), carte dominante qui ne bouge plus pendant la marche, détails techniques regroupés dans l'Aide, panneau latéral unique. La librairie propose des centaines de classiques du domaine public (catalogue Open Library actualisé chaque jour) sur huit rayons variés. Les habitants évoquent la poursuite avec leurs propres mots au fil des conversations. Boutique d'équipement compacte avec enseigne locale, erreurs du café signalées par un flash, marché et pétanque tiennent à l'écran, raccourci Hébergement unifié (H).",
+      "en": "The travel screen becomes a game interface: translucent status bar (agenda, icon gauges with effect tooltips, menu), a dominant map that no longer shifts while walking, technical details gathered into Help, a single side panel. The bookshop offers hundreds of public-domain classics (Open Library catalogue refreshed daily) across eight varied shelves. Inhabitants mention the pursuit in their own words in conversations. Compact equipment shop with a local shop name, café mistakes flash the screen, market and pétanque fit the screen, unified Shelter shortcut (H)."
+    },
     {
       "version": "0.22.21",
       "fr": "Les directions des indices de la Piste du parent sont mises en évidence dans les messages. Sommeil et abri affiche directement les deux hébergements les plus proches ; les autres restent dans un volet replié. Pendant une rencontre, les touches du défi s'affichent au centre de l'écran, toujours visibles, puis reprennent leur place avec le résultat.",

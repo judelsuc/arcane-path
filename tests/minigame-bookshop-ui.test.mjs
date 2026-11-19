@@ -121,11 +121,14 @@ for (const language of ["en", "fr"]) {
     assert.match(h.root.textContent, language === "en" ? /personal wish/ : /envie personnelle/);
     h.click("start");
     sortByClick(h);
-    assert.match(h.root.textContent, language === "en" ? /escape from everyday life/ : /m’évader loin du quotidien/);
+    const wish = h.game.requests[0];
+    assert.ok(h.root.textContent.includes(wish.text[language]), "the personal wish is displayed");
     assert.equal(decoration().length, 1);
-    h.click("select", "book-2");
+    const servedId = wish.acceptedBookIds[0];
+    h.click("select", servedId);
     h.click("serve");
-    assert.match(h.root.textContent, language === "en" ? /pirate adventure takes me far/ : /aventure de pirates m’emporte/);
+    assert.ok(h.root.textContent.includes(wish.reactions[servedId][language]),
+      "the reaction explains why the served book fits");
     for (const request of h.game.requests.slice(1)) {
       h.click("select", request.bookId);
       h.click("serve");

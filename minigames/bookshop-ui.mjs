@@ -9,6 +9,8 @@ const words = {
     keys: "Clavier : Tab / Entrée pour les boutons ; S commencer, B choisir le livre suivant, flèches déplacer la case, P ranger, R servir, Échap annuler.",
     sorting: "Rangement", requests: "Demandes", shelf: "Rayon", slot: "Case", books: "Livres",
     voyages: "Voyages", nature: "Nature", mystery: "Mystères", poetry: "Poésie",
+    history: "Histoire", tales: "Contes", theatre: "Théâtre", science: "Savoirs",
+    catalogue: "Catalogue élargi : Open Library, œuvres publiées en 1928 ou avant. Les rayons suivent les thèmes de ce catalogue.",
     score: "Score", mistakes: "Erreurs", seconds: "secondes", request: "Client",
     selected: "Livre choisi.", ready: "À vous de ranger !", chooseBook: "Choisissez un livre d'abord.",
     serveInstead: "Les rayons sont prêts : servez le client.", alreadyPlaced: "Ce livre est déjà rangé.",
@@ -23,6 +25,8 @@ const words = {
     keys: "Keyboard: Tab / Enter for buttons; S start, B select next book, arrows move shelf cursor, P place, R serve, Escape cancel.",
     sorting: "Sorting", requests: "Requests", shelf: "Shelf", slot: "Slot", books: "Books",
     voyages: "Travel", nature: "Nature", mystery: "Mystery", poetry: "Poetry",
+    history: "History", tales: "Tales", theatre: "Drama", science: "Science",
+    catalogue: "Extended catalogue: Open Library, works published in or before 1928. Shelves follow that catalogue's themes.",
     score: "Score", mistakes: "Mistakes", seconds: "seconds", request: "Customer",
     selected: "Book selected.", ready: "Time to sort!", chooseBook: "Select a book first.",
     serveInstead: "Shelves are ready: serve the customer.", alreadyPlaced: "That book is already shelved.",
@@ -92,7 +96,7 @@ export function mount(container, { level = 0, language = "fr", onFinish, audio, 
       ? { command: active.dataset?.command, value: active.dataset?.value } : null;
     root.replaceChildren();
     root.className = "";
-    const explanations = [t.instructions, t.keys, `${t.multiplier}: ×${config.rewardMultiplier}`].map(text => {
+    const explanations = [t.instructions, t.catalogue, t.keys, `${t.multiplier}: ×${config.rewardMultiplier}`].map(text => {
       const paragraph = node("p", text);
       paragraph.className = "game-help-text";
       return paragraph;

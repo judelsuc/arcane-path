@@ -119,7 +119,7 @@ export function mount(container, { level = 0, language = "fr", onFinish, random 
   const start = button(t("start"), () => begin(), "petanque-start");
   start.disabled = false;
   const pitch = make("div", { className: "petanque-pitch", role: "img",
-    style: { position: "relative", width: "min(12rem, 16vh)", aspectRatio: "4 / 15", background: "#c9a66b", border: "2px solid #7a5a2b", margin: "0.5rem auto" } });
+    style: { position: "relative", width: "min(12rem, 15dvh)", aspectRatio: "4 / 15", background: "#c9a66b", border: "2px solid #7a5a2b", margin: "0.5rem auto" } });
   const marker = (color, size, label) => make("div", { className: `petanque-${label}`, "aria-hidden": "true",
     style: { position: "absolute", width: size, height: size, borderRadius: "50%", background: color, transform: "translate(-50%, -50%)", display: "none" } });
   const jack = marker("#f2c94c", "0.5rem", "jack");

@@ -267,7 +267,7 @@ test("washing formulas and the other rule explanations are only visible in conte
   }
 });
 
-test("technical details stay closed, retain original links, show failures, and update without losing expansion", () => {
+test("technical diagnostics live in the on-demand help dialog; failures and busy stay visible inline", () => {
   const f = fixture("en", false, true);
   const source = f.doc.createElement("p");
   source.className = "technical-text";
@@ -277,43 +277,39 @@ test("technical details stay closed, retain original links, show failures, and u
   source.append(link);
   f.main.append(source);
   f.update(f.main, [source]);
-  const fold = source.parentElement;
-  assert.equal(fold.tagName, "details");
-  assert.equal(fold.open, false);
-  assert.equal(fold.hidden, false);
-  assert.equal(fold.querySelector("a"), link, "link identity and destination survive folding");
-  assert.equal(fold.querySelector("summary").textContent, "Details");
-  fold.open = true;
+  const technical = f.popup.querySelector(".window-help-technical");
+  assert.ok(technical.contains(source), "diagnostics move into the help dialog");
+  assert.equal(source.querySelector("a"), link, "link identity and destination survive the move");
+  assert.equal(f.main.querySelector(".technical-details"), null, "no inline collapsed details remain");
+  f.trigger.emit("click");
+  assert.equal(technical.hidden, false, "the open dialog lists the host's diagnostics");
+  assert.equal(f.popup.querySelector("h3").hidden, false);
+  f.popup.querySelector("button").emit("click");
   source.dataset.feedback = "failure";
   source.textContent = "Provider failure";
   f.update(source);
-  assert.equal(fold.open, true);
-  assert.equal(fold.dataset.feedback, "failure");
-  assert.equal(fold.querySelector("summary").textContent, "Something went wrong — details");
-  f.doc.documentElement.lang = "fr";
-  f.api.localize();
-  assert.equal(fold.querySelector("summary").textContent, "Un problème est survenu — détails");
+  assert.equal(source.parentElement, f.main, "failures surface inline, not in the closed dialog");
+  source.dataset.feedback = "";
   source.ariaBusy = "true";
   f.update(source);
-  assert.equal(source.parentElement, f.main, "waiting indicators stay visible outside closed details");
+  assert.equal(source.parentElement, f.main, "waiting indicators stay visible inline");
   source.ariaBusy = "false";
   f.update(source);
-  const replacement = source.parentElement;
-  assert.equal(replacement.tagName, "details");
-  assert.equal(replacement.open, false);
+  assert.ok(technical.contains(source), "recovered diagnostics fold back into the dialog");
+  const holder = source.parentElement;
   source.textContent = "";
   f.update(source);
-  assert.equal(replacement.hidden, true);
+  assert.equal(holder.hidden, true, "empty diagnostics leave no visible entry");
   source.textContent = "Recovered";
   source.hidden = true;
   f.update(source);
-  assert.equal(replacement.hidden, true, "a source hidden by its controller must remain hidden");
+  assert.equal(holder.hidden, true, "a source hidden by its controller must remain hidden");
+  source.hidden = false;
   source.className = "";
   f.update(source);
   assert.equal(source.parentElement, f.main, "retry success can remove its diagnostic classification");
   f.api.destroy();
   assert.equal(source.parentElement, f.main);
-  assert.equal(source.hidden, true);
   assert.equal(f.main.querySelector(".technical-details"), null);
 });
 

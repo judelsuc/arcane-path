@@ -1,12 +1,7 @@
 import { hospitalityTown } from "./hospitality.mjs";
 import { skyState } from "./sky.mjs";
 import { journeyDate } from "./travel.mjs";
-
-const TOPICS = {
-  shelter: "sleep-travel", food: "eat-travel", work: "open-earn-money",
-  transport: "open-journey-world", town: "open-town",
-};
-const EXCHANGE_TOPICS = ["parent", "clues", "notebooks", "artifacts", "services", "legends"];
+import { conversationTopics, CORE_TOPICS } from "./conversation-topics.mjs";
 
 export function setupConversations(t, { context, characters, onCharacter = () => {},
   onArtifactRumour = () => {},
@@ -16,6 +11,24 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
   const dialog = $("conversation-dialog");
   const selector = $("character-selector-dialog");
   const trigger = $("open-conversation");
+  const localButtons = new Map();
+  function topicsFor(current) {
+    return conversationTopics(current ?? context());
+  }
+  function localButton(topic) {
+    if (!localButtons.has(topic.id)) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.addEventListener("click", () => {
+        if (button.disabled) return;
+        selected = topic.id;
+        localize();
+      });
+      $("conversation-topic-extras")?.append(button);
+      localButtons.set(topic.id, button);
+    }
+    return localButtons.get(topic.id);
+  }
   let selected = "services";
   let currentCharacter;
   let characterLocation;
@@ -95,17 +108,34 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
     $("conversation-character-reply").hidden = !currentCharacter;
     $("conversation-reply").hidden = true;
     $("conversation-reply").textContent = "";
-    for (const [topic, target] of Object.entries(TOPICS)) {
-      const source = $(target);
-      $(`conversation-${topic}`).disabled = !enabled || !source || source.disabled || source.hidden;
+    const topics = topicsFor(current);
+    for (const topic of topics) {
+      if (topic.kind === "action") {
+        const source = $(topic.target);
+        $(`conversation-${topic.id}`).disabled = !enabled || !source || source.disabled || source.hidden;
+      } else if (topic.kind === "exchange") {
+        const button = $(`conversation-${topic.id}`);
+        button.disabled = !enabled || topic.id === "clues" && $("open-investigation").disabled;
+        button.setAttribute("aria-pressed", String(selected === topic.id));
+      } else {
+        const button = localButton(topic);
+        button.textContent = topic.label?.(t) ?? topic.id;
+        button.hidden = false;
+        button.disabled = !enabled;
+        button.setAttribute("aria-pressed", String(selected === topic.id));
+      }
     }
-    for (const topic of EXCHANGE_TOPICS) {
-      const button = $(`conversation-${topic}`);
-      button.disabled = !enabled || topic === "clues" && $("open-investigation").disabled;
-      button.setAttribute("aria-pressed", String(selected === topic));
+    for (const [id, button] of localButtons) {
+      if (!topics.some(topic => topic.kind === "local" && topic.id === id)) {
+        button.hidden = true;
+        if (selected === id) selected = "services";
+      }
     }
+    const localTopic = topics.find(topic => topic.kind === "local" && topic.id === selected);
     if (currentCharacter) {
-      if (selected === "legends") {
+      if (localTopic) {
+        $("conversation-character-reply").textContent = localTopic.reply(current, t, currentCharacter);
+      } else if (selected === "legends") {
         const telling = legendTelling(currentCharacter);
         $("conversation-character-reply").textContent = telling.text;
         $("conversation-character-status").textContent = telling.status;
@@ -350,15 +380,15 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
     returningToSelector = false;
     await refresh();
   });
-  for (const [topic, target] of Object.entries(TOPICS)) {
-    $(`conversation-${topic}`).addEventListener("click", () => {
+  for (const topic of CORE_TOPICS.filter(entry => entry.kind === "action")) {
+    $(`conversation-${topic.id}`).addEventListener("click", () => {
       localize();
-      if ($(`conversation-${topic}`).disabled) return;
+      if ($(`conversation-${topic.id}`).disabled) return;
       dialog.close();
-      $(target).click();
+      $(topic.target).click();
     });
   }
-  for (const topic of EXCHANGE_TOPICS) {
+  for (const { id: topic } of CORE_TOPICS.filter(entry => entry.kind === "exchange")) {
     $(`conversation-${topic}`).addEventListener("click", () => {
       if (topic === "clues") {
         localize();

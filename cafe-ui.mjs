@@ -181,10 +181,18 @@ export function setupCafe(t, { context, begin, settle, audio, resonance = () => 
     localize();
   }
 
+  // One brief red flash over the whole dialog; restarting the class replays the animation.
+  function flashError() {
+    dialog.className = (dialog.className || "").replace(/\bcafe-flash\b/g, "").trim();
+    if (typeof dialog.offsetWidth === "number") void dialog.offsetWidth;
+    dialog.className = `${dialog.className} cafe-flash`.trim();
+  }
+
   function input(kind, value) {
     if (!game) return;
     const previous = game;
     game = cafeInput(game, kind, value, performance.now());
+    if (game.mistakes > previous.mistakes) flashError();
     if (kind === "ingredient" && game.tray.length &&
         (game.selected !== previous.selected || game.tray.length > previous.tray.length)) void audio?.pickup(value);
     render();

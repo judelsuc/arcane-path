@@ -8,6 +8,7 @@ import { createTrail } from "../trail.mjs";
 import { LORE_ITEMS } from "../lore-catalogue.mjs";
 import { armPower, activePower, ordinaryEnergyFactor } from "../lore-effects.mjs";
 import { inscriptionClue, fragmentOptions, parentPath, parentTruth, refundableDebits, thread } from "../lore-knowledge.mjs";
+import { catalogue as bookshopCatalogue } from "../minigames/bookshop.mjs";
 import { learnDiscovery, discoveryIdentity } from "../discovery.mjs";
 import { firstPlacement } from "../equipment-inventory.mjs";
 import { ITEMS, journeyEquipmentModifiers } from "../equipment.mjs";
@@ -528,12 +529,10 @@ test("Normal bookshop work is server replayed, persists mid-game and earns real 
   }
   board = view(result).work;
   assert.equal(board.status, "requests");
-  const requests = ["world", "pirates", "Mowgli", "Buck"];
-  const ids = ["book-1", "book-2", "book-5", "book-6"];
   while (board?.status === "requests") {
-    const index = requests.findIndex(word => board.request.en.includes(word));
-    assert.ok(index >= 0, board.request.en);
-    result = await step(result, { type: "work-move", move: { type: "select", bookId: ids[index] } }, { nowMillis: 1200 });
+    const wanted = bookshopCatalogue.find(book => book.request.en === board.request.en);
+    assert.ok(wanted, board.request.en);
+    result = await step(result, { type: "work-move", move: { type: "select", bookId: wanted.id } }, { nowMillis: 1200 });
     result = await step(result, { type: "work-move", move: { type: "serve" } }, { nowMillis: 1200 });
     board = view(result).work;
   }

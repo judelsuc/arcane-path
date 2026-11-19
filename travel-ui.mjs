@@ -8,6 +8,7 @@ import {
 import { setupTowns } from "./towns-ui.mjs";
 import { setupChangeRequests } from "./change-requests-ui.mjs";
 import { setupConversations } from "./conversations-ui.mjs";
+import { registerConversationTopics, characterVariant } from "./conversation-topics.mjs";
 import { createCharactersClient } from "./characters-client.mjs";
 import { setupQuestLayout } from "./quest-layout.mjs";
 import { setupServiceQuests } from "./service-quests-ui.mjs";
@@ -29,7 +30,7 @@ import { setupEconomyUI } from "./economy-ui.mjs";
 import { setupBuildingSleep } from "./building-sleep-ui.mjs";
 import { setupPursuit } from "./pursuit-ui.mjs";
 import { setupPursuitNews } from "./pursuit-news-ui.mjs";
-import { beginPursuit, advancePursuit, pursuitPending, beginPursuitEscape, settlePursuitEscape } from "./pursuit.mjs";
+import { beginPursuit, advancePursuit, pursuitPending, beginPursuitEscape, settlePursuitEscape, pursuitStatus } from "./pursuit.mjs";
 import { buildingSleepPending, startBuildingSleep, beginBuildingSleep, settleBuildingSleep } from "./building-sleep.mjs";
 import { discoverTownMeals } from "./town-meals.mjs";
 import { beginBusking, settleBusking, musicMistakeLimit, musicDifficulty } from "./music.mjs";
@@ -612,6 +613,15 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     },
   });
   const charactersClient = createCharactersClient();
+  // The pursuit layer speaks through inhabitants rather than a mechanical notice.
+  registerConversationTopics("pursuit", [{
+    id: "rumours", kind: "local", order: 55,
+    label: translate => translate("conversation.rumours"),
+    available: current => ["grace", "distant", "near", "danger"]
+      .includes(pursuitStatus(current?.state)?.stage),
+    reply: (current, translate, character) => translate(
+      `pursuitRumour.${pursuitStatus(current.state).stage}.${characterVariant(character, 3)}`),
+  }]);
   const conversations = setupConversations(t, {
     context: () => active ? economyContext() : null,
     characters: charactersClient,

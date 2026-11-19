@@ -228,6 +228,27 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Daily bookshop catalogue refresh
+
+The bookshop minigame ships a tracked baseline `public/bookshop-catalogue.json`
+(Open Library metadata, works first published in or before 1928). On the server,
+install [the service](../infra/systemd/arcane-bookshop-catalogue.service) and
+[the timer](../infra/systemd/arcane-bookshop-catalogue.timer) into
+`/etc/systemd/system/`, then:
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now arcane-bookshop-catalogue.timer
+sudo systemctl start arcane-bookshop-catalogue.service   # first refresh now
+```
+
+The job runs daily at 05:50 Paris time as `arcane`, writes to
+`/var/lib/arcane-path/bookshop-catalogue.json` and keeps the previous file on
+any failure; there are no automatic retries. The application serves that copy
+at `/public/bookshop-catalogue.json` when present and valid, otherwise the
+packaged baseline (`ARCANE_BOOKSHOP_CATALOGUE_FILE` overrides the path). No
+model call, no credential and no quota are involved; the registry is public.
+
 ## Clearer trail, shelter and QTE interfaces, 0.22.21 (19 November 2026)
 
 Deployed runtime `fad7ebd73ab48ef17a00c2de122c280185d7ecf2`, tagged

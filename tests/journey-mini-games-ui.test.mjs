@@ -105,7 +105,7 @@ test("journey and previews load the same component stylesheet, not preview-only 
     assert.match(readFileSync(new URL(`../${file}`, import.meta.url), "utf8"),
       /rel="stylesheet" href="\.\.?\/mini-games\.css"/);
   }
-  assert.match(css, /\.market-art \{[^}]*width: 76px; height: 76px;/);
+  assert.match(css, /\.market-art \{[^}]*width: 48px; height: 48px;/);
   assert.match(css, /\.market-shopping-list \{[^}]*display: flex;/);
-  assert.match(css, /\.market-money-art \{[^}]*width: 90px;[^}]*height: 60px;/);
+  assert.match(css, /\.market-money-art \{[^}]*width: 64px;[^}]*height: 42px;/);
 });

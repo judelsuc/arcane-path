@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { setupEquipment } from "../equipment-ui.mjs";
+import { setupEquipment, townBoutique } from "../equipment-ui.mjs";
 import { beginEquipment, equipmentAction } from "../equipment.mjs";
 import { translate } from "../i18n.mjs";
 
@@ -97,4 +97,24 @@ test("town menu exposes the dedicated equipment shop", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const town = html.slice(html.indexOf('<dialog id="town-dialog"'), html.indexOf('<dialog id="conversation-dialog"'));
   assert.match(town, /id="town-equipment-shop"[^>]*aria-controls="equipment-shop-dialog"/);
+});
+
+test("the shop heading uses an equipment-relevant mapped boutique or a generic fallback", () => {
+  const outdoor = { osmId: "node/9", name: "Au Vieux Campeur", category: "shop", tags: { shop: "outdoor" } };
+  const bakery = { osmId: "node/2", name: "Boulangerie Rolland", category: "shop", tags: { shop: "bakery" } };
+  const vacant = { osmId: "node/1", name: "Ancienne échoppe", category: "shop", tags: { shop: "vacant" } };
+  const unnamed = { osmId: "node/3", name: " ", category: "shop", tags: { shop: "clothes" } };
+  const cell = { terrain: "place", pois: [bakery, vacant, unnamed, outdoor] };
+  assert.equal(townBoutique(cell), outdoor, "equipment-relevant shops outrank other named shops");
+  assert.equal(townBoutique({ terrain: "place", pois: [bakery] }), bakery);
+  assert.equal(townBoutique({ terrain: "place", pois: [vacant, unnamed] }), null);
+  assert.equal(townBoutique({ terrain: "place" }), null);
+});
+
+test("the shop dialog is styled as a compact boutique with its own background", () => {
+  const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  const shop = css.slice(css.indexOf("#equipment-shop-dialog {"));
+  assert.match(shop, /#equipment-shop-dialog \{[^}]*repeating-linear-gradient/, "a drawn shop background");
+  assert.match(shop, /#equipment-shop-dialog \.catalogue-art svg \{ width: 44px; height: 40px; \}/,
+    "shop item art stays small");
 });

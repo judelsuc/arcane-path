@@ -1073,6 +1073,25 @@ def make_handler(store, jobs, path_pool=None):
                 except (OSError, ValueError) as error:
                     logging.exception("Configuration request failed")
                     return self.send_json(500, {"error": str(error)})
+            if url.path == "/public/bookshop-catalogue.json":
+                # The daily refresh writes outside the read-only application
+                # directory; serve it when valid, else the packaged baseline.
+                override = os.environ.get("ARCANE_BOOKSHOP_CATALOGUE_FILE",
+                                          "/var/lib/arcane-path/bookshop-catalogue.json")
+                try:
+                    with open(override, "rb") as handle:
+                        payload = handle.read()
+                    json.loads(payload.decode("utf-8"))
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+                except FileNotFoundError:
+                    pass
+                except (OSError, ValueError):
+                    logging.exception("Daily bookshop catalogue unusable; serving the packaged baseline")
             if url.path.startswith("/api/"):
                 try:
                     if url.path == "/api/hitchhiking":

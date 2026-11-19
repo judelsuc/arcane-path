@@ -3,9 +3,10 @@
 // Only completed && !cancelled results are eligible for host-managed rewards;
 // difficulty(level).rewardMultiplier is metadata, not an economy transaction.
 import { resolveResonance, resonanceResult } from "../arcane-resonance.mjs";
+import REGISTRY from "../public/bookshop-catalogue.json" with { type: "json" };
 
 const states = new WeakSet();
-const genres = ["voyages", "nature", "mystery", "poetry"];
+const genres = ["voyages", "nature", "mystery", "poetry", "history", "tales", "theatre", "science"];
 const titles = [
   ["Le Tour du monde en quatre-vingts jours", "Around the World in Eighty Days", "Jules Verne",
     "Un pari, des escales et un départ autour du globe.", "A wager, faraway stops and a race around the globe."],
@@ -40,6 +41,57 @@ const titles = [
   ["Fables", "Fables", "Jean de La Fontaine",
     "Cigale, fourmi, corbeau et renard portent des leçons en vers.", "A grasshopper, ant, crow and fox carry lessons in verse."],
 ];
+// Additional classics with explicit genres; ids continue after the original sixteen.
+const extraTitles = [
+  ["voyages", "Cinq Semaines en ballon", "Five Weeks in a Balloon", "Jules Verne",
+    "Trois voyageurs survolent l’Afrique en ballon.", "Three travellers cross Africa by balloon.",
+    "Le survol de l’Afrique en ballon, de Jules Verne.", "Jules Verne's balloon flight over Africa, please."],
+  ["voyages", "Voyage au centre de la Terre", "Journey to the Center of the Earth", "Jules Verne",
+    "Une descente par un volcan vers les profondeurs du globe.", "A descent through a volcano toward the depths of the globe.",
+    "Je cherche la descente par le volcan, vers les profondeurs.", "I'm looking for the descent through the volcano, into the depths."],
+  ["voyages", "Moby Dick", "Moby-Dick", "Herman Melville",
+    "Un capitaine poursuit une baleine blanche sur tous les océans.", "A captain hunts a white whale across the oceans.",
+    "Le capitaine Achab et la baleine blanche, s’il vous plaît.", "Captain Ahab and the white whale, please."],
+  ["voyages", "Robinson Crusoé", "Robinson Crusoe", "Daniel Defoe",
+    "Un naufragé apprend à survivre sur une île déserte.", "A castaway learns to survive on a desert island.",
+    "Le naufragé qui s’installe sur son île déserte.", "The castaway making a home on his desert island."],
+  ["nature", "Croc-Blanc", "White Fang", "Jack London",
+    "Un loup-chien apprivoisé découvre le monde des hommes.", "A tamed wolf-dog discovers the world of men.",
+    "L’histoire du loup-chien apprivoisé du Grand Nord.", "The story of the tamed wolf-dog of the far North."],
+  ["nature", "Le Vent dans les saules", "The Wind in the Willows", "Kenneth Grahame",
+    "Taupe, Rat et Crapaud vivent au fil de la rivière.", "Mole, Rat and Toad live along the river.",
+    "Les aventures de Crapaud et de ses amis de la rivière.", "The adventures of Toad and his river friends."],
+  ["nature", "Black Beauty", "Black Beauty", "Anna Sewell",
+    "Un cheval raconte sa vie, des prés aux pavés.", "A horse tells his own life, from meadow to cobblestones.",
+    "La vie racontée par le cheval lui-même, s’il vous plaît.", "The life told by the horse himself, please."],
+  ["nature", "La Vie des abeilles", "The Life of the Bee", "Maurice Maeterlinck",
+    "Une plongée émerveillée dans la ruche et ses lois.", "A wonder-struck dive into the hive and its laws.",
+    "Le livre sur la ruche et ses abeilles.", "The book about the hive and its bees."],
+  ["mystery", "Le Mystère de la chambre jaune", "The Mystery of the Yellow Room", "Gaston Leroux",
+    "Rouletabille enquête sur une agression en chambre close.", "Rouletabille investigates an attack in a locked room.",
+    "L’enquête de Rouletabille dans la chambre close.", "Rouletabille's investigation of the locked room."],
+  ["mystery", "Arsène Lupin, gentleman cambrioleur", "Arsène Lupin, Gentleman Burglar", "Maurice Leblanc",
+    "Un voleur élégant déjoue la police avec panache.", "An elegant thief outwits the police with flair.",
+    "Les exploits du cambrioleur élégant, s’il vous plaît.", "The exploits of the elegant burglar, please."],
+  ["mystery", "Le Signe des quatre", "The Sign of the Four", "Arthur Conan Doyle",
+    "Un trésor disparu et un pacte scellé à quatre.", "A missing treasure and a pact sealed by four men.",
+    "Holmes, un trésor disparu et un pacte à quatre.", "Holmes, a missing treasure and a pact of four."],
+  ["mystery", "Le Scarabée d’or", "The Gold-Bug", "Edgar Allan Poe",
+    "Un parchemin chiffré mène à un trésor enterré.", "A ciphered parchment leads to buried treasure.",
+    "Le parchemin chiffré et le trésor enterré de Poe.", "Poe's ciphered parchment and buried treasure."],
+  ["poetry", "Romances sans paroles", "Romances sans paroles", "Paul Verlaine",
+    "Des vers en demi-teinte, entre pluie et chanson.", "Verse in half-tones, between rain and song.",
+    "Le recueil de Verlaine, entre pluie et chanson.", "Verlaine's collection, between rain and song."],
+  ["poetry", "Une saison en enfer", "A Season in Hell", "Arthur Rimbaud",
+    "Une traversée en prose des tourments d’un poète.", "A prose crossing of a poet's torments.",
+    "La prose brûlante de Rimbaud, s’il vous plaît.", "Rimbaud's burning prose, please."],
+  ["poetry", "Alcools", "Alcools", "Guillaume Apollinaire",
+    "Des poèmes sans ponctuation, du pont Mirabeau aux routes.", "Poems without punctuation, from the Mirabeau bridge to the roads.",
+    "Les poèmes sans ponctuation d’Apollinaire.", "Apollinaire's poems without punctuation."],
+  ["poetry", "Les Chimères", "The Chimeras", "Gérard de Nerval",
+    "Douze sonnets denses aux images de rêve.", "Twelve dense sonnets with dreamlike images.",
+    "Les sonnets de Nerval, s’il vous plaît.", "Nerval's sonnets, please."],
+];
 // Original clues and summaries, not quotations from the books or publisher copy.
 const clues = [
   ["Je voudrais suivre Phileas Fogg dans son pari autour du monde.", "I'd like to follow Phileas Fogg on his wager around the world."],
@@ -68,11 +120,93 @@ function freeze(value) {
   return value;
 }
 
-const catalogue = freeze(titles.map(([fr, en, author, summaryFr, summaryEn], index) => ({
-  id: `book-${index + 1}`, genre: genres[Math.floor(index / 4)],
-  author, title: { fr, en }, summary: { fr: summaryFr, en: summaryEn },
-  request: { fr: clues[index][0], en: clues[index][1] },
-})));
+const curated = [
+  ...titles.map(([fr, en, author, summaryFr, summaryEn], index) => ({
+    genre: genres[Math.floor(index / 4)],
+    author, title: { fr, en }, summary: { fr: summaryFr, en: summaryEn },
+    request: { fr: clues[index][0], en: clues[index][1] },
+  })),
+  ...extraTitles.map(([genre, fr, en, author, summaryFr, summaryEn, clueFr, clueEn]) => ({
+    genre, author, title: { fr, en }, summary: { fr: summaryFr, en: summaryEn },
+    request: { fr: clueFr, en: clueEn },
+  })),
+];
+
+// Registry works keep their catalogued title in both languages; requests and
+// summaries are honest title/author templates, never invented quotations.
+function registryBooks() {
+  const taken = new Set(curated.flatMap(book => [book.title.fr.toLowerCase(), book.title.en.toLowerCase()]));
+  const books = [];
+  for (const genre of genres) {
+    for (const work of REGISTRY.genres?.[genre] ?? []) {
+      const title = typeof work.title === "string" ? work.title.trim() : "";
+      const author = typeof work.author === "string" ? work.author.trim() : "";
+      if (!title || !author || taken.has(title.toLowerCase())) continue;
+      taken.add(title.toLowerCase());
+      books.push({
+        genre, author,
+        title: { fr: title, en: title },
+        summary: {
+          fr: `Un ouvrage de ${author}${work.year ? `, publié vers ${work.year}` : ""}. Catalogue Open Library.`,
+          en: `A work by ${author}${work.year ? `, first published around ${work.year}` : ""}. Open Library catalogue.`,
+        },
+        request: {
+          fr: `Auriez-vous « ${title} », de ${author} ?`,
+          en: `Would you have “${title}”, by ${author}?`,
+        },
+      });
+    }
+  }
+  return books;
+}
+
+export const catalogue = freeze([...curated, ...registryBooks()]
+  .map((book, index) => ({ ...book, id: `book-${index + 1}` })));
+export const catalogueSource = freeze({
+  source: REGISTRY.source ?? "", sourceUrl: REGISTRY.sourceUrl ?? "",
+  license: REGISTRY.license ?? "", retrievedAt: REGISTRY.retrievedAt ?? "",
+});
+
+// One personal wish per shelf theme; the reaction quotes the served title.
+const WISHES = freeze({
+  voyages: {
+    fr: "J’ai besoin de m’évader loin du quotidien : un grand départ vers des terres lointaines me ferait du bien.",
+    en: "I need an escape from everyday life: a great departure toward faraway lands would lift my spirits.",
+  },
+  nature: {
+    fr: "J’ai envie de grand air : un livre où respirent les bêtes et les forêts.",
+    en: "I long for open air: a book where animals and forests breathe.",
+  },
+  mystery: {
+    fr: "Il me faut une énigme à démêler au coin du feu.",
+    en: "I need a puzzle to untangle by the fire.",
+  },
+  poetry: {
+    fr: "Je voudrais des vers qui me portent un peu plus loin que la journée.",
+    en: "I would like verse that carries me a little beyond the day.",
+  },
+  history: {
+    fr: "Faites-moi traverser une autre époque, celle des récits vrais.",
+    en: "Take me across another age, the one of true stories.",
+  },
+  tales: {
+    fr: "Racontez-moi une histoire comme on en raconte aux veillées.",
+    en: "Tell me a story like the ones told at evening gatherings.",
+  },
+  theatre: {
+    fr: "Donnez-moi des répliques à lire à voix haute.",
+    en: "Give me lines to read aloud.",
+  },
+  science: {
+    fr: "Je veux comprendre comment le monde tient ensemble.",
+    en: "I want to understand how the world holds together.",
+  },
+});
+const wishReaction = freeze({
+  fr: title => `« ${title} », c’est exactement ce qu’il me fallait. Merci !`,
+  en: title => `“${title}” is exactly what I needed. Thank you!`,
+});
+
 const settings = freeze([
   { shelves: 2, slots: 2, requests: 2, durationMs: 120000, mistakeLimit: 5, rewardMultiplier: 1 },
   { shelves: 2, slots: 3, requests: 3, durationMs: 140000, mistakeLimit: 5, rewardMultiplier: 1.25 },
@@ -136,22 +270,24 @@ export function createGame({ level = 0, language = "fr", random = Math.random, n
   time(now);
   if (typeof random !== "function") throw new TypeError("Random must be a function.");
   if (now > Number.MAX_SAFE_INTEGER - config.durationMs) throw new RangeError("Clock overflow.");
-  const books = catalogue.filter((book, index) => genres.indexOf(book.genre) < config.shelves && index % 4 < config.slots);
+  const shelves = shuffle(genres, random).slice(0, config.shelves);
+  const books = shelves.flatMap(genre =>
+    shuffle(catalogue.filter(book => book.genre === genre), random).slice(0, config.slots));
   const requests = shuffle(books, random).slice(0, config.requests)
     .map(book => ({ bookId: book.id, text: book.request }));
-  if (resonance) requests[0] = {
-    acceptedBookIds: ["book-1", "book-2"],
-    text: {
-      fr: "J’ai besoin de m’évader loin du quotidien : un départ vers des escales lointaines ou une aventure de pirates me ferait du bien.",
-      en: "I need an escape from everyday life: a journey to faraway stops or a pirate adventure would lift my spirits.",
-    },
-    reactions: {
-      "book-1": { fr: "Ce pari autour du globe m’offre les escales et l’évasion dont j’avais besoin. Merci !", en: "This wager around the globe gives me the faraway stops and escape I needed. Thank you!" },
-      "book-2": { fr: "Cette aventure de pirates m’emporte loin du quotidien. C’est exactement mon envie, merci !", en: "This pirate adventure takes me far from everyday life. Just the escape I wanted, thank you!" },
-    },
-  };
+  if (resonance) {
+    const wished = books.filter(book => book.genre === shelves[0])
+      .sort((a, b) => Number(a.id.split("-")[1]) - Number(b.id.split("-")[1])).slice(0, 2);
+    requests[0] = {
+      acceptedBookIds: wished.map(book => book.id),
+      text: WISHES[shelves[0]],
+      reactions: Object.fromEntries(wished.map(book => [book.id, {
+        fr: wishReaction.fr(book.title.fr), en: wishReaction.en(book.title.en),
+      }])),
+    };
+  }
   return state({
-    level, language, resonance, reaction: null, config, books: shuffle(books, random), shelves: genres.slice(0, config.shelves),
+    level, language, resonance, reaction: null, config, books: shuffle(books, random), shelves,
     slots: Array(config.shelves * config.slots).fill(null), requests, requestIndex: 0,
     selected: null, status: "sorting", score: 0, maxScore: books.length + requests.length,
     mistakes: 0, feedback: "ready", startedAt: now, lastNow: now, deadline: now + config.durationMs,

@@ -486,11 +486,16 @@ export function setupPursuit({ context, act, doc = document }) {
   doc.addEventListener("close", () => queueMicrotask(update), true);
   function update() {
     const current = context(), state = current?.state, info = pursuitStatus(state);
-    status.hidden = !info;
+    // The protected-day countdown is deliberately not surfaced: newspapers and
+    // inhabitants hint at the pursuit in-world instead of a mechanical notice.
+    const concealed = !info || info.stage === "grace";
+    status.hidden = concealed;
     if (!info) return;
-    status.textContent = text(info.stage, { hours: Math.ceil(info.grace / 60), km: info.gap.toFixed(1) });
-    status.title = text("pace");
-    status.dataset.feedback = ["near", "danger", "escape"].includes(info.stage) ? "failure" : "";
+    if (!concealed) {
+      status.textContent = text(info.stage, { hours: Math.ceil(info.grace / 60), km: info.gap.toFixed(1) });
+      status.title = text("pace");
+      status.dataset.feedback = ["near", "danger", "escape"].includes(info.stage) ? "failure" : "";
+    }
     const pending = state.pursuit.pending;
     if (!pending) return;
     const next = `${state.startedAt}:${pending.id}`;

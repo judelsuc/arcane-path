@@ -69,6 +69,9 @@ mark.text-highlight {
   font-weight: 700;
 }
 
+/* Gameplay-effect notes inside bar tooltips; hidden in plain label layouts. */
+.needs-effect { display: none; color: #b8c0af; }
+
 [role="status"][aria-busy="true"] {
   padding: 10px 12px;
   border: 1px solid currentColor;
@@ -682,12 +685,13 @@ dialog {
   width: min(850px, calc(100% - 32px));
   max-height: 90vh;
   overflow: auto;
-  border: 1px solid var(--line);
+  border: 2px solid #4c5c4b;
   background: #121a14;
   color: #e5e7d9;
+  box-shadow: inset 0 0 0 1px #0c120d, inset 0 0 0 4px #212f23, 0 18px 70px rgb(0 0 0 / 55%);
 }
 
-dialog::backdrop { background: rgb(0 0 0 / 75%); }
+dialog::backdrop { background: rgb(5 9 6 / 82%); }
 dialog img { display: block; max-width: 100%; max-height: 60vh; margin: 16px auto; }
 dialog p { margin: 12px 0; }
 
@@ -997,6 +1001,14 @@ dialog p { margin: 12px 0; }
 .journal-cover-art { display: block; width: min(100%, 520px); height: auto; margin: 20px auto; border-radius: 8px; }
 .journal-cover a { display: block; font-size: .8rem; overflow-wrap: anywhere; }
 #cafe-dialog { width: min(760px, 94vw); max-height: 90dvh; overflow: auto; }
+#cafe-dialog.cafe-flash { animation: cafe-error-flash 0.45s ease-out; }
+@keyframes cafe-error-flash {
+  0%, 55% { box-shadow: inset 0 0 0 100vmax rgb(205 60 50 / 40%); }
+  100% { box-shadow: inset 0 0 0 100vmax transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #cafe-dialog.cafe-flash { animation: none; }
+}
 #earn-money-dialog { width: min(680px, 94vw); max-height: 90dvh; overflow: auto; }
 #earn-money-dialog section { border-top: 1px solid var(--line); padding-block: 12px; }
 #cafe-dialog select { max-width: 100%; }
@@ -1076,15 +1088,17 @@ dialog p { margin: 12px 0; }
 
 .travel-active {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  grid-template-rows: auto 1fr;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(205px, 300px);
+  grid-template-rows: auto minmax(0, 1fr);
+  align-items: stretch;
 }
 
 .travel-overview { padding: 16px; font-size: 0.75rem; line-height: 1.6; overflow-wrap: anywhere; }
 .travel-overview h3 { margin: 0 0 10px; }
-.travel-active .travel-overview { grid-column: 2; grid-row: 1; border-left: 1px solid var(--line); }
-.travel-active .map-comparison { grid-column: 1; grid-row: 1 / 3; }
+.travel-active .travel-overview { grid-column: 1 / -1; grid-row: 1; min-height: 0; }
+.travel-active .map-comparison { grid-column: 1; grid-row: 2; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.travel-active .comparison-panel { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+.travel-active .comparison-panel > .map-viewport { flex: 1; min-height: 0; max-height: none; }
 .travel-active .travel-panel {
   grid-column: 2;
   grid-row: 2;
@@ -1093,7 +1107,15 @@ dialog p { margin: 12px 0; }
   border-left: 1px solid var(--line);
   font-size: 0.75rem;
   overflow-wrap: anywhere;
+  min-height: 0;
+  overflow-y: auto;
 }
+.travel-panel .cell-content { margin-top: 14px; padding: 12px 0 0; }
+.travel-panel .legend-card { margin-top: 14px; padding: 12px 14px; box-shadow: none; }
+.travel-panel .legend-card h2 { font-size: 1rem; margin-bottom: 10px; }
+#traveller-status { padding-bottom: 10px; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
+#traveller-status p { margin: 4px 0; }
+#traveller-status #journey-ended { margin-top: 8px; padding: 10px; border: 2px solid var(--accent); border-radius: 6px; }
 
 .travel-actions { display: grid; gap: 8px; }
 #parent-recollection, #artifact-recovery {
@@ -1116,7 +1138,188 @@ dialog p { margin: 12px 0; }
 }
 .travel-toolbar .button-shortcut { font-size: 1rem; }
 .travel-toolbar { padding: 8px; border: 1px solid var(--line); background: #101711cc; border-radius: 6px; }
-.travel-active .map-viewport { max-height: 58dvh; }
+
+/* Console frame: while travelling, the page never scrolls; gameplay stays pinned
+   and only the secondary panel scrolls. */
+@media (min-width: 761px) {
+  body.is-travelling {
+    height: 100dvh;
+    overflow: hidden;
+  }
+  body.is-travelling .game-shell {
+    width: min(100% - 32px, 1720px);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    padding: 8px 0;
+  }
+  body.is-travelling #game-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  body.is-travelling .map-card {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  body.is-travelling .map-heading { padding: 2px 12px; }
+  body.is-travelling .map-heading h2 { font-size: 0.85rem; }
+  body.is-travelling .map-heading button { min-height: 22px; padding: 1px 8px; font-size: 0.65rem; }
+  body.is-travelling .map-scale { font-size: 0.62rem; }
+  body.is-travelling .masthead { margin-bottom: 2px; gap: 4px 10px; }
+  body.is-travelling .masthead p { margin: 0; font-size: 0.72rem; }
+  body.is-travelling .masthead button { min-height: 22px; padding: 1px 8px; font-size: 0.65rem; }
+  /* The menu lives inside the HUD bar, Qud-style: one top strip for everything. */
+  body.is-travelling .game-shell { position: relative; }
+  body.is-travelling.is-travelling .masthead {
+    position: absolute;
+    top: 76px;
+    right: 14px;
+    z-index: 6;
+    margin: 0;
+    width: auto;
+    max-width: 240px;
+    justify-content: flex-end;
+  }
+  body.is-travelling .masthead .masthead-tools { margin: 0; }
+  body.is-travelling .masthead .masthead-actions { justify-content: flex-end; gap: 6px; }
+  /* Icon menu buttons; labels stay available to assistive technology. */
+  body.is-travelling .masthead button {
+    min-height: 30px;
+    min-width: 30px;
+    padding: 0 4px;
+    font-size: 0;
+  }
+  body.is-travelling .masthead button::before { font-size: 1rem; line-height: 1; }
+  body.is-travelling #open-journal::before { content: "📖"; }
+  body.is-travelling #open-controls::before { content: "⌨\FE0F"; }
+  body.is-travelling #open-options::before { content: "⚙\FE0F"; }
+  body.is-travelling #open-change-request::before { content: "✎"; color: var(--accent); }
+  body.is-travelling #map-workspace { flex: 1; min-height: 0; }
+  body.is-travelling .map-meta { padding-block: 4px; }
+  body.is-travelling .status-line { display: none; }
+  body.is-travelling .travel-active .map-viewport { padding: 10px; }
+  body.is-travelling .travel-active .comparison-panel h3 { padding: 6px 12px; }
+  /* Qud-style translucent HUD strip: a tiny agenda square with vitals bars alongside. */
+  body.is-travelling .travel-active .travel-overview {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 2px 14px;
+    padding: 2px 200px 2px 10px;
+    min-height: 58px;
+    border-bottom: 1px solid rgb(90 107 88 / 55%);
+    background: rgb(13 19 14 / 72%);
+    font-size: 0.68rem;
+    line-height: 1.4;
+    pointer-events: none;
+  }
+  body.is-travelling .travel-overview > * { pointer-events: auto; }
+  body.is-travelling .travel-overview > h3 { display: none; }
+  body.is-travelling .travel-overview p { margin: 0; }
+  body.is-travelling #dog-travel { min-height: 26px; padding: 2px 6px; font-size: 0.65rem; }
+  body.is-travelling .journey-atmosphere {
+    align-items: center;
+    gap: 2px 8px;
+    padding: 2px 8px 2px 0;
+    border: 0;
+    border-right: 1px solid rgb(90 107 88 / 45%);
+    border-radius: 0;
+    background: none;
+  }
+  body.is-travelling .travel-sky { display: none; }
+  body.is-travelling .agenda-page { padding: 0 6px 2px; box-shadow: none; }
+  body.is-travelling .agenda-weekday { padding: 1px 2px; font-size: 0.45rem; }
+  body.is-travelling .agenda-day { font-size: 0.95rem; padding-top: 1px; }
+  body.is-travelling .agenda-month { font-size: 0.45rem; }
+  body.is-travelling .agenda-year { display: none; }
+  body.is-travelling .clock-face { width: 34px; }
+  body.is-travelling .weather-card h4 { display: none; }
+  body.is-travelling #weather-display:not([hidden]) { grid-auto-flow: column; align-items: center; gap: 5px; }
+  body.is-travelling .weather-icon { width: 20px; height: 17px; }
+  body.is-travelling #weather-temperature { font-size: 0.72rem; }
+  body.is-travelling #weather-condition { font-size: 0.58rem; }
+  body.is-travelling #weather-tooltip { bottom: auto; top: calc(100% + 8px); }
+  body.is-travelling .player-needs {
+    flex: 1;
+    align-self: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    gap: 3px 14px;
+  }
+  body.is-travelling .player-needs h4 { display: none; }
+  body.is-travelling #player-vigilance:not([hidden]),
+  body.is-travelling #player-hygiene:not([hidden]) { display: contents; }
+  body.is-travelling .player-needs label { display: flex; align-items: center; gap: 5px; margin: 0; white-space: nowrap; }
+  body.is-travelling .player-needs meter { width: 56px; }
+  /* Icons instead of bar names; hovering a bar shows its name and gameplay effect. */
+  body.is-travelling .player-needs label { position: relative; cursor: help; }
+  body.is-travelling .player-needs label::before { font-size: 0.85rem; line-height: 1; }
+  body.is-travelling .player-needs label:has(span[data-i18n="needsHealth"])::before { content: "♥"; color: #e4766f; }
+  body.is-travelling .player-needs label:has(span[data-i18n="needsHunger"])::before { content: "🍞"; }
+  body.is-travelling .player-needs label:has(span[data-i18n="needsFatigue"])::before { content: "⚡"; }
+  body.is-travelling .player-needs label:has(span[data-i18n="needsSleep"])::before { content: "☾"; color: #d4cbff; }
+  body.is-travelling .player-needs label:has(span[data-i18n="pressureVigilance"])::before { content: "👁"; }
+  body.is-travelling .player-needs label:has(span[data-i18n="pressureCleanliness"])::before { content: "💧"; }
+  body.is-travelling .player-needs .needs-tip { font-size: 0; }
+  body.is-travelling .player-needs label:hover > .needs-tip,
+  body.is-travelling .player-needs label:focus-within > .needs-tip {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 12;
+    width: 220px;
+    padding: 5px 8px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: #101711;
+    font-size: 0.68rem;
+    line-height: 1.35;
+    white-space: normal;
+    box-shadow: 0 4px 12px #0008;
+  }
+  body.is-travelling .player-needs label:hover > .needs-tip > span,
+  body.is-travelling .player-needs label:focus-within > .needs-tip > span { display: block; }
+  body.is-travelling .player-needs label:hover > .needs-tip > span:first-child,
+  body.is-travelling .player-needs label:focus-within > .needs-tip > span:first-child { color: var(--accent); }
+  body.is-travelling #needs-warning, body.is-travelling #journey-ended { flex-basis: 100%; }
+  /* The fixed-camera travel map fills the pinned map box instead of assuming a scrolling page. */
+  body.is-travelling .map-comparison .travel-viewport { container-type: size; padding: 8px; }
+  body.is-travelling .ascii-map.travel-map {
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    aspect-ratio: 1 / 1;
+    font-size: clamp(8px, min(3.2cqi, 4.2cqb), 18px);
+  }
+  /* Demote technical noise so the map stays the centre of attention. */
+  body.is-travelling .map-country { display: none; }
+  body.is-travelling .technical-details { margin-block: 2px; font-size: 0.68rem; opacity: 0.75; }
+  /* Transient travel notices float over the map so its size never jumps mid-step. */
+  body.is-travelling .travel-active .comparison-panel { position: relative; }
+  body.is-travelling .travel-active .comparison-panel
+    :is(#travel-blocker, #travel-streaming, #cell-info, #copy-coordinates-status):not([hidden]):not(:empty) {
+    position: absolute;
+    left: 14px;
+    max-width: min(72%, 460px);
+    z-index: 3;
+    margin: 0;
+    padding: 3px 8px;
+    background: rgb(13 19 14 / 85%);
+    border: 1px solid rgb(90 107 88 / 45%);
+    border-radius: 4px;
+    font-size: 0.68rem;
+    pointer-events: none;
+  }
+  body.is-travelling .travel-active .comparison-panel #travel-streaming:not([hidden]):not(:empty) { bottom: 84px; }
+  body.is-travelling .travel-active .comparison-panel #travel-blocker:not([hidden]):not(:empty) { bottom: 114px; }
+  body.is-travelling .travel-active .comparison-panel #cell-info:not([hidden]):not(:empty) { bottom: 144px; }
+  body.is-travelling .travel-active .comparison-panel #copy-coordinates-status:not([hidden]):not(:empty) { bottom: 84px; left: auto; right: 14px; }
+}
 .travel-overview p { margin-block: 6px; }
 #open-survival-choices { border: 2px solid var(--accent); }
 #travel-toolbar-help { font-size: 0.8rem; margin-block: 4px 10px; }
@@ -1251,6 +1454,30 @@ dialog p { margin: 12px 0; }
 #weather-tooltip:hover, #weather-tooltip:focus-within { display: block; }
 #travel-status { margin: 10px 0 0; color: #e6b767; overflow-wrap: anywhere; }
 #travel-note { margin-bottom: 0; color: var(--muted); }
+#pressure-panel { position: relative; }
+#pressure-display { cursor: help; }
+#pressure-display:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+#pressure-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 10;
+  width: 260px;
+  max-width: calc(100vw - 48px);
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: #101711;
+  color: #e5e7d9;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  box-shadow: 0 4px 12px #0008;
+}
+#pressure-tooltip p { margin: 4px 0; }
+#pressure-display:hover ~ #pressure-tooltip, #pressure-display:focus ~ #pressure-tooltip,
+#pressure-tooltip:hover, #pressure-tooltip:focus-within { display: block; }
 .map-comparison .travel-viewport {
   display: flex;
   justify-content: center;
@@ -1336,14 +1563,18 @@ dialog p { margin: 12px 0; }
     grid-column: 1;
     grid-row: 2;
     border-left: 0;
+    border-right: 0;
+    overflow-y: visible;
   }
-  .travel-active .map-comparison { grid-column: 1; grid-row: 1; }
+  .travel-active .map-comparison { grid-column: 1; grid-row: 1; display: grid; overflow: visible; }
+  .travel-active .comparison-panel { display: block; }
   .travel-active .map-viewport { max-height: 45dvh; }
   .travel-active .travel-panel {
     grid-column: 1;
     grid-row: 3;
     border-left: 0;
     border-top: 1px solid var(--line);
+    overflow-y: visible;
   }
 }
 
@@ -1426,6 +1657,9 @@ dialog p { margin: 12px 0; }
 }
 .preview-help-dialog p { line-height: 1.55; }
 .preview-help-dialog > button { position: sticky; top: 0; min-height: 44px; }
+.window-help-dialog h3 { margin: 18px 0 6px; font-size: 0.85rem; color: var(--muted); }
+.window-help-technical { border-top: 1px solid var(--line); padding-top: 6px; }
+.window-help-technical .window-help-technical-item { margin-block: 6px; font-size: 0.75rem; color: var(--muted); overflow-wrap: anywhere; }
 #dog-travel:not([hidden]) { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; margin-block: 8px; }
 #dog-travel svg { width: 52px; height: 48px; flex-shrink: 0; }
 #dog-travel .dog-status-label { min-width: 0; overflow-wrap: anywhere; }
@@ -1449,6 +1683,53 @@ dialog p { margin: 12px 0; }
 #equipment-dialog .inventory-item[aria-pressed="true"] { border: 3px solid #ffd276; background: #596448; }
 #equipment-dialog .inventory-item svg { width: 90%; height: 90%; }
 #equipment-dialog .inventory-item span { position: absolute; right: 3px; bottom: 1px; background: #151c22; font-size: .7rem; padding: 1px 3px; }
+#equipment-shop-dialog {
+  width: min(620px, 94vw);
+  max-height: 90dvh;
+  overflow: auto;
+  font-size: 0.8rem;
+  border: 2px solid #6d5633;
+  padding: 26px 20px 18px;
+  background:
+    repeating-linear-gradient(90deg, #8c3732 0 30px, #e3d9b8 30px 60px) top / 100% 14px no-repeat,
+    linear-gradient(rgb(18 26 20 / 60%), rgb(18 26 20 / 86%)),
+    repeating-linear-gradient(180deg, transparent 0 84px, #54401f 84px 90px, rgb(27 19 8 / 60%) 90px 96px),
+    #262016;
+}
+#equipment-shop-dialog h2 {
+  margin: 4px 0 0;
+  color: var(--accent);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.3rem;
+  font-weight: 400;
+}
+#equipment-shop-dialog .shop-subtitle { margin: 2px 0 10px; color: var(--muted); font-size: 0.75rem; }
+#equipment-shop-dialog p { margin: 8px 0; }
+#equipment-shop-dialog fieldset { border: 0; padding: 0; min-width: 0; }
+#equipment-shop-dialog ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; }
+#equipment-shop-dialog li {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 2px 12px;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid #6d5633;
+  border-radius: 4px;
+  background: rgb(16 23 17 / 85%);
+  box-shadow: 0 6px 14px rgb(0 0 0 / 35%);
+}
+#equipment-shop-dialog .catalogue-art { grid-row: 1 / 4; align-self: center; }
+#equipment-shop-dialog .catalogue-art svg { width: 44px; height: 40px; }
+#equipment-shop-dialog li strong { font-size: 0.8rem; }
+#equipment-shop-dialog li .window-help-text { margin: 0; font-size: 0.72rem; }
+#equipment-shop-dialog li button {
+  grid-column: 2;
+  justify-self: start;
+  margin: 4px 0 0;
+  padding: 4px 12px;
+  min-height: 32px;
+  font-size: 0.75rem;
+}
 .quest-tabs, .quest-command-block {
   display: flex;
   flex-wrap: wrap;

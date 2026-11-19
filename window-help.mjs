@@ -13,11 +13,19 @@ export function setupWindowHelp(doc, {
   close.type = "button";
   close.autofocus = true;
   const content = doc.createElement("div");
+  const technicalHeading = doc.createElement("h3");
+  const technicalBlock = doc.createElement("div");
+  technicalBlock.className = "window-help-technical";
   const timing = doc.createElement("p");
-  dialog.append(heading, close, content, timing);
+  dialog.append(heading, close, content, technicalHeading, technicalBlock, timing);
   doc.body.append(dialog);
   const hidden = new Map(), triggers = new Map(), folded = new Map();
   let opener = null, activeHost = null, signature = "";
+
+  // Alerts, failures and busy indicators must stay visible in place; everything
+  // else technical lives in the on-demand help dialog instead of inline folds.
+  const needsInline = node => node.getAttribute?.("role") === "alert" ||
+    node.dataset?.feedback === "failure" || node.ariaBusy === "true";
 
   function sync() {
     const words = getWords();
@@ -25,43 +33,42 @@ export function setupWindowHelp(doc, {
     if (heading.textContent !== words.help) heading.textContent = words.help;
     if (close.textContent !== words.close) close.textContent = words.close;
     if (timing.textContent !== words.timing) timing.textContent = words.timing;
-    for (const [node, { wrapper }] of folded) {
-      if (!node.isConnected) {
-        if (wrapper.isConnected) wrapper.remove();
+    if (technicalHeading.textContent !== words.details) technicalHeading.textContent = words.details;
+    for (const [node, meta] of folded) {
+      if (!meta.placeholder.isConnected || !node.isConnected) {
+        if (meta.holder.contains(node)) node.remove();
+        meta.holder.remove();
+        meta.placeholder.remove();
         folded.delete(node);
-      } else if (!node.matches(foldedSelector)) {
-        wrapper.before(node);
-        wrapper.remove();
+      } else if (!node.matches(foldedSelector) || needsInline(node)) {
+        meta.placeholder.before(node);
+        meta.placeholder.remove();
+        meta.holder.remove();
         folded.delete(node);
       }
     }
     for (const node of foldedSelector ? doc.querySelectorAll(foldedSelector) : []) {
-      if (dialog.contains(node) || node.matches(sourceSelector)) continue;
-      if (node.ariaBusy === "true") {
-        const previous = folded.get(node);
-        if (previous) {
-          previous.wrapper.before(node);
-          previous.wrapper.remove();
-          folded.delete(node);
-        }
-        continue;
-      }
-      if (!folded.has(node)) {
-        if (node.closest("details")) continue;
-        const wrapper = doc.createElement("details"), summary = doc.createElement("summary");
-        wrapper.className = "technical-details";
-        node.before(wrapper);
-        wrapper.append(summary, node);
-        folded.set(node, { wrapper, summary });
-      }
-      const { wrapper, summary } = folded.get(node);
-      const failed = node.getAttribute?.("role") === "alert" || node.dataset?.feedback === "failure";
-      const label = failed ? words.failure : words.details;
-      if (summary.textContent !== label) summary.textContent = label;
-      const empty = node.hidden || !node.textContent.trim();
-      if (wrapper.hidden !== empty) wrapper.hidden = empty;
-      wrapper.dataset.feedback = failed && !empty ? "failure" : "";
+      if (dialog.contains(node) || node.matches(sourceSelector) || folded.has(node)) continue;
+      if (needsInline(node)) continue;
+      if (node.closest("details")) continue;
+      const placeholder = doc.createElement("span");
+      placeholder.hidden = true;
+      node.before(placeholder);
+      const holder = doc.createElement("div");
+      holder.className = "window-help-technical-item";
+      holder.append(node);
+      technicalBlock.append(holder);
+      folded.set(node, { placeholder, holder, host: placeholder.closest(hostSelector) });
     }
+    let anyTechnical = false;
+    for (const [node, meta] of folded) {
+      const empty = node.hidden || !node.textContent.trim();
+      const foreign = contextual && activeHost && meta.host !== activeHost;
+      meta.holder.hidden = empty || Boolean(foreign);
+      if (!meta.holder.hidden) anyTechnical = true;
+    }
+    technicalHeading.hidden = !anyTechnical;
+    technicalBlock.hidden = !anyTechnical;
     const sources = [...doc.querySelectorAll(sourceSelector)].filter(node => !dialog.contains(node));
     for (const node of sources) {
       if (!hidden.has(node)) hidden.set(node, node.hidden);
@@ -122,8 +129,8 @@ export function setupWindowHelp(doc, {
   sync();
   const observer = new doc.defaultView.MutationObserver(records => {
     const changed = records.some(record => {
-      if (dialog.contains(record.target)) return false;
       const target = record.target.nodeType === 3 ? record.target.parentElement : record.target;
+      if (dialog.contains(record.target) && !(target && technicalBlock.contains(target))) return false;
       if (folded.has(target)) return true;
       if (target?.closest?.(sourceSelector)) return true;
       if (foldedSelector && target?.closest?.(foldedSelector)) return true;
@@ -150,10 +157,10 @@ export function setupWindowHelp(doc, {
         button.remove();
       }
       for (const [node, wasHidden] of hidden) node.hidden = wasHidden;
-      for (const [node, { wrapper }] of folded) {
-        if (!wrapper.isConnected) continue;
-        wrapper.before(node);
-        wrapper.remove();
+      for (const [node, { placeholder, holder }] of folded) {
+        if (placeholder.isConnected) placeholder.before(node);
+        placeholder.remove();
+        holder.remove();
       }
       dialog.remove();
     },

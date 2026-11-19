@@ -1,0 +1,20 @@
+[Unit]
+Description=Arcane Path daily bookshop catalogue refresh from Open Library
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/opt/arcane-path/scripts/update_bookshop_catalogue.py
+
+[Service]
+Type=oneshot
+User=arcane
+Group=arcane
+WorkingDirectory=/opt/arcane-path
+ExecStart=/usr/bin/python3 scripts/update_bookshop_catalogue.py --output /var/lib/arcane-path/bookshop-catalogue.json
+TimeoutStartSec=5min
+Nice=15
+UMask=0022
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/arcane-path

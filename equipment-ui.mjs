@@ -1,5 +1,6 @@
 import { ITEMS, CAPACITY_GRAMS, equipmentModifiers, equipmentAction, companionCondition } from "./equipment.mjs";
 import { equipmentShopAvailable } from "./equipment-journey.mjs";
+import { publicPlace } from "./towns.mjs";
 import { renderInventory } from "./equipment-inventory-ui.mjs";
 import { itemArt, companionArt } from "./equipment-art.mjs";
 import { dailyTarotPending } from "./economy.mjs";
@@ -15,6 +16,7 @@ const copy = {
     boots: "Chaussures", backpack: "Sac à dos", raincoat: "Imperméable",
     sleepingBag: "Sac de couchage", tent: "Tente", camera: "Appareil photo", knife: "Couteau",
     buy: "Acheter", repair: "Réparer", discard: "Abandonner sans remboursement", minutes: "min",
+    genericShop: "La boutique du bourg",
     shop: "Achats, réparations et provisions disponibles dans cette localité. Prix de jeu fixes.",
     noShop: "Rejoignez une localité pour acheter, réparer ou obtenir des provisions pour le chien.",
     shopHelp: "Pour acheter des objets, ouvrez le menu de la ville puis « Acheter des objets ».",
@@ -42,6 +44,7 @@ const copy = {
     boots: "Boots", backpack: "Backpack", raincoat: "Raincoat",
     sleepingBag: "Sleeping bag", tent: "Tent", camera: "Camera", knife: "Knife",
     buy: "Buy", repair: "Repair", discard: "Discard without refund", minutes: "min",
+    genericShop: "The village shop",
     shop: "Purchases, repairs and supplies available in this settlement. Fixed game prices.",
     noShop: "Reach a settlement to buy equipment, repair it or obtain dog supplies.",
     shopHelp: "To buy equipment, open the town menu and choose “Buy equipment”.",
@@ -65,6 +68,19 @@ const copy = {
     done: "Done.", error: "Action unavailable", stale: "The journey changed. Try again.",
   },
 };
+
+const SHOP_PREFERENCE = ["outdoor", "sports", "clothes", "shoes", "bag", "department_store",
+  "general", "variety_store", "mall", "supermarket", "convenience", "hardware", "doityourself"];
+
+// Deterministically selects the town's mapped boutique: equipment-relevant shops first.
+export function townBoutique(cell) {
+  const rank = poi => {
+    const index = SHOP_PREFERENCE.indexOf(poi.tags.shop);
+    return index === -1 ? SHOP_PREFERENCE.length : index;
+  };
+  return (cell?.pois ?? []).filter(poi => poi.category === "shop" && publicPlace(poi))
+    .sort((a, b) => rank(a) - rank(b) || a.osmId.localeCompare(b.osmId))[0] ?? null;
+}
 
 export function setupEquipment(t, { context, act, treasureAction }) {
   const trigger = document.querySelector("#equipment-travel");
@@ -125,8 +141,13 @@ export function setupEquipment(t, { context, act, treasureAction }) {
     renderedState = state;
     renderedLanguage = language;
     dialog.replaceChildren();
-    node("h2", shopping ? t("equipmentShopTitle") : pending ? w.encounter : w.title).id =
+    const boutique = shopping ? townBoutique(cell) : null;
+    node("h2", shopping ? boutique?.name ?? w.genericShop : pending ? w.encounter : w.title).id =
       shopping ? "equipment-shop-heading" : "equipment-heading";
+    if (shopping) {
+      const town = [...(cell?.settlements ?? [])].sort((a, b) => a.osmId.localeCompare(b.osmId))[0];
+      node("p", `${t("equipmentShopTitle")}${town?.name ? ` · ${town.name}` : ""}`).className = "shop-subtitle";
+    }
     const feedback = node("p");
     feedback.className = "equipment-status";
     feedback.setAttribute("role", "status");

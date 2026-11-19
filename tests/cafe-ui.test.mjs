@@ -205,3 +205,69 @@ test(`${language} Temperance revised order is highlighted without changing the t
   ui.reset();
 });
 }
+
+test("an incorrect tray flashes the cafe dialog; correct serves do not", t => {
+  const original = { document: globalThis.document, performance: globalThis.performance,
+    setInterval: globalThis.setInterval, clearInterval: globalThis.clearInterval, random: Math.random };
+  t.after(() => {
+    Object.assign(globalThis, { document: original.document, performance: original.performance,
+      setInterval: original.setInterval, clearInterval: original.clearInterval });
+    Math.random = original.random;
+  });
+  class Element {
+    children = []; events = {}; attributes = {}; dataset = {}; style = {}; textContent = ""; className = "";
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    addEventListener(name, fn) { this.events[name] = fn; }
+    setAttribute(name, value) { this.attributes[name] = value; }
+    remove() { this.removed = true; }
+    showModal() { this.open = true; }
+    close() { this.open = false; this.events.close?.(); }
+    click() { if (!this.disabled) this.events.click?.(); }
+    focus() {}
+  }
+  let doc;
+  const elements = new Map(), element = id => {
+    if (!elements.has(id)) {
+      const created = new Element();
+      created.ownerDocument = doc;
+      elements.set(id, created);
+    }
+    return elements.get(id);
+  };
+  doc = { hidden: false, documentElement: { lang: "fr" }, createElement: () => {
+    const created = new Element();
+    created.ownerDocument = doc;
+    return created;
+  },
+    addEventListener() {}, querySelector: id => id === "dialog[open]"
+      ? [...elements.values()].find(e => e.open) : element(id) };
+  globalThis.document = doc;
+  let now = 0, tick;
+  globalThis.performance = { now: () => now };
+  globalThis.setInterval = fn => { tick = fn; return 1; };
+  globalThis.clearInterval = () => { tick = undefined; };
+  Math.random = () => 0;
+  const current = { state: {}, cell: { pois: [{ osmId: "node/1", name: "Cafe",
+    tags: { amenity: "cafe" } }] }, blocked: false };
+  const ui = setupCafe((key, args) => translate("fr", key, args), {
+    context: () => current,
+    begin: () => cafeDifficulty({}),
+    settle: (served, mistakes, cancelled) => ({ served, orders: 5, mistakes, cancelled,
+      rewardCents: 0, foodKcal: 0 }),
+  });
+  ui.open();
+  element("#cafe-start").click();
+  now = 200; tick();
+  assert.doesNotMatch(element("#cafe-dialog").className, /\bcafe-flash\b/);
+  element("#cafe-coffee").click();
+  element("#cafe-serve").click();
+  assert.match(element("#cafe-dialog").className, /\bcafe-flash\b/,
+    "serving a wrong tray flashes the dialog");
+  element("#cafe-dialog").className = "";
+  for (let i = 0; i < 3; i++) element("#cafe-coffee").click();
+  element("#cafe-serve").click();
+  assert.doesNotMatch(element("#cafe-dialog").className, /\bcafe-flash\b/,
+    "a correct serve does not flash");
+  ui.reset();
+});

@@ -2,24 +2,29 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-test("calendar and player status share an overview before the map and secondary actions", () => {
+test("the travel HUD overlay keeps only vitals; identity and notices live in the side panel", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const overview = html.slice(html.indexOf('id="travel-overview"'), html.indexOf('<section class="travel-panel"'));
   assert.match(overview, /aria-labelledby="travel-title" hidden/);
   assert.ok(overview.indexOf('id="journey-atmosphere"') < overview.indexOf('class="player-needs"'));
-  const needsStart = overview.indexOf('class="player-needs"');
-  const firstMeter = overview.indexOf('id="needs-health"', needsStart);
-  assert.doesNotMatch(overview.slice(needsStart, firstMeter), /<p\b|<button\b/);
-  for (const id of ["player-name", "player-character", "player-wallet", "equipment-travel",
-    "player-food", "player-tarot", "outdoor-status"]) {
-    assert.ok(overview.indexOf(`id="${id}"`) > overview.indexOf('id="needs-warning"'));
-  }
-  for (const id of ["travel-title", "journey-play-save", "travel-clock", "needs-health",
-    "needs-hunger", "needs-fatigue", "needs-sleep", "needs-warning"]) {
+  for (const id of ["travel-title", "travel-clock", "needs-health", "needs-hunger", "needs-fatigue",
+    "needs-sleep", "player-vigilance", "pressure-vigilance", "pressure-vigilance-value",
+    "player-hygiene", "pressure-cleanliness", "dog-travel"]) {
     assert.match(overview, new RegExp(`id="${id}"`));
     assert.equal(html.split(`id="${id}"`).length - 1, 1);
   }
   assert.doesNotMatch(overview, /id="travel-controls"|class="map-comparison"/);
+  assert.doesNotMatch(overview,
+    /id="(?:player-name|player-wallet|player-tarot|equipment-travel|needs-warning|pressure-panel|journey-ended)"/,
+    "the overlay holds no identity lines, wallet, equipment or notices");
+  const sidebar = html.slice(html.indexOf('<section class="travel-panel"'), html.indexOf('<div class="map-comparison"'));
+  const status = sidebar.slice(sidebar.indexOf('id="traveller-status"'), sidebar.indexOf('id="travel-controls"'));
+  for (const id of ["journey-play-save", "needs-speed-effect", "needs-warning", "player-name",
+    "player-character", "player-wallet", "player-food", "player-tarot",
+    "outdoor-status", "pressure-panel", "journey-ended", "closing-story", "restart-travel"]) {
+    assert.match(status, new RegExp(`id="${id}"`));
+    assert.equal(html.split(`id="${id}"`).length - 1, 1);
+  }
   assert.match(overview, /id="pressure-cleanliness-value"><\/output><\/label>\s*<button id="dog-travel" type="button" hidden><\/button>/);
   assert.doesNotMatch(overview, /id="wash-travel"/);
   const town = html.split('<dialog id="town-dialog"')[1].split("</dialog>")[0];
@@ -27,13 +32,6 @@ test("calendar and player status share an overview before the map and secondary 
   assert.equal(html.split('id="wash-travel"').length - 1, 1);
   assert.doesNotMatch(html, /id="cell-wash"/);
   assert.equal(html.split('id="dog-travel"').length - 1, 1);
-  const collapsed = overview.slice(overview.indexOf('<details id="pressure-panel"'));
-  for (const id of ["player-vigilance", "pressure-vigilance", "pressure-vigilance-value",
-    "player-hygiene", "pressure-cleanliness"]) {
-    assert.match(overview, new RegExp(`id="${id}"`));
-    assert.doesNotMatch(collapsed, new RegExp(`id="${id}"`));
-    assert.equal(html.split(`id="${id}"`).length - 1, 1);
-  }
   const script = readFileSync(new URL("../travel-ui.mjs", import.meta.url), "utf8");
   for (const selector of ["travel-toolbar", "travel-toolbar-help", "travel-overview"]) {
     assert.ok(script.includes(`document.querySelector("#${selector}").hidden = !active;`));
@@ -41,10 +39,20 @@ test("calendar and player status share an overview before the map and secondary 
   assert.match(script, /document\.querySelector\("#player-vigilance"\)\.hidden = !pressures;/);
 });
 
-test("mobile layout puts the map and toolbar first, retaining a desktop status sidebar", () => {
+test("console layout pins characteristics and map while secondary data scrolls, keeping the mobile stack", () => {
   const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
-  assert.match(css, /\.travel-active \.travel-overview \{ grid-column: 2; grid-row: 1;/);
-  assert.match(css, /\.travel-active \.map-comparison \{ grid-column: 1; grid-row: 1 \/ 3;/);
+  assert.match(css, /body\.is-travelling \{[^}]*height: 100dvh;[^}]*overflow: hidden;/,
+    "the page itself must not scroll during travel");
+  assert.match(css, /\.travel-active \.travel-overview \{ grid-column: 1 \/ -1; grid-row: 1;/,
+    "the HUD bar spans the full width");
+  assert.match(css, /\.travel-active \.map-comparison \{ grid-column: 1; grid-row: 2;/);
+  assert.match(css, /\.travel-active \.travel-panel \{[^}]*grid-column: 2;[^}]*grid-row: 2;[^}]*overflow-y: auto/);
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const sidebar = html.slice(html.indexOf('<section class="travel-panel"'), html.indexOf('<div class="map-comparison"'));
+  assert.match(sidebar, /class="cell-content"/, "cell details are secondary data in the scrolling panel");
+  assert.match(sidebar, /class="legend-card"/, "the map legend is secondary data in the scrolling panel");
+  assert.equal(html.split('class="legend-card"').length - 1, 1);
+  assert.equal(html.split('class="cell-content"').length - 1, 1);
   const mobile = css.slice(css.indexOf("@media (max-width: 760px)", css.indexOf(".travel-active {")));
   assert.match(mobile, /\.travel-active \.travel-overview \{[^}]*grid-column: 1;[^}]*grid-row: 2;/);
   assert.match(mobile, /\.travel-active \.map-comparison \{ grid-column: 1; grid-row: 1;/);
@@ -58,7 +66,8 @@ test("travel actions are a compact wrapping toolbar immediately below the map, n
   assert.match(html, /id="ascii-map"[^>]*><\/pre>\s*<\/div>\s*<p id="travel-blocker" role="status" hidden><\/p>\s*<p id="travel-streaming" role="status"><\/p>\s*<nav id="travel-toolbar"/);
   assert.equal(html.split('id="travel-blocker"').length - 1, 1);
   assert.equal(html.split('id="travel-streaming"').length - 1, 1);
-  for (const id of ["rest-travel", "open-survival-choices", "open-conversation", "save-travel"]) {
+  for (const id of ["rest-travel", "open-survival-choices", "open-conversation", "save-travel",
+    "equipment-travel", "show-photo"]) {
     assert.match(toolbar, new RegExp(`id="${id}"`));
     assert.equal(html.split(`id="${id}"`).length - 1, 1);
   }

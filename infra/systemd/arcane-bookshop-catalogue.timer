@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh the Arcane Path bookshop catalogue daily at 05:50 Paris time
+
+[Timer]
+OnCalendar=*-*-* 05:50:00 Europe/Paris
+Persistent=true
+Unit=arcane-bookshop-catalogue.service
+
+[Install]
+WantedBy=timers.target

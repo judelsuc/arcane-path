@@ -225,3 +225,23 @@ test("conversation topics and expanded cell actions retain unique shortcuts with
   assert.equal(buttonBindings([{ id: "open-conversation" }])[0].key, "G");
   assert.equal(buttonBindings([{ id: "open-journey-world" }])[0].key, "6");
 });
+
+test("the same action keeps the same shortcut in every window", () => {
+  const families = {
+    H: ["sleep-travel", "cell-sleep", "conversation-shelter", "town-accommodation"],
+    E: ["eat-travel", "cell-buy", "town-services", "conversation-food"],
+    T: ["open-town", "cell-town", "conversation-town"],
+    G: ["open-conversation", "town-conversation", "cell-conversation"],
+    B: ["open-earn-money", "town-earn-money", "cell-earn-money", "conversation-work",
+      "open-music", "town-music", "cell-music"],
+    6: ["open-journey-world", "cell-transport", "conversation-transport"],
+    W: ["open-cafe", "town-cafe", "cell-cafe"],
+    F: ["open-survival-choices", "town-survival-choices"],
+    J: ["open-inscriptions", "cell-inscriptions"],
+  };
+  for (const [key, ids] of Object.entries(families)) {
+    for (const id of ids) {
+      assert.equal(buttonBindings([{ id }])[0].key, String(key), `${id} should use ${key}`);
+    }
+  }
+});

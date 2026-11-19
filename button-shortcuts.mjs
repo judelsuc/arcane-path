@@ -34,6 +34,7 @@ const KEYS = {
   "daily-tarot-draw": "D", "daily-tarot-continue": "Enter",
   "previous-photo": "ArrowLeft", "next-photo": "ArrowRight",
   "town-refresh": "U", "town-services": "E", "town-music": "B",
+  "town-accommodation": "H",
   "music-start": "Enter", "music-tap": "Space",
   "open-cafe": "W", "town-cafe": "W", "cell-cafe": "W",
   "cafe-start": "G", "cafe-serve": "Enter", "cafe-clear": "X",
