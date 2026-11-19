@@ -228,6 +228,38 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Clearer trail, shelter and QTE interfaces, 0.22.21 (19 November 2026)
+
+Deployed runtime `fad7ebd73ab48ef17a00c2de122c280185d7ecf2`, tagged
+`deploy-2026-11-19-ui-clarity`. Parent-trail messages highlight compass
+directions through the new shared `text-highlight.mjs` helper; the visible
+text is unchanged and simplified test documents fall back to plain text.
+Sleep and shelter shows the two nearest accommodations directly under an
+always-visible heading, with remaining results in a folded
+"More accommodation" drawer that refolds on each opening. During a running
+QTE, the cue, timing meter and reaction keys overlay the centre of the
+screen (`data-live` flag) and return inline with the result afterwards.
+No backend, schema or provider change was included.
+
+Validation: the full JavaScript run passed 1,854/1,855; the single failure is
+the unchanged dream-wiring source assertion already failing on the pristine
+baseline and recorded for 0.22.20. No Python code changed. All eight changed
+installed disk hashes matched the local commit, `nginx -t` passed, HTTPS
+returns expected unauthenticated status 401, and the new process journal has
+no errors or tracebacks. Application PID 402203 became 478624; application,
+Nginx and prefetch timer are active.
+
+The manifest mtime was refreshed; a conditional GET using the old release date
+returned 200 with the new manifest.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.21-fad7ebd/runtime.tar.gz`,
+SHA-256 `dfcff52f5ad4ee6dcc7059e67cf0e8e2adbd642847ff3ff6b6ab734a7d9d6602`.
+Restore its eight files under `/opt/arcane-path`, remove the newly added
+`text-highlight.mjs` (see the sibling `NOTES.txt`), refresh the release
+manifest mtime and restart. Do not restore or delete player databases, cached
+narratives, images or provider-job receipts.
+
 ## Persistent pursuit and escape, 0.22.20 (13 November 2026)
 
 Deployed runtime `dc905713c92bfddb1b55daf01f5530bca01db47b`, tagged
