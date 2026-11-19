@@ -16,6 +16,7 @@ import { intimateWitness, parentIntimacy } from "./parent-intimacy.mjs";
 import { parentIntuitionText } from "./parent-recollection.mjs";
 import { fieldSearchAvailable, fieldSearchRules, prepareFieldSearch, fieldClueText, vagueLead,
   recognitionHint, collectedClues, prepareRecognition, openingClue, openingClueText } from "./trail-search.mjs";
+import { compassTerms, highlightPattern, setHighlightedText } from "./text-highlight.mjs";
 
 export function parentClueText(state, discovery, t) {
   const testimony = ["discuss", "buy"].includes(discovery.kind) ? intimateWitness(state, discovery.step, t) : "";
@@ -244,9 +245,17 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     }
   }
 
+  let highlightLanguage, highlightRegex;
+  function directionPattern() {
+    if (highlightLanguage !== document.documentElement.lang) {
+      highlightLanguage = document.documentElement.lang;
+      highlightRegex = highlightPattern(compassTerms(t));
+    }
+    return highlightRegex;
+  }
   function paragraph(container, text, outcome = "", className = "") {
     const p = document.createElement("p");
-    p.textContent = text;
+    setHighlightedText(p, text, directionPattern());
     p.className = className;
     setFeedback(p, outcome);
     container.append(p);
@@ -343,13 +352,14 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         : report && report.stage === current.state.trail?.index
         ? report.outcome === "suggestion" ? "" : "failure"
         : directionsOutcome ? directionsOutcome === "helped" ? "success" : "failure" : "");
-      document.querySelector("#hint-guidance").textContent = directionsTown && directionsOutcome
+      setHighlightedText(document.querySelector("#hint-guidance"), directionsTown && directionsOutcome
         ? directionsOutcome === "helped" ? citedTownDirections(directionsTown, current.info, t)
           : t(`hintOutcome.${directionsOutcome}`)
         : report && report.stage === current.state.trail?.index
         ? reportText(report)
         : directionsOutcome === "helped" && current.state.trail ? playerHint(current.state, current.info, t)
-          : t(directionsOutcome ? `hintOutcome.${directionsOutcome}` : "hintBeforeAsk");
+          : t(directionsOutcome ? `hintOutcome.${directionsOutcome}` : "hintBeforeAsk"),
+      directionPattern());
       const clues = document.querySelector("#hint-clues");
       clues.replaceChildren();
       for (const hint of current.state.trail ? collectedClues(current.state) : []) {
@@ -442,10 +452,11 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     document.querySelector("#trail-intro").textContent = t("trailReminderIntro", { parent: trail.parentName });
     const local = trail.stages.some(stage => stage.geonameId !== undefined);
     document.querySelector("#trail-catalogue-credit").hidden = !local;
-    document.querySelector("#trail-target").textContent = currentPage
+    setHighlightedText(document.querySelector("#trail-target"), currentPage
       ? awaitingLead ? t("trailPageAwaiting", { page: viewedStage + 1, place: trail.stages[trail.index].name })
         : [parentIntuitionText(state, t), trailReminder(state, t)].filter(Boolean).join("\n")
-      : t("trailPageReached", { page: viewedStage + 1, place: trail.stages[viewedStage].name });
+      : t("trailPageReached", { page: viewedStage + 1, place: trail.stages[viewedStage].name }),
+    directionPattern());
     action.disabled = blocked || !atTrailTarget(state);
     action.hidden = modern;
     actionCost.hidden = modern;
@@ -717,8 +728,9 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
         trailEntryDate(state, discovery.elapsedMinutes, document.documentElement.lang, t);
       document.querySelector("#trail-discovery-title").textContent =
         t(discovery.kind === "photo" && trail.exploration ? "fieldClue.photo" : `clueFound.${discovery.kind}`);
-      document.querySelector("#trail-discovery-text").textContent =
-        `${photoUnavailable ? `${t("cluePhotoFallback")} ` : ""}${parentClueText(state, discovery, t)}`;
+      setHighlightedText(document.querySelector("#trail-discovery-text"),
+        `${photoUnavailable ? `${t("cluePhotoFallback")} ` : ""}${parentClueText(state, discovery, t)}`,
+        directionPattern());
     }
     const last = trail.exploration?.lastSearch;
     const latestPhoto = trail.exploration?.hints.find(h => h.kind === "photo" &&

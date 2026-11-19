@@ -63,6 +63,12 @@ html[data-ui-skin]:not([data-ui-skin="default"]) :is(button, input, select, text
 .notebook-page [data-feedback="success"] { color: #216232; }
 .notebook-page [data-feedback="failure"] { color: #a12727; }
 
+mark.text-highlight {
+  background: none;
+  color: var(--accent);
+  font-weight: 700;
+}
+
 [role="status"][aria-busy="true"] {
   padding: 10px 12px;
   border: 1px solid currentColor;
@@ -1794,6 +1800,23 @@ dialog p { margin: 12px 0; }
 .event-qte { border: 1px solid currentColor; padding: 12px; margin-block: 12px; overflow-wrap: anywhere; }
 .event-qte button { min-height: 48px; max-width: 100%; margin: 4px; white-space: normal; }
 .event-qte-target { font-weight: bold; }
+.event-qte-prompt { text-align: center; }
+.event-qte[data-live="true"] .event-qte-prompt {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  width: min(94vw, 620px);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 20px 16px;
+  background: rgb(20 24 39 / 95%);
+  color: #eee3bf;
+  border: 2px solid #8e8879;
+  box-shadow: 0 0 60px rgb(0 0 0 / 80%);
+}
+.event-qte[data-live="true"] .event-qte-target { font-size: 1.4rem; }
 .event-qte-meter { position: relative; height: 32px; border: 2px solid currentColor; margin-block: 12px; }
 .event-qte-meter::before { content: ""; position: absolute; left: 35%; width: 30%; height: 100%; background: #537952; outline: 2px dashed currentColor; outline-offset: -3px; }
 .event-qte-marker { position: absolute; top: 0; height: 100%; width: 4px; background: currentColor; transform: translateX(-50%); }

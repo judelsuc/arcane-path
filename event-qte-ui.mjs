@@ -61,14 +61,14 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
   let running = false, disposed = false, result, trace = [], startedAt, timer, rules, pausedAt;
   let preparing = true, readyAt;
   const buttons = [];
-  function node(tag, value) {
+  function node(tag, value, parent = root) {
     const element = doc.createElement(tag);
     if (value !== undefined) element.textContent = value;
-    root.append(element);
+    parent.append(element);
     return element;
   }
-  function button(label, callback) {
-    const element = node("button", label);
+  function button(label, callback, parent) {
+    const element = node("button", label, parent);
     element.type = "button";
     element.setAttribute("data-shortcut-skip", "");
     element.addEventListener("click", callback);
@@ -98,10 +98,14 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
   const narrativeResult = node("p", "");
   narrativeResult.className = "event-qte-result";
   narrativeResult.setAttribute("role", "status");
-  const target = node("p", c.waiting);
+  // Prompt, meter and reaction keys live together so the running challenge can
+  // overlay them front and centre on the screen, Shenmue-style.
+  const prompt = node("div");
+  prompt.className = "event-qte-prompt";
+  const target = node("p", c.waiting, prompt);
   target.className = "event-qte-target";
   target.setAttribute("aria-live", "assertive");
-  const meter = node("div", "");
+  const meter = node("div", "", prompt);
   meter.className = "event-qte-meter";
   meter.hidden = true;
   meter.setAttribute("aria-hidden", "true");
@@ -113,7 +117,7 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
   const symbols = ["←", "↑", "→", "↓", "␣", ...QTE_LETTERS.map(key => key.toUpperCase())];
   const actionButtons = keys.map((key, index) => {
     const element = button(index < REACTION_KEYS.length ? `${symbols[index]} ${labels[index]}` : labels[index],
-      () => input(key));
+      () => input(key), prompt);
     element.className = "event-qte-key";
     element.setAttribute("aria-keyshortcuts", key);
     element.setAttribute("aria-pressed", "false");
@@ -177,6 +181,7 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
     } catch (reason) { error(reason); retryStart.hidden = false; return; }
     if (disposed) return;
     running = true;
+    root.setAttribute("data-live", "true");
     startedAt = view.performance.now();
     readyAt = startedAt + QTE_PREPARATION_MS;
     retryStart.hidden = true;
@@ -237,6 +242,7 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
     if (!running || result) return;
     result = { trace: structuredClone(trace), elapsedMs: elapsed(), skipped };
     running = false;
+    root.setAttribute("data-live", "false");
     view.clearInterval(timer);
     buttons.forEach(element => { element.disabled = true; });
     helpButton.disabled = false;

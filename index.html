@@ -747,13 +747,17 @@
       <p id="economy-hospitality-result" role="status"></p>
       <ul id="economy-options"></ul>
       <p id="economy-action-error" role="alert"></p>
-      <details id="nearby-accommodation" hidden>
-        <summary data-i18n="accommodationTitle"></summary>
+      <section id="nearby-accommodation" hidden>
+        <h3 data-i18n="accommodationTitle"></h3>
         <button id="accommodation-search" type="button" data-i18n="accommodationSearch"></button>
         <p id="accommodation-status" role="status"></p>
         <p id="accommodation-details" class="technical-text"></p>
         <ul id="accommodation-results"></ul>
-      </details>
+        <details id="accommodation-more" hidden>
+          <summary data-i18n="accommodationMore"></summary>
+          <ul id="accommodation-more-results"></ul>
+        </details>
+      </section>
     </dialog>
     <dialog id="music-dialog" aria-labelledby="music-title">
       <h2 id="music-title" data-i18n="musicOpen"></h2>

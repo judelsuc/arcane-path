@@ -92,12 +92,16 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findSpecialtie
     if (accommodationPartial) diagnostics.textContent += ` ${t("accommodationCached")}`;
     if (accommodationLoading && accommodationProgress) showAccommodationProgress();
     const nearby = document.querySelector("#accommodation-results");
+    const moreDrawer = document.querySelector("#accommodation-more");
+    const more = document.querySelector("#accommodation-more-results");
     nearby.replaceChildren();
+    more.replaceChildren();
     const accommodationPriority = place => place.col === state.col && place.row === state.row
       ? place.tags?.tourism === "hotel" ? 2 : 1 : 0;
     const nearbyPlaces = [...(accommodationResult?.places ?? [])].sort((a, b) =>
       accommodationPriority(b) - accommodationPriority(a));
-    for (const place of nearbyPlaces) {
+    moreDrawer.hidden = nearbyPlaces.length <= 2;
+    for (const [order, place] of nearbyPlaces.entries()) {
       const item = document.createElement("li"), text = document.createElement("p");
       const east = place.col - state.col, north = state.row - place.row;
       const worship = place.tags?.amenity === "place_of_worship";
@@ -137,7 +141,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findSpecialtie
         });
         item.append(go);
       }
-      nearby.append(item);
+      (order < 2 ? nearby : more).append(item);
     }
     const quote = marketPrice(cell, 1, data, info);
     document.querySelector("#economy-pricing").textContent = t(quote.estimated ? "priceEuropeanEstimate"
@@ -361,7 +365,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findSpecialtie
     accommodationResult = undefined;
     accommodationError = "";
     dialog.dataset.activity = mode;
-    document.querySelector("#nearby-accommodation").open = false;
+    document.querySelector("#accommodation-more").open = false;
     document.querySelector("#economy-action-error").textContent = "";
     dialog.showModal();
     const request = ++generation;

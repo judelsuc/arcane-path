@@ -113,6 +113,22 @@ test("a sheltered-sleep challenge can supply its own scene and result without jo
   f.api.destroy();
 });
 
+test("the running challenge centres its prompt, meter and key buttons in a live overlay", async () => {
+  const f = await fixture("coins", "en", { preparation: true });
+  const prompt = f.nodes.find(node => node.className === "event-qte-prompt");
+  assert.ok(prompt, "the keys sit in a dedicated prompt container");
+  assert.equal(prompt.parent, f.root);
+  assert.equal(f.nodes.find(node => node.className === "event-qte-target").parent, prompt);
+  assert.equal(f.nodes.find(node => node.className === "event-qte-meter").parent, prompt);
+  const keys = f.nodes.filter(node => node.className === "event-qte-key");
+  assert.ok(keys.length > 0);
+  assert.ok(keys.every(key => key.parent === prompt), "every reaction key stays inside the prompt");
+  assert.equal(f.root.attributes["data-live"], "true", "the overlay is flagged live while running");
+  f.button("Skip challenge").click();
+  assert.equal(f.root.attributes["data-live"], "false", "the prompt returns inline once the attempt ends");
+  f.api.destroy();
+});
+
 test("Help freezes preparation and skipping during preparation settles once with an empty trace", async () => {
   const f = await fixture("coins", "en", { preparation: true });
   f.tick(1000);

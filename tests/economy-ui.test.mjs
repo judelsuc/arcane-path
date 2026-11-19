@@ -40,31 +40,36 @@ for (const language of ["en", "fr"]) {
   });
 }
 
-test("nearby accommodation POIs are in a closed drawer after local actions", () => {
+test("the two nearest shelters stay visible and the rest sits in a closed drawer after local actions", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const options = html.indexOf('<ul id="economy-options">');
-  const drawer = html.indexOf('<details id="nearby-accommodation" hidden>');
-  assert.ok(options > 0 && drawer > options);
-  const content = html.slice(drawer, html.indexOf("</details>", drawer));
-  assert.match(content, /<summary data-i18n="accommodationTitle"><\/summary>/);
-  assert.match(content, /id="accommodation-results"/);
-  assert.doesNotMatch(content.split(">")[0], /\bopen\b/);
+  const section = html.indexOf('<section id="nearby-accommodation" hidden>');
+  assert.ok(options > 0 && section > options);
+  const content = html.slice(section, html.indexOf("</section>", section));
+  assert.match(content, /<h3 data-i18n="accommodationTitle"><\/h3>/);
+  const results = content.indexOf('id="accommodation-results"');
+  const drawer = content.indexOf('<details id="accommodation-more" hidden>');
+  assert.ok(results > 0 && drawer > results, "the nearest results list must come before the overflow drawer");
+  const drawerContent = content.slice(drawer, content.indexOf("</details>", drawer));
+  assert.match(drawerContent, /<summary data-i18n="accommodationMore"><\/summary>/);
+  assert.match(drawerContent, /id="accommodation-more-results"/);
+  assert.doesNotMatch(drawerContent.split(">")[0], /\bopen\b/);
 });
 
 for (const language of ["en", "fr"]) {
-  test(`${language} accommodation drawer starts folded on each opening without changing local options`, async t => {
+  test(`${language} accommodation overflow drawer starts folded on each opening without changing local options`, async t => {
     const h = harness(t, language);
     await h.ui.open("sleep");
     const choices = h.buttons().map(button => button.textContent);
     assert.ok(choices.length > 0);
-    assert.equal(h.element("#nearby-accommodation").open, false);
-    h.element("#nearby-accommodation").open = true;
+    assert.equal(h.element("#accommodation-more").open, false);
+    h.element("#accommodation-more").open = true;
     h.ui.localize();
-    assert.equal(h.element("#nearby-accommodation").open, true);
+    assert.equal(h.element("#accommodation-more").open, true);
     assert.deepEqual(h.buttons().map(button => button.textContent), choices);
     h.element("#economy-dialog").close();
     await h.ui.open("sleep");
-    assert.equal(h.element("#nearby-accommodation").open, false);
+    assert.equal(h.element("#accommodation-more").open, false);
     assert.equal(h.actions.length, 0);
   });
 
@@ -375,7 +380,11 @@ for (const language of ["fr", "en"]) {
       cell: { ...town, pois: [hostel, hotel, second] } });
     const initialState = structuredClone(h.current().state);
     const opening = h.ui.open("sleep");
-    const names = () => h.element("#accommodation-results").children.map(item => item.children[0].textContent);
+    const names = () => [...h.element("#accommodation-results").children,
+      ...h.element("#accommodation-more-results").children].map(item => item.children[0].textContent);
+    assert.equal(h.element("#accommodation-results").children.length, 2,
+      "only the two nearest destinations stay outside the overflow drawer");
+    assert.equal(h.element("#accommodation-more").hidden, false);
     assert.match(names()[0], /Your hotel/);
     assert.ok(names()[0].includes(translate(language, "accommodationHere")));
     assert.match(names()[1], /Second local hotel/);

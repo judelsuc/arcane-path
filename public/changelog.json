@@ -1,6 +1,11 @@
 {
-  "version": "0.22.20",
+  "version": "0.22.21",
   "entries": [
+    {
+      "version": "0.22.21",
+      "fr": "Les directions des indices de la Piste du parent sont mises en évidence dans les messages. Sommeil et abri affiche directement les deux hébergements les plus proches ; les autres restent dans un volet replié. Pendant une rencontre, les touches du défi s'affichent au centre de l'écran, toujours visibles, puis reprennent leur place avec le résultat.",
+      "en": "Compass directions in Parent-trail clues are now highlighted in messages. Sleep and shelter shows the two nearest accommodations directly; the rest stays in a folded drawer. During an encounter, the challenge keys appear front and centre on screen, always visible, then return inline with the result."
+    },
     {
       "version": "0.22.20",
       "fr": "Après une journée protégée, un poursuivant avance avec le temps du voyage. Surveillez son écart : s'il vous rejoint, fuyez dans un parcours de plateformes adapté au terrain. Dix difficultés progressent avec les tentatives et votre état ; obstacles variés, pièges mobiles aux niveaux experts, pluie, brouillard et nuit rythment la fuite. Réussir redonne 30 km d'avance ; trois trébuchements terminent le voyage. Préparation, aide en pause et rythme accessible sont disponibles. Journaux et habitants évoquent la menace ; les anciens voyages reçoivent une journée de répit à la reprise.",
