@@ -1,6 +1,11 @@
 {
-  "version": "0.22.22",
+  "version": "0.22.23",
   "entries": [
+    {
+      "version": "0.22.23",
+      "fr": "La fuite va à l'essentiel : une ligne de contexte, l'ambiance, et toutes les règles dans l'Aide (qui met toujours le défi en pause). Le rythme de course n'est plus un choix : un voyageur affaibli court prudemment sur un parcours ralenti, imposé par son état. Le catalogue quotidien de la librairie s'installe correctement sur le serveur.",
+      "en": "The escape gets to the point: one line of context, the atmosphere, and all rules in Help (which still pauses the challenge). Running pace is no longer a choice: a weakened traveller runs carefully on a slower course, imposed by their condition. The bookshop's daily catalogue now installs correctly on the server."
+    },
     {
       "version": "0.22.22",
       "fr": "L'écran de voyage devient une interface de jeu : barre d'état translucide (agenda, jauges à icônes avec infobulles d'effets, menu), carte dominante qui ne bouge plus pendant la marche, détails techniques regroupés dans l'Aide, panneau latéral unique. La librairie propose des centaines de classiques du domaine public (catalogue Open Library actualisé chaque jour) sur huit rayons variés. Les habitants évoquent la poursuite avec leurs propres mots au fil des conversations. Boutique d'équipement compacte avec enseigne locale, erreurs du café signalées par un flash, marché et pétanque tiennent à l'écran, raccourci Hébergement unifié (H).",

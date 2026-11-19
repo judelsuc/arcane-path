@@ -13,6 +13,8 @@ const COPY = {
     rules: "You run automatically. Press Space, Up or Jump to clear obstacles. Jump onto raised platforms, then over their crates. Falling into a gap costs one stumble and puts you back on the far side. Three stumbles mean capture and the end of this journey. Reach the end to regain a 30 km lead. Closing the tab or leaving a started escape counts as capture. Help pauses the challenge.",
     pace: "The pursuer moves at 2 km/h as game time passes, including rest and sleep. Shelters do not stop him. Moving away or taking transport can increase your lead.",
     normal: "Normal pace", accessible: "Slower accessible pace", start: "Start escape",
+    difficultyShort: "Difficulty {level}/10.",
+    paceImposed: "Weakened, you run carefully: the course unfolds more slowly.",
     jump: "Jump", help: "Help / pause", resume: "Resume", prepare: "Get ready",
     release: "Release held keys to begin.", retry: "Retry saving the result", close: "Continue",
     success: "The pursuer trips and falls. The boy escapes! You have regained a 30 km lead.", failed: "You were caught. Your journey ends here.",
@@ -42,6 +44,8 @@ const COPY = {
     rules: "Vous courez automatiquement. Appuyez sur Espace, Haut ou Sauter pour franchir les obstacles. Montez sur les plateformes, puis sautez leurs caisses. Tomber dans un trou coûte un trébuchement et vous replace de l'autre côté. Trois trébuchements entraînent la capture et la fin du voyage. Atteignez la sortie pour reprendre 30 km d'avance. Fermer l'onglet ou quitter une fuite commencée compte comme une capture. Aide met le défi en pause.",
     pace: "Le poursuivant avance à 2 km/h avec le temps du jeu, y compris pendant le repos et le sommeil. Les abris ne l'arrêtent pas. S'éloigner ou prendre un transport peut augmenter votre avance.",
     normal: "Vitesse normale", accessible: "Vitesse réduite accessible", start: "Commencer la fuite",
+    difficultyShort: "Difficulté {level}/10.",
+    paceImposed: "Affaibli, vous courez avec prudence : le parcours défile plus lentement.",
     jump: "Sauter", help: "Aide / pause", resume: "Reprendre", prepare: "Préparez-vous",
     release: "Relâchez les touches pour commencer.", retry: "Réessayer d'enregistrer le résultat", close: "Continuer",
     success: "Le poursuivant trébuche et tombe. Le garçon s'échappe ! Vous reprenez 30 km d'avance.",
@@ -77,16 +81,15 @@ export function setupPursuit({ context, act, doc = document }) {
   const dialog = doc.createElement("dialog");
   dialog.className = "pursuit-dialog";
   dialog.setAttribute("data-native-controls", "");
-  const title = doc.createElement("h2"), warning = doc.createElement("p"), rules = doc.createElement("p");
+  const title = doc.createElement("h2"), warning = doc.createElement("p");
   const atmosphereInfo = doc.createElement("p");
   dialog.setAttribute("aria-labelledby", "pursuit-title");
   title.id = "pursuit-title";
-  const mode = doc.createElement("select");
-  mode.setAttribute("aria-label", "Escape pace");
-  for (const value of ["normal", "accessible"]) {
-    const option = doc.createElement("option"); option.value = value; mode.append(option);
-  }
-  mode.value = "normal";
+  // The pace is imposed by the traveller's condition, never chosen in the dialog.
+  const imposedPace = () => {
+    const pending = context()?.state.pursuit?.pending;
+    return pending?.difficulty && pending.difficulty.modifier > 0 ? "accessible" : "normal";
+  };
   const canvas = doc.createElement("canvas");
   canvas.width = 640; canvas.height = 320;
   canvas.setAttribute("role", "img");
@@ -117,13 +120,14 @@ export function setupPursuit({ context, act, doc = document }) {
   help.className = "window-dialog";
   const helpText = doc.createElement("p"), resume = button(() => help.close());
   help.append(helpText, resume);
+  let helpDetails = "";
   const helpButton = button(() => {
     if (help.open) return;
-    helpText.textContent = text("rules");
+    helpText.textContent = helpDetails || text("rules");
     help.showModal();
   });
   const retry = button(saveResult), close = button(() => dialog.close());
-  dialog.append(title, warning, atmosphereInfo, rules, mode, start, canvas, captureImage, feedback, jump, helpButton, retry, close);
+  dialog.append(title, warning, atmosphereInfo, start, canvas, captureImage, feedback, jump, helpButton, retry, close);
   doc.body.append(dialog, help);
   let identity, attempt, engine, jumps = [], result, running = false, preparation = 0;
   let timer, last = 0, accumulated = 0, jumpRequested = false, errorText = "";
@@ -178,7 +182,7 @@ export function setupPursuit({ context, act, doc = document }) {
   function launch() {
     if (!attempt || attempt.status !== "ready" || running || result || doc.hidden) return;
     try {
-      if (act({ type: "begin", mode: mode.value }) !== true) throw new Error(text("save"));
+      if (act({ type: "begin", mode: imposedPace() }) !== true) throw new Error(text("save"));
     } catch (reason) {
       console.error("Pursuit start save failed:", reason);
       feedback.textContent = reason.message;
@@ -188,7 +192,7 @@ export function setupPursuit({ context, act, doc = document }) {
     engine = createEscape(attempt.seed, attempt.version, attempt.difficulty?.level);
     jumps = []; jumpRequested = false; accumulated = 0;
     preparation = 3000;
-    start.disabled = mode.disabled = true;
+    start.disabled = true;
     running = true; last = clock();
     timer = view.setInterval(tick, 16);
     dialog.focus();
@@ -510,12 +514,18 @@ export function setupPursuit({ context, act, doc = document }) {
       phase: text(`phase_${atmosphere.phase}`), rain: text(`rain_${atmosphere.precipitation}`),
       fog: text(`fog_${atmosphere.fog}`),
     }) : "";
-    warning.textContent = `${text("escape")} ${text(pending.terrain)}${difficulty ? ` ${text("difficulty", {
-      ...difficulty, modifier: difficulty.modifier > 0 ? `+${difficulty.modifier}` : difficulty.modifier,
-    })}` : ""}${pending.version >= 5 && difficulty.level >= 8 ? ` ${text("expert")}` : ""}`;
-    rules.textContent = `${text("pace")} ${text("rules")} ${text("chase")}${pending.version >= 4 ? ` ${text("obstacles")}${difficulty.level >= 8 ? ` ${text("moving")}` : ""}` : ""}${pending.version >= 7 && difficulty.level >= 4 ? ` ${text("demanding")}` : ""}`;
-    [...mode.children].forEach(option => { option.textContent = text(option.value); });
-    mode.setAttribute("aria-label", text("accessible"));
+    warning.textContent = `${text("escape")} ${text(pending.terrain)}${difficulty
+      ? ` ${text("difficultyShort", { level: difficulty.level })}` : ""}${
+      difficulty && difficulty.modifier > 0 ? ` ${text("paceImposed")}` : ""}`;
+    helpDetails = [
+      difficulty ? text("difficulty", {
+        ...difficulty, modifier: difficulty.modifier > 0 ? `+${difficulty.modifier}` : difficulty.modifier,
+      }) : "",
+      pending.version >= 5 && difficulty.level >= 8 ? text("expert") : "",
+      text("pace"), text("rules"), text("chase"),
+      pending.version >= 4 ? `${text("obstacles")}${difficulty.level >= 8 ? ` ${text("moving")}` : ""}` : "",
+      pending.version >= 7 && difficulty.level >= 4 ? text("demanding") : "",
+    ].filter(Boolean).join(" ");
     canvas.setAttribute("aria-label", `${text(pending.terrain)} ${text("chase")} ${atmosphereInfo.textContent}`);
     canvas.hidden = false;
     captureImage.hidden = true;
@@ -524,7 +534,7 @@ export function setupPursuit({ context, act, doc = document }) {
     start.textContent = text("start"); jump.textContent = text("jump");
     helpButton.textContent = text("help"); resume.textContent = text("resume");
     retry.textContent = text("retry"); close.textContent = text("close");
-    start.disabled = mode.disabled = pending.status === "active";
+    start.disabled = pending.status === "active";
     jump.disabled = close.disabled = true; retry.hidden = true;
     engine = createEscape(pending.seed, pending.version, pending.difficulty?.level); draw();
     feedback.textContent = "";

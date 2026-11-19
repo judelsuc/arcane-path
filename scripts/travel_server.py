@@ -1077,7 +1077,7 @@ def make_handler(store, jobs, path_pool=None):
                 # The daily refresh writes outside the read-only application
                 # directory; serve it when valid, else the packaged baseline.
                 override = os.environ.get("ARCANE_BOOKSHOP_CATALOGUE_FILE",
-                                          "/var/lib/arcane-path/bookshop-catalogue.json")
+                                          "/var/lib/arcane-path/bookshop/bookshop-catalogue.json")
                 try:
                     with open(override, "rb") as handle:
                         payload = handle.read()

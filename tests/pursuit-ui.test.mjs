@@ -76,7 +76,7 @@ function fixture(status = "ready", lang = "en") {
 }
 
 for (const language of ["en", "fr"]) {
-  test(`${language} pursuit warns explicitly, waits for other dialogs, and allows accessible mode before starting`, () => {
+  test(`${language} pursuit warns briefly, waits for other dialogs, and imposes the pace from the traveller's condition`, () => {
     const h = fixture("ready", language);
     h.current.otherPending = true;
     h.ui.update();
@@ -88,12 +88,34 @@ for (const language of ["en", "fr"]) {
     assert.equal(h.dialog.open, true);
     const canvas = h.dialog.children.find(node => node.tagName === "CANVAS");
     assert.match(canvas.attributes["aria-label"], language === "en" ? /weather data unavailable/ : /météo indisponible/);
-    const mode = h.dialog.children.find(node => node.tagName === "SELECT");
-    mode.value = "accessible";
+    assert.equal(h.dialog.children.find(node => node.tagName === "SELECT"), undefined,
+      "no pace selector: the game decides");
+    const paragraphs = h.dialog.children.filter(node => node.tagName === "P" && !node.attributes.role);
+    for (const paragraph of paragraphs) {
+      assert.ok(paragraph.textContent.length < 220, `concise intro: ${paragraph.textContent}`);
+    }
+    assert.ok(!h.dialog.children.some(node =>
+      /automatiquement|automatically/.test(node.textContent ?? "")), "control rules live in Help");
     h.button(language === "en" ? "Start escape" : "Commencer la fuite").click();
-    assert.equal(h.state.pursuit.pending.mode, "accessible");
+    assert.equal(h.state.pursuit.pending.mode, "normal",
+      "a healthy traveller is imposed the normal pace");
     assert.equal(h.state.pursuit.pending.status, "active");
-    assert.equal(mode.disabled, true);
+    h.ui.reset();
+  });
+
+  test(`${language} a weakened traveller is imposed the slower pace and told so`, () => {
+    const h = fixture("ready", language);
+    h.state = { ...h.state, pursuit: { ...h.state.pursuit, pending: {
+      ...h.state.pursuit.pending,
+      difficulty: pursuitDifficulty({ health: 30, fatigue: 80, awakeHours: 20 }, 2),
+    } } };
+    assert.ok(h.state.pursuit.pending.difficulty.modifier > 0, "weak condition raises the modifier");
+    h.ui.update();
+    const warning = h.dialog.children.find(node => node.tagName === "P" && !node.attributes.role);
+    assert.match(warning.textContent, language === "en" ? /carefully/ : /prudence/);
+    h.button(language === "en" ? "Start escape" : "Commencer la fuite").click();
+    assert.equal(h.state.pursuit.pending.mode, "accessible",
+      "weak condition imposes the slower course");
     h.ui.reset();
   });
 }
@@ -230,13 +252,18 @@ test("three stumbles show a static capture portrait; a missing image reports an 
 });
 
 test("a complete keyboard route succeeds in normal and slower mode without duplicate settlement", () => {
-  for (const [mode, level] of ["normal", "accessible"].flatMap(mode => [1, 5, 10].map(level => [mode, level]))) {
+  for (const [mode, level] of [["normal", 1], ["normal", 5], ["normal", 10],
+    ["accessible", 3], ["accessible", 5], ["accessible", 10]]) {
     const h = fixture();
     if (level === 5) h.doc.defaultView.matchMedia = () => ({ matches: true });
-    h.state.pursuit.pending.difficulty = pursuitDifficulty({ health: 70, fatigue: 40, awakeHours: 12 }, (level - 1) * 2);
+    // Strong condition keeps modifier 0 (normal pace); a weakened traveller gets
+    // modifier +2, which imposes the slower course and raises the level.
+    const condition = mode === "accessible"
+      ? { health: 20, fatigue: 80, awakeHours: 24 } : { health: 70, fatigue: 40, awakeHours: 12 };
+    const completed = mode === "accessible" ? (level - 3) * 2 : (level - 1) * 2;
+    h.state.pursuit.pending.difficulty = pursuitDifficulty(condition, completed);
     h.ui.update();
     assert.ok(h.dialog.children.some(node => node.textContent.includes(`Difficulty ${level}/10`)));
-    h.dialog.children.find(node => node.tagName === "SELECT").value = mode;
     const seed = h.state.pursuit.pending.seed;
     const plan = escapeRoute(seed, h.state.pursuit.pending.version, level);
     const jumpTicks = plan.transcript.jumps;

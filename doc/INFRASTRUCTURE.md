@@ -243,7 +243,8 @@ sudo systemctl start arcane-bookshop-catalogue.service   # first refresh now
 ```
 
 The job runs daily at 05:50 Paris time as `arcane`, writes to
-`/var/lib/arcane-path/bookshop-catalogue.json` and keeps the previous file on
+`/var/lib/arcane-path/bookshop/bookshop-catalogue.json` (create that directory
+once with `arcane` ownership) and keeps the previous file on
 any failure; there are no automatic retries. The application serves that copy
 at `/public/bookshop-catalogue.json` when present and valid, otherwise the
 packaged baseline (`ARCANE_BOOKSHOP_CATALOGUE_FILE` overrides the path). No
