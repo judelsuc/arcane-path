@@ -228,6 +228,59 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Console interface, living bookshop and imposed escape pace, 0.22.22–0.22.23 (19 November 2026)
+
+Deployed runtimes `71aab7e03fc1945062895b57f1e025380594f255`
+(`deploy-2026-11-19-console-hud`, 0.22.22) and
+`187bd5a857f99cffc6e0b0e30821facfca926b44`
+(`deploy-2026-11-19-imposed-pace`, 0.22.23), the latter active.
+
+0.22.22 turns the travel screen into a console-style interface: a full-width
+translucent HUD bar (compact agenda square, icon vitals with name-and-effect
+hover tooltips, right-anchored icon menu), a dominant fixed-size map whose
+transient notices overlay it instead of resizing it, technical details moved
+from inline folds into each window's on-demand Help dialog, and a single
+scrolling side panel holding identity, notices, cell details and the legend.
+The bookshop minigame now draws from 348 works (32 curated bilingual classics
+plus Open Library metadata for public-domain-era works) across eight randomized
+shelf themes, with a conversation-topic registry letting game layers feed
+character conversations — the pursuit speaks through inhabitants with three
+per-character phrasings per stage instead of a mechanical notice. The equipment
+shop is compact with a mapped boutique name, café mistakes flash once, market
+and pétanque fit the viewport, and the shelter shortcut is H everywhere.
+
+0.22.23 trims the escape dialog to one context line plus atmosphere, moves all
+rules into the pausing Help, and removes the pace selector: a weakened
+traveller (positive condition modifier) is imposed the slower course and told
+so diegetically. It also fixes the daily bookshop catalogue job, which now
+writes to the arcane-owned `/var/lib/arcane-path/bookshop/`; the timer
+(`arcane-bookshop-catalogue.timer`, 05:50 Europe/Paris) is installed and
+active, the first refresh succeeded, and the application serves the daily copy
+at `/public/bookshop-catalogue.json` (confirmed by its `retrievedAt`).
+
+Validation: full JavaScript runs passed 1863/1864 and 1865/1866 — the single
+failure is the unchanged dream-wiring source assertion failing on the pristine
+baseline. New suites cover the conversation registry, catalogue script
+(mocked registry, failure keeps the previous file), bookshop variety and the
+imposed pace. Backend: 4 new catalogue tests pass; the travel-cache migration
+failures reproduce on the pristine baseline as recorded for 0.22.20.
+Nine installed disk hashes match the packaged commit, `nginx -t` passed, HTTPS
+returns the expected unauthenticated 401, conditional GET of the refreshed
+manifest returns 200, application PID 481808 became 482233 with a clean
+journal, and application plus both timers are active.
+
+Private rollback archives (directories 0700, archives 0600):
+`/home/ubuntu/before-0.22.22-71aab7e/runtime.tar.gz`,
+SHA-256 `59da41635cef3cc1ef64a9a0a823efa06ae13c5f0921be7ca21dfdb484b97918`, and
+`/home/ubuntu/before-0.22.23-187bd5a/runtime.tar.gz`,
+SHA-256 `515ad84bac4445b0bc02b5e6610521b206cc7b9fb37a983b9f9a29ce8a9e1f51`.
+Their sibling NOTES list files new in each release to remove on rollback
+(notably `conversation-topics.mjs`, the catalogue script, baseline catalogue
+and systemd units). Disable `arcane-bookshop-catalogue.timer` if rolling back
+past 0.22.22. Refresh the release manifest mtime and restart after runtime
+changes. Do not restore or delete player databases, cached narratives, images
+or provider-job receipts.
+
 ## Daily bookshop catalogue refresh
 
 The bookshop minigame ships a tracked baseline `public/bookshop-catalogue.json`
