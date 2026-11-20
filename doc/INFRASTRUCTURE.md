@@ -228,6 +228,30 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Pursuer's portrait on capture ending, 0.22.31 (20 November 2026)
+
+Deployed runtime `77e9f15` (`deploy-2026-11-20-capture-portrait`). The capture
+ending now shows the pursuer's portrait inside the journey-ended notice,
+hidden gracefully if the image fails and never shown for other endings. Root
+cause of the missing picture: `public/pursuit-capture.png` was absent from the
+nginx asset allowlist since its introduction, so browsers received 404 and the
+pursuit dialog silently fell back to text; the allowlist gained the entry in
+`infra/nginx/preview.conf` and on the live server (`nginx -t`, reload,
+unauthenticated HTTPS now 401 for the image).
+
+Validation: full JavaScript run passed 1884/1885 (the single failure is the
+unchanged dream-wiring baseline assertion); a new test covers the portrait on
+capture, the graceful fallback and its absence on other notices. Installed
+hashes match the packaged commit, journal clean after restart, conditional GET
+of the refreshed manifest returns 200, PID 506012 became 508032.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.31-77e9f15/runtime.tar.gz`, SHA-256
+`badb4da1abf73490778ff185ef95e14a9a9e1f9807995b80ad958bc867fd8383`. No new
+files in this release. Refresh the release manifest mtime and restart after
+runtime changes. Do not restore or delete player databases, cached narratives,
+images or provider-job receipts.
+
 ## Map-action legend entrance and trimmed window prose, 0.22.30 (20 November 2026)
 
 Deployed runtime `995a58a` (`deploy-2026-11-20-map-entrance`). The legend
