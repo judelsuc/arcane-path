@@ -45,7 +45,12 @@ export function archivedJourneys(storage) {
   const saves = [];
   for (let index = 0; index < storage.length; index++) {
     const key = storage.key(index);
-    if (key?.startsWith(JOURNEY_ARCHIVE_PREFIX)) saves.push(validateSave(JSON.parse(storage.getItem(key))));
+    if (!key?.startsWith(JOURNEY_ARCHIVE_PREFIX)) continue;
+    // Archives written by older releases may use an incompatible save
+    // format; skip them so remaining notebooks stay readable.
+    try {
+      saves.push(validateSave(JSON.parse(storage.getItem(key))));
+    } catch {}
   }
   return saves.sort((a, b) => b.savedAt.localeCompare(a.savedAt));
 }

@@ -1,6 +1,11 @@
 {
-  "version": "0.22.23",
+  "version": "0.22.24",
   "entries": [
+    {
+      "version": "0.22.24",
+      "fr": "Les carnets archivés redeviennent consultables : un ancien voyage enregistré dans un format dépassé est simplement ignoré au lieu de bloquer toute la liste.",
+      "en": "Archived notebooks are readable again: an old journey saved in an outdated format is simply skipped instead of blocking the whole list."
+    },
     {
       "version": "0.22.23",
       "fr": "La fuite va à l'essentiel : une ligne de contexte, l'ambiance, et toutes les règles dans l'Aide (qui met toujours le défi en pause). Le rythme de course n'est plus un choix : un voyageur affaibli court prudemment sur un parcours ralenti, imposé par son état. Le catalogue quotidien de la librairie s'installe correctement sur le serveur.",

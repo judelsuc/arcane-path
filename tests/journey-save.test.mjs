@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createSave, validateSave, createJourneyStore, mapIdentity, archivedJourneys, SAVE_VERSION } from "../journey-save.mjs";
+import { createSave, validateSave, createJourneyStore, mapIdentity, archivedJourneys, SAVE_VERSION, JOURNEY_ARCHIVE_PREFIX } from "../journey-save.mjs";
 import { startSurvival, walkSurvival } from "../survival.mjs";
 import { startEconomy, buyMeal, finishAction, applyBirthTarot, tarotEventChance,
   dailyTarotPending, acknowledgeDailyTarot, refreshPricing } from "../economy.mjs";
@@ -59,6 +59,19 @@ test("missing-server replacement archives the exact save before replacement and 
   assert.throws(() => store.archive({ ...save, revision: save.revision + 1 }), /refusing to overwrite/);
   assert.throws(() => createJourneyStore({ ...memory, setItem() { throw new Error("Storage full"); } })
     .archive(save), /Storage full/);
+});
+
+test("archives from older incompatible save formats are skipped, keeping the rest readable", () => {
+  const memory = storage();
+  Object.defineProperty(memory, "length", { get: () => memory.data.size });
+  memory.key = index => [...memory.data.keys()][index] ?? null;
+  const store = createJourneyStore(memory), original = details();
+  store.read(original.region);
+  const save = store.write(original);
+  store.archive(save);
+  memory.setItem(`${JOURNEY_ARCHIVE_PREFIX}legacy`, JSON.stringify({ ...save, version: SAVE_VERSION - 1 }));
+  memory.setItem(`${JOURNEY_ARCHIVE_PREFIX}corrupt`, "{not json");
+  assert.deepEqual(archivedJourneys(memory), [save]);
 });
 
 test("the isolated authoritative lore state cannot be imported into a main-game save", () => {
