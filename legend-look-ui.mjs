@@ -8,6 +8,8 @@ const COPY = {
     found: "Entrance discovered.",
     open: "Open the adventure entrance",
     enter: "Enter the adventure",
+    explore: "Explore",
+    nothing: "You find nothing unusual here.",
   },
   fr: {
     title: "Traces d'une ancienne histoire", loading: "Observation des alentours…",
@@ -16,33 +18,49 @@ const COPY = {
     found: "Entrée découverte.",
     open: "Ouvrir l'entrée de l'aventure",
     enter: "Entrer dans l'aventure",
+    explore: "Explorer",
+    nothing: "Vous ne trouvez rien d'inhabituel ici.",
   },
 };
 
-export function setupLegendLook({ context, host, action, client = createTownLegendsClient(), onEntry, onObservation, openEntrance } = {}) {
+export function setupLegendLook({ context, host, action, status, client = createTownLegendsClient(), onEntry, onObservation, openEntrance } = {}) {
   const doc = host.ownerDocument;
   let controller, key, target, observations = [], error = "", loading = false;
   const identity = state => state?.serverJourney?.id && state.journalAccess
     ? `${state.serverJourney.id}:${state.journalAccess}` : null;
-  // The entrance interaction is a direct map action: the same cell knowledge
-  // that fills the side panel drives a toolbar button next to the map.
+  // Exploring is a permanent map action beside the others: it inspects a
+  // matching passage, enters a discovered one, and otherwise simply reports
+  // that nothing unusual is here.
   function actionTarget() {
     const captured = context(), state = captured?.state;
     const here = state && target && state.col === target.col && state.row === target.row;
     return { captured, observation: here ? observations.find(item => item.matches) : null };
   }
+  function clearFeedback() {
+    if (!status) return;
+    status.hidden = true;
+    status.textContent = "";
+  }
   function renderAction() {
     if (!action) return;
     const language = doc.documentElement.lang === "en" ? "en" : "fr", c = COPY[language];
     const { captured, observation } = actionTarget();
-    action.hidden = !observation;
-    if (!observation) return;
-    action.textContent = observation.found ? c.enter : c.inspect;
-    action.disabled = loading || !!captured?.blocked;
+    action.hidden = false;
+    action.textContent = observation?.found ? c.enter : observation ? c.inspect : c.explore;
+    action.disabled = loading || !captured?.state || !!captured.blocked;
   }
   action?.addEventListener("click", () => {
+    const language = doc.documentElement.lang === "en" ? "en" : "fr", c = COPY[language];
     const { captured, observation } = actionTarget();
-    if (!observation || loading || captured?.blocked) return;
+    if (loading || !captured?.state || captured.blocked) return;
+    clearFeedback();
+    if (!observation) {
+      if (status) {
+        status.textContent = c.nothing;
+        status.hidden = false;
+      }
+      return;
+    }
     if (observation.found) openEntrance?.();
     else void inspect(observation);
   });
@@ -138,6 +156,7 @@ export function setupLegendLook({ context, host, action, client = createTownLege
         observations = [];
         error = "";
         loading = false;
+        clearFeedback();
         if (next && !captured.blocked) void request();
       } else if (next && !captured.blocked && !loading && !error && !observations.length && controller === undefined) {
         void request();
@@ -151,6 +170,7 @@ export function setupLegendLook({ context, host, action, client = createTownLege
       observations = [];
       loading = false;
       error = "";
+      clearFeedback();
       render();
     },
   };

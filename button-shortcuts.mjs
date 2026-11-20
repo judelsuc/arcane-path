@@ -9,7 +9,7 @@ const KEYS = {
   "start-travel": "N", "resume-travel": "C", "open-osm": "O",
   "restart-travel": "N", "rest-travel": "R", "sleep-travel": "H",
   "eat-travel": "E", "open-town": "T", "open-music": "B",
-  "save-travel": "S", "look-travel": "L",
+  "save-travel": "S", "look-travel": "L", "explore-cell": "Z",
   "open-journey-world": "6",
   "open-inscriptions": "J", "cell-inscriptions": "J", "inscriptions-close": "Escape",
   "open-conversation": "G", "town-conversation": "G", "cell-conversation": "G",

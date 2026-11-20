@@ -485,7 +485,17 @@ test("the pursuer grows bolder with journey time, even without any escape attemp
   const difficulty = state.pursuit.pending.difficulty;
   assert.equal(difficulty.base, 6, "ten days of chase raise the base difficulty");
   validatePursuit(state);
+  // Deferring the escape keeps the pinned difficulty valid across day boundaries.
+  state = advance(state, 3 * 1440);
+  assert.deepEqual(state.pursuit.pending.difficulty, difficulty);
+  validatePursuit(state);
   const forged = structuredClone(state);
-  forged.pursuit.pending.difficulty.base = 1;
-  assert.throws(() => validatePursuit(forged), /Invalid/);
+  forged.pursuit.pending.difficulty.base = 9;
+  forged.pursuit.pending.difficulty.level = 9;
+  assert.throws(() => validatePursuit(forged), /Invalid/,
+    "a base above what the elapsed chase allows is rejected");
+  const inflated = structuredClone(state);
+  inflated.pursuit.pending.difficulty.level = 10;
+  assert.throws(() => validatePursuit(inflated), /Invalid/,
+    "the level must follow the pinned base and modifier");
 });

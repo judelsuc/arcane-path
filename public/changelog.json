@@ -1,6 +1,11 @@
 {
-  "version": "0.22.33",
+  "version": "0.22.34",
   "entries": [
+    {
+      "version": "0.22.34",
+      "fr": "Correction urgente : reporter une fuite au-delà d'un jour rendait la sauvegarde invalide (« Invalid saved pursuit ») — la difficulté épinglée est de nouveau acceptée. Un bouton Explorer (Z) est toujours présent dans la barre d'actions : il inspecte un passage correspondant, entre dans une aventure découverte, et sinon répond simplement « Vous ne trouvez rien d'inhabituel ici. »",
+      "en": "Urgent fix: deferring an escape past a day boundary invalidated the save (\"Invalid saved pursuit\") — the pinned difficulty is accepted again. An Explore button (Z) is always present in the action bar: it inspects a matching passage, enters a discovered adventure, and otherwise simply replies \"You find nothing unusual here.\""
+    },
     {
       "version": "0.22.33",
       "fr": "Le croquis utilise la photo locale à chaque partie, plus seulement la première : « Commencer » attend brièvement (2,5 s maximum) que le modèle photo soit prêt, pour qu'un démarrage rapide ne retombe plus sur les motifs imaginaires.",

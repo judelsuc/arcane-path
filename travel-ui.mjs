@@ -690,7 +690,8 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const legendLookUI = setupLegendLook({
     context: () => active ? economyContext({ allowLook: true }) : null,
     host: document.querySelector("#legend-look"),
-    action: document.querySelector("#legend-entrance-action"),
+    action: document.querySelector("#explore-cell"),
+    status: document.querySelector("#explore-status"),
     onEntry: entry => townLegendsUI.acceptEntry(entry),
     onObservation: observation => townLegendsUI.observe(observation),
     // Entering the adventure is a direct map action; the legends page only

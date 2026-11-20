@@ -151,9 +151,18 @@ export function validatePursuit(state) {
     if (item.version >= 3) {
       const d = item.difficulty;
       if (!d || Object.keys(d).sort().join() !== "awakeHours,base,fatigue,health,level,modifier") fail();
-      const expected = pursuitDifficulty(d, index,
-        item.version >= 8 ? (item.elapsedMinutes - p.startedMinutes) / 1440 : undefined);
-      if (Object.keys(expected).some(key => expected[key] !== d[key])) fail();
+      const expected = pursuitDifficulty(d, index);
+      if (item.version >= 8) {
+        // The difficulty is pinned when the attempt is created, while its
+        // elapsed time keeps advancing when the escape is deferred, so the
+        // exact days input cannot be reproduced: accept any base between the
+        // attempts-only floor and the ceiling the latest elapsed time allows.
+        const ceiling = pursuitDifficulty(d, index,
+          Math.max(0, (item.elapsedMinutes - p.startedMinutes) / 1440)).base;
+        if (["health", "fatigue", "awakeHours", "modifier"].some(key => expected[key] !== d[key]) ||
+            !Number.isSafeInteger(d.base) || d.base < expected.base || d.base > ceiling ||
+            d.level !== Math.max(1, Math.min(10, d.base + d.modifier))) fail();
+      } else if (Object.keys(expected).some(key => expected[key] !== d[key])) fail();
     }
     if (item.version >= 6) validatePursuitAtmosphere(item.atmosphere);
     if (pending && (state.ended || item.col !== state.col || item.row !== state.row ||

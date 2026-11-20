@@ -1302,7 +1302,7 @@ dialog p { margin: 12px 0; }
   /* Transient travel notices float over the map so its size never jumps mid-step. */
   body.is-travelling .travel-active .comparison-panel { position: relative; }
   body.is-travelling .travel-active .comparison-panel
-    :is(#travel-blocker, #travel-streaming, #cell-info, #copy-coordinates-status):not([hidden]):not(:empty) {
+    :is(#travel-blocker, #travel-streaming, #cell-info, #copy-coordinates-status, #explore-status):not([hidden]):not(:empty) {
     position: absolute;
     left: 14px;
     max-width: min(72%, 460px);
@@ -1319,6 +1319,7 @@ dialog p { margin: 12px 0; }
   body.is-travelling .travel-active .comparison-panel #travel-blocker:not([hidden]):not(:empty) { bottom: 114px; }
   body.is-travelling .travel-active .comparison-panel #cell-info:not([hidden]):not(:empty) { bottom: 144px; }
   body.is-travelling .travel-active .comparison-panel #copy-coordinates-status:not([hidden]):not(:empty) { bottom: 84px; left: auto; right: 14px; }
+  body.is-travelling .travel-active .comparison-panel #explore-status:not([hidden]):not(:empty) { bottom: 54px; }
 }
 .travel-overview p { margin-block: 6px; }
 #open-survival-choices { border: 2px solid var(--accent); }

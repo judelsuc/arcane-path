@@ -29,14 +29,16 @@ function fixture(client) {
   doc.createElement = tag => new Element(tag, doc);
   const host = new Element("section", doc);
   const action = new Element("button", doc);
+  const status = new Element("p", doc);
+  status.hidden = true;
   let context = { state: { serverJourney: { id: "a".repeat(32) }, journalAccess: "b".repeat(64), col: 0, row: 0 },
     blocked: false };
   const entries = [], observed = [], opened = [];
-  const ui = setupLegendLook({ host, action, context: () => context, client,
+  const ui = setupLegendLook({ host, action, status, context: () => context, client,
     onEntry: value => entries.push(value), onObservation: value => observed.push(value),
     openEntrance: () => opened.push(true) });
   const descendants = node => [node, ...node.children.flatMap(descendants)];
-  return { ui, doc, host, action, entries, observed, opened, getContext: () => context, setContext: next => { context = next; },
+  return { ui, doc, host, action, status, entries, observed, opened, getContext: () => context, setContext: next => { context = next; },
     text: () => descendants(host).map(node => node.textContent).join(" "),
     button: text => descendants(host).find(node => node.tagName === "button" && node.textContent === text) };
 }
@@ -227,25 +229,29 @@ test("the actual travel context permits remote Look requests without permitting 
   f.ui.reset();
 });
 
-test("the entrance is a direct map action: inspect from the toolbar, then enter the adventure", async () => {
+test("the toolbar Explore is always available: it reports nothing, inspects the passage and enters the adventure", async () => {
   const calls = [];
   const f = fixture({ look: async () => ({ observations: [observation] }),
     inspect: async () => { calls.push("inspect"); return { entry }; } });
   f.ui.update(observation.location);
   await flush();
-  assert.equal(f.action.hidden, true, "no toolbar action away from the passage");
+  assert.equal(f.action.hidden, false, "Explore is a permanent map action");
+  assert.equal(f.action.textContent, "Explore");
+  f.action.click();
+  assert.equal(f.status.hidden, false);
+  assert.equal(f.status.textContent, "You find nothing unusual here.");
+  assert.deepEqual(calls, []);
   f.setContext({ ...f.getContext(), state: { ...f.getContext().state, col: 1 } });
   f.ui.update(observation.location);
   await flush();
-  assert.equal(f.action.hidden, false);
+  assert.equal(f.status.hidden, true, "moving clears the empty-handed note");
   assert.equal(f.action.textContent, "Inspect the passage");
   f.action.click();
   await flush();
   assert.deepEqual(calls, ["inspect"]);
-  assert.equal(f.action.hidden, false);
   assert.equal(f.action.textContent, "Enter the adventure");
   f.action.click();
   assert.equal(f.opened.length, 1, "entering starts directly from the map");
   f.ui.reset();
-  assert.equal(f.action.hidden, true, "reset conceals the map action");
+  assert.equal(f.status.hidden, true);
 });
