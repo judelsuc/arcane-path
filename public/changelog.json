@@ -1,6 +1,11 @@
 {
-  "version": "0.22.38",
+  "version": "0.22.39",
   "entries": [
+    {
+      "version": "0.22.39",
+      "fr": "Après une réservation de transport, l'avis « Réservation ou trajet en cours » renvoyait vers une fenêtre sans bouton visible pour l'ouvrir : il contient désormais un bouton « Agenda, transports et auto-stop (6) » pour poursuivre l'attente ou annuler avant l'embarquement. Pendant l'attente, la fenêtre explique où vous attendez, l'heure de départ et le temps restant, puis à bord le prochain arrêt et l'heure d'arrivée ; chaque appui sur « Poursuivre » résume ce qui vient de se passer (attente, montée à bord, arrivée).",
+      "en": "After booking a ride, the \"reservation or ride is active\" notice pointed to a window with no visible button to open it: it now carries an \"Agenda, transport and hitchhiking (6)\" button to keep waiting or cancel before boarding. While waiting, the window explains where you wait, the departure time and time left, then on board the next stop and arrival time; each press of Continue sums up what just happened (waiting, boarding, arrival)."
+    },
     {
       "version": "0.22.38",
       "fr": "Carnet de photos : chaque photo épinglée retient l'endroit où vous étiez. Sa page affiche « 📍 Épinglée à : … » et une petite carte de votre route avec une épingle sur ce lieu, et le commentaire commence par le nom du lieu au lieu de rester vide (vous pouvez toujours le réécrire). Les photos-indices ne révèlent aucun lieu.",

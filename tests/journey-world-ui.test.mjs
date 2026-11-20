@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { setupJourneyWorld } from "../journey-world-ui.mjs";
+import { setupJourneyWorld, transitNarration, transitStepSummary } from "../journey-world-ui.mjs";
 import { translate } from "../i18n.mjs";
 import { demoTimetable, demoJourney } from "../layers/transport/demo-fixture.mjs";
 
@@ -79,5 +79,33 @@ for (const language of ["fr", "en"]) {
     assert.equal(state.worldEncounters.entries.length, 1);
     ui.reset(); ui.update();
     assert.equal(get("#journey-world-dialog").open, false);
+  });
+}
+
+for (const language of ["fr", "en"]) {
+  test(`${language}: waiting and riding explain where the traveller is, when things happen and what each press did`, () => {
+    const t = (key, args) => translate(language, key, args);
+    const clock = at => new Date(at).toISOString().slice(11, 16);
+    const base = Date.UTC(2026, 10, 23, 17, 0);
+    const booking = { status: "active", paid: false, nextCall: 0,
+      offer: { from: { name: "Laveissière" }, to: { name: "Ytrac" },
+        departureAt: base + 45 * 60000, arrivalAt: base + 95 * 60000 },
+      calls: [{ stop: { name: "Vic" }, arrivalAt: base + 70 * 60000 }, { stop: { name: "Ytrac" }, arrivalAt: base + 95 * 60000 }] };
+    const waiting = transitNarration(booking, base, t, clock);
+    assert.match(waiting[0], /Laveissière/);
+    assert.match(waiting[0], /17:45/);
+    assert.match(waiting[0], /45 min/);
+    assert.match(waiting[1], /30 min/, "explains that time only moves when continuing");
+    const riding = transitNarration({ ...booking, paid: true }, base + 50 * 60000, t, clock);
+    assert.match(riding[0], /Ytrac/);
+    assert.match(riding[0], /18:35/);
+    assert.match(riding[0], /45 min/);
+    assert.match(riding[1], /Vic/);
+    assert.match(riding[1], /18:10/);
+    const state = (elapsedMinutes, b) => ({ elapsedMinutes, transport: { booking: b } });
+    assert.match(transitStepSummary(state(0, booking), state(30, booking), t), /30 min/);
+    assert.notEqual(transitStepSummary(state(0, booking), state(30, booking), t),
+      transitStepSummary(state(30, booking), state(60, { ...booking, paid: true }), t), "boarding is announced");
+    assert.match(transitStepSummary(state(60, { ...booking, paid: true }), state(90, { ...booking, paid: true, status: "arrived" }), t), /Ytrac/);
   });
 }

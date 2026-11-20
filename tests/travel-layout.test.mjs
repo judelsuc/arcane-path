@@ -107,3 +107,13 @@ test("unloaded movement prepares terrain without acquiring the global action loc
   assert.doesNotMatch(preparation, /busy = true|\bstate =(?!=)|walkSurvival|autosave\(/);
   assert.match(script, /terrainWaitingState !== state\) \{\s*transient = "";/);
 });
+
+test("an active booking's blocker offers a clickable way into the transport window", () => {
+  const source = readFileSync(new URL("../travel-ui.mjs", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  // The transport button itself sits in a hidden shortcut-only group.
+  assert.match(readFileSync(new URL("../index.html", import.meta.url), "utf8"),
+    /data-shortcut-sources="travel-toolbar" hidden>[\s\S]*id="open-journey-world"/);
+  assert.match(source, /blocker === "transport"[\s\S]{0,400}querySelector\("#open-journey-world"\)\?\.click\(\)/);
+  assert.match(styles, /#travel-blocker \.travel-blocker-action \{\s*pointer-events: auto;/);
+});

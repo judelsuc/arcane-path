@@ -2,6 +2,33 @@ import { importAgenda, encounterAgenda, acknowledgeEncounter, emptyEncounterStat
 import { journeyTransportOptions, transitActive } from "./journey-world.mjs";
 import { hitchhikingAvailable, hitchhikingActive, hitchhikingDestinations, hitchhikingStopChance } from "./hitchhiking.mjs";
 
+/**
+ * Plain sentences for an active booking: where the traveller waits and for how
+ * long, or which stop comes next on board. Times are journey-clock UTC.
+ */
+export function transitNarration(booking, nowMillis, t, clock) {
+  const minutes = at => Math.max(0, Math.ceil((at - nowMillis) / 60000));
+  if (!booking.paid) {
+    return [t("worldWaiting", { stop: booking.offer.from.name, time: clock(booking.offer.departureAt),
+      minutes: minutes(booking.offer.departureAt) }), t("worldWaitingHow")];
+  }
+  const next = booking.calls[booking.nextCall];
+  return [t("worldRiding", { to: booking.offer.to.name, time: clock(booking.offer.arrivalAt),
+    minutes: minutes(booking.offer.arrivalAt) }),
+  ...(next ? [t("worldNextStop", { stop: next.stop.name, time: clock(next.arrivalAt) })] : [])];
+}
+
+/** One sentence on what the last press of “continue” did. */
+export function transitStepSummary(before, after, t) {
+  const passed = Math.round(after.elapsedMinutes - before.elapsedMinutes);
+  const booking = after.transport?.booking;
+  if (booking?.status === "arrived") return t("worldStepArrived", { to: booking.offer.to.name, minutes: passed });
+  if (booking?.status === "cancelled") return t("worldStepCancelled");
+  if (booking?.status === "interrupted") return t("worldStepInterrupted", { minutes: passed });
+  if (booking?.paid && !before.transport?.booking?.paid) return t("worldStepBoarded", { minutes: passed });
+  return t(booking?.paid ? "worldStepRiding" : "worldStepWaited", { minutes: passed });
+}
+
 export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance, cancel,
   hitchhike, resumeHitchhiking, fetcher = fetch }) {
   const $ = id => document.querySelector(`#${id}`);
@@ -10,6 +37,7 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
   let controller, generation = 0;
   let searchedDay;
   let hitchPayload, hitchSelected;
+  let stepSummary = "";
   const hitchSection = hitchhike ? document.createElement("section") : null;
   if (hitchSection) $("journey-world-transports").before(hitchSection);
   const language = () => document.documentElement.lang === "en" ? "en" : "fr";
@@ -141,9 +169,30 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
       status.textContent = t("worldBooking", { from: booking.offer.from.name, to: booking.offer.to.name,
         status: t(`worldRide.${booking.status}`), paid: (booking.paid ? booking.offer.fareCents / 100 : 0).toFixed(2) });
       list.append(status);
+      if (stepSummary) {
+        const summary = document.createElement("p");
+        summary.className = "journey-world-step";
+        summary.setAttribute("role", "status");
+        summary.textContent = stepSummary;
+        list.append(summary);
+      }
       if (transitActive(current.state)) {
-        list.append(button(t("worldAdvance"), () => run(advance), current.busy));
-        if (!booking.paid) list.append(button(t("worldCancel"), () => run(cancel), current.busy));
+        const clock = at => new Intl.DateTimeFormat(language() === "en" ? "en-GB" : "fr-FR",
+          { timeZone: "UTC", hour: "2-digit", minute: "2-digit" }).format(new Date(at));
+        for (const sentence of transitNarration(booking,
+          current.state.startedAt + current.state.elapsedMinutes * 60000, t, clock)) {
+          const line = document.createElement("p");
+          line.className = "journey-world-transit";
+          line.textContent = sentence;
+          list.append(line);
+        }
+        list.append(button(t("worldAdvance"), () => run(async () => {
+          const before = context()?.state;
+          await advance();
+          const after = context()?.state;
+          stepSummary = before && after ? transitStepSummary(before, after, t) : "";
+        }), current.busy));
+        if (!booking.paid) list.append(button(t("worldCancel"), () => { stepSummary = ""; return run(cancel); }, current.busy));
         return;
       }
     }
@@ -184,6 +233,7 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
         list.append(notice, button(t("worldReserve"), () => run(() => {
           const feed = [...payload.realFeeds, ...(payload.fictionalFeed ? [payload.fictionalFeed] : [])]
             .find(feed => feed.id === selected.feedId);
+          stepSummary = "";
           reserve(feed, selected.id);
           selected = undefined;
         }), current.busy || current.blocked || current.state.walletCents < selected.fareCents));
@@ -266,6 +316,7 @@ export function setupJourneyWorld(t, { context, saveEncounters, reserve, advance
   return { update, reset() {
     generation++; controller?.abort(); loading = false; agenda = payload = selected = hitchPayload = hitchSelected = undefined;
     searchedDay = undefined;
+    stepSummary = "";
     error = coverage = ""; offers = []; $("journey-world-notice").textContent = ""; dialog.close();
   } };
 }

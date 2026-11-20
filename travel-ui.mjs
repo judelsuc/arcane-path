@@ -1227,6 +1227,17 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const blockerStatus = document.querySelector("#travel-blocker");
     blockerStatus.hidden = !blocker;
     blockerStatus.textContent = blocker ? t(`travelBlocked.${blocker}`) : "";
+    // The transport window's own button lives in a hidden shortcut group, and the
+    // cell menu refuses to open during a booking: offer the way out right here.
+    if (blocker === "transport") {
+      const resolve = document.createElement("button");
+      resolve.type = "button";
+      resolve.id = "travel-blocker-transport";
+      resolve.className = "travel-blocker-action";
+      resolve.textContent = `${t("worldTitle")} (6)`;
+      resolve.addEventListener("click", () => document.querySelector("#open-journey-world")?.click());
+      blockerStatus.append(" ", resolve);
+    }
     rest.disabled = sleep.disabled = busy || !cell || Boolean(cursor) || ended || activityPending;
     eat.disabled = rest.disabled || !canEat(cell);
     look.disabled = busy || !cell;

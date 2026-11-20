@@ -1322,6 +1322,9 @@ dialog p { margin: 12px 0; }
   }
   body.is-travelling .travel-active .comparison-panel #travel-streaming:not([hidden]):not(:empty) { bottom: 84px; }
   body.is-travelling .travel-active .comparison-panel #travel-blocker:not([hidden]):not(:empty) { bottom: 114px; }
+  body.is-travelling .travel-active .comparison-panel #travel-blocker .travel-blocker-action {
+    pointer-events: auto; margin-left: 6px; padding: 1px 6px; font-size: 0.68rem;
+  }
   body.is-travelling .travel-active .comparison-panel #cell-info:not([hidden]):not(:empty) { bottom: 144px; }
   body.is-travelling .travel-active .comparison-panel #copy-coordinates-status:not([hidden]):not(:empty) { bottom: 84px; left: auto; right: 14px; }
   body.is-travelling .travel-active .comparison-panel #explore-status:not([hidden]):not(:empty) { bottom: 54px; }
