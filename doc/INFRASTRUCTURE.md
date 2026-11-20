@@ -228,6 +228,32 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## One platform door per E press, 0.22.36 (20 November 2026)
+
+Deployed runtime `d6d7ae1` (`deploy-2026-11-20-door-latch`). Since platform
+level version 5 the interact control is held (for cranks), so holding E at a
+door crossed it on every frame until release: a player reported 98 fatigue
+after three rooms, which the settled costs (275 min, 98 fatigue, 10 health,
+95 dirt) resolve to about 87 room entries. After a room change the adventure
+input layer now ignores interact until it is released; cranks can still be
+held. The platform engine, cost table and saved transcripts are unchanged, so
+existing sessions still replay identically.
+
+Validation: full JavaScript run passed 1890/1891 (the single failure is the
+unchanged dream-wiring baseline assertion). A new UI regression test holds E
+through a door: 22 crossings in 12 frames before the fix, one after, and a new
+press opens the next door. Installed hash of
+`minigames/legend-adventure-ui.mjs` matches the packaged commit, journal clean
+after restart, `nginx -t` OK, HTTPS 401, conditional GET 200, PID 512667
+became 514940.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.36-d6d7ae1/runtime.tar.gz`, SHA-256
+`ac4529e3a43dc8efbce4589f123793dcb539d94b1effe50c35d3f6125b685dfb`. No new
+files in this release. Refresh the release manifest mtime and restart after
+runtime changes. Do not restore or delete player databases, cached narratives,
+images or provider-job receipts.
+
 ## Pursuit kept in step with adventure time, cell-menu Explore and lost-found pairs, 0.22.35 (20 November 2026)
 
 Deployed runtime `f7d05ab` (`deploy-2026-11-20-pursuit-adventure-sync`). The
