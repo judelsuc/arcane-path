@@ -238,6 +238,7 @@ test("the same action keeps the same shortcut in every window", () => {
     W: ["open-cafe", "town-cafe", "cell-cafe"],
     F: ["open-survival-choices", "town-survival-choices"],
     J: ["open-inscriptions", "cell-inscriptions"],
+    Z: ["explore-cell", "cell-explore"],
   };
   for (const [key, ids] of Object.entries(families)) {
     for (const id of ids) {

@@ -3,6 +3,8 @@ const OBJECTS = new Set([
   "keys-fish", "keys-bird", "pouch-square", "pouch-round",
   "scarf-stripes", "scarf-dots", "bottle-cork", "bottle-cup",
   "hat-ribbon", "hat-feather", "mitten-snowflake", "mitten-heart",
+  "glasses-round", "glasses-square", "mug-anchor", "mug-boat",
+  "lantern-red", "lantern-green", "basket-apples", "basket-mushrooms",
 ]);
 
 /** Original vector drawings; the distinctive details are shapes, not text or emoji. */
@@ -136,6 +138,59 @@ export function objectIllustration(doc, objectId, { resonance = false, closeup =
       path("M86 96Q62 76 72 62Q80 52 86 64Q92 52 100 62Q110 76 86 96Z",
         { fill: "#d65c73", stroke: "#8e3e50" }, mark);
     }
+  } else if (kind === "glasses") {
+    path("M30 82L18 60M150 82L162 60", { fill: "none", stroke: "#5a4632", "stroke-width": 5 });
+    path("M82 86Q90 76 98 86", { fill: "none", stroke: "#5a4632", "stroke-width": 5 });
+    const mark = node("g", { "data-detail": detail, fill: "#d4ecf5", stroke: "#5a4632", "stroke-width": 6 }, group);
+    if (detail === "round") {
+      circle(56, 92, 26, {}, mark);
+      circle(124, 92, 26, {}, mark);
+    } else {
+      rect(30, 68, 52, 46, { rx: 3 }, mark);
+      rect(98, 68, 52, 46, { rx: 3 }, mark);
+    }
+    path("M44 82Q50 76 58 78M112 82Q118 76 126 78", { fill: "none", stroke: "#ffffff", "stroke-width": 3 });
+  } else if (kind === "mug") {
+    path("M118 62Q148 62 148 90Q148 118 118 116", { fill: "none", stroke: "#2f5d8a", "stroke-width": 9 });
+    rect(40, 42, 80, 96, { rx: 10, fill: "#f4f1e8", stroke: "#2f5d8a" });
+    path("M40 52H120", { stroke: "#2f5d8a", "stroke-width": 7 });
+    const mark = node("g", { "data-detail": detail, fill: "none", stroke: "#2f5d8a", "stroke-width": 4 }, group);
+    if (detail === "anchor") {
+      circle(80, 70, 6, {}, mark);
+      path("M80 76V122M66 86H94M58 106Q62 124 80 124Q98 124 102 106M54 110L58 104L64 110M96 110L102 104L106 110", {}, mark);
+    } else {
+      path("M56 108H104L96 122H64Z", { fill: "#b8573f", stroke: "#7a3a2a" }, mark);
+      path("M80 108V68", {}, mark);
+      path("M82 70L102 102H82Z", { fill: "#e9dcc0", stroke: "#2f5d8a" }, mark);
+      path("M50 128Q60 122 70 128Q80 134 90 128Q100 122 110 128", { "stroke-width": 2.5 }, mark);
+    }
+  } else if (kind === "lantern") {
+    path("M70 30Q90 6 110 30", { fill: "none", stroke: "#3e3a36", "stroke-width": 5 });
+    path("M64 30H116L124 46H56Z", { fill: "#55504a", stroke: "#2e2b28" });
+    const glass = detail === "red" ? ["#e0705f", "#9e3b31"] : ["#79b56f", "#3e6f3a"];
+    const mark = node("g", { "data-detail": detail }, group);
+    rect(62, 46, 56, 74, { fill: glass[0], stroke: glass[1], opacity: 0.9 }, mark);
+    path("M90 46V120M62 83H118", { fill: "none", stroke: "#2e2b28", "stroke-width": 3 }, mark);
+    path("M90 110Q76 96 90 76Q104 96 90 110Z", { fill: "#f8d777", stroke: "#c98a2c", "stroke-width": 2 });
+    path("M56 120H124L118 134H62Z", { fill: "#55504a", stroke: "#2e2b28" });
+  } else if (kind === "basket") {
+    path("M46 80Q46 28 90 28Q134 28 134 80", { fill: "none", stroke: "#9b7442", "stroke-width": 7 });
+    const mark = node("g", { "data-detail": detail }, group);
+    if (detail === "apples") {
+      for (const [cx, cy] of [[62, 74], [90, 68], [118, 74], [76, 62], [104, 62]]) {
+        circle(cx, cy, 14, { fill: "#cf4a3c", stroke: "#86302a" }, mark);
+        path(`M${cx} ${cy - 14}Q${cx + 2} ${cy - 22} ${cx + 6} ${cy - 22}`, { fill: "none", stroke: "#5a3e22" }, mark);
+      }
+    } else {
+      for (const [cx, cy] of [[64, 70], [92, 62], [118, 72]]) {
+        rect(cx - 5, cy, 10, 16, { rx: 3, fill: "#f2e6cc", stroke: "#8a7552" }, mark);
+        path(`M${cx - 18} ${cy + 2}Q${cx} ${cy - 22} ${cx + 18} ${cy + 2}Z`, { fill: "#a8643a", stroke: "#6b3d22" }, mark);
+        circle(cx - 6, cy - 6, 2.5, { fill: "#f2e6cc", stroke: "none" }, mark);
+      }
+    }
+    path("M36 80H144L130 138H50Z", { fill: "#d2a463", stroke: "#8a6430" });
+    path("M40 96H140M44 112H136M47 126H133", { fill: "none", stroke: "#a87a3e", "stroke-width": 2 });
+    path("M66 80L70 138M90 80V138M114 80L110 138", { fill: "none", stroke: "#a87a3e", "stroke-width": 2 });
   } else {
     path("M46 47Q33 68 30 124Q29 141 90 141Q151 141 150 124Q147 68 134 47Z",
       { fill: "#e8bd53", stroke: "#997434" });

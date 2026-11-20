@@ -1,6 +1,11 @@
 {
-  "version": "0.22.34",
+  "version": "0.22.35",
   "entries": [
+    {
+      "version": "0.22.35",
+      "fr": "Correction : entrer dans une aventure de légende (ou utiliser un objet magique qui déplace) pendant une poursuite provoquait « Invalid saved pursuit » — le poursuivant suit désormais aussi le temps passé dans l'aventure. Explorer rejoint aussi le menu contextuel de la case (même raccourci Z). Les objets trouvés s'enrichissent de quatre nouvelles paires à départager — lunettes, tasses émaillées, lanternes et paniers d'osier — soit douze familles tirées au hasard à chaque partie.",
+      "en": "Fix: entering a legend adventure (or using a magic object that moves you) during a pursuit caused \"Invalid saved pursuit\" — the pursuer now also follows the time spent in the adventure. Explore also joins the cell's context menu (same Z shortcut). Lost & found gains four new lookalike pairs — glasses, enamel mugs, lanterns and wicker baskets — for twelve families drawn at random each game."
+    },
     {
       "version": "0.22.34",
       "fr": "Correction urgente : reporter une fuite au-delà d'un jour rendait la sauvegarde invalide (« Invalid saved pursuit ») — la difficulté épinglée est de nouveau acceptée. Un bouton Explorer (Z) est toujours présent dans la barre d'actions : il inspecte un passage correspondant, entre dans une aventure découverte, et sinon répond simplement « Vous ne trouvez rien d'inhabituel ici. »",

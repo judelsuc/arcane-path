@@ -127,6 +127,17 @@ function correctButton(f) {
       /flocon|étoile|givre|snowflake|star|frost/i],
     ["mitten-heart", /moufle|laine|ma main|chaleur de main|étui|mitten|wool|my hand|hand case|hand-warmth/i,
       /cœur|affection|bat dans|heart|beats|affection/i],
+    ["glasses-round", /lunettes|lire|fenêtres pour les yeux|glasses|lenses|\bread\b|windows for the eyes/i,
+      /ronds|cercles|sans former d'angle|round|circles|without any angle/i],
+    ["glasses-square", /lunettes|lire|fenêtres pour les yeux|glasses|lenses|\bread\b|windows for the eyes/i,
+      /carrés|quatre coins|angles droits|square|four corners|right angles/i],
+    ["mug-anchor", /tasse|café|compagnon du matin|mug|coffee|morning companion/i, /ancre|crochet|navires|anchor|hook|ships/i],
+    ["mug-boat", /tasse|café|compagnon du matin|mug|coffee|morning companion/i, /bateau|vogue|voile|boat|sail/i],
+    ["lantern-red", /lanterne|flamme|éclaire|lantern|flame|lights my way/i, /rouge|braise|cerises|\bred\b|ember|cherries/i],
+    ["lantern-green", /lanterne|flamme|éclaire|lantern|flame|lights my way/i, /vert|mousse|feuilles|green|moss|leaves/i],
+    ["basket-apples", /panier|osier|tressage|marché|basket|wicker|woven|market/i, /pomme|verger|sur l’arbre|apple|orchard|on a tree/i],
+    ["basket-mushrooms", /panier|osier|tressage|marché|basket|wicker|woven|market/i,
+      /champignon|sous-bois|sous la mousse|mushroom|woodland|under moss/i],
   ];
   const buttons = f.all().filter(node => node.dataset.action === "match");
   // Riddle clues negate the paired feature; keep only the positive phrase.

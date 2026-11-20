@@ -966,3 +966,23 @@ test("ordinary and magical inventory share packing cells and a weight limit", as
   state.lore.carriedGrams++;
   assert.throws(() => validateArtifactInventory(state), /weight/);
 });
+
+test("legend adventure time on the server keeps an active pursuit and a deferred escape consistent", async () => {
+  const { beginPursuit, advancePursuit, validatePursuit } = await import("../pursuit.mjs");
+  const base = input().snapshot;
+  const chasing = beginPursuit(base);
+  // A ready escape deferred on this cell: the pursuer caught up after the grace day.
+  const later = { ...chasing, elapsedMinutes: 2340,
+    tarotDay: new Date(chasing.startedAt + 2340 * 60000).toISOString().slice(0, 10) };
+  const deferred = advancePursuit(later, { terrain: "forest" });
+  assert.equal(deferred.pursuit.pending?.status, "ready");
+  for (const snapshot of [chasing, deferred]) {
+    const genesis = { ...input().genesis, state: base };
+    const { result } = await startInvestigation({ snapshot, genesis }, GENERATED_INVESTIGATION_VERSION);
+    const state = result.runtime.state;
+    assert.equal(state.elapsedMinutes, snapshot.elapsedMinutes + 3, "entering costs journey time");
+    assert.equal(state.pursuit.observedMinutes, state.elapsedMinutes);
+    if (snapshot.pursuit.pending) assert.equal(state.pursuit.pending.elapsedMinutes, state.elapsedMinutes);
+    validatePursuit(state);
+  }
+});

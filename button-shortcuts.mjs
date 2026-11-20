@@ -20,6 +20,7 @@ const KEYS = {
   "cell-town": "T", "cell-transport": "6",
   "cell-equipment": "V", "cell-dog": "5",
   "cell-journal": "A", "cell-photo": "P", "cell-save": "S",
+  "cell-explore": "Z",
   "open-journal": "A",
   "open-earn-money": "B", "town-earn-money": "B", "cell-earn-money": "B",
   "journal-previous": "ArrowLeft", "journal-next": "ArrowRight",

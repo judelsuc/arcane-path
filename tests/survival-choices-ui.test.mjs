@@ -156,7 +156,8 @@ test("full-word cell actions forward to existing controls only after closing, re
   for (const [id, target] of [["cell-town", "open-town"], ["cell-equipment", "equipment-travel"],
     ["cell-journal", "open-journal"],
     ["cell-inscriptions", "open-inscriptions"],
-    ["cell-photo", "show-photo"], ["cell-save", "save-travel"]]) {
+    ["cell-photo", "show-photo"], ["cell-save", "save-travel"],
+    ["cell-explore", "explore-cell"]]) {
     let invoked = false;
     h.get(`#${target}`).events.click = () => { invoked = true; };
     h.ui.localize();

@@ -92,6 +92,14 @@ test("handwritten clues distinguish lookalikes in both languages, at every level
     "hat-feather": [/feather|bird/i, /plume|oiseau/i],
     "mitten-snowflake": [/snowflake|star|frost|winter/i, /flocon|étoile|givre|hiver/i],
     "mitten-heart": [/heart|affection|beats/i, /cœur|affection|bat/i],
+    "glasses-round": [/round|circles|without any angle/i, /ronds|cercles|sans former d'angle/i],
+    "glasses-square": [/square|four corners|right angles/i, /carrés|quatre coins|angles droits/i],
+    "mug-anchor": [/anchor|hook|ships/i, /ancre|crochet|navires/i],
+    "mug-boat": [/boat|sail/i, /bateau|vogue|voile/i],
+    "lantern-red": [/\bred\b|ember|cherries/i, /rouge|braise|cerises/i],
+    "lantern-green": [/green|moss|leaves/i, /vert|mousse|feuilles/i],
+    "basket-apples": [/apple|orchard|on a tree/i, /pomme|verger|sur l’arbre/i],
+    "basket-mushrooms": [/mushroom|woodland|under moss/i, /champignon|sous-bois|sous la mousse/i],
   };
   for (let level = 0; level <= 19; level++) {
     const game = create(level);

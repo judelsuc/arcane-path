@@ -11,6 +11,7 @@ import ARTIFACT_RUMOURS from "./public/artifact-rumours.json" with { type: "json
 import { MAIN_ARTIFACT_WORLD } from "./lore-catalogue.mjs";
 import { loreCell } from "./lore-map.mjs";
 import { parentPath } from "./lore-knowledge.mjs";
+import { advancePursuit } from "./pursuit.mjs";
 
 export async function mainArtifactRequest(input) {
   const { genesis, map, journey, action, journalContext } = input;
@@ -195,6 +196,13 @@ export async function mainArtifactRequest(input) {
     result.runtime.state.ended = state.ended;
   }
   state = result.runtime.state;
+  // Adventures and artifact powers spend journey time or move the traveller
+  // on the server; the pursuer follows that trajectory exactly as it would
+  // after a client action, so the saved chase stays consistent.
+  if (state.pursuit) {
+    state = advancePursuit(state, loreCell(map, state.col, state.row), infoAt(map, state));
+    result.runtime.state = state;
+  }
   state.artifactRevision = result.runtime.revision;
   const view = loreView(result.runtime, result.instances, journey, map, { nowMillis: input.nowMillis, journalContext });
   state.lore.carriedGrams = view.state.lore.carriedGrams;
