@@ -106,22 +106,35 @@ function fixture(options = {}, configure = () => {}) {
 }
 function correctButton(f) {
   const text = f.doc.activeElement.textContent;
+  // Each entry pairs a family pattern with a detail pattern: a clue designates
+  // an object only when both match, which keeps any random mix unambiguous.
   const patterns = [
-    ["umbrella-moon", /moon|crescent|lune|croissant/i],
-    ["umbrella-star", /star|five.point|five points|étoile|cinq point/i],
-    ["notebook-leaf", /leaf|branch|feuille|branche/i],
-    ["notebook-flower", /flower|petals|fleur|pétales/i],
-    ["keys-fish", /fish|swimmer|fins|poisson|nageur|nageoires/i],
-    ["keys-bird", /bird|feather|wings|oiseau|plumes|ailes/i],
-    ["pouch-square", /square|four.corner|four right|four equal|carrée|quatre coins|quatre angles|quatre côtés/i],
-    ["pouch-round", /round|without corners|circle|without.*corner|ronde|sans coins|cercle|sans.*coin/i],
+    ["umbrella-moon", /parapluie|pluie|poignée|abri pliant|umbrella|rain|handle|folding shelter/i, /lune|croissant|moon|crescent/i],
+    ["umbrella-star", /parapluie|pluie|poignée|abri pliant|umbrella|rain|handle|folding shelter/i, /étoile|cinq pointes?|star|five.point/i],
+    ["notebook-leaf", /carnet|notes|pages|jardin de mots|notebook|garden of words/i, /feuille|branche|leaf|branch/i],
+    ["notebook-flower", /carnet|notes|pages|jardin de mots|notebook|garden of words/i, /fleur|pétale|flower|petal/i],
+    ["keys-fish", /clé|trousseau|serrure|ouvrir ma porte|key|lock|open my door/i, /poisson|nageur|nageoire|fish|swimmer|fins/i],
+    ["keys-bird", /clé|trousseau|serrure|ouvrir ma porte|key|lock|open my door/i, /oiseau|voyageur|ailes|plumes|bird|feathered|wings/i],
+    ["pouch-square", /pochette|sac jaune|tissu|pouch|bag|cloth/i, /carrée|quatre|square|four/i],
+    ["pouch-round", /pochette|sac jaune|tissu|pouch|bag|cloth/i, /ronde|sans coins?|former de coin|cercle|round|circle|without.*corner/i],
+    ["scarf-stripes", /écharpe|tour de cou|au cou|laine d'hiver|scarf|neck|ribbon of wool/i, /ray|lignes|stripes|lines/i],
+    ["scarf-dots", /écharpe|tour de cou|au cou|laine d'hiver|scarf|neck|ribbon of wool/i, /pois|ronds|dots|circles/i],
+    ["bottle-cork", /gourde|eau|boire|flask|water|drink/i, /liège|écorce|chêne|cork|bark|oak/i],
+    ["bottle-cup", /gourde|eau|boire|flask|water|drink/i, /gobelet|verre|sert à boire|cup|glass|drink from/i],
+    ["hat-ribbon", /chapeau|paille|soleil|toit|straw|hat|sun|roof/i, /ruban|ceinture|bande|étoffe|ribbon|belt|band|fabric/i],
+    ["hat-feather", /chapeau|paille|soleil|toit|straw|hat|sun|roof/i, /plume|oiseau|feather|bird/i],
+    ["mitten-snowflake", /moufle|laine|ma main|chaleur de main|étui|mitten|wool|my hand|hand case|hand-warmth/i,
+      /flocon|étoile|givre|snowflake|star|frost/i],
+    ["mitten-heart", /moufle|laine|ma main|chaleur de main|étui|mitten|wool|my hand|hand case|hand-warmth/i,
+      /cœur|affection|bat dans|heart|beats|affection/i],
   ];
   const buttons = f.all().filter(node => node.dataset.action === "match");
-  // At level 4 the clues also negate the paired feature; use the positive phrase.
+  // Riddle clues negate the paired feature; keep only the positive phrase.
   const positive = text.split(/, not |, pas |, without |, sans |, pas une |, pas un /)[0]
-    .replace(/\s(?:sans ailes|without wings)[.!]?$/, "");
-  const matches = patterns.filter(([id, pattern]) => buttons.some(node => node.dataset.objectId === id) &&
-    pattern.test(positive));
+    .replace(/\s(?:sans ailes|without wings)[.!]?$/, "")
+    .replace(/^(?:Ni|Neither)[^:]*: /, "");
+  const matches = patterns.filter(([id, family, detail]) => buttons.some(node => node.dataset.objectId === id) &&
+    family.test(positive) && detail.test(positive));
   assert.equal(matches.length, 1, `Unique visible clue: ${text}`);
   return buttons.find(node => node.dataset.objectId === matches[0][0]);
 }

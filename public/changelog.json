@@ -1,6 +1,11 @@
 {
-  "version": "0.22.27",
+  "version": "0.22.28",
   "entries": [
+    {
+      "version": "0.22.28",
+      "fr": "Le poursuivant s'enhardit avec le temps : la difficulté de la fuite augmente désormais avec les jours de traque écoulés, en plus des tentatives et de votre état — les anciennes fuites enregistrées restent inchangées. Objets trouvés double sa collection (écharpe, gourde, chapeau, moufle rejoignent parapluie, carnet, clés et pochette) et tire les familles au hasard : chaque partie change, les paires trompeuses restent ensemble.",
+      "en": "The pursuer grows bolder with time: escape difficulty now rises with the days of chase, on top of attempts and your condition — previously saved escapes stay unchanged. Lost and found doubles its collection (scarf, flask, hat and mitten join umbrella, notebook, keys and pouch) and draws families at random: every game differs, with confusable pairs kept together."
+    },
     {
       "version": "0.22.27",
       "fr": "Le croquis de carte postale trame désormais une vraie photo locale du lieu (avec son crédit) : la photo est découpée en cases selon la difficulté — grille plus fine et couleurs selon le niveau — avec un cadrage aléatoire à chaque partie. Sans photo disponible, les motifs imaginaires reviennent, désormais déclinés en huit orientations aléatoires.",

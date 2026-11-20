@@ -35,7 +35,7 @@ const COPY = {
     captureImage: "A frightening close-up of the pursuer's face. You were caught.",
     captureImageError: "The capture illustration could not be loaded.",
     demanding: "Low ceilings guard tall stacks: stay low, then time your jump. Three-step ledges require another jump. Each new impact can cost a stumble.",
-    difficulty: "Difficulty {level}/10 · journey progression {base}, condition adjustment {modifier}. Low health, fatigue and lack of sleep make escape harder.",
+    difficulty: "Difficulty {level}/10 · chase progression {base} (attempts and days since the pursuit began), condition adjustment {modifier}. Low health, fatigue and lack of sleep make escape harder; the pursuer grows bolder with each passing day.",
     save: "Unable to save the escape.", restored: "This started escape was interrupted and must be recorded as capture.",
   },
   fr: {
@@ -69,7 +69,7 @@ const COPY = {
     captureImage: "Gros plan inquiétant du visage du poursuivant. Vous avez été rattrapé.",
     captureImageError: "L'illustration de la capture n'a pas pu être chargée.",
     demanding: "Des plafonds bas précèdent les piles hautes : restez au sol, puis sautez au bon moment. Les escaliers à trois marches demandent un nouveau saut. Chaque nouvel impact peut coûter un trébuchement.",
-    difficulty: "Difficulté {level}/10 · progression du voyage {base}, adaptation à votre état {modifier}. Une santé faible, la fatigue et le manque de sommeil compliquent la fuite.",
+    difficulty: "Difficulté {level}/10 · progression de la traque {base} (tentatives et jours depuis le début de la poursuite), adaptation à votre état {modifier}. Une santé faible, la fatigue et le manque de sommeil compliquent la fuite ; le poursuivant s'enhardit de jour en jour.",
     save: "Impossible d'enregistrer la fuite.", restored: "Cette fuite commencée a été interrompue et doit être enregistrée comme une capture.",
   },
 };

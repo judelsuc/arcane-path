@@ -84,6 +84,14 @@ test("handwritten clues distinguish lookalikes in both languages, at every level
     "keys-bird": [/bird|feather|wings/i, /oiseau|plumes|ailes/i],
     "pouch-square": [/square|four.corner|four right|four equal/i, /carrée|quatre coins|quatre angles|quatre côtés/i],
     "pouch-round": [/round|without corners|circle|without.*corner/i, /ronde|sans coins|cercle|sans.*coin/i],
+    "scarf-stripes": [/stripes|lines/i, /ray|lignes/i],
+    "scarf-dots": [/dots|circles/i, /pois|ronds/i],
+    "bottle-cork": [/cork|bark|oak/i, /liège|écorce|chêne/i],
+    "bottle-cup": [/cup|glass|drink/i, /gobelet|verre|boire/i],
+    "hat-ribbon": [/ribbon|belt|band/i, /ruban|ceinture|bande/i],
+    "hat-feather": [/feather|bird/i, /plume|oiseau/i],
+    "mitten-snowflake": [/snowflake|star|frost|winter/i, /flocon|étoile|givre|hiver/i],
+    "mitten-heart": [/heart|affection|beats/i, /cœur|affection|bat/i],
   };
   for (let level = 0; level <= 19; level++) {
     const game = create(level);
@@ -204,5 +212,24 @@ test("15-second deadline starts at creation and expires exactly, including befor
     assert.equal(input(expired, { type: "cancel" }, 100000), expired);
     assert.equal(initial.score, 0);
     assert.equal(initial.status, "playing");
+  }
+});
+
+test("object families are drawn at random so repeated games differ, pairs staying together", () => {
+  const sets = new Set();
+  for (let seed = 1; seed <= 40; seed++) {
+    let value = seed;
+    const rng = () => ((value = (Math.imul(value, 1664525) + 1013904223) >>> 0) / 2 ** 32);
+    const game = createGame({ level: 0, random: rng });
+    assert.equal(game.objects.length, 4);
+    assert.equal(new Set(game.objects.map(item => item.id.split("-")[0])).size, 2,
+      "confusable pairs stay together");
+    sets.add(game.objects.map(item => item.id).sort().join(","));
+  }
+  assert.ok(sets.size >= 10, `distinct object sets over 40 seeds: ${sets.size}`);
+  const moon = createGame({ level: 0, dailyCard: "moon" });
+  for (const id of ["umbrella-moon", "umbrella-star"]) {
+    assert.ok(moon.objects.some(object => object.id === id),
+      "the resonance variant keeps the umbrella pair it re-labels");
   }
 });

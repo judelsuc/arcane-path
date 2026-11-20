@@ -1,12 +1,12 @@
 import { PLAYER, STEP } from "./legend-platformer.mjs";
 
-export const ESCAPE_VERSION = 7;
+export const ESCAPE_VERSION = 8;
 export const ESCAPE_LENGTH = 5400;
 export const ESCAPE_MAX_TICKS = 2400;
 const FLOOR = 270;
 
 export function escapeCourse(version = ESCAPE_VERSION, difficulty = 1) {
-  if (![1, 2, 3, 4, 5, 6, 7].includes(version) || !Number.isInteger(difficulty) || difficulty < 1 || difficulty > 10) {
+  if (![1, 2, 3, 4, 5, 6, 7, 8].includes(version) || !Number.isInteger(difficulty) || difficulty < 1 || difficulty > 10) {
     throw new Error("Invalid escape course.");
   }
   const speed = version >= 7 && difficulty >= 4 ? [260, 285, 310, 320, 330, 350, 370][difficulty - 4]
@@ -131,7 +131,7 @@ export function createEscape(seed, version = ESCAPE_VERSION, difficulty = 1) {
 }
 
 export function stepEscape(state, jump = false) {
-  if (typeof jump !== "boolean" || ![1, 2, 3, 4, 5, 6, ESCAPE_VERSION].includes(state.version)) throw new Error("Invalid escape controls.");
+  if (typeof jump !== "boolean" || ![1, 2, 3, 4, 5, 6, 7, ESCAPE_VERSION].includes(state.version)) throw new Error("Invalid escape controls.");
   if (state.status !== "running") return state;
   const course = escapeCourse(state.version, state.difficulty);
   const next = { ...state, tick: state.tick + 1, x: state.x + course.speed * STEP };

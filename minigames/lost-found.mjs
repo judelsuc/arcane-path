@@ -30,6 +30,30 @@ const variants = [
   ["pouch-round", "Pochette jaune, pièce ronde", "Yellow pouch, round patch",
     ["Ma pochette jaune a une pièce ronde.", "Je cherche une pochette jaune à pièce ronde.", "Mon petit sac jaune porte une pièce sans coins.", "Mon rangement de tissu soleil porte un cercle cousu.", "Ni pluie ni papier : sur mon tissu jaune, la réparation tourne sans jamais former de coin."],
     ["My yellow pouch has a round patch.", "I lost a yellow pouch with a round patch.", "My small yellow bag has a patch without corners.", "My sunshine cloth storage bears a stitched circle.", "Neither rain nor paper: on my yellow cloth, the repair curves without ever forming a corner."]],
+  ["scarf-stripes", "Écharpe rouge à rayures", "Red scarf with stripes",
+    ["Mon écharpe rouge est rayée.", "Je cherche une écharpe rouge à rayures.", "Elle tient chaud au cou ; des rayures la traversent.", "Mon ruban de laine d'hiver porte des lignes parallèles.", "Ni pois ni fleurs : mon tour de cou tissé ne porte que des lignes bien droites."],
+    ["My red scarf has stripes.", "I lost a red scarf with stripes.", "It keeps my neck warm; stripes run across it.", "My winter ribbon of wool bears parallel lines.", "Neither dots nor flowers: my woven neck-warmer carries only straight lines."]],
+  ["scarf-dots", "Écharpe rouge à pois", "Red scarf with dots",
+    ["Mon écharpe rouge est à pois.", "Je cherche une écharpe rouge à pois.", "Elle tient chaud au cou ; des pois la parsèment.", "Mon ruban de laine d'hiver est semé de petits ronds.", "Ni lignes ni fleurs : mon tour de cou tissé ne porte que des ronds dispersés."],
+    ["My red scarf has dots.", "I lost a red scarf with dots.", "It keeps my neck warm; dots are scattered across it.", "My winter ribbon of wool is sprinkled with little circles.", "Neither lines nor flowers: my woven neck-warmer carries only scattered circles."]],
+  ["bottle-cork", "Gourde bleue, bouchon de liège", "Blue flask, cork stopper",
+    ["Ma gourde bleue a un bouchon de liège.", "Je cherche une gourde bleue au bouchon de liège.", "Elle porte l'eau du chemin ; du liège la ferme.", "Ma réserve d'eau bleue se ferme d'un morceau d'écorce.", "Ni métal ni visserie : ce qui scelle mon eau a poussé sur un chêne."],
+    ["My blue flask has a cork stopper.", "I lost a blue flask with a cork stopper.", "It carries water for the road; cork seals it.", "My blue water keeper is closed by a piece of bark.", "Neither metal nor screw: what seals my water once grew on an oak."]],
+  ["bottle-cup", "Gourde bleue, gobelet de métal", "Blue flask, metal cup",
+    ["Ma gourde bleue a un gobelet de métal.", "Je cherche une gourde bleue au gobelet de métal.", "Elle porte l'eau du chemin ; un gobelet la coiffe.", "Ma réserve d'eau bleue porte un chapeau qui sert à boire.", "Ni liège ni écorce : ce qui coiffe mon eau brille et sert de petit verre."],
+    ["My blue flask has a metal cup.", "I lost a blue flask with a metal cup.", "It carries water for the road; a cup tops it.", "My blue water keeper wears a hat you can drink from.", "Neither cork nor bark: what tops my water shines and serves as a little glass."]],
+  ["hat-ribbon", "Chapeau de paille, ruban", "Straw hat, ribbon",
+    ["Mon chapeau de paille a un ruban.", "Je cherche un chapeau de paille au ruban sombre.", "Il protège du soleil ; un ruban l'entoure.", "Mon toit de paille porte une ceinture de tissu.", "Ni plume ni fleur : mon abri de soleil est ceint d'une bande d'étoffe."],
+    ["My straw hat has a ribbon.", "I lost a straw hat with a dark ribbon.", "It keeps the sun off; a ribbon circles it.", "My straw roof wears a belt of cloth.", "Neither feather nor flower: my sun shelter is girdled with a band of fabric."]],
+  ["hat-feather", "Chapeau de paille, plume", "Straw hat, feather",
+    ["Mon chapeau de paille porte une plume.", "Je cherche un chapeau de paille à la plume.", "Il protège du soleil ; une plume le signale.", "Mon toit de paille porte un souvenir d'oiseau.", "Ni ruban ni fleur : mon abri de soleil garde ce qu'un oiseau a laissé tomber."],
+    ["My straw hat has a feather.", "I lost a straw hat with a feather.", "It keeps the sun off; a feather marks it.", "My straw roof carries a bird's keepsake.", "Neither ribbon nor flower: my sun shelter keeps what a bird let fall."]],
+  ["mitten-snowflake", "Moufle de laine, flocon", "Wool mitten, snowflake",
+    ["Ma moufle de laine porte un flocon.", "Je cherche une moufle de laine au flocon.", "Elle garde ma main au chaud ; un flocon la décore.", "Mon étui de laine porte l'étoile froide de l'hiver.", "Ni cœur ni pois : ma chaleur de main est brodée d'une étoile de givre."],
+    ["My wool mitten has a snowflake.", "I lost a wool mitten with a snowflake.", "It keeps my hand warm; a snowflake decorates it.", "My woollen hand case bears winter's cold star.", "Neither heart nor dot: my hand-warmth is embroidered with a star of frost."]],
+  ["mitten-heart", "Moufle de laine, cœur", "Wool mitten, heart",
+    ["Ma moufle de laine porte un cœur.", "Je cherche une moufle de laine au cœur brodé.", "Elle garde ma main au chaud ; un cœur la décore.", "Mon étui de laine porte un petit signe d'affection.", "Ni flocon ni pois : ma chaleur de main est brodée du signe qui bat dans la poitrine."],
+    ["My wool mitten has a heart.", "I lost a wool mitten with an embroidered heart.", "It keeps my hand warm; a heart decorates it.", "My woollen hand case bears a small sign of affection.", "Neither snowflake nor dot: my hand-warmth is embroidered with the sign that beats in a chest."]],
 ];
 
 const states = new WeakSet();
@@ -84,8 +108,18 @@ export function createGame({ level = 0, random = Math.random, now = 0, ...option
   const settings = difficulty(level);
   time(now);
   if (typeof random !== "function") throw new TypeError("Expected a random function.");
-  const objects = variants.slice(0, settings.objectCount).map(([id, fr, en]) => ({ id, label: { fr, en } }));
-  const reports = shuffle(variants.slice(0, settings.objectCount), random).map(([objectId, , , fr, en]) =>
+  // Confusable pairs are kept together, but the families themselves are drawn
+  // at random so repeated games differ. The resonance variant keeps the
+  // umbrella pair first, whose medallion details it re-labels.
+  const pairs = [];
+  for (let index = 0; index < variants.length; index += 2) pairs.push([variants[index], variants[index + 1]]);
+  const ordered = resonance ? [pairs[0], ...shuffle(pairs.slice(1), random)] : shuffle(pairs, random);
+  const chosen = [];
+  for (const family of ordered) for (const variant of family) {
+    if (chosen.length < settings.objectCount) chosen.push(variant);
+  }
+  const objects = chosen.map(([id, fr, en]) => ({ id, label: { fr, en } }));
+  const reports = shuffle(chosen, random).map(([objectId, , , fr, en]) =>
     ({ objectId, description: { fr: fr[settings.clueStyle], en: en[settings.clueStyle] } }));
   if (resonance) {
     for (const [index, object] of objects.slice(0, 2).entries()) {

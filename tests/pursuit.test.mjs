@@ -210,13 +210,16 @@ test("difficulty and its condition snapshot stay pinned through deferral, reload
   for (let completed = 0; completed < 5; completed++) {
     state = advance(state, completed ? 900 : 2340, { health: 70, fatigue: 40, awakeHours: 12 });
     const selected = structuredClone(state.pursuit.pending.difficulty);
-    assert.equal(selected.base, 1 + Math.floor(completed / 2));
+    const days = (state.pursuit.pending.elapsedMinutes - state.pursuit.startedMinutes) / 1440;
+    assert.equal(selected.base,
+      Math.min(10, 1 + Math.floor(completed / 2) + Math.floor(days / 2)));
     state = advance(state, 1, { health: 20, fatigue: 80, awakeHours: 23 });
     assert.deepEqual(state.pursuit.pending.difficulty, selected);
     state = structuredClone(state);
     validatePursuit(state);
     state = beginPursuitEscape(state, "normal");
-    const { transcript } = route(state.pursuit.pending.seed, 54, 5, selected.level);
+    const pending = state.pursuit.pending;
+    const { transcript } = route(pending.seed, hardApproach, pending.version, selected.level);
     state = settlePursuitEscape(state, transcript);
     assert.deepEqual(state.pursuit.history.at(-1).difficulty, selected);
     validatePursuit(state);
@@ -463,4 +466,26 @@ test("malformed pursuit state, incompatible protocols, forged outcomes and displ
   }
   assert.throws(() => validatePursuit({ ...base(), ended: "captured" }), /Invalid/);
   assert.throws(() => advance(advance(beginPursuit(base()), 1440), 900, {}, { unavailable: true }), /loaded terrain/);
+});
+
+test("the pursuer grows bolder with journey time, even without any escape attempts", () => {
+  const condition = { health: 70, fatigue: 40, awakeHours: 12 };
+  assert.equal(pursuitDifficulty(condition, 0, 0).base, 1, "a fresh chase starts gently");
+  assert.equal(pursuitDifficulty(condition, 0, 5).base, 3);
+  assert.equal(pursuitDifficulty(condition, 0, 30).base, 10, "time alone can reach the hardest routes");
+  assert.equal(pursuitDifficulty(condition, 4, 5).base, 5, "attempts and days stack");
+  assert.equal(pursuitDifficulty(condition, 0).base, 1, "the legacy formula ignores time");
+  assert.throws(() => pursuitDifficulty(condition, 0, -1), /Invalid/);
+  // A traveller who outruns the pursuer for ten days faces a much bolder chase
+  // on first contact, and the save roundtrips with the pinned difficulty.
+  let state = beginPursuit(base());
+  for (let i = 0; i < 20; i++) state = advance(state, 720, { col: state.col + 96 });
+  assert.equal(state.pursuit.pending, null, "matching the pursuer's pace avoids contact");
+  state = advance(state, 900);
+  const difficulty = state.pursuit.pending.difficulty;
+  assert.equal(difficulty.base, 6, "ten days of chase raise the base difficulty");
+  validatePursuit(state);
+  const forged = structuredClone(state);
+  forged.pursuit.pending.difficulty.base = 1;
+  assert.throws(() => validatePursuit(forged), /Invalid/);
 });

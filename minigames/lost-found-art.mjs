@@ -1,6 +1,8 @@
 const OBJECTS = new Set([
   "umbrella-moon", "umbrella-star", "notebook-leaf", "notebook-flower",
   "keys-fish", "keys-bird", "pouch-square", "pouch-round",
+  "scarf-stripes", "scarf-dots", "bottle-cork", "bottle-cup",
+  "hat-ribbon", "hat-feather", "mitten-snowflake", "mitten-heart",
 ]);
 
 /** Original vector drawings; the distinctive details are shapes, not text or emoji. */
@@ -82,6 +84,57 @@ export function objectIllustration(doc, objectId, { resonance = false, closeup =
       circle(138, 81, 3, { fill: "#fff6df", stroke: "none" }, mark);
       circle(139, 81, 1.5, { fill: "#343332", stroke: "none" }, mark);
       path("M118 125V135M128 125V135", { fill: "none" }, mark);
+    }
+  } else if (kind === "scarf") {
+    path("M55 30Q90 20 125 30L120 118Q90 128 60 118Z", { fill: "#c4524a", stroke: "#7e322d" });
+    path("M62 118L59 138M74 121L73 139M88 124L88 140M102 121L103 139M116 118L119 138",
+      { fill: "none", stroke: "#7e322d" });
+    const mark = node("g", { "data-detail": detail }, group);
+    if (detail === "stripes") {
+      path("M57 52Q90 44 123 52M58 76Q90 68 122 76M59 100Q90 92 121 100",
+        { fill: "none", stroke: "#f3e2c0", "stroke-width": 7 }, mark);
+    } else {
+      for (const [cx, cy] of [[72, 55], [104, 50], [88, 78], [68, 98], [110, 95]]) {
+        circle(cx, cy, 7, { fill: "#f3e2c0", stroke: "none" }, mark);
+      }
+    }
+  } else if (kind === "bottle") {
+    path("M78 42H102V54Q122 62 122 92V126Q122 140 90 140Q58 140 58 126V92Q58 62 78 54Z",
+      { fill: "#3f7fb5", stroke: "#24537a" });
+    path("M58 96Q90 104 122 96", { fill: "none", stroke: "#8fc3e8", "stroke-width": 3 });
+    path("M66 60Q90 70 114 60", { fill: "none", stroke: "#8a6a43", "stroke-width": 5 });
+    const mark = node("g", { "data-detail": detail }, group);
+    if (detail === "cork") {
+      rect(76, 24, 28, 20, { rx: 4, fill: "#c8a06a", stroke: "#8a6a43" }, mark);
+      path("M82 28V40M90 27V41M98 28V40", { fill: "none", stroke: "#8a6a43", "stroke-width": 1.5 }, mark);
+    } else {
+      rect(70, 20, 40, 24, { rx: 6, fill: "#c7d2d5", stroke: "#66757c" }, mark);
+      path("M70 32H110", { fill: "none", stroke: "#9fadb2", "stroke-width": 2 }, mark);
+    }
+  } else if (kind === "hat") {
+    node("ellipse", { cx: 90, cy: 103, rx: 64, ry: 20, fill: "#e8c979", stroke: "#9a7b3c" }, group);
+    path("M52 100Q52 48 90 48Q128 48 128 100Q90 112 52 100Z", { fill: "#f2d98e", stroke: "#9a7b3c" });
+    path("M60 72Q90 64 120 72", { fill: "none", stroke: "#c9a85c", "stroke-width": 2 });
+    const mark = node("g", { "data-detail": detail }, group);
+    if (detail === "ribbon") {
+      path("M53 94Q90 104 127 94L127 82Q90 92 53 82Z", { fill: "#6b4a74", stroke: "#4a3252" }, mark);
+    } else {
+      path("M96 78Q122 38 140 36Q136 58 108 84Z", { fill: "#d9e5ee", stroke: "#66757c" }, mark);
+      path("M100 80Q122 56 136 40", { fill: "none", stroke: "#66757c", "stroke-width": 1.5 }, mark);
+    }
+  } else if (kind === "mitten") {
+    path("M58 48Q58 28 82 26Q112 24 114 48V96Q132 84 142 94Q152 104 136 116Q120 128 114 130Q110 140 86 140Q60 140 58 120Z",
+      { fill: "#7f9bc5", stroke: "#4a618a" });
+    rect(56, 118, 60, 22, { rx: 8, fill: "#e9edf5", stroke: "#8b97ad" });
+    path("M66 120V138M78 120V138M90 120V138M102 120V138",
+      { fill: "none", stroke: "#8b97ad", "stroke-width": 1.5 });
+    const mark = node("g", { "data-detail": detail }, group);
+    if (detail === "snowflake") {
+      path("M86 58V98M69 68L103 88M103 68L69 88M80 60L86 66L92 60M80 96L86 90L92 96",
+        { fill: "none", stroke: "#f2f6fc", "stroke-width": 4 }, mark);
+    } else {
+      path("M86 96Q62 76 72 62Q80 52 86 64Q92 52 100 62Q110 76 86 96Z",
+        { fill: "#d65c73", stroke: "#8e3e50" }, mark);
     }
   } else {
     path("M46 47Q33 68 30 124Q29 141 90 141Q151 141 150 124Q147 68 134 47Z",

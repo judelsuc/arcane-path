@@ -7,16 +7,20 @@ export const PURSUIT = Object.freeze({ version: 1, graceMinutes: 1440, gapKm: 30
 export const pursuitPending = state => Boolean(state?.pursuit?.pending) && !state.ended;
 const distance = (x, y, col, row, scale) => Math.hypot(x - col * scale, y - row * scale);
 
-export function pursuitDifficulty(state, completed = state.pursuit?.history.length ?? 0) {
+export function pursuitDifficulty(state, completed = state.pursuit?.history.length ?? 0, days) {
   const health = healthValue(state), { fatigue, awakeHours } = state;
   if (!Number.isSafeInteger(completed) || completed < 0 ||
+      days !== undefined && (!Number.isFinite(days) || days < 0) ||
       ![health, fatigue, awakeHours].every(Number.isFinite) ||
       health < 0 || health > 100 || fatigue < 0 || fatigue > 100 || awakeHours < 0) {
     throw new Error("Invalid escape condition.");
   }
   const strain = ((100 - health) + fatigue + Math.min(100, awakeHours / 24 * 100)) / 3;
   const modifier = strain < 15 ? -2 : strain < 30 ? -1 : strain < 50 ? 0 : strain < 70 ? 1 : 2;
-  const base = Math.min(10, 1 + Math.floor(completed / 2));
+  // The pursuer grows bolder with every escape attempt and, since version 8,
+  // with each passing journey day of the chase (days is replay-derived from
+  // the attempt's elapsed time, never stored).
+  const base = Math.min(10, 1 + Math.floor(completed / 2) + Math.floor((days ?? 0) / 2));
   return { base, modifier, level: Math.max(1, Math.min(10, base + modifier)), health, fatigue, awakeHours };
 }
 
@@ -80,7 +84,9 @@ export function advancePursuit(state, cell, info) {
     for (const char of `${state.serverJourney?.seed ?? state.startedAt}:${p.history.length}:${state.col}:${state.row}`) {
       seed = Math.imul(seed ^ char.charCodeAt(0), 16777619) >>> 0;
     }
-    pending = { version: ESCAPE_VERSION, id: p.history.length + 1, seed, difficulty: pursuitDifficulty(state),
+    pending = { version: ESCAPE_VERSION, id: p.history.length + 1, seed,
+      difficulty: pursuitDifficulty(state, p.history.length,
+        (state.elapsedMinutes - p.startedMinutes) / 1440),
       atmosphere: createPursuitAtmosphere(state, cell, info, seed),
       terrain: escapeTerrain(cell.terrain), col: state.col, row: state.row,
       elapsedMinutes: state.elapsedMinutes, status: "ready" };
@@ -135,7 +141,7 @@ export function validatePursuit(state) {
       ...(item?.version >= 6 ? ["atmosphere"] : []),
       ...(!pending || item?.status === "active" ? ["mode"] : []),
       ...(!pending ? ["outcome", "jumps", "ticks", "abandoned"] : [])].sort().join();
-    if (!item || Object.keys(item).sort().join() !== keys || ![1, 2, 3, 4, 5, 6, ESCAPE_VERSION].includes(item.version) ||
+    if (!item || Object.keys(item).sort().join() !== keys || ![1, 2, 3, 4, 5, 6, 7, ESCAPE_VERSION].includes(item.version) ||
         item.id !== index + 1 || !Number.isSafeInteger(item.seed) || item.seed < 0 || item.seed > 0xffffffff ||
         !["woodland", "streets", "rocky", "country"].includes(item.terrain) ||
         ![item.col, item.row].every(coord) || !finite(item.elapsedMinutes) ||
@@ -145,7 +151,8 @@ export function validatePursuit(state) {
     if (item.version >= 3) {
       const d = item.difficulty;
       if (!d || Object.keys(d).sort().join() !== "awakeHours,base,fatigue,health,level,modifier") fail();
-      const expected = pursuitDifficulty(d, index);
+      const expected = pursuitDifficulty(d, index,
+        item.version >= 8 ? (item.elapsedMinutes - p.startedMinutes) / 1440 : undefined);
       if (Object.keys(expected).some(key => expected[key] !== d[key])) fail();
     }
     if (item.version >= 6) validatePursuitAtmosphere(item.atmosphere);
