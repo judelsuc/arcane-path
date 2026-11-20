@@ -228,6 +228,33 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Sketch photo on every game, 0.22.33 (20 November 2026)
+
+Deployed runtime `f2af579` (`deploy-2026-11-20-sketch-photo-race`). The
+postcard sketch only used the local photo on the first play: a quick replay
+start raced past the asynchronous photo tessellation (the swap is skipped once
+the game leaves its ready phase) and fell back to the imaginary motifs, since
+the cached photo resolves after the focused Start control can be activated.
+The Start control now stays disabled while the photo model may still arrive,
+bounded at 2.5 seconds so a slow or missing photo never blocks the game; the
+deadline timer is cleaned up with the game.
+
+Validation: full JavaScript run passed 1888/1889 (the single failure is the
+unchanged dream-wiring baseline assertion). New tests cover the held Start, an
+eager press being ignored until the model settles, the tessellated photo
+winning on an immediate replay start, and the 2.5-second deadline unblocking a
+never-resolving photo. The repeat-resolve path was verified live in the
+browser (cached blob decodes identically on the second call). Installed hash
+matches the packaged commit, journal clean after restart, HTTPS 401,
+conditional GET 200, PID 508956 became 510318.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.33-f2af579/runtime.tar.gz`, SHA-256
+`4a0bdd166138ee54046d122e0d5bfed45a32cff024264c1bafedebd5d78a2643`. No new
+files in this release. Refresh the release manifest mtime and restart after
+runtime changes. Do not restore or delete player databases, cached narratives,
+images or provider-job receipts.
+
 ## Legend disclosure by inhabitants and ambient decoys, 0.22.32 (20 November 2026)
 
 Deployed runtime `c6eac10` (`deploy-2026-11-20-legend-disclosure`). A legend's
