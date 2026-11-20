@@ -228,6 +228,29 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Readable archived notebooks despite legacy saves, 0.22.24 (20 November 2026)
+
+Deployed runtime `b42bcdc` (`deploy-2026-11-20-archive-compat`). Archived
+journeys written before the 0.22.20 save-format bump threw
+`IncompatibleJourneySaveError` while listing, making every archived notebook
+unavailable; `archivedJourneys` now skips archives that fail validation so the
+remaining notebooks stay readable.
+
+Validation: full JavaScript run passed 1866/1867 (the single failure is the
+unchanged dream-wiring baseline assertion); a new test covers legacy-version
+and corrupt archives being skipped. Installed hashes of `journey-save.mjs` and
+`public/changelog.json` match the packaged commit, journal clean after
+restart, `nginx -t` passed, HTTPS returns the expected unauthenticated 401
+(including the catalogue and module routes through nginx), conditional GET of
+the refreshed manifest returns 200, PID 482233 became 492440.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.24-b42bcdc/runtime.tar.gz`, SHA-256
+`fca6a45d573dd58e3f1ed0590d3485e250dc82976403fbbfeb01a4840ad5dc84`. No new
+files in this release. Refresh the release manifest mtime and restart after
+runtime changes. Do not restore or delete player databases, cached narratives,
+images or provider-job receipts.
+
 ## Console interface, living bookshop and imposed escape pace, 0.22.22–0.22.23 (19 November 2026)
 
 Deployed runtimes `71aab7e03fc1945062895b57f1e025380594f255`
