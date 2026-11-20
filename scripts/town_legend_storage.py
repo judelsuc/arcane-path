@@ -13,6 +13,10 @@ SCHEMAS = (
         discovered DOUBLE PRECISION NOT NULL,
         PRIMARY KEY(journey,town_id))""",
     "CREATE INDEX IF NOT EXISTS town_legend_history ON town_legend_discoveries(journey,town_id)",
+    """CREATE TABLE IF NOT EXISTS town_legend_disclosures (
+        journey TEXT NOT NULL, town_id TEXT NOT NULL REFERENCES town_legends(town_id),
+        disclosed DOUBLE PRECISION NOT NULL,
+        PRIMARY KEY(journey,town_id))""",
     """CREATE TABLE IF NOT EXISTS town_legend_searches (
         town_id TEXT PRIMARY KEY REFERENCES town_legends(town_id),
         map_geometry TEXT NOT NULL, payload TEXT NOT NULL)""",

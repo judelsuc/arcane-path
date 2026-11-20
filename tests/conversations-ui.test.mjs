@@ -720,3 +720,20 @@ test("empty towns never claim someone is available and explain blocked creation"
   assert.equal(get("character-selector-status").textContent, translate("en", "character.empty"));
   assert.equal(get("character-create").hidden, false);
 });
+
+test("inhabitants of a legend town spontaneously tell the untold legend on first contact", async t => {
+  const requests = [];
+  let told = false;
+  const f = portraitFixture(t, async () => new Blob(["portrait"]), {
+    legendTelling: (character, request) => {
+      if (request) { requests.push(character.id); told = true; }
+      return told
+        ? { text: "A remembered gathering. Search the woodland.", status: "" }
+        : { text: "There is indeed a story told around here…", status: "", untold: true };
+    },
+  });
+  await f.ui.open();
+  await f.get("character-choices").children[0].children[0].click();
+  assert.deepEqual(requests, ["b".repeat(32)], "the character brings the legend up unprompted");
+  assert.match(f.get("conversation-character-reply").textContent, /remembered gathering/);
+});

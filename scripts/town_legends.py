@@ -3,6 +3,7 @@
 import re
 import secrets
 import json
+import hashlib
 
 from asset_storage import AssetError, local_storage
 from content_storage import clock
@@ -90,13 +91,33 @@ class TownLegends:
                 **location, "description": detail["description"], "found": bool(found)})
             if found:
                 result["exploration"]["status"] = "found"
+        # The legend itself waits for an inhabitant to tell it; the player's own
+        # recorded cell notes remain visible.
+        if result["exploration"]["status"] == "searching" and not self.told(db, journey, row[0]):
+            result["exploration"] = {**result["exploration"], "status": "untold", "clues": None}
         return result
 
+    def told(self, db, journey, town_id):
+        """A journey knows the legend once an inhabitant has told it; journeys
+        that already found the entrance before disclosure existed stay told."""
+        sql = self.assets.catalogue.sql
+        if db.execute(sql("SELECT 1 FROM town_legend_disclosures WHERE journey=? AND town_id=?"),
+                      (journey, town_id)).fetchone():
+            return True
+        return db.execute(sql(
+            "SELECT 1 FROM town_legend_observations WHERE journey=? AND town_id=? AND found=1"),
+            (journey, town_id)).fetchone() is not None
+
     def prepare_search(self, db, row, region, location):
-        if not row[2] or self.search(db, row[0]) is not None:
+        if self.search(db, row[0]) is not None:
             return
         chunks = self.journeys.chunks
-        plan = generate_search(row[3], row[0], location, prepared_cells(chunks, region, location))
+        # Ineligible towns receive ambient decoy details too, so surrounding
+        # descriptions never betray whether a legend exists; their plans are
+        # never surfaced as clues, entrances or inspections.
+        seed = row[3] if row[2] else int.from_bytes(
+            hashlib.sha256(f"legend-ambient-v1:{row[0]}".encode()).digest()[:4], "big")
+        plan = generate_search(seed, row[0], location, prepared_cells(chunks, region, location))
         if plan is None:
             return
         base = chunks.bases[region]
@@ -167,7 +188,7 @@ class TownLegends:
         return legend_wording.wording(retained[1], row[0], reward)
 
     def request(self, data, token):
-        if not isinstance(data, dict) or data.get("action") not in ("discover", "list", "look", "inspect"):
+        if not isinstance(data, dict) or data.get("action") not in ("discover", "list", "look", "inspect", "disclose"):
             raise JourneyRequest("Invalid town legend request.")
         expected = {"journey", "action", "location"} | (
             {"target"} if data["action"] == "look" else {"townId"} if data["action"] == "inspect" else set())
@@ -182,6 +203,23 @@ class TownLegends:
         base = self.journeys.chunks.bases[genesis["region"]]
         if data["action"] in ("look", "inspect"):
             return self.observe(data, genesis["region"])
+        if data["action"] == "disclose":
+            # An inhabitant tells the legend: from now on this journey sees the
+            # clues, the town's contextual hints and may inspect the entrance.
+            town = self.town_at(genesis["region"], data["location"])
+            with catalogue.connection() as db:
+                row = db.execute(sql(
+                    "SELECT t.town_id,t.town_name,t.eligible,t.seed,t.format FROM town_legends t "
+                    "JOIN town_legend_discoveries d ON d.town_id=t.town_id "
+                    "WHERE d.journey=? AND t.town_id=?"), (data["journey"], town["osmId"])).fetchone()
+                if row is None or not row[2] or self.search(db, row[0]) is None:
+                    raise JourneyConflict("No prepared town legend can be told here.")
+                now = float(db.execute("SELECT " + clock(catalogue)).fetchone()[0])
+                db.execute(sql(
+                    "INSERT INTO town_legend_disclosures(journey,town_id,disclosed) VALUES(?,?,?) "
+                    "ON CONFLICT(journey,town_id) DO NOTHING"), (data["journey"], town["osmId"], now))
+                entry = self.exploration_view(db, row, data["journey"], base)
+            return {"version": 1, "entry": entry}
         if data["action"] == "list":
             cursor = data["cursor"]
             if cursor is not None and (not isinstance(cursor, str) or not TOWN_ID.fullmatch(cursor)):
@@ -262,7 +300,13 @@ class TownLegends:
                     continue
                 geometry, plan = self.search(db, row[0])
                 position = self.position_in(base, geometry, target)
+                # Clues, the entrance identity and inspection all wait until an
+                # inhabitant has told the legend; plain cell descriptions and
+                # ambient decoy details around any town remain visible.
+                told = bool(row[2]) and self.told(db, data["journey"], row[0])
                 if data["action"] == "look" and position == plan["origin"]:
+                    if not told:
+                        continue
                     clues = search_clues(plan)
                     description = {
                         "en": "The story told here points beyond the town. " + " ".join(clues["en"]) +
@@ -278,8 +322,10 @@ class TownLegends:
                                if (cell["col"], cell["row"]) == (position["col"], position["row"])), None)
                 if detail is None:
                     continue
-                matches = position == plan["entrance"]
+                matches = told and position == plan["entrance"]
                 if data["action"] == "inspect":
+                    if not told:
+                        raise JourneyConflict("Hear the town's legend from an inhabitant before inspecting.")
                     seen = db.execute(sql(
                         "SELECT found FROM town_legend_observations WHERE journey=? AND town_id=? AND col=? AND row=?"),
                         (data["journey"], row[0], position["col"], position["row"])).fetchone()

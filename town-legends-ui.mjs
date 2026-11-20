@@ -9,6 +9,8 @@ const WORDS = {
     empty: "No town discoveries recorded yet.", none: "No treasure legend recorded for this town.",
     pending: "This town holds a treasure legend. Its adventure is not prepared yet.",
     ready: "A story of hidden treasure is told here.",
+    untold: "People hint that an old story is told here. Ask the inhabitants.",
+    firstTelling: "There is indeed a story told around here… let me remember it properly.",
     searchPending: "The search area is not prepared yet. Explore nearby terrain, return and retry discovery.",
     search: "What people remember",
     found: "Entrance discovered.",
@@ -31,6 +33,8 @@ const WORDS = {
     empty: "Aucune découverte de ville enregistrée.", none: "Aucune légende de trésor enregistrée pour cette ville.",
     pending: "Cette ville possède une légende de trésor. Son aventure n'est pas encore préparée.",
     ready: "On raconte ici l'histoire d'un trésor caché.",
+    untold: "On murmure qu'une vieille histoire circule ici. Interrogez les habitants.",
+    firstTelling: "Il se raconte bien une histoire par ici… laissez-moi m'en souvenir.",
     searchPending: "La zone de recherche n'est pas encore préparée. Explorez les environs, revenez et réessayez.",
     search: "Ce qu'on raconte",
     found: "Entrée découverte.",
@@ -78,7 +82,9 @@ export function setupTownLegends({ context, host = document.getElementById("ques
     if (loading) node("p", c.loading).setAttribute("role", "status");
     if (error) node("p", `${c.error} ${error}`).setAttribute("role", "alert");
     if (position && !current && !loading) button(c.retry, () => { void discover(); }, !!context()?.blocked);
-    const status = entry => entry.eligible ? entry.exploration?.clues ? c.ready : c.pending : c.none;
+    const status = entry => !entry.eligible ? c.none
+      : entry.exploration?.status === "untold" ? c.untold
+      : entry.exploration?.clues ? c.ready : c.pending;
     if (current) node("p", `${current.town}: ${status(current)}`).setAttribute("role", "status");
     if (current?.exploration?.status === "pending") {
       node("p", c.searchPending).className = "window-help-text";
@@ -179,6 +185,27 @@ export function setupTownLegends({ context, host = document.getElementById("ques
     return story.status === "disabled" ? c.storyDisabled : story.status === "failed" ? c.storyFailed : c.storyPending;
   }
   narrative.subscribe(() => { render(); onNarrative(); });
+  // An inhabitant telling the legend is what unlocks its clues: triggered by
+  // the conversation topic, spontaneously on first contact in a legend town.
+  let disclosing;
+  async function discloseEntry(state, townId) {
+    if (disclosing) return;
+    disclosing = townId;
+    try {
+      const result = await client.disclose(state);
+      if (result.entry.townId !== townId) throw new Error("Disclosed legend belongs to a different town.");
+      retainEntry(result.entry);
+      const captured = context();
+      if (captured && !captured.blocked) narrative.request(captured.state, townId);
+      render();
+      onDiscovery();
+      onNarrative();
+    } catch (reason) {
+      console.error("Legend disclosure failed:", reason);
+    } finally {
+      disclosing = undefined;
+    }
+  }
   function retainEntry(entry) {
     const previous = entries.get(entry.townId)?.exploration, incoming = entry.exploration;
     if (previous?.clues) {
@@ -257,8 +284,14 @@ export function setupTownLegends({ context, host = document.getElementById("ques
     telling(character, request = false) {
       const captured = context(), language = doc.documentElement.lang === "en" ? "en" : "fr", c = WORDS[language];
       const entry = entries.get(townLegendIdentity(captured?.cell));
-      if (!character || owner !== `${captured?.state?.serverJourney?.id}:${captured?.state?.journalAccess}` ||
-          !entry?.exploration?.clues) return { text: c.noStory, status: "" };
+      if (!character || owner !== `${captured?.state?.serverJourney?.id}:${captured?.state?.journalAccess}`) {
+        return { text: c.noStory, status: "" };
+      }
+      if (entry?.exploration?.status === "untold") {
+        if (request && !captured.blocked) void discloseEntry(captured.state, entry.townId);
+        return { text: c.firstTelling, status: "", untold: true };
+      }
+      if (!entry?.exploration?.clues) return { text: c.noStory, status: "" };
       if (request && !captured.blocked) narrative.request(captured.state, entry.townId);
       const story = narrative.get(captured.state, entry.townId);
       let hash = 0;

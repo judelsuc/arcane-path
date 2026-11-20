@@ -60,6 +60,8 @@ class LegendSessionTests(unittest.TestCase):
     def start(self, content_version="cinema-investigation-v1"):
         entry = self.discover()
         if content_version in ("seeded-platform-v2", "seeded-investigation-v3", "seeded-dungeon-v4"):
+            self.legends.request({"journey": self.journey, "action": "disclose",
+                                  "location": self.location}, self.token)
             with self.legends.assets.catalogue.connection() as db:
                 target = self.legends.search(db, entry["townId"])[1]["entrance"]
             self.legends.request({"journey": self.journey, "action": "look",

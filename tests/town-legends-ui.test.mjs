@@ -306,3 +306,35 @@ test("startEntrance starts the trial from the map action and refuses away from t
   f.setContext({ ...f.getContext(), state: { ...f.getContext().state, col: 1 }, blocked: true });
   assert.equal(f.ui.startEntrance(), false, "blocked activities cannot enter");
 });
+
+test("an untold legend hides its clues until an inhabitant tells it", async () => {
+  const untoldEntry = { ...entry, exploration: { status: "untold", clues: null, observations: [] } };
+  const toldEntry = { ...entry, exploration: { status: "searching", clues: {
+    en: ["Search the woodland.", "Find a slate disc.", "Match the bell and four dots."],
+    fr: ["Cherchez dans les bois.", "Trouvez une rondelle en ardoise.", "Cloche et quatre points."],
+  }, observations: [] } };
+  const discloses = [];
+  const narrativeRequests = [];
+  const f = fixture({ discover: async () => ({ entry: untoldEntry }),
+    disclose: async state => { discloses.push(state.col); return { entry: toldEntry }; } }, {
+    startTrial() {},
+    narrative: { subscribe() {}, reset() {}, get: () => undefined,
+      request: (_state, townId) => narrativeRequests.push(townId) },
+  });
+  f.ui.localize();
+  await flush();
+  assert.match(f.text(), /Ask the inhabitants/);
+  assert.doesNotMatch(f.text(), /Search the woodland/);
+  const character = { id: "c".repeat(32), role: "merchant" };
+  const first = f.ui.telling(character);
+  assert.equal(first.untold, true, "conversations can detect an untold legend");
+  assert.doesNotMatch(first.text, /Search the woodland/);
+  f.ui.telling(character, true);
+  await flush();
+  assert.deepEqual(discloses, [0], "the character telling the legend discloses it");
+  assert.deepEqual(narrativeRequests, [entry.townId]);
+  assert.match(f.text(), /Search the woodland/, "clues appear once told");
+  const after = f.ui.telling(character);
+  assert.equal(after.untold, undefined);
+  assert.match(after.text, /Search the woodland/);
+});

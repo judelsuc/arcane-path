@@ -308,6 +308,12 @@ export function setupConversations(t, { context, characters, onCharacter = () =>
         col: current.state.col, row: current.state.row };
       selected = "services";
       exchangeReply = undefined;
+      // Inhabitants of a legend town spontaneously bring up the old story the
+      // first time someone talks with them.
+      if (legendTelling(currentCharacter).untold) {
+        selected = "legends";
+        legendTelling(currentCharacter, true);
+      }
       $("conversation-options").open = false;
       $("conversation-character-status").textContent = "";
       selector.close();

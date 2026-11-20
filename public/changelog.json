@@ -1,6 +1,11 @@
 {
-  "version": "0.22.31",
+  "version": "0.22.32",
   "entries": [
+    {
+      "version": "0.22.32",
+      "fr": "Les légendes se méritent : leurs indices n'apparaissent que lorsqu'un habitant vous a raconté l'histoire — et les habitants d'un bourg à légende l'évoquent spontanément à la première conversation. Les descriptions des cases restent visibles sans l'histoire, et les environs des bourgs sans légende ont désormais aussi leurs détails à observer : rien ne trahit où dorment les trésors.",
+      "en": "Legends must be earned: their clues only appear once an inhabitant has told you the story — and inhabitants of a legend town bring it up spontaneously in the first conversation. Cell descriptions stay visible without the story, and the surroundings of towns without a legend now have observable details too: nothing betrays where treasures sleep."
+    },
     {
       "version": "0.22.31",
       "fr": "Le portrait du poursuivant apparaît désormais dans l'avis de fin de voyage après une capture — l'image était aussi bloquée par le serveur web, c'est corrigé.",

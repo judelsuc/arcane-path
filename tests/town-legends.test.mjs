@@ -123,3 +123,21 @@ test("arrival guidance validates as context only and cannot claim to be an entra
       /Invalid adventure look/);
   }
 });
+
+test("untold legends hide clues, disclose is a first-class action and forged untold clues are rejected", async () => {
+  const actions = [];
+  const untold = { townId: "node/42", town: "Firmi", eligible: true, seed: 1, format: "platform",
+    contentStatus: "unprepared", exploration: { status: "untold", clues: null, observations: [] } };
+  const client = createTownLegendsClient({ fetcher: async (_url, options) => {
+    actions.push(JSON.parse(options.body).action);
+    return { ok: true, json: async () => ({ version: 1, entry: untold }) };
+  } });
+  const state = { serverJourney: { id: "a".repeat(32) }, journalAccess: "b".repeat(64), col: 3, row: 4 };
+  const result = await client.disclose(state);
+  assert.equal(result.entry.exploration.status, "untold");
+  assert.deepEqual(actions, ["disclose"]);
+  const forged = createTownLegendsClient({ fetcher: async () => ({ ok: true, json: async () => ({ version: 1,
+    entry: { ...untold, exploration: { ...untold.exploration,
+      clues: { en: ["a", "b", "c"], fr: ["a", "b", "c"] } } } }) }) });
+  await assert.rejects(forged.discover(state), /Invalid retained adventure search/);
+});

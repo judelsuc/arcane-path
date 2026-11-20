@@ -22,8 +22,8 @@ function validateEntry(entry) {
   }
   if (entry.exploration !== undefined) {
     const search = entry.exploration;
-    if (!entry.eligible || !["pending", "searching", "found"].includes(search?.status) ||
-        (search.status === "pending" ? search.clues !== null : !bilingual(search.clues, true)) ||
+    if (!entry.eligible || !["pending", "untold", "searching", "found"].includes(search?.status) ||
+        (["pending", "untold"].includes(search.status) ? search.clues !== null : !bilingual(search.clues, true)) ||
         !Array.isArray(search.observations) || search.observations.length > 48 ||
         search.status === "pending" && search.observations.length !== 0 ||
         search.observations.some(observation => !location(observation) ||
@@ -56,7 +56,7 @@ export function createTownLegendsClient({ fetcher = fetch } = {}) {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error ?? `Town legends HTTP ${response.status}`);
     if (result?.version !== 1) throw new Error("Invalid town legend response version.");
-    if (action === "discover" || action === "inspect") validateEntry(result.entry);
+    if (action === "discover" || action === "inspect" || action === "disclose") validateEntry(result.entry);
     else if (action === "look") {
       if (!Array.isArray(result.observations) || result.observations.length > 100 ||
           result.observations.some(item => !townIdentity.test(item?.townId) ||
@@ -87,6 +87,7 @@ export function createTownLegendsClient({ fetcher = fetch } = {}) {
   }
   return {
     discover: (state, signal) => send(state, "discover", { location: { col: state.col, row: state.row } }, signal),
+    disclose: (state, signal) => send(state, "disclose", { location: { col: state.col, row: state.row } }, signal),
     list: (state, cursor = null, signal) => send(state, "list", { cursor }, signal),
     look: (state, target, signal) => send(state, "look", { location: { col: state.col, row: state.row }, target }, signal),
     inspect: (state, townId, signal) => send(state, "inspect", {

@@ -106,8 +106,17 @@ class LegendSearchStorageTests(unittest.TestCase):
             return self.service.search(db, "node/42")[1]
 
     def test_arrival_cell_describes_known_search_without_becoming_a_false_entrance_or_recorded_trace(self):
-        entry = self.call("discover")["entry"]
+        undisclosed = self.call("discover")["entry"]
+        self.assertEqual(undisclosed["exploration"]["status"], "untold")
+        self.assertIsNone(undisclosed["exploration"]["clues"])
         before = copy.deepcopy(self.plan())
+        self.assertEqual(self.call("look", target=self.origin)["observations"], [],
+                         "the town square hints at nothing before an inhabitant talks")
+        self.assertFalse(self.call("look", target=before["entrance"])["observations"][0]["matches"],
+                         "the entrance cell stays an ordinary description before disclosure")
+        with self.assertRaises(JourneyConflict):
+            self.call("inspect", townId="node/42", location=before["entrance"])
+        entry = self.call("disclose")["entry"]
         observations = self.call("look", target=self.origin)["observations"]
         self.assertEqual(len(observations), 1)
         observation = observations[0]
@@ -122,7 +131,7 @@ class LegendSearchStorageTests(unittest.TestCase):
         self.assertIn("Use Look", observation["description"]["en"])
         self.assertIn("Utilisez Regarder", observation["description"]["fr"])
         self.assertEqual(self.call("look", player=2, target=self.origin)["observations"], [])
-        self.assertEqual(self.call("list")["entries"][0]["exploration"]["observations"], [])
+        self.assertEqual(self.call("list")["entries"][0]["exploration"]["observations"][0]["found"], False)
         with self.assertRaises(JourneyConflict):
             self.call("inspect", townId="node/42")
         self.assertEqual(self.plan(), before)
@@ -131,7 +140,8 @@ class LegendSearchStorageTests(unittest.TestCase):
         self.assertNotIn("contextual", entrance)
 
     def test_one_retained_shared_entrance_private_look_and_inspection_survive_restart(self):
-        entry = self.call("discover")["entry"]
+        self.call("discover")
+        entry = self.call("disclose")["entry"]
         self.assertEqual(entry["exploration"]["status"], "searching")
         self.assertEqual(entry["exploration"]["observations"], [])
         self.assertNotIn("entrance", entry["exploration"])
@@ -147,7 +157,8 @@ class LegendSearchStorageTests(unittest.TestCase):
         self.assertEqual(matches, [plan["entrance"]])
         self.assertEqual(len(self.call("list")["entries"][0]["exploration"]["observations"]), 48)
         self.assertEqual(self.call("look", player=2, target=plan["entrance"])["observations"], [])
-        other = self.call("discover", player=2)["entry"]
+        self.call("discover", player=2)
+        other = self.call("disclose", player=2)["entry"]
         self.assertEqual(other["exploration"]["clues"], entry["exploration"]["clues"])
         self.assertEqual(other["exploration"]["observations"], [])
         with self.assertRaises(JourneyConflict):
@@ -165,6 +176,7 @@ class LegendSearchStorageTests(unittest.TestCase):
 
     def test_old_clue_copy_is_reworded_without_replacing_retained_facts_or_observations(self):
         self.call("discover")
+        self.call("disclose")
         plan = self.plan()
         expected = search_clues(plan)
         plan["clues"] = {
@@ -188,6 +200,7 @@ class LegendSearchStorageTests(unittest.TestCase):
 
     def test_remote_inspection_forgery_and_paced_entry_from_town_or_decoy_are_rejected(self):
         self.call("discover")
+        self.call("disclose")
         plan = self.plan()
         target = plan["entrance"]
         with self.assertRaises(JourneyConflict):
@@ -227,6 +240,7 @@ class LegendSearchStorageTests(unittest.TestCase):
         with ThreadPoolExecutor(max_workers=8) as pool:
             results = list(pool.map(lambda _: self.call("discover"), range(12)))
         self.assertTrue(all(item == results[0] for item in results))
+        self.call("disclose")
         target = self.plan()["entrance"]
         self.call("look", target=target)
         with ThreadPoolExecutor(max_workers=8) as pool:
@@ -241,11 +255,14 @@ class LegendSearchStorageTests(unittest.TestCase):
         pending = self.call("discover")["entry"]
         self.assertEqual(pending["exploration"]["status"], "pending")
         self.base["rows"] = rows
-        self.assertEqual(self.call("discover")["entry"]["exploration"]["status"], "searching")
+        self.assertEqual(self.call("discover")["entry"]["exploration"]["status"], "untold",
+                         "a prepared search still waits for an inhabitant to tell the legend")
+        self.assertEqual(self.call("disclose")["entry"]["exploration"]["status"], "searching")
         self.assertEqual(self.fixture.random.call_count, 3)
 
     def test_shared_location_is_geographic_not_tied_to_a_journeys_grid_origin(self):
         self.call("discover")
+        self.call("disclose")
         target = self.plan()["entrance"]
         shifted = copy.deepcopy(self.base)
         from journey_storage import geographic_position, grid_position
@@ -261,3 +278,40 @@ class LegendSearchStorageTests(unittest.TestCase):
                                   "location": {"col": 3, "row": 3}, "target": {"col": col, "row": row}}, "token")
         self.assertTrue(result["observations"][0]["matches"])
         self.assertEqual(result["observations"][0]["location"], {"col": col, "row": row})
+
+    def test_towns_without_legends_offer_ambient_descriptions_but_never_an_entrance(self):
+        self.fixture.random = Mock(side_effect=[5])
+        self.service = TownLegends(self.fixture.journeys, fixtures.Authorization(), randbelow=self.fixture.random)
+        entry = self.call("discover")["entry"]
+        self.assertFalse(entry["eligible"])
+        self.assertNotIn("exploration", entry)
+        plan = self.plan()
+        self.assertTrue(plan["cells"], "ambient decoy details exist around an ordinary town")
+        for detail in plan["cells"]:
+            target = {key: detail[key] for key in ("col", "row")}
+            result = self.call("look", target=target)["observations"]
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result[0]["description"], detail["description"])
+            self.assertFalse(result[0]["matches"], "decoy details never become an entrance")
+            self.assertNotIn("entry", result[0])
+        self.assertEqual(self.call("look", target=self.origin)["observations"], [],
+                         "no contextual legend hint without a legend")
+        with self.assertRaises(JourneyConflict):
+            self.call("disclose")
+        with self.assertRaises(JourneyConflict):
+            self.call("inspect", townId="node/42",
+                      location={key: plan["cells"][0][key] for key in ("col", "row")})
+
+    def test_journeys_that_already_found_the_entrance_keep_their_clues_without_a_disclosure_row(self):
+        self.call("discover")
+        self.call("disclose")
+        plan = self.plan()
+        self.call("look", target=plan["entrance"])
+        self.call("inspect", townId="node/42", location=plan["entrance"])
+        catalogue = self.fixture.assets.catalogue
+        with catalogue.connection() as db:
+            db.execute(catalogue.sql("DELETE FROM town_legend_disclosures WHERE journey=?"), (f"{1:032x}",))
+        entry = self.call("discover")["entry"]
+        self.assertEqual(entry["exploration"]["status"], "found",
+                         "journeys that found the entrance before disclosure existed stay told")
+        self.assertIsNotNone(entry["exploration"]["clues"])

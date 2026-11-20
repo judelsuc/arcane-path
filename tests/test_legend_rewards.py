@@ -32,6 +32,7 @@ class LegendRewardTests(unittest.TestCase):
         journey, token = journey or self.journey, token or self.token
         fixture = self.fixture
         fixture.legends.request({"journey": journey, "action": "discover", "location": fixture.location}, token)
+        fixture.legends.request({"journey": journey, "action": "disclose", "location": fixture.location}, token)
         fixture.legends.request({"journey": journey, "action": "look",
                                 "location": fixture.location, "target": self.entrance}, token)
         fixture.legends.request({"journey": journey, "action": "inspect",
