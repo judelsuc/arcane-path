@@ -66,6 +66,13 @@ export function setupNeedsNotices(t, { context }) {
   const dialog = document.querySelector("#needs-notice-dialog");
   const deathCard = document.querySelector("#needs-death-card");
   const fade = document.querySelector("#death-fade");
+  const capture = document.querySelector("#needs-notice-capture");
+  let captureFailed = false;
+  capture.addEventListener("error", () => {
+    captureFailed = true;
+    capture.hidden = true;
+    console.error("Pursuit capture illustration failed to load.");
+  });
   let notices = createNeedsNotices(), kind, queued = false, deathAcknowledged = false;
   function localize() {
     if (!dialog.open || !kind) return;
@@ -77,6 +84,10 @@ export function setupNeedsNotices(t, { context }) {
     document.querySelector("#needs-death-retry").hidden = !dead;
     dialog.classList.toggle("death-notice", dead);
     if (dead) renderTarotCard(deathCard, "nameless", t("deathCardTitle"), t);
+    // The pursuer's portrait accompanies the capture ending.
+    const captured = kind === "captured" && !dead;
+    if (captured && !capture.src) capture.src = new URL("./public/pursuit-capture.png", import.meta.url).href;
+    capture.hidden = !captured || captureFailed;
     const faint = state?.lastFaint;
     const placement = state?.pressures?.placements.at(-1);
     const placementText = placement ? `${placementReason(placement, t)} ${t("placementText", {

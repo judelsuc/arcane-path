@@ -1,6 +1,11 @@
 {
-  "version": "0.22.30",
+  "version": "0.22.31",
   "entries": [
+    {
+      "version": "0.22.31",
+      "fr": "Le portrait du poursuivant apparaît désormais dans l'avis de fin de voyage après une capture — l'image était aussi bloquée par le serveur web, c'est corrigé.",
+      "en": "The pursuer's portrait now appears in the journey-ended notice after a capture — the image was also blocked by the web server, which is fixed."
+    },
     {
       "version": "0.22.30",
       "fr": "L'entrée d'une aventure de légende se joue sur la carte : un bouton d'action apparaît à côté de la carte quand vous êtes sur le passage — « Inspecter le passage », puis « Entrer dans l'aventure » — sans passer par les menus de quêtes. Les fenêtres Enquêter ici et Légendes vont à l'essentiel : les explications rejoignent l'Aide.",

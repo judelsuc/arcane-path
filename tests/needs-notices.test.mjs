@@ -286,3 +286,55 @@ test("death fade is slow, nonblocking and reduced-motion aware; death artwork is
   const code = readFileSync(new URL("../needs-notices.mjs", import.meta.url), "utf8");
   assert.doesNotMatch(code, /pinTarot|pinTarotCard|dailyCard\s*=/);
 });
+
+test("capture shows the pursuer's portrait in the journey-ended notice, with a graceful fallback", async test => {
+  const original = { document: globalThis.document, MutationObserver: globalThis.MutationObserver };
+  test.after(() => Object.assign(globalThis, original));
+  class Element {
+    dataset = {}; events = {}; children = []; open = false; attributes = {}; hidden = false;
+    classes = new Set();
+    classList = {
+      toggle: (name, on) => { if (on) this.classes.add(name); else this.classes.delete(name); },
+      remove: name => this.classes.delete(name),
+    };
+    addEventListener(event, fn) { this.events[event] = fn; }
+    setAttribute(name, value) { this.attributes[name] = value; }
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    querySelector() { return null; }
+    showModal() { this.open = true; }
+    close() { this.open = false; this.events.close?.(); }
+  }
+  const elements = new Map(), element = key => {
+    if (!elements.has(key)) elements.set(key, new Element());
+    return elements.get(key);
+  };
+  globalThis.document = {
+    body: new Element(),
+    querySelector: key => key === "dialog[open]" ? element("#needs-notice-dialog").open : element(key),
+    querySelectorAll: () => [],
+    createElement: tag => Object.assign(new Element(), { tag }),
+  };
+  globalThis.MutationObserver = class { observe() {} };
+  const current = { state: { ...state(50), ended: "captured" }, survival: config, busy: false };
+  const tr = (key, args) => translate("fr", key, args);
+  const ui = setupNeedsNotices(tr, { context: () => current });
+  ui.update();
+  await new Promise(resolve => setImmediate(resolve));
+  const dialog = element("#needs-notice-dialog"), capture = element("#needs-notice-capture");
+  assert.equal(dialog.open, true);
+  assert.equal(element("#needs-notice-title").textContent, tr("needsEndedTitle"));
+  assert.ok(element("#needs-notice-text").textContent.includes(tr("journeyEnded.captured")));
+  assert.equal(capture.hidden, false, "the pursuer's portrait accompanies the capture ending");
+  assert.match(capture.src, /public\/pursuit-capture\.png$/);
+  assert.equal(element("#needs-death-card").hidden, true, "capture is not a needs death");
+  capture.events.error();
+  assert.equal(capture.hidden, true, "a missing portrait never blocks the notice");
+  dialog.close();
+  ui.reset();
+  current.state = state(80);
+  ui.update();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(element("#needs-notice-title").textContent, tr("hungerWarningTitle"));
+  assert.equal(element("#needs-notice-capture").hidden, true, "other notices never show the portrait");
+});
