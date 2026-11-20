@@ -100,7 +100,7 @@ function scopeResonanceStyles(dialog) {
   }
 }
 
-export function setupJourneyMiniGames(t, { context, act, audio = {} } = {}) {
+export function setupJourneyMiniGames(t, { context, act, audio = {}, photo } = {}) {
   if (typeof context !== "function" || typeof act !== "function") {
     throw new TypeError("Journey mini-games require context and act callbacks.");
   }
@@ -263,6 +263,7 @@ export function setupJourneyMiniGames(t, { context, act, audio = {} } = {}) {
         audio: audioByGame.get(game),
         resonance: pending.resonance,
         journey: true,
+        ...(game === "sketch" && typeof photo === "function" ? { photo } : {}),
       });
       if (closing) {
         mounted.destroy();

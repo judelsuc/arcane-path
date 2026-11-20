@@ -1,4 +1,6 @@
 import { chunkPosition, journeyDate, journeyActionBlocker } from "./travel.mjs";
+import { createContentService } from "./cell-content.mjs";
+import { openContentCache } from "./content-cache.mjs";
 import { createChunkStream, createChunkPrefetcher, visibleDownloads } from "./travel-stream.mjs";
 import { cellInfo } from "./cell-info.mjs";
 import { skyState, altitudeTemperatureOffset } from "./sky.mjs";
@@ -782,9 +784,22 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       return state.lastSurvivalChoice;
     },
   });
+  let sketchPhotoService;
   const miniGamesUI = setupJourneyMiniGames(t, {
     audio: miniGameAudio,
     context: economyContext,
+    // The sketch motif derives from a cached, licensed photo of the current
+    // cell when one is available; otherwise it keeps its imaginary scenes.
+    async photo() {
+      const current = economyContext();
+      if (!current?.info) return null;
+      sketchPhotoService ??= createContentService({ cache: openContentCache(), maxPhotos: 1 });
+      const result = await sketchPhotoService.resolve(current.info,
+        document.documentElement.lang === "en" ? "en" : "fr", "photo");
+      const content = result?.content;
+      if (!content?.blob) return null;
+      return { blob: content.blob, credit: `${content.attribution} (${content.license})` };
+    },
     act(action) {
       try {
         if (action.type === "begin") {

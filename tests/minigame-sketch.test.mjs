@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { available, difficulty, createGame, input, advance, result, constellation, INK } from "../minigames/sketch.mjs";
+import { available, difficulty, createGame, input, advance, result, constellation, INK, tessellatePhoto } from "../minigames/sketch.mjs";
 
 const make = (level = 0, sample = 0) => createGame({ level, random: () => sample });
 test("Star marks three occupied positions, connects only correct colours and never alters targets or raw scores", () => {
@@ -208,4 +208,53 @@ test("wrong colours lose points, repainting and erasing work, and clear preserve
   assert.equal(input(game, { type: "toggle", ...position, colour: 5 }, 2), game);
   assert.equal(input(game, { type: "toggle", row: 7, col: 0, colour: 1 }, 2), game);
   assert.ok(input(game, { type: "clear" }, 2).marks.every(value => value === 0));
+});
+
+test("a single sample varies the motif by both scene and orientation", () => {
+  for (const level of [0, 10]) {
+    const targets = new Set(Array.from({ length: 32 }, (_, index) =>
+      make(level, index / 32).target.join(",")));
+    assert.ok(targets.size > 8, `level ${level}: ${targets.size} distinct motifs over 32 samples`);
+  }
+  const base = make(10, 0), turned = make(10, 2 / 32);
+  assert.notDeepEqual(base.target, turned.target);
+  assert.equal(base.target.filter(Boolean).length, turned.target.filter(Boolean).length,
+    "an orientation is a bijection: it keeps the number of filled cells");
+});
+
+test("a tessellated photo becomes the target: darker half filled, playable, non-fictional result", () => {
+  const settings = difficulty(0);
+  const data = new Array(9 * 4).fill(255);
+  for (const index of [0, 4, 8]) { data[index * 4] = 10; data[index * 4 + 1] = 10; data[index * 4 + 2] = 10; }
+  const target = tessellatePhoto({ data, width: 3, height: 3 }, settings);
+  assert.deepEqual(target, [1, 0, 0, 0, 1, 0, 0, 0, 1]);
+  const game = createGame({ level: 0, random: () => 0, target });
+  assert.equal(game.scene, "photo");
+  assert.deepEqual(game.target, target);
+  const done = input(drawing(game), { type: "submit" }, 2);
+  assert.equal(result(done).sketch.fictional, false, "photo-derived sketches are not declared fictional");
+  assert.equal(result(input(drawing(make(0, 0)), { type: "submit" }, 2)).sketch.fictional, true);
+});
+
+test("photo tessellation maps hues to the available inks and stays playable on flat images", () => {
+  const settings = difficulty(15), size = settings.width;
+  const data = new Array(size * size * 4).fill(255);
+  const paint = (index, r, g, b) => { data[index * 4] = r; data[index * 4 + 1] = g; data[index * 4 + 2] = b; };
+  paint(0, 120, 20, 20); paint(1, 20, 120, 60); paint(2, 20, 60, 140); paint(3, 110, 40, 130);
+  const target = tessellatePhoto({ data, width: size, height: size }, settings);
+  assert.deepEqual(target.slice(0, 4), [2, 1, 3, 4], "red, green, blue and purple map to their inks");
+  assert.equal(target.slice(4).filter(Boolean).length, 0);
+  const uniform = tessellatePhoto({ data: new Array(size * size * 4).fill(128), width: size, height: size }, settings);
+  assert.equal(uniform.filter(Boolean).length, 3, "a flat image still yields a playable minimum");
+  assert.ok(uniform.includes(0));
+  assert.throws(() => tessellatePhoto({ data: [1, 2, 3], width: size, height: size }, settings), TypeError);
+  assert.throws(() => tessellatePhoto({ data, width: size, height: size + 1 }, settings), TypeError);
+});
+
+test("injected targets are validated: size, inks and playability", () => {
+  for (const bad of [[1, 1, 1], Array(9).fill(1), [1, 1, 0, 0, 0, 0, 0, 0, 0],
+    [2, 1, 1, 0, 0, 0, 0, 0, 0], [1, 1, 0.5, 0, 0, 0, 0, 0, 0], "111000000"]) {
+    assert.throws(() => createGame({ level: 0, target: bad }), TypeError, JSON.stringify(bad));
+  }
+  assert.equal(createGame({ level: 0, target: [1, 1, 1, 0, 0, 0, 0, 0, 0] }).scene, "photo");
 });

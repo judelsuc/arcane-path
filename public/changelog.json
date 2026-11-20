@@ -1,6 +1,11 @@
 {
-  "version": "0.22.26",
+  "version": "0.22.27",
   "entries": [
+    {
+      "version": "0.22.27",
+      "fr": "Le croquis de carte postale trame désormais une vraie photo locale du lieu (avec son crédit) : la photo est découpée en cases selon la difficulté — grille plus fine et couleurs selon le niveau — avec un cadrage aléatoire à chaque partie. Sans photo disponible, les motifs imaginaires reviennent, désormais déclinés en huit orientations aléatoires.",
+      "en": "The postcard sketch now tessellates a real local photo of the place (with its credit): the photo is cut into cells according to difficulty — finer grid and colours by level — with a random framing each game. Without an available photo, the imaginary motifs return, now varied across eight random orientations."
+    },
     {
       "version": "0.22.26",
       "fr": "La fuite se joue comme un jeu : plus de paragraphes ni de bouton — le défi démarre seul après un compte à rebours dessiné dans la scène, avec les consignes courtes (terrain, difficulté, commande de saut) affichées dans l'image. Le contexte et l'ambiance complets restent dans l'Aide, qui met toujours en pause.",

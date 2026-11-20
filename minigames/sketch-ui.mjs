@@ -1,4 +1,4 @@
-import { advance, createGame, input, result, constellation, INK } from "./sketch.mjs";
+import { advance, createGame, input, result, constellation, INK, tessellatePhoto, difficulty } from "./sketch.mjs";
 import { resolveResonance, decorateResonance } from "../arcane-resonance.mjs";
 
 const COPY = {
@@ -7,6 +7,7 @@ const COPY = {
     submit: "Terminer le croquis", clear: "Effacer", cancel: "Annuler",
     instructions: "Observez puis reproduisez les cases et leurs couleurs de mémoire. Choisissez une couleur puis cliquez les cases ; un second clic de même couleur efface. Tab et les flèches déplacent le focus, Espace ou Entrée peint une case. Échap annule. Le dessin est sans limite de temps.",
     fiction: "Motifs ASCII originaux et imaginaires : ni photos, ni représentation du lieu réel.",
+    photoSource: "Motif tramé d’après une photo locale : {credit}.",
     ready: "Prêt. Le modèle ne sera montré qu’après votre départ.",
     observe: "Mémorisez le motif. Il disparaîtra après {seconds} secondes ; vous pouvez commencer à dessiner plus tôt.",
     draw: "Reproduisez le motif caché et ses couleurs. Un point par case bien colorée, moins un par case incorrecte ; minimum zéro.",
@@ -23,6 +24,7 @@ const COPY = {
     submit: "Finish sketch", clear: "Clear", cancel: "Cancel",
     instructions: "Observe, then reproduce the squares and their colours from memory. Choose a colour, then click squares; clicking the same colour again erases it. Tab and arrows move focus, Space or Enter paints a square. Escape cancels. Drawing has no time limit.",
     fiction: "Original imaginary ASCII motifs: not photos or a depiction of the real location.",
+    photoSource: "Motif tessellated from a local photo: {credit}.",
     ready: "Ready. The model appears only after you start.",
     observe: "Memorize the motif. It disappears after {seconds} seconds; you can start drawing earlier.",
     draw: "Reproduce the hidden motif and its colours. One point per correctly coloured square, minus one per incorrect painted square; minimum zero.",
@@ -40,7 +42,7 @@ const COPY = {
  * Standalone, intentionally not activated in the app. The caller must gate with available(cell).
  * No persistence or reward issuance. Individual playtest approval is required before activation.
  */
-export function mount(container, { level = 0, language = "fr", onFinish, ...options } = {}) {
+export function mount(container, { level = 0, language = "fr", onFinish, photo, ...options } = {}) {
   const resonance = resolveResonance("sketch", options);
   if (!container?.ownerDocument || typeof container.append !== "function")
     throw new TypeError("A DOM container is required");
@@ -76,6 +78,9 @@ export function mount(container, { level = 0, language = "fr", onFinish, ...opti
     element("style", "@keyframes sketch-sparkle{50%{opacity:.3}}.sketch-landmark{position:relative}.sketch-landmark::after{content:'✦';position:absolute;right:0;top:-.5em;color:#ab9469;animation:sketch-sparkle 1.4s infinite}.sketch-star{position:absolute;right:2px;top:0;color:#ab9469;opacity:.45;pointer-events:none}@media(prefers-reduced-motion:reduce){.sketch-landmark::after{animation:none}}", root);
   }
   element("p", t("fiction"), root).className = "game-help-text";
+  const sourceNote = element("p", "", root);
+  sourceNote.className = "game-help-text";
+  sourceNote.hidden = true;
   element("p", t("settings", { level, size: game.width, colours: game.colours, seconds: game.observeMs / 1000 }), root).className = "game-help-text";
   const status = element("p", "", root);
   status.setAttribute("role", "status");
@@ -277,6 +282,40 @@ export function mount(container, { level = 0, language = "fr", onFinish, ...opti
       act({ type: "cancel" });
     }
   });
+  async function rasterize(blob) {
+    const bitmap = await win.createImageBitmap(blob);
+    try {
+      // A random square crop keeps repeated games at the same place varied.
+      const crop = Math.max(1, Math.floor(Math.min(bitmap.width, bitmap.height) * (0.6 + Math.random() * 0.4)));
+      const sx = Math.floor(Math.random() * (bitmap.width - crop + 1));
+      const sy = Math.floor(Math.random() * (bitmap.height - crop + 1));
+      const canvas = doc.createElement("canvas");
+      canvas.width = game.width;
+      canvas.height = game.height;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(bitmap, sx, sy, crop, crop, 0, 0, game.width, game.height);
+      const image = ctx.getImageData(0, 0, game.width, game.height);
+      return { data: image.data, width: image.width, height: image.height };
+    } finally {
+      bitmap.close?.();
+    }
+  }
+  if (typeof photo === "function") {
+    // The motif becomes a tessellated local photo when one is available before
+    // the player starts observing; otherwise the imaginary scene stands.
+    Promise.resolve().then(photo).then(async source => {
+      if (!source || destroyed || finished || game.phase !== "ready") return;
+      const pixels = source.pixels ?? await rasterize(source.blob);
+      if (destroyed || finished || game.phase !== "ready") return;
+      const target = tessellatePhoto(pixels, difficulty(level));
+      game = createGame({ level, now: clock(), target, ...options });
+      if (source.credit) {
+        sourceNote.textContent = t("photoSource", { credit: source.credit });
+        sourceNote.hidden = false;
+      }
+      render();
+    }).catch(error => console.warn("Sketch photo unavailable; using an imaginary motif:", error));
+  }
   container.append(root);
   decorateResonance(root, "sketch", resonance, language);
   render();

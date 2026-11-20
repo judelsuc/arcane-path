@@ -387,3 +387,31 @@ test("invalid mounting options do not attach nodes or listeners; fallback locale
   assert.equal(fresh.root.lang, "fr");
   fresh.ui.destroy();
 });
+
+test("a provided local photo becomes the tessellated model and shows its credit", async () => {
+  const data = new Array(9 * 4).fill(255);
+  for (const index of [0, 4, 8]) { data[index * 4] = 0; data[index * 4 + 1] = 0; data[index * 4 + 2] = 0; }
+  const h = harness({ language: "fr",
+    photo: async () => ({ pixels: { data, width: 3, height: 3 }, credit: "Jean Photographe (CC BY-SA 4.0)" }) });
+  for (let wait = 0; wait < 8; wait++) await Promise.resolve();
+  h.control("Commencer").click();
+  assert.equal(h.model.textContent.replaceAll("\n", ""), "#...#...#",
+    "the model is the tessellated photo, not an imaginary scene");
+  assert.ok(h.nodes.some(node => node.textContent.includes("Jean Photographe")),
+    "the photo credit is displayed");
+  h.ui.destroy();
+  h.assertClean();
+});
+
+test("a failing or late photo keeps the imaginary motif without breaking the game", async () => {
+  const h = harness({ language: "en", photo: async () => { throw new Error("offline"); } });
+  for (let wait = 0; wait < 8; wait++) await Promise.resolve();
+  h.control("Start").click();
+  assert.ok(h.model.textContent.length > 0, "the fallback scene still renders");
+  const slow = harness({ language: "en", photo: () => new Promise(() => {}) });
+  slow.control("Start").click();
+  for (let wait = 0; wait < 8; wait++) await Promise.resolve();
+  assert.ok(slow.model.textContent.length > 0);
+  slow.ui.destroy();
+  h.ui.destroy();
+});
