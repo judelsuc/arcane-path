@@ -228,6 +228,33 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Self-starting escape with in-game directions, 0.22.26 (20 November 2026)
+
+Deployed runtime `4f42425` (`deploy-2026-11-20-escape-console`). The escape
+dialog drops its intro paragraphs and start button: the challenge begins on
+its own after the three-second countdown, which is now drawn inside the scene
+along with short directions (terrain instruction, difficulty, imposed pace and
+jump control). The release prompt is drawn in the game view too. Full context,
+atmosphere and rules move into the pausing Help; the start button only
+reappears as a fallback if saving the start fails, and a restored interrupted
+attempt still never replays.
+
+Validation: full JavaScript run passed 1873/1874 (the single failure is the
+unchanged dream-wiring baseline assertion); the pursuit-ui suite was rewritten
+for the self-starting contract (auto-begin and imposed pace without input,
+countdown and directions drawn on the canvas, fallback start button on save
+failure, restored attempts never auto-beginning). Installed hashes match the
+packaged commit, journal clean after restart, `nginx -t` passed, HTTPS 401
+verified through nginx for the changed module, conditional GET of the
+refreshed manifest returns 200, PID 497084 became 498741.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.26-4f42425/runtime.tar.gz`, SHA-256
+`cdc20b62951876bdda5737b88429660565f9e65987b455cad91c733d82e10c2b`. No new
+files in this release. Refresh the release manifest mtime and restart after
+runtime changes. Do not restore or delete player databases, cached narratives,
+images or provider-job receipts.
+
 ## Encounter sounds, phantom-key fix and wider reactions, 0.22.25 (20 November 2026)
 
 Deployed runtime `332710b` (`deploy-2026-11-20-qte-sounds`). Event encounter
