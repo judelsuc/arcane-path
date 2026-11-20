@@ -1066,7 +1066,15 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         cellSizeMeters: base.cellSizeMeters, mapTerrain: stream?.journeyTerrain,
         artTerrain: cell?.terrain,
         artWeather: weatherData?.months[journeyDate(state).getUTCMonth()]?.condition,
-        startingPoint: base.origin?.name ?? base.name });
+        startingPoint: base.origin?.name ?? base.name,
+        // Resolved only when a photo is pinned: the cell's own name, else the
+        // nearest mapped settlement, else the starting point.
+        placeName: () => {
+          const named = (cell?.names ?? []).find(name => typeof name === "string" && name.trim());
+          if (named) return named.trim();
+          const town = stream && nearestSettlement({ col: state.col, row: state.row }, stream.chunks.values());
+          return town ? t("journalPlaceNear", { town: town.town }) : base.origin?.name ?? base.name ?? "";
+        } });
     }
     if (ended) {
       backgroundDownloads?.stop();

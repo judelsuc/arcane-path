@@ -625,3 +625,102 @@ test("automatic tarot pins show storage failures with retry and do not pin again
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(calls, 2);
 });
+
+test("a pinned photo keeps where it was taken and starts its note with the place name", async () => {
+  const rows = new Map();
+  const connection = { createObjectStore() {}, transaction() {
+    const tx = { objectStore() { return {
+      get(key) {
+        const request = {};
+        queueMicrotask(() => { request.result = rows.get(key); request.onsuccess(); queueMicrotask(() => tx.oncomplete()); });
+        return request;
+      },
+      add(value, key) { rows.set(key, value); }, put(value, key) { rows.set(key, value); },
+    }; } };
+    return tx;
+  } };
+  const index = { open() {
+    const request = {};
+    queueMicrotask(() => { request.result = connection; request.onupgradeneeded(); request.onsuccess(); });
+    return request;
+  } };
+  const store = await createPhotoJournalStore(index).scope("journey");
+  const location = { col: 12, row: -3, place: "Capdenaguet" };
+  assert.equal(await store.pin(photo(1), { location }), true);
+  const saved = await store.get(photo(1).sourceUrl);
+  assert.deepEqual(saved.location, location);
+  assert.equal(saved.note, "Capdenaguet", "the empty commentary becomes the place name");
+  await store.pin(photo(2), { location, note: "My own words" });
+  assert.equal((await store.get(photo(2).sourceUrl)).note, "My own words", "a written note is never replaced");
+  await store.pin(photo(3));
+  assert.equal((await store.get(photo(3).sourceUrl)).location, undefined);
+  for (const bad of [{ col: 1.5, row: 0, place: "" }, { col: 0, row: 0 }, { col: 0, row: 0, place: "x", extra: 1 }]) {
+    assert.throws(() => store.pin(photo(4), { location: bad }), /Invalid journal photo location/);
+  }
+});
+
+test("the pin button records the traveller's place and the journal draws a locator pin", async t => {
+  const original = { document: globalThis.document, URL: globalThis.URL };
+  t.after(() => Object.assign(globalThis, original));
+  class Element {
+    dataset = {}; children = []; events = {}; textContent = ""; open = false; value = "";
+    addEventListener(type, callback) { this.events[type] = callback; }
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    showModal() { this.open = true; }
+    close() { this.open = false; this.events.close?.(); }
+    getContext() {
+      const calls = this.calls = [];
+      return new Proxy({}, { get: (_, name) => typeof name === "string" && ["fillStyle", "strokeStyle", "lineWidth", "font", "textAlign"].includes(name)
+        ? undefined : (...args) => { calls.push([name, ...args]); }, set: () => true });
+    }
+  }
+  const elements = new Map(), element = selector => {
+    if (!elements.has(selector)) elements.set(selector, new Element());
+    return elements.get(selector);
+  };
+  globalThis.document = { documentElement: { lang: "en" }, createElement: () => new Element(),
+    querySelector: selector => selector === "dialog[open]" ? [...elements.values()].find(e => e.open) ?? null : element(selector) };
+  globalThis.URL = class extends original.URL { static createObjectURL() { return "blob:x"; } static revokeObjectURL() {} };
+  const survival = JSON.parse(readFileSync(new URL("../public/config.json", import.meta.url))).survival;
+  const economy = JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url)));
+  const state = { ...startEconomy(startSurvival(4, 7, Date.UTC(2026, 9, 17), "balanced", survival), economy, () => 0),
+    journeyMap: { version: 1, partial: false, simplified: false, points: [{ col: 0, row: 0 }, { col: 4, row: 7 }] } };
+  const rows = new Map(), received = [];
+  const store = {
+    async pin(p, options = {}) {
+      received.push(options);
+      rows.set(p.sourceUrl, { ...p, unannotated: options.unannotated ?? false,
+        note: options.note || options.location?.place || "", ...(options.location ? { location: options.location } : {}) });
+      return true;
+    },
+    async list() { return [...rows].map(([id, p]) => ({ id, pinnedAt: p.pinnedAt })); },
+    async get(id) { return rows.get(id); },
+    async note() {}, async remove() {},
+  };
+  const tr = (key, args) => translate("en", key, args);
+  const ui = setupPhotoJournal(tr, { store, narrative: { prefetch() {}, snapshot() { return null; }, status() { return ""; },
+    pending() { return false; }, subscribe() {} } });
+  ui.updateStats({ state, survival, economy, cellSizeMeters: 250, placeName: () => "Near Firmi" });
+  const pin = new Element();
+  ui.pinButton(pin, photo(1));
+  await pin.children[0].events.click();
+  assert.deepEqual(received[0].location, { col: 4, row: 7, place: "Near Firmi" });
+  const clue = new Element();
+  ui.pinButton(clue, photo(2), { unannotated: true });
+  await clue.children[0].events.click();
+  assert.equal(received[1].location, null, "a clue photo never records where it was pinned");
+  element("#open-journal").events.click();
+  await new Promise(resolve => setImmediate(resolve));
+  element("#journal-photos-page").events.click();
+  await new Promise(resolve => setImmediate(resolve));
+  const page = element("#journal-pages").children[0];
+  const place = page.children.find(child => child.className === "journal-photo-place");
+  assert.equal(place.textContent, "📍 Pinned at: Near Firmi");
+  const locator = page.children.find(child => child.className === "journal-photo-locator");
+  assert.ok(locator, "a locator map accompanies the located photo");
+  assert.ok(locator.calls.some(([name]) => name === "bezierCurveTo"), "the pin is drawn");
+  const note = page.children.find(child => child.tagName === undefined && child.className === "journal-print")
+    ?.children[1].children[0].children[0];
+  assert.equal(note?.value, "Near Firmi");
+});

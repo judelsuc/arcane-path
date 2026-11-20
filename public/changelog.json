@@ -1,6 +1,11 @@
 {
-  "version": "0.22.37",
+  "version": "0.22.38",
   "entries": [
+    {
+      "version": "0.22.38",
+      "fr": "Carnet de photos : chaque photo épinglée retient l'endroit où vous étiez. Sa page affiche « 📍 Épinglée à : … » et une petite carte de votre route avec une épingle sur ce lieu, et le commentaire commence par le nom du lieu au lieu de rester vide (vous pouvez toujours le réécrire). Les photos-indices ne révèlent aucun lieu.",
+      "en": "Photo journal: each pinned photo remembers where you stood. Its page shows \"📍 Pinned at: …\" and a small map of your route with a pin on that place, and the comment starts with the place name instead of staying empty (you can still rewrite it). Clue photos reveal no place."
+    },
     {
       "version": "0.22.37",
       "fr": "Aventures : les objets ramassés pour une énigme (roue, axe, feuilles…) annonçaient « L'objet rejoint votre sacoche », ce qui laissait croire qu'ils iraient dans le sac de voyage. Le message précise désormais qu'ils ne servent que dans ce lieu ; la récompense de l'aventure reste le trésor annoncé à la fin.",

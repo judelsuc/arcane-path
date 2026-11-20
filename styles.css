@@ -977,6 +977,11 @@ dialog p { margin: 12px 0; }
   transform: rotate(-1deg);
 }
 .notebook-page:nth-child(2) .journal-print { transform: rotate(1deg); }
+.journal-photo-place { margin: 0 0 6px; color: #3d3428; font-weight: 600; }
+.journal-photo-locator {
+  display: block; width: min(100%, 240px); height: auto; aspect-ratio: 360 / 220; margin: 0 0 16px;
+  border: 1px solid #c9b78f; box-shadow: 1px 3px 8px rgb(39 30 19 / 20%); transform: rotate(1.5deg);
+}
 .notebook-spread[data-statistics="true"]::after { display: none; }
 .journal-statistics { grid-column: 1 / -1; color: #282622; }
 .journal-stats-groups {

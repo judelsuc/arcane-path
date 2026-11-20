@@ -237,3 +237,49 @@ export async function journeyMapPhoto(view, t) {
   return { blob, title: t("journalMapPage"), note: journeyMapDescription(view, t) + "\n" +
     view.stops.map((stop, index) => `${index + 1}. ${stop.name ?? t(`journalMap.${stop.kind}`)}`).join("\n") };
 }
+
+/** Small locator beside a pinned photo: the walked route and a pin where it was taken. */
+export function drawPhotoLocator(canvas, view, location, t) {
+  canvas.width = 360;
+  canvas.height = 220;
+  const c = canvas.getContext("2d");
+  if (!c) throw new Error(t("journalPdfCanvasError"));
+  const all = [...view.points, location];
+  const minX = Math.min(...all.map(p => p.col)), maxX = Math.max(...all.map(p => p.col));
+  const minY = Math.min(...all.map(p => p.row)), maxY = Math.max(...all.map(p => p.row));
+  const scale = Math.min(300 / Math.max(12, maxX - minX), 160 / Math.max(12, maxY - minY));
+  const project = p => [180 + (p.col - (minX + maxX) / 2) * scale, 115 + (p.row - (minY + maxY) / 2) * scale];
+  c.fillStyle = "#eddfbb";
+  c.fillRect(0, 0, 360, 220);
+  c.strokeStyle = "#c9b78f";
+  c.lineWidth = 1;
+  for (let x = 30; x < 360; x += 60) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, 220); c.stroke(); }
+  for (let y = 25; y < 220; y += 60) { c.beginPath(); c.moveTo(0, y); c.lineTo(360, y); c.stroke(); }
+  c.strokeStyle = "#ac3029";
+  c.lineWidth = 3;
+  c.setLineDash([8, 6]);
+  c.beginPath();
+  c.moveTo(...project(view.points[0]));
+  for (const point of view.points.slice(1)) c.lineTo(...project(point));
+  c.stroke();
+  c.setLineDash([]);
+  const [x, y] = project(location);
+  c.fillStyle = "#2f4a6b";
+  c.strokeStyle = "#fff8e6";
+  c.lineWidth = 2;
+  c.beginPath();
+  c.moveTo(x, y);
+  c.bezierCurveTo(x - 4, y - 8, x - 11, y - 14, x - 11, y - 22);
+  c.arc(x, y - 22, 11, Math.PI, 0);
+  c.bezierCurveTo(x + 11, y - 14, x + 4, y - 8, x, y);
+  c.fill();
+  c.stroke();
+  c.fillStyle = "#fff8e6";
+  c.beginPath();
+  c.arc(x, y - 22, 4, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = "#59472c";
+  c.font = "bold 14px sans-serif";
+  c.textAlign = "left";
+  c.fillText(t("journalMapNorth"), 10, 18);
+}

@@ -5,7 +5,7 @@ import { createTarotJournalPinner, tarotArtwork, tarotJournalEntry } from "./tar
 import { journeyEventJournalEntry } from "./journey-event-journal.mjs";
 import { journeyStats } from "./journey-stats.mjs";
 import { notebookPdf, downloadNotebookPdf } from "./notebook-pdf.mjs";
-import { journeyMapView, journeyMapDescription, drawJourneyMap } from "./journey-map.mjs";
+import { journeyMapView, journeyMapDescription, drawJourneyMap, drawPhotoLocator } from "./journey-map.mjs";
 import { notebookCover } from "./notebook-cover.mjs";
 import { renderDiscoveryNotebook, discoveryNotebookEntries } from "./discovery-ui.mjs";
 import { createJournalIllustrator, illustrationScenes, illustrationSettingNote, COVER_ART_ID } from "./journal-art.mjs";
@@ -47,6 +47,15 @@ export function validateJournalPhoto(photo) {
       !(photo.blob instanceof Blob) || !photo.blob.type.startsWith("image/") ||
       !photo.blob.size || photo.blob.size > 12_000_000) {
     throw new Error("Invalid photo or missing source/license for journal.");
+  }
+}
+
+export function validatePhotoLocation(location) {
+  if (!location || typeof location !== "object" || Array.isArray(location) ||
+      Object.keys(location).some(key => !["col", "row", "place"].includes(key)) ||
+      ![location.col, location.row].every(value => Number.isSafeInteger(value) && Math.abs(value) <= 8000) ||
+      typeof location.place !== "string" || location.place.length > 200) {
+    throw new Error("Invalid journal photo location.");
   }
 }
 
@@ -120,8 +129,11 @@ export function createPhotoJournalStore(index = indexedDB) {
         request.onsuccess = () => done(request.result);
       });
     },
-    pin(photo, { unannotated = false, id = photo.sourceUrl, caption = "", note = "" } = {}) {
+    pin(photo, { unannotated = false, id = photo.sourceUrl, caption = "", note = "", location = null } = {}) {
       validateJournalPhoto(photo);
+      if (location !== null) validatePhotoLocation(location);
+      // A pinned place starts the commentary with its name instead of leaving it empty.
+      if (!note && location?.place) note = location.place.slice(0, noteLimit(id));
       if (typeof id !== "string" || !id || typeof caption !== "string" ||
           typeof note !== "string" || note.length > noteLimit(id)) throw new Error("Invalid journal entry.");
       return transaction("readwrite", (store, done) => {
@@ -130,7 +142,8 @@ export function createPhotoJournalStore(index = indexedDB) {
           if (request.result) { done(false); return; }
           store.add({ blob: photo.blob, title: photo.title, sourceUrl: photo.sourceUrl,
             attribution: photo.attribution, license: photo.license, licenseUrl: photo.licenseUrl,
-            owner, entryId: id, unannotated, caption, note, pinnedAt: new Date().toISOString() }, key(id));
+            owner, entryId: id, unannotated, caption, note, pinnedAt: new Date().toISOString(),
+            ...(location ? { location } : {}) }, key(id));
           done(true);
         };
       });
@@ -615,6 +628,25 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
           } else caption.append(label, save, noteStatus);
           frame.append(image, caption);
           page.append(frame);
+          const located = photo.location ? (() => {
+            try { validatePhotoLocation(photo.location); return photo.location; }
+            catch (reason) { console.error("Ignoring invalid photo location:", reason); return null; }
+          })() : null;
+          const routeState = readOnly ? archiveState : statsContext?.state;
+          if (located) {
+            const where = document.createElement("p");
+            where.className = "journal-photo-place";
+            where.textContent = t("journalPhotoPlace", { place: located.place || t("journalPhotoPlaceUnknown") });
+            page.append(where);
+          }
+          if (located && routeState) {
+            const canvas = document.createElement("canvas");
+            canvas.className = "journal-photo-locator";
+            canvas.role = "img";
+            canvas.ariaLabel = t("journalPhotoPlace", { place: located.place || t("journalPhotoPlaceUnknown") });
+            drawPhotoLocator(canvas, journeyMapView(routeState, statsContext?.cellSizeMeters ?? 250), located, t);
+            page.append(canvas);
+          }
           const credit = document.createElement("p");
           credit.className = "journal-credit technical-text";
           credit.textContent = `${photo.attribution} · ${photo.license} `;
@@ -984,7 +1016,11 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
         button.disabled = true;
         feedback.className = "";
         try {
-          const added = await target.pin(photo, options);
+          const state = statsContext?.state;
+          const location = !options?.unannotated && Number.isSafeInteger(state?.col) && Number.isSafeInteger(state?.row)
+            ? { col: state.col, row: state.row, place: String(statsContext.placeName?.() ?? "").trim().slice(0, 200) }
+            : null;
+          const added = await target.pin(photo, { ...options, location });
           feedback.textContent = t(added ? "journalPinned" : "journalAlreadyPinned");
           setFeedback(feedback, "success");
         } catch (reason) {
