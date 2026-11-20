@@ -1,6 +1,11 @@
 {
-  "version": "0.22.25",
+  "version": "0.22.26",
   "entries": [
+    {
+      "version": "0.22.26",
+      "fr": "La fuite se joue comme un jeu : plus de paragraphes ni de bouton — le défi démarre seul après un compte à rebours dessiné dans la scène, avec les consignes courtes (terrain, difficulté, commande de saut) affichées dans l'image. Le contexte et l'ambiance complets restent dans l'Aide, qui met toujours en pause.",
+      "en": "The escape plays like a game: no more paragraphs or button — the challenge starts on its own after a countdown drawn inside the scene, with short directions (terrain, difficulty, jump control) shown in the picture. The full context and atmosphere remain in Help, which still pauses."
+    },
     {
       "version": "0.22.25",
       "fr": "Les rencontres sonnent : signal de départ, touches illuminées, bonnes réponses et résultat ont chacun leur son. Une touche fantôme ne bloque plus le défi (« Relâchez les touches » disparaît seul) et les fenêtres de réaction sont plus généreuses. Les suites de lanternes sont désormais entièrement aléatoires. La direction du rêve est mise en évidence, la boutique affiche l'effet de chaque objet à côté du prix, et « Enquêter ici » propose un raccourci vers les indices du journal.",

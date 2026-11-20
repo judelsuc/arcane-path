@@ -24,8 +24,9 @@ class Element extends Target {
   click() { if (!this.disabled && !this.hidden) this.dispatch("click"); }
   getContext() {
     return this.canvasContext ??= {
-      rotations: [], save() {}, restore() {}, translate() {},
+      rotations: [], texts: [], save() {}, restore() {}, translate() {},
       rotate(angle) { this.rotations.push(angle); },
+      fillText(value) { this.texts.push(String(value)); },
       fillRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, fill() {},
     };
   }
@@ -76,7 +77,7 @@ function fixture(status = "ready", lang = "en") {
 }
 
 for (const language of ["en", "fr"]) {
-  test(`${language} pursuit warns briefly, waits for other dialogs, and imposes the pace from the traveller's condition`, () => {
+  test(`${language} pursuit warns briefly, waits for other dialogs, starts on its own and imposes the pace`, async () => {
     const h = fixture("ready", language);
     h.current.otherPending = true;
     h.ui.update();
@@ -90,20 +91,23 @@ for (const language of ["en", "fr"]) {
     assert.match(canvas.attributes["aria-label"], language === "en" ? /weather data unavailable/ : /météo indisponible/);
     assert.equal(h.dialog.children.find(node => node.tagName === "SELECT"), undefined,
       "no pace selector: the game decides");
-    const paragraphs = h.dialog.children.filter(node => node.tagName === "P" && !node.attributes.role);
-    for (const paragraph of paragraphs) {
-      assert.ok(paragraph.textContent.length < 220, `concise intro: ${paragraph.textContent}`);
-    }
-    assert.ok(!h.dialog.children.some(node =>
-      /automatiquement|automatically/.test(node.textContent ?? "")), "control rules live in Help");
-    h.button(language === "en" ? "Start escape" : "Commencer la fuite").click();
+    assert.equal(h.dialog.children.filter(node => node.tagName === "P" && !node.attributes.role).length, 0,
+      "no intro paragraphs: directions live inside the game view");
+    await Promise.resolve();
     assert.equal(h.state.pursuit.pending.mode, "normal",
-      "a healthy traveller is imposed the normal pace");
+      "a healthy traveller is imposed the normal pace without pressing anything");
     assert.equal(h.state.pursuit.pending.status, "active");
+    assert.equal(h.button(language === "en" ? "Start escape" : "Commencer la fuite").hidden, true,
+      "no start button: the escape begins after the countdown");
+    h.advance(100);
+    const texts = canvas.getContext().texts;
+    assert.ok(texts.includes("3"), "the countdown is drawn in the game view");
+    assert.ok(texts.some(line => line.includes(language === "en" ? "jump" : "aute")),
+      "short directions are drawn in the game view");
     h.ui.reset();
   });
 
-  test(`${language} a weakened traveller is imposed the slower pace and told so`, () => {
+  test(`${language} a weakened traveller is imposed the slower pace and told so in the game view`, async () => {
     const h = fixture("ready", language);
     h.state = { ...h.state, pursuit: { ...h.state.pursuit, pending: {
       ...h.state.pursuit.pending,
@@ -111,22 +115,27 @@ for (const language of ["en", "fr"]) {
     } } };
     assert.ok(h.state.pursuit.pending.difficulty.modifier > 0, "weak condition raises the modifier");
     h.ui.update();
-    const warning = h.dialog.children.find(node => node.tagName === "P" && !node.attributes.role);
-    assert.match(warning.textContent, language === "en" ? /carefully/ : /prudence/);
-    h.button(language === "en" ? "Start escape" : "Commencer la fuite").click();
+    await Promise.resolve();
     assert.equal(h.state.pursuit.pending.mode, "accessible",
       "weak condition imposes the slower course");
+    h.advance(100);
+    const canvas = h.dialog.children.find(node => node.tagName === "CANVAS");
+    assert.ok(canvas.getContext().texts.some(line =>
+      language === "en" ? /Careful pace/.test(line) : /prudente/.test(line)),
+    "the imposed pace is announced in the game view");
     h.ui.reset();
   });
 }
 
-test("three-second preparation waits for held movement keys and Help pauses the exact simulation", () => {
+test("three-second preparation waits for held movement keys and Help pauses the exact simulation", async () => {
   const h = fixture();
   h.doc.dispatch("keydown", { key: "ArrowRight" });
   h.ui.update();
-  h.button("Start escape").click();
+  await Promise.resolve();
+  const canvas = h.dialog.children.find(node => node.tagName === "CANVAS");
   h.advance(3500);
-  assert.match(h.feedback().textContent, /Release held keys/);
+  assert.ok(canvas.getContext().texts.some(line => /Release held keys/.test(line)),
+    "the release prompt is drawn in the game view");
   h.doc.dispatch("keyup", { key: "ArrowRight" });
   h.advance(1000);
   const before = h.feedback().textContent;
@@ -141,7 +150,7 @@ test("three-second preparation waits for held movement keys and Help pauses the 
   h.ui.reset();
 });
 
-test("night, fog and rain are announced and rendered; Help and reduced motion stop weather movement", () => {
+test("night, fog and rain are announced and rendered; Help and reduced motion stop weather movement", async () => {
   const h = fixture();
   h.state.pursuit.pending.atmosphere = {
     version: 1, phase: "night", precipitation: "storm", fog: "dense", seed: 123,
@@ -156,7 +165,8 @@ test("night, fog and rain are announced and rendered; Help and reduced motion st
   assert.match(canvas.attributes["aria-label"], /night.*heavy rain.*dense fog/);
   const initial = structuredClone(rain);
   assert.equal(initial.length, 128);
-  h.button("Start escape").click(); h.advance(3500);
+  await Promise.resolve();
+  h.advance(3500);
   assert.notDeepEqual(rain, initial);
   h.button("Help / pause").click();
   const paused = structuredClone(rain);
@@ -171,14 +181,16 @@ test("night, fog and rain are announced and rendered; Help and reduced motion st
   h.ui.reset();
 });
 
-test("legacy escapes have no retroactively generated atmosphere", () => {
+test("legacy escapes have no retroactively generated atmosphere", async () => {
   const h = fixture();
   h.state.pursuit.pending.version = 5;
   delete h.state.pursuit.pending.atmosphere;
   h.ui.update();
   const canvas = h.dialog.children.find(node => node.tagName === "CANVAS");
   assert.doesNotMatch(canvas.attributes["aria-label"], /Atmosphere/);
-  assert.ok(h.dialog.children.some(node => node.textContent.includes("Difficulty 1/10")));
+  await Promise.resolve();
+  h.advance(100);
+  assert.ok(canvas.getContext().texts.some(line => line.includes("Difficulty 1/10")));
   h.ui.reset();
 });
 
@@ -194,14 +206,18 @@ test("a pending escape opens after another modal closes without requiring a bloc
   h.ui.reset();
 });
 
-test("failure saving the start cannot run the timer; result retry saves the same attempt without restarting", () => {
+test("failure saving the start reveals the fallback button; result retry saves the same attempt without restarting", async () => {
   const h = fixture();
-  h.ui.update(); h.fail("Storage is full");
-  h.button("Start escape").click();
+  h.fail("Storage is full");
+  h.ui.update();
+  await Promise.resolve();
   assert.equal(h.timers.size, 0);
   assert.equal(h.state.pursuit.pending.status, "ready");
   assert.match(h.feedback().textContent, /Storage is full/);
-  h.fail(""); h.button("Start escape").click();
+  const start = h.button("Start escape");
+  assert.equal(start.hidden, false, "the start button only appears as a save-failure fallback");
+  h.fail(""); start.click();
+  assert.equal(start.hidden, true);
   h.fail("Storage is full");
   h.doc.hidden = true;
   h.doc.dispatch("visibilitychange");
@@ -221,26 +237,28 @@ test("failure saving the start cannot run the timer; result retry saves the same
   assert.equal(image.hidden, true);
 });
 
-test("restored active attempts cannot replay; they must persist capture before continuing", () => {
+test("restored active attempts cannot replay; they must persist capture before continuing", async () => {
   const h = fixture("active");
   h.ui.update();
-  assert.equal(h.button("Start escape").disabled, true);
+  await Promise.resolve();
+  assert.equal(h.button("Start escape").hidden, true);
   assert.equal(h.button("Continue").disabled, true);
   assert.equal(h.timers.size, 0);
+  assert.equal(h.actions.length, 0, "a restored attempt never begins again on its own");
   h.button("Retry saving the result").click();
   assert.equal(h.state.ended, "captured");
   assert.equal(h.actions.length, 1);
   h.ui.reset();
 });
 
-test("three stumbles show a static capture portrait; a missing image reports an explicit error", () => {
+test("three stumbles show a static capture portrait; a missing image reports an explicit error", async () => {
   for (const missing of [false, true]) {
     const h = fixture();
     h.doc.defaultView.matchMedia = () => ({ matches: true });
     h.ui.update();
     const image = h.dialog.children.find(node => node.tagName === "IMG");
     if (missing) image.dispatch("error");
-    h.button("Start escape").click();
+    await Promise.resolve();
     h.advance(15000);
     assert.equal(h.state.ended, "captured");
     assert.equal(h.state.pursuit.history[0].abandoned, false);
@@ -251,7 +269,7 @@ test("three stumbles show a static capture portrait; a missing image reports an 
   }
 });
 
-test("a complete keyboard route succeeds in normal and slower mode without duplicate settlement", () => {
+test("a complete keyboard route succeeds in normal and slower mode without duplicate settlement", async () => {
   for (const [mode, level] of [["normal", 1], ["normal", 5], ["normal", 10],
     ["accessible", 3], ["accessible", 5], ["accessible", 10]]) {
     const h = fixture();
@@ -263,12 +281,15 @@ test("a complete keyboard route succeeds in normal and slower mode without dupli
     const completed = mode === "accessible" ? (level - 3) * 2 : (level - 1) * 2;
     h.state.pursuit.pending.difficulty = pursuitDifficulty(condition, completed);
     h.ui.update();
-    assert.ok(h.dialog.children.some(node => node.textContent.includes(`Difficulty ${level}/10`)));
     const seed = h.state.pursuit.pending.seed;
     const plan = escapeRoute(seed, h.state.pursuit.pending.version, level);
     const jumpTicks = plan.transcript.jumps;
     assert.equal(plan.state.hits, 0, `planned route at level ${level}`);
-    h.button("Start escape").click(); h.advance(3001);
+    await Promise.resolve();
+    h.advance(100);
+    assert.ok(h.dialog.children.find(node => node.tagName === "CANVAS").getContext()
+      .texts.some(line => line.includes(`Difficulty ${level}/10`)));
+    h.advance(2901);
     const retrySuccess = mode === "normal" && level === 1;
     if (retrySuccess) h.fail("Storage is full");
     let ms = 0;

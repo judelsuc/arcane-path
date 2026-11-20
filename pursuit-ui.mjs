@@ -13,6 +13,8 @@ const COPY = {
     rules: "You run automatically. Press Space, Up or Jump to clear obstacles. Jump onto raised platforms, then over their crates. Falling into a gap costs one stumble and puts you back on the far side. Three stumbles mean capture and the end of this journey. Reach the end to regain a 30 km lead. Closing the tab or leaving a started escape counts as capture. Help pauses the challenge.",
     pace: "The pursuer moves at 2 km/h as game time passes, including rest and sleep. Shelters do not stop him. Moving away or taking transport can increase your lead.",
     normal: "Normal pace", accessible: "Slower accessible pace", start: "Start escape",
+    controlsShort: "Space or Up: jump",
+    paceShort: "Careful pace imposed by your condition.",
     difficultyShort: "Difficulty {level}/10.",
     paceImposed: "Weakened, you run carefully: the course unfolds more slowly.",
     jump: "Jump", help: "Help / pause", resume: "Resume", prepare: "Get ready",
@@ -44,6 +46,8 @@ const COPY = {
     rules: "Vous courez automatiquement. Appuyez sur Espace, Haut ou Sauter pour franchir les obstacles. Montez sur les plateformes, puis sautez leurs caisses. Tomber dans un trou coûte un trébuchement et vous replace de l'autre côté. Trois trébuchements entraînent la capture et la fin du voyage. Atteignez la sortie pour reprendre 30 km d'avance. Fermer l'onglet ou quitter une fuite commencée compte comme une capture. Aide met le défi en pause.",
     pace: "Le poursuivant avance à 2 km/h avec le temps du jeu, y compris pendant le repos et le sommeil. Les abris ne l'arrêtent pas. S'éloigner ou prendre un transport peut augmenter votre avance.",
     normal: "Vitesse normale", accessible: "Vitesse réduite accessible", start: "Commencer la fuite",
+    controlsShort: "Espace ou Haut : sauter",
+    paceShort: "Allure prudente imposée par votre état.",
     difficultyShort: "Difficulté {level}/10.",
     paceImposed: "Affaibli, vous courez avec prudence : le parcours défile plus lentement.",
     jump: "Sauter", help: "Aide / pause", resume: "Reprendre", prepare: "Préparez-vous",
@@ -81,8 +85,8 @@ export function setupPursuit({ context, act, doc = document }) {
   const dialog = doc.createElement("dialog");
   dialog.className = "pursuit-dialog";
   dialog.setAttribute("data-native-controls", "");
-  const title = doc.createElement("h2"), warning = doc.createElement("p");
-  const atmosphereInfo = doc.createElement("p");
+  const title = doc.createElement("h2");
+  let atmosphereText = "";
   dialog.setAttribute("aria-labelledby", "pursuit-title");
   title.id = "pursuit-title";
   // The pace is imposed by the traveller's condition, never chosen in the dialog.
@@ -127,7 +131,7 @@ export function setupPursuit({ context, act, doc = document }) {
     help.showModal();
   });
   const retry = button(saveResult), close = button(() => dialog.close());
-  dialog.append(title, warning, atmosphereInfo, start, canvas, captureImage, feedback, jump, helpButton, retry, close);
+  dialog.append(title, start, canvas, captureImage, feedback, jump, helpButton, retry, close);
   doc.body.append(dialog, help);
   let identity, attempt, engine, jumps = [], result, running = false, preparation = 0;
   let timer, last = 0, accumulated = 0, jumpRequested = false, errorText = "";
@@ -186,17 +190,45 @@ export function setupPursuit({ context, act, doc = document }) {
     } catch (reason) {
       console.error("Pursuit start save failed:", reason);
       feedback.textContent = reason.message;
+      start.hidden = false;
       return;
     }
     attempt = context().state.pursuit.pending;
     engine = createEscape(attempt.seed, attempt.version, attempt.difficulty?.level);
     jumps = []; jumpRequested = false; accumulated = 0;
     preparation = 3000;
+    start.hidden = true;
     start.disabled = true;
     running = true; last = clock();
     timer = view.setInterval(tick, 16);
     dialog.focus();
     tick();
+  }
+  // Short directions live inside the game view, Shenmue-style, instead of
+  // paragraphs above the canvas.
+  function overlay(big, lines) {
+    const ctx = canvas.getContext("2d");
+    ctx.save();
+    ctx.fillStyle = "rgba(8, 12, 18, 0.55)";
+    ctx.fillRect(0, 86, canvas.width, 160);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#f4e9c8";
+    if (big) {
+      ctx.font = "bold 64px ui-monospace, monospace";
+      ctx.fillText(big, canvas.width / 2, 152);
+    }
+    ctx.font = "15px ui-monospace, monospace";
+    lines.forEach((line, index) => ctx.fillText(line, canvas.width / 2, 186 + index * 22));
+    ctx.restore();
+  }
+  function directions() {
+    const difficulty = attempt?.difficulty;
+    return [
+      text(attempt.terrain),
+      `${difficulty ? text("difficultyShort", { level: difficulty.level }) : ""}${
+        attempt.mode === "accessible" ? ` ${text("paceShort")}` : ""}`.trim(),
+      text("controlsShort"),
+    ].filter(Boolean);
   }
   function tick() {
     const now = clock(), delta = Math.min(100, Math.max(0, now - last));
@@ -204,12 +236,16 @@ export function setupPursuit({ context, act, doc = document }) {
     if (!running || help.open) return;
     if (preparation > 0) {
       preparation = Math.max(0, preparation - delta);
-      feedback.textContent = `${text("prepare")} ${Math.ceil(preparation / 1000)}`;
+      feedback.textContent = "";
+      draw();
+      overlay(String(Math.ceil(preparation / 1000)), directions());
       jumpRequested = false;
       return;
     }
     if (held.size && engine.tick === 0) {
-      feedback.textContent = text("release"); jumpRequested = false; return;
+      draw();
+      overlay("", [text("release")]);
+      jumpRequested = false; return;
     }
     jump.disabled = false;
     accumulated += delta * (attempt.mode === "accessible" ? 0.65 : 1);
@@ -486,7 +522,10 @@ export function setupPursuit({ context, act, doc = document }) {
     stop(); if (help.open) help.close();
     doc.querySelector("#ascii-map")?.focus({ preventScroll: true });
   });
-  doc.addEventListener("visibilitychange", () => { if (doc.hidden && running) finish(true); });
+  doc.addEventListener("visibilitychange", () => {
+    if (doc.hidden && running) finish(true);
+    else if (!doc.hidden && dialog.open && !running && !result && attempt?.status === "ready") launch();
+  });
   doc.addEventListener("close", () => queueMicrotask(update), true);
   function update() {
     const current = context(), state = current?.state, info = pursuitStatus(state);
@@ -509,24 +548,22 @@ export function setupPursuit({ context, act, doc = document }) {
     title.textContent = text("title");
     const difficulty = pending.difficulty;
     const atmosphere = pending.atmosphere;
-    atmosphereInfo.hidden = !atmosphere;
-    atmosphereInfo.textContent = atmosphere ? text("atmosphere", {
+    atmosphereText = atmosphere ? text("atmosphere", {
       phase: text(`phase_${atmosphere.phase}`), rain: text(`rain_${atmosphere.precipitation}`),
       fog: text(`fog_${atmosphere.fog}`),
     }) : "";
-    warning.textContent = `${text("escape")} ${text(pending.terrain)}${difficulty
-      ? ` ${text("difficultyShort", { level: difficulty.level })}` : ""}${
-      difficulty && difficulty.modifier > 0 ? ` ${text("paceImposed")}` : ""}`;
     helpDetails = [
+      text("escape"), atmosphereText,
       difficulty ? text("difficulty", {
         ...difficulty, modifier: difficulty.modifier > 0 ? `+${difficulty.modifier}` : difficulty.modifier,
       }) : "",
+      difficulty && difficulty.modifier > 0 ? text("paceImposed") : "",
       pending.version >= 5 && difficulty.level >= 8 ? text("expert") : "",
       text("pace"), text("rules"), text("chase"),
       pending.version >= 4 ? `${text("obstacles")}${difficulty.level >= 8 ? ` ${text("moving")}` : ""}` : "",
       pending.version >= 7 && difficulty.level >= 4 ? text("demanding") : "",
     ].filter(Boolean).join(" ");
-    canvas.setAttribute("aria-label", `${text(pending.terrain)} ${text("chase")} ${atmosphereInfo.textContent}`);
+    canvas.setAttribute("aria-label", `${text(pending.terrain)} ${text("chase")} ${atmosphereText}`);
     canvas.hidden = false;
     captureImage.hidden = true;
     captureImage.alt = text("captureImage");
@@ -534,7 +571,10 @@ export function setupPursuit({ context, act, doc = document }) {
     start.textContent = text("start"); jump.textContent = text("jump");
     helpButton.textContent = text("help"); resume.textContent = text("resume");
     retry.textContent = text("retry"); close.textContent = text("close");
-    start.disabled = pending.status === "active";
+    // The escape begins on its own after the in-game countdown; the start
+    // button only reappears if saving the start fails.
+    start.hidden = true;
+    start.disabled = false;
     jump.disabled = close.disabled = true; retry.hidden = true;
     engine = createEscape(pending.seed, pending.version, pending.difficulty?.level); draw();
     feedback.textContent = "";
@@ -544,6 +584,7 @@ export function setupPursuit({ context, act, doc = document }) {
       retry.hidden = false;
     }
     dialog.showModal();
+    if (pending.status === "ready") queueMicrotask(launch);
   }
   function reset() {
     stop(); identity = undefined; result = undefined; victoryElapsed = undefined;
