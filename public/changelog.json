@@ -1,6 +1,11 @@
 {
-  "version": "0.22.35",
+  "version": "0.22.36",
   "entries": [
+    {
+      "version": "0.22.36",
+      "fr": "Aventures de plateforme : maintenir E devant une porte faisait changer de salle à chaque image jusqu'au relâchement — des dizaines d'entrées facturées en temps, fatigue et saleté. Une porte ne s'ouvre plus qu'une fois par appui ; il faut relâcher E pour franchir la suivante (les manivelles se tiennent toujours).",
+      "en": "Platform adventures: holding E at a door changed room on every frame until release — dozens of room entries charged in time, fatigue and dirt. A door now opens once per press; release E to go through the next one (cranks can still be held)."
+    },
     {
       "version": "0.22.35",
       "fr": "Correction : entrer dans une aventure de légende (ou utiliser un objet magique qui déplace) pendant une poursuite provoquait « Invalid saved pursuit » — le poursuivant suit désormais aussi le temps passé dans l'aventure. Explorer rejoint aussi le menu contextuel de la case (même raccourci Z). Les objets trouvés s'enrichissent de quatre nouvelles paires à départager — lunettes, tasses émaillées, lanternes et paniers d'osier — soit douze familles tirées au hasard à chaque partie.",

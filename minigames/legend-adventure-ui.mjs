@@ -1281,6 +1281,7 @@ export function mount(container, { format, language = "en", seed = 1, background
     actionControls.className = "legend-action-controls";
     const held = new Set();
     const keyboardHeld = new Set();
+    let doorLatch = false;
     const taps = new Set();
     let paused = false;
     let last = null;
@@ -1425,9 +1426,17 @@ export function mount(container, { format, language = "en", seed = 1, background
         if (!paused && visible && !(authoritative && (authoritative.disabled || authoritative.status !== "active"))) {
           if (last !== null) accumulator += Math.min((now - last) / 1000, 0.1);
           while (accumulator >= STEP) {
-            const input = Object.fromEntries([...held, ...keyboardHeld, ...taps].map(key => [key, true]));
+            // A held E (interact is held for cranks since version 5) must not
+            // chain through doors frame after frame: after a room change the
+            // interact control stays ignored until it is released.
+            const pressed = [...held, ...keyboardHeld, ...taps];
+            if (doorLatch && !pressed.includes("interact")) doorLatch = false;
+            const input = Object.fromEntries(pressed.filter(key => !(doorLatch && key === "interact"))
+              .map(key => [key, true]));
+            const room = state.room;
             if (local) localInput({ controls: input, ticks: 1 });
             else state = stepPlatformer(state, input);
+            if (state.room !== room && input.interact) doorLatch = true;
             taps.clear();
             accumulator -= STEP;
             if (state.completed || local && (authoritative.disabled || authoritative.status !== "active")) break;

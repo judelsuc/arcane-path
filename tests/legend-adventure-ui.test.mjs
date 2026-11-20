@@ -1557,3 +1557,33 @@ test("food-enabled live dungeons show accepted calorie gains in both languages w
     f.api.destroy();
   }
 });
+
+test("holding E through a door changes room once until the key is released", () => {
+  let progress = replayLegendSession({ contentVersion: CATALOGUE_PLATFORM_VERSION, seed: 1, actions: [] });
+  assert.ok(progress.level.version >= 5, "interact is a held control on this level version");
+  assert.ok(progress.level.rooms.length > 1);
+  const doors = [];
+  const f = fixture("platform", "en", { authoritative: {
+    contentVersion: CATALOGUE_PLATFORM_VERSION, local: true, actions: [], health: 85, status: "active",
+    onAction(input) {
+      // Every interact at a door would move the traveller to the other room.
+      if (input.controls.interact) {
+        doors.push(input);
+        progress = { ...progress, room: progress.room === 0 ? 1 : 0 };
+      }
+      return { progress, state: { health: 85 }, interrupted: false };
+    },
+  } });
+  const root = f.nodes.find(node => node.className === "legend-game");
+  const press = repeat => root.dispatch("keydown", { key: "e", repeat, preventDefault() {}, stopPropagation() {} });
+  press(false);
+  let now = 0;
+  for (let frame = 0; frame < 12; frame++) { if (frame) press(true); f.run(now); now += 34; }
+  assert.equal(doors.length, 1, "a held key crosses a single door");
+  f.win.dispatch("keyup", { key: "e" });
+  f.run(now); now += 34;
+  press(false);
+  f.run(now); now += 34; f.run(now);
+  assert.equal(doors.length, 2, "releasing and pressing again opens the next door");
+  f.api.destroy();
+});
