@@ -228,6 +228,39 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Encounter sounds, phantom-key fix and wider reactions, 0.22.25 (20 November 2026)
+
+Deployed runtime `332710b` (`deploy-2026-11-20-qte-sounds`). Event encounter
+challenges gain synthesized sounds (go signal, cue, correct press, outcome) in
+the new `event-qte-audio.mjs`, following the global audio toggle, volume and
+tab visibility. Held-key tracking now follows only challenge keys, ignores
+modifier combinations, expires entries that auto-repeat stops refreshing and
+caps the release wait, so a lost keyup can no longer freeze "release held
+keys". Challenge snapshots move to qte version 4 with reaction windows widened
+by 400 ms; versions 1–3 keep their timings so saved traces replay to the same
+outcome. Lantern rehearsal sequences are fully random (the three authored
+patterns are removed). The trail-dream dialog highlights its compass
+direction, the boutique shows each item's effect beside its price (no longer
+folded into Help), and the investigation window gains a permanent shortcut to
+the clue journal.
+
+Validation: full JavaScript run passed 1873/1874 — the single failure is the
+unchanged dream-wiring baseline assertion. New suites cover the challenge
+sounds, stale-key expiry, capped release wait, version-4 timings, random
+lantern generation, the dream highlight mark, visible boutique effects and
+the journal shortcut. Four installed hashes (including the new module) match
+the packaged commit, journal clean after restart, `nginx -t` passed, HTTPS
+returns the expected unauthenticated 401 for the root, the new module and the
+changelog (verified through nginx), conditional GET of the refreshed manifest
+returns 200, PID 492440 became 497084.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.25-332710b/runtime.tar.gz`, SHA-256
+`3c1601a323bd19418769698f3161df85ab8f8230d0b16930cb949af205483a85`. Remove
+`event-qte-audio.mjs` on rollback. Refresh the release manifest mtime and
+restart after runtime changes. Do not restore or delete player databases,
+cached narratives, images or provider-job receipts.
+
 ## Readable archived notebooks despite legacy saves, 0.22.24 (20 November 2026)
 
 Deployed runtime `b42bcdc` (`deploy-2026-11-20-archive-compat`). Archived
