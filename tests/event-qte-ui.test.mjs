@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mountEventChallenge, trackEventQteKeys } from "../event-qte-ui.mjs";
+import { mountEventChallenge, trackEventQteKeys, QTE_HELD_STALE_MS } from "../event-qte-ui.mjs";
 import { eventChallenge, challengeOutcome, reactionCue, QTE_PREPARATION_MS, QTE_LETTERS } from "../event-qte.mjs";
 
 class Target {
@@ -67,13 +67,14 @@ test("three-second preparation ignores walking input, waits for release and star
   }
   f.tick(3000);
   assert.equal(f.nodes.find(n => n.className === "event-qte-target").textContent, "Release held keys to begin.");
-  f.tick(20000);
+  f.tick(3000 + QTE_HELD_STALE_MS - 1);
   assert.deepEqual(f.outcomes, []);
   f.release("ArrowRight");
-  f.tick(20001);
+  f.tick(3000 + QTE_HELD_STALE_MS);
   assert.equal(f.nodes.find(n => n.className === "event-qte-target").textContent, "Watch the keys…");
+  const base = 3000 + QTE_HELD_STALE_MS;
   for (const [index, key] of rule.keys.entries()) {
-    f.tick(20001 + reactionCue(rule, index).startMs + 50);
+    f.tick(base + reactionCue(rule, index).startMs + 50);
     f.key(key);
     f.release(key);
   }
@@ -83,17 +84,64 @@ test("three-second preparation ignores walking input, waits for release and star
   assert.equal(f.doc.listeners.get("keyup").size, 0);
 });
 
+test("a key that is never released only delays the start by the stale window", async () => {
+  const heldKeys = new Set(["ArrowRight"]);
+  const f = await fixture("coins", "en", { preparation: true, heldKeys });
+  const target = () => f.nodes.find(n => n.className === "event-qte-target");
+  f.tick(3000);
+  assert.equal(target().textContent, "Release held keys to begin.");
+  f.tick(3000 + QTE_HELD_STALE_MS - 1);
+  assert.equal(target().textContent, "Release held keys to begin.");
+  f.tick(3000 + QTE_HELD_STALE_MS);
+  assert.equal(target().textContent, "Watch the keys…", "a phantom held key cannot block the challenge forever");
+  assert.deepEqual(f.outcomes, []);
+  f.api.destroy();
+});
+
 test("the tracker remembers keys held before the event opens and releases them outside the panel", () => {
   const doc = new Target();
   doc.defaultView = new Target();
-  const held = trackEventQteKeys(doc);
+  const held = trackEventQteKeys(doc, () => 0);
   doc.dispatch("keydown", { key: "ArrowUp" });
   doc.dispatch("keydown", { key: "A" });
-  assert.deepEqual([...held], ["ArrowUp", "a"]);
+  doc.dispatch("keydown", { key: "x" });
+  doc.dispatch("keydown", { key: "f", metaKey: true });
+  assert.equal(held.size, 2, "only plain challenge keys are tracked");
+  assert.ok(held.has("ArrowUp") && held.has("a"));
   doc.dispatch("keyup", { key: "ArrowUp" });
-  assert.deepEqual([...held], ["a"]);
+  assert.equal(held.size, 1);
   doc.defaultView.dispatch("blur");
   assert.equal(held.size, 0);
+});
+
+test("a held key whose keyup was lost expires once auto-repeat stops refreshing it", () => {
+  const doc = new Target();
+  doc.defaultView = new Target();
+  let now = 0;
+  const held = trackEventQteKeys(doc, () => now);
+  doc.dispatch("keydown", { key: " " });
+  now = 2000;
+  doc.dispatch("keydown", { key: " ", repeat: true });
+  now = 2000 + QTE_HELD_STALE_MS;
+  assert.equal(held.size, 1, "auto-repeat keeps a genuinely held key alive");
+  now = 2001 + QTE_HELD_STALE_MS;
+  assert.equal(held.size, 0, "a key that stopped repeating is no longer counted as held");
+});
+
+test("the challenge sounds the go signal, each cue, correct presses and the outcome", async () => {
+  const plays = [];
+  const f = await fixture("coins", "en", { audio: { play: kind => plays.push(kind) } });
+  const rule = eventChallenge(f.event);
+  assert.deepEqual(plays, ["go"], "preparation ending is audible");
+  for (const [index, key] of rule.keys.entries()) {
+    f.tick(reactionCue(rule, index).startMs + 50);
+    f.key(key);
+    f.release(key);
+  }
+  assert.equal(plays.filter(kind => kind === "cue").length, rule.keys.length);
+  assert.equal(plays.filter(kind => kind === "hit").length, rule.keys.length);
+  assert.equal(plays.at(-1), "success");
+  f.api.destroy();
 });
 
 test("a sheltered-sleep challenge can supply its own scene and result without journey-event rewards", async () => {

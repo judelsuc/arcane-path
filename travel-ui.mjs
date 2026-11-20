@@ -94,7 +94,7 @@ import { beginJourneyMiniGame, settleJourneyMiniGame } from "./journey-mini-game
 import { synchronizeParentDiscovery, applyJournalDiscovery } from "./discovery-targets.mjs";
 import { recordJourneyVisit } from "./journey-visits.mjs";
 
-export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onAppearance, onStep, onActiveChange, musicAudio, cafeAudio, theftAudio, miniGameAudio, pinPhoto, pinTarot, pinBiography, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats, encounterIllustrations }) {
+export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onAppearance, onStep, onActiveChange, musicAudio, cafeAudio, theftAudio, miniGameAudio, eventAudio, pinPhoto, pinTarot, pinBiography, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats, encounterIllustrations }) {
   const questLayout = setupQuestLayout(t);
   const start = document.querySelector("#start-travel");
   const resume = document.querySelector("#resume-travel");
@@ -277,6 +277,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const journeyEventsUI = setupJourneyEvents(t, {
     illustrations: encounterIllustrations,
     narrative: liveNarrative,
+    audio: eventAudio,
     pinEvent: (container, current, economy, wording) => pinTarot(container, current, "event", economy, wording),
     rememberWording(id, wording) {
       state = { ...state, events: { ...state.events,

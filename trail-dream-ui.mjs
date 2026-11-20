@@ -1,6 +1,7 @@
 import { trailDreamText, trailDreamVariant } from "./trail-dreams.mjs";
 import { LOST_PLAYER_DREAM } from "./live-narrative.mjs";
 import { setGenerating } from "./feedback.mjs";
+import { compassTerms, highlightPattern, setHighlightedText } from "./text-highlight.mjs";
 
 export function setupTrailDream(t, { context, openTrail, narrative, illustrations }) {
   const dialog = document.querySelector("#trail-dream-dialog");
@@ -17,7 +18,8 @@ export function setupTrailDream(t, { context, openTrail, narrative, illustration
     if (!dialog.open || !showing) return;
     const language = document.documentElement.lang === "en" ? "en" : "fr";
     document.querySelector("#trail-dream-title").textContent = t("trailDreamTitle");
-    document.querySelector("#trail-dream-text").textContent = trailDreamText(showing, t, wording, language);
+    setHighlightedText(document.querySelector("#trail-dream-text"),
+      trailDreamText(showing, t, wording, language), highlightPattern(compassTerms(t)));
     if (illustration) illustrations.render(illustration, context().state,
       LOST_PLAYER_DREAM, `dream:${showing.checkMinutes}`, t);
     if (wordingStatus) {

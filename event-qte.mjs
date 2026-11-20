@@ -56,7 +56,7 @@ export const QTE_LETTERS = Object.freeze(["a", "f", "j", "p", "v", "n"]);
 export const QTE_PREPARATION_MS = 3000;
 
 export function eventInputKeys(event) {
-  return event.qte?.version === 3 && (event.qte.fatigue >= 60 || event.qte.health <= 50)
+  return [3, 4].includes(event.qte?.version) && (event.qte.fatigue >= 60 || event.qte.health <= 50)
     ? [...REACTION_KEYS, ...QTE_LETTERS] : REACTION_KEYS;
 }
 
@@ -73,12 +73,14 @@ export function eventChallenge(event, mode = "normal") {
   for (const char of `${event.kind}:${event.id}:${event.opportunity}`) {
     seed = Math.imul(seed ^ char.charCodeAt(0), 16777619) >>> 0;
   }
-  if ([2, 3].includes(event.qte?.version)) {
+  if ([2, 3, 4].includes(event.qte?.version)) {
     const { fatigue, health } = event.qte;
     if (mode !== "normal" || ![fatigue, health].every(value =>
       Number.isFinite(value) && value >= 0 && value <= 100)) throw new Error("Invalid event challenge condition.");
     const count = ({ observe: 3, timing: 4, sequence: 5 })[EVENT_QTES[event.kind]] + Math.ceil((100 - health) / 25);
-    const reactionMs = Math.round(1100 - fatigue * 5);
+    // Version 4 widens the reaction window; earlier versions keep their
+    // original timings so saved traces replay to the same outcome.
+    const reactionMs = Math.round((event.qte.version === 4 ? 1500 : 1100) - fatigue * 5);
     const harder = eventInputKeys(event).length > REACTION_KEYS.length;
     const keys = Array.from({ length: count }, (_, index) => {
       seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5;
@@ -119,10 +121,10 @@ export function challengeOutcome(event, mode, trace, elapsedMs, skipped = false)
 
 export function validateEventChallenge(event) {
   const qte = event.qte;
-  if (!qte || ![1, 2, 3].includes(qte.version) || !["ready", "active", "success", "failure", "skipped"].includes(qte.status)) {
+  if (!qte || ![1, 2, 3, 4].includes(qte.version) || !["ready", "active", "success", "failure", "skipped"].includes(qte.status)) {
     throw new Error("Invalid saved event challenge.");
   }
-  const expected = ["version", "status", ...([2, 3].includes(qte.version) ? ["fatigue", "health"] : []),
+  const expected = ["version", "status", ...([2, 3, 4].includes(qte.version) ? ["fatigue", "health"] : []),
     ...(qte.status !== "ready" ? ["mode"] : []),
     ...(["success", "failure", "skipped"].includes(qte.status) ? ["trace", "elapsedMs"] : [])].sort().join();
   if (Object.keys(qte).sort().join() !== expected) throw new Error("Invalid saved event challenge fields.");

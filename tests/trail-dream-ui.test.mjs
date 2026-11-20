@@ -82,6 +82,46 @@ test("actual journey wires dreams only to completed economy sleeps and preserves
   assert.match(html, /id="trail-dream-dialog" aria-labelledby="trail-dream-title" aria-describedby="trail-dream-text"/);
 });
 
+test("dream guidance wraps the compass direction in a highlight mark", async t => {
+  const original = { document: globalThis.document, MutationObserver: globalThis.MutationObserver };
+  t.after(() => Object.assign(globalThis, original));
+  class Node { constructor(text) { this.textContent = text; } }
+  class Element {
+    events = {}; open = false; nodes = [];
+    addEventListener(name, fn) { this.events[name] = fn; }
+    showModal() { this.open = true; }
+    close() { this.open = false; }
+    focus() {}
+    append(node) { this.nodes.push(node); }
+    set textContent(value) { this.nodes = value === "" ? [] : [new Node(value)]; }
+    get textContent() { return this.nodes.map(node => node.textContent).join(""); }
+  }
+  const elements = new Map();
+  const element = key => {
+    if (!elements.has(key)) elements.set(key, new Element());
+    return elements.get(key);
+  };
+  globalThis.document = {
+    body: {}, documentElement: { lang: "fr" },
+    querySelector: key => key === "dialog[open]" ? element("#trail-dream-dialog").open : element(key),
+    createTextNode: text => new Node(text),
+    createElement: () => new Element(),
+  };
+  globalThis.MutationObserver = class { observe() {} };
+  const state = { ended: null, trail: { index: 0, dreams: { version: 1,
+    checks: [{ stage: 0, outcome: "guidance", direction: "west", checkMinutes: 780 }] } } };
+  const ui = setupTrailDream((key, args) => translate("fr", key, args), {
+    context: () => ({ state, busy: false }), openTrail() {},
+  });
+  ui.update(); await Promise.resolve();
+  const text = element("#trail-dream-text");
+  const direction = translate("fr", "hintCompass.west");
+  assert.ok(text.textContent.includes(direction), "the full guidance text is preserved");
+  const mark = text.nodes.find(node => node.className === "text-highlight");
+  assert.ok(mark, "the direction is wrapped in a highlight mark");
+  assert.equal(mark.textContent, direction);
+});
+
 test("dream introductions always retain canonical direction; only successful dreams rotate variants", () => {
   const checks = [
     { checkMinutes: 2880, outcome: "guidance", direction: "north" },

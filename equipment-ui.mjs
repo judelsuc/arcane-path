@@ -188,7 +188,9 @@ export function setupEquipment(t, { context, act, treasureAction }) {
         art.className = "catalogue-art";
         art.append(itemArt(document, item.id));
         node("strong", `${w[item.id]} · ${new Intl.NumberFormat(language, { maximumFractionDigits: 2 }).format(item.grams / 1000)} kg${owned ? ` · ${w.condition}: ${format(owned.condition)}%` : ""}`, row);
-        node("p", w[`${item.id}Effect`], row).className = "window-help-text";
+        // In the boutique the effect is the purchase information: keep it
+        // visible beside the price instead of folding it into Help.
+        node("p", w[`${item.id}Effect`], row).className = shopping ? "equipment-effect" : "window-help-text";
         const add = (type, label, cents, minutes) => {
           const action = { type, itemId: item.id };
           let available = !current.blocked;

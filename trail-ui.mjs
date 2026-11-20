@@ -153,6 +153,21 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
   let viewedFieldPhoto;
   let viewedStage, lastActiveStage, pageJourney, section = "current";
 
+  // Shared by the inline "journal" link and the permanent shortcut button in
+  // the investigation window: open the trail journal on the clue history.
+  function openClueJournal() {
+    if (investigationDialog.open) investigationDialog.close();
+    selectClueJournal();
+    section = "current";
+    if (!dialog.open) open();
+    else localize();
+    const history = document.querySelector("#trail-history");
+    history.setAttribute("tabindex", "-1");
+    history.scrollIntoView({ block: "start" });
+    history.focus();
+  }
+  document.querySelector("#trail-open-journal").addEventListener("click", openClueJournal);
+
   function clearPhoto() {
     photoGeneration++;
     if (objectUrl) URL.revokeObjectURL(objectUrl);
@@ -461,6 +476,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     action.hidden = modern;
     actionCost.hidden = modern;
     action.textContent = t(trail.index === trail.stages.length - 1 ? "trailMeet" : "trailInterview");
+    document.querySelector("#trail-open-journal").textContent = t("fieldJournalShortcut");
     const history = document.querySelector("#trail-history");
     history.replaceChildren();
     const records = trailPageRecords(state, viewedStage);
@@ -596,15 +612,7 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
           link.setAttribute("aria-controls", "trail-dialog");
           link.addEventListener("click", event => {
             event.preventDefault();
-            if (investigationDialog.open) investigationDialog.close();
-            selectClueJournal();
-            section = "current";
-            if (!dialog.open) open();
-            else localize();
-            const history = document.querySelector("#trail-history");
-            history.setAttribute("tabindex", "-1");
-            history.scrollIntoView({ block: "start" });
-            history.focus();
+            openClueJournal();
           });
           outcome.replaceChildren(before, link, after);
         }

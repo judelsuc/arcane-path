@@ -36,19 +36,38 @@ function inputKey(key) {
   return key === " " ? "Space" : key?.length === 1 ? key.toLowerCase() : key;
 }
 
-export function trackEventQteKeys(doc) {
-  const held = new Set();
+const TRACKED_KEYS = new Set([...REACTION_KEYS, ...QTE_LETTERS]);
+export const QTE_HELD_STALE_MS = 2500;
+
+// Tracks which challenge keys are physically held. keyup events can be lost
+// (OS shortcuts swallow them, focus moves away), so entries expire unless the
+// key's auto-repeat keeps refreshing them; a stale phantom key must never
+// block the challenge with "release held keys".
+export function trackEventQteKeys(doc, now = () => Date.now()) {
+  const held = new Map();
+  const prune = () => {
+    for (const [key, seenAt] of held) if (now() - seenAt > QTE_HELD_STALE_MS) held.delete(key);
+  };
+  const tracker = {
+    add(key) {
+      if (TRACKED_KEYS.has(key)) held.set(key, now());
+    },
+    delete(key) { held.delete(key); },
+    clear() { held.clear(); },
+    has(key) { prune(); return held.has(key); },
+    get size() { prune(); return held.size; },
+  };
   doc.addEventListener("keydown", event => {
-    const key = inputKey(event.key);
-    if (key) held.add(key);
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    tracker.add(inputKey(event.key));
   }, true);
   doc.addEventListener("keyup", event => held.delete(inputKey(event.key)), true);
   doc.defaultView?.addEventListener("blur", () => held.clear());
-  return held;
+  return tracker;
 }
 
 export function mountEventChallenge(host, { event, language, begin, settle, illustration,
-  heldKeys = new Set(), presentation = eventQtePresentation(event, language),
+  heldKeys = new Set(), audio, presentation = eventQtePresentation(event, language),
   outcomeText = outcome => eventQteResult(event, language, outcome),
   backdrop = journeyEventArt(event.kind), onError = console.error }) {
   const doc = host.ownerDocument, view = doc.defaultView ?? globalThis, c = COPY[language];
@@ -59,7 +78,8 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
   root.setAttribute("aria-label", c.title);
   host.append(root);
   let running = false, disposed = false, result, trace = [], startedAt, timer, rules, pausedAt;
-  let preparing = true, readyAt;
+  let preparing = true, readyAt, lastCue;
+  const sound = kind => void audio?.play(kind);
   const buttons = [];
   function node(tag, value, parent = root) {
     const element = doc.createElement(tag);
@@ -195,7 +215,9 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
     if (pausedAt !== undefined) { status.textContent = c.paused; return; }
     if (preparing) {
       const remaining = readyAt - view.performance.now();
-      if (remaining > 0 || heldKeys.size) {
+      // A lost keyup must never block the start: waiting on held keys is
+      // capped, and the challenge begins on its own once the window passes.
+      if (remaining > 0 || heldKeys.size && view.performance.now() - readyAt < QTE_HELD_STALE_MS) {
         target.textContent = remaining > 0 ? `${c.preparing} ${Math.ceil(remaining / 1000)}` : c.release;
         status.textContent = "";
         return;
@@ -203,6 +225,7 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
       preparing = false;
       startedAt = view.performance.now();
       actionButtons.forEach(element => { element.disabled = false; });
+      sound("go");
     }
     const time = elapsed();
     if (rules.durationMs !== null && time >= rules.durationMs ||
@@ -217,6 +240,14 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
     actionButtons.forEach((element, index) => {
       element.setAttribute("aria-pressed", String(keys[index] === key));
     });
+    // A new lit cue gets a blip; steps can repeat the same key, so cue
+    // identity follows progress rather than the key value.
+    const cue = key === undefined ? undefined :
+      rules.type === "timing" ? `zone:${Math.floor(time / 2000)}` : `step:${trace.length}`;
+    if (cue !== lastCue) {
+      lastCue = cue;
+      if (key) sound("cue");
+    }
     target.textContent = rules.type === "timing" ? c.timing :
       key ? `${c.now} ${labels[keys.indexOf(key)]}` : c.waiting;
     status.textContent = `${c.progress}: ${trace.length}/${rules.keys.length}`;
@@ -230,6 +261,7 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
     const cue = rules.type === "reaction" ? reactionCue(rules, index) : null;
     const correct = rules.type !== "timing" && key === rules.keys[index] &&
       (!cue || atMs >= cue.startMs && atMs < cue.endMs);
+    if (correct) sound("hit");
     if (correct && presentation.social) {
       const line = doc.createElement("li");
       line.textContent = presentation.lines[index];
@@ -249,8 +281,9 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
     actionButtons.forEach(element => element.setAttribute("aria-pressed", "false"));
     target.textContent = c.finished;
     status.textContent = `${c.progress}: ${trace.length}/${rules.keys.length}`;
-    narrativeResult.textContent = outcomeText(
-      challengeOutcome(event, rules.mode, result.trace, result.elapsedMs, skipped));
+    const outcome = challengeOutcome(event, rules.mode, result.trace, result.elapsedMs, skipped);
+    if (["success", "failure"].includes(outcome)) sound(outcome);
+    narrativeResult.textContent = outcomeText(outcome);
     saveResult();
   }
   function saveResult() {
@@ -262,7 +295,7 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
   }
   function keydown(event) {
     const key = inputKey(event.key);
-    if (key) heldKeys.add(key);
+    if (key && !event.altKey && !event.ctrlKey && !event.metaKey && keys.includes(key)) heldKeys.add(key);
     if (!running || help.open || event.target?.tagName === "BUTTON" && event.target.className !== "event-qte-key" ||
         event.altKey || event.ctrlKey || event.metaKey ||
         !keys.includes(key)) return;
@@ -296,6 +329,7 @@ export function mountEventChallenge(host, { event, language, begin, settle, illu
     },
     destroy() {
       disposed = true;
+      audio?.stop?.();
       if (help.open) help.close();
       view.clearInterval(timer);
       root.removeEventListener("keydown", keydown);

@@ -9,6 +9,7 @@ import { createMarketAudio } from "./minigames/market-audio.mjs";
 import { createBookshopAudio } from "./minigames/bookshop-audio.mjs";
 import { createPetanqueAudio } from "./minigames/petanque-audio.mjs";
 import { createLanternAudio } from "./minigames/lanterns-audio.mjs";
+import { createEventQteAudio } from "./event-qte-audio.mjs";
 
 export function setupAudio(t) {
   const toggle = document.querySelector("#audio-toggle");
@@ -58,6 +59,8 @@ export function setupAudio(t) {
     lanterns: createLanternAudio(gameAudioOptions),
   };
   const gameSounds = [...new Set(Object.values(journeyGames))];
+  const eventQte = createEventQteAudio(gameAudioOptions);
+  gameSounds.push(eventQte);
   function localize() {
     toggle.textContent = t(playback.status === "blocked" ? "audioRetry"
       : playback.enabled ? "audioDisable" : "audioEnable");
@@ -133,6 +136,6 @@ export function setupAudio(t) {
   sync();
   void player.enable(true);
   localize();
-  return { localize, busking, cafe, theft, journeyGames, step(terrain) { void footsteps.play(terrain); },
+  return { localize, busking, cafe, theft, journeyGames, eventQte, step(terrain) { void footsteps.play(terrain); },
     update(next) { context = next; sync(); } };
 }

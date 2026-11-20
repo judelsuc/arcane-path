@@ -562,6 +562,15 @@ for (const locale of ["fr", "en"]) {
     assert.equal(element("#trail-history").focused, true);
     assert.equal(element("#trail-history").scrolled, true);
     assert.equal(element("#trail-evidence-page").hidden, false);
+    const shortcut = element("#trail-open-journal");
+    assert.equal(shortcut.textContent, translate(locale, "fieldJournalShortcut"),
+      "the investigation window offers a permanent clue-journal shortcut");
+    element("#trail-history").focused = false;
+    element("#trail-history").scrolled = false;
+    shortcut.events.click();
+    assert.equal(element("#trail-dialog").open, true);
+    assert.equal(element("#trail-history").focused, true);
+    assert.equal(element("#trail-history").scrolled, true);
     rolls = [0, 0, 0.999];
     await element("#trail-actions").children.flatMap(c => c.children)
       .find(b => b.id === "clue-field-search").events.click();

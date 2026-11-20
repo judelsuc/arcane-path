@@ -57,6 +57,7 @@ const travel = setupTravel({
   cafeAudio: audio.cafe,
   theftAudio: audio.theft,
   miniGameAudio: audio.journeyGames,
+  eventAudio: audio.eventQte,
   onAudioContext: context => audio.update(context),
   onStep: terrain => audio.step(terrain),
   onActiveChange(active) {

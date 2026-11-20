@@ -1,6 +1,11 @@
 {
-  "version": "0.22.24",
+  "version": "0.22.25",
   "entries": [
+    {
+      "version": "0.22.25",
+      "fr": "Les rencontres sonnent : signal de départ, touches illuminées, bonnes réponses et résultat ont chacun leur son. Une touche fantôme ne bloque plus le défi (« Relâchez les touches » disparaît seul) et les fenêtres de réaction sont plus généreuses. Les suites de lanternes sont désormais entièrement aléatoires. La direction du rêve est mise en évidence, la boutique affiche l'effet de chaque objet à côté du prix, et « Enquêter ici » propose un raccourci vers les indices du journal.",
+      "en": "Encounters now have sound: start signal, lit keys, correct presses and the outcome each get their own cue. A phantom held key no longer blocks the challenge (the release prompt clears on its own) and reaction windows are more generous. Lantern sequences are now fully random. The dream's direction is highlighted, the shop shows each item's effect next to its price, and Investigate here offers a shortcut to the journal clues."
+    },
     {
       "version": "0.22.24",
       "fr": "Les carnets archivés redeviennent consultables : un ancien voyage enregistré dans un format dépassé est simplement ignoré au lieu de bloquer toute la liste.",

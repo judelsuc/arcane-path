@@ -72,6 +72,9 @@ for (const language of ["fr", "en"]) {
     assert.equal($("#equipment-dialog").open, false);
     assert.deepEqual(state, before);
     assert.ok(buyButtons().length > 0);
+    const effects = $("#equipment-shop-dialog").descendants().filter(node => node.className === "equipment-effect");
+    assert.equal(effects.length, buyButtons().length, "each purchasable item shows its effect in the boutique");
+    assert.ok(effects.some(node => node.textContent.includes("35")), "the raincoat effect is readable at purchase time");
     const count = buyButtons().length;
     buyButtons().find(button => !button.disabled).click();
     assert.equal(actions.length, 1);

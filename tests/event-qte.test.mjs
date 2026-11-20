@@ -186,7 +186,7 @@ test("reaction difficulty depends on event, fatigue shortens deadlines and poor 
 test("reaction condition snapshots and successful transcripts survive save/load without recalculation", () => {
   const { queued, context } = fixture("forestBoar");
   const event = queued.events.history.at(-1), condition = structuredClone(event.qte);
-  assert.equal(condition.version, 3);
+  assert.equal(condition.version, 4);
   assert.equal(condition.fatigue, queued.fatigue);
   assert.equal(condition.health, queued.health);
   const active = beginJourneyEventChallenge(queued, event.id);
@@ -201,6 +201,21 @@ test("reaction condition snapshots and successful transcripts survive save/load 
   invalid.events.history.at(-1).qte.trace[0].atMs = 0;
   assert.throws(() => validateJourneyEvents(invalid, economy, survival), /result/);
   assert.equal(trace[0].atMs, 1000);
+});
+
+test("version 4 widens reaction windows while earlier versions keep their timings", () => {
+  const make = version => ({ kind: "coins", id: 1, opportunity: 1,
+    qte: { version, status: "ready", fatigue: 40, health: 100 } });
+  const v3 = eventChallenge(make(3)), v4 = eventChallenge(make(4));
+  assert.equal(v3.reactionMs, 900);
+  assert.equal(v4.reactionMs, 1300);
+  assert.deepEqual(v4.keys, v3.keys);
+  assert.ok(v4.durationMs > v3.durationMs);
+  const slow = v4.keys.map((key, index) => ({ key, atMs: reactionCue(v4, index).endMs - 1 }));
+  assert.equal(challengeOutcome(make(4), "normal", slow, slow.at(-1).atMs), "success",
+    "a press too slow for version 3 timings succeeds under version 4");
+  validateEventChallenge({ ...make(4), qte: { ...make(4).qte, status: "success", mode: "normal",
+    trace: structuredClone(slow), elapsedMs: slow.at(-1).atMs } });
 });
 
 test("version-3 letters start at fatigue 60 or health 50 and never reinterpret version-2 results", () => {

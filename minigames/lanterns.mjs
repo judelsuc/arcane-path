@@ -8,11 +8,6 @@ import { resolveResonance, resonanceResult } from "../arcane-resonance.mjs";
 import { mappedGameVenues } from "./venues.mjs";
 
 const issued = new WeakSet();
-const patterns = Object.freeze([
-  Object.freeze([0, 1, 0, 2, 1, 2, 3, 0, 3, 2, 4, 5]),
-  Object.freeze([2, 0, 1, 1, 2, 0, 2, 3, 1, 4, 5, 0]),
-  Object.freeze([1, 2, 2, 0, 1, 3, 0, 1, 4, 2, 0, 5]),
-]);
 
 /** Mapped, active public cultural venues here or within walking distance qualify. */
 export function available(cell) {
@@ -73,13 +68,10 @@ export function createGame({ level = 0, random = Math.random, now = 0, ...option
     if (!Number.isFinite(value) || value < 0 || value >= 1) throw new RangeError("Random must return [0, 1).");
     return value;
   };
-  const variant = Math.floor(draw() * 4);
-  const sequence = Object.freeze(Array.from({ length: rules.length }, (_, index) =>
-    variant < patterns.length
-      ? patterns[variant][index] % rules.lanternCount
-      : Math.floor(draw() * rules.lanternCount)));
+  const sequence = Object.freeze(Array.from({ length: rules.length }, () =>
+    Math.floor(draw() * rules.lanternCount)));
   return freeze({
-    rules, sequence, variant, resonance, phase: "ready", updatedAt: now,
+    rules, sequence, resonance, phase: "ready", updatedAt: now,
     startedAt: null, nextAt: null, litLantern: null, playbackIndex: -1,
     round: 1, cursor: 0, score: 0, lastLantern: null, lastCorrect: null,
   });

@@ -87,23 +87,22 @@ test("levels strictly increase length and reward, and accelerate playback", () =
   }
 });
 
-test("three authored variants and bounded deterministic generation", () => {
-  const authored = [0, 0.26, 0.51].map(value => createGame({ level: 19, random: () => value }));
-  assert.equal(new Set(authored.map(game => game.sequence.join(","))).size, 3);
-  const generator = () => {
-    let seed = 8123;
-    return () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
-  };
-  function generated() {
-    const next = generator();
+test("every sequence is randomly drawn, bounded and deterministic for a given source", () => {
+  const generator = (seed = 8123) =>
+    () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
+  function generated(seed) {
+    const next = generator(seed);
     let calls = 0;
-    const game = createGame({ level: 19, random: () => ++calls === 1 ? 0.99 : next() });
-    assert.equal(calls, 12);
-    assert.equal(game.variant, 3);
+    const game = createGame({ level: 19, random: () => { calls++; return next(); } });
+    assert.equal(calls, game.rules.length, "one draw per sequence item");
     return game.sequence;
   }
-  assert.deepEqual(generated(), generated());
-  assert.ok(new Set(generated()).size > 1);
+  assert.deepEqual(generated(8123), generated(8123));
+  assert.ok(new Set(generated(8123)).size > 1);
+  assert.notDeepEqual(generated(8123), generated(977), "different draws give different sequences");
+  const sequences = new Set(Array.from({ length: 40 },
+    (_, index) => generated(index + 1).join(",")));
+  assert.ok(sequences.size > 3, "sequences are not limited to a handful of fixed patterns");
   for (const value of [-1, 1, Infinity, NaN, undefined, "0.5"]) {
     assert.throws(() => createGame({ random: () => value }), RangeError);
   }

@@ -7,7 +7,7 @@ import { mountEventChallenge, trackEventQteKeys } from "./event-qte-ui.mjs";
 import { eventQteResult } from "./event-qte-copy.mjs";
 
 export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrative, rememberWording, illustrations,
-  beginChallenge, settleChallenge }) {
+  beginChallenge, settleChallenge, audio }) {
   const dialog = document.querySelector("#journey-event-dialog");
   const heldKeys = trackEventQteKeys(document);
   const proceed = document.querySelector("#journey-event-continue");
@@ -86,7 +86,7 @@ export function setupJourneyEvents(t, { context, acknowledge, pinEvent, narrativ
         challengeHost ??= document.createElement("div");
         proceed.before(challengeHost);
         dialog.setAttribute("data-native-controls", "");
-        challenge = mountEventChallenge(challengeHost, { event, language, illustration, heldKeys,
+        challenge = mountEventChallenge(challengeHost, { event, language, illustration, heldKeys, audio,
           begin: mode => {
             if (identity(context()?.state) !== owner) throw new Error(t("eventQte.unavailable"));
             return beginChallenge(event.id, mode);

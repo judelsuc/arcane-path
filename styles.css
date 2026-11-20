@@ -1722,6 +1722,7 @@ dialog p { margin: 12px 0; }
 #equipment-shop-dialog .catalogue-art svg { width: 44px; height: 40px; }
 #equipment-shop-dialog li strong { font-size: 0.8rem; }
 #equipment-shop-dialog li .window-help-text { margin: 0; font-size: 0.72rem; }
+#equipment-shop-dialog li .equipment-effect { margin: 0; font-size: 0.72rem; color: var(--muted); }
 #equipment-shop-dialog li button {
   grid-column: 2;
   justify-self: start;

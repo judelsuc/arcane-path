@@ -149,7 +149,7 @@ export function advanceJourneyEvents(previous, moved, info, survival, economy) {
     ...companionRecord(moved),
     wordingVariant: ((previousWording ?? -1) + 1) % 3,
     ...chances, elapsedMinutes: moved.elapsedMinutes, col: moved.col, row: moved.row, terrain: info.terrain,
-    qte: { version: 3, status: "ready", fatigue: moved.fatigue, health: healthValue(moved) },
+    qte: { version: 4, status: "ready", fatigue: moved.fatigue, health: healthValue(moved) },
     minutes: next.elapsedMinutes - moved.elapsedMinutes,
     foodKcal: next.reserveKcal - moved.reserveKcal,
     moneyCents: next.walletCents - moved.walletCents, fatigue: next.fatigue - moved.fatigue,
@@ -208,7 +208,7 @@ export function journeyEventTextParts(record, t, { includeEffects = true } = {})
   })} `;
   const companion = ["forestBoar", "forestDogs", "food", "picnic", "waterBreak", "catNap", "whiteDeer", "ribbon"]
     .includes(record.kind) ? companionText(record, `event.${record.kind}`, t) : "";
-  const outcome = [2, 3].includes(record.qte?.version) ? eventQteResult(record, t("discovery.inscriptionLanguage")) : "";
+  const outcome = [2, 3, 4].includes(record.qte?.version) ? eventQteResult(record, t("discovery.inscriptionLanguage")) : "";
   const challenge = record.qte ? [t(`eventQte.${record.qte.status}`), " ", ...(outcome ? [outcome, " "] : [])] : [];
   if (record.qte && ["ready", "active"].includes(record.qte.status)) return [narrative, ...challenge,
     ...(companion ? [" ", companion] : [])];
