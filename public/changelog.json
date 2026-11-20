@@ -1,6 +1,11 @@
 {
-  "version": "0.22.29",
+  "version": "0.22.30",
   "entries": [
+    {
+      "version": "0.22.30",
+      "fr": "L'entrée d'une aventure de légende se joue sur la carte : un bouton d'action apparaît à côté de la carte quand vous êtes sur le passage — « Inspecter le passage », puis « Entrer dans l'aventure » — sans passer par les menus de quêtes. Les fenêtres Enquêter ici et Légendes vont à l'essentiel : les explications rejoignent l'Aide.",
+      "en": "Entering a legend adventure happens on the map: an action button appears beside the map when you stand on the passage — Inspect the passage, then Enter the adventure — without going through the quest menus. The Investigate here and Legends windows get to the point: explanations join Help."
+    },
     {
       "version": "0.22.29",
       "fr": "Le croquis révèle sa source : une fois le dessin terminé, la photo locale recadrée qui a servi de modèle s'affiche sous le motif et votre reproduction, avec son crédit.",

@@ -690,9 +690,12 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   const legendLookUI = setupLegendLook({
     context: () => active ? economyContext({ allowLook: true }) : null,
     host: document.querySelector("#legend-look"),
+    action: document.querySelector("#legend-entrance-action"),
     onEntry: entry => townLegendsUI.acceptEntry(entry),
     onObservation: observation => townLegendsUI.observe(observation),
-    openEntrance: () => questLayout.openLegends(),
+    // Entering the adventure is a direct map action; the legends page only
+    // opens as a fallback when the entry record is not retained locally.
+    openEntrance: () => { if (!townLegendsUI.startEntrance()) questLayout.openLegends(); },
   });
   const questTrackingUI = setupQuestTracking(t, {
     context: () => active ? economyContext() : null, mutate: mutateQuest,

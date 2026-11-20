@@ -654,10 +654,18 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     }
     const available = clueActions(state);
     if (socialActions && modern && !available.some(kind => ["discuss", "buy", "directions", "rumor"].includes(kind))) {
-      paragraph(socialActions, t(trail.completed ? "parentTalkCompleted" : "parentTalkNoWitness"));
+      paragraph(socialActions, t(trail.completed ? "parentTalkCompleted" : "parentTalkNoWitness"), "",
+        trail.completed ? "" : "window-help-text");
       const letter = openingClue(state);
-      if (letter) paragraph(socialActions, openingClueText(state, t));
-      if (!trail.completed) paragraph(socialActions, t(trail.exploration ? "parentTalkExplore" : "clueTravelFirst"));
+      if (letter) {
+        // The letter itself is the content; its reading guidance goes to Help.
+        const [quote, ...guidance] = openingClueText(state, t).split("\n");
+        paragraph(socialActions, quote);
+        if (guidance.length) paragraph(socialActions, guidance.join("\n"), "", "window-help-text");
+      }
+      if (!trail.completed) {
+        paragraph(socialActions, t(trail.exploration ? "parentTalkExplore" : "clueTravelFirst"), "", "window-help-text");
+      }
     }
     const options = searchClueOptions(state, current.cell, current.info, current.data)
       .filter(kind => !["discuss", "buy"].includes(kind));

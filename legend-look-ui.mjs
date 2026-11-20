@@ -7,6 +7,7 @@ const COPY = {
     travel: "This could be the passage they spoke of. Come closer to inspect it.",
     found: "Entrance discovered.",
     open: "Open the adventure entrance",
+    enter: "Enter the adventure",
   },
   fr: {
     title: "Traces d'une ancienne histoire", loading: "Observation des alentours…",
@@ -14,14 +15,37 @@ const COPY = {
     travel: "Ce pourrait être le passage dont on vous a parlé. Approchez pour l'inspecter.",
     found: "Entrée découverte.",
     open: "Ouvrir l'entrée de l'aventure",
+    enter: "Entrer dans l'aventure",
   },
 };
 
-export function setupLegendLook({ context, host, client = createTownLegendsClient(), onEntry, onObservation, openEntrance } = {}) {
+export function setupLegendLook({ context, host, action, client = createTownLegendsClient(), onEntry, onObservation, openEntrance } = {}) {
   const doc = host.ownerDocument;
   let controller, key, target, observations = [], error = "", loading = false;
   const identity = state => state?.serverJourney?.id && state.journalAccess
     ? `${state.serverJourney.id}:${state.journalAccess}` : null;
+  // The entrance interaction is a direct map action: the same cell knowledge
+  // that fills the side panel drives a toolbar button next to the map.
+  function actionTarget() {
+    const captured = context(), state = captured?.state;
+    const here = state && target && state.col === target.col && state.row === target.row;
+    return { captured, observation: here ? observations.find(item => item.matches) : null };
+  }
+  function renderAction() {
+    if (!action) return;
+    const language = doc.documentElement.lang === "en" ? "en" : "fr", c = COPY[language];
+    const { captured, observation } = actionTarget();
+    action.hidden = !observation;
+    if (!observation) return;
+    action.textContent = observation.found ? c.enter : c.inspect;
+    action.disabled = loading || !!captured?.blocked;
+  }
+  action?.addEventListener("click", () => {
+    const { captured, observation } = actionTarget();
+    if (!observation || loading || captured?.blocked) return;
+    if (observation.found) openEntrance?.();
+    else void inspect(observation);
+  });
   function node(tag, value) {
     const result = doc.createElement(tag);
     result.textContent = value;
@@ -36,6 +60,7 @@ export function setupLegendLook({ context, host, client = createTownLegendsClien
   }
   function render() {
     const language = doc.documentElement.lang === "en" ? "en" : "fr", c = COPY[language];
+    renderAction();
     host.replaceChildren();
     host.hidden = !loading && !error && !observations.length;
     if (host.hidden) return;

@@ -74,14 +74,14 @@ export function setupTownLegends({ context, host = document.getElementById("ques
     const c = WORDS[language];
     host.replaceChildren();
     node("h3", c.title);
-    if (!owner) { node("p", c.private); return; }
+    if (!owner) { node("p", c.private).className = "window-help-text"; return; }
     if (loading) node("p", c.loading).setAttribute("role", "status");
     if (error) node("p", `${c.error} ${error}`).setAttribute("role", "alert");
     if (position && !current && !loading) button(c.retry, () => { void discover(); }, !!context()?.blocked);
     const status = entry => entry.eligible ? entry.exploration?.clues ? c.ready : c.pending : c.none;
     if (current) node("p", `${current.town}: ${status(current)}`).setAttribute("role", "status");
     if (current?.exploration?.status === "pending") {
-      node("p", c.searchPending);
+      node("p", c.searchPending).className = "window-help-text";
       button(c.retrySearch, () => { void discover(); }, loading || !!context()?.blocked);
     }
     const entrance = [...entries.values()].find(entry => atEntrance(entry));
@@ -90,15 +90,7 @@ export function setupTownLegends({ context, host = document.getElementById("ques
       const reward = treasureItem(treasureId(entrance.townId, entrance.seed, !!entrance.reward), entrance.reward);
       node("p", reward[language]);
       if (reward.effect) node("p", reward.effect[language]);
-      const effect = treasureEquipment(context()?.state).jewel?.effect;
-      const modifiers = effect ? ` ${effect[language]}` : "";
-      const version = { platform: DECOY_PLATFORM_VERSION, investigation: DECOY_INVESTIGATION_VERSION,
-        dungeon: CATALOGUE_DUNGEON_VERSION }[entrance.format];
-      button(c.recover, () => {
-        if (atEntrance(entrance) && !context()?.blocked && confirmTrial(c.rewardTerms + modifiers + c.localTerms)) {
-          startTrial({ type: "legend-start", townId: entrance.townId, contentVersion: version });
-        }
-      }, !!context()?.blocked);
+      button(c.recover, () => { startEntrance(); }, !!context()?.blocked);
     }
     if (entries.size) {
       node("h4", c.discovered);
@@ -168,6 +160,20 @@ export function setupTownLegends({ context, host = document.getElementById("ques
     return state && owner === `${state.serverJourney?.id}:${state.journalAccess}` &&
       entry.exploration?.status === "found" && entry.exploration.observations.some(item =>
         item.found && item.col === state.col && item.row === state.row);
+  }
+  // Starts the treasure trial at the current entrance. Shared between the
+  // legends page and the direct map action.
+  function startEntrance() {
+    const language = doc.documentElement.lang === "en" ? "en" : "fr", c = WORDS[language];
+    const entrance = [...entries.values()].find(entry => atEntrance(entry));
+    if (!entrance || !startTrial || context()?.blocked) return false;
+    const effect = treasureEquipment(context()?.state).jewel?.effect;
+    const modifiers = effect ? ` ${effect[language]}` : "";
+    const version = { platform: DECOY_PLATFORM_VERSION, investigation: DECOY_INVESTIGATION_VERSION,
+      dungeon: CATALOGUE_DUNGEON_VERSION }[entrance.format];
+    if (!confirmTrial(c.rewardTerms + modifiers + c.localTerms)) return true;
+    startTrial({ type: "legend-start", townId: entrance.townId, contentVersion: version });
+    return true;
   }
   function storyStatus(story, c) {
     return story.status === "disabled" ? c.storyDisabled : story.status === "failed" ? c.storyFailed : c.storyPending;
@@ -247,6 +253,7 @@ export function setupTownLegends({ context, host = document.getElementById("ques
   }
   return {
     reset,
+    startEntrance,
     telling(character, request = false) {
       const captured = context(), language = doc.documentElement.lang === "en" ? "en" : "fr", c = WORDS[language];
       const entry = entries.get(townLegendIdentity(captured?.cell));

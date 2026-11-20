@@ -287,3 +287,22 @@ test("shared story and stable NPC voices always retain all canonical clues in bo
       assert.match(f.ui.telling(speaker).text, language === "en" ? /do not know/ : /ne connais pas/);
   }
 });
+
+test("startEntrance starts the trial from the map action and refuses away from the entrance", async () => {
+  const started = [], confirmations = [];
+  const f = fixture({ discover: async () => ({ entry }) }, {
+    startTrial: action => started.push(action),
+    confirmTrial: message => { confirmations.push(message); return true; },
+  });
+  f.ui.localize();
+  await flush();
+  assert.equal(f.ui.startEntrance(), false, "no retained entrance: the caller can fall back");
+  enter(f);
+  assert.equal(f.ui.startEntrance(), true);
+  assert.deepEqual(started, [{ type: "legend-start", townId: entry.townId, contentVersion: "treasure-platform-v5" }]);
+  assert.match(confirmations[0], /3 minutes.*1 fatigue/);
+  f.setContext({ ...f.getContext(), state: { ...f.getContext().state, col: 5 } });
+  assert.equal(f.ui.startEntrance(), false, "moving away conceals the entrance action");
+  f.setContext({ ...f.getContext(), state: { ...f.getContext().state, col: 1 }, blocked: true });
+  assert.equal(f.ui.startEntrance(), false, "blocked activities cannot enter");
+});
