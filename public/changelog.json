@@ -1,6 +1,11 @@
 {
-  "version": "0.22.36",
+  "version": "0.22.37",
   "entries": [
+    {
+      "version": "0.22.37",
+      "fr": "Aventures : les objets ramassés pour une énigme (roue, axe, feuilles…) annonçaient « L'objet rejoint votre sacoche », ce qui laissait croire qu'ils iraient dans le sac de voyage. Le message précise désormais qu'ils ne servent que dans ce lieu ; la récompense de l'aventure reste le trésor annoncé à la fin.",
+      "en": "Adventures: objects picked up for a puzzle (wheel, axle, sheets…) announced \"The object joins your satchel\", suggesting they would reach your travel bag. The message now says they only serve in that place; the adventure's reward remains the treasure announced at the end."
+    },
     {
       "version": "0.22.36",
       "fr": "Aventures de plateforme : maintenir E devant une porte faisait changer de salle à chaque image jusqu'au relâchement — des dizaines d'entrées facturées en temps, fatigue et saleté. Une porte ne s'ouvre plus qu'une fois par appui ; il faut relâcher E pour franchir la suivante (les manivelles se tiennent toujours).",
