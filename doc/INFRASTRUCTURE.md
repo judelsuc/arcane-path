@@ -228,6 +228,37 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Pursuit kept in step with adventure time, cell-menu Explore and lost-found pairs, 0.22.35 (20 November 2026)
+
+Deployed runtime `f7d05ab` (`deploy-2026-11-20-pursuit-adventure-sync`). The
+0.22.34 fix did not cover a second cause of "Invalid saved pursuit": legend
+adventures (and moving artifact powers) advance journey time or position inside
+the lore worker, which then rejected its own result because the pursuit's
+observed time and a deferred escape's elapsed time were left behind. The worker
+now advances the pursuit along that trajectory before its final validation,
+exactly as the client does after its own actions. The lore worker is spawned
+per request, so the fix applied without draining anything. Explore also joins
+the cell context menu (forwarding to the toolbar action, same `Z` shortcut),
+and lost & found gains four lookalike pairs with original drawings (glasses,
+enamel mugs, lanterns, wicker baskets), for twelve randomly drawn families.
+
+Validation: full JavaScript run passed 1889/1890 (the single failure is the
+unchanged dream-wiring baseline assertion). A new regression test reproduces
+the exact "Invalid saved pursuit." rejection without the fix, for an active
+chase and a deferred ready escape; every clue of all 24 lost-found objects was
+checked to match only its own family and detail patterns. Installed hashes of
+`main-artifacts.mjs`, `survival-choices-ui.mjs`, `minigames/lost-found.mjs`
+and `minigames/lost-found-art.mjs` match the packaged commit; the worker module
+imports under the `arcane` user; journal clean after restart, `nginx -t` OK,
+HTTPS 401, conditional GET 200, PID 512106 became 512667.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.35-f7d05ab/runtime.tar.gz`, SHA-256
+`7a7b46e3d1968eb3bf73d758c012ba9cacebd39ca1b8929c0035789f5dfd3037`. No new
+files in this release. Refresh the release manifest mtime and restart after
+runtime changes. Do not restore or delete player databases, cached narratives,
+images or provider-job receipts.
+
 ## Deferred escape saves and permanent Explore action, 0.22.34 (20 November 2026)
 
 Deployed runtime `a4b1d2b` (`deploy-2026-11-20-explore-action`). Deferring a
