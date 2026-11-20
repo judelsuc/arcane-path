@@ -228,6 +228,34 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Map-action legend entrance and trimmed window prose, 0.22.30 (20 November 2026)
+
+Deployed runtime `995a58a` (`deploy-2026-11-20-map-entrance`). The legend
+entrance is now a direct map action: a contextual button in the travel toolbar
+appears when the player stands on an observed passage — "Inspecter le passage"
+runs the inspection, then "Entrer dans l'aventure" opens the entry
+confirmation and starts the trial directly, without routing through the quest
+menus. `setupTownLegends` exposes `startEntrance()` shared by the legends page
+and the map action; the legends page remains as overview and fallback. The
+investigation window's reading guidance (no-witness notice, letter guidance,
+"follow your clues" instructions) and the legends page explainers move into
+the pausing Help via the window-help system.
+
+Validation: full JavaScript run passed 1883/1884 (the single failure is the
+unchanged dream-wiring baseline assertion). New tests cover the toolbar action
+lifecycle (hidden away from the passage, inspect, enter, reset) and
+`startEntrance` refusing away from the entrance or while blocked. Installed
+hashes match the packaged commit, journal clean after restart, `nginx -t`
+passed, HTTPS 401 verified through nginx, conditional GET of the refreshed
+manifest returns 200, PID 502165 became 506012.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.30-995a58a/runtime.tar.gz`, SHA-256
+`ecce905fbde38c0761de9a4d3801e68e80c068dea20303caf6b64d9a469f70f5`. No new
+files in this release. Refresh the release manifest mtime and restart after
+runtime changes. Do not restore or delete player databases, cached narratives,
+images or provider-job receipts.
+
 ## Sketch source photo revealed with the result, 0.22.29 (20 November 2026)
 
 Deployed runtime `f1953fd` (`deploy-2026-11-20-sketch-reveal`). The cropped
