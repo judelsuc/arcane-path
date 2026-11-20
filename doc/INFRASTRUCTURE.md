@@ -228,6 +228,33 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Deferred escape saves and permanent Explore action, 0.22.34 (20 November 2026)
+
+Deployed runtime `a4b1d2b` (`deploy-2026-11-20-explore-action`). Deferring a
+pending escape past a day boundary made the save invalid ("Invalid saved
+pursuit"): the version-8 difficulty is pinned at creation, but validation
+recomputed it from the attempt's advanced elapsed time. Validation now accepts
+any pinned base between the attempts-only floor and the ceiling the latest
+elapsed time allows, still rejecting inflated bases and inconsistent levels.
+The legend entrance action, previously hidden at the bottom of the side panel,
+becomes a permanent Explore toolbar button (`Z`): it inspects a matching
+passage, enters a discovered adventure, and otherwise reports through a
+transient map notice that nothing unusual is here.
+
+Validation: full JavaScript run passed 1888/1889 (the single failure is the
+unchanged dream-wiring baseline assertion). New tests reproduce the deferred
+escape save rejection and cover the always-visible Explore contract. Installed
+hashes of `pursuit.mjs`, `legend-look-ui.mjs` and `travel-ui.mjs` match the
+packaged commit, journal clean after restart, `nginx -t` OK, HTTPS 401,
+conditional GET 200, PID 510318 became 512106.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.34-a4b1d2b/runtime.tar.gz`, SHA-256
+`9fcb6672d2fd85d437a31d54b07f599e01494cbdfb9421d53c727261659ef1bf`. No new
+files in this release. Refresh the release manifest mtime and restart after
+runtime changes. Do not restore or delete player databases, cached narratives,
+images or provider-job receipts.
+
 ## Sketch photo on every game, 0.22.33 (20 November 2026)
 
 Deployed runtime `f2af579` (`deploy-2026-11-20-sketch-photo-race`). The
