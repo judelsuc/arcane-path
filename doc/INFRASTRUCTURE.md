@@ -228,6 +228,36 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Photo-tessellated postcard sketch, 0.22.27 (20 November 2026)
+
+Deployed runtime `58d32e1` (`deploy-2026-11-20-photo-sketch`). The postcard
+sketch target now derives from the cached, licensed photo of the current cell
+(the same content pipeline as "See a photo of this place"): the photo is
+downscaled to the difficulty grid with a random square crop, cells darker than
+the median luminance are filled, hues map to the available inks at higher
+levels, and the photo credit is displayed under the game. Photo-derived
+results are no longer declared fictional in the journal. Without an available
+photo, the original imaginary motifs remain, now varied across eight
+orientations derived from the same single random sample (about 20 distinct
+level-10 motifs instead of 4).
+
+Validation: full JavaScript run passed 1879/1880 (the single failure is the
+unchanged dream-wiring baseline assertion). New tests cover orientation
+variety and bijection, median tessellation, hue-to-ink mapping, flat-image
+playability, injected-target validation, the non-fictional photo result, the
+UI photo swap with displayed credit, and fallback on photo failure or slow
+loads. Installed hashes match the packaged commit, journal clean after
+restart, `nginx -t` passed, HTTPS 401 verified through nginx for the changed
+modules, conditional GET of the refreshed manifest returns 200, PID 498741
+became 500659.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.27-58d32e1/runtime.tar.gz`, SHA-256
+`72e6fa475cbf36eefa529fa39bd6e1371031c3e597e45a0be40449300841bde9`. No new
+files in this release. Refresh the release manifest mtime and restart after
+runtime changes. Do not restore or delete player databases, cached narratives,
+images or provider-job receipts.
+
 ## Self-starting escape with in-game directions, 0.22.26 (20 November 2026)
 
 Deployed runtime `4f42425` (`deploy-2026-11-20-escape-console`). The escape
