@@ -1,6 +1,11 @@
 {
-  "version": "0.22.32",
+  "version": "0.22.33",
   "entries": [
+    {
+      "version": "0.22.33",
+      "fr": "Le croquis utilise la photo locale à chaque partie, plus seulement la première : « Commencer » attend brièvement (2,5 s maximum) que le modèle photo soit prêt, pour qu'un démarrage rapide ne retombe plus sur les motifs imaginaires.",
+      "en": "The sketch uses the local photo on every game, not only the first: Start briefly waits (2.5 s at most) for the photo model, so a quick start no longer falls back to the imaginary motifs."
+    },
     {
       "version": "0.22.32",
       "fr": "Les légendes se méritent : leurs indices n'apparaissent que lorsqu'un habitant vous a raconté l'histoire — et les habitants d'un bourg à légende l'évoquent spontanément à la première conversation. Les descriptions des cases restent visibles sans l'histoire, et les environs des bourgs sans légende ont désormais aussi leurs détails à observer : rien ne trahit où dorment les trésors.",

@@ -57,6 +57,9 @@ export function mount(container, { level = 0, language = "fr", onFinish, photo, 
   let game = createGame({ level, now: clock(), ...options });
   let selectedColour = 1;
   let timer = null, observer = null, finished = false, destroyed = false;
+  // While a photo model may still arrive, Start waits briefly so a quick
+  // replay cannot race past the tessellated photo into the fallback motif.
+  let modelPending = typeof photo === "function", modelTimer = null;
   const listeners = [];
   const listen = (node, type, handler) => {
     node.addEventListener(type, handler);
@@ -180,6 +183,8 @@ export function mount(container, { level = 0, language = "fr", onFinish, photo, 
   function cleanup() {
     if (timer !== null) win.clearTimeout(timer);
     timer = null;
+    if (modelTimer !== null) win.clearTimeout(modelTimer);
+    modelTimer = null;
     observer?.disconnect();
     for (const remove of listeners.splice(0)) remove();
   }
@@ -225,7 +230,7 @@ export function mount(container, { level = 0, language = "fr", onFinish, photo, 
       button.hidden = type === "start" ? phase !== "ready"
         : type === "remember" ? phase !== "observe"
           : type === "cancel" ? ["completed", "cancelled"].includes(phase) : phase !== "draw";
-      button.disabled = button.hidden;
+      button.disabled = button.hidden || type === "start" && modelPending;
     }
     buttons.forEach((button, index) => {
       const ink = game.marks[index];
@@ -319,6 +324,14 @@ export function mount(container, { level = 0, language = "fr", onFinish, photo, 
   if (typeof photo === "function") {
     // The motif becomes a tessellated local photo when one is available before
     // the player starts observing; otherwise the imaginary scene stands.
+    const settleModel = () => {
+      if (modelTimer !== null) win.clearTimeout(modelTimer);
+      modelTimer = null;
+      if (destroyed || finished) return;
+      modelPending = false;
+      render();
+    };
+    modelTimer = win.setTimeout(settleModel, 2500);
     Promise.resolve().then(photo).then(async source => {
       if (!source || destroyed || finished || game.phase !== "ready") return;
       const pixels = source.pixels ?? await rasterize(source.blob);
@@ -336,7 +349,8 @@ export function mount(container, { level = 0, language = "fr", onFinish, photo, 
         sourceNote.hidden = false;
       }
       render();
-    }).catch(error => console.warn("Sketch photo unavailable; using an imaginary motif:", error));
+    }).catch(error => console.warn("Sketch photo unavailable; using an imaginary motif:", error))
+      .finally(settleModel);
   }
   container.append(root);
   decorateResonance(root, "sketch", resonance, language);

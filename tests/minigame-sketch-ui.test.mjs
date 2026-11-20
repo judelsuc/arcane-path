@@ -421,9 +421,35 @@ test("a failing or late photo keeps the imaginary motif without breaking the gam
   h.control("Start").click();
   assert.ok(h.model.textContent.length > 0, "the fallback scene still renders");
   const slow = harness({ language: "en", photo: () => new Promise(() => {}) });
+  assert.equal(slow.control("Start").disabled, true,
+    "Start waits while the photo model may still arrive");
   slow.control("Start").click();
   for (let wait = 0; wait < 8; wait++) await Promise.resolve();
+  assert.equal(slow.model.hidden, true, "a disabled Start cannot begin the game");
+  slow.tick(2500);
+  assert.equal(slow.control("Start").disabled, false, "a late photo never blocks the game");
+  slow.control("Start").click();
   assert.ok(slow.model.textContent.length > 0);
   slow.ui.destroy();
   h.ui.destroy();
+});
+
+test("a quick replay cannot race past the photo into the imaginary motif", async () => {
+  const data = new Array(9 * 4).fill(255);
+  for (const index of [0, 4, 8]) { data[index * 4] = 0; data[index * 4 + 1] = 0; data[index * 4 + 2] = 0; }
+  let deliver;
+  const h = harness({ language: "en",
+    photo: () => new Promise(resolve => { deliver = resolve; }) });
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(h.control("Start").disabled, true, "an eager Start press is held until the model settles");
+  h.control("Start").click();
+  deliver({ pixels: { data, width: 3, height: 3 } });
+  for (let wait = 0; wait < 8; wait++) await Promise.resolve();
+  assert.equal(h.control("Start").disabled, false);
+  h.control("Start").click();
+  assert.equal(h.model.textContent.replaceAll("\n", ""), "#...#...#",
+    "the tessellated photo is the model even on an immediate replay start");
+  h.ui.destroy();
+  h.assertClean();
 });
