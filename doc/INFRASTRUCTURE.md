@@ -228,6 +228,30 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Sketch source photo revealed with the result, 0.22.29 (20 November 2026)
+
+Deployed runtime `f1953fd` (`deploy-2026-11-20-sketch-reveal`). The cropped
+local photo used to tessellate the postcard-sketch model is kept at readable
+size (240 px JPEG data URL of the exact crop) and displayed beneath the model
+and the player's drawing once the sketch is finished, with its credit as alt
+text. It is never shown before completion. Imaginary-motif games are
+unaffected.
+
+Validation: full JavaScript run passed 1881/1882 (the single failure is the
+unchanged dream-wiring baseline assertion); the photo-sketch UI test now
+plays a game to completion and asserts the photo stays hidden while observing
+and drawing, then appears with its source and credit. Installed hashes match
+the packaged commit, journal clean after restart, `nginx -t` passed, HTTPS 401
+verified through nginx for the changed assets, conditional GET of the
+refreshed manifest returns 200, PID 501188 became 502165.
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.29-f1953fd/runtime.tar.gz`, SHA-256
+`a73aa3060aea32c92805920fdb5281cc2ea46313af701c7bbc2ce93116bb3182`. No new
+files in this release. Refresh the release manifest mtime and restart after
+runtime changes. Do not restore or delete player databases, cached narratives,
+images or provider-job receipts.
+
 ## Bolder pursuit over time and doubled lost-found variety, 0.22.28 (20 November 2026)
 
 Deployed runtime `4e35b39` (`deploy-2026-11-20-bolder-pursuit`). Escape
