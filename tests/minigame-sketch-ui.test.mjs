@@ -392,13 +392,25 @@ test("a provided local photo becomes the tessellated model and shows its credit"
   const data = new Array(9 * 4).fill(255);
   for (const index of [0, 4, 8]) { data[index * 4] = 0; data[index * 4 + 1] = 0; data[index * 4 + 2] = 0; }
   const h = harness({ language: "fr",
-    photo: async () => ({ pixels: { data, width: 3, height: 3 }, credit: "Jean Photographe (CC BY-SA 4.0)" }) });
+    photo: async () => ({ pixels: { data, width: 3, height: 3 }, view: "data:image/jpeg;base64,abc",
+      credit: "Jean Photographe (CC BY-SA 4.0)" }) });
   for (let wait = 0; wait < 8; wait++) await Promise.resolve();
+  const photoPanel = h.nodes.find(node => node.className === "sketch-photo-panel");
+  assert.equal(photoPanel.hidden, true, "the photo is not leaked before the result");
   h.control("Commencer").click();
   assert.equal(h.model.textContent.replaceAll("\n", ""), "#...#...#",
     "the model is the tessellated photo, not an imaginary scene");
   assert.ok(h.nodes.some(node => node.textContent.includes("Jean Photographe")),
     "the photo credit is displayed");
+  h.control("Dessiner maintenant").click();
+  assert.equal(photoPanel.hidden, true, "the photo stays hidden while drawing");
+  for (const index of [0, 4, 8]) h.cells[index].click();
+  h.control("Terminer le croquis").click();
+  assert.equal(photoPanel.hidden, false, "the original photo is revealed with the result");
+  const image = h.nodes.find(node => node.className === "sketch-photo");
+  assert.equal(image.src, "data:image/jpeg;base64,abc");
+  assert.ok(image.alt.includes("Jean Photographe"));
+  assert.equal(h.results[0].score, 3);
   h.ui.destroy();
   h.assertClean();
 });

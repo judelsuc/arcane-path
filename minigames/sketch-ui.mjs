@@ -8,6 +8,7 @@ const COPY = {
     instructions: "Observez puis reproduisez les cases et leurs couleurs de mémoire. Choisissez une couleur puis cliquez les cases ; un second clic de même couleur efface. Tab et les flèches déplacent le focus, Espace ou Entrée peint une case. Échap annule. Le dessin est sans limite de temps.",
     fiction: "Motifs ASCII originaux et imaginaires : ni photos, ni représentation du lieu réel.",
     photoSource: "Motif tramé d’après une photo locale : {credit}.",
+    photoReveal: "Photo d’origine",
     ready: "Prêt. Le modèle ne sera montré qu’après votre départ.",
     observe: "Mémorisez le motif. Il disparaîtra après {seconds} secondes ; vous pouvez commencer à dessiner plus tôt.",
     draw: "Reproduisez le motif caché et ses couleurs. Un point par case bien colorée, moins un par case incorrecte ; minimum zéro.",
@@ -25,6 +26,7 @@ const COPY = {
     instructions: "Observe, then reproduce the squares and their colours from memory. Choose a colour, then click squares; clicking the same colour again erases it. Tab and arrows move focus, Space or Enter paints a square. Escape cancels. Drawing has no time limit.",
     fiction: "Original imaginary ASCII motifs: not photos or a depiction of the real location.",
     photoSource: "Motif tessellated from a local photo: {credit}.",
+    photoReveal: "Original photo",
     ready: "Ready. The model appears only after you start.",
     observe: "Memorize the motif. It disappears after {seconds} seconds; you can start drawing earlier.",
     draw: "Reproduce the hidden motif and its colours. One point per correctly coloured square, minus one per incorrect painted square; minimum zero.",
@@ -99,6 +101,14 @@ export function mount(container, { level = 0, language = "fr", onFinish, photo, 
   const playerDrawing = element("pre", "", playerPanel);
   playerDrawing.className = "sketch-player";
   playerDrawing.setAttribute("aria-label", t("output"));
+  // The cropped photo behind a tessellated motif is revealed with the result.
+  const photoPanel = element("div", "", comparison);
+  photoPanel.className = "sketch-photo-panel";
+  photoPanel.hidden = true;
+  element("h3", t("photoReveal"), photoPanel);
+  const photoImage = element("img", "", photoPanel);
+  photoImage.className = "sketch-photo";
+  let photoReady = false;
   const palette = element("div", "", root);
   palette.setAttribute("aria-label", t("palette"));
   const paints = Array.from({ length: game.colours + 1 }, (_, colour) => {
@@ -188,6 +198,7 @@ export function mount(container, { level = 0, language = "fr", onFinish, photo, 
     comparison.style.display = comparison.hidden ? "none" : phase === "completed" ? "grid" : "block";
     modelCaption.hidden = phase !== "completed";
     playerPanel.hidden = phase !== "completed";
+    photoPanel.hidden = phase !== "completed" || !photoReady;
     for (const [drawing, marks] of [[model, model.hidden ? [] : game.target],
       [playerDrawing, phase === "completed" ? game.marks : []]]) {
       drawing.replaceChildren();
@@ -295,7 +306,12 @@ export function mount(container, { level = 0, language = "fr", onFinish, photo, 
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       ctx.drawImage(bitmap, sx, sy, crop, crop, 0, 0, game.width, game.height);
       const image = ctx.getImageData(0, 0, game.width, game.height);
-      return { data: image.data, width: image.width, height: image.height };
+      // Keep a readable copy of the same crop to reveal with the result.
+      const display = doc.createElement("canvas");
+      display.width = display.height = 240;
+      display.getContext("2d").drawImage(bitmap, sx, sy, crop, crop, 0, 0, 240, 240);
+      return { data: image.data, width: image.width, height: image.height,
+        view: display.toDataURL?.("image/jpeg", 0.85) };
     } finally {
       bitmap.close?.();
     }
@@ -309,6 +325,12 @@ export function mount(container, { level = 0, language = "fr", onFinish, photo, 
       if (destroyed || finished || game.phase !== "ready") return;
       const target = tessellatePhoto(pixels, difficulty(level));
       game = createGame({ level, now: clock(), target, ...options });
+      const view = source.view ?? pixels.view;
+      if (view) {
+        photoImage.src = view;
+        photoImage.alt = source.credit ?? t("photoReveal");
+        photoReady = true;
+      }
       if (source.credit) {
         sourceNote.textContent = t("photoSource", { credit: source.credit });
         sourceNote.hidden = false;

@@ -1,6 +1,11 @@
 {
-  "version": "0.22.28",
+  "version": "0.22.29",
   "entries": [
+    {
+      "version": "0.22.29",
+      "fr": "Le croquis révèle sa source : une fois le dessin terminé, la photo locale recadrée qui a servi de modèle s'affiche sous le motif et votre reproduction, avec son crédit.",
+      "en": "The sketch reveals its source: once the drawing is finished, the cropped local photo used as the model appears beneath the motif and your reproduction, with its credit."
+    },
     {
       "version": "0.22.28",
       "fr": "Le poursuivant s'enhardit avec le temps : la difficulté de la fuite augmente désormais avec les jours de traque écoulés, en plus des tentatives et de votre état — les anciennes fuites enregistrées restent inchangées. Objets trouvés double sa collection (écharpe, gourde, chapeau, moufle rejoignent parapluie, carnet, clés et pochette) et tire les familles au hasard : chaque partie change, les paires trompeuses restent ensemble.",

@@ -58,6 +58,8 @@
 :is(#sketch-board, [data-mini-game="sketch"]) pre { box-sizing: border-box; width: fit-content; min-width: min(100%, 12rem); max-width: 100%; margin: 20px auto; padding: 12px; font: bold clamp(36px, 5vw, 52px)/1.35 monospace; letter-spacing: 0.2em; color: #423624; background: #f0e3c4; border: 4px solid #c7ac78; border-radius: 8px; white-space: pre; }
 .sketch-comparison { gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .sketch-comparison h3 { font-size: 1rem; }
+.sketch-photo-panel { grid-column: 1 / -1; }
+.sketch-photo { width: 100%; max-width: 260px; height: auto; border: 4px solid #c7ac78; border-radius: 8px; }
 @media (max-width: 640px) {
   .sketch-comparison { grid-template-columns: minmax(0, 1fr); }
 }
