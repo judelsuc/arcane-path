@@ -269,6 +269,14 @@ returns the expected unauthenticated 401, conditional GET of the refreshed
 manifest returns 200, application PID 481808 became 482233 with a clean
 journal, and application plus both timers are active.
 
+Hotfix 20 November: the nginx asset allowlist did not include
+`public/bookshop-catalogue.json`, so browsers received 404 and the game failed
+to load (the catalogue is a static JSON module import). Added it to the
+allowlist regex in `infra/nginx/preview.conf` and on the server, `nginx -t`
+passed, reloaded; unauthenticated HTTPS now returns 401 for the path. When
+verifying a release, fetch new public assets through nginx, not only via the
+application loopback port.
+
 Private rollback archives (directories 0700, archives 0600):
 `/home/ubuntu/before-0.22.22-71aab7e/runtime.tar.gz`,
 SHA-256 `59da41635cef3cc1ef64a9a0a823efa06ae13c5f0921be7ca21dfdb484b97918`, and
