@@ -228,6 +228,40 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Legend disclosure by inhabitants and ambient decoys, 0.22.32 (20 November 2026)
+
+Deployed runtime `c6eac10` (`deploy-2026-11-20-legend-disclosure`). A legend's
+clues, its town-square hints, the entrance identity and inspection now wait
+until an inhabitant has told the story: new `disclose` town-legends action and
+additive `town_legend_disclosures` table (initialized on the shared store with
+`asset_storage.py --configured initialize`, `{"initialized": true}`); journeys
+that already found an entrance remain told. Inhabitants of a legend town bring
+the story up spontaneously on first contact in a conversation, which performs
+the disclosure and requests the narrative. Plain cell descriptions remain
+visible before disclosure, and ineligible towns now receive ambient decoy
+details (seeded from the town identity) so surroundings never betray whether a
+legend exists. Discovery and history entries report an `untold` exploration
+status with hidden clues; the legends page invites asking the inhabitants.
+
+Validation: full JavaScript run passed 1887/1888 (the single failure is the
+unchanged dream-wiring baseline assertion). Backend legend suites pass (24
+search/legends tests including new disclosure-gating, decoy and
+found-grandfathering coverage; rewards, sessions and asset-storage suites
+adjusted to the disclosure step and the grown schema). Pre-existing baseline
+failures unchanged and reproduced on the pristine tree: three travel-cache
+migrations, the https-configuration bypass count, and the legend-sessions
+dungeon-assignment test. Installed hashes match the packaged commit, journal
+clean after both restarts, HTTPS 401, conditional GET 200, PID 508032 became
+508956 (second restart after schema initialization).
+
+Private rollback archive (directory 0700, archive 0600):
+`/home/ubuntu/before-0.22.32-c6eac10/runtime.tar.gz`, SHA-256
+`006dd7b959a1405911b617c8c9f4a87e78559bcf702b28ff68a84d1a8801563f`. No new
+files; the disclosures table is additive and ignored by older code on
+rollback. Refresh the release manifest mtime and restart after runtime
+changes. Do not restore or delete player databases, cached narratives, images
+or provider-job receipts.
+
 ## Pursuer's portrait on capture ending, 0.22.31 (20 November 2026)
 
 Deployed runtime `77e9f15` (`deploy-2026-11-20-capture-portrait`). The capture
