@@ -3,15 +3,16 @@ const TRACKS = [
   "music-town", "music-city", "music-coast", "music-night",
   "music-shelter", "music-tarot-trail", "music-street-practice",
   "music-reunion", "music-journey-ended",
-  "music-title-song", "music-pursuit",
+  "music-title-song", "music-pursuit", "music-fight",
 ];
 // Tracks added after the original fifteen keep their prompt numbers in filenames.
-const NUMBERS = { "music-title-song": "16", "music-pursuit": "17" };
+const NUMBERS = { "music-title-song": "16", "music-pursuit": "17", "music-fight": "18" };
 
 export function musicTrack({ active, ended, terrain, sources = [], night, dialog, sleeping } = {}) {
   if (dialog === "music-dialog" || dialog === "cafe-dialog") return null;
   if (!active) return "music-title-song";
   if (dialog === "pursuit-dialog") return "music-pursuit";
+  if (dialog === "brawl-dialog") return "music-fight";
   if (ended) return ended === "reunion" ? "music-reunion" : "music-journey-ended";
   if (["trail-dialog", "birth-tarot-dialog", "daily-tarot-dialog"].includes(dialog)) return "music-tarot-trail";
   if (dialog === "economy-dialog" && sleeping) return "music-shelter";

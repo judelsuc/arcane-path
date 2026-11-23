@@ -275,3 +275,24 @@ tempo changes, clean bar boundaries, no fade-out. Purely chip timbres: no
 vocals, screams, whispers, sirens, orchestra, realistic drums, cinematic
 impacts, borrowed melodies or artist imitation. Harsh but not ear-piercing.
 ```
+
+## 18 - music-fight - Garde haute
+
+Use: the self-defence fights (street, camp and the pursuer's capture).
+Target: 144 BPM, 90 seconds.
+
+```text
+Original instrumental 8-bit fighting-game chiptune for a child standing their
+ground against bullies in a dark street. Tense, defiant and urgent: the small
+hero is outnumbered but refuses to give in. 144 BPM. Punchy triangle bass
+on driving octave eighth notes, a bold square-wave lead with short
+syncopated stabs built on an original D-F-A-E motif, a second pulse
+channel of fast staccato counter-rhythms, and hard noise-channel kicks and
+snares on every beat. D minor with sudden heroic F-major and C-major
+flashes, like a blow landing. Classic four-channel NES-style arrangement,
+same warm retro timbres as the rest of the soundtrack. Two-bar intro, then
+a stable repeating 16-bar loop around 90 seconds, no tempo changes, clean
+bar boundaries, no fade-out. No vocals, shouts, crowd, orchestra,
+realistic drums, cinematic impacts, borrowed melodies or artist imitation.
+Energetic but not piercing.
+```

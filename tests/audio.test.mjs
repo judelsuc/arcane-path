@@ -186,3 +186,8 @@ test("the pursuit window plays its own numbered track and falls back to the road
   assert.ok(musicCandidates("music-pursuit").includes("./public/audio/music/17%20-%20music-pursuit.wav"));
   assert.deepEqual(musicFallbacks("music-pursuit"), ["music-pursuit", "music-road-day", "music-title"]);
 });
+
+test("the fight window plays its own numbered track", () => {
+  assert.equal(musicTrack({ active: true, terrain: "place", dialog: "brawl-dialog" }), "music-fight");
+  assert.ok(musicCandidates("music-fight").includes("./public/audio/music/18%20-%20music-fight.wav"));
+});

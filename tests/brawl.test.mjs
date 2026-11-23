@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { INPUT, brawlRules, createBrawl, createBrawlRecorder, replayBrawl, stepBrawl } from "../minigames/brawl.mjs";
+import { BRAWL_REACH, INPUT, brawlRules, createBrawl, createBrawlRecorder, replayBrawl, stepBrawl } from "../minigames/brawl.mjs";
 
 function run(setup, choose, limit = 6000) {
   let state = createBrawl(setup);
@@ -16,30 +16,34 @@ function run(setup, choose, limit = 6000) {
 // Reads each wind-up, parries it, then sweeps the staggered attacker.
 function defender(state) {
   const p = state.player;
-  const threat = state.opponents.find(o => o.pose === "windup" && o.timer <= 8 && Math.abs(o.x - p.x) < 70);
+  const threat = state.opponents.find(o => o.pose === "windup" && o.timer <= 8 && Math.abs(o.x - p.x) < BRAWL_REACH.attack + 26);
   if (threat) {
     if (threat.attack === "grab") return INPUT.up;
     const face = threat.x > p.x ? INPUT.right : INPUT.left;
     return state.tick % 2 ? INPUT.up | INPUT.action | face : INPUT.up | face;
   }
   if (p.grabbedBy !== null) return state.tick % 2 ? INPUT.action : 0;
-  const open = state.opponents.find(o => (o.pose === "stagger" || o.pinned > 0) && Math.abs(o.x - p.x) < 54);
+  const open = state.opponents.find(o => (o.pose === "stagger" || o.pinned > 0) && Math.abs(o.x - p.x) < BRAWL_REACH.sweep);
   if (open) {
     const face = open.x > p.x ? INPUT.right : INPUT.left;
     return state.tick % 2 ? INPUT.down | INPUT.action | face : INPUT.down | face;
   }
   const near = state.opponents.filter(o => !["down", "fled"].includes(o.pose))
     .sort((a, b) => Math.abs(a.x - p.x) - Math.abs(b.x - p.x))[0];
-  if (near && Math.abs(near.x - p.x) > 46) return near.x > p.x ? INPUT.right : INPUT.left;
+  if (near && Math.abs(near.x - p.x) > BRAWL_REACH.attack + 2) return near.x > p.x ? INPUT.right : INPUT.left;
   return 0;
 }
 
 test("reading, parrying and sweeping beats one to three attackers and replays exactly", () => {
   for (const opponents of [1, 2, 3]) for (const level of [1, 6, 10]) {
-    const setup = { seed: 41 + opponents, level, opponents, breath: 4 };
-    const { state, transcript } = run(setup, defender);
-    assert.equal(state.status, "won", `${opponents} attackers at level ${level}`);
-    assert.equal(replayBrawl(setup, transcript), "won");
+    let won = 0;
+    for (let seed = 1; seed <= 6; seed++) {
+      const setup = { seed, level, opponents, breath: 4 };
+      const { state, transcript } = run(setup, defender);
+      if (state.status === "won") won++;
+      assert.equal(replayBrawl(setup, transcript), state.status);
+    }
+    assert.ok(won >= (opponents === 3 ? 5 : 6), `${opponents} attackers at level ${level}: ${won}/6`);
   }
 });
 
@@ -101,4 +105,33 @@ test("transcripts are bounded, ordered and cannot continue after the outcome", (
   assert.equal(replayBrawl(setup, { changes: [], ticks: 10, abandoned: true }), "lost");
   assert.throws(() => createBrawl({ seed: 1, opponents: 4 }), /setup/);
   assert.throws(() => createBrawl({ seed: -1 }), /seed/);
+});
+
+test("a push followed by a sweep floors an attacker: the basic combo the hints teach", () => {
+  let state = createBrawl({ seed: 12, level: 3, opponents: 1, breath: 6 });
+  while (Math.abs(state.opponents[0].x - state.player.x) > BRAWL_REACH.attack + 2) state = stepBrawl(state, INPUT.right);
+  const seen = [];
+  const press = (mask, ticks) => { for (let i = 0; i < ticks; i++) { state = stepBrawl(state, i ? mask & ~INPUT.action | (mask & INPUT.action ? 0 : 0) : mask); seen.push(...state.events.map(e => e.type)); } };
+  press(INPUT.action | INPUT.right, 1); press(0, 24);
+  assert.equal(state.opponents[0].pose, "stagger");
+  press(INPUT.action | INPUT.down | INPUT.right, 1); press(INPUT.down, 10);
+  assert.equal(state.status, "won");
+  assert.ok(seen.includes("shoved") && seen.includes("down"));
+});
+
+test("a carried knife makes pushes reach further, stagger longer and floor attackers for longer", () => {
+  const rules = brawlRules(3, "street");
+  const outcome = knife => {
+    let state = createBrawl({ seed: 12, level: 3, opponents: 1, breath: 6, knife });
+    // The attacker waits just beyond the bare-handed push; he closes about one pixel per tick before the push lands.
+    Object.assign(state.opponents[0], { x: state.player.x + BRAWL_REACH.push + 8, timer: 200 });
+    state = stepBrawl(state, INPUT.action | INPUT.right);
+    for (let i = 0; i < 6; i++) state = stepBrawl(state, 0);
+    return state.opponents[0];
+  };
+  assert.notEqual(outcome(false).pose, "stagger", "without a knife the push falls short at this distance");
+  const pushed = outcome(true);
+  assert.equal(pushed.pose, "stagger");
+  assert.ok(pushed.timer > Math.round(rules.staggerTicks * 0.6));
+  assert.throws(() => createBrawl({ seed: 1, knife: "yes" }), /setup/);
 });

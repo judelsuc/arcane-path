@@ -24,7 +24,8 @@ Do not keep multiple versions unless you want the first matching one used:
 WAV before MP3 before OGG, canonical before compact/spaced numbered names.
 
 The pursuit escape window plays `music-pursuit.wav` (also accepted as
-`17 - music-pursuit.wav`, MP3 or OGG), from prompt 17.
+`17 - music-pursuit.wav`, MP3 or OGG), from prompt 17. The self-defence fights play `music-fight.wav` (also
+`18 - music-fight.wav`), from prompt 18.
 
 Missing/context-specific tracks fall back to `music-road-day`, then
 `music-title`, then silence. The status explains any fallback; the console

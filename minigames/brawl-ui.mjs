@@ -1,13 +1,24 @@
-import { BRAWL_FLOOR, BRAWL_MAX_TICKS, BRAWL_WIDTH, INPUT, createBrawl, createBrawlRecorder, stepBrawl } from "./brawl.mjs";
+import { BRAWL_FLOOR, BRAWL_MAX_TICKS, BRAWL_WIDTH, INPUT, brawlRules, createBrawl, createBrawlRecorder, stepBrawl } from "./brawl.mjs";
+import { drawSprite, spriteCanvas } from "./brawl-sprites.mjs";
+import { brawlSound } from "./brawl-audio.mjs";
 
-const HEIGHT = 320, STEP_MS = 1000 / 60, PIXEL = 5, PURSUER_PIXEL = 7;
+const HEIGHT = 320, STEP_MS = 1000 / 60, SCALE = 3, TUTORIAL_TICKS = 420;
 const COPY = {
   fr: {
     title: { street: "Mauvaise rencontre", camp: "Réveil brutal", pursuer: "Il vous a rattrapé" },
-    help: "← → se déplacer · ↑ sauter en arrière (évite les coups bas) · ↓ s'accroupir (évite les coups hauts) · Espace : repousser · Espace + ↓ : balayer un adversaire déséquilibré · Espace + ↑ juste avant le coup : parer · Échap : abandonner.",
-    goal: "Mettez tous les agresseurs à terre en même temps, ou profitez qu'ils soient à terre ou retenus pour sortir de l'écran.",
-    grab: "Il vous tient ! Martelez Espace !",
-    dog: "Votre chien en retient un !",
+    steps: [
+      "Lisez le signe au-dessus de l'agresseur : ▲ jaune → ↓ se baisser · ▼ bleu → ↑ sauter en arrière.",
+      "Espace le repousse (ou Espace + ↑ juste avant son coup pour parer) : il vacille ✦.",
+      "Pendant qu'il vacille : Espace + ↓ le balaie et le met à terre.",
+      "Victoire : tous les agresseurs à terre en même temps (la barre sous chacun montre quand il se relève). Ou fuyez par un bord quand aucun ne peut vous suivre. Échap : abandonner.",
+    ],
+    knife: "Votre couteau rend vos coups plus efficaces : ils vacillent plus longtemps et restent à terre plus longtemps.",
+    tutorial: ["▲ jaune : ↓   ▼ bleu : ↑", "Espace : il vacille ✦", "puis Espace + ↓ : à terre !"],
+    goal: (down, total) => `À terre : ${down}/${total} — tous en même temps pour gagner`,
+    hint: { high: "↓ se baisser", low: "↑ sauter", grab: "↑ reculer !", sweep: "Espace + ↓", near: "approchez" },
+    grab: (n, total) => `Il vous tient ! Martelez Espace ! ${n}/${total}`,
+    pop: { parried: "PARÉ !", down: "À TERRE !", hit: "Aïe !", shoved: "Il vacille !", break: "Libéré !",
+      dog: "Wouf !", getup: "Il se relève…" },
     won: "Ils détalent. Vous êtes libre.",
     escaped: "Vous leur échappez.",
     lost: { street: "Ils vous ont maîtrisé…", camp: "Ils vous ont maîtrisé…", pursuer: "Il ne vous lâche plus…" },
@@ -15,10 +26,19 @@ const COPY = {
   },
   en: {
     title: { street: "A bad encounter", camp: "Rude awakening", pursuer: "He has caught up with you" },
-    help: "← → move · ↑ hop back (avoids low attacks) · ↓ duck (avoids high attacks) · Space: push · Space + ↓: sweep an off-balance attacker · Space + ↑ just before a blow: parry · Esc: give up.",
-    goal: "Knock every attacker down at the same time, or leave the screen while they are down or held back.",
-    grab: "He has you! Hammer Space!",
-    dog: "Your dog is holding one back!",
+    steps: [
+      "Read the sign above the attacker: yellow ▲ → ↓ duck · blue ▼ → ↑ hop back.",
+      "Space pushes him (or Space + ↑ just before his blow to parry): he staggers ✦.",
+      "While he staggers: Space + ↓ sweeps him to the ground.",
+      "Victory: every attacker down at the same time (the bar under each shows when he gets up). Or flee through an edge when none can follow. Esc: give up.",
+    ],
+    knife: "Your knife makes your blows count: attackers stagger longer and stay down longer.",
+    tutorial: ["yellow ▲: ↓   blue ▼: ↑", "Space: he staggers ✦", "then Space + ↓: down!"],
+    goal: (down, total) => `Down: ${down}/${total} — all at once to win`,
+    hint: { high: "↓ duck", low: "↑ hop", grab: "↑ back off!", sweep: "Space + ↓", near: "get closer" },
+    grab: (n, total) => `He has you! Hammer Space! ${n}/${total}`,
+    pop: { parried: "PARRIED!", down: "DOWN!", hit: "Ouch!", shoved: "He staggers!", break: "Free!",
+      dog: "Woof!", getup: "He gets up…" },
     won: "They run off. You are free.",
     escaped: "You get away from them.",
     lost: { street: "They overpowered you…", camp: "They overpowered you…", pursuer: "He will not let go…" },
@@ -28,45 +48,11 @@ const COPY = {
 
 const KEYS = { ArrowLeft: INPUT.left, KeyA: INPUT.left, KeyQ: INPUT.left, ArrowRight: INPUT.right, KeyD: INPUT.right,
   ArrowUp: INPUT.up, KeyW: INPUT.up, KeyZ: INPUT.up, ArrowDown: INPUT.down, KeyS: INPUT.down, Space: INPUT.action };
+const SIGNS = { high: ["▲", "#ffd23f"], low: ["▼", "#4cc9f0"], grab: ["✋", "#ff3b3b"] };
+const POP_COLORS = { parried: "#a8f0ff", down: "#9be564", hit: "#ff5d5d", shoved: "#ffe66d", break: "#9be564",
+  dog: "#e9c46a", getup: "#ffb4a2" };
 
-// Pixel figures, 8 columns wide, drawn from the feet up; "#" body, "o" head, "x" accent.
-const FIGURES = {
-  idle: ["..oo....", "..oo....", ".####...", "x####x..", ".####...", ".#..#...", ".#..#...", ".#..#..."],
-  walk: ["..oo....", "..oo....", ".####...", "x####x..", ".####...", ".#..#...", "#....#..", "#....#.."],
-  duck: ["........", "........", "........", "..oo....", ".####...", "x####x..", ".#..#...", "##..##.."],
-  hop: ["..oo....", "..oo....", ".####...", "x####x..", ".####...", ".#..#...", "#....#..", "........"],
-  push: ["...oo...", "...oo...", "..####xx", "..#####.", "..####..", "..#..#..", ".#...#..", ".#...#.."],
-  sweep: ["........", "........", "........", "..oo....", ".#####..", "x####...", ".#.#####", "##......"],
-  parry: ["...oo.xx", "...oo.x.", "..####x.", "..####..", "..####..", "..#..#..", "..#..#..", "..#..#.."],
-  windup: ["..oo....", "x.oo....", "x####...", ".####...", ".####...", ".#..#...", ".#..#...", "#...#..."],
-  strike: ["...oo...", "...oo...", "..#####x", "..####.x", "..####..", "..#..#..", ".#...#..", ".#...#.."],
-  stagger: [".oo.....", ".oo.....", "..####..", ".x####x.", "..####..", "...#..#.", "..#...#.", "..#....#"],
-  recover: ["..oo....", "..oo....", ".####...", ".####...", ".####...", ".#..#...", ".#..#...", ".#..#..."],
-  grab: ["...oo...", "...oo...", "..######", "..####.x", "..####..", "..#..#..", ".#...#..", ".#...#.."],
-  down: ["........", "........", "........", "........", "........", "........", "oo######", "x#..#x.."],
-  approach: ["..oo....", "..oo....", ".####...", "x####x..", ".####...", ".#..#...", "#....#..", "#....#.."],
-};
-
-const PALETTE = {
-  traveller: { "#": "#3f7f8c", o: "#f1c9a5", x: "#e8b04b" },
-  thugs: [{ "#": "#4b4453", o: "#d9a982", x: "#8c2f39" }, { "#": "#5a5a3c", o: "#c69673", x: "#2f3e46" },
-    { "#": "#6b3e26", o: "#e0b48f", x: "#1f1f1f" }],
-  pursuer: { "#": "#151317", o: "#d8d4cc", x: "#7a0f14" },
-};
-
-function drawFigure(ctx, pose, x, palette, facing, scale = PIXEL, lift = 0) {
-  const rows = FIGURES[pose] ?? FIGURES.idle;
-  const width = 8 * scale, top = BRAWL_FLOOR - rows.length * scale - lift;
-  rows.forEach((row, r) => [...row].forEach((cell, c) => {
-    if (cell === ".") return;
-    ctx.fillStyle = palette[cell];
-    const column = facing < 0 ? 7 - c : c;
-    ctx.fillRect(Math.round(x - width / 2 + column * scale), Math.round(top + r * scale), scale, scale);
-  }));
-  return top;
-}
-
-function drawBackground(ctx, context, phase, tick) {
+function background(ctx, context, phase, tick) {
   const night = phase !== "day";
   const sky = ctx.createLinearGradient(0, 0, 0, BRAWL_FLOOR);
   if (context === "pursuer") { sky.addColorStop(0, "#07060a"); sky.addColorStop(1, "#2a0d10"); }
@@ -75,41 +61,49 @@ function drawBackground(ctx, context, phase, tick) {
   ctx.fillStyle = sky; ctx.fillRect(0, 0, BRAWL_WIDTH, HEIGHT);
   if (context === "street") {
     for (let i = 0; i < 9; i++) {
-      const x = i * 74 - 10, h = 90 + ((i * 37) % 70);
+      const x = i * 74 - 10, h = 100 + ((i * 37) % 80);
       ctx.fillStyle = night ? "#1b1d2b" : "#a89a8c"; ctx.fillRect(x, BRAWL_FLOOR - h, 68, h);
-      for (let wy = BRAWL_FLOOR - h + 12; wy < BRAWL_FLOOR - 30; wy += 22) for (let wx = x + 8; wx < x + 60; wx += 18) {
+      ctx.fillStyle = night ? "#23263a" : "#968878"; ctx.fillRect(x, BRAWL_FLOOR - h, 68, 4);
+      for (let wy = BRAWL_FLOOR - h + 14; wy < BRAWL_FLOOR - 40; wy += 22) for (let wx = x + 8; wx < x + 60; wx += 18) {
         ctx.fillStyle = night ? ((wx + wy + i) % 3 === 0 ? "#e9c46a" : "#2a2d3e") : "#6d8597";
         ctx.fillRect(wx, wy, 8, 10);
       }
+      ctx.fillStyle = night ? "#121420" : "#7d6f62"; ctx.fillRect(x + 26, BRAWL_FLOOR - 26, 16, 26);
     }
     for (const lx of [110, 530]) {
-      ctx.fillStyle = "#2b2b2b"; ctx.fillRect(lx, BRAWL_FLOOR - 120, 4, 120);
+      ctx.fillStyle = "#2b2b2b"; ctx.fillRect(lx, BRAWL_FLOOR - 130, 4, 130); ctx.fillRect(lx - 6, BRAWL_FLOOR - 132, 16, 3);
       if (night) {
-        ctx.fillStyle = "rgba(255, 220, 140, 0.12)";
-        ctx.beginPath(); ctx.moveTo(lx + 2, BRAWL_FLOOR - 118); ctx.lineTo(lx - 50, BRAWL_FLOOR); ctx.lineTo(lx + 54, BRAWL_FLOOR); ctx.fill();
-        ctx.fillStyle = "#ffd98a"; ctx.fillRect(lx - 4, BRAWL_FLOOR - 124, 12, 6);
+        ctx.fillStyle = "rgba(255, 220, 140, 0.10)";
+        ctx.beginPath(); ctx.moveTo(lx + 2, BRAWL_FLOOR - 126); ctx.lineTo(lx - 60, BRAWL_FLOOR); ctx.lineTo(lx + 64, BRAWL_FLOOR); ctx.fill();
+        ctx.fillStyle = "#ffd98a"; ctx.fillRect(lx - 4, BRAWL_FLOOR - 129, 12, 5);
       }
     }
-    ctx.fillStyle = night ? "#2d2d33" : "#8e8e8e"; ctx.fillRect(0, BRAWL_FLOOR, BRAWL_WIDTH, HEIGHT - BRAWL_FLOOR);
+    ctx.fillStyle = night ? "#3a3a42" : "#9c9c9c"; ctx.fillRect(0, BRAWL_FLOOR, BRAWL_WIDTH, 6);
+    ctx.fillStyle = night ? "#2d2d33" : "#8e8e8e"; ctx.fillRect(0, BRAWL_FLOOR + 6, BRAWL_WIDTH, HEIGHT - BRAWL_FLOOR);
+    ctx.fillStyle = night ? "#26262c" : "#7d7d7d";
+    for (let x = 0; x < BRAWL_WIDTH; x += 40) ctx.fillRect(x, BRAWL_FLOOR, 2, 6);
   } else if (context === "camp") {
-    for (let i = 0; i < 40; i++) { ctx.fillStyle = "#c9d1ff"; ctx.fillRect((i * 97) % BRAWL_WIDTH, (i * 53) % 120, 2, 2); }
-    for (let i = 0; i < 12; i++) {
-      const x = i * 58, h = 110 + (i * 29) % 60;
-      ctx.fillStyle = "#0c1a14";
-      ctx.beginPath(); ctx.moveTo(x, BRAWL_FLOOR); ctx.lineTo(x + 28, BRAWL_FLOOR - h); ctx.lineTo(x + 56, BRAWL_FLOOR); ctx.fill();
+    for (let i = 0; i < 46; i++) { ctx.fillStyle = i % 5 ? "#c9d1ff" : "#fff6d5"; ctx.fillRect((i * 97) % BRAWL_WIDTH, (i * 53) % 130, 2, 2); }
+    for (let i = 0; i < 13; i++) {
+      const x = i * 54 - 10, h = 120 + (i * 29) % 70;
+      ctx.fillStyle = i % 2 ? "#0c1a14" : "#10241b";
+      ctx.beginPath(); ctx.moveTo(x, BRAWL_FLOOR); ctx.lineTo(x + 30, BRAWL_FLOOR - h); ctx.lineTo(x + 60, BRAWL_FLOOR); ctx.fill();
     }
-    ctx.fillStyle = "#4c6b4a"; ctx.beginPath(); ctx.moveTo(470, BRAWL_FLOOR); ctx.lineTo(520, BRAWL_FLOOR - 50); ctx.lineTo(570, BRAWL_FLOOR); ctx.fill();
+    ctx.fillStyle = "#4c6b4a"; ctx.beginPath(); ctx.moveTo(470, BRAWL_FLOOR); ctx.lineTo(522, BRAWL_FLOOR - 56); ctx.lineTo(574, BRAWL_FLOOR); ctx.fill();
+    ctx.fillStyle = "#2f4530"; ctx.beginPath(); ctx.moveTo(512, BRAWL_FLOOR); ctx.lineTo(522, BRAWL_FLOOR - 30); ctx.lineTo(532, BRAWL_FLOOR); ctx.fill();
     const flicker = 6 + (tick >> 2) % 4;
-    ctx.fillStyle = "rgba(255, 140, 50, 0.15)"; ctx.beginPath(); ctx.arc(150, BRAWL_FLOOR - 8, 60 + flicker, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#ff8c32"; ctx.fillRect(144, BRAWL_FLOOR - 10 - flicker, 12, 10 + flicker);
+    ctx.fillStyle = "rgba(255, 140, 50, 0.14)"; ctx.beginPath(); ctx.arc(150, BRAWL_FLOOR - 8, 70 + flicker, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#5a3a22"; ctx.fillRect(132, BRAWL_FLOOR - 4, 36, 4);
+    ctx.fillStyle = "#ff8c32"; ctx.fillRect(142, BRAWL_FLOOR - 12 - flicker, 16, 8 + flicker);
+    ctx.fillStyle = "#ffd166"; ctx.fillRect(146, BRAWL_FLOOR - 8 - flicker / 2, 8, 4 + flicker / 2);
     ctx.fillStyle = "#1a1410"; ctx.fillRect(0, BRAWL_FLOOR, BRAWL_WIDTH, HEIGHT - BRAWL_FLOOR);
   } else {
     ctx.fillStyle = "#e8e2d0"; ctx.beginPath(); ctx.arc(520, 60, 22, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = "#07060a"; ctx.beginPath(); ctx.arc(530, 54, 20, 0, Math.PI * 2); ctx.fill();
     for (let i = 0; i < 7; i++) {
       const x = i * 100 + 20;
-      ctx.fillStyle = "#050405"; ctx.fillRect(x, BRAWL_FLOOR - 150, 6, 150);
-      ctx.fillRect(x - 18, BRAWL_FLOOR - 140, 42, 4); ctx.fillRect(x - 10, BRAWL_FLOOR - 120, 26, 3);
+      ctx.fillStyle = "#050405"; ctx.fillRect(x, BRAWL_FLOOR - 160, 6, 160);
+      ctx.fillRect(x - 18, BRAWL_FLOOR - 150, 42, 4); ctx.fillRect(x - 10, BRAWL_FLOOR - 130, 26, 3);
     }
     ctx.fillStyle = "#1c1416"; ctx.fillRect(0, BRAWL_FLOOR, BRAWL_WIDTH, HEIGHT - BRAWL_FLOOR);
     ctx.fillStyle = `rgba(140, 120, 130, ${0.10 + 0.04 * Math.sin(tick / 40)})`;
@@ -117,79 +111,151 @@ function drawBackground(ctx, context, phase, tick) {
   }
 }
 
-export function drawBrawl(ctx, state, { phase = "night", copy = COPY.en } = {}) {
-  drawBackground(ctx, state.context, phase, state.tick);
-  state.opponents.forEach((o, index) => {
-    if (o.pose === "fled") return;
-    const palette = state.context === "pursuer" ? PALETTE.pursuer : PALETTE.thugs[index % 3];
-    const facing = Math.sign(state.player.x - o.x) || -1;
-    const scale = state.context === "pursuer" ? PURSUER_PIXEL : PIXEL;
-    const top = drawFigure(ctx, o.pose, o.x, palette, facing, scale);
-    if (o.pose === "windup") {
-      const sign = { high: ["▲", "#ffd23f"], low: ["▼", "#4cc9f0"], grab: ["✋", "#ff3b3b"] }[o.attack];
-      ctx.font = "bold 18px monospace"; ctx.textAlign = "center"; ctx.fillStyle = sign[1];
-      ctx.fillText(sign[0], o.x, top - 8);
-    }
-    if (o.pose === "down" || o.pose === "stagger") {
-      ctx.fillStyle = "#ffe66d"; ctx.font = "12px monospace"; ctx.textAlign = "center";
-      ctx.fillText("✦ ✦", o.x, top - 6 + ((state.tick >> 3) % 2) * 2);
-    }
-    if (o.pinned > 0) {
-      ctx.fillStyle = "#8a5a2b"; ctx.fillRect(o.x - 16 * facing - 10, BRAWL_FLOOR - 12, 20, 10);
-      ctx.fillRect(o.x - 16 * facing + (facing < 0 ? 8 : -12), BRAWL_FLOOR - 18, 6, 8);
-    }
-  });
-  const p = state.player;
-  const blink = p.hurt > 0 && (p.hurt >> 2) % 2 === 0;
-  if (!blink) drawFigure(ctx, p.air > 0 ? "hop" : p.pose === "walk" ? (state.tick >> 3) % 2 ? "walk" : "idle" : p.pose,
-    p.x, PALETTE.traveller, p.facing, PIXEL, p.air > 0 ? Math.sin(Math.PI * p.air / 34) * 30 : 0);
-  if (state.context === "pursuer") {
-    const vignette = ctx.createRadialGradient(p.x, BRAWL_FLOOR - 40, 60, p.x, BRAWL_FLOOR - 40, 360);
-    vignette.addColorStop(0, "rgba(0,0,0,0)"); vignette.addColorStop(1, "rgba(0,0,0,0.75)");
-    ctx.fillStyle = vignette; ctx.fillRect(0, 0, BRAWL_WIDTH, HEIGHT);
-  }
-  // Breath and clock.
-  for (let i = 0; i < state.maxBreath; i++) {
-    ctx.fillStyle = i < state.breath ? "#e63946" : "#3a3a3a";
-    ctx.fillRect(14 + i * 18, 14, 12, 12);
-  }
-  ctx.fillStyle = "#f1faee"; ctx.font = "14px monospace"; ctx.textAlign = "right";
-  ctx.fillText(String(Math.max(0, Math.ceil((BRAWL_MAX_TICKS - state.tick) / 60))), BRAWL_WIDTH - 14, 26);
-  ctx.textAlign = "center";
-  if (p.grabbedBy !== null) { ctx.fillStyle = "#ff3b3b"; ctx.font = "bold 18px monospace"; ctx.fillText(copy.grab, BRAWL_WIDTH / 2, 60); }
-  else if (state.opponents.some(o => o.pinned > 0)) { ctx.fillStyle = "#e9c46a"; ctx.font = "14px monospace"; ctx.fillText(copy.dog, BRAWL_WIDTH / 2, 60); }
+function playerPose(p, tick) {
+  if (p.grabbedBy !== null || p.hurt > 36) return "hurt";
+  if (p.air > 0) return "hop";
+  if (["duck", "push", "sweep", "parry"].includes(p.pose)) return p.pose;
+  if (p.pose === "walk") return (tick >> 3) % 2 ? "walk1" : "walk2";
+  return "guard";
 }
 
-export function mountBrawl(host, setup, { language = "en", phase = "night", onFinish = () => {} } = {}) {
+function opponentPose(o, p, tick) {
+  if (o.pinned > 0) return "stagger";
+  if (o.pose === "windup") return { high: "windupHigh", low: "windupLow", grab: "windupGrab" }[o.attack];
+  if (o.pose === "strike") return { high: "strikeHigh", low: "strikeLow", grab: "grab" }[o.attack] ?? "guard";
+  if (["stagger", "down", "grab"].includes(o.pose)) return o.pose;
+  if (o.pose === "approach" && Math.abs(o.x - p.x) > 48) return (tick >> 3) % 2 ? "walk1" : "walk2";
+  return "guard";
+}
+
+function label(ctx, text, x, y, color, size = 14) {
+  ctx.font = `bold ${size}px monospace`; ctx.textAlign = "center";
+  ctx.lineWidth = 3; ctx.lineJoin = "round"; ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.strokeText(text, x, y);
+  ctx.fillStyle = color; ctx.fillText(text, x, y);
+}
+
+export function drawBrawl(ctx, state, { phase = "night", copy = COPY.en, pops = [], shake = 0, doc = globalThis.document } = {}) {
+  const rules = brawlRules(state.level, state.context);
+  const downMax = Math.round(rules.downTicks * (state.knife ? 1.5 : 1));
+  ctx.save();
+  if (shake > 0) ctx.translate(((shake * 7) % 5) - 2, ((shake * 3) % 5) - 2);
+  background(ctx, state.context, phase, state.tick);
+  const p = state.player;
+  for (const figure of [p, ...state.opponents.filter(o => o.pose !== "fled")]) {
+    ctx.fillStyle = "rgba(0,0,0,0.35)"; ctx.fillRect(Math.round(figure.x - 18), BRAWL_FLOOR - 1, 36, 4);
+  }
+  state.opponents.forEach((o, index) => {
+    if (o.pose === "fled") return;
+    const body = state.context === "pursuer" ? "pursuer" : `thug${index % 3}`;
+    const facing = Math.sign(p.x - o.x) || -1;
+    const top = drawSprite(ctx, spriteCanvas(doc, body, opponentPose(o, p, state.tick)), o.x, BRAWL_FLOOR, { facing, scale: SCALE });
+    const head = Math.max(top + 30, 70);
+    const gap = Math.abs(o.x - p.x);
+    if (o.pose === "windup") {
+      const [sign, color] = SIGNS[o.attack];
+      label(ctx, sign, o.x, head - 22, color, 24);
+      label(ctx, copy.hint[o.attack], o.x, head - 4, color, 12);
+    } else if (o.pose === "stagger" || o.pinned > 0) {
+      label(ctx, "✦ ✦ ✦", o.x, head - 4 + ((state.tick >> 3) % 2) * 3, "#ffe66d", 13);
+      if ((state.tick >> 4) % 2 === 0) label(ctx, gap < 72 ? copy.hint.sweep : copy.hint.near, o.x, head - 22, "#9be564", 13);
+    } else if (o.pose === "down") {
+      const share = Math.max(0, o.timer / downMax);
+      ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(Math.round(o.x - 26), BRAWL_FLOOR + 12, 52, 7);
+      ctx.fillStyle = share > 0.3 ? "#9be564" : "#ff9f43"; ctx.fillRect(Math.round(o.x - 25), BRAWL_FLOOR + 13, Math.round(50 * share), 5);
+    }
+    if (o.pinned > 0) {
+      // The dog hangs on to the attacker's leg.
+      const dx = o.x - facing * 18;
+      ctx.fillStyle = "#8a5a2b"; ctx.fillRect(dx - 12, BRAWL_FLOOR - 16, 24, 11);
+      ctx.fillRect(dx + facing * 10 - 3, BRAWL_FLOOR - 22, 9, 9);
+      ctx.fillStyle = "#5c3b1c"; ctx.fillRect(dx - 12, BRAWL_FLOOR - 6, 4, 6); ctx.fillRect(dx + 7, BRAWL_FLOOR - 6, 4, 6);
+      ctx.fillRect(dx - facing * 14, BRAWL_FLOOR - 18, 4, 3);
+    }
+  });
+  const blink = p.hurt > 0 && p.hurt <= 36 && (p.hurt >> 2) % 2 === 0;
+  drawSprite(ctx, spriteCanvas(doc, state.knife ? "travellerKnife" : "traveller", playerPose(p, state.tick)),
+    p.x, BRAWL_FLOOR, { facing: p.facing, scale: SCALE, alpha: blink ? 0.45 : 1,
+      lift: p.air > 0 ? Math.sin(Math.PI * p.air / 34) * 30 : 0 });
+  ctx.restore();
+  if (state.context === "pursuer") {
+    const vignette = ctx.createRadialGradient(p.x, BRAWL_FLOOR - 40, 60, p.x, BRAWL_FLOOR - 40, 360);
+    vignette.addColorStop(0, "rgba(0,0,0,0)"); vignette.addColorStop(1, "rgba(0,0,0,0.72)");
+    ctx.fillStyle = vignette; ctx.fillRect(0, 0, BRAWL_WIDTH, HEIGHT);
+  }
+  if (p.hurt > 40 && state.status === "fighting") { ctx.fillStyle = `rgba(255,0,0,${(p.hurt - 40) / 40})`; ctx.fillRect(0, 0, BRAWL_WIDTH, HEIGHT); }
+  for (let i = 0; i < state.maxBreath; i++) {
+    const x = 14 + i * 20;
+    ctx.fillStyle = "#1a1a1a"; ctx.fillRect(x - 1, 13, 16, 14);
+    ctx.fillStyle = i < state.breath ? "#e63946" : "#4a4a4a";
+    ctx.fillRect(x + 1, 15, 5, 5); ctx.fillRect(x + 8, 15, 5, 5); ctx.fillRect(x + 1, 19, 12, 4); ctx.fillRect(x + 4, 23, 6, 2);
+  }
+  const active = state.opponents.filter(o => o.pose !== "fled");
+  if (state.status === "fighting") {
+    label(ctx, copy.goal(active.filter(o => o.pose === "down").length, active.length), BRAWL_WIDTH / 2, 26, "#f1faee", 13);
+  }
+  ctx.textAlign = "right"; ctx.font = "bold 14px monospace"; ctx.fillStyle = "#f1faee";
+  ctx.fillText(String(Math.max(0, Math.ceil((BRAWL_MAX_TICKS - state.tick) / 60))), BRAWL_WIDTH - 14, 26);
+  if (p.grabbedBy !== null) {
+    label(ctx, copy.grab(p.breaks, rules.grabBreaks), BRAWL_WIDTH / 2, 58, "#ff3b3b", 16);
+    const holder = state.opponents[p.grabbedBy];
+    ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(BRAWL_WIDTH / 2 - 80, 66, 160, 8);
+    ctx.fillStyle = "#ff3b3b"; ctx.fillRect(BRAWL_WIDTH / 2 - 79, 67, Math.round(158 * holder.timer / rules.grabTicks), 6);
+  }
+  if (state.tick < TUTORIAL_TICKS && state.status === "fighting") {
+    ctx.fillStyle = "rgba(10, 12, 20, 0.78)"; ctx.fillRect(BRAWL_WIDTH / 2 - 150, 40, 300, 66);
+    copy.tutorial.forEach((line, index) => label(ctx, line, BRAWL_WIDTH / 2, 60 + index * 19, "#f1faee", 13));
+  }
+  for (const pop of pops) label(ctx, pop.text, pop.x, BRAWL_FLOOR - 150 - pop.age * 0.6, pop.color, 15);
+}
+
+export function mountBrawl(host, setup, { language = "en", phase = "night", audio = null, onFinish = () => {} } = {}) {
   const copy = COPY[language === "fr" ? "fr" : "en"];
   const doc = host.ownerDocument;
   const root = doc.createElement("section"); root.className = "brawl";
   const title = doc.createElement("h3"); title.textContent = copy.title[setup.context ?? "street"];
-  const help = doc.createElement("p"); help.className = "game-help-text"; help.textContent = `${copy.goal} ${copy.help}`;
+  const help = doc.createElement("ol"); help.className = "game-help-text brawl-steps";
+  for (const step of [...copy.steps, ...(setup.knife ? [copy.knife] : [])]) {
+    const item = doc.createElement("li"); item.textContent = step; help.append(item);
+  }
   const canvas = doc.createElement("canvas"); canvas.width = BRAWL_WIDTH; canvas.height = HEIGHT;
   canvas.tabIndex = 0; canvas.style.width = "100%"; canvas.style.imageRendering = "pixelated";
   canvas.setAttribute("aria-label", copy.title[setup.context ?? "street"]);
   const status = doc.createElement("p"); status.setAttribute("role", "status");
   const pad = doc.createElement("div"); pad.className = "brawl-touch";
-  root.append(title, help, canvas, status, pad); host.append(root);
+  root.append(title, canvas, status, pad, help); host.append(root);
   const ctx = canvas.getContext("2d");
-  let state = createBrawl(setup), held = 0, touch = 0, frame, last = null, carry = 0, done = false;
+  ctx.imageSmoothingEnabled = false;
+  let state = createBrawl(setup), held = 0, touch = 0, frame, last = null, carry = 0, done = false, shake = 0;
+  let pops = [];
   const recorder = createBrawlRecorder();
+  const unlock = () => { void audio?.unlock?.(); };
   for (const [name, bit] of Object.entries({ left: INPUT.left, down: INPUT.down, up: INPUT.up, right: INPUT.right, action: INPUT.action })) {
     const button = doc.createElement("button"); button.type = "button"; button.textContent = copy.touch[name];
-    const press = on => event => { event.preventDefault(); touch = on ? touch | bit : touch & ~bit; };
+    const press = on => event => { event.preventDefault(); if (on) unlock(); touch = on ? touch | bit : touch & ~bit; };
     button.addEventListener("pointerdown", press(true));
     for (const type of ["pointerup", "pointerleave", "pointercancel"]) button.addEventListener(type, press(false));
     pad.append(button);
+  }
+  function react(events) {
+    for (const event of events) {
+      const sound = brawlSound(event);
+      if (sound) audio?.play(sound);
+      if (event.type === "hit") shake = 10;
+      if (event.type === "down") shake = Math.max(shake, 5);
+      const text = copy.pop[event.type];
+      if (text) pops.push({ text, x: event.x, age: 0, color: POP_COLORS[event.type] });
+    }
   }
   function finish(abandoned = false) {
     if (done) return;
     done = true;
     const outcome = abandoned ? "lost" : state.status;
+    audio?.play(outcome);
     status.textContent = outcome === "lost" ? copy.lost[state.context] : copy[outcome];
     onFinish({ outcome, breath: state.breath, transcript: recorder.transcript(state.tick, abandoned) });
   }
   const keydown = event => {
+    unlock();
     if (event.code === "Escape") { event.preventDefault(); finish(true); return; }
     const bit = KEYS[event.code];
     if (bit) { event.preventDefault(); held |= bit; }
@@ -197,17 +263,19 @@ export function mountBrawl(host, setup, { language = "en", phase = "night", onFi
   const keyup = event => { const bit = KEYS[event.code]; if (bit) held &= ~bit; };
   doc.addEventListener("keydown", keydown); doc.addEventListener("keyup", keyup);
   function loop(time) {
-    if (done) { drawBrawl(ctx, state, { phase, copy }); return; }
     carry += last === null ? STEP_MS : Math.min(250, time - last);
     last = time;
-    while (carry >= STEP_MS && state.status === "fighting") {
+    while (!done && carry >= STEP_MS && state.status === "fighting") {
       const mask = held | touch;
       recorder.record(state.tick + 1, mask);
       state = stepBrawl(state, mask);
+      react(state.events);
       carry -= STEP_MS;
     }
-    drawBrawl(ctx, state, { phase, copy });
-    if (state.status !== "fighting") finish();
+    pops = pops.map(pop => ({ ...pop, age: pop.age + 1 })).filter(pop => pop.age < 50);
+    if (shake > 0) shake--;
+    drawBrawl(ctx, state, { phase, copy, pops, shake, doc });
+    if (!done && state.status !== "fighting") finish();
     frame = requestAnimationFrame(loop);
   }
   canvas.focus();
@@ -216,6 +284,7 @@ export function mountBrawl(host, setup, { language = "en", phase = "night", onFi
     abandon: () => finish(true),
     destroy() {
       cancelAnimationFrame(frame);
+      audio?.stop();
       doc.removeEventListener("keydown", keydown); doc.removeEventListener("keyup", keyup);
       root.remove();
     },

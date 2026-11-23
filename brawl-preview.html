@@ -11,6 +11,7 @@
       .brawl-touch { display: flex; gap: .4rem; justify-content: center; flex-wrap: wrap; }
       .brawl-touch button { min-width: 56px; min-height: 48px; touch-action: none; }
       .preview-options label { margin-right: .8rem; }
+      .brawl-steps { margin-top: .6rem; line-height: 1.5; }
     </style>
   </head>
   <body>
@@ -25,7 +26,9 @@
         <label><span id="preview-level-label"></span>
           <select id="preview-level"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></label>
         <label><input type="checkbox" id="preview-dog"> <span id="label-dog"></span></label>
+        <label><input type="checkbox" id="preview-knife"> <span id="label-knife"></span></label>
         <label><input type="checkbox" id="preview-night" checked> <span id="label-night"></span></label>
+        <button id="preview-sound" type="button" aria-pressed="true"></button>
         <button id="preview-reset" type="button"></button>
       </div>
       <p id="preview-result" role="status"></p>
