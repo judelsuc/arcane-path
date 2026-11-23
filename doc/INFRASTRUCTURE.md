@@ -228,6 +228,30 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Garde haute in the journey, 0.22.46 (23 November 2026)
+
+Deployed `d6428c3` (`deploy-2026-11-23-brawl-journey`): street fights in
+urban cells (3.5% per step at night, 0.8% by day, none beside police), camp
+fights when sleeping without shelter (15%, halved with the dog), at most one
+per 7 journey days; fleeing a street fight as a street chase on the pursuit
+escape engine; a failed pursuit escape opens a fight against the pursuer
+(win: 30 km lead back; loss: captured). Losing a street or camp fight takes
+25–50% of the purse and 15 health, never fatal. New files
+`brawl-journey.mjs`, `brawl-journey-ui.mjs`, `minigames/street-chase-ui.mjs`;
+changed `travel-ui.mjs`, `pursuit.mjs` (capture final only without a won
+fight), `pursuit-ui.mjs`, `journey-save.mjs` (`validateBrawl`), `audio-ui.mjs`,
+`styles.css`, changelog. Service restarted, journal clean, `nginx -t` OK,
+HTTPS 401, conditional GET 200, hashes of all ten files match.
+
+Validation: JavaScript 1915/1916 (dream-wiring baseline), Python 857 tests
+with the same 5 pre-existing failures; 6 journey tests (triggers, robbery
+without death, weekly limit, camp odds, pursuer win/loss, flight escape and
+capture, forged history rejected). Not yet exercised in a live journey.
+Rollback archive `/home/ubuntu/before-0.22.46-d6428c3/runtime.tar.gz`, SHA-256
+`0ba5d445ce47c178311b7d1b6ee78c8bc46f8ab5d9d27aca08b9549980d0fe6c`; delete the
+three new files on rollback. Saves that already contain `state.brawl` would
+not validate on the previous code.
+
 ## Garde haute preview: kicks and dog (23 November 2026)
 
 Deployed `f72a753` (`deploy-2026-11-23-brawl-kicks`): kick key (X), split kick,
