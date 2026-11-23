@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { setupEconomyUI } from "../economy-ui.mjs";
 import { askHospitality } from "../hospitality.mjs";
 import { startSurvival } from "../survival.mjs";
-import { applyBirthTarot, startEconomy, mealOffers } from "../economy.mjs";
+import { applyBirthTarot, startEconomy, mealOffers, mergeDiscoveredMeals } from "../economy.mjs";
 import { translate } from "../i18n.mjs";
 import { NARRATIVE_BRIEFS } from "../live-narrative.mjs";
 import { withDiscoveredAccommodations } from "../accommodations.mjs";
@@ -141,7 +141,7 @@ class Element {
   scrollIntoView(options) { this.scrolled = options; }
   setAttribute(name, value) { this[name] = value; }
 }
-function harness(t, language = "en", findAccommodations, selectAccommodation, narrative, findSpecialties) {
+function harness(t, language = "en", findAccommodations, selectAccommodation, narrative, findSpecialties, pinMeal) {
   const original = globalThis.document;
   const elements = new Map();
   const element = selector => {
@@ -164,6 +164,7 @@ function harness(t, language = "en", findAccommodations, selectAccommodation, na
   const ui = setupEconomyUI((key, args) => translate(language, key, args), {
     narrative,
     findSpecialties,
+    pinMeal,
     findAccommodations,
     selectAccommodation,
     context: () => current,
@@ -720,3 +721,36 @@ for (const language of ["fr", "en"]) {
     h.ui.reset();
   });
 }
+
+test("taking a meal that has a documentary photo pins that photo to the journal", async t => {
+  const dish = {
+    id: `discovered-${"b".repeat(24)}`, name: "Truffade du Carladès", area: "Aubrac",
+    scope: "regional", countries: ["FR"], towns: ["node/123"], bounds: [-180, -90, 180, 90],
+    mealUnits: 1, reserveKcal: 900,
+    fr: "Une purée filante de pommes de terre et de tomme fraîche.", en: "Stretchy mashed potatoes with fresh tomme.",
+    source: "https://en.wikipedia.org/wiki/Aligot", publisher: "Wikipedia contributors",
+    originSource: "https://www.wikidata.org/wiki/Q1", photo: {
+      imageId: "c".repeat(64), sourceUrl: "https://commons.wikimedia.org/wiki/File:Aligot.jpg",
+      licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", attribution: "Photographer", license: "CC BY-SA 4.0" },
+  };
+  const pins = [];
+  const blob = new Blob(["photo"], { type: "image/jpeg" });
+  t.mock.method(URL, "createObjectURL", () => "blob:dish");
+  let h;
+  h = harness(t, "fr", undefined, undefined, undefined, async () => {
+    h.set({ data: mergeDiscoveredMeals(economy, [dish], "node/123"),
+      state: { ...h.current().state, walletCents: 10000 } });
+    return { meals: [dish], photos: [{ id: dish.id, blob }], warnings: [] };
+  }, (photo, options) => { pins.push({ photo, options }); return Promise.resolve(true); });
+  await h.ui.open("eat");
+  const button = h.buttons().find(item => item.textContent.includes("Truffade"));
+  assert.ok(button, "the documented dish is offered");
+  button.click();
+  assert.equal(pins.length, 1);
+  assert.equal(pins[0].photo.blob, blob);
+  assert.equal(pins[0].photo.sourceUrl, dish.photo.sourceUrl);
+  assert.equal(pins[0].options.caption, "Truffade du Carladès — Aubrac");
+  const basic = h.buttons().find(item => !item.textContent.includes("Truffade"));
+  if (basic) { await h.ui.open("eat"); basic.click(); }
+  assert.equal(pins.length, 1, "a meal without a photo pins nothing");
+});

@@ -1,6 +1,11 @@
 {
-  "version": "0.22.47",
+  "version": "0.22.48",
   "entries": [
+    {
+      "version": "0.22.48",
+      "fr": "Quand vous prenez une spécialité locale illustrée, sa photo est épinglée automatiquement dans votre journal, avec le nom du plat, sa région, le lieu du repas, la source et la licence.",
+      "en": "When you take an illustrated local speciality, its photo is pinned automatically to your journal, with the dish name, its region, where you ate it, the source and the licence."
+    },
     {
       "version": "0.22.47",
       "fr": "Les noms de personnages célèbres colorent de nouveau vraiment l'introduction : l'enfant est présenté dès les premières phrases à travers des traits reconnaissables de la référence, la culture locale passe au second plan, et une phrase qui citerait le nom est retirée au lieu de faire échouer toute l'histoire. Vous pouvez désormais mener 5 quêtes à la fois et garder 5 propositions en attente (au lieu de 3), et le jeu explique clairement quand la limite est atteinte. Les légendes se racontent enfin : un habitant rencontré dans les environs d'une ville à légende, et pas seulement sur sa case centrale, peut désormais vous la confier. Enfin, une page laissée ouverte signale désormais qu'une nouvelle version est en ligne et propose de recharger (votre partie est sauvegardée).",

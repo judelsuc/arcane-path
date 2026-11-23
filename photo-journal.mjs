@@ -1004,6 +1004,19 @@ export function setupPhotoJournal(t, { store = createPhotoJournalStore(),
       void pending.finally(() => pendingPins.delete(pending));
     },
     localize() { localize(); if (dialog.open) void render(); },
+    // Pins without a button (a meal just taken); failures are logged, never blocking.
+    async pinQuietly(photo, options = {}) {
+      try {
+        const state = statsContext?.state;
+        const location = Number.isSafeInteger(state?.col) && Number.isSafeInteger(state?.row)
+          ? { col: state.col, row: state.row, place: String(statsContext.placeName?.() ?? "").trim().slice(0, 200) }
+          : null;
+        return await store.pin(photo, { ...options, location });
+      } catch (reason) {
+        console.error("Could not pin meal photo:", reason);
+        return false;
+      }
+    },
     pinButton(container, photo, options) {
       const target = store;
       const button = document.createElement("button");

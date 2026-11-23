@@ -99,7 +99,7 @@ import { beginJourneyMiniGame, settleJourneyMiniGame } from "./journey-mini-game
 import { synchronizeParentDiscovery, applyJournalDiscovery } from "./discovery-targets.mjs";
 import { recordJourneyVisit } from "./journey-visits.mjs";
 
-export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onAppearance, onStep, onActiveChange, musicAudio, cafeAudio, theftAudio, miniGameAudio, eventAudio, pinPhoto, pinTarot, pinBiography, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats, encounterIllustrations }) {
+export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, onAudioContext, onAppearance, onStep, onActiveChange, musicAudio, cafeAudio, theftAudio, miniGameAudio, eventAudio, pinPhoto, pinMeal, pinTarot, pinBiography, useNotebook, snapshotNotebook, showNotebook, updateNotebookStats, encounterIllustrations }) {
   const questLayout = setupQuestLayout(t);
   const start = document.querySelector("#start-travel");
   const resume = document.querySelector("#resume-travel");
@@ -542,7 +542,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     },
   });
   const economyUI = setupEconomyUI(t, {
-    illustrations: encounterIllustrations,
+    illustrations: encounterIllustrations, pinMeal,
     narrative: liveNarrative,
     context: economyContext, act: economyAction,
     async findSpecialties(signal) {

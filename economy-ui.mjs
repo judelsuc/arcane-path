@@ -6,15 +6,16 @@ import { NARRATIVE_BRIEFS } from "./live-narrative.mjs";
 import { mergeAccommodations } from "./accommodations.mjs";
 import { buildingSleepStatus, BUILDING_SEARCH_MINUTES } from "./building-sleep.mjs";
 
-export function setupEconomyUI(t, { context, act, resolveCountry, findSpecialties, findAccommodations, selectAccommodation, narrative, illustrations }) {
+export function setupEconomyUI(t, { context, act, resolveCountry, findSpecialties, findAccommodations, selectAccommodation, narrative, illustrations, pinMeal }) {
   const dialog = document.querySelector("#economy-dialog");
   let mode = "eat";
   let resolving = false, countryError = "", generation = 0;
   let specialtyController, specialtyStatus = "", specialtyError = "";
-  const dishPhotos = new Map();
+  const dishPhotos = new Map(), dishBlobs = new Map();
   function clearDishPhotos() {
     for (const url of dishPhotos.values()) URL.revokeObjectURL(url);
     dishPhotos.clear();
+    dishBlobs.clear();
   }
   let accommodationController, accommodationResult, accommodationError = "", accommodationLoading = false;
   let accommodationCancelled = false;
@@ -158,7 +159,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findSpecialtie
     list.replaceChildren();
     document.querySelector("#economy-shelter-context").textContent = "";
     document.querySelector("#economy-hospitality-result").textContent = "";
-    const add = (title, cents, run, note, url, sourceName, unavailable = false) => {
+    const add = (title, cents, run, note, url, sourceName, unavailable = false, done = null) => {
       const item = document.createElement("li");
       const button = document.createElement("button");
       button.type = "button";
@@ -166,6 +167,7 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findSpecialtie
       button.disabled = unavailable || resolving || state.ended !== null || state.walletCents < cents || current.blocked;
       button.addEventListener("click", () => {
         if (act(run)) {
+          done?.();
           if (run.kind === "hospitality") {
             localize();
             const feedback = document.getElementById(run.id
@@ -209,7 +211,12 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findSpecialtie
           { kind: "meal", id: meal.id },
           note,
           restaurant ? `https://www.openstreetmap.org/${meal.venue.osmId}` : meal.source,
-          restaurant ? t("townOsm") : meal.publisher);
+          restaurant ? t("townOsm") : meal.publisher, false,
+          // A meal taken with a documentary photograph is pinned to the journal automatically.
+          meal.photo && dishBlobs.has(meal.id) && pinMeal ? () => pinMeal({
+            blob: dishBlobs.get(meal.id), title: meal.name, sourceUrl: meal.photo.sourceUrl,
+            licenseUrl: meal.photo.licenseUrl, attribution: meal.photo.attribution, license: meal.photo.license,
+          }, { caption: meal.area ? `${meal.name} — ${meal.area}` : meal.name }) : null);
         const effects = document.createElement("p");
         effects.className = "window-help-text";
         effects.textContent = t("mealEffect", { kcal: meal.reserveKcal, minutes: survival.meal_minutes });
@@ -243,6 +250,12 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findSpecialtie
           license.rel = "noopener noreferrer";
           license.textContent = t("mealPhotoLicense");
           caption.append(" · ", license);
+          if (pinMeal && dishBlobs.has(meal.id)) {
+            const pinned = document.createElement("span");
+            pinned.className = "window-help-text";
+            pinned.textContent = ` ${t("mealPhotoJournal")}`;
+            caption.append(pinned);
+          }
           figure.append(image, caption);
           description.after(figure);
         }
@@ -394,7 +407,10 @@ export function setupEconomyUI(t, { context, act, resolveCountry, findSpecialtie
         const result = await findSpecialties(controller.signal);
         if (controller.signal.aborted || request !== generation) return;
         if (result) {
-          for (const photo of result.photos) dishPhotos.set(photo.id, URL.createObjectURL(photo.blob));
+          for (const photo of result.photos) {
+            dishPhotos.set(photo.id, URL.createObjectURL(photo.blob));
+            dishBlobs.set(photo.id, photo.blob);
+          }
           specialtyStatus = result.mode === "documentary" ? result.meals.length ? "documentary" : "documentaryEmpty"
             : result.warnings.length ? "partial" : result.meals.length ? "ready" : "empty";
           specialtyError = result.warnings.join(" ");
