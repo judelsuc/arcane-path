@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from build_map import classify
 from mapped_sites import site_kind
+from osm_mirror import default_mirror
 
 MAX_LANDCOVER_COMPLETIONS = 16
 OVERPASS_URLS = (
@@ -193,6 +194,16 @@ def _request_overpass(bounds, url, on_progress=None):
 
 
 def _request_sources(bounds, on_progress=None):
+    # The self-hosted regional mirror answers covered areas without any public request;
+    # uncovered areas are queued for download and fall through to the public sources.
+    mirror = default_mirror()
+    if mirror is not None:
+        local = mirror.bbox_map(bounds)
+        if local is not None:
+            if on_progress:
+                on_progress({"phase": "download", "provider": "arcane-path map mirror"})
+            root, label = local
+            return root, [label]
     failures = []
     # Serialize provider access across chunk workers, including cooldown checks.
     if on_progress:
@@ -221,8 +232,26 @@ def _request_sources(bounds, on_progress=None):
     raise SourceUnavailable("All OSM sources unavailable. " + " | ".join(failures))
 
 
+def _mirror_catalogue(latitude, longitude, meters, filters, *, named=False, types=None):
+    """The same catalogue from the regional mirror when the whole circle is installed, else None."""
+    mirror = default_mirror()
+    if mirror is None:
+        return None
+    elements = mirror.around(latitude, longitude, meters, filters, named=named, types=types)
+    if elements is None:
+        return None
+    return {"elements": elements, "sourceUrl": mirror.source_url(latitude, longitude),
+            "retrievedAt": datetime.now(timezone.utc).isoformat()}
+
+
 def fetch_towns(latitude, longitude, venues=False, on_progress=None):
     """Fetch a bounded catalogue, not all regional geometry."""
+    local = (_mirror_catalogue(latitude, longitude, 2000,
+                               [("amenity", {"library", "cafe", "restaurant", "theatre"})], named=True, types=("node",))
+             if venues else
+             _mirror_catalogue(latitude, longitude, 60000, [("place", {"city", "town"})], named=True, types=("node",)))
+    if local is not None:
+        return local
     query = (f'[out:json][timeout:45];node(around:{2000 if venues else 60000},'
              f'{latitude:.6f},{longitude:.6f})' +
              ('["amenity"~"^(library|cafe|restaurant|theatre)$"]["name"];out body;'
@@ -231,6 +260,10 @@ def fetch_towns(latitude, longitude, venues=False, on_progress=None):
 
 
 def fetch_accommodations(latitude, longitude, on_progress=None):
+    local = _mirror_catalogue(latitude, longitude, 5000, [
+        ("tourism", {"hotel", "hostel", "guest_house", "motel", "alpine_hut"}), ("amenity", {"place_of_worship"})])
+    if local is not None:
+        return local["elements"]
     query = ('[out:json][timeout:20];(nwr(around:5000,'
              f'{latitude:.6f},{longitude:.6f})'
              '["tourism"~"^(hotel|hostel|guest_house|motel|alpine_hut)$"];'

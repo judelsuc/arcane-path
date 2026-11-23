@@ -49,6 +49,7 @@ from start_art import StartArt
 from asset_storage import AssetConflict, AssetError, S3Blobs
 from content_storage import clock
 from quest_destinations import QuestDestinations
+from osm_mirror import default_mirror
 from characters import Characters
 from town_content import TownContent
 from town_meals import TownMeals, MealWriter
@@ -333,6 +334,10 @@ class ChunkStore:
                     self.bases[key] = updated
                 return {"region": key, "map": self.bases[key]}
             progress("location")
+            # A new starting point queues its regional map data (and neighbours within
+            # 60 km); this first map still comes from the public sources if not yet installed.
+            if (mirror := default_mirror()) is not None:
+                mirror.request_around(latitude, longitude, reason="new starting point")
             place = self.places.reverse(latitude, longitude)
             lat_step = CELL_METERS / RADIUS * 180 / math.pi
             lon_step = lat_step / math.cos(math.radians(latitude))
@@ -648,6 +653,9 @@ class ChunkStore:
 
     def compute_chunk(self, region, x, y):
         bounds, latitude, centers = chunk_geometry(self.bases[region], x, y)
+        if (mirror := default_mirror()) is not None:
+            # Walking towards a sub-region border prefetches the neighbour (throttled, files only).
+            mirror.request_around((bounds[1] + bounds[3]) / 2, (bounds[0] + bounds[2]) / 2)
         source_base = self.source_path(region, x, y)
         source = source_base.with_suffix(".osm.gz")
         if region in self.origin_sources:
@@ -866,7 +874,7 @@ def make_handler(store, jobs, path_pool=None):
     start_art = StartArt(store.cache / "start-art.sqlite3", assets=getattr(journeys, "assets", None))
     living_world = ChunkJobs(LivingWorld(store.cache / "living-world", atomic_write), workers=1, capacity=4)
     journey_transport = JourneyTransport(store)
-    quest_destinations = QuestDestinations(store, journal_art, journey_transport)
+    quest_destinations = QuestDestinations(store, journal_art, journey_transport, mirror=default_mirror())
     parent_paths = ParentPaths(store, journeys, atomic_write, pool=path_pool)
     lore = LorePlaytest(journeys, abandoned, paths=parent_paths, chunk_jobs=jobs)
     portrait_writer = (OvhImageWriter(journal_art.writer.token, style=CHARACTER_IMAGE_STYLE)

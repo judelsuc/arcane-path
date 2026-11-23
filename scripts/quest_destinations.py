@@ -28,6 +28,7 @@ from collections import Counter
 
 from asset_storage import AssetConflict, AssetError
 from fetch_osm import OVERPASS_URLS
+from osm_mirror import MapDataPending, default_mirror
 from content_storage import clock
 from journey_storage import StoreConnection
 from journeys import JourneyRequest, JourneyConflict, JourneyCapacity
@@ -239,10 +240,13 @@ class QuestUnavailable(ValueError):
 
 
 class QuestDestinations:
-    def __init__(self, chunks, authorization, transport, *, fetcher=acquire, towns=None):
+    def __init__(self, chunks, authorization, transport, *, fetcher=acquire, towns=None, mirror=None):
         self.chunks, self.authorization, self.transport = chunks, authorization, transport
         self.path = authorization.journeys.path.parent / "quest-destinations.sqlite3"
         self.fetcher, self.towns = fetcher, towns
+        # With the regional mirror, quests use only complete installed map data:
+        # never public providers nor partial chunk caches.
+        self.mirror = mirror
         self.lock = threading.Lock()
         self.closed = False
         self.running = False
@@ -411,6 +415,10 @@ class QuestDestinations:
                     result = self.build(json.loads(row["request"]), row["region"], json.loads(row["authored"]))
                 except (QuestUnavailable, PathLimit) as error:
                     result = {"status": "unavailable", "reason": str(error)}
+                except MapDataPending as error:
+                    logging.info("Quest destinations wait for regional map data: %s", error)
+                    result = {"status": "failed", "errorCode": "map-preparing", "retryable": True,
+                              "error": "The map of this area is still being prepared; ask again in a few minutes."}
                 except (OSError, ValueError) as error:
                     logging.exception("Bounded quest destination discovery failed")
                     result = {"status": "failed", "errorCode": "discovery-failed", "retryable": True,
@@ -481,6 +489,12 @@ class QuestDestinations:
         return bounded_candidates(elements, town), complete
 
     def pois(self, town, base, region=None, fallback=None, required_kinds=None, excluded_cells=()):
+        if self.mirror is not None:
+            elements = self.mirror.around(town["latitude"], town["longitude"], 2000,
+                                          [(key, values) for key, values in TAGS.values()], limit=MAX_ELEMENTS)
+            if elements is None:
+                raise MapDataPending("The map data for this area is still being prepared.")
+            return normalize(elements, town, base)
         with self.connect() as db:
             row = db.execute(f"SELECT * FROM {self.pois_table} WHERE town=?", (town["id"],)).fetchone()
         if row is not None and 0 <= time.time() - row["observed"] < TTL:

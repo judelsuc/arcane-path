@@ -1,0 +1,10 @@
+[Unit]
+Description=Process queued Arcane Path map extracts every two minutes (and monthly refreshes)
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=2min
+Unit=arcane-osm-mirror.service
+
+[Install]
+WantedBy=timers.target

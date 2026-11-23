@@ -654,6 +654,64 @@ past 0.22.22. Refresh the release manifest mtime and restart after runtime
 changes. Do not restore or delete player databases, cached narratives, images
 or provider-job receipts.
 
+## Regional map mirror (self-hosted OpenStreetMap data)
+
+Since November 2026 the public Overpass servers are regularly saturated ("at
+capacity", timeouts and 502s from both `overpass-api.de` and
+`overpass.kumi.systems`), which stopped every character quest
+("Quest POI providers unavailable and cached map data is incomplete"). The game
+now serves its own regional OpenStreetMap data.
+
+**Source and storage.** Geofabrik sub-region extracts (`.osm.pbf`, ODbL 1.0,
+© OpenStreetMap contributors). The smallest Geofabrik extract without children
+that contains a point is its sub-region. Each version is verified against
+Geofabrik's published MD5, then published to the dedicated S3 bucket
+`arcane-path-osm` (OVH `gra`, same endpoint and application key as the asset
+bucket; created 23 November 2026 with that key, which has put/get/list/delete
+on it; versioning off) as `osm/<extract>/<YYYYMMDD>/{source.osm.pbf,
+pois.sqlite, manifest.json}` plus `osm/<extract>/current.json`. S3 keeps the
+current and one previous version; the server disk keeps only the current one
+under `/var/lib/arcane-path/osm/extracts/<extract>/`.
+
+**Serving (request path, local files only).** `scripts/osm_mirror.py`:
+bounding-box map data is cut with `osmium extract --strategy smart` (complete
+ways and multipolygons, the same XML the rasterizer reads from the OSM API;
+a parity check on a Firmi tile gave 0 terrain and 0 POI differences over 100
+cells); points of interest come from a per-extract SQLite R*Tree index
+(`amenity`, `shop`, `tourism`, `historic`, `leisure`, `office`, `craft`,
+`railway`, `public_transport`, `place`, `aerialway`, cemeteries, peaks),
+returned in Overpass's element shape. `fetch_osm.download_region`,
+`fetch_towns` and `fetch_accommodations` use the mirror first and the public
+sources only for areas not installed yet. Character quests use **only** the
+mirror: an uncovered area answers "the map of this area is still being
+prepared" (retryable) instead of building quests from partial caches. Already
+built map chunks never change (their cache key does not depend on the OSM
+version), so refreshes only affect unexplored chunks and new lookups.
+
+**Coverage.** A new starting point and every computed chunk queue the
+sub-regions within 60 km (throttled per ~5 km, queue files only). Queue:
+`/var/lib/arcane-path/osm/queue/<extract>.json`; failures retry with
+exponential backoff (10 min to 6 h). Ingestion refuses to start below 8 GB of
+free disk. Geofabrik serves this server at about 640 KB/s; `-latest` links
+briefly redirect to unpublished dated files, so the downloader falls back to
+the previous days' dated files.
+
+**Units.** `osmium-tool` 1.16.0 (Ubuntu package, installed 23 November 2026).
+`arcane-osm-mirror.service` (oneshot `scripts/osm_mirror.py drain` as
+`arcane`, `.venv-shared-storage` Python, Nice 15, `CPUQuota=150%`, idle I/O,
+3 h timeout) runs from `arcane-osm-mirror.timer` every 2 minutes; each run
+also refreshes the Geofabrik index and queues extracts older than 30 days
+(monthly refresh). The app reads the mirror through the drop-in
+`/etc/systemd/system/arcane-path.service.d/60-osm-mirror.conf`
+(`ARCANE_OSM_MIRROR_DIR=/var/lib/arcane-path/osm`) and needs no S3 access.
+
+Operations, as `arcane` with the worker environment:
+`scripts/osm_mirror.py status` (installed versions and queue),
+`scripts/osm_mirror.py cover --lat <lat> --lon <lon> [--radius m]` (queue an
+area), `scripts/osm_mirror.py drain --max-jobs 1`. Disabling the mirror:
+remove the drop-in and restart `arcane-path` (public sources are used again),
+then `systemctl disable --now arcane-osm-mirror.timer`.
+
 ## Daily bookshop catalogue refresh
 
 The bookshop minigame ships a tracked baseline `public/bookshop-catalogue.json`

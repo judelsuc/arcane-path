@@ -1,6 +1,11 @@
 {
-  "version": "0.22.39",
+  "version": "0.22.40",
   "entries": [
+    {
+      "version": "0.22.40",
+      "fr": "Les personnages proposent de nouveau des quêtes : les serveurs publics de cartes étant saturés, le jeu héberge désormais ses propres données OpenStreetMap par région. Dans une région qui n'est pas encore installée, le personnage vous demande de revenir quelques minutes plus tard, le temps de préparer la carte, plutôt que d'inventer une quête au rabais.",
+      "en": "Characters offer quests again: with the public map servers saturated, the game now hosts its own OpenStreetMap data per region. In a region not installed yet, the character asks you to come back a few minutes later while the map is prepared, rather than inventing a weaker quest."
+    },
     {
       "version": "0.22.39",
       "fr": "Après une réservation de transport, l'avis « Réservation ou trajet en cours » renvoyait vers une fenêtre sans bouton visible pour l'ouvrir : il contient désormais un bouton « Agenda, transports et auto-stop (6) » pour poursuivre l'attente ou annuler avant l'embarquement. Pendant l'attente, la fenêtre explique où vous attendez, l'heure de départ et le temps restant, puis à bord le prochain arrêt et l'heure d'arrivée ; chaque appui sur « Poursuivre » résume ce qui vient de se passer (attente, montée à bord, arrivée).",
