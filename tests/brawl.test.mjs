@@ -135,3 +135,48 @@ test("a carried knife makes pushes reach further, stagger longer and floor attac
   assert.ok(pushed.timer > Math.round(rules.staggerTicks * 0.6));
   assert.throws(() => createBrawl({ seed: 1, knife: "yes" }), /setup/);
 });
+
+function place(state, offsets) {
+  state.opponents.forEach((o, index) => Object.assign(o, { x: state.player.x + offsets[index], timer: 300 }));
+  return state;
+}
+
+test("blows send attackers well back: a push glides them about 45 px away", () => {
+  let state = place(createBrawl({ seed: 4, level: 3, opponents: 1, breath: 6 }), [BRAWL_REACH.attack]);
+  const start = state.opponents[0].x;
+  state = stepBrawl(state, INPUT.action | INPUT.right);
+  for (let i = 0; i < 40; i++) state = stepBrawl(state, 0);
+  assert.ok(state.opponents[0].x - start >= 38, `moved ${state.opponents[0].x - start}`);
+  assert.equal(state.opponents[0].pose, "stagger");
+});
+
+test("the sweep slides in to floor an attacker the push sent away", () => {
+  let state = place(createBrawl({ seed: 4, level: 3, opponents: 2, breath: 6 }), [-400, BRAWL_REACH.attack]);
+  state = stepBrawl(state, INPUT.action | INPUT.right);
+  for (let i = 0; i < 24; i++) state = stepBrawl(state, 0);
+  assert.equal(state.opponents[1].pose, "stagger");
+  state = stepBrawl(state, INPUT.action | INPUT.down | INPUT.right);
+  for (let i = 0; i < 16; i++) state = stepBrawl(state, INPUT.down);
+  assert.equal(state.opponents[1].pose, "down");
+});
+
+test("the split kick hits attackers on both sides at once and ducks high blows", () => {
+  let state = place(createBrawl({ seed: 4, level: 3, opponents: 2, breath: 6 }), [-60, 60]);
+  state = stepBrawl(state, INPUT.kick | INPUT.down);
+  for (let i = 0; i < 10; i++) state = stepBrawl(state, INPUT.down);
+  assert.deepEqual(state.opponents.map(o => o.pose), ["stagger", "stagger"]);
+  assert.equal(state.player.pose, "split");
+});
+
+test("up with a direction jumps forward, and a kick in the air floors the first attacker", () => {
+  let state = place(createBrawl({ seed: 4, level: 3, opponents: 1, breath: 6 }), [150]);
+  const start = state.player.x;
+  state = stepBrawl(state, INPUT.up | INPUT.right);
+  for (let i = 0; i < 6; i++) state = stepBrawl(state, INPUT.right);
+  assert.ok(state.player.x > start + 10, "the jump carries the traveller forward");
+  state = stepBrawl(state, INPUT.right | INPUT.kick);
+  for (let i = 0; i < 40 && state.status === "fighting"; i++) state = stepBrawl(state, INPUT.right);
+  assert.equal(state.status, "won", "flooring the only attacker wins the fight");
+  assert.ok(createBrawl({ seed: 1 }) && replayBrawl({ seed: 1, opponents: 1, breath: 1 },
+    { changes: [[1, INPUT.kick]], ticks: 1, abandoned: true }) === "lost", "kick is a valid transcript input");
+});

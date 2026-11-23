@@ -6,12 +6,18 @@ export const BRAWL_WIDTH = 640;
 export const BRAWL_FLOOR = 262;
 export const BRAWL_MAX_TICKS = 90 * 60;
 export const BRAWL_CONTEXTS = Object.freeze(["street", "camp", "pursuer"]);
-export const INPUT = Object.freeze({ left: 1, right: 2, up: 4, down: 8, action: 16 });
+export const INPUT = Object.freeze({ left: 1, right: 2, up: 4, down: 8, action: 16, kick: 32 });
+const MAX_MASK = 63;
 
 // Distances match the drawn figures (about 40 px wide at scale 3).
-export const BRAWL_REACH = Object.freeze({ attack: 58, push: 66, sweep: 70, spacing: 40 });
+export const BRAWL_REACH = Object.freeze({ attack: 58, push: 66, sweep: 70, kick: 82, split: 76, flying: 52, spacing: 40 });
 const REACH = BRAWL_REACH.attack, PUSH_REACH = BRAWL_REACH.push, SWEEP_REACH = BRAWL_REACH.sweep, EDGE = 10;
 const HOP_TICKS = 34, PUSH_TICKS = 22, SWEEP_TICKS = 26, PARRY_TICKS = 18, PARRY_WINDOW = 12;
+// Kicks: slower to land and to recover than a push, but they reach further.
+const KICK_TICKS = 30, KICK_DELAY = 8, SPLIT_TICKS = 44, SPLIT_DELAY = 9, LAND_TICKS = 18, JUMP_SPEED = 2.8;
+// How far each blow sends an attacker, in pixels.
+const KNOCK = Object.freeze({ push: 45, kick: 65, split: 55, flying: 90, sweep: 20, parry: 25 });
+const GLIDE = 1 / (1 - 0.85), SWEEP_SLIDE = 50, SWEEP_SLIDE_TICKS = 8;
 const STRIKE_TICKS = 7, RECOVER_TICKS = 34, HURT_TICKS = 50, ACTIVE_DELAY = 4;
 // Attackers out-run the traveller, so fleeing works only once nobody can follow.
 const CHASE = 3.2, LUNGE = 2.4, WALK = 2.2, FREE_DISTANCE = 150;
@@ -65,10 +71,10 @@ export function createBrawl({ seed, level = 1, context = "street", opponents = 1
     version: BRAWL_VERSION, seed, level, context, dog, drowsy, knife, tick: 0, status: "fighting",
     rng: seed, mask: 0, breath, maxBreath: breath, dogTimer: DOG_FIRST,
     player: { x: BRAWL_WIDTH / 2, facing: 1, pose: "idle", timer: 0, air: 0, hurt: 0,
-      parryAge: null, activeAt: null, grabbedBy: null, breaks: 0 },
+      parryAge: null, activeAt: null, grabbedBy: null, breaks: 0, vx: 0, flying: false },
     opponents: sides.map((side, index) => ({
       id: index, x: BRAWL_WIDTH / 2 + side * (190 + Math.floor(spread.next() * 50) + (index === 2 ? 80 : 0)),
-      pose: "approach", timer: 30 + index * 25 + Math.floor(spread.next() * 30), attack: null, downs: 0, pinned: 0,
+      pose: "approach", timer: 30 + index * 25 + Math.floor(spread.next() * 30), attack: null, downs: 0, pinned: 0, vx: 0,
     })),
   };
 }
@@ -78,13 +84,14 @@ const able = opponent => standing(opponent) && opponent.pinned === 0 && opponent
 
 function hits(opponent, attack, player) {
   if (player.hurt > 0) return false;
-  if (attack === "high") return player.pose !== "duck";
+  // Ducking or dropping into the split leaves high blows above the traveller.
+  if (attack === "high") return !["duck", "split"].includes(player.pose);
   if (attack === "low") return player.air === 0;
   return player.air === 0; // the pursuer's grab is avoided only by hopping away
 }
 
 export function stepBrawl(state, mask = 0) {
-  if (!Number.isInteger(mask) || mask < 0 || mask > 31) throw new Error("Invalid brawl input.");
+  if (!Number.isInteger(mask) || mask < 0 || mask > MAX_MASK) throw new Error("Invalid brawl input.");
   if (state.status !== "fighting") return state;
   const rules = brawlRules(state.level, state.context);
   const next = structuredClone(state);
@@ -99,7 +106,14 @@ export function stepBrawl(state, mask = 0) {
 
   // Traveller.
   if (p.hurt > 0) p.hurt--;
-  if (p.air > 0) p.air--;
+  if (p.air > 0) {
+    p.x += p.vx;
+    if (--p.air === 0) {
+      p.vx = 0;
+      // A flying kick ends in a short landing during which the traveller cannot act.
+      if (p.flying) { p.flying = false; p.pose = "land"; p.timer = LAND_TICKS; }
+    }
+  }
   if (p.timer > 0) p.timer--;
   if (p.parryAge !== null) p.parryAge++;
   if (p.grabbedBy !== null) {
@@ -114,9 +128,20 @@ export function stepBrawl(state, mask = 0) {
       return next;
     }
   } else {
-    const busy = p.timer > 0 && ["push", "sweep", "parry"].includes(p.pose);
+    const busy = p.timer > 0 && ["push", "sweep", "parry", "kick", "split", "land"].includes(p.pose) || p.flying;
+    const dir = (mask & INPUT.right ? 1 : 0) - (mask & INPUT.left ? 1 : 0);
     if (!busy) {
-      if (pressed & INPUT.action) {
+      if ((pressed & INPUT.kick) && p.air > 0) {
+        p.flying = true; p.pose = "flykick"; p.vx = p.facing * JUMP_SPEED * 1.2;
+        events.push({ type: "flykick", x: p.x });
+      } else if (pressed & INPUT.kick) {
+        if (dir) p.facing = dir;
+        const split = Boolean(mask & INPUT.down);
+        p.pose = split ? "split" : "kick";
+        p.timer = Math.round((split ? SPLIT_TICKS : KICK_TICKS) / slow);
+        p.activeAt = next.tick + Math.round((split ? SPLIT_DELAY : KICK_DELAY) / slow);
+        events.push({ type: p.pose, x: p.x });
+      } else if (pressed & INPUT.action) {
         if (mask & INPUT.up) { p.pose = "parry"; p.timer = PARRY_TICKS; p.parryAge = 0; }
         else if (mask & INPUT.down) { p.pose = "sweep"; p.timer = Math.round(SWEEP_TICKS / slow); }
         else { p.pose = "push"; p.timer = Math.round(PUSH_TICKS / slow); }
@@ -125,43 +150,76 @@ export function stepBrawl(state, mask = 0) {
         if (mask & INPUT.left) p.facing = -1;
         if (mask & INPUT.right) p.facing = 1;
       } else if ((pressed & INPUT.up) && p.air === 0) {
-        p.air = HOP_TICKS; p.pose = "hop";
+        p.air = HOP_TICKS;
+        if (dir) {
+          // Up with a direction jumps that way; up alone hops back from the facing side.
+          p.facing = dir; p.pose = "jump"; p.vx = dir * JUMP_SPEED * slow;
+        } else {
+          p.pose = "hop"; p.vx = 0; p.x -= p.facing * 26 * slow;
+        }
         events.push({ type: "hop", x: p.x });
-        p.x -= p.facing * 26 * slow;
+      } else if (p.air > 0) {
+        // Airborne: keep the jump pose until landing.
       } else if (mask & INPUT.down) {
         p.pose = "duck";
       } else {
-        const dir = (mask & INPUT.right ? 1 : 0) - (mask & INPUT.left ? 1 : 0);
         if (dir) { p.facing = dir; p.x += dir * WALK * slow; p.pose = "walk"; }
         else if (p.air === 0) p.pose = "idle";
       }
     }
-    // A push or sweep lands once, on its first active tick.
-    if (["push", "sweep"].includes(p.pose) && p.activeAt === next.tick) {
-      const sweep = p.pose === "sweep";
-      if (sweep) p.x += p.facing * 16; // the sweep slides in under the attacker
-      // A carried knife makes every blow count: longer reach, full stagger, longer falls.
-      const reach = sweep ? SWEEP_REACH : PUSH_REACH + (state.knife ? 10 : 0);
-      const target = next.opponents
-        .filter(o => standing(o) && o.pinned === 0 || sweep && o.pose === "stagger")
-        .filter(o => Math.sign(o.x - p.x) === p.facing && Math.abs(o.x - p.x) <= reach)
-        .sort((a, b) => Math.abs(a.x - p.x) - Math.abs(b.x - p.x))[0]
-        ?? next.opponents.find(o => o.pinned > 0 && Math.abs(o.x - p.x) <= reach &&
-          Math.sign(o.x - p.x) === p.facing);
+    // Knockback is a glide: a starting speed that decays each tick (distance ≈ speed × 6.7).
+    const away = target => Math.sign(target.x - p.x) || p.facing;
+    const knock = (target, share, distance) => {
+      Object.assign(target, { pose: "stagger", timer: Math.round(rules.staggerTicks * share), attack: null });
+      target.vx = away(target) * distance / GLIDE;
+      events.push({ type: "shoved", x: target.x, id: target.id });
+    };
+    const floor = (target, distance) => {
+      Object.assign(target, { pose: "down", timer: Math.round(rules.downTicks * (state.knife ? 1.5 : 1)),
+        attack: null, pinned: 0, vx: away(target) * distance / GLIDE });
+      target.downs++;
+      events.push({ type: "down", x: target.x, id: target.id });
+    };
+    const open = o => o.pose === "stagger" || o.pinned > 0;
+    const hittable = o => standing(o) && o.pose !== "grab";
+    // Kicks: a staggered or held attacker goes down, anyone else staggers.
+    if (["kick", "split"].includes(p.pose) && p.activeAt === next.tick) {
+      const split = p.pose === "split";
+      const reach = (split ? BRAWL_REACH.split : BRAWL_REACH.kick) + (state.knife ? 6 : 0);
+      const targets = next.opponents.filter(o => hittable(o) && Math.abs(o.x - p.x) <= reach &&
+        (split || Math.sign(o.x - p.x) === p.facing));
+      const hit = split ? targets
+        : targets.sort((a, b) => Math.abs(a.x - p.x) - Math.abs(b.x - p.x)).slice(0, 1);
+      for (const target of hit) {
+        if (open(target)) floor(target, split ? KNOCK.split : KNOCK.kick);
+        else knock(target, state.knife ? 1 : 0.8, split ? KNOCK.split : KNOCK.kick);
+      }
+      if (!hit.length) events.push({ type: "miss", x: p.x });
+    }
+    if (p.flying) {
+      const target = next.opponents.find(o => hittable(o) && Math.sign(o.x - p.x) === p.facing &&
+        Math.abs(o.x - p.x) <= BRAWL_REACH.flying);
       if (target) {
-        if (sweep && (target.pose === "stagger" || target.pinned > 0)) {
-          Object.assign(target, { pose: "down", timer: Math.round(rules.downTicks * (state.knife ? 1.5 : 1)),
-            attack: null, pinned: 0 });
-          target.downs++;
-          events.push({ type: "down", x: target.x, id: target.id });
-        } else if (!sweep) {
-          Object.assign(target, { pose: "stagger", timer: Math.round(rules.staggerTicks * (state.knife ? 1 : 0.6)),
-            attack: null });
-          // A short shove keeps the attacker within reach of the follow-up sweep.
-          target.x += p.facing * 12;
-          events.push({ type: "shoved", x: target.x, id: target.id });
-        } else events.push({ type: "miss", x: p.x });
-      } else events.push({ type: "miss", x: p.x });
+        floor(target, KNOCK.flying);
+        p.vx = -p.facing * 1.5;
+      }
+    }
+    // A push lands once, on its first active tick, and shoves the attacker well back.
+    if (p.pose === "push" && p.activeAt === next.tick) {
+      const reach = PUSH_REACH + (state.knife ? 10 : 0);
+      const target = next.opponents.filter(o => hittable(o) && Math.sign(o.x - p.x) === p.facing &&
+        Math.abs(o.x - p.x) <= reach).sort((a, b) => Math.abs(a.x - p.x) - Math.abs(b.x - p.x))[0];
+      if (target) knock(target, state.knife ? 1 : 0.7, KNOCK.push);
+      else events.push({ type: "miss", x: p.x });
+    }
+    // The sweep slides along the ground and floors the first off-balance attacker it meets.
+    if (p.pose === "sweep" && p.activeAt !== null && next.tick >= p.activeAt &&
+        next.tick < p.activeAt + SWEEP_SLIDE_TICKS) {
+      p.x += p.facing * SWEEP_SLIDE / SWEEP_SLIDE_TICKS;
+      const target = next.opponents.find(o => standing(o) && open(o) && Math.sign(o.x - p.x || p.facing) === p.facing &&
+        Math.abs(o.x - p.x) <= SWEEP_REACH);
+      if (target) { floor(target, KNOCK.sweep); p.activeAt = null; }
+      else if (next.tick === p.activeAt + SWEEP_SLIDE_TICKS - 1) events.push({ type: "miss", x: p.x });
     }
   }
   p.x = Math.max(0, Math.min(BRAWL_WIDTH, p.x));
@@ -183,6 +241,11 @@ export function stepBrawl(state, mask = 0) {
   // Attackers.
   let winding = next.opponents.filter(o => ["windup", "strike"].includes(o.pose)).length;
   for (const o of next.opponents) {
+    if (o.vx) {
+      o.x += o.vx;
+      o.vx = Math.abs(o.vx) < 0.1 ? 0 : o.vx * 0.85;
+      o.x = Math.max(16, Math.min(BRAWL_WIDTH - 16, o.x));
+    }
     if (o.pinned > 0 || o.pose === "fled" || o.pose === "grab") continue;
     if (o.timer > 0) o.timer--;
     const toward = Math.sign(p.x - o.x) || 1;
@@ -212,7 +275,8 @@ export function stepBrawl(state, mask = 0) {
       const parried = p.pose === "parry" && p.parryAge !== null && p.parryAge <= PARRY_WINDOW &&
         Math.sign(o.x - p.x) === p.facing && o.attack !== "grab";
       if (parried) {
-        Object.assign(o, { pose: "stagger", timer: rules.staggerTicks, attack: null });
+        Object.assign(o, { pose: "stagger", timer: rules.staggerTicks, attack: null,
+          vx: -toward * KNOCK.parry / GLIDE });
         events.push({ type: "parried", x: o.x, id: o.id });
       } else if (gap <= REACH + 8 && p.grabbedBy === null && hits(o, o.attack, p)) {
         if (o.attack === "grab") {
@@ -248,7 +312,7 @@ export function replayBrawl(setup, transcript) {
       ticks < 0 || ticks > BRAWL_MAX_TICKS || typeof abandoned !== "boolean" ||
       changes.some((change, index) => !Array.isArray(change) || change.length !== 2 ||
         !Number.isSafeInteger(change[0]) || change[0] < 1 || change[0] > ticks ||
-        !Number.isInteger(change[1]) || change[1] < 0 || change[1] > 31 ||
+        !Number.isInteger(change[1]) || change[1] < 0 || change[1] > MAX_MASK ||
         index > 0 && change[0] <= changes[index - 1][0])) throw new Error("Invalid brawl transcript.");
   let state = createBrawl(setup), mask = 0, index = 0;
   for (let tick = 1; tick <= ticks; tick++) {

@@ -1,6 +1,6 @@
 // Synthesized 8-bit effects for the brawl, played from the engine's events.
 
-const SOUNDS = ["windupHigh", "windupLow", "windupGrab", "hit", "dodged", "parried", "push", "shoved",
+const SOUNDS = ["kick", "split", "flykick", "windupHigh", "windupLow", "windupGrab", "hit", "dodged", "parried", "push", "shoved",
   "sweep", "down", "miss", "hop", "getup", "grabbed", "break", "dog", "won", "escaped", "lost"];
 
 export function brawlSound(event) {
@@ -75,6 +75,9 @@ export function createBrawlAudio({ createContext, onError = () => {}, report = c
     down: () => { tone("triangle", 140, 40, 0, 0.28, 0.7); hiss(0.02, 0.22, 0.5, 400, 90); },
     miss: () => hiss(0, 0.1, 0.18, 2000, 900),
     hop: () => tone("square", 300, 600, 0, 0.08, 0.1),
+    kick: () => hiss(0.06, 0.12, 0.35, 1200, 3000, 0.9),
+    split: () => { hiss(0.05, 0.14, 0.35, 900, 2600, 0.9); hiss(0.1, 0.14, 0.3, 1100, 2800, 0.9); },
+    flykick: () => { tone("square", 260, 780, 0, 0.18, 0.12); hiss(0, 0.2, 0.3, 800, 3200, 0.8); },
     getup: () => notes("square", [196, 233], 0.07, 0.12),
     grabbed: () => { tone("sawtooth", 98, 92, 0, 0.6, 0.35); tone("square", 104, 97, 0, 0.6, 0.2); },
     break: () => notes("square", [392, 523, 659, 784], 0.05, 0.2),

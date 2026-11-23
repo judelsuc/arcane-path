@@ -47,6 +47,11 @@ export const POSES = Object.freeze({
   grab: { crouch: 0.15, lean: 0.35, feet: [[0.5, 0], [-0.55, 0]], hands: [[1.0, -0.15], [0.95, 0.05]] },
   stagger: { crouch: 0.15, lean: -0.5, feet: [[0.1, 0], [-0.45, 0]], hands: [[-0.1, -0.85], [-0.65, -0.45]] },
   limp: { crouch: 0, lean: 0, feet: [[0.12, 0], [-0.12, 0]], hands: [[0.15, 0.9], [-0.15, 0.9]] },
+  kick: { crouch: 0.05, lean: -0.3, feet: [[1.0, -0.85], [-0.15, 0]], hands: [[0.3, -0.45], [-0.5, 0.1]] },
+  split: { crouch: 0.88, lean: 0, feet: [[1.0, 0], [-1.0, 0]], hands: [[0.65, -0.55], [-0.65, -0.55]] },
+  flykick: { crouch: 0.2, lean: -0.25, feet: [[1.1, -0.55], [-0.35, -0.45]], hands: [[-0.2, -0.6], [-0.6, -0.2]] },
+  jump: { crouch: 0.25, lean: 0.2, feet: [[0.3, -0.35], [-0.35, -0.25]], hands: [[0.5, -0.5], [-0.3, -0.4]] },
+  land: { crouch: 0.4, lean: 0.25, feet: [[0.45, 0], [-0.45, 0]], hands: [[0.5, 0.1], [-0.3, 0.2]] },
 });
 
 function joint(from, to, length, bend) {
@@ -74,8 +79,9 @@ function skeleton(body, pose, size) {
   const shoulder = { x: neck.x, y: neck.y + 2 };
   return {
     hip, neck, shoulder, feet, hands,
-    knees: feet.map(foot => joint(hip, foot, body.leg / 2 + 0.5, 1)),
-    elbows: hands.map(hand => joint(shoulder, hand, body.arm / 2 + 0.5, -1)),
+    // Knees bend forward (toward the facing side), elbows bend downward.
+    knees: feet.map(foot => joint(hip, foot, body.leg / 2 + 0.5, -1)),
+    elbows: hands.map(hand => joint(shoulder, hand, body.arm / 2 + 0.5, 1)),
     head: { x: neck.x + 1, y: neck.y - body.head / 2 - 1 },
   };
 }
@@ -201,4 +207,29 @@ export function drawSprite(ctx, sprite, x, floor, { facing = 1, scale = 3, lift 
   ctx.drawImage(sprite, -sprite.width / 2, -sprite.height + 2);
   ctx.restore();
   return floor - lift - (sprite.height - 2) * scale;
+}
+
+// The traveller's dog, side view, two trotting frames and a sitting/pulling frame.
+export function dogSprite(doc, frame) {
+  const key = `dog:${frame}`;
+  if (cache.has(key)) return cache.get(key);
+  const canvas = doc.createElement("canvas"); canvas.width = 24; canvas.height = 16;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const fill = (color, x, y, w, h) => { ctx.fillStyle = color; ctx.fillRect(x, y, w, h); };
+  const coat = "#a8743f", dark = "#6b4423", light = "#d9b27c";
+  const pull = frame === "pull";
+  fill(coat, 5, 6, 11, 5);                      // body
+  fill(light, 7, 9, 8, 2);                      // belly
+  fill(coat, 15, pull ? 5 : 3, 5, 5);           // head
+  fill(dark, 15, pull ? 4 : 2, 2, 3);           // ear
+  fill(light, 19, pull ? 7 : 5, 3, 2);          // snout
+  fill("#1a1410", 21, pull ? 7 : 5, 1, 1);      // nose
+  fill("#1a1410", 18, pull ? 6 : 4, 1, 1);      // eye
+  fill(dark, 2, pull ? 6 : 4, 3, 2); fill(dark, 1, pull ? 5 : 3, 2, 2);   // tail
+  const legs = frame === "a" ? [[6, 0], [9, 2], [13, 0], [15, 2]]
+    : frame === "b" ? [[6, 2], [9, 0], [13, 2], [15, 0]] : [[5, 1], [8, 1], [14, 0], [16, 0]];
+  for (const [x, lift] of legs) fill(dark, x, 11, 2, 4 - lift);
+  outline(ctx, canvas.width, canvas.height);
+  cache.set(key, canvas);
+  return canvas;
 }

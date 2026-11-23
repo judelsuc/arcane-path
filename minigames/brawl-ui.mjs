@@ -1,5 +1,5 @@
 import { BRAWL_FLOOR, BRAWL_MAX_TICKS, BRAWL_WIDTH, INPUT, brawlRules, createBrawl, createBrawlRecorder, stepBrawl } from "./brawl.mjs";
-import { drawSprite, spriteCanvas } from "./brawl-sprites.mjs";
+import { dogSprite, drawSprite, spriteCanvas } from "./brawl-sprites.mjs";
 import { brawlSound } from "./brawl-audio.mjs";
 
 const HEIGHT = 320, STEP_MS = 1000 / 60, SCALE = 3, TUTORIAL_TICKS = 420;
@@ -9,11 +9,12 @@ const COPY = {
     steps: [
       "Lisez le signe au-dessus de l'agresseur : ▲ jaune → ↓ se baisser · ▼ bleu → ↑ sauter en arrière.",
       "Espace le repousse (ou Espace + ↑ juste avant son coup pour parer) : il vacille ✦.",
-      "Pendant qu'il vacille : Espace + ↓ le balaie et le met à terre.",
+      "Pendant qu'il vacille : Espace + ↓ glisse vers lui et le met à terre.",
+      "Coups de pied (X) : X frappe loin · X + ↓ grand écart, frappe des deux côtés quand vous êtes encerclé · ↑ + → saute en avant, puis X en l'air : coup de pied sauté qui met à terre.",
       "Victoire : tous les agresseurs à terre en même temps (la barre sous chacun montre quand il se relève). Ou fuyez par un bord quand aucun ne peut vous suivre. Échap : abandonner.",
     ],
     knife: "Votre couteau rend vos coups plus efficaces : ils vacillent plus longtemps et restent à terre plus longtemps.",
-    tutorial: ["▲ jaune : ↓   ▼ bleu : ↑", "Espace : il vacille ✦", "puis Espace + ↓ : à terre !"],
+    tutorial: ["▲ jaune : ↓   ▼ bleu : ↑", "Espace ou X : il vacille ✦", "puis Espace + ↓ : à terre !", "Encerclé ? X + ↓ : grand écart"],
     goal: (down, total) => `À terre : ${down}/${total} — tous en même temps pour gagner`,
     hint: { high: "↓ se baisser", low: "↑ sauter", grab: "↑ reculer !", sweep: "Espace + ↓", near: "approchez" },
     grab: (n, total) => `Il vous tient ! Martelez Espace ! ${n}/${total}`,
@@ -22,18 +23,19 @@ const COPY = {
     won: "Ils détalent. Vous êtes libre.",
     escaped: "Vous leur échappez.",
     lost: { street: "Ils vous ont maîtrisé…", camp: "Ils vous ont maîtrisé…", pursuer: "Il ne vous lâche plus…" },
-    touch: { left: "←", right: "→", up: "↑", down: "↓", action: "Espace" },
+    touch: { left: "←", right: "→", up: "↑", down: "↓", action: "Espace", kick: "Pied (X)" },
   },
   en: {
     title: { street: "A bad encounter", camp: "Rude awakening", pursuer: "He has caught up with you" },
     steps: [
       "Read the sign above the attacker: yellow ▲ → ↓ duck · blue ▼ → ↑ hop back.",
       "Space pushes him (or Space + ↑ just before his blow to parry): he staggers ✦.",
-      "While he staggers: Space + ↓ sweeps him to the ground.",
+      "While he staggers: Space + ↓ slides in and sweeps him to the ground.",
+      "Kicks (X): X strikes far · X + ↓ split kick hits both sides when you are surrounded · ↑ + → jumps forward, then X in the air: a flying kick that floors him.",
       "Victory: every attacker down at the same time (the bar under each shows when he gets up). Or flee through an edge when none can follow. Esc: give up.",
     ],
     knife: "Your knife makes your blows count: attackers stagger longer and stay down longer.",
-    tutorial: ["yellow ▲: ↓   blue ▼: ↑", "Space: he staggers ✦", "then Space + ↓: down!"],
+    tutorial: ["yellow ▲: ↓   blue ▼: ↑", "Space or X: he staggers ✦", "then Space + ↓: down!", "Surrounded? X + ↓: split kick"],
     goal: (down, total) => `Down: ${down}/${total} — all at once to win`,
     hint: { high: "↓ duck", low: "↑ hop", grab: "↑ back off!", sweep: "Space + ↓", near: "get closer" },
     grab: (n, total) => `He has you! Hammer Space! ${n}/${total}`,
@@ -42,12 +44,13 @@ const COPY = {
     won: "They run off. You are free.",
     escaped: "You get away from them.",
     lost: { street: "They overpowered you…", camp: "They overpowered you…", pursuer: "He will not let go…" },
-    touch: { left: "←", right: "→", up: "↑", down: "↓", action: "Space" },
+    touch: { left: "←", right: "→", up: "↑", down: "↓", action: "Space", kick: "Kick (X)" },
   },
 };
 
 const KEYS = { ArrowLeft: INPUT.left, KeyA: INPUT.left, KeyQ: INPUT.left, ArrowRight: INPUT.right, KeyD: INPUT.right,
-  ArrowUp: INPUT.up, KeyW: INPUT.up, KeyZ: INPUT.up, ArrowDown: INPUT.down, KeyS: INPUT.down, Space: INPUT.action };
+  ArrowUp: INPUT.up, KeyW: INPUT.up, KeyZ: INPUT.up, ArrowDown: INPUT.down, KeyS: INPUT.down, Space: INPUT.action,
+  KeyX: INPUT.kick };
 const SIGNS = { high: ["▲", "#ffd23f"], low: ["▼", "#4cc9f0"], grab: ["✋", "#ff3b3b"] };
 const POP_COLORS = { parried: "#a8f0ff", down: "#9be564", hit: "#ff5d5d", shoved: "#ffe66d", break: "#9be564",
   dog: "#e9c46a", getup: "#ffb4a2" };
@@ -113,8 +116,9 @@ function background(ctx, context, phase, tick) {
 
 function playerPose(p, tick) {
   if (p.grabbedBy !== null || p.hurt > 36) return "hurt";
-  if (p.air > 0) return "hop";
-  if (["duck", "push", "sweep", "parry"].includes(p.pose)) return p.pose;
+  if (p.flying) return "flykick";
+  if (p.air > 0) return p.pose === "jump" ? "jump" : "hop";
+  if (["duck", "push", "sweep", "parry", "kick", "split", "land"].includes(p.pose)) return p.pose;
   if (p.pose === "walk") return (tick >> 3) % 2 ? "walk1" : "walk2";
   return "guard";
 }
@@ -134,7 +138,8 @@ function label(ctx, text, x, y, color, size = 14) {
   ctx.fillStyle = color; ctx.fillText(text, x, y);
 }
 
-export function drawBrawl(ctx, state, { phase = "night", copy = COPY.en, pops = [], shake = 0, doc = globalThis.document } = {}) {
+export function drawBrawl(ctx, state, { phase = "night", copy = COPY.en, pops = [], shake = 0, dog = null,
+  doc = globalThis.document } = {}) {
   const rules = brawlRules(state.level, state.context);
   const downMax = Math.round(rules.downTicks * (state.knife ? 1.5 : 1));
   ctx.save();
@@ -163,15 +168,8 @@ export function drawBrawl(ctx, state, { phase = "night", copy = COPY.en, pops = 
       ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(Math.round(o.x - 26), BRAWL_FLOOR + 12, 52, 7);
       ctx.fillStyle = share > 0.3 ? "#9be564" : "#ff9f43"; ctx.fillRect(Math.round(o.x - 25), BRAWL_FLOOR + 13, Math.round(50 * share), 5);
     }
-    if (o.pinned > 0) {
-      // The dog hangs on to the attacker's leg.
-      const dx = o.x - facing * 18;
-      ctx.fillStyle = "#8a5a2b"; ctx.fillRect(dx - 12, BRAWL_FLOOR - 16, 24, 11);
-      ctx.fillRect(dx + facing * 10 - 3, BRAWL_FLOOR - 22, 9, 9);
-      ctx.fillStyle = "#5c3b1c"; ctx.fillRect(dx - 12, BRAWL_FLOOR - 6, 4, 6); ctx.fillRect(dx + 7, BRAWL_FLOOR - 6, 4, 6);
-      ctx.fillRect(dx - facing * 14, BRAWL_FLOOR - 18, 4, 3);
-    }
   });
+  if (dog) drawSprite(ctx, dogSprite(doc, dog.frame), dog.x, BRAWL_FLOOR, { facing: dog.facing, scale: SCALE });
   const blink = p.hurt > 0 && p.hurt <= 36 && (p.hurt >> 2) % 2 === 0;
   drawSprite(ctx, spriteCanvas(doc, state.knife ? "travellerKnife" : "traveller", playerPose(p, state.tick)),
     p.x, BRAWL_FLOOR, { facing: p.facing, scale: SCALE, alpha: blink ? 0.45 : 1,
@@ -203,6 +201,7 @@ export function drawBrawl(ctx, state, { phase = "night", copy = COPY.en, pops = 
   }
   if (state.tick < TUTORIAL_TICKS && state.status === "fighting") {
     ctx.fillStyle = "rgba(10, 12, 20, 0.78)"; ctx.fillRect(BRAWL_WIDTH / 2 - 150, 40, 300, 66);
+    ctx.fillStyle = "rgba(10, 12, 20, 0.78)"; ctx.fillRect(BRAWL_WIDTH / 2 - 150, 106, 300, 18);
     copy.tutorial.forEach((line, index) => label(ctx, line, BRAWL_WIDTH / 2, 60 + index * 19, "#f1faee", 13));
   }
   for (const pop of pops) label(ctx, pop.text, pop.x, BRAWL_FLOOR - 150 - pop.age * 0.6, pop.color, 15);
@@ -227,9 +226,22 @@ export function mountBrawl(host, setup, { language = "en", phase = "night", audi
   ctx.imageSmoothingEnabled = false;
   let state = createBrawl(setup), held = 0, touch = 0, frame, last = null, carry = 0, done = false, shake = 0;
   let pops = [];
+  // The dog is presentation only: it trots behind the traveller and runs to the attacker it holds.
+  const dog = setup.dog ? { x: state.player.x - 50, facing: 1, frame: "a" } : null;
+  function moveDog() {
+    if (!dog) return;
+    const p = state.player, held = state.opponents.find(o => o.pinned > 0);
+    const target = held ? held.x - Math.sign(p.x - held.x || 1) * 22 : p.x - p.facing * 48;
+    const step = target - dog.x;
+    dog.x += Math.sign(step) * Math.min(Math.abs(step), held ? 9 : 4);
+    if (Math.abs(step) > 1) dog.facing = Math.sign(step);
+    else dog.facing = held ? Math.sign(held.x - dog.x) || 1 : p.facing;
+    dog.frame = held && Math.abs(step) < 4 ? "pull" : Math.abs(step) > 1 ? ((state.tick >> 3) % 2 ? "a" : "b") : "a";
+  }
   const recorder = createBrawlRecorder();
   const unlock = () => { void audio?.unlock?.(); };
-  for (const [name, bit] of Object.entries({ left: INPUT.left, down: INPUT.down, up: INPUT.up, right: INPUT.right, action: INPUT.action })) {
+  for (const [name, bit] of Object.entries({ left: INPUT.left, down: INPUT.down, up: INPUT.up, right: INPUT.right,
+    action: INPUT.action, kick: INPUT.kick })) {
     const button = doc.createElement("button"); button.type = "button"; button.textContent = copy.touch[name];
     const press = on => event => { event.preventDefault(); if (on) unlock(); touch = on ? touch | bit : touch & ~bit; };
     button.addEventListener("pointerdown", press(true));
@@ -274,7 +286,8 @@ export function mountBrawl(host, setup, { language = "en", phase = "night", audi
     }
     pops = pops.map(pop => ({ ...pop, age: pop.age + 1 })).filter(pop => pop.age < 50);
     if (shake > 0) shake--;
-    drawBrawl(ctx, state, { phase, copy, pops, shake, doc });
+    moveDog();
+    drawBrawl(ctx, state, { phase, copy, pops, shake, dog, doc });
     if (!done && state.status !== "fighting") finish();
     frame = requestAnimationFrame(loop);
   }
