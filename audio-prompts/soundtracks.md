@@ -258,22 +258,20 @@ violent sound, jump scare, voice, realistic ambience or borrowed melody.
 
 ## 17 - music-pursuit - Someone on the road behind
 
-Use: the pursuit escape window, while the man asking about the child closes in
-and the traveller runs and jumps to stay ahead. Target: 132 BPM, 90 seconds.
+Use: the pursuit escape window, while the man hunting the child closes in and
+the traveller runs and jumps to stay ahead. Target: 150 BPM, 90 seconds.
 
 ```text
-Original instrumental 8-bit chiptune chase music for a gentle walking fairy
-tale. A child travelling alone hurries to stay ahead of a stranger who has
-been asking about them in the villages behind. Urgency, quick breath and
-determination, never horror, violence or despair. 132 BPM, driving triangle
-bass in steady eighth notes, a nimble pulse-wave lead built on a faster
-original D-F-A-E motif, a second pulse channel of tense off-beat stabs and
-crisp noise-channel percussion with a light snare on two and four. D minor
-with brief hopeful F-major lifts as if the child gains ground. Classic
-four-channel NES-style arrangement, same warm retro timbres as a calm 8-bit
-road soundtrack, just faster and tighter. A short two-bar pickup, then a
-stable repeating 16-bar loop around 90 seconds, no tempo changes, clean bar
-boundaries, no fade-out. No vocals, speech, sirens, alarms, orchestra,
-realistic drums, cinematic impacts, borrowed melodies or artist imitation.
-Bright but not piercing highs.
+Original instrumental 8-bit horror chase chiptune. A child alone at dusk runs
+from a menacing stranger who is almost close enough to grab them: dread,
+panic, a pounding heart. Very frightening and relentless, but strictly retro
+four-channel NES-style. 150 BPM. Low triangle bass hammering a chromatic
+ostinato, dissonant tritone and minor-second pulse-wave stabs, a shrill
+detuned lead rising in semitone steps like footsteps gaining, fast noise-
+channel hi-hats and heavy noise hits like heartbeat thuds. D minor turned
+diminished, no relief, no major chords. Sudden silent half-beats before the
+loop slams back in. Stable repeating 16-bar loop around 90 seconds, no
+tempo changes, clean bar boundaries, no fade-out. Purely chip timbres: no
+vocals, screams, whispers, sirens, orchestra, realistic drums, cinematic
+impacts, borrowed melodies or artist imitation. Harsh but not ear-piercing.
 ```
