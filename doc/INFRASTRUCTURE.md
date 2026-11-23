@@ -228,6 +228,20 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Garde haute brawl preview (23 November 2026)
+
+Deployed `5425f92` (`deploy-2026-11-23-brawl-preview`): new files
+`brawl-preview.html`, `brawl-preview.mjs`, `minigames/brawl.mjs` and
+`minigames/brawl-ui.mjs` (stage 1 of `doc/BRAWL_PLAN.md`, a sandbox with no
+journey effect), and `/brawl-preview.html` added to the nginx allowlist beside
+`legend-preview.html` (live site file was identical to
+`infra/nginx/preview.conf` before the change). `nginx -t` OK and reloaded;
+service restarted, journal clean; the four files answer 401 without
+authentication and 200 locally, hashes match; other preview pages still 404.
+Validation: JavaScript 1902/1903 (dream-wiring baseline), 6 new brawl tests.
+Backup `/home/ubuntu/before-brawl-preview-5425f92/` holds the previous nginx
+site file; rollback = restore it, `nginx -t`, reload, delete the four files.
+
 ## Legend odds, nearby capitals' dishes and pursuit music, 0.22.45 (23 November 2026)
 
 Deployed runtime `5256024` (`deploy-2026-11-23-legend-odds`). Legends: one town
