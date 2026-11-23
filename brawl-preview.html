@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Self-defence brawl - preview</title>
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./mini-games.css">
+    <style>
+      main { max-width: 900px; margin: 1rem auto; padding: 1rem; }
+      .brawl-touch { display: flex; gap: .4rem; justify-content: center; flex-wrap: wrap; }
+      .brawl-touch button { min-width: 56px; min-height: 48px; touch-action: none; }
+      .preview-options label { margin-right: .8rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 id="preview-title"></h1>
+      <p id="preview-note"></p>
+      <div class="preview-options">
+        <label><span id="label-context"></span>
+          <select id="preview-context"><option value="street"></option><option value="camp"></option><option value="pursuer"></option></select></label>
+        <label><span id="label-opponents"></span>
+          <select id="preview-opponents"><option>1</option><option selected>2</option><option>3</option></select></label>
+        <label><span id="preview-level-label"></span>
+          <select id="preview-level"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></label>
+        <label><input type="checkbox" id="preview-dog"> <span id="label-dog"></span></label>
+        <label><input type="checkbox" id="preview-night" checked> <span id="label-night"></span></label>
+        <button id="preview-reset" type="button"></button>
+      </div>
+      <p id="preview-result" role="status"></p>
+      <p id="preview-error" role="alert"></p>
+      <div id="brawl-board"></div>
+      <p><a href="?lang=en">English</a> / <a href="?lang=fr">Francais</a></p>
+    </main>
+    <script type="module" src="./brawl-preview.mjs"></script>
+  </body>
+</html>
