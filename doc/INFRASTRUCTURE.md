@@ -228,6 +228,31 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Legend odds, nearby capitals' dishes and pursuit music, 0.22.45 (23 November 2026)
+
+Deployed runtime `5256024` (`deploy-2026-11-23-legend-odds`). Legends: one town
+in four; towns decided before `LEGEND_RATE_RAISED_AT` (epoch 1795451026) with
+no legend get one top-up roll at one in six on their next discovery request
+(overall 1/4), written once under a `created` guard. Meals: hamlets without a
+documentary identity borrow the nearest populated Wikidata place within 10 km,
+Wikidata capitals (P36) within 30 km join the origins and searches, dish
+articles rank before place articles, cache key `town-meals-v4`. A server-side
+probe returns Bouillabaisse, Pieds paquets and Brandade first for
+Septèmes-les-Vallons, Calas and Saint-Pons. Audio: the pursuit window has id
+`pursuit-dialog` and plays new file `public/audio/music/17 - music-pursuit.wav`
+(48 kHz stereo, 89.9 s; served by the same nginx audio location, 401 without
+authentication like the other tracks).
+
+Validation: JavaScript 1896/1897 (dream-wiring baseline); Python 857 tests,
+the same 5 pre-existing failures; new tests for the legend top-up, capitals and
+hamlet fallback, and pursuit music routing. Installed hashes of the six changed
+files match, journal clean since start, `nginx -t` OK, HTTPS 401, conditional
+GET 200. Private rollback archive
+`/home/ubuntu/before-0.22.45-5256024/runtime.tar.gz`, SHA-256
+`56d9671bb463e889d1fb3403206c717a92e2b0ea8e06de43cb8f4370ac73dfdd`; on
+rollback also delete the new music file. Top-up legend decisions already
+written remain valid for the old code.
+
 ## Area tiles, wider quest search and regional dishes, 0.22.42–0.22.44 (23 November 2026)
 
 Deployed runtime `05c2876` (`deploy-2026-11-23-regional-dishes`), carrying
