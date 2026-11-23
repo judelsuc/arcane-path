@@ -263,3 +263,35 @@ class StartingPlaceTests(unittest.TestCase):
                 self.assertEqual(db.execute(
                     "SELECT COUNT(*) FROM custom_origins WHERE region=?", (key,)).fetchone()[0], 1)
             store._release_origin(key, current)
+
+    def test_an_unpublished_local_origin_is_ignored_instead_of_crashing_startup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            assets = local_storage(root / "shared")
+            orphan = root / "server" / "origins" / "origin-94e7043287a07cca2f3a"
+            orphan.mkdir(parents=True)
+            rows = [[{"terrain": "place"} for _ in range(24)] for _ in range(24)]
+            (orphan / "map.json").write_text(json.dumps({"name": "Marseille", "width": 24, "height": 24,
+                                                          "rows": rows, "origin": {}}))
+            with gzip.open(orphan / "source.osm.gz", "wt") as stream:
+                stream.write('<osm><bounds minlon="5.3" minlat="43.2" maxlon="5.5" maxlat="43.4"/></osm>')
+            store = ChunkStore(cache=root / "server")
+            self.assertIn("origin-94e7043287a07cca2f3a", store.bases)
+            with self.assertLogs(level="ERROR") as logs:
+                store.set_shared_assets(assets)
+            self.assertIn("origin-94e7043287a07cca2f3a", logs.output[0])
+            self.assertNotIn("origin-94e7043287a07cca2f3a", store.bases, "never served without shared storage")
+            self.assertNotIn("origin-94e7043287a07cca2f3a", store.regions)
+
+    def test_dense_city_origin_sources_publish_above_the_general_asset_limit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            assets = local_storage(Path(directory) / "shared")
+            data = b"x" * 13_000_000
+            provenance = {"source": "https://www.openstreetmap.org/copyright", "license": "ODbL",
+                          "version": "osm-origin-v1"}
+            record = assets.publish("custom-origin-source", "origin-94e7043287a07cca2f3a-0123456789abcdef", data,
+                                    media_type="application/gzip", retention="durable", provenance=provenance)
+            self.assertEqual(record.size, 13_000_000)
+            with self.assertRaisesRegex(ValueError, "oversized"):
+                assets.publish("journal-art", "too-large", data, media_type="image/png", retention="cache",
+                               provenance=provenance)

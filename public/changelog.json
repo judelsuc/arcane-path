@@ -1,6 +1,11 @@
 {
-  "version": "0.22.40",
+  "version": "0.22.41",
   "entries": [
+    {
+      "version": "0.22.41",
+      "fr": "Les points de départ dans les grandes villes denses (comme Marseille) sont de nouveau enregistrés correctement : leur carte dépassait une limite de taille et n'était pas partagée. Une telle erreur ne peut plus empêcher le jeu de redémarrer.",
+      "en": "Starting points in large dense cities (such as Marseille) are saved correctly again: their map exceeded a size limit and was not shared. Such a failure can no longer stop the game from restarting."
+    },
     {
       "version": "0.22.40",
       "fr": "Les personnages proposent de nouveau des quêtes : les serveurs publics de cartes étant saturés, le jeu héberge désormais ses propres données OpenStreetMap par région. Dans une région qui n'est pas encore installée, le personnage vous demande de revenir quelques minutes plus tard, le temps de préparer la carte, plutôt que d'inventer une quête au rabais.",

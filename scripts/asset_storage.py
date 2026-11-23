@@ -302,14 +302,21 @@ class GenerationJobs:
 
 
 class AssetStorage:
+    # Starting-map OSM sources of dense cities (Marseille: 12.2 MB gzipped) exceed the
+    # general image limit; they are server-generated, never uploaded by players.
+    SCOPE_LIMITS = {"custom-origin-source": 48_000_000}
+
     def __init__(self, blobs, catalogue, *, max_bytes=12_000_000):
         if type(max_bytes) is not int or max_bytes <= 0:
             raise ValueError("Asset size limit must be positive.")
         self.blobs, self.catalogue, self.max_bytes = blobs, catalogue, max_bytes
 
+    def limit(self, scope):
+        return max(self.max_bytes, self.SCOPE_LIMITS.get(scope, 0))
+
     def publish(self, scope, request, data, *, media_type, retention, provenance):
         identifier(scope), identifier(request)
-        if not isinstance(data, bytes) or not 0 < len(data) <= self.max_bytes:
+        if not isinstance(data, bytes) or not 0 < len(data) <= self.limit(scope):
             raise ValueError("Empty or oversized asset.")
         if retention not in ("durable", "cache"):
             raise ValueError("Unknown asset retention class.")

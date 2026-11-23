@@ -216,7 +216,15 @@ class ChunkStore:
         self.load_shared_origins()
         missing = local_origins - self.origin_sources.keys()
         if missing:
-            raise AssetError("Local custom origins are not in shared storage; publish them explicitly before enabling shared mode.")
+            # A starting point whose publication failed must never take the whole game
+            # down at the next restart: it is ignored (never served unshared) and is
+            # prepared and published again the next time a player selects it.
+            logging.error("Ignoring local custom origins missing from shared storage: %s",
+                          ", ".join(sorted(missing)))
+            for key in missing:
+                self.bases.pop(key, None)
+                self.fingerprints.pop(key, None)
+                self.regions.pop(key, None)
 
     def load_shared_origins(self):
         if self.assets is None:
@@ -253,7 +261,7 @@ class ChunkStore:
                 hashlib.sha256(payload.encode()).hexdigest() != payload_hash or
                 not isinstance(source_request, str) or not source_request.startswith(key + "-") or
                 not re.fullmatch(r"[a-f0-9]{64}", source_hash) or
-                type(source_size) is not int or not 0 < source_size <= self.assets.max_bytes):
+                type(source_size) is not int or not 0 < source_size <= self.assets.limit("custom-origin-source")):
             raise AssetError("Shared custom origin metadata failed integrity validation.")
         try:
             data = json.loads(payload)
