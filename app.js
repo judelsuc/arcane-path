@@ -11,7 +11,7 @@ import { setupShortcutHelp } from "./shortcut-help.mjs";
 import { setupPhotoJournal } from "./photo-journal.mjs";
 import { setupGameHelp } from "./game-help.mjs";
 import { setupStartArt } from "./start-art.mjs";
-import { setupGameRelease } from "./game-release-ui.mjs";
+import { setupGameRelease, watchGameUpdates } from "./game-release-ui.mjs";
 import { setupMapAppearance, decorateMapTile, mappedSites, visualKind, SITE_GLYPHS } from "./map-appearance.mjs";
 
 const mapElement = document.querySelector("#ascii-map");
@@ -216,6 +216,7 @@ const gameRelease = setupGameRelease({
   t,
   language: locale,
 });
+watchGameUpdates({ loaded: gameRelease.loaded });
 appearance = setupMapAppearance(t, { onChange: () => { if (mapData) localize(); } });
 
 function localize() {

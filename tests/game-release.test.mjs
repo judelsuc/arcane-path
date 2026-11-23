@@ -140,3 +140,31 @@ test("abort-aware fetch rejection and a stalled JSON body both report timeout", 
     assert.equal(result.errors.deployment.code, "timeout");
   }
 });
+
+test("an open page offers a reload once a newer release is deployed, never forcing it", async () => {
+  const { watchGameUpdates } = await import("../game-release-ui.mjs");
+  const changelog = JSON.parse(await readFile(new URL("../public/changelog.json", import.meta.url), "utf8"));
+  let commit = "a".repeat(40);
+  const fetcher = async url => ({ ok: true, status: 200, headers: { get: () => "application/json" },
+    json: async () => url.includes("release") ? { version: 1, commit, packagedAt: "2026-11-23T19:13:00Z" } : changelog,
+    text: async () => JSON.stringify(url.includes("release") ? { version: 1, commit, packagedAt: "2026-11-23T19:13:00Z" } : changelog) });
+  const appended = [], listeners = {};
+  const element = () => ({ hidden: false, children: [], textContent: "", append(...items) { this.children.push(...items); },
+    setAttribute() {}, addEventListener(type, run) { this[`on${type}`] = run; } });
+  const doc = { documentElement: { lang: "fr" }, visibilityState: "visible", createElement: element,
+    body: { append: item => appended.push(item) }, addEventListener: (type, run) => { listeners[type] = run; },
+    removeEventListener() {}, defaultView: { setInterval: () => 1, clearInterval() {} } };
+  let reloads = 0;
+  const watcher = watchGameUpdates({ loaded: Promise.resolve({ deployment: { commit } }), doc, fetcher,
+    logger: { warn() {} }, reload: () => reloads++ });
+  await new Promise(resolve => setTimeout(resolve, 0));
+  await watcher.check();
+  assert.equal(appended.length, 0, "same release: no banner");
+  commit = "b".repeat(40);
+  await watcher.check();
+  assert.equal(appended.length, 1);
+  assert.match(appended[0].children[0].textContent, /nouvelle version/);
+  assert.equal(reloads, 0, "the page is never reloaded on its own");
+  appended[0].children[1].onclick();
+  assert.equal(reloads, 1);
+});

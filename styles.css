@@ -2163,3 +2163,10 @@ dialog p { margin: 12px 0; }
 .brawl-touch { display: flex; gap: .4rem; justify-content: center; flex-wrap: wrap; margin: .5rem 0; }
 .brawl-touch button { min-width: 56px; min-height: 48px; touch-action: none; }
 .brawl-steps { margin-top: .6rem; line-height: 1.5; }
+
+/* Offer to reload when a newer release is deployed while the page is open. */
+.release-update { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 1000;
+  display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; max-width: min(94vw, 720px);
+  padding: .7rem 1rem; background: var(--panel, #1c2420); color: var(--ink, #f1faee);
+  border: 2px solid var(--accent, #e9c46a); box-shadow: 0 6px 24px rgba(0,0,0,.5); }
+.release-update[hidden] { display: none; }
