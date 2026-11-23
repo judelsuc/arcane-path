@@ -228,6 +228,56 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Regional map mirror and origin-publication outage, 0.22.37–0.22.41 (23 November 2026)
+
+Deployed runtime `4091567` (`deploy-2026-11-23-osm-mirror`), carrying 0.22.37
+(adventure pickups stay in the adventure), 0.22.38 (journal photo pins and
+place names), 0.22.39 (transport blocker button and waiting/riding narration)
+and 0.22.40 (regional map mirror, see "Regional map mirror" below), then
+`e4880c9` (`deploy-2026-11-23-origin-publish`, 0.22.41).
+
+**Outage, about 8 minutes (09:03–09:11 UTC).** The 0.22.40 restart entered a
+crash loop: `set_shared_assets` refused to start because the local custom
+origin `origin-94e7043287a07cca2f3a` (Marseille, prepared 21 November) was not
+in shared storage. Its publication had failed because its gzipped OSM source
+(12,192,667 bytes) exceeded the 12 MB shared-asset limit, leaving local files
+that any restart since 21 November would have tripped on; the release itself
+was not the cause. Recovery, with explicit approval: the directory was moved
+(not deleted) to `/var/lib/arcane-path/cache/travel/origins-unpublished/`,
+which restored service. 0.22.41 then raised the `custom-origin-source` limit to
+48 MB and made startup log and ignore unpublished local origins instead of
+aborting; after its deployment the Marseille origin was published with a
+proper lease (`custom_origins` row, 12,192,667 bytes) and the running service
+loads it from shared storage (24×24 map verified through `/api/origin-map`).
+
+**Mirror installation.** `osmium-tool` 1.16.0 installed; bucket
+`arcane-path-osm` created; `/var/lib/arcane-path/osm` created (arcane, 0755);
+`arcane-osm-mirror.{service,timer}` installed and the timer enabled; drop-in
+`/etc/systemd/system/arcane-path.service.d/60-osm-mirror.conf` installed
+(the running service shows `ARCANE_OSM_MIRROR_DIR`). The 25 Geofabrik
+sub-regions within 60 km of the existing regions (Firmi, Toulouse, Marseille,
+Le Bois-Plage-en-Ré, Manchester, Nommern, Cuglieri, Pontassieve; 4.9 GB) were
+queued with `osm_mirror.py cover`, Midi-Pyrénées first.
+
+Validation: full JavaScript run 1895/1896 (unchanged dream-wiring baseline,
+plus one street-music timing test that passed 3/3 on its own); Python
+851 tests, 5 failures all pre-existing and reproduced on the previous commit
+(3 travel-cache migration tests, the HTTPS public-icon route test and a
+legend-session eligibility test); 7 new mirror tests and 2 new origin tests.
+Installed hashes match the packaged commits, journal clean since the 0.22.41
+start, `nginx -t` OK, HTTPS 401, conditional GET 200.
+
+Private rollback archives (directories 0700, archives 0600):
+`/home/ubuntu/before-0.22.40-4091567/runtime.tar.gz`, SHA-256
+`ce3f173f8c08f8d0da214f9df85d07e6b7a91f49ed9719c3c3fe8aa79c9278c4` (its
+NOTES list the mirror files and units to remove), and
+`/home/ubuntu/before-0.22.41-e4880c9/runtime.tar.gz`, SHA-256
+`e5dc2ff827ae818dcd0fa67fd1acae2224ef287b3e05ea03325a050015c39e60`. Rolling
+back past 0.22.41 requires keeping any unpublished origin out of
+`cache/travel/origins`, or the old startup check crash-loops again. Do not
+restore or delete player databases, cached narratives, images or
+provider-job receipts.
+
 ## One platform door per E press, 0.22.36 (20 November 2026)
 
 Deployed runtime `d6d7ae1` (`deploy-2026-11-20-door-latch`). Since platform
