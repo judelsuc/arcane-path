@@ -55,6 +55,13 @@ POI_FILTERS = (
     "nwr/landuse=cemetery", "nwr/natural=peak,hill",
 )
 EXTRACT_SLOTS = threading.BoundedSemaphore(2)
+# A sub-region file has no spatial index, so each cut scans it whole (about 15 s
+# on the 2-CPU server). The first map request in a ~25-km area cuts a buffered
+# area tile once; later requests there scan only that small file (well under a second).
+AREA_TILE_DEGREES = 0.25
+AREA_TILE_BUFFER = 0.05
+_TILE_LOCKS = {}
+_TILE_LOCKS_GUARD = threading.Lock()
 
 
 class MapDataPending(Exception):
@@ -387,10 +394,11 @@ class OsmMirror:
                 self.request_point(lat, lon)
             return None
         extract = self.installed()[identity]
+        source = self._area_tile(extract, bounds) or extract["source"]
         with EXTRACT_SLOTS:
             result = subprocess.run(
                 [self.osmium, "extract", "-b", ",".join(format(v, ".12g") for v in bounds), "-s", "smart",
-                 str(extract["source"]), "-f", "osm", "-o", "-"],
+                 str(source), "-f", "osm", "-o", "-"],
                 check=True, capture_output=True, timeout=180)
         root = ET.fromstring(result.stdout)
         for element in list(root.findall("bounds")):
@@ -399,6 +407,36 @@ class OsmMirror:
                                          "maxlon": str(east), "maxlat": str(north)})
         root.insert(0, bounding)
         return root, f"{extract['url'] or DOWNLOAD_PREFIX}#{identity}@{extract['version']}"
+
+    def _area_tile(self, extract, bounds):
+        """The cached buffered area tile containing ``bounds``, cut on first use; None if it does not fit."""
+        west, south, east, north = bounds
+        tx = math.floor((west + east) / 2 / AREA_TILE_DEGREES)
+        ty = math.floor((south + north) / 2 / AREA_TILE_DEGREES)
+        box = (tx * AREA_TILE_DEGREES - AREA_TILE_BUFFER, ty * AREA_TILE_DEGREES - AREA_TILE_BUFFER,
+               (tx + 1) * AREA_TILE_DEGREES + AREA_TILE_BUFFER, (ty + 1) * AREA_TILE_DEGREES + AREA_TILE_BUFFER)
+        if not (box[0] <= west and box[1] <= south and east <= box[2] and north <= box[3]):
+            return None
+        path = extract["dir"] / "tiles" / f"{tx}_{ty}.osm.pbf"
+        if path.is_file():
+            return path
+        with _TILE_LOCKS_GUARD:
+            lock = _TILE_LOCKS.setdefault(str(path), threading.Lock())
+        with lock:
+            if path.is_file():
+                return path
+            path.parent.mkdir(parents=True, exist_ok=True)
+            temporary = path.with_suffix(f".{os.getpid()}.{threading.get_ident()}.tmp.pbf")
+            try:
+                with EXTRACT_SLOTS:
+                    subprocess.run(
+                        [self.osmium, "extract", "-b", ",".join(format(v, ".12g") for v in box), "-s", "smart",
+                         str(extract["source"]), "-o", str(temporary), "-O"],
+                        check=True, capture_output=True, timeout=600)
+                temporary.replace(path)
+            finally:
+                temporary.unlink(missing_ok=True)
+        return path
 
     def around(self, lat, lon, meters, filters, *, limit=None, named=False, types=None):
         """Overpass-shaped elements within ``meters`` of a point, nearest first.

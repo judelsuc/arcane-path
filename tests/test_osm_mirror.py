@@ -149,6 +149,22 @@ class MirrorTests(unittest.TestCase):
         self.assertIsNotNone(root.find("node[@id='6']"), "the road leaving the box stays complete")
         self.assertIn("south@20261121", label)
 
+    def test_area_tiles_are_cut_once_and_give_the_same_map_as_the_whole_extract(self):
+        self.install()
+        mirror = OsmMirror(self.root)
+        bounds = (2.34, 44.59, 2.37, 44.62)
+        direct = subprocess.run([OSMIUM, "extract", "-b", "2.34,44.59,2.37,44.62", "-s", "smart",
+                                 str(self.pbf), "-f", "osm", "-o", "-"], check=True, capture_output=True).stdout
+        root, _ = mirror.bbox_map(bounds)
+        tiles = list((self.root / "extracts" / "south" / "20261121" / "tiles").glob("*.osm.pbf"))
+        self.assertEqual(len(tiles), 1, "the first request cut one area tile")
+        import xml.etree.ElementTree as ET
+        ids = lambda r: sorted((e.tag, e.get("id")) for e in r if e.tag in {"node", "way", "relation"})
+        self.assertEqual(ids(root), ids(ET.fromstring(direct)))
+        stamp = tiles[0].stat().st_mtime_ns
+        mirror.bbox_map((2.345, 44.595, 2.36, 44.61))
+        self.assertEqual(tiles[0].stat().st_mtime_ns, stamp, "a later request in the same area reuses the tile")
+
     def test_uncovered_areas_answer_none_and_queue_their_sub_region(self):
         self.install()
         mirror = OsmMirror(self.root)

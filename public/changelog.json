@@ -1,6 +1,11 @@
 {
-  "version": "0.22.41",
+  "version": "0.22.42",
   "entries": [
+    {
+      "version": "0.22.42",
+      "fr": "Les nouvelles zones de la carte se chargent plus vite dans les régions installées : la première case d'un secteur d'environ 25 km prépare ce secteur, les suivantes en profitent.",
+      "en": "New map areas load faster in installed regions: the first cell of a roughly 25-km sector prepares that sector, and the following ones reuse it."
+    },
     {
       "version": "0.22.41",
       "fr": "Les points de départ dans les grandes villes denses (comme Marseille) sont de nouveau enregistrés correctement : leur carte dépassait une limite de taille et n'était pas partagée. Une telle erreur ne peut plus empêcher le jeu de redémarrer.",
