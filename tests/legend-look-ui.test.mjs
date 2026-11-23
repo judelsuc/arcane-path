@@ -70,7 +70,9 @@ test("Look reveals descriptions remotely but inspection requires presence and op
     assert.deepEqual(calls.at(-1), ["inspect", 1, observation.townId]);
     assert.match(f.text(), language === "en" ? /Entrance discovered/ : /Entrée découverte/);
     assert.doesNotMatch(f.text(), /fiction|fictif|cell|case|Quests|Quêtes|costs|coûts/i);
-    f.button(language === "en" ? "Open the adventure entrance" : "Ouvrir l'entrée de l'aventure").click();
+    assert.equal(f.button(language === "en" ? "Open the adventure entrance" : "Ouvrir l'entrée de l'aventure"), undefined,
+      "the side panel shows the discovery; entering is the map action and the quest journal");
+    f.action.click();
     assert.equal(f.opened.length, 1);
     assert.equal(f.observed.length, 2);
     f.ui.reset();
@@ -132,7 +134,8 @@ test("already found entrance reloads its entry without relying on the first hist
   f.ui.update(observation.location);
   await flush();
   assert.deepEqual(f.entries, [entry]);
-  assert.ok(f.button("Open the adventure entrance"));
+  assert.equal(f.button("Open the adventure entrance"), undefined);
+  assert.equal(f.action.textContent, "Enter the adventure");
   f.ui.reset();
 });
 
@@ -255,4 +258,11 @@ test("the toolbar Explore is always available: it reports nothing, inspects the 
   assert.equal(f.opened.length, 1, "entering starts directly from the map");
   f.ui.reset();
   assert.equal(f.status.hidden, true);
+});
+
+test("an entrance found while observing (Look) can be entered: Look is left before the adventure starts", async () => {
+  const { readFileSync } = await import("node:fs");
+  const source = readFileSync(new URL("../travel-ui.mjs", import.meta.url), "utf8");
+  assert.match(source, /const townLegendsUI = setupTownLegends\(\{[\s\S]*?context: \(\) => active \? economyContext\(\{ allowLook: true \}\) : null/);
+  assert.match(source, /startTrial: action => \{\s*if \(cursor\) toggleLook\(\);\s*void artifactsUI\.startLegend\(action\);/);
 });

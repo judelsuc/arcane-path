@@ -96,7 +96,7 @@ export function setupLegendLook({ context, host, action, status, client = create
       const here = state?.col === target.col && state?.row === target.row;
       if (observation.found) {
         node("p", here ? c.found : c.travel).setAttribute("role", "status");
-        if (here && openEntrance) button(c.open, openEntrance, !!captured?.blocked);
+        // Entering is the map's Explore action (also in the cell menu) and the quest journal, not this panel.
       }
       else if (!here) node("p", c.travel);
       else button(c.inspect, () => { void inspect(observation); }, loading || !!captured?.blocked);

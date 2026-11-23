@@ -3,8 +3,8 @@
   "entries": [
     {
       "version": "0.22.48",
-      "fr": "Quand vous prenez une spécialité locale illustrée, sa photo est épinglée automatiquement dans votre journal, avec le nom du plat, sa région, le lieu du repas, la source et la licence.",
-      "en": "When you take an illustrated local speciality, its photo is pinned automatically to your journal, with the dish name, its region, where you ate it, the source and the licence."
+      "fr": "Quand vous prenez une spécialité locale illustrée, sa photo est épinglée automatiquement dans votre journal, avec le nom du plat, sa région, le lieu du repas, la source et la licence. L'entrée d'une aventure de légende se fait de nouveau depuis la carte (Explorer, aussi dans le menu de la case) ou depuis le journal des quêtes, y compris quand vous l'avez trouvée en observant ; le bouton en double du panneau de droite disparaît.",
+      "en": "When you take an illustrated local speciality, its photo is pinned automatically to your journal, with the dish name, its region, where you ate it, the source and the licence. A legend adventure is entered again from the map (Explore, also in the cell menu) or from the quest journal, including when you found it while observing; the duplicate button in the right panel is gone."
     },
     {
       "version": "0.22.47",

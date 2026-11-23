@@ -685,8 +685,12 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     openLegends: () => questLayout.openLegends(),
   });
   const townLegendsUI = setupTownLegends({
-    context: () => active ? economyContext() : null,
-    startTrial: action => { void artifactsUI.startLegend(action); },
+    // Entrances are found while observing (Look); starting the adventure leaves Look first.
+    context: () => active ? economyContext({ allowLook: true }) : null,
+    startTrial: action => {
+      if (cursor) toggleLook();
+      void artifactsUI.startLegend(action);
+    },
     onNarrative: () => conversations.localize(),
     onDiscovery: () => updateLegendLook(true),
   });
