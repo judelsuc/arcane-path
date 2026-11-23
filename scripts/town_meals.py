@@ -19,6 +19,9 @@ from journeys import JourneyCapacity, JourneyRequest
 from town_content import (allowed_url, coordinate, digest, distance, documentary_photo)
 
 VERSION = "town-meals-v2"
+# Bumped when source discovery improves so towns cached empty are searched again;
+# VERSION alone keeps discovered meal identities stable in saved journeys.
+CACHE_VERSION = "town-meals-v3"
 MODEL = "Mistral-Small-3.2-24B-Instruct-2506"
 PROVIDER = "ovh-town-meals"
 KIND = "town-meals"
@@ -171,10 +174,20 @@ class MealSources:
                                 "subdivision": any(isinstance(v, str) and v.startswith(codes[0] + "-")
                                                    for v in claims(entity, "P300")),
                                 "source": f"https://www.wikidata.org/wiki/{entity_id}"})
-            parents = {v["id"] for v in claims(entity, "P131") if isinstance(v, dict) and v.get("id")}
-            if len(parents) != 1 or country_id in parents:
+            parents = sorted({v["id"] for v in claims(entity, "P131") if isinstance(v, dict) and v.get("id")})
+            if not parents or country_id in parents:
                 break
-            entity = self.entity(ids=next(iter(parents)))
+            if len(parents) == 1:
+                entity = self.entity(ids=parents[0])
+                continue
+            # French communes list their département beside an arrondissement, canton or
+            # metropolis; follow the one parent that is an ISO 3166-2 subdivision.
+            candidates = [self.entity(ids=parent) for parent in parents[:6]]
+            official = [candidate for candidate in candidates if any(
+                isinstance(v, str) and v.startswith(codes[0] + "-") for v in claims(candidate, "P300"))]
+            if len(official) != 1:
+                break
+            entity = official[0]
         if not origins:
             raise ValueError("No documentary town or region was resolved.")
         subdivisions = [i for i, origin in enumerate(origins) if origin["subdivision"]]
@@ -190,7 +203,10 @@ class MealSources:
                 "en.wikipedia.org", action="query", generator="search", gsrsearch=query,
                 gsrlimit="20", gsrnamespace="0", prop="extracts|info|pageimages|categories|links", explaintext="1",
                 exintro="1", exlimit="max", inprop="url", piprop="name",
-                cllimit="max", pllimit="max", plnamespace="0").get("query", {}).get("pages", {})
+                # Only links to the origin articles matter; an unrestricted link list shares
+                # one 500-link budget across all twenty pages and truncates most of them.
+                cllimit="max", pllimit="max", plnamespace="0",
+                pltitles="|".join(dict.fromkeys(o["article"] for o in origins))).get("query", {}).get("pages", {})
             for page in sorted(pages.values(), key=lambda p: p.get("index", 99)):
                 text, url = page.get("extract", "")[:6000], page.get("fullurl", "")
                 categories = [c["title"].removeprefix("Category:") for c in page.get("categories", [])
@@ -329,7 +345,7 @@ class TownMeals:
                 or data.get("kind") != "meals"):
             raise JourneyRequest("Invalid culinary discovery request.")
         town = self.towns.town(data, capability)
-        key = VERSION + ":" + digest(town["osmId"])
+        key = CACHE_VERSION + ":" + digest(town["osmId"])
         catalogue = self.assets.catalogue
         with catalogue.connection() as db:
             row = db.execute(catalogue.sql(

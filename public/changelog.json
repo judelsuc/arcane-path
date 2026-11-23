@@ -1,6 +1,11 @@
 {
-  "version": "0.22.43",
+  "version": "0.22.44",
   "entries": [
+    {
+      "version": "0.22.44",
+      "fr": "Les spécialités locales retrouvent leurs plats emblématiques (la bouillabaisse à Marseille, par exemple), et sur le lieu d'une étape de quête à faire en conversation, la fenêtre Quêtes propose d'ouvrir Dialogue directement.",
+      "en": "Local specialities find their signature dishes again (bouillabaisse in Marseille, for example), and on the site of a conversation quest step the Quests window offers to open Dialogue directly."
+    },
     {
       "version": "0.22.43",
       "fr": "Les personnages proposent des quêtes plus souvent : la recherche de lieux réels parcourt désormais jusqu'à seize villes proches au lieu de trois, et une ville inaccessible n'interrompt plus la recherche.",

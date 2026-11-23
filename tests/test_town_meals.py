@@ -144,6 +144,17 @@ class MealSourceTests(unittest.TestCase):
         source.entities["Q2044"]["claims"]["P131"].append(historic)
         self.assertEqual(MealSources(source).discover(TOWN)["country"], "IT")
 
+    def test_several_parents_follow_the_official_subdivision_and_links_target_the_origins(self):
+        source = Sources()
+        source.entities["Q2044"]["claims"]["P131"] = [claim({"id": "Q900"}), claim({"id": "Q1273"})]
+        source.entities["Q900"] = {"id": "Q900", "labels": {"en": {"value": "Metropolitan City"}}, "claims": {}}
+        source.entities["Q1273"]["claims"]["P300"] = [claim("IT-52")]
+        brief = MealSources(source).discover(TOWN)
+        self.assertEqual([o["name"] for o in brief["origins"]], ["Florence", "Tuscany"])
+        search = next(p for host, p in source.calls if host == "en.wikipedia.org")
+        # Restricting links to the origin articles keeps every page's link evidence complete.
+        self.assertEqual(search["pltitles"], "Florence|Tuscany")
+
     def test_regional_cuisine_categories_ground_dishes_without_guessed_demonyms(self):
         source = Sources()
         del source.entities["Q1273"]["claims"]["P1549"]
@@ -383,10 +394,10 @@ class TownMealTests(unittest.TestCase):
             self.writer.assert_not_called()
 
     def test_old_cached_failure_gets_one_source_only_recovery_without_paid_dispatch(self):
-        from town_meals import VERSION, digest
+        from town_meals import CACHE_VERSION, digest
         with self.towns.assets.catalogue.connection() as db:
             db.execute("INSERT INTO town_documents(cache_key,payload,fetched,expires,token,lease) "
-                       "VALUES(?,?,0,0,NULL,0)", (VERSION + ":" + digest(TOWN["osmId"]),
+                       "VALUES(?,?,0,0,NULL,0)", (CACHE_VERSION + ":" + digest(TOWN["osmId"]),
                        json.dumps({"identity": TOWN["osmId"], "loading": False, "meals": [],
                                    "error": "Old provider failure", "warnings": []})))
         result = self.settled()
@@ -409,8 +420,8 @@ class TownMealTests(unittest.TestCase):
         catalogue = self.service.assets.catalogue
         with catalogue.connection() as db:
             from town_content import digest
-            from town_meals import VERSION
-            key = VERSION + ":" + digest(TOWN["osmId"])
+            from town_meals import CACHE_VERSION
+            key = CACHE_VERSION + ":" + digest(TOWN["osmId"])
             db.execute("INSERT INTO town_documents(cache_key,payload,fetched,expires,token,lease) "
                        "VALUES(?,?,0,0,'interrupted',1)",
                        (key, json.dumps({"identity": TOWN["osmId"], "loading": True,

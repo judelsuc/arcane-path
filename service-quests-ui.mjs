@@ -20,7 +20,8 @@ const COPY = {
     return: "Revenir au détail", abandon: "Abandonner", confirm: "Abandonner sans récompense finale ?",
     keep: "Garder la quête", step: "Étape", reward: "Récompense", route: "Trajet de référence",
     here: "Action sur place", go: "Rejoindre le POI indiqué pour agir.",
-    talk: "Parler à la personne sur place dans Dialogue.", noTown: "Une personne doit être présente pour proposer une mission.",
+    talk: "Parler à la personne sur place dans Dialogue.",
+    talkHere: "Vous êtes sur place : l'action « {action} » se fait dans la fenêtre Dialogue.", openTalk: "Ouvrir Dialogue", noTown: "Une personne doit être présente pour proposer une mission.",
     saved: "Étape enregistrée.", paid: "Quête terminée ; récompense versée.",
     actions: { talk: "Se renseigner", send: "Envoyer la réponse", collect: "Retirer le document",
       deliver: "Remettre le document", observe: "Relever le repère", candle: "Allumer le cierge" },
@@ -41,7 +42,8 @@ const COPY = {
     return: "Back to details", abandon: "Abandon", confirm: "Abandon without the final reward?",
     keep: "Keep quest", step: "Step", reward: "Reward", route: "Reference journey",
     here: "On-site action", go: "Reach the specified POI to act.",
-    talk: "Talk to the person on site in Dialogue.", noTown: "Someone must be present to offer a quest.",
+    talk: "Talk to the person on site in Dialogue.",
+    talkHere: "You are on site: the “{action}” action is in the Dialogue window.", openTalk: "Open Dialogue", noTown: "Someone must be present to offer a quest.",
     saved: "Step saved.", paid: "Quest completed; reward paid.",
     actions: { talk: "Ask for information", send: "Send the response", collect: "Collect the document",
       deliver: "Hand over the document", observe: "Record the landmark", candle: "Light the candle" },
@@ -237,7 +239,13 @@ export function setupServiceQuests(t, { context, mutate,
       button(controls, c.destination, () => { mapQuest = quest.id; localize(); });
       if (!role.social) button(controls, `${c.here} : ${c.actions[role.action]}`, () => act(quest, false),
         !here || current.blocked);
-      paragraph(controls, role.social ? c.talk : here ? "" : c.go);
+      if (role.social && here) {
+        button(controls, c.openTalk, () => {
+          document.getElementById("trail-dialog")?.close();
+          document.getElementById("open-conversation")?.click();
+        }, current.blocked);
+        paragraph(controls, c.talkHere.replace("{action}", c.actions[role.action]));
+      } else paragraph(controls, !here ? c.go : role.social ? c.talk : "");
       if (confirming === quest.id) {
         paragraph(controls, c.confirm);
         const keep = button(controls, c.keep, () => { confirming = undefined; localize(); });
