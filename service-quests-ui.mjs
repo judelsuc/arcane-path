@@ -14,7 +14,8 @@ const COPY = {
     refused: "« Je comprends. Bonne route à vous. »",
     unavailable: "« Je n’ai pas de mission à vous proposer pour le moment. »",
     failed: "« Je n’ai pas encore toutes les indications. Revenez me parler, je garde votre demande. »",
-    limit: "Consultez vos missions en attente avant d’en écouter une autre.",
+    limit: "Vous avez déjà {n} propositions en attente : acceptez-en ou refusez-en une dans Quêtes avant d’en écouter une autre.",
+    activeFull: "Vous avez déjà {n} quêtes en cours : terminez-en ou abandonnez-en une avant d’en accepter une autre.",
     retry: "Réessayer la même demande", active: "En cours", completed: "Terminée", abandoned: "Abandonnée", declined: "Refusée",
     follow: "Suivre", unfollow: "Ne plus suivre", destination: "Voir la destination",
     return: "Revenir au détail", abandon: "Abandonner", confirm: "Abandonner sans récompense finale ?",
@@ -36,7 +37,8 @@ const COPY = {
     refused: "“I understand. Safe travels.”",
     unavailable: "“I have no quest to offer you at the moment.”",
     failed: "“I don’t have all the directions yet. Speak to me again; I’ll keep your request.”",
-    limit: "Review your pending offers before listening to another one.",
+    limit: "You already have {n} pending offers: accept or decline one in Quests before listening to another.",
+    activeFull: "You already have {n} quests in progress: finish or abandon one before accepting another.",
     retry: "Retry this request", active: "Active", completed: "Completed", abandoned: "Abandoned", declined: "Declined",
     follow: "Track", unfollow: "Stop tracking", destination: "View destination",
     return: "Back to details", abandon: "Abandon", confirm: "Abandon without the final reward?",
@@ -177,7 +179,7 @@ export function setupServiceQuests(t, { context, mutate,
       queueMicrotask(() => { if (preparationKey === key) void prepareOffer(); });
     }
     status.textContent = working ? c.preparing.replace("{name}", speaker?.name ?? "")
-      : feedback ? c[feedback] : !speaker ? c.noTown : full && !knownQuest ? c.limit
+      : feedback ? c[feedback] : !speaker ? c.noTown : full && !knownQuest ? c.limit.replace("{n}", SERVICE_QUEST_LIMITS.offers)
         : unavailable ? c.unavailable : knownQuest?.status === "offered"
           ? c.proposal.replace("{name}", speaker.name)
           : knownQuest?.status === "active" ? c.accepted
@@ -199,7 +201,11 @@ export function setupServiceQuests(t, { context, mutate,
       for (const poi of offer.destinations) paragraph(section, `${poi.town} — ${poi.name}`);
       const controls = document.createElement("div");
       controls.className = "quest-command-block";
-      button(controls, c.accept, () => { commit(s => acceptServiceQuest(s, offer.id)); feedback = ""; localize(); }, current.blocked);
+      const busyQuests = (state.serviceQuests?.quests ?? []).filter(quest => quest.status === "active").length;
+      const activeFull = busyQuests >= SERVICE_QUEST_LIMITS.active;
+      button(controls, c.accept, () => { commit(s => acceptServiceQuest(s, offer.id)); feedback = ""; localize(); },
+        current.blocked || activeFull);
+      if (activeFull) paragraph(controls, c.activeFull.replace("{n}", SERVICE_QUEST_LIMITS.active));
       button(controls, c.decline, () => { commit(s => declineServiceQuest(s, offer.id)); localize(); }, current.blocked);
       section.append(controls);
       if (offer.characterId === speaker?.id) offers.append(section);

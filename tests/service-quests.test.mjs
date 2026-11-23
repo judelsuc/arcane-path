@@ -224,13 +224,15 @@ test("decline and abandon never pay, preserve nonce history and allow new instan
 });
 
 test("offers/active caps, duplicate template and bounded history are enforced without eviction", () => {
+  const { offers, active } = SERVICE_QUEST_LIMITS;
+  assert.equal(offers, 5); assert.equal(active, 5);
   let current = state();
-  for (let i = 0; i < 3; i++) current = offered(QUEST_TEMPLATES[i], i + 1, current);
-  assert.throws(() => offered(QUEST_TEMPLATES[3], 4, current), /limit/);
-  for (let i = 0; i < 3; i++) current = acceptServiceQuest(current, nonce(i + 1));
-  current = offered(QUEST_TEMPLATES[3], 4, current);
-  assert.throws(() => acceptServiceQuest(current, nonce(4)));
-  assert.throws(() => offered(QUEST_TEMPLATES[0], 5, current), /duplicate/);
+  for (let i = 0; i < offers; i++) current = offered(QUEST_TEMPLATES[i], i + 1, current);
+  assert.throws(() => offered(QUEST_TEMPLATES[offers], offers + 1, current), /limit/);
+  for (let i = 0; i < active; i++) current = acceptServiceQuest(current, nonce(i + 1));
+  current = offered(QUEST_TEMPLATES[offers], offers + 1, current);
+  assert.throws(() => acceptServiceQuest(current, nonce(offers + 1)));
+  assert.throws(() => offered(QUEST_TEMPLATES[0], offers + 2, current), /duplicate/);
   const base = declineServiceQuest(offered(), nonce(1));
   const closed = base.serviceQuests.quests[0];
   const full = { ...base, serviceQuests: { ...base.serviceQuests,

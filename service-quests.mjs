@@ -15,7 +15,8 @@ export const SERVICE_QUEST_KINDS = freeze([
   "church", "station", "cafe", "administrative", "tourism", "alpine_hut",
   "viewpoint", "school", "cemetery", "restaurant", "shop", "museum",
 ]);
-export const SERVICE_QUEST_LIMITS = freeze({ offers: 3, active: 3, history: 1000, wording: 2000 });
+// Raised from 3/3 in 0.22.47: characters offer quests far more often since the regional mirror.
+export const SERVICE_QUEST_LIMITS = freeze({ offers: 5, active: 5, history: 1000, wording: 2000 });
 export const SERVICE_QUEST_SCOPES = freeze(["local", "regional", "far", "europe"]);
 
 const templates = new Map(QUEST_TEMPLATES.map(template => [template.id, template]));
