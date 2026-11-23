@@ -228,6 +228,24 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Opening names, quest caps, nearby legend telling and update banner, 0.22.47 (23 November 2026)
+
+Deployed `33cb42b` (`deploy-2026-11-23-0.22.47`): the opening prompt gives a
+recognized character name priority over local culture and drops a sentence
+that prints the name instead of failing (server replay of a Marcel Pagnol
+brief: 3/3 valid, was 2/3); service quests allow 5 active and 5 pending
+offers with an explicit message at the cap; inhabitants within a few cells of
+a discovered legend town can tell its story (server accepts a disclose naming
+the town within 4 cells of its search area); an open page checks the deployed
+commit every 5 minutes and offers a reload. Context: a page loaded at 16:47
+ran the pre-0.22.46 code until the evening (nginx showed no module fetch after
+the 19:13 deployment), so a pursuer capture ended a journey without the new
+fight. Eleven files changed, no new files; hashes match, service restarted,
+journal clean, `nginx -t` OK, HTTPS 401, conditional GET 200. JavaScript
+1916/1917 (dream-wiring baseline), Python suites with the same pre-existing
+failures. Rollback archive `/home/ubuntu/before-0.22.47-33cb42b/runtime.tar.gz`,
+SHA-256 `54e53a31eff63087f49006ba9dc7f281152e43ff3660ead04a05b135a16a52a7`.
+
 ## Garde haute in the journey, 0.22.46 (23 November 2026)
 
 Deployed `d6428c3` (`deploy-2026-11-23-brawl-journey`): street fights in
