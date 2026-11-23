@@ -22,6 +22,9 @@ VERSION = "town-meals-v2"
 # Bumped when source discovery improves so towns cached empty are searched again;
 # VERSION alone keeps discovered meal identities stable in saved journeys.
 CACHE_VERSION = "town-meals-v4"
+# Per-article decisions shared by neighbouring towns, so the model is asked
+# about each Wikipedia article once instead of once per town.
+DECISION_VERSION = "town-meals-dish-v1"
 MODEL = "Mistral-Small-3.2-24B-Instruct-2506"
 PROVIDER = "ovh-town-meals"
 KIND = "town-meals"
@@ -477,9 +480,16 @@ class TownMeals:
             result["mode"] = "documentary"
         try:
             brief = MealSources(self.towns.source).discover(town)
-            if brief["documents"] and result.get("mode") != "documentary":
+            reused = self._reuse(brief, town) if result.get("mode") != "documentary" else None
+            if reused is not None:
+                result["meals"] = reused
+            elif brief["documents"] and result.get("mode") != "documentary":
                 try:
                     result["meals"] = self._generate(brief, town)
+                    try:
+                        self._remember(brief, result["meals"])
+                    except (OSError, ValueError, AssetError):
+                        logging.exception("Culinary decisions for %s were not cached", town["osmId"])
                 except (OSError, ValueError, AssetError, WorkshopError):
                     logging.exception("Culinary model unavailable for %s; using documentary fallback", town["osmId"])
                     result["mode"] = "documentary"
@@ -513,6 +523,56 @@ class TownMeals:
             finally:
                 with self.lock:
                     self.tasks.discard(key)
+
+    def _decision_key(self, url):
+        return DECISION_VERSION + ":" + digest(url)
+
+    def _remember(self, brief, meals):
+        """Record what the model decided for every article it was shown."""
+        chosen = {meal["source"]: meal for meal in meals}
+        catalogue = self.assets.catalogue
+        with catalogue.connection() as db:
+            now = float(db.execute("SELECT " + clock(catalogue)).fetchone()[0])
+            for doc in brief["documents"]:
+                meal = chosen.get(doc["url"])
+                payload = {"selected": False} if meal is None else {
+                    "selected": True, "originSource": meal["originSource"], "evidence": meal["originEvidence"],
+                    "fr": meal["fr"], "en": meal["en"]}
+                db.execute(catalogue.sql(
+                    "INSERT INTO town_documents(cache_key,payload,fetched,expires,token,lease) VALUES(?,?,?,0,NULL,0) "
+                    "ON CONFLICT(cache_key) DO UPDATE SET payload=excluded.payload,fetched=excluded.fetched"),
+                    (self._decision_key(doc["url"]), json.dumps(payload, ensure_ascii=False), now))
+
+    def _reuse(self, brief, town):
+        """Meals for this town from earlier decisions, or None when an article is new."""
+        if not brief["documents"]:
+            return None
+        catalogue = self.assets.catalogue
+        decisions = {}
+        with catalogue.connection() as db:
+            for doc in brief["documents"]:
+                row = db.execute(catalogue.sql("SELECT payload FROM town_documents WHERE cache_key=?"),
+                                 (self._decision_key(doc["url"]),)).fetchone()
+                if row is None:
+                    return None
+                decisions[doc["url"]] = json.loads(row[0])
+        meals = []
+        for doc in brief["documents"]:
+            decision = decisions[doc["url"]]
+            if not decision.get("selected"):
+                continue
+            # The dish stays grounded: its origin must belong to this town's own chain
+            # and be allowed for this article here, with the same evidence available.
+            origin_id = next((i for i, origin in enumerate(brief["origins"])
+                              if origin["source"] == decision["originSource"]), None)
+            if (origin_id is None or origin_id not in doc["allowedOrigins"] or
+                    decision["evidence"] not in doc["evidence"]):
+                continue
+            meals.append(meal_record(doc, brief["origins"][origin_id], decision["evidence"], brief, town,
+                                     decision["fr"], decision["en"]))
+            if len(meals) == MAX_MEALS:
+                break
+        return meals
 
     def _generate(self, brief, town):
         request = digest([VERSION, town["osmId"]])

@@ -306,6 +306,36 @@ class TownMealTests(unittest.TestCase):
             usage = db.execute("SELECT calls FROM provider_usage WHERE provider=?", (PROVIDER,)).fetchall()
         self.assertEqual([row[0] for row in usage], [1, 1])
 
+    def test_neighbouring_town_reuses_article_decisions_without_asking_the_model_again(self):
+        first = self.settled()
+        self.assertEqual([meal["name"] for meal in first["meals"]], ["Bistecca alla fiorentina"])
+        self.writer.assert_called_once()
+        neighbour = {**copy.deepcopy(TOWN), "osmId": "node/11", "name": "Fiesole"}
+        self.towns.town = lambda data, token: copy.deepcopy(neighbour)
+        self.payload = {**self.payload, "town": "node/11"}
+        second = self.settled()
+        self.writer.assert_called_once()
+        self.assertEqual([meal["name"] for meal in second["meals"]], ["Bistecca alla fiorentina"])
+        self.assertEqual(second["meals"][0]["towns"], ["node/11"])
+        self.assertNotEqual(second["meals"][0]["id"], first["meals"][0]["id"], "meals stay scoped to their town")
+        self.assertEqual(second["meals"][0]["fr"], first["meals"][0]["fr"])
+        self.assertIn("photo", second["meals"][0])
+        # A new article in a third town still goes to the model.
+        original = self.source.api
+        def api(host, **params):
+            value = original(host, **params)
+            if host == "en.wikipedia.org" and "pages" in value.get("query", {}):
+                value["query"]["pages"]["3"] = {"title": "Ribollita", "index": 3, "links": [{"title": "Tuscany"}],
+                    "extract": "Ribollita is a Tuscan soup made with bread and vegetables, typical of Tuscan cuisine.",
+                    "fullurl": "https://en.wikipedia.org/wiki/Ribollita"}
+            return value
+        self.source.api = api
+        third = {**copy.deepcopy(TOWN), "osmId": "node/12", "name": "Prato"}
+        self.towns.town = lambda data, token: copy.deepcopy(third)
+        self.payload = {**self.payload, "town": "node/12"}
+        self.settled()
+        self.assertEqual(self.writer.call_count, 2)
+
     def test_concurrent_requests_claim_once_and_errors_do_not_retry(self):
         entered, release = threading.Event(), threading.Event()
         def blocked(brief):
