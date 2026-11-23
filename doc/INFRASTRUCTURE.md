@@ -228,6 +228,34 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Area tiles, wider quest search and regional dishes, 0.22.42–0.22.44 (23 November 2026)
+
+Deployed runtime `05c2876` (`deploy-2026-11-23-regional-dishes`), carrying
+0.22.42 (`eb7a1ed`, mirror map boxes cut from cached 0.25° area tiles),
+0.22.43 (`f709105`, character quests search up to 16 anchor towns and 40 POI
+lookups with the mirror; a walking failure skips to the next town) and 0.22.44
+(meal discovery restricts Wikipedia links to the origin articles, follows the
+ISO 3166-2 parent when a town has several, and uses cache key
+`town-meals-v3` so towns cached empty are searched once more; the Quests
+window points conversation steps to Dialogue). All 26 mirror sub-regions were
+installed before this deployment, with an empty queue.
+
+Diagnosis: a production replay of the day's 9 refused character quests near
+Pertuis and Venelles found 0 ready with 0.22.41 (POI lookups 0.0 s, the search
+stopped after 3 villages; one quest timed out on 17–20 s chunk builds) and 4
+ready with 0.22.42–0.22.43 (chunk builds 3–5 s after the first area cut). A
+server-side probe of meal discovery for Marseille now returns Bouillabaisse,
+Pieds paquets and Brandade; Septèmes-les-Vallons still finds no dish article
+through its region search.
+
+Validation: JavaScript 1895/1896 (dream-wiring baseline); Python 855 tests,
+the same 5 pre-existing failures. Installed hashes of the five changed files
+match the commit, journal clean since start, `nginx -t` OK, HTTPS 401,
+conditional GET 200. Private rollback archive
+`/home/ubuntu/before-0.22.44-05c2876/runtime.tar.gz`, SHA-256
+`e28a9e776d495a56557acdbb8130bf37b95bec4408b8333159e9fa201b074154`
+(restores the 0.22.41 files; area tiles are harmless to the old code).
+
 ## Regional map mirror and origin-publication outage, 0.22.37–0.22.41 (23 November 2026)
 
 Deployed runtime `4091567` (`deploy-2026-11-23-osm-mirror`), carrying 0.22.37
