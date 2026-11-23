@@ -1,3 +1,4 @@
+import { createBrawlAudio } from "./minigames/brawl-audio.mjs";
 import { createMusicPlayer, musicTrack } from "./audio.mjs";
 import { createFootstepPlayer } from "./footsteps.mjs";
 import { createStreetMusicAudio } from "./street-music-audio.mjs";
@@ -57,6 +58,7 @@ export function setupAudio(t) {
     bookshop: createBookshopAudio(gameAudioOptions),
     petanque: createPetanqueAudio(gameAudioOptions),
     lanterns: createLanternAudio(gameAudioOptions),
+    brawl: createBrawlAudio(gameAudioOptions),
   };
   const gameSounds = [...new Set(Object.values(journeyGames))];
   const eventQte = createEventQteAudio(gameAudioOptions);

@@ -38,9 +38,15 @@ attackers. The goal is never to hurt people: attackers are knocked down
 ## Stages
 
 1. Engine, replay validation, canvas UI and `brawl-preview.html` (done).
-2. Journey triggers: urban cells (more at night, fewer with police presence),
-   sleeping outside (fewer at campsites, with the dog), the 7-day cap,
-   robbery and health outcomes, saved/validated history like the pursuit.
+2. Journey triggers (done, 0.22.46, `brawl-journey.mjs` and `brawl-journey-ui.mjs`):
+   urban cells 3.5% per step at night and 0.8% by day, never beside a police
+   station; sleeping without shelter 15% per night (halved with the dog; the
+   tarot sanctuary, shelters and campsites are safe), waking after 35–75% of
+   the night; at most one fight per 7 journey days; never on top of another
+   pending event. Level 1–10 from days on the road, fatigue and night; breath
+   2–5 from health; knife and dog from the real inventory and companion.
+   Losing takes 25–50% of the purse (at most half), 15 health (never below 1)
+   and 10 fatigue; winning costs 4 fatigue. History is replayed on load.
 3. Fleeing as a street-chase variant of the pursuit run.
 4. The pursuer's capture opens the fight instead of instant death; winning
    restores the pursuit head start, losing ends the journey as today.

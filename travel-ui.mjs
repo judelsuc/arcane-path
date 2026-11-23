@@ -31,6 +31,8 @@ import { setupSurvivalChoices } from "./survival-choices-ui.mjs";
 import { setupEconomyUI } from "./economy-ui.mjs";
 import { setupBuildingSleep } from "./building-sleep-ui.mjs";
 import { setupPursuit } from "./pursuit-ui.mjs";
+import { setupBrawlJourney } from "./brawl-journey-ui.mjs";
+import { brawlPending, streetEncounter, campInterruption, beginCampEncounter, beginBrawl, settleBrawl } from "./brawl-journey.mjs";
 import { setupPursuitNews } from "./pursuit-news-ui.mjs";
 import { beginPursuit, advancePursuit, pursuitPending, beginPursuitEscape, settlePursuitEscape, pursuitStatus } from "./pursuit.mjs";
 import { buildingSleepPending, startBuildingSleep, beginBuildingSleep, settleBuildingSleep } from "./building-sleep.mjs";
@@ -417,7 +419,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const cell = withNearbyMappedPois(discoveredCell, info, stream.chunks);
     return { state, cell, map: base, mapTerrain: stream.journeyTerrain, info,
       data: economyData, survival: survivalConfig, blocked: busy || (!allowLook && Boolean(cursor)) || Boolean(state.ended) ||
-        Boolean(pursuitPending(state) || buildingSleepPending(state) || artifactsUI?.pending(state) || transitActive(state) || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending ||
+        Boolean(pursuitPending(state) || brawlPending(state) || buildingSleepPending(state) || artifactsUI?.pending(state) || transitActive(state) || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending ||
           state.equipment?.dogEncounter === "pending") };
   }
   function finishJourneyArrival() {
@@ -509,7 +511,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     context() {
       const current = economyContext();
       return current && active ? { ...current, saveStatus: saveStatus.textContent,
-        blocked: busy || pursuitPending(state) || buildingSleepPending(state) || artifactsUI?.pending(state) || transitActive(state) || Boolean(cursor) || Boolean(state.ended || state.performancePending ||
+        blocked: busy || pursuitPending(state) || brawlPending(state) || buildingSleepPending(state) || artifactsUI?.pending(state) || transitActive(state) || Boolean(cursor) || Boolean(state.ended || state.performancePending ||
           state.cafePending || state.theftPending || state.miniGamePending || state.events?.pending) } : null;
     },
     act(action) {
@@ -1057,7 +1059,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     const chunk = position && stream?.get(position.x, position.y);
     const cell = chunk?.rows[position.row][position.col];
     const ended = Boolean(state?.ended);
-    const activityPending = Boolean(pursuitPending(state) || buildingSleepPending(state) || artifactsUI.pending(state) || state?.performancePending || state?.cafePending || state?.theftPending ||
+    const activityPending = Boolean(pursuitPending(state) || brawlPending(state) || buildingSleepPending(state) || artifactsUI.pending(state) || state?.performancePending || state?.cafePending || state?.theftPending ||
       transitActive(state) || state?.miniGamePending || state?.events?.pending || state?.equipment?.dogEncounter === "pending");
     const marker = document.querySelector(".tile--player");
     if (marker && state) renderJourneyMarker(marker, state, t);
@@ -1329,6 +1331,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     journeyEventsUI.update();
     queueMicrotask(() => buildingSleepUI.update());
     queueMicrotask(() => pursuitUI.update());
+    queueMicrotask(() => brawlUI.update());
     pursuitNewsUI.update();
     equipmentUI.update();
     trailArrivalUI.update();
@@ -1456,7 +1459,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
   }
 
   async function move(dc, dr) {
-    if (!state || busy || !active || pursuitPending(state) || buildingSleepPending(state) || artifactsUI.pending(state) || transitActive(state) || state.ended || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending ||
+    if (!state || busy || !active || pursuitPending(state) || brawlPending(state) || buildingSleepPending(state) || artifactsUI.pending(state) || transitActive(state) || state.ended || state.performancePending || state.cafePending || state.theftPending || state.miniGamePending ||
         state.events?.pending || state.equipment?.dogEncounter === "pending") return;
     heading = [dc, dr];
     stream.prioritize(visibleDownloads(state.col, state.row, ...heading));
@@ -1499,6 +1502,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         { survival: survivalConfig });
       const eventInfo = exposureInfo(target, to.row, to.col);
       state = advanceJourneyEvents(previous, recordTrailArrival(finalized), eventInfo, survivalConfig, economyData);
+      state = streetEncounter(previous, state, target.rows[to.row][to.col], eventInfo);
       autosave();
       onStep?.(target.rows[to.row][to.col].terrain);
       if (state.lastMove && !state.lastMove.elevationKnown) missingHeightMoves++;
@@ -1706,6 +1710,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     economyUI.reset();
     buildingSleepUI.reset();
     pursuitUI.reset();
+    brawlUI.reset();
     pursuitNewsUI.reset();
     choicesUI.reset();
     inscriptionsUI.reset();
@@ -1772,7 +1777,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     context() {
       const current = economyContext();
       return current && active ? { ...current, busy,
-        otherPending: Boolean(buildingSleepPending(state) || artifactsUI?.pending(state) ||
+        otherPending: Boolean(brawlPending(state) || buildingSleepPending(state) || artifactsUI?.pending(state) ||
           transitActive(state) || state.performancePending || state.cafePending ||
           state.theftPending || state.miniGamePending || state.events?.pending ||
           state.equipment?.dogEncounter === "pending") } : null;
@@ -1790,6 +1795,36 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         state = previous;
         report(reason);
         throw reason;
+      }
+    },
+  });
+  // Sleeping without shelter may be cut short by prowlers (at most one fight a week).
+  function sleepWithEncounter(current, place, shelterId) {
+    const minutes = survivalConfig.sleep_hours * 60;
+    const share = campInterruption(current, shelterId, minutes);
+    if (share === null) return sleepEconomy(current, place.cell, place.info, shelterId, survivalConfig, economyData);
+    const slept = sleepEconomy(current, place.cell, place.info, shelterId, survivalConfig, economyData,
+      { minutes: Math.round(minutes * share) });
+    return slept.ended ? slept : beginCampEncounter(slept, place.info);
+  }
+  const brawlUI = setupBrawlJourney({
+    context() {
+      const current = economyContext();
+      return current && active ? current : null;
+    },
+    audio: miniGameAudio?.brawl ?? null,
+    act(action) {
+      const previous = state;
+      try {
+        state = action.type === "begin" ? beginBrawl(state) : settleBrawl(state, action.transcript);
+        autosave();
+        if (saveError) throw new Error(t("saveError", { error: saveError }));
+        localize();
+        return true;
+      } catch (reason) {
+        state = previous;
+        report(reason);
+        return false;
       }
     },
   });
@@ -1812,7 +1847,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
         ? buyMeal(state, current.cell, current.info, action.id, survivalConfig, economyData)
         : action.kind === "hospitality"
         ? askHospitality(state, current.cell, current.info, survivalConfig, economyData, Math.random, action.id)
-        : sleepEconomy(state, current.cell, current.info, action.id, survivalConfig, economyData);
+        : sleepWithEncounter(state, current, action.id);
       if (["sleep", "hospitality", "building-sleep-settle"].includes(action.kind)) {
         const hosted = action.kind === "hospitality" && next.hospitalityAttempts?.at(-1)?.outcome === "hosted";
         next = settleTrailDream(previous, next, {

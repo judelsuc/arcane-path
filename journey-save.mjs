@@ -6,6 +6,7 @@ import { CLUE_ACTIONS } from "./trail-actions.mjs";
 import { validateHospitality } from "./hospitality.mjs";
 import { validateBuildingSleep } from "./building-sleep.mjs";
 import { validatePursuit } from "./pursuit.mjs";
+import { validateBrawl } from "./brawl-journey.mjs";
 import { validateStoryProgress } from "./parent-story.mjs";
 import { validateExploration } from "./trail-search.mjs";
 import { validatePressures } from "./pressures.mjs";
@@ -73,6 +74,7 @@ export function validateSave(save) {
   validateEconomy(save.economy);
   const s = save.state;
   validatePursuit(s);
+  validateBrawl(s);
   validateLegendActivity(s);
   if (s) validateTreasures(s);
   validateParentWording(s);

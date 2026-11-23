@@ -1,6 +1,11 @@
 {
-  "version": "0.22.45",
+  "version": "0.22.46",
   "entries": [
+    {
+      "version": "0.22.46",
+      "fr": "Nouveau combat « Garde haute » : en ville, surtout la nuit, ou en dormant dehors sans abri, des agresseurs peuvent vous tomber dessus (au plus une fois par semaine). Défendez-vous à coups de poussées, balayages et coups de pied ; votre couteau et votre chien vous aident. Perdre coûte une partie de votre argent et de la santé, jamais la vie.",
+      "en": "New \"Garde haute\" fights: in town, especially at night, or when sleeping outdoors without shelter, attackers may jump you (at most once a week). Defend yourself with pushes, sweeps and kicks; your knife and your dog help. Losing costs some of your money and health, never your life."
+    },
     {
       "version": "0.22.45",
       "fr": "Une ville sur quatre abrite désormais une légende, et les villes déjà visitées sans légende ont une nouvelle chance. Les hameaux et les communes voisines d'une grande ville proposent ses spécialités (la bouillabaisse autour de Marseille). La poursuite peut avoir sa propre musique.",

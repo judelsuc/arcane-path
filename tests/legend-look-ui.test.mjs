@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { setupLegendLook } from "../legend-look-ui.mjs";
 import { chunkPosition } from "../travel.mjs";
 import { pursuitPending } from "../pursuit.mjs";
+import { brawlPending } from "../brawl-journey.mjs";
 import { buildingSleepPending } from "../building-sleep.mjs";
 
 class Element {
@@ -203,7 +204,7 @@ test("the actual travel context permits remote Look requests without permitting 
     withDiscoveredAccommodations: cell => cell, discoveredLodging: new Map(),
     withNearbyMappedPois: cell => cell, base: {}, survivalConfig: {},
     busy: false, cursor: { col: 9, row: 8 }, artifactsUI: { pending: () => false },
-    transitActive: () => false, pursuitPending, buildingSleepPending,
+    transitActive: () => false, pursuitPending, brawlPending, buildingSleepPending,
   };
   const context = overrides => {
     const inputs = { ...values, ...overrides };

@@ -2155,3 +2155,11 @@ dialog p { margin: 12px 0; }
 @media (prefers-reduced-motion: reduce) {
   .event-qte .event-qte-key[aria-pressed="true"] { transform: none; }
 }
+
+/* Self-defence fights (Garde haute). */
+.brawl-dialog { width: min(96vw, 880px); max-height: 94vh; overflow-y: auto; }
+.brawl-dialog canvas { display: block; width: 100%; image-rendering: pixelated; border: 1px solid var(--line, #555); }
+.brawl-dialog .brawl-facts { opacity: 0.85; font-size: 0.92em; }
+.brawl-touch { display: flex; gap: .4rem; justify-content: center; flex-wrap: wrap; margin: .5rem 0; }
+.brawl-touch button { min-width: 56px; min-height: 48px; touch-action: none; }
+.brawl-steps { margin-top: .6rem; line-height: 1.5; }
