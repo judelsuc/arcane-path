@@ -1,6 +1,7 @@
 """Private durable quests: bounded real POIs and verified game-route topology.
 
-Discovery visits at most six towns (2-km OSM queries, 512 records, 2 MB each).
+Discovery visits at most six towns with public Overpass (2-km queries, 512 records, 2 MB each),
+or forty with the self-hosted regional mirror.
 Game walking uses existing terrain plus at most eight chunk downloads. Transport
 must come from JourneyTransport, including its explicitly fictional coaches.
 This is not a real-world routing engine or proof of private player progress.
@@ -43,6 +44,11 @@ SCOPES = {"local": (0, 15000), "regional": (15000, 100000),
 MAX_BYTES = 2_000_000
 MAX_ELEMENTS = 512
 MAX_TOWNS = 6
+MAX_ANCHORS = 3
+# The self-hosted mirror answers a 2-km POI lookup locally in milliseconds,
+# so a quest may consider many more towns than public Overpass allowed.
+MIRROR_MAX_TOWNS = 40
+MIRROR_MAX_ANCHORS = 16
 MAX_ROUTE_NODES = 64
 MAX_CHUNKS = 16
 MAX_DOWNLOADS = 8
@@ -595,7 +601,9 @@ class QuestDestinations:
         day = datetime.now(timezone.utc).date().isoformat()
         public_pois, fallback = {}, {"offline": False, "incomplete": set()}
         groups = TOWN_GROUPS.get(authored["id"], (0,) * len(authored["roles"]))
-        for anchor in targets[:3]:
+        max_towns, max_anchors = ((MIRROR_MAX_TOWNS, MIRROR_MAX_ANCHORS) if self.mirror is not None
+                                  else (MAX_TOWNS, MAX_ANCHORS))
+        for anchor in targets[:max_anchors]:
             check()
             selected = [None] * len(authored["roles"])
             assigned, used_ids, used_cells = {}, set(), {(origin["col"], origin["row"])}
@@ -608,7 +616,7 @@ class QuestDestinations:
                 for town in candidates:
                     check()
                     if town["id"] not in public_pois:
-                        if len(public_pois) >= MAX_TOWNS:
+                        if len(public_pois) >= max_towns:
                             break
                         try:
                             required = [role["kind"] for index, role in enumerate(authored["roles"])
@@ -670,29 +678,35 @@ class QuestDestinations:
                     earliest = datetime.fromisoformat(scheduled[-1]["arrival"])
                 return True
 
-            if request["scope"] == "local":
-                walking(origin, selected[0])
-            else:
-                if not local:
-                    continue
-                # Check each potential boarding walk before using its actual timetable.
-                boarding = local[0]
-                walking(origin, boarding)
-                if not riding([boarding], first_town):
-                    continue
-                walking(first_town, selected[0])
-            complete = True
-            for index in range(1, len(selected)):
-                a, b = selected[index - 1:index + 1]
-                source_town, target_town = assigned[groups[index - 1]], assigned[groups[index]]
-                if source_town["id"] == target_town["id"]:
-                    walking(a, b)
+            def route():
+                if request["scope"] == "local":
+                    walking(origin, selected[0])
                 else:
-                    walking(a, source_town)
-                    if not riding([source_town], target_town):
-                        complete = False
-                        break
-                    walking(target_town, b)
+                    if not local:
+                        return False
+                    # Check each potential boarding walk before using its actual timetable.
+                    boarding = local[0]
+                    walking(origin, boarding)
+                    if not riding([boarding], first_town):
+                        return False
+                    walking(first_town, selected[0])
+                for index in range(1, len(selected)):
+                    a, b = selected[index - 1:index + 1]
+                    source_town, target_town = assigned[groups[index - 1]], assigned[groups[index]]
+                    if source_town["id"] == target_town["id"]:
+                        walking(a, b)
+                    else:
+                        walking(a, source_town)
+                        if not riding([source_town], target_town):
+                            return False
+                        walking(target_town, b)
+                return True
+
+            try:
+                complete = route()
+            except PathLimit:
+                # This town is unreachable on the game grid; another candidate may be.
+                complete = False
             if not complete:
                 continue
             meters = sum(leg.get("distanceMeters", 0) for leg in legs)

@@ -1,6 +1,11 @@
 {
-  "version": "0.22.42",
+  "version": "0.22.43",
   "entries": [
+    {
+      "version": "0.22.43",
+      "fr": "Les personnages proposent des quêtes plus souvent : la recherche de lieux réels parcourt désormais jusqu'à seize villes proches au lieu de trois, et une ville inaccessible n'interrompt plus la recherche.",
+      "en": "Characters offer quests more often: the search for real places now looks through up to sixteen nearby towns instead of three, and an unreachable town no longer ends the search."
+    },
     {
       "version": "0.22.42",
       "fr": "Les nouvelles zones de la carte se chargent plus vite dans les régions installées : la première case d'un secteur d'environ 25 km prépare ce secteur, les suivantes en profitent.",

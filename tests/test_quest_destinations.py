@@ -22,7 +22,7 @@ from abandoned_journals import AbandonedJournals, JournalForbidden
 from journal_art import JournalArt
 from journeys import JourneyStore, JourneyRequest, JourneyConflict
 from quest_destinations import QuestDestinations, normalize, acquire
-from quest_wording import catalogue
+from quest_wording import catalogue, template
 from travel_server import ChunkStore, ChunkJobs, atomic_write, make_handler
 
 
@@ -299,6 +299,43 @@ class QuestDestinationsTests(unittest.TestCase):
         self.assertEqual(result[0]["departure"], "2026-10-23T06:00:00+00:00")
         self.assertEqual(result[1]["departure"], "2026-10-24T06:00:00+00:00")
         self.assertGreater(datetime.fromisoformat(result[1]["departure"]), datetime.fromisoformat(result[0]["arrival"]))
+
+    def mirror_with_pois_only_in_the_fifth_town(self):
+        towns = [[100 + k, f"Village {k}", 47.99887585, 2.001680 + k * .03, "FR", 500] for k in range(5)]
+        self.towns.buckets = {(47, 2): towns}
+        far = towns[-1][3]
+        elements = [poi(11, {"tourism": "hotel"}, longitude=far), poi(12, {"amenity": "post_office"}, longitude=far + .004)]
+        self.fetcher.side_effect = lambda town: elements if town["longitude"] == far else []
+        return SimpleNamespace(around=Mock(side_effect=lambda lat, lon, *_, **__: elements if lon == far else []))
+
+    def test_mirror_search_reaches_beyond_the_three_nearest_towns(self):
+        mirror = self.mirror_with_pois_only_in_the_fifth_town()
+        # Public Overpass keeps its three-town bound.
+        self.assertEqual(self.settle()["status"], "unavailable")
+        service = QuestDestinations(self.chunks, self.auth, self.transport, towns=self.towns, mirror=mirror)
+        self.addCleanup(service.close)
+        result = service.build(self.data, "test", template("fool.first-address"))
+        self.assertEqual([value["id"] for value in result["destinations"]], ["osm:node/11", "osm:node/12"])
+
+    def test_an_unreachable_candidate_town_does_not_end_the_search(self):
+        from parent_paths import PathLimit, find_path
+        mirror = self.mirror_with_pois_only_in_the_fifth_town()
+        mirror.around.side_effect = lambda lat, lon, *_, **__: [
+            poi(int(lon * 1e5), {"tourism": "hotel"}, longitude=lon),
+            poi(int(lon * 1e5) + 1, {"amenity": "post_office"}, longitude=lon + .004)]
+        calls = []
+        def blocked_first(*args, **kwargs):
+            calls.append(args[1])
+            if len(calls) == 1:
+                raise PathLimit("No route on the game grid.")
+            return find_path(*args, **kwargs)
+        service = QuestDestinations(self.chunks, self.auth, self.transport, towns=self.towns, mirror=mirror)
+        self.addCleanup(service.close)
+        with patch("quest_destinations.find_path", side_effect=blocked_first):
+            result = service.build(self.data, "test", template("fool.first-address"))
+        self.assertEqual(result["status"], "ready")
+        self.assertNotEqual(result["destinations"][0]["id"], f"osm:node/{int(2.001680 * 1e5)}")
+        self.assertGreater(len(calls), 1)
 
     def test_repeated_roles_require_distinct_real_pois(self):
         self.assertEqual(self.settle({**self.data, "template": "emperor.winter-stop"})["status"], "unavailable")
