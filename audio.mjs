@@ -3,12 +3,15 @@ const TRACKS = [
   "music-town", "music-city", "music-coast", "music-night",
   "music-shelter", "music-tarot-trail", "music-street-practice",
   "music-reunion", "music-journey-ended",
-  "music-title-song",
+  "music-title-song", "music-pursuit",
 ];
+// Tracks added after the original fifteen keep their prompt numbers in filenames.
+const NUMBERS = { "music-title-song": "16", "music-pursuit": "17" };
 
 export function musicTrack({ active, ended, terrain, sources = [], night, dialog, sleeping } = {}) {
   if (dialog === "music-dialog" || dialog === "cafe-dialog") return null;
   if (!active) return "music-title-song";
+  if (dialog === "pursuit-dialog") return "music-pursuit";
   if (ended) return ended === "reunion" ? "music-reunion" : "music-journey-ended";
   if (["trail-dialog", "birth-tarot-dialog", "daily-tarot-dialog"].includes(dialog)) return "music-tarot-trail";
   if (dialog === "economy-dialog" && sleeping) return "music-shelter";
@@ -26,7 +29,7 @@ export function musicTrack({ active, ended, terrain, sources = [], night, dialog
 export function musicCandidates(track) {
   const index = TRACKS.indexOf(track);
   if (index < 0) throw new Error(`Unknown music track: ${track}`);
-  const number = track === "music-title-song" ? "16" : String(index + 1).padStart(2, "0");
+  const number = NUMBERS[track] ?? String(index + 1).padStart(2, "0");
   const legacy = { "music-city": "music-paris", "music-coast": "music-tahiti" }[track];
   const names = [track, ...(legacy ? [legacy] : [])].flatMap(id =>
     [id, `${number}-${id}`, `${number} - ${id}`]);

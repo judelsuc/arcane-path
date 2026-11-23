@@ -155,6 +155,30 @@ class MealSourceTests(unittest.TestCase):
         # Restricting links to the origin articles keeps every page's link evidence complete.
         self.assertEqual(search["pltitles"], "Florence|Tuscany")
 
+    def test_suburbs_and_unlisted_hamlets_reach_the_nearby_capital_dishes(self):
+        source = Sources()
+        source.entities["Q500"] = {"id": "Q500", "labels": {"en": {"value": "Sesto"}},
+                                   "claims": {"P625": [claim({"latitude": 43.83, "longitude": 11.2})],
+                                              "P17": [claim({"id": "Q38"})], "P131": [claim({"id": "Q1273"})],
+                                              "P1082": [claim({"amount": "+49000"})]}}
+        source.entities["Q1273"]["claims"]["P36"] = [claim({"id": "Q2044"})]
+        original = source.api
+        def api(host, **params):
+            if host == "www.wikidata.org" and "|" in params.get("ids", ""):
+                return {"entities": {i: source.entities.get(i, {"missing": ""}) for i in params["ids"].split("|")}}
+            if params.get("generator") == "geosearch":
+                return {"query": {"pages": {"7": {"title": "Sesto", "pageprops": {"wikibase_item": "Q500"},
+                                                  "coordinates": [{"lat": 43.83, "lon": 11.2}]}}}}
+            return original(host, **params)
+        source.api = api
+        for tags in ({"wikidata": "Q500"}, {}):
+            with self.subTest(tags=tags):
+                hamlet = {"osmId": "node/11", "name": "Hamlet without article",
+                          "coordinates": (43.835, 11.21), "tags": tags}
+                brief = MealSources(source).discover(hamlet)
+                self.assertEqual([o["name"] for o in brief["origins"]], ["Sesto", "Florence", "Tuscany"])
+                self.assertTrue(any('"Florence"' in p.get("gsrsearch", "") for _, p in source.calls))
+
     def test_regional_cuisine_categories_ground_dishes_without_guessed_demonyms(self):
         source = Sources()
         del source.entities["Q1273"]["claims"]["P1549"]

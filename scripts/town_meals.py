@@ -21,11 +21,14 @@ from town_content import (allowed_url, coordinate, digest, distance, documentary
 VERSION = "town-meals-v2"
 # Bumped when source discovery improves so towns cached empty are searched again;
 # VERSION alone keeps discovered meal identities stable in saved journeys.
-CACHE_VERSION = "town-meals-v3"
+CACHE_VERSION = "town-meals-v4"
 MODEL = "Mistral-Small-3.2-24B-Instruct-2506"
 PROVIDER = "ovh-town-meals"
 KIND = "town-meals"
 MAX_MEALS = 6
+CAPITAL_METERS = 30000
+FOOD_CATEGORY = re.compile(r"\b(cuisine|dishes|foods|soups|stews|desserts|breads|cheeses|pastries|sausages|"
+                           r"confectionery|snack foods|condiments|sauces)\b", re.IGNORECASE)
 LEASE_SECONDS = 600
 
 
@@ -140,9 +143,10 @@ class MealSources:
                        and p.get("coordinates") and p.get("pageprops", {}).get("wikibase_item")
                        and distance(town["coordinates"], (p["coordinates"][0]["lat"],
                                                          p["coordinates"][0]["lon"])) <= 2000]
-            if len(matches) != 1:
-                raise ValueError("The mapped town has no unambiguous documentary identity.")
-            entity = self.entity(ids=matches[0]["pageprops"]["wikibase_item"])
+            if len(matches) == 1:
+                entity = self.entity(ids=matches[0]["pageprops"]["wikibase_item"])
+            else:
+                entity = self.nearest_settlement(town)
         coords = next((coordinate((v.get("latitude"), v.get("longitude")))
                        for v in claims(entity, "P625") if isinstance(v, dict)), None)
         if not coords or distance(town["coordinates"], coords) > 50000:
@@ -155,7 +159,7 @@ class MealSources:
         codes = [v for v in claims(country, "P297") if isinstance(v, str) and re.fullmatch(r"[A-Z]{2}", v)]
         if len(codes) != 1:
             raise ValueError("The documentary country has no unambiguous ISO code.")
-        origins, seen = [], set()
+        origins, seen, capitals = [], set(), []
         for _ in range(5):
             entity_id = entity.get("id")
             if not entity_id or entity_id in seen or entity_id == country_id:
@@ -168,6 +172,8 @@ class MealSources:
             aliases.extend(v["value"] for values in entity.get("aliases", {}).values() for v in values)
             aliases.extend(v["text"] for v in claims(entity, "P1549")
                            if isinstance(v, dict) and v.get("language") in ("en", "fr", "it"))
+            if name and origins:
+                capitals.extend(v["id"] for v in claims(entity, "P36") if isinstance(v, dict) and v.get("id"))
             if name:
                 origins.append({"name": name, "aliases": list(dict.fromkeys(aliases))[:40],
                                 "article": entity.get("sitelinks", {}).get("enwiki", {}).get("title", name),
@@ -192,12 +198,58 @@ class MealSources:
             raise ValueError("No documentary town or region was resolved.")
         subdivisions = [i for i, origin in enumerate(origins) if origin["subdivision"]]
         origins = origins[:subdivisions[-1] + 1] if subdivisions else origins[:3]
+        # A nearby administrative capital (Marseille for Bouches-du-Rhône) is part of a
+        # suburb's culinary place: its dishes are searched and may ground a meal.
+        known = {origin["source"] for origin in origins}
+        for capital_id in dict.fromkeys(capitals):
+            if len(origins) >= 5:
+                break
+            if f"https://www.wikidata.org/wiki/{capital_id}" in known:
+                continue
+            capital = self.entity(ids=capital_id)
+            where = next((coordinate((v.get("latitude"), v.get("longitude")))
+                          for v in claims(capital, "P625") if isinstance(v, dict)), None)
+            name = capital.get("labels", {}).get("en", {}).get("value")
+            if not where or not name or distance(town["coordinates"], where) > CAPITAL_METERS:
+                continue
+            aliases = [v["value"] for v in capital.get("labels", {}).values()]
+            aliases.extend(v["value"] for values in capital.get("aliases", {}).values() for v in values)
+            aliases.extend(v["text"] for v in claims(capital, "P1549")
+                           if isinstance(v, dict) and v.get("language") in ("en", "fr", "it"))
+            origins.insert(1, {"name": name, "aliases": list(dict.fromkeys(aliases))[:40],
+                               "article": capital.get("sitelinks", {}).get("enwiki", {}).get("title", name),
+                               "subdivision": False, "capital": True,
+                               "source": f"https://www.wikidata.org/wiki/{capital_id}"})
+            known.add(f"https://www.wikidata.org/wiki/{capital_id}")
         return codes[0], origins
+
+    def nearest_settlement(self, town):
+        """A hamlet without its own article borrows the nearest documented populated place."""
+        pages = self.source.api(
+            "en.wikipedia.org", action="query", generator="geosearch",
+            ggscoord=f"{town['coordinates'][0]}|{town['coordinates'][1]}",
+            ggsradius="10000", ggslimit="20", prop="coordinates|pageprops").get("query", {}).get("pages", {})
+        nearby = sorted(
+            ((distance(town["coordinates"], (p["coordinates"][0]["lat"], p["coordinates"][0]["lon"])),
+              p["pageprops"]["wikibase_item"]) for p in pages.values()
+             if p.get("coordinates") and p.get("pageprops", {}).get("wikibase_item")),
+            key=lambda item: item[0])
+        ids = list(dict.fromkeys(identity for _, identity in nearby))[:20]
+        if ids:
+            entities = self.source.api("www.wikidata.org", action="wbgetentities",
+                                       props="labels|aliases|claims|sitelinks", languages="en|fr|it",
+                                       ids="|".join(ids)).get("entities", {})
+            for identity in ids:
+                entity = entities.get(identity, {})
+                if "missing" not in entity and claims(entity, "P1082") and claims(entity, "P131"):
+                    return entity
+        raise ValueError("The mapped town has no unambiguous documentary identity.")
 
     def discover(self, town):
         country, origins = self.context(town)
         documents = {}
-        for origin in dict.fromkeys((origins[0]["name"], origins[-1]["name"])):
+        for origin in dict.fromkeys((origins[0]["name"], *(o["name"] for o in origins if o.get("capital")),
+                                     origins[-1]["name"])):
             query = '"' + origin.replace('"', "") + '" (food OR dish OR cuisine)'
             pages = self.source.api(
                 "en.wikipedia.org", action="query", generator="search", gsrsearch=query,
@@ -228,8 +280,10 @@ class MealSources:
                                                "evidence": [text[:600], *(
                                                    "Wikipedia category: " + category + "."
                                                    for category in regional[:3])],
-                                               "_priority": bool(regional)})
-        ordered = sorted(documents.values(), key=lambda doc: not doc["_priority"])[:16]
+                                               "_priority": (not regional, not any(
+                                                   FOOD_CATEGORY.search(category) for category in categories))})
+        # Place articles mention every origin too; dish articles go first so they are not crowded out.
+        ordered = sorted(documents.values(), key=lambda doc: doc["_priority"])[:16]
         for doc in ordered:
             del doc["_priority"]
         return {"country": country, "origins": origins, "documents": ordered}

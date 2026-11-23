@@ -1,6 +1,11 @@
 {
-  "version": "0.22.44",
+  "version": "0.22.45",
   "entries": [
+    {
+      "version": "0.22.45",
+      "fr": "Une ville sur quatre abrite désormais une légende, et les villes déjà visitées sans légende ont une nouvelle chance. Les hameaux et les communes voisines d'une grande ville proposent ses spécialités (la bouillabaisse autour de Marseille). La poursuite peut avoir sa propre musique.",
+      "en": "One town in four now hosts a legend, and towns already visited without one get a second chance. Hamlets and towns near a major city offer its specialities (bouillabaisse around Marseille). The pursuit can have its own music."
+    },
     {
       "version": "0.22.44",
       "fr": "Les spécialités locales retrouvent leurs plats emblématiques (la bouillabaisse à Marseille, par exemple), et sur le lieu d'une étape de quête à faire en conversation, la fenêtre Quêtes propose d'ouvrir Dialogue directement.",

@@ -17,6 +17,11 @@ from durable_jobs import DurableJobs
 
 TOWN_ID = re.compile(r"(?:node|way|relation)/[1-9]\d{0,19}")
 PAGE_SIZE = 30
+# One town in four hosts a legend. Towns decided before the rate was raised from
+# one in ten get a single top-up roll at one in six: 1/10 + 9/10 * 1/6 = 1/4.
+LEGEND_ODDS = 4
+TOPUP_ODDS = 6
+LEGEND_RATE_RAISED_AT = 1795451026
 
 
 class TownLegends:
@@ -239,8 +244,9 @@ class TownLegends:
             row = db.execute(sql(
                 "SELECT town_id,town_name,eligible,seed,format FROM town_legends WHERE town_id=?"),
                 (town["osmId"],)).fetchone()
+            decided = False
             if row is None:
-                eligible = self.randbelow(10) == 0
+                eligible = self.randbelow(LEGEND_ODDS) == 0
                 seed = self.randbelow(2**32) if eligible else None
                 format_name = ("platform", "investigation", "dungeon")[self.randbelow(3)] if eligible else None
                 now = float(db.execute("SELECT " + clock(catalogue)).fetchone()[0])
@@ -252,6 +258,24 @@ class TownLegends:
                 if eligible and inserted:
                     db.execute(sql("INSERT INTO town_legend_gameplay(town_id,format) VALUES(?,?)"),
                                (town["osmId"], format_name))
+                decided = True
+            elif not row[2] and db.execute(sql("SELECT created FROM town_legends WHERE town_id=?"),
+                                           (row[0],)).fetchone()[0] < LEGEND_RATE_RAISED_AT:
+                eligible = self.randbelow(TOPUP_ODDS) == 0
+                seed = self.randbelow(2**32) if eligible else None
+                format_name = ("platform", "investigation", "dungeon")[self.randbelow(3)] if eligible else None
+                now = float(db.execute("SELECT " + clock(catalogue)).fetchone()[0])
+                # The created guard makes the top-up happen once, even across concurrent requests.
+                updated = db.execute(sql(
+                    "UPDATE town_legends SET eligible=?,seed=?,format=?,created=? "
+                    "WHERE town_id=? AND eligible=0 AND created<? RETURNING town_id"),
+                    (int(eligible), seed, "platform" if format_name == "dungeon" else format_name,
+                     max(now, LEGEND_RATE_RAISED_AT), row[0], LEGEND_RATE_RAISED_AT)).fetchone()
+                if eligible and updated:
+                    db.execute(sql("INSERT INTO town_legend_gameplay(town_id,format) VALUES(?,?) "
+                                   "ON CONFLICT(town_id) DO NOTHING"), (row[0], format_name))
+                decided = True
+            if decided:
                 row = db.execute(sql(
                     "SELECT town_id,town_name,eligible,seed,format FROM town_legends WHERE town_id=?"),
                     (town["osmId"],)).fetchone()

@@ -84,6 +84,7 @@ export function setupPursuit({ context, act, doc = document }) {
   doc.querySelector("#needs-warning").after(status);
   const dialog = doc.createElement("dialog");
   dialog.className = "pursuit-dialog";
+  dialog.id = "pursuit-dialog";
   dialog.setAttribute("data-native-controls", "");
   const title = doc.createElement("h2");
   let atmosphereText = "";

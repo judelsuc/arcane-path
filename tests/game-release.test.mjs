@@ -18,7 +18,7 @@ const logger = { error() {} };
 test("tracked changelog declares a semantic game version and bilingual release notes", async () => {
   const actual = JSON.parse(await readFile(new URL("../public/changelog.json", import.meta.url)));
   assert.match(actual.version, /^\d+\.\d+\.\d+$/);
-  assert.deepEqual(actual.entries.slice(0, 5).map(entry => entry.version), ["0.22.44", "0.22.43", "0.22.42", "0.22.41", "0.22.40"]);
+  assert.deepEqual(actual.entries.slice(0, 5).map(entry => entry.version), ["0.22.45", "0.22.44", "0.22.43", "0.22.42", "0.22.41"]);
   assert.equal(new Set(actual.entries.map(entry => entry.version)).size, actual.entries.length);
   assert.equal(actual.version, actual.entries[0].version);
   assert.doesNotMatch(JSON.stringify(actual.entries.filter(entry => /^0\.(19|20)\./.test(entry.version))),

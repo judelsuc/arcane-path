@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from abandoned_journals import JournalForbidden
 from asset_storage import AssetError, local_storage
 from journeys import JourneyConflict, JourneyRequest
-from town_legends import PAGE_SIZE, TownLegends
+from town_legends import LEGEND_RATE_RAISED_AT, PAGE_SIZE, TownLegends
 import test_lore_playtest as fixtures
 from travel_server import ChunkJobs, make_handler
 
@@ -70,7 +70,21 @@ class TownLegendsTests(unittest.TestCase):
         self.assertIsNone(first["entry"]["format"])
         self.assertEqual(first["entry"]["contentStatus"], "none")
         self.assertEqual(self.request(player=2), first)
-        self.random.assert_called_once_with(10)
+        self.random.assert_called_once_with(4)
+
+    def test_towns_refused_at_the_old_rate_get_exactly_one_top_up_roll(self):
+        self.random.side_effect = [9]
+        self.request()
+        with self.assets.catalogue.connection() as db:
+            db.execute("UPDATE town_legends SET created=? WHERE town_id='node/42'", (LEGEND_RATE_RAISED_AT - 86400,))
+            db.commit()
+        self.random.side_effect = [0, 654321, 0]
+        entry = self.request(player=2)["entry"]
+        self.assertTrue(entry["eligible"])
+        self.assertEqual((entry["seed"], entry["format"]), (654321, "platform"))
+        self.assertEqual([call.args for call in self.random.call_args_list[1:]], [(6,), (2**32,), (3,)])
+        reopened = TownLegends(self.journeys, Authorization(), randbelow=Mock(side_effect=AssertionError("reroll")))
+        self.assertEqual(self.request(player=3, service=reopened)["entry"]["seed"], 654321)
 
     def test_all_three_gameplay_assignments_are_permanent_and_existing_legacy_assignments_stay_unchanged(self):
         for index, format_name in enumerate(("platform", "investigation", "dungeon")):

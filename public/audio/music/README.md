@@ -23,6 +23,9 @@ or without numbering) remain accepted; no need to regenerate or rename them.
 Do not keep multiple versions unless you want the first matching one used:
 WAV before MP3 before OGG, canonical before compact/spaced numbered names.
 
+The pursuit escape window plays `music-pursuit.wav` (also accepted as
+`17 - music-pursuit.wav`, MP3 or OGG), from prompt 17.
+
 Missing/context-specific tracks fall back to `music-road-day`, then
 `music-title`, then silence. The status explains any fallback; the console
 records file/decode errors. Re-enable music after downloading a missing file
