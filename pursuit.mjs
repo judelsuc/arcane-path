@@ -5,6 +5,9 @@ import { createPursuitAtmosphere, validatePursuitAtmosphere } from "./pursuit-at
 export const PURSUIT = Object.freeze({ version: 1, graceMinutes: 1440, gapKm: 30,
   speedKmPerMinute: 2 / 60, contactKm: 0.05 });
 export const pursuitPending = state => Boolean(state?.pursuit?.pending) && !state.ended;
+// The fight a capture led to, read from the saved brawl history (validated there).
+const pursuerFight = (state, escapeId) => state.brawl?.history?.find(record =>
+  record?.kind === "pursuer" && record.escapeId === escapeId);
 const distance = (x, y, col, row, scale) => Math.hypot(x - col * scale, y - row * scale);
 
 export function pursuitDifficulty(state, completed = state.pursuit?.history.length ?? 0, days) {
@@ -167,10 +170,20 @@ export function validatePursuit(state) {
     if (item.version >= 6) validatePursuitAtmosphere(item.atmosphere);
     if (pending && (state.ended || item.col !== state.col || item.row !== state.row ||
         item.elapsedMinutes !== state.elapsedMinutes)) fail();
-    if (!pending && (replayEscape(item.seed, item.jumps, item.ticks, item.abandoned,
-      item.version, item.difficulty?.level) !== item.outcome ||
-        item.outcome === "captured" && index !== p.history.length - 1)) fail();
+    if (!pending && replayEscape(item.seed, item.jumps, item.ticks, item.abandoned,
+      item.version, item.difficulty?.level) !== item.outcome) fail();
+    // Since 0.22.47 a capture opens a fight with the pursuer: winning it lets the
+    // journey continue, so a capture is final only when that fight was lost (or,
+    // for older saves, when no fight followed it).
+    if (!pending && item.outcome === "captured" &&
+        !["won", "escaped"].includes(pursuerFight(state, item.id)?.outcome) &&
+        index !== p.history.length - 1) fail();
     lastTime = item.elapsedMinutes;
   }
-  if ((state.ended === "captured") !== (p.history.at(-1)?.outcome === "captured")) fail();
+  const last = p.history.at(-1);
+  const lastFight = last?.outcome === "captured" ? pursuerFight(state, last.id) : undefined;
+  const fighting = last?.outcome === "captured" && state.brawl?.pending?.kind === "pursuer" &&
+    state.brawl.pending.escapeId === last.id;
+  const final = last?.outcome === "captured" && !fighting && !["won", "escaped"].includes(lastFight?.outcome);
+  if ((state.ended === "captured") !== final) fail();
 }

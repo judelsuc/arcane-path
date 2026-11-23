@@ -85,3 +85,90 @@ test("sleeping without shelter can be cut short by prowlers, less often with the
   assert.equal(camp.brawl.pending.drowsy, true);
   validateBrawl(camp);
 });
+
+import { beginPursuit, advancePursuit, beginPursuitEscape, settlePursuitEscape } from "../pursuit.mjs";
+import { beginFlight, settleFlight, openPursuerFight } from "../brawl-journey.mjs";
+import { INPUT, BRAWL_REACH, createBrawl, createBrawlRecorder, stepBrawl } from "../minigames/brawl.mjs";
+import { escapeRoute } from "./helpers/pursuit-route.mjs";
+
+// A frame-perfect defender used to produce real winning transcripts.
+function defend(setup) {
+  let state = createBrawl(setup);
+  const recorder = createBrawlRecorder();
+  while (state.status === "fighting") {
+    const p = state.player;
+    const threat = state.opponents.find(o => o.pose === "windup" && o.timer <= 8 && Math.abs(o.x - p.x) < BRAWL_REACH.attack + 26);
+    const open = state.opponents.find(o => (o.pose === "stagger" || o.pinned > 0) && Math.abs(o.x - p.x) < BRAWL_REACH.sweep);
+    const near = state.opponents.filter(o => !["down", "fled"].includes(o.pose)).sort((a, b) => Math.abs(a.x - p.x) - Math.abs(b.x - p.x))[0];
+    const face = o => o.x > p.x ? INPUT.right : INPUT.left;
+    let mask = 0;
+    if (p.grabbedBy !== null) mask = state.tick % 2 ? INPUT.action : 0;
+    else if (threat) mask = threat.attack === "grab" ? INPUT.up : state.tick % 2 ? INPUT.up | INPUT.action | face(threat) : INPUT.up | face(threat);
+    else if (open) mask = state.tick % 2 ? INPUT.down | INPUT.action | face(open) : INPUT.down | face(open);
+    else if (near && Math.abs(near.x - p.x) > BRAWL_REACH.attack + 2) mask = face(near);
+    recorder.record(state.tick + 1, mask);
+    state = stepBrawl(state, mask);
+  }
+  return { outcome: state.status, transcript: recorder.transcript(state.tick) };
+}
+
+function captured() {
+  let state = beginPursuit(base());
+  const elapsedMinutes = state.elapsedMinutes + 1440 + 900;
+  state = advancePursuit({ ...state, elapsedMinutes,
+    tarotDay: new Date(state.startedAt + elapsedMinutes * 60000).toISOString().slice(0, 10) }, { terrain: "forest" });
+  state = beginPursuitEscape(state, "normal");
+  return settlePursuitEscape(state, { jumps: [], ticks: 0, abandoned: true });
+}
+
+test("a capture by the pursuer opens a fight: winning gives the lead back, losing ends the journey", () => {
+  const caught = captured();
+  assert.equal(caught.ended, "captured");
+  const fight = openPursuerFight(caught, night);
+  assert.equal(fight.ended, null);
+  assert.equal(fight.brawl.pending.kind, "pursuer");
+  assert.equal(fight.brawl.pending.escapeId, caught.pursuit.history.at(-1).id);
+  validateSave(save(fight));
+  assert.equal(openPursuerFight(fight, night), fight, "only one fight per capture");
+  const active = beginBrawl(fight);
+  const lost = settleBrawl(active, { changes: [], ticks: 0, abandoned: true });
+  assert.equal(lost.ended, "captured");
+  assert.equal(lost.walletCents, active.walletCents, "the pursuer does not rob");
+  validateSave(save(lost));
+  let win = null;
+  for (let seed = 0; seed < 12 && !win; seed++) {
+    const candidate = { ...active, brawl: { ...active.brawl, pending: { ...active.brawl.pending, seed } } };
+    const { outcome, transcript } = defend({ seed, level: candidate.brawl.pending.level, context: "pursuer",
+      opponents: 1, breath: candidate.brawl.pending.breath, dog: candidate.brawl.pending.dog,
+      drowsy: false, knife: candidate.brawl.pending.knife });
+    if (outcome === "won") win = settleBrawl(candidate, transcript);
+  }
+  assert.ok(win, "a perfect defender beats the pursuer");
+  assert.equal(win.ended, null);
+  const scale = win.pursuit.cellSizeMeters / 1000;
+  assert.ok(Math.hypot(win.pursuit.x - win.col * scale, win.pursuit.y - win.row * scale) > 29, "the 30 km lead is back");
+  validateSave(save(win));
+});
+
+test("street attackers can be outrun; if they catch the traveller, the fight starts one breath short", () => {
+  const fight = walkUntilFight(base());
+  assert.throws(() => beginFlight(openPursuerFight(captured(), night)), /not possible/);
+  const running = beginFlight(fight);
+  assert.throws(() => beginBrawl(running), /cannot start/);
+  const caught = settleFlight(running, { jumps: [], ticks: 0, abandoned: true });
+  assert.equal(caught.brawl.pending.breath, Math.max(1, fight.brawl.pending.breath - 1));
+  assert.equal(caught.brawl.pending.flight.outcome, "captured");
+  validateBrawl(caught);
+  const lost = settleBrawl(beginBrawl(caught), { changes: [], ticks: 0, abandoned: true });
+  validateSave(save(lost));
+  const { flight } = running.brawl.pending;
+  const route = escapeRoute(flight.seed, flight.version, flight.difficulty);
+  const fled = settleFlight(running, route.transcript);
+  assert.equal(brawlPending(fled), false);
+  assert.equal(fled.brawl.history.at(-1).outcome, "fled");
+  assert.equal(fled.walletCents, fight.walletCents);
+  validateSave(save(fled));
+  const forged = structuredClone(fled);
+  forged.brawl.history.at(-1).flight.jumps = [];
+  assert.throws(() => validateBrawl(forged), /Invalid saved fight/);
+});

@@ -1,6 +1,8 @@
 // Journey side of the self-defence brawl: when a fight happens, what is at stake,
 // and how its outcome is settled and verified by replay.
 import { BRAWL_VERSION, createBrawl, replayBrawl } from "./minigames/brawl.mjs";
+import { ESCAPE_VERSION, replayEscape } from "./minigames/pursuit-escape.mjs";
+import { PURSUIT } from "./pursuit.mjs";
 import { journeyEquipmentModifiers } from "./equipment.mjs";
 import { healthValue } from "./health.mjs";
 import { activePower, powerCoverage } from "./lore-effects.mjs";
@@ -13,8 +15,10 @@ const STREET_CHANCE = { night: 0.035, day: 0.008 };
 const CAMP_CHANCE = 0.15;
 const HISTORY_LIMIT = 30;
 const URBAN = new Set(["place", "building", "church", "station"]);
-const KINDS = ["street", "camp"];
-const OUTCOMES = ["won", "escaped", "lost"];
+const KINDS = ["street", "camp", "pursuer"];
+// "fled": the traveller outran street attackers before any blow was exchanged.
+const OUTCOMES = ["won", "escaped", "lost", "fled"];
+const FLIGHT_FATIGUE = 6;
 // Losing is a robbery and a beating, never death.
 export const BRAWL_LOSS = Object.freeze({ health: 15, fatigue: 10 });
 const WIN_FATIGUE = 4;
@@ -89,7 +93,7 @@ function pending(state, kind, info, salt) {
     level: brawlLevel(state, kind, night), opponents, breath: brawlBreath(state),
     knife: knifeReady(state), dog: dogReady(state), drowsy: kind === "camp",
     phase: night ? "night" : "day", col: state.col, row: state.row,
-    elapsedMinutes: state.elapsedMinutes, status: "ready",
+    elapsedMinutes: state.elapsedMinutes, status: "ready", escapeId: null, flight: null,
   };
 }
 
@@ -124,6 +128,55 @@ export function beginCampEncounter(state, info) {
   return withPending(state, pending(state, "camp", info, `camp-fight:${state.elapsedMinutes}:${state.col}:${state.row}`));
 }
 
+// A capture by the pursuer opens a fight instead of ending the journey at once.
+export function openPursuerFight(state, info) {
+  const last = state.pursuit?.history?.at(-1);
+  if (state.ended !== "captured" || last?.outcome !== "captured" || brawlPending(state) ||
+      state.brawl?.history?.some(record => record.kind === "pursuer" && record.escapeId === last.id)) return state;
+  const night = isNight(state, info);
+  const history = state.brawl?.history ?? [];
+  const item = {
+    version: BRAWL_VERSION, id: (history.at(-1)?.id ?? 0) + 1, kind: "pursuer",
+    seed: hash(`${state.serverJourney?.seed ?? state.startedAt}:pursuer:${last.id}:${last.seed}`),
+    level: Math.max(1, Math.min(10, last.difficulty?.level ?? 1)), opponents: 1, breath: brawlBreath(state),
+    knife: knifeReady(state), dog: dogReady(state), drowsy: false, phase: night ? "night" : "day",
+    col: state.col, row: state.row, elapsedMinutes: state.elapsedMinutes, status: "ready",
+    escapeId: last.id, flight: null,
+  };
+  return withPending({ ...state, ended: null }, item);
+}
+
+function flightSeed(item) {
+  return hash(`flight:${item.seed}:${item.id}`);
+}
+
+// Street attackers can be outrun: the same run as the pursuit escape, through streets.
+export function beginFlight(state) {
+  const item = state.brawl?.pending;
+  if (state.ended || item?.kind !== "street" || item.status !== "ready" || item.flight !== null) {
+    throw new Error("Fleeing is not possible now.");
+  }
+  const flight = { version: ESCAPE_VERSION, seed: flightSeed(item), difficulty: item.level, status: "active" };
+  return { ...state, brawl: { ...state.brawl, pending: { ...item, flight } } };
+}
+
+export function settleFlight(state, transcript) {
+  const item = state.brawl?.pending;
+  if (state.ended || item?.flight?.status !== "active") throw new Error("This flight cannot be settled.");
+  const { jumps, ticks, abandoned } = transcript ?? {};
+  const outcome = replayEscape(item.flight.seed, jumps, ticks, abandoned, item.flight.version, item.flight.difficulty);
+  const flight = { ...item.flight, status: "done", outcome, jumps: [...jumps], ticks, abandoned };
+  if (outcome === "captured") {
+    // Caught after running: the fight starts out of breath.
+    return { ...state, brawl: { ...state.brawl, pending: { ...item, flight, breath: Math.max(1, item.breath - 1) } } };
+  }
+  const record = { ...item, status: "active", flight, outcome: "fled", changes: [], ticks: 0, abandoned: false,
+    stolenCents: 0, healthLost: 0 };
+  return { ...state, fatigue: Math.min(100, state.fatigue + FLIGHT_FATIGUE),
+    brawl: { ...state.brawl, lastEncounterMinutes: item.elapsedMinutes, pending: null,
+      history: [...state.brawl.history, record].slice(-HISTORY_LIMIT) } };
+}
+
 export function brawlSetup(item) {
   return { seed: item.seed, level: item.level, context: item.kind, opponents: item.opponents,
     breath: item.breath, dog: item.dog, drowsy: item.drowsy, knife: item.knife };
@@ -131,7 +184,7 @@ export function brawlSetup(item) {
 
 export function beginBrawl(state) {
   const item = state.brawl?.pending;
-  if (state.ended || item?.status !== "ready") throw new Error("This fight cannot start.");
+  if (state.ended || item?.status !== "ready" || item.flight?.status === "active") throw new Error("This fight cannot start.");
   return { ...state, brawl: { ...state.brawl, pending: { ...item, status: "active" } } };
 }
 
@@ -146,11 +199,23 @@ export function settleBrawl(state, transcript) {
   const { changes, ticks, abandoned } = transcript ?? {};
   const outcome = replayBrawl(brawlSetup(item), { changes, ticks, abandoned });
   const lost = outcome === "lost";
-  const stolenCents = lost ? brawlStolenCents(state, item) : 0;
-  const healthLost = lost ? Math.min(BRAWL_LOSS.health, Math.max(0, healthValue(state) - 1)) : 0;
+  const pursuer = item.kind === "pursuer";
+  const stolenCents = lost && !pursuer ? brawlStolenCents(state, item) : 0;
+  const healthLost = lost && !pursuer ? Math.min(BRAWL_LOSS.health, Math.max(0, healthValue(state) - 1)) : 0;
   const record = { ...item, outcome, changes: changes.map(change => [...change]), ticks, abandoned,
     stolenCents, healthLost };
   const history = [...state.brawl.history, record].slice(-HISTORY_LIMIT);
+  if (pursuer) {
+    // Losing to the pursuer ends the journey as a capture always did; beating him
+    // gives back the same head start as a successful escape.
+    const p = state.pursuit, scale = p.cellSizeMeters / 1000;
+    const dx = p.x - state.col * scale, dy = p.y - state.row * scale, length = Math.hypot(dx, dy);
+    return { ...state, ended: lost ? "captured" : null,
+      fatigue: Math.min(100, state.fatigue + (lost ? 0 : BRAWL_LOSS.fatigue)),
+      pursuit: lost ? p : { ...p, x: state.col * scale + (length ? dx / length : -1) * PURSUIT.gapKm,
+        y: state.row * scale + (length ? dy / length : 0) * PURSUIT.gapKm },
+      brawl: { ...state.brawl, pending: null, history } };
+  }
   return {
     ...state,
     walletCents: (state.walletCents ?? 0) - stolenCents,
@@ -161,8 +226,21 @@ export function settleBrawl(state, transcript) {
 }
 
 const ITEM_KEYS = ["version", "id", "kind", "seed", "level", "opponents", "breath", "knife", "dog", "drowsy",
-  "phase", "col", "row", "elapsedMinutes", "status"];
+  "phase", "col", "row", "elapsedMinutes", "status", "escapeId", "flight"];
 const RECORD_KEYS = [...ITEM_KEYS, "outcome", "changes", "ticks", "abandoned", "stolenCents", "healthLost"];
+
+function validFlight(flight, item, done) {
+  const keys = done ? ["version", "seed", "difficulty", "status", "outcome", "jumps", "ticks", "abandoned"]
+    : ["version", "seed", "difficulty", "status"];
+  if (!flight || typeof flight !== "object" || Object.keys(flight).sort().join() !== [...keys].sort().join() ||
+      flight.version !== ESCAPE_VERSION || flight.seed !== flightSeed(item) || flight.difficulty !== item.level ||
+      flight.status !== (done ? "done" : "active")) return false;
+  if (!done) return true;
+  try {
+    return replayEscape(flight.seed, flight.jumps, flight.ticks, flight.abandoned, flight.version,
+      flight.difficulty) === flight.outcome;
+  } catch { return false; }
+}
 
 export function validateBrawl(state) {
   const b = state?.brawl;
@@ -174,29 +252,53 @@ export function validateBrawl(state) {
       !Array.isArray(b.history) || b.history.length > HISTORY_LIMIT ||
       b.lastEncounterMinutes !== null && (!Number.isFinite(b.lastEncounterMinutes) ||
         b.lastEncounterMinutes < 0 || b.lastEncounterMinutes > state.elapsedMinutes)) fail();
+  const escapes = new Map((state.pursuit?.history ?? []).map(item => [item.id, item]));
   const checkItem = (item, keys) => {
     if (!same(item, keys) || item.version !== BRAWL_VERSION || !KINDS.includes(item.kind) ||
         !Number.isSafeInteger(item.id) || item.id < 1 || !["day", "night"].includes(item.phase) ||
         !Number.isFinite(item.elapsedMinutes) || item.elapsedMinutes > state.elapsedMinutes ||
         ![item.col, item.row].every(Number.isSafeInteger)) fail();
+    if (item.kind === "pursuer") {
+      // A pursuer fight follows a recorded capture and is never fled.
+      if (escapes.get(item.escapeId)?.outcome !== "captured" || item.flight !== null || item.opponents !== 1) fail();
+    } else if (item.escapeId !== null) fail();
+    if (item.flight !== null && item.kind !== "street") fail();
     try { createBrawl(brawlSetup(item)); } catch { fail(); }
   };
-  let lastId = 0, lastTime = -Infinity;
+  let lastId = 0, lastTime = -Infinity, lastEncounter = null;
+  const fought = new Set();
   for (const record of b.history) {
     checkItem(record, RECORD_KEYS);
     if (record.id <= lastId || record.elapsedMinutes < lastTime || record.status !== "active" ||
         !OUTCOMES.includes(record.outcome) || !Number.isSafeInteger(record.stolenCents) || record.stolenCents < 0 ||
         !Number.isFinite(record.healthLost) || record.healthLost < 0 || record.healthLost > BRAWL_LOSS.health ||
-        record.outcome !== "lost" && (record.stolenCents || record.healthLost)) fail();
-    let replayed;
-    try { replayed = replayBrawl(brawlSetup(record), record); } catch { fail(); }
-    if (replayed !== record.outcome) fail();
+        record.outcome !== "lost" && (record.stolenCents || record.healthLost) ||
+        record.kind === "pursuer" && (record.stolenCents || record.healthLost)) fail();
+    if (record.flight !== null && !validFlight(record.flight, record, true)) fail();
+    if (record.outcome === "fled") {
+      if (record.flight?.outcome !== "escaped" || record.changes.length || record.ticks || record.abandoned) fail();
+    } else {
+      if (record.flight !== null && record.flight.outcome !== "captured") fail();
+      let replayed;
+      try { replayed = replayBrawl(brawlSetup(record), record); } catch { fail(); }
+      if (replayed !== record.outcome) fail();
+    }
+    if (record.kind === "pursuer") {
+      if (fought.has(record.escapeId)) fail();
+      fought.add(record.escapeId);
+    } else lastEncounter = record.elapsedMinutes;
     lastId = record.id; lastTime = record.elapsedMinutes;
   }
-  if (b.history.length && b.lastEncounterMinutes !== b.history.at(-1).elapsedMinutes) fail();
+  if (b.history.length === HISTORY_LIMIT ? lastEncounter !== null && b.lastEncounterMinutes !== lastEncounter
+    : b.lastEncounterMinutes !== lastEncounter) fail();
   if (b.pending !== null) {
-    checkItem(b.pending, ITEM_KEYS);
-    if (!["ready", "active"].includes(b.pending.status) || b.pending.id <= lastId || state.ended ||
-        b.pending.col !== state.col || b.pending.row !== state.row) fail();
+    const item = b.pending;
+    checkItem(item, ITEM_KEYS);
+    if (!["ready", "active"].includes(item.status) || item.id <= lastId || state.ended ||
+        item.col !== state.col || item.row !== state.row) fail();
+    if (item.flight !== null && !validFlight(item.flight, item, item.flight?.status === "done")) fail();
+    if (item.flight?.status === "done" && item.flight.outcome !== "captured") fail();
+    if (item.flight?.status === "active" && item.status !== "ready") fail();
+    if (item.kind === "pursuer" && (fought.has(item.escapeId) || state.pursuit?.history.at(-1)?.id !== item.escapeId)) fail();
   }
 }

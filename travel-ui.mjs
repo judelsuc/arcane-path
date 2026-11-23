@@ -32,7 +32,8 @@ import { setupEconomyUI } from "./economy-ui.mjs";
 import { setupBuildingSleep } from "./building-sleep-ui.mjs";
 import { setupPursuit } from "./pursuit-ui.mjs";
 import { setupBrawlJourney } from "./brawl-journey-ui.mjs";
-import { brawlPending, streetEncounter, campInterruption, beginCampEncounter, beginBrawl, settleBrawl } from "./brawl-journey.mjs";
+import { brawlPending, streetEncounter, campInterruption, beginCampEncounter, beginBrawl, settleBrawl,
+  openPursuerFight, beginFlight, settleFlight } from "./brawl-journey.mjs";
 import { setupPursuitNews } from "./pursuit-news-ui.mjs";
 import { beginPursuit, advancePursuit, pursuitPending, beginPursuitEscape, settlePursuitEscape, pursuitStatus } from "./pursuit.mjs";
 import { buildingSleepPending, startBuildingSleep, beginBuildingSleep, settleBuildingSleep } from "./building-sleep.mjs";
@@ -1786,7 +1787,7 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
       const previous = state;
       try {
         state = action.type === "begin" ? beginPursuitEscape(state, action.mode)
-          : settlePursuitEscape(state, action.result);
+          : openPursuerFight(settlePursuitEscape(state, action.result), economyContext()?.info);
         autosave();
         if (saveError) throw new Error(t("saveError", { error: saveError }));
         localize();
@@ -1816,7 +1817,10 @@ export function setupTravel({ t, renderMap, selectPlayer, resetContent, onStop, 
     act(action) {
       const previous = state;
       try {
-        state = action.type === "begin" ? beginBrawl(state) : settleBrawl(state, action.transcript);
+        state = action.type === "begin" ? beginBrawl(state)
+          : action.type === "flee" ? beginFlight(state)
+          : action.type === "flight" ? settleFlight(state, action.transcript)
+          : settleBrawl(state, action.transcript);
         autosave();
         if (saveError) throw new Error(t("saveError", { error: saveError }));
         localize();

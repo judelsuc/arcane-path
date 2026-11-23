@@ -47,7 +47,13 @@ attackers. The goal is never to hurt people: attackers are knocked down
    2–5 from health; knife and dog from the real inventory and companion.
    Losing takes 25–50% of the purse (at most half), 15 health (never below 1)
    and 10 fatigue; winning costs 4 fatigue. History is replayed on load.
-3. Fleeing as a street-chase variant of the pursuit run.
-4. The pursuer's capture opens the fight instead of instant death; winning
-   restores the pursuit head start, losing ends the journey as today.
-5. Music (`music-fight`, prompt 18) and hit sounds.
+3. Fleeing (done, 0.22.46): before a street fight, "Fuir" runs the pursuit
+   escape engine through streets (`minigames/street-chase-ui.mjs`, replayed
+   with `replayEscape`). Escaping ends the encounter with outcome `fled` and 6
+   fatigue; being caught starts the fight one breath short.
+4. Pursuer (done, 0.22.46): a failed escape opens a single fight against the
+   pursuer (`openPursuerFight`), tied to the escape by `escapeId`. Winning
+   restores the 30 km lead and costs 10 fatigue; losing ends the journey as
+   `captured`. The pursuer never robs and his fights ignore the weekly limit.
+   `validatePursuit` accepts a capture that a won fight followed.
+5. Music (`music-fight`, prompt 18) and synthesized hit sounds (done).

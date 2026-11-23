@@ -20,6 +20,7 @@ const COPY = {
     jump: "Jump", help: "Help / pause", resume: "Resume", prepare: "Get ready",
     release: "Release held keys to begin.", retry: "Retry saving the result", close: "Continue",
     success: "The pursuer trips and falls. The boy escapes! You have regained a 30 km lead.", failed: "You were caught. Your journey ends here.",
+    cornered: "He has caught you. There is no way out: defend yourself!",
     status: "{progress}% of the route · stumbles {hits}/3", paused: "Paused",
     woodland: "Woodland escape: jump fallen branches.", streets: "Street escape: jump low barriers.",
     rocky: "Rocky-ground escape: jump low rocks.", country: "Open-country escape: jump low mounds.",
@@ -54,6 +55,7 @@ const COPY = {
     release: "Relâchez les touches pour commencer.", retry: "Réessayer d'enregistrer le résultat", close: "Continuer",
     success: "Le poursuivant trébuche et tombe. Le garçon s'échappe ! Vous reprenez 30 km d'avance.",
     failed: "Vous avez été rattrapé. Votre voyage s'arrête ici.",
+    cornered: "Il vous a rattrapé. Plus d'issue : défendez-vous !",
     status: "{progress} % du parcours · trébuchements {hits}/3", paused: "En pause",
     woodland: "Fuite en forêt : sautez les branches tombées.", streets: "Fuite dans les rues : sautez les barrières basses.",
     rocky: "Fuite en terrain rocheux : sautez les petits rochers.", country: "Fuite en campagne : sautez les petites buttes.",
@@ -146,8 +148,12 @@ export function setupPursuit({ context, act, doc = document }) {
       errorText = "";
       retry.hidden = true;
       close.disabled = false;
-      feedback.textContent = text(context()?.state.ended === "captured" ? "failed" : "success");
-      if (context()?.state.ended !== "captured") celebrate();
+      const cornered = context()?.state.brawl?.pending?.kind === "pursuer";
+      feedback.textContent = text(cornered ? "cornered" : context()?.state.ended === "captured" ? "failed" : "success");
+      if (cornered) {
+        // The capture now opens a fight with the pursuer in its own window.
+        view.setTimeout(() => { if (dialog.open) dialog.close(); }, 1400);
+      } else if (context()?.state.ended !== "captured") celebrate();
       else if (captureImageFailed) feedback.textContent += ` ${text("captureImageError")}`;
       else {
         canvas.hidden = true;
