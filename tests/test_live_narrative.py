@@ -913,6 +913,19 @@ class LiveNarrativeTests(unittest.TestCase):
             self.assertEqual(repaired["en"], phrase)
             self.assertFalse(validate_opening_text(repaired, brief))
 
+    def test_opening_repair_drops_a_sentence_that_prints_the_name_when_enough_remains(self):
+        brief = {"parent": "Camille", "characterName": "Marcel Pagnol"}
+        en = ("You tell stories about the hills to anyone who listens. " * 12).strip()
+        fr = ("Vous racontez les collines à qui veut l'entendre. " * 12).strip()
+        source = {"en": en + " Your humour recalls Pagnol's tales.",
+                  "fr": "Votre humour rappelle les récits de Marcel Pagnol. " + fr}
+        repaired, changes = repair_opening_text(source, brief)
+        self.assertEqual(repaired, {"en": en, "fr": fr})
+        self.assertIn("name sentence removed", changes)
+        self.assertTrue(validate_opening_text(repaired, brief))
+        short = {"en": "Your humour recalls Pagnol's tales.", "fr": "La nuit tombe."}
+        self.assertEqual(repair_opening_text(short, brief)[0], short, "too little would remain")
+
     def test_opening_repair_trims_only_an_incomplete_last_sentence(self):
         en = ("Your parent Camille left. " * 25).strip()
         fr = ("Votre parent Camille est parti. " * 25).strip()
@@ -961,7 +974,8 @@ class LiveNarrativeTests(unittest.TestCase):
         fr = (f"Votre parent {parent} est parti. " * 25).strip()
         cases = [
             response(en=en + f" Your mother {parent} left.", fr=fr + " Il/elle marche."),
-            response(en=en + f" The traveller is {player}.", fr=fr + " Il/elle marche."),
+            # Printed in every sentence: dropping them would leave nothing, so it still fails.
+            response(en=(f"The traveller {player} walks on. " * 25).strip(), fr=fr),
             response(en=en + " <script>bad</script>", fr=fr + " Il/elle marche."),
             response(en=("A winter memory. " * 40).strip() + f" Your parent {parent} left",
                      fr=fr + " Il/elle marche."),

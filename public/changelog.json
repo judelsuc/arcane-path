@@ -1,6 +1,11 @@
 {
-  "version": "0.22.46",
+  "version": "0.22.47",
   "entries": [
+    {
+      "version": "0.22.47",
+      "fr": "Les noms de personnages célèbres colorent de nouveau vraiment l'introduction : l'enfant est présenté dès les premières phrases à travers des traits reconnaissables de la référence, la culture locale passe au second plan, et une phrase qui citerait le nom est retirée au lieu de faire échouer toute l'histoire.",
+      "en": "Famous character names truly colour the introduction again: the child is introduced in the first sentences through recognizable traits of the reference, local culture takes second place, and a sentence that would print the name is dropped instead of failing the whole story."
+    },
     {
       "version": "0.22.46",
       "fr": "Nouveau combat « Garde haute » : en ville, surtout la nuit, ou en dormant dehors sans abri, des agresseurs peuvent vous tomber dessus (au plus une fois par semaine). Défendez-vous à coups de poussées, balayages et coups de pied, ou fuyez par les rues ; votre couteau et votre chien vous aident. Perdre coûte une partie de votre argent et de la santé, jamais la vie. Et quand le poursuivant vous rattrape, vous pouvez désormais lui tenir tête : gagnez et vous reprenez 30 km d'avance.",

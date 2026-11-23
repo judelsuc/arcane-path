@@ -114,6 +114,21 @@ def repair_opening_text(output, brief):
             if count or inline_count:
                 changes.add("explicit name comparison")
 
+    # A sentence that still prints the name is dropped rather than losing the whole
+    # opening, as long as what remains keeps a valid length.
+    if isinstance(name, str) and len(name) >= 4:
+        name_words = re.findall(r"\w+", name)
+        banned = [name] + ([name_words[-1]] if name_words and len(name_words[-1]) >= 4 else [])
+        pattern = re.compile("|".join(r"(?<!\w)" + re.escape(item) + r"(?!\w)" for item in banned), re.IGNORECASE)
+        for language, text in repaired.items():
+            if not pattern.search(text):
+                continue
+            kept = " ".join(sentence for sentence in re.split(r"(?<=[.!?…])\s+", text)
+                            if not pattern.search(sentence))
+            if valid_opening_length(kept) and COMPLETE_SENTENCE_END.search(kept):
+                repaired[language] = kept
+                changes.add("name sentence removed")
+
     for language, text in repaired.items():
         endings = list(SENTENCE_END.finditer(text))
         if endings and endings[-1].end() != len(text):
@@ -187,16 +202,23 @@ def story_request(brief, model=OPENING_MODEL):
                 "Address the child traveller as 'you'. Explain who their parent "
                 "is to them, the parent's supplied reason for leaving, and why the child begins searching. "
                 "PLAN FIRST, in two private planning arrays that are never shown to players. "
-                "localCulture: 3 to 6 short notes naming specific, confidently known traditions of "
+                "localCulture: 2 to 6 short notes (only 2 or 3 when nameTraits is not empty) naming specific, "
+                "confidently known traditions of "
                 "startingPlace itself or, failing that, its immediate region: signature dishes, pastries, "
                 "cheeses, drinks, markets, festivals, saints' days, songs, crafts, trades, industrial heritage, "
                 "dialect words, landmarks or customs, fitting the season. Prefer what makes this town or region "
                 "distinct over national cliches, and never attribute another region's speciality to it. "
                 "nameTraits: if characterName confidently evokes a well-known fictional character, historical "
-                "figure or public persona, 3 to 5 short notes of concrete, recognizable traits, tastes and habits "
-                "the child will show, inspired by that reference; otherwise an empty array. "
+                "figure or public persona, 4 or 5 short notes of ICONIC, specific, instantly recognizable traits "
+                "the child will show: the reference's signature activity or craft, iconic objects or clothing, "
+                "favourite places, typical attitude and humour. Write these notes WITHOUT the name, its parts, "
+                "titles of works or other characters. Generic traits any child could have do not count. "
+                "Otherwise an empty array. "
                 "Then write en and fr so that EVERY localCulture note and EVERY nameTraits note visibly appears in "
                 "both texts. These two requirements matter as much as the plot facts. "
+                "When nameTraits is not empty, the name matters MORE than local culture: introduce the child "
+                "through those traits in the first two sentences, return to them in the memories and the "
+                "departure, and keep local culture to two or three light touches. "
                 "The supplied parent name and departure reason are immutable. "
                 "Refer only to 'your parent NAME' / 'votre parent NAME'; gender is unknown. "
                 "Never use mother, father, he, she, his, her, mere or pere, or invent parental gender. "
@@ -223,7 +245,8 @@ def story_request(brief, model=OPENING_MODEL):
                 "Never revive a magical gambling game, inherited wager, table or empty chair. "
                 "Without adultStory you may invent only small domestic memories. Emotional texture and the "
                 "child's feelings must never add plot facts. "
-                "Root the story vividly in the real starting place: weave in at least three concrete, "
+                "Root the story vividly in the real starting place: weave in at least three (two when nameTraits "
+                "is not empty) concrete, "
                 "well-known local cultural details you are confident about for that town or its region, such as "
                 "signature dishes, pastries, cheeses or drinks, markets, festivals, saints' days, songs, crafts, "
                 "trades, dialect words, architecture, landmarks or customs, and fit them to the supplied season. "
@@ -272,7 +295,7 @@ def story_request(brief, model=OPENING_MODEL):
             "name": "opening_backstory", "strict": True,
             "schema": {"type": "object", "additionalProperties": False,
                        "properties": {
-                           "localCulture": {"type": "array", "minItems": 3, "maxItems": 6,
+                           "localCulture": {"type": "array", "minItems": 2, "maxItems": 6,
                                             "items": {"type": "string", "maxLength": 160}},
                            "nameTraits": {"type": "array", "maxItems": 5,
                                           "items": {"type": "string", "maxLength": 160}},

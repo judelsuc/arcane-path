@@ -194,7 +194,7 @@ def validate_output(response, *, story=False, closing=False, variants=False, cov
         if story and isinstance(value, dict) and set(value) == {"localCulture", "nameTraits", "en", "fr"}:
             if (any(not isinstance(value[key], list) or len(value[key]) > 6 or
                     any(not isinstance(note, str) or len(note) > 160 for note in value[key])
-                    for key in ("localCulture", "nameTraits")) or len(value["localCulture"]) < 3):
+                    for key in ("localCulture", "nameTraits")) or len(value["localCulture"]) < 2):
                 raise ValueError()
             value = {"en": value["en"], "fr": value["fr"]}
         if not isinstance(value, dict) or set(value) != ({"en", "fr", "alternatives"} if variants else {"en", "fr"}):
