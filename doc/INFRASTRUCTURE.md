@@ -228,6 +228,20 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Meal photos in the journal and legend entrance from Look, 0.22.48 (23 November 2026)
+
+Deployed `c22f5f6` (`deploy-2026-11-23-0.22.48`): taking a documented
+speciality with a Commons photo pins it to the journal (captioned with dish
+and region, located where eaten); town legends use the Look-permitting
+context and leave Look before a trial, fixing entrances found while
+observing that could not be entered (side-panel button opened the quest
+journal, whose button was disabled); the duplicate side-panel entrance button
+is removed. Seven files changed, no new files; hashes match, service
+restarted, journal clean, `nginx -t` OK, HTTPS 401, conditional GET 200.
+JavaScript 1918/1919 (dream-wiring baseline). Rollback archive
+`/home/ubuntu/before-0.22.48-c22f5f6/runtime.tar.gz`, SHA-256
+`d7148122017fa053bf6ca4fe925e9f0a7437da4993fa5bdec278f1eacfadc6da`.
+
 ## Opening names, quest caps, nearby legend telling and update banner, 0.22.47 (23 November 2026)
 
 Deployed `33cb42b` (`deploy-2026-11-23-0.22.47`): the opening prompt gives a
