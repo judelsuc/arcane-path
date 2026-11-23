@@ -228,6 +228,21 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Garde haute preview: sprites, guidance, sounds and fight music (23 November 2026)
+
+Deployed `8480be7` (`deploy-2026-11-23-brawl-sprites`) after player feedback
+(ugly sprites, unclear win condition, no sound): jointed pixel sprites
+(`minigames/brawl-sprites.mjs`), on-screen goal counter, per-attacker hints,
+get-up bars and tutorial, synthesized effects (`minigames/brawl-audio.mjs`),
+knife effect, push/sweep spacing fix, seeded rhythm variety, and new
+`public/audio/music/18 - music-fight.wav` (48 kHz stereo, 88.8 s; registered
+as `music-fight` in `audio.mjs`). Service restarted, journal clean, new files
+answer 401 without authentication, `nginx -t` OK, hashes of the eight changed
+or new files match. JavaScript 1905/1906 (dream-wiring baseline). Rollback
+archive `/home/ubuntu/before-brawl-sprites-8480be7/runtime.tar.gz`, SHA-256
+`189390ca14f402d6c6caa7cf136d91188fbafd3e2a636b68196be8605f5cbc5a`; on
+rollback also delete the three new files.
+
 ## Garde haute brawl preview (23 November 2026)
 
 Deployed `5425f92` (`deploy-2026-11-23-brawl-preview`): new files
