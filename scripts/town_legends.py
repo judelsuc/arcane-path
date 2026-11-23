@@ -17,6 +17,9 @@ from durable_jobs import DurableJobs
 
 TOWN_ID = re.compile(r"(?:node|way|relation)/[1-9]\d{0,19}")
 PAGE_SIZE = 30
+# Inhabitants up to this many cells from a legend's search area can tell it,
+# not only those met on the exact town cell.
+TELLING_CELLS = 4
 # One town in four hosts a legend. Towns decided before the rate was raised from
 # one in ten get a single top-up roll at one in six: 1/10 + 9/10 * 1/6 = 1/4.
 LEGEND_ODDS = 4
@@ -197,6 +200,8 @@ class TownLegends:
             raise JourneyRequest("Invalid town legend request.")
         expected = {"journey", "action", "location"} | (
             {"target"} if data["action"] == "look" else {"townId"} if data["action"] == "inspect" else set())
+        if data["action"] == "disclose" and "townId" in data:
+            expected = expected | {"townId"}
         if data["action"] == "list":
             expected = {"journey", "action", "cursor"}
         if set(data) != expected or not isinstance(data.get("journey"), str) or not re.fullmatch(
@@ -211,14 +216,31 @@ class TownLegends:
         if data["action"] == "disclose":
             # An inhabitant tells the legend: from now on this journey sees the
             # clues, the town's contextual hints and may inspect the entrance.
-            town = self.town_at(genesis["region"], data["location"])
+            location = data["location"]
+            if not isinstance(location, dict) or set(location) != {"col", "row"} or any(
+                    type(location[key]) is not int or abs(location[key] // 8) > 1000 for key in ("col", "row")):
+                raise JourneyRequest("Invalid town legend location.")
+            if "townId" in data:
+                if not isinstance(data["townId"], str) or not TOWN_ID.fullmatch(data["townId"]):
+                    raise JourneyRequest("Invalid town legend identity.")
+                town = {"osmId": data["townId"]}
+            else:
+                town = self.town_at(genesis["region"], location)
             with catalogue.connection() as db:
                 row = db.execute(sql(
                     "SELECT t.town_id,t.town_name,t.eligible,t.seed,t.format FROM town_legends t "
                     "JOIN town_legend_discoveries d ON d.town_id=t.town_id "
                     "WHERE d.journey=? AND t.town_id=?"), (data["journey"], town["osmId"])).fetchone()
-                if row is None or not row[2] or self.search(db, row[0]) is None:
+                retained = self.search(db, row[0]) if row is not None and row[2] else None
+                if retained is None:
                     raise JourneyConflict("No prepared town legend can be told here.")
+                if "townId" in data:
+                    geometry, plan = retained
+                    near = min((max(abs(spot["col"] - location["col"]), abs(spot["row"] - location["row"]))
+                                for spot in (self.position_in(geometry, base, cell) for cell in plan["cells"])),
+                               default=None)
+                    if near is None or near > TELLING_CELLS:
+                        raise JourneyConflict("This legend is told only around its town.")
                 now = float(db.execute("SELECT " + clock(catalogue)).fetchone()[0])
                 db.execute(sql(
                     "INSERT INTO town_legend_disclosures(journey,town_id,disclosed) VALUES(?,?,?) "

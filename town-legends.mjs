@@ -87,7 +87,8 @@ export function createTownLegendsClient({ fetcher = fetch } = {}) {
   }
   return {
     discover: (state, signal) => send(state, "discover", { location: { col: state.col, row: state.row } }, signal),
-    disclose: (state, signal) => send(state, "disclose", { location: { col: state.col, row: state.row } }, signal),
+    disclose: (state, signal, townId = null) => send(state, "disclose", {
+      location: { col: state.col, row: state.row }, ...(townId ? { townId } : {}) }, signal),
     list: (state, cursor = null, signal) => send(state, "list", { cursor }, signal),
     look: (state, target, signal) => send(state, "look", { location: { col: state.col, row: state.row }, target }, signal),
     inspect: (state, townId, signal) => send(state, "inspect", {

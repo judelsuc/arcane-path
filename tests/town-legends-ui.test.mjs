@@ -282,7 +282,13 @@ test("shared story and stable NPC voices always retain all canonical clues in bo
       listeners[0]();
       assert.match(f.text(), language === "en" ? /No automatic retry/ : /Aucun nouvel essai automatique/);
       for (const clue of clues[language]) assert.ok(f.ui.telling(speaker).text.includes(clue));
-      f.setContext({ ...f.getContext(), cell: { terrain: "forest" } });
+      const here = f.getContext();
+      // Two cells away the inhabitants still know the story of the nearby town…
+      f.setContext({ ...here, cell: { terrain: "forest" }, state: { ...here.state, col: here.state.col + 2 } });
+      f.ui.localize();
+      for (const clue of clues[language]) assert.ok(f.ui.telling(speaker).text.includes(clue));
+      // …but far from it nobody does.
+      f.setContext({ ...here, cell: { terrain: "forest" }, state: { ...here.state, col: here.state.col + 20 } });
       f.ui.localize();
       assert.match(f.ui.telling(speaker).text, language === "en" ? /do not know/ : /ne connais pas/);
   }
@@ -323,7 +329,7 @@ test("an untold legend hides its clues until an inhabitant tells it", async () =
   });
   f.ui.localize();
   await flush();
-  assert.match(f.text(), /Ask the inhabitants/);
+  assert.match(f.text(), /Talk to an inhabitant here or nearby/);
   assert.doesNotMatch(f.text(), /Search the woodland/);
   const character = { id: "c".repeat(32), role: "merchant" };
   const first = f.ui.telling(character);

@@ -105,6 +105,19 @@ class LegendSearchStorageTests(unittest.TestCase):
         with self.fixture.assets.catalogue.connection() as db:
             return self.service.search(db, "node/42")[1]
 
+    def test_inhabitants_around_the_town_can_tell_its_legend_but_not_far_away(self):
+        self.assertEqual(self.call("discover")["entry"]["exploration"]["status"], "untold")
+        with self.assertRaises(JourneyConflict):
+            self.call("disclose", townId="node/42", location={"col": 40, "row": 3})
+        with self.assertRaises(JourneyConflict):
+            self.call("disclose", player=2, townId="node/42", location={"col": 5, "row": 3})
+        with self.assertRaises(JourneyRequest):
+            self.call("disclose", townId="not a town", location={"col": 5, "row": 3})
+        entry = self.call("disclose", townId="node/42", location={"col": 5, "row": 3})["entry"]
+        self.assertEqual(entry["townId"], "node/42")
+        self.assertEqual(entry["exploration"]["status"], "searching")
+        self.assertTrue(entry["exploration"]["clues"])
+
     def test_arrival_cell_describes_known_search_without_becoming_a_false_entrance_or_recorded_trace(self):
         undisclosed = self.call("discover")["entry"]
         self.assertEqual(undisclosed["exploration"]["status"], "untold")

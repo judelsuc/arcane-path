@@ -9,7 +9,7 @@ const WORDS = {
     empty: "No town discoveries recorded yet.", none: "No treasure legend recorded for this town.",
     pending: "This town holds a treasure legend. Its adventure is not prepared yet.",
     ready: "A story of hidden treasure is told here.",
-    untold: "People hint that an old story is told here. Ask the inhabitants.",
+    untold: "People hint that an old story is told here. Talk to an inhabitant here or nearby (Dialogue, G).",
     firstTelling: "There is indeed a story told around here… let me remember it properly.",
     searchPending: "The search area is not prepared yet. Explore nearby terrain, return and retry discovery.",
     search: "What people remember",
@@ -33,7 +33,7 @@ const WORDS = {
     empty: "Aucune découverte de ville enregistrée.", none: "Aucune légende de trésor enregistrée pour cette ville.",
     pending: "Cette ville possède une légende de trésor. Son aventure n'est pas encore préparée.",
     ready: "On raconte ici l'histoire d'un trésor caché.",
-    untold: "On murmure qu'une vieille histoire circule ici. Interrogez les habitants.",
+    untold: "On murmure qu'une vieille histoire circule ici. Parlez à un habitant ici ou dans les environs (Dialogue, G).",
     firstTelling: "Il se raconte bien une histoire par ici… laissez-moi m'en souvenir.",
     searchPending: "La zone de recherche n'est pas encore préparée. Explorez les environs, revenez et réessayez.",
     search: "Ce qu'on raconte",
@@ -188,11 +188,24 @@ export function setupTownLegends({ context, host = document.getElementById("ques
   // An inhabitant telling the legend is what unlocks its clues: triggered by
   // the conversation topic, spontaneously on first contact in a legend town.
   let disclosing;
-  async function discloseEntry(state, townId) {
+  // Where each legend town was discovered, so inhabitants nearby can tell its story too.
+  const positions = new Map();
+  const TELLING_CELLS = 5;
+  function nearbyEntry(state) {
+    let best = null, bestDistance = Infinity;
+    for (const [townId, spot] of positions) {
+      const entry = entries.get(townId);
+      if (!entry?.eligible || !entry.exploration || entry.exploration.status === "pending") continue;
+      const distance = Math.max(Math.abs(spot.col - state.col), Math.abs(spot.row - state.row));
+      if (distance <= TELLING_CELLS && distance < bestDistance) { best = entry; bestDistance = distance; }
+    }
+    return best;
+  }
+  async function discloseEntry(state, townId, nearby = false) {
     if (disclosing) return;
     disclosing = townId;
     try {
-      const result = await client.disclose(state);
+      const result = await client.disclose(state, undefined, nearby ? townId : null);
       if (result.entry.townId !== townId) throw new Error("Disclosed legend belongs to a different town.");
       retainEntry(result.entry);
       const captured = context();
@@ -236,6 +249,7 @@ export function setupTownLegends({ context, host = document.getElementById("ques
       if (request.signal.aborted || position !== requestedPosition) return;
       if (result.entry.townId !== townLegendIdentity(captured.cell)) throw new Error("Town legend response belongs to a different town.");
       current = retainEntry(result.entry);
+      positions.set(result.entry.townId, { col: captured.state.col, row: captured.state.row });
       onDiscovery();
     } catch (reason) {
       if (request.signal.aborted) return;
@@ -277,18 +291,20 @@ export function setupTownLegends({ context, host = document.getElementById("ques
     cursor = null;
     error = "";
     entries.clear();
+    positions.clear();
   }
   return {
     reset,
     startEntrance,
     telling(character, request = false) {
       const captured = context(), language = doc.documentElement.lang === "en" ? "en" : "fr", c = WORDS[language];
-      const entry = entries.get(townLegendIdentity(captured?.cell));
+      const local = entries.get(townLegendIdentity(captured?.cell));
+      const entry = local?.eligible && local.exploration ? local : captured?.state ? nearbyEntry(captured.state) ?? local : local;
       if (!character || owner !== `${captured?.state?.serverJourney?.id}:${captured?.state?.journalAccess}`) {
         return { text: c.noStory, status: "" };
       }
       if (entry?.exploration?.status === "untold") {
-        if (request && !captured.blocked) void discloseEntry(captured.state, entry.townId);
+        if (request && !captured.blocked) void discloseEntry(captured.state, entry.townId, entry !== local);
         return { text: c.firstTelling, status: "", untold: true };
       }
       if (!entry?.exploration?.clues) return { text: c.noStory, status: "" };
