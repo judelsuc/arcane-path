@@ -228,6 +228,17 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Garde haute preview: kicks and dog (23 November 2026)
+
+Deployed `f72a753` (`deploy-2026-11-23-brawl-kicks`): kick key (X), split kick,
+forward jump and flying kick, gliding knockback with a sliding sweep, knees
+bending forward, and the dog visible throughout. Only the four
+`minigames/brawl*.mjs` files changed; hashes match, service restarted with a
+clean journal, preview 401 without authentication. JavaScript 1909/1910
+(dream-wiring baseline). Rollback archive
+`/home/ubuntu/before-brawl-kicks-f72a753/runtime.tar.gz`, SHA-256
+`17d9cd374173717c69463f10f9ec465334ef70cbb49877dc61cc3afa84de08a4`.
+
 ## Garde haute preview: sprites, guidance, sounds and fight music (23 November 2026)
 
 Deployed `8480be7` (`deploy-2026-11-23-brawl-sprites`) after player feedback
