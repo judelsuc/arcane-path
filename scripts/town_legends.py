@@ -9,7 +9,7 @@ from asset_storage import AssetError, local_storage
 from content_storage import clock
 from journey_storage import cached_journey_cell, geographic_position, grid_position
 from journeys import JourneyConflict, JourneyRequest
-from legend_search import prepared_cells, generate_search, search_clues
+from legend_search import prepared_cells, generate_search, extend_search, search_clues
 import legend_wording
 from legend_rewards import choose_reward
 from reward_names import enqueue_name, KIND as NAME_KIND, request_key
@@ -117,14 +117,25 @@ class TownLegends:
             (journey, town_id)).fetchone() is not None
 
     def prepare_search(self, db, row, region, location):
-        if self.search(db, row[0]) is not None:
-            return
         chunks = self.journeys.chunks
         # Ineligible towns receive ambient decoy details too, so surrounding
         # descriptions never betray whether a legend exists; their plans are
         # never surfaced as clues, entrances or inspections.
         seed = row[3] if row[2] else int.from_bytes(
             hashlib.sha256(f"legend-ambient-v1:{row[0]}".encode()).digest()[:4], "big")
+        retained = self.search(db, row[0])
+        if retained is not None:
+            geometry, plan = retained
+            base = chunks.bases.get(region)
+            if plan.get("terrains") == "v2":
+                return
+            if base is None or any(geometry.get(key) != base.get(key) for key in ("cellSizeMeters", "bounds")):
+                return
+            extended = extend_search(plan, seed, row[0], prepared_cells(chunks, region, plan["origin"]))
+            if extended is not None:
+                db.execute(self.assets.catalogue.sql("UPDATE town_legend_searches SET payload=? WHERE town_id=?"),
+                           (json.dumps(extended, ensure_ascii=False), row[0]))
+            return
         plan = generate_search(seed, row[0], location, prepared_cells(chunks, region, location))
         if plan is None:
             return
@@ -344,6 +355,7 @@ class TownLegends:
             for row in rows:
                 if data["action"] == "inspect" and row[0] != data["townId"]:
                     continue
+                self.prepare_search(db, row, region, data["location"])
                 geometry, plan = self.search(db, row[0])
                 position = self.position_in(base, geometry, target)
                 # Clues, the entrance identity and inspection all wait until an

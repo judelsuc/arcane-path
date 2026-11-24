@@ -266,3 +266,17 @@ test("an entrance found while observing (Look) can be entered: Look is left befo
   assert.match(source, /const townLegendsUI = setupTownLegends\(\{[\s\S]*?context: \(\) => active \? economyContext\(\{ allowLook: true \}\) : null/);
   assert.match(source, /startTrial: action => \{\s*if \(cursor\) toggleLook\(\);\s*void artifactsUI\.startLegend\(action\);/);
 });
+
+test("a cell without legend detail never opens the panel, even while Look is waiting for the answer", async () => {
+  let answer;
+  const f = fixture({ look: () => new Promise(resolve => { answer = resolve; }) });
+  f.ui.update({ col: 3, row: 0 });
+  assert.equal(f.host.hidden, true, "no flash while the answer is pending");
+  answer({ observations: [] });
+  await flush();
+  assert.equal(f.host.hidden, true);
+  f.ui.update(observation.location);
+  answer({ observations: [observation] });
+  await flush();
+  assert.equal(f.host.hidden, false, "a described cell still opens the panel");
+});

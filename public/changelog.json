@@ -1,6 +1,11 @@
 {
-  "version": "0.22.49",
+  "version": "0.22.50",
   "entries": [
+    {
+      "version": "0.22.50",
+      "fr": "Les cases de grand-route, de voie ferrée et de gare de téléphérique autour d'une ville à légende ont maintenant leur description quand vous les observez, y compris pour les légendes déjà en cours (l'entrée ne change pas). Le panneau de légende ne s'ouvre plus pour se refermer aussitôt sur une case sans indice. Un rechargement de la page ne peut plus laisser le jeu sans région choisie (« Impossible de charger la carte »).",
+      "en": "Main road, railway and cable-car station cells around a legend town now have a description when you look at them, including for legends already in progress (the entrance does not move). The legend panel no longer opens and closes at once on a cell without a clue. Reloading the page can no longer leave the game without a selected region (\"Unable to load the map\")."
+    },
     {
       "version": "0.22.49",
       "fr": "Les spécialités locales s'affichent bien plus vite dans les villes voisines : le choix des plats fait pour une ville est réutilisé pour les autres villes de la même région au lieu d'être recalculé.",

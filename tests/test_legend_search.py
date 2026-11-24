@@ -6,12 +6,31 @@ import unittest
 from unittest.mock import Mock
 
 from journeys import JourneyConflict, JourneyRequest
-from legend_search import generate_search, prepared_cells, search_clues, LANDMARKS, GROUPS, MARKS, MATERIALS, CARRIERS, DETAILS
+from legend_search import generate_search, extend_search, prepared_cells, search_clues, LANDMARKS, GROUPS, MARKS, MATERIALS, CARRIERS, DETAILS
 from town_legends import TownLegends
 import test_town_legends as fixtures
 
 
 class LegendSearchGenerationTests(unittest.TestCase):
+    def test_stored_plans_gain_main_road_and_rail_cells_without_moving_anything(self):
+        old = {(col, row): {"terrain": "forest"} for row in range(-3, 4) for col in range(-3, 4)
+               if (col, row) != (0, 0) and col != 1}
+        road = {(1, row): {"terrain": "major_road" if row % 2 else "rail"} for row in range(-3, 4)}
+        stored = generate_search(9, "node/9", {"col": 0, "row": 0}, old)
+        stored.pop("terrains")  # a plan stored before main roads and railways were described
+        extended = extend_search(stored, 9, "node/9", {**old, **road})
+        self.assertEqual(extended["cells"][:len(stored["cells"])], stored["cells"])
+        self.assertEqual((extended["entrance"], extended["clues"]), (stored["entrance"], stored["clues"]))
+        added = extended["cells"][len(stored["cells"]):]
+        self.assertEqual({(cell["col"], cell["row"]) for cell in added}, set(road))
+        self.assertTrue(all(cell["group"] == "wayside" for cell in added))
+        signatures = [(c["group"], c["landmark"], c["mark"], c["material"], c["count"]) for c in extended["cells"]]
+        self.assertEqual(len(set(signatures)), len(signatures), "no added cell copies the entrance's details")
+        self.assertEqual(extended, extend_search(stored, 9, "node/9", {**old, **road}))
+        self.assertIsNone(extend_search(extended, 9, "node/9", {**old, **road}))
+        self.assertIsNone(extend_search(generate_search(9, "node/9", {"col": 0, "row": 0}, {**old, **road}),
+                                        9, "node/9", {**old, **road}))
+
     def test_variety_has_measurable_bounds_not_only_wording_changes(self):
         entrances, structures = set(), set()
         for group, terrain in (("woodland", "forest"), ("cultivated", "field"), ("open", "grass"),

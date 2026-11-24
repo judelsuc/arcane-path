@@ -9,9 +9,12 @@ GROUPS = {
     "field": "cultivated", "vineyard": "cultivated",
     "plain": "open", "grass": "open",
     "hill": "rocky", "mountain": "rocky",
-    "place": "built", "building": "built", "church": "built", "station": "built",
-    "road": "wayside",
+    "place": "built", "building": "built", "church": "built", "station": "built", "cable_station": "built",
+    "road": "wayside", "major_road": "wayside", "rail": "wayside",
 }
+# Terrains added after the first plans were stored; those plans are extended
+# with them (see extend_search) without moving or rewording existing cells.
+LATER_TERRAINS = {"cable_station", "major_road", "rail"}
 LANDMARKS = {
     "woodland": [
         ("a hollow stump", "une souche creuse"), ("a fallen trunk", "un tronc couché"),
@@ -105,6 +108,9 @@ TERRAIN = {
     "place": ("among the houses", "parmi les maisons"), "building": ("among the buildings", "parmi les bâtiments"),
     "church": ("near a church", "près d'une église"), "station": ("near a station", "près d'une gare"),
     "road": ("beside the road", "au bord de la route"),
+    "major_road": ("beside the main road", "au bord de la grand-route"),
+    "rail": ("beside the railway", "le long de la voie ferrée"),
+    "cable_station": ("near the cable-car station", "près de la gare du téléphérique"),
 }
 
 
@@ -143,14 +149,8 @@ def prepared_cells(chunks, region, origin):
     return {key: cells[key] for key in sorted(reached) if key != origin_key}
 
 
-def generate_search(seed, town_id, origin, cells):
-    if len(cells) < 4:
-        return None
-    rng = random_source(seed, town_id)
-    positions = list(sorted(cells))
-    rng.shuffle(positions)
-    target = positions[0]
-    bags, previous, details, signatures = {}, {}, [], set()
+def _detailer(rng, signatures):
+    bags, previous = {}, {}
     def draw(name, size):
         if not bags.get(name):
             bags[name] = list(range(size))
@@ -159,8 +159,8 @@ def generate_search(seed, town_id, origin, cells):
                 bags[name][0], bags[name][-1] = bags[name][-1], bags[name][0]
         previous[name] = bags[name].pop()
         return previous[name]
-    for col, row in positions:
-        cell = cells[col, row]
+
+    def detail(col, row, cell, seed):
         group = GROUPS[cell["terrain"]]
         landmark_index = draw(group, len(LANDMARKS[group]))
         mark = draw("marks", len(MARKS))
@@ -183,14 +183,44 @@ def generate_search(seed, town_id, origin, cells):
             if (col + row + seed) % 2:
                 sentences[2], sentences[3] = sentences[3], sentences[2]
             description[language] = " ".join(sentences)
-        details.append({"col": col, "row": row, "terrain": cell["terrain"], "group": group,
-                        "landmark": landmark_index, "mark": mark, "material": material, "count": count,
-                        "carrier": carrier, "pattern": pattern,
-                        "description": description})
+        return {"col": col, "row": row, "terrain": cell["terrain"], "group": group,
+                "landmark": landmark_index, "mark": mark, "material": material, "count": count,
+                "carrier": carrier, "pattern": pattern,
+                "description": description}
+    return detail
+
+
+def generate_search(seed, town_id, origin, cells):
+    if len(cells) < 4:
+        return None
+    rng = random_source(seed, town_id)
+    positions = list(sorted(cells))
+    rng.shuffle(positions)
+    target = positions[0]
+    detail = _detailer(rng, set())
+    details = [detail(col, row, cells[col, row], seed) for col, row in positions]
     plan = {"version": 1, "origin": origin, "entrance": {"col": target[0], "row": target[1]},
-            "cells": details}
+            "cells": details, "terrains": "v2"}
     plan["clues"] = search_clues(plan)
     return plan
+
+
+def extend_search(plan, seed, town_id, cells):
+    """Describe cells a stored plan left out (terrains added later) without
+    moving the entrance or changing any described cell. Returns None when the
+    plan is already current. Added cells never repeat the entrance's
+    landmark, mark, material and count."""
+    if plan.get("terrains") == "v2":
+        return None
+    known = {(cell["col"], cell["row"]) for cell in plan["cells"]}
+    origin = (plan["origin"]["col"], plan["origin"]["row"])
+    missing = sorted(key for key in cells if key not in known and key != origin)
+    signatures = {(cell["group"], cell["landmark"], cell["mark"], cell["material"], cell["count"])
+                  for cell in plan["cells"]}
+    digest = hashlib.sha256(f"legend-search-extend-v1:{town_id}:{seed}".encode()).digest()
+    detail = _detailer(random.Random(int.from_bytes(digest, "big")), signatures)
+    added = [detail(col, row, cells[col, row], seed) for col, row in missing]
+    return {**plan, "cells": plan["cells"] + added, "terrains": "v2"}
 
 
 def search_clues(plan):

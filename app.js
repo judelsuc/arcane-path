@@ -382,6 +382,10 @@ languageSelect.addEventListener("change", () => {
 localize();
 
 async function loadRegion(prepared) {
+  // A browser restoring form state after a reload can leave no option selected
+  // (the starting-point option it remembers is added later), so fall back to
+  // the default region instead of asking for an empty one.
+  if (!regionSelect.value) regionSelect.selectedIndex = 0;
   travel.reset();
   travel.configure(regionSelect.value, undefined);
   activeRequest?.abort();

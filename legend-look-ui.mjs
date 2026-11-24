@@ -80,7 +80,9 @@ export function setupLegendLook({ context, host, action, status, client = create
     const language = doc.documentElement.lang === "en" ? "en" : "fr", c = COPY[language];
     renderAction();
     host.replaceChildren();
-    host.hidden = !loading && !error && !observations.length;
+    // Most looked-at cells carry no legend detail: opening the panel while the
+    // answer is pending made it flash and vanish, so it only opens with content.
+    host.hidden = !error && !observations.length;
     if (host.hidden) return;
     node("h3", c.title);
     if (loading) node("p", c.loading).setAttribute("role", "status");
