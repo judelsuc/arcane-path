@@ -574,7 +574,21 @@ export function setupTrail(t, { context, interview, discover, askDirections, sea
     action.hidden = modern;
     actionCost.hidden = modern;
     actions.replaceChildren();
-    if (awaitingLead && !atTrailTarget(state)) paragraph(actions, t("clueTravelFirst"));
+    if (awaitingLead && !atTrailTarget(state)) {
+      // The arrival is recorded, but the stop is a precise cell: in a large
+      // town the traveller may have walked off it. Say where it is.
+      const stop = trail.stages[trail.index];
+      const dc = stop.col - state.col, dr = stop.row - state.row;
+      const sectors = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
+      const heading = sectors[Math.round(((Math.atan2(dc, -dr) * 180 / Math.PI + 360) % 360) / 45) % 8];
+      paragraph(actions, t("clueBackToStop", { place: stop.name,
+        km: (Math.hypot(dc, dr) * 0.25).toFixed(1), direction: t(`hintCompass.${heading}`) }));
+    } else if (modern && atTrailTarget(state) && !trail.completed &&
+        !searchClueOptions(state, current.cell, current.info, current.data).some(kind => !["discuss", "buy"].includes(kind)) &&
+        clueActions(state).some(kind => ["discuss", "buy", "directions", "rumor"].includes(kind))) {
+      // Here the trail continues through people: those actions live in Dialogue only.
+      paragraph(actions, t("clueAskInhabitants"));
+    }
     if (modern && !atTrailTarget(state) && !trail.completed && !trail.exploration) paragraph(actions, t("clueTravelFirst"));
     if (fieldSearchAvailable(state, current.cell) && !atTrailTarget(state) && !awaitingLead) {
       const item = document.createElement("div"), button = document.createElement("button");

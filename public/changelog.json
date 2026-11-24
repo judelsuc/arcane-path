@@ -1,6 +1,11 @@
 {
-  "version": "0.22.50",
+  "version": "0.22.51",
   "entries": [
+    {
+      "version": "0.22.51",
+      "fr": "La fenêtre « Enquêter ici » explique désormais pourquoi aucune recherche n'est proposée : si vous vous êtes éloigné du point précis de l'étape, elle indique sa distance et sa direction ; si la piste passe par les habitants, elle renvoie vers Dialogue (« Avez-vous croisé mon parent ? »).",
+      "en": "The “Investigate here” window now explains why no search is offered: if you walked away from the stop's exact spot it gives its distance and direction; if the lead comes from the inhabitants it points to Dialogue (“Have you seen my parent?”)."
+    },
     {
       "version": "0.22.50",
       "fr": "Les cases de grand-route, de voie ferrée et de gare de téléphérique autour d'une ville à légende ont maintenant leur description quand vous les observez, y compris pour les légendes déjà en cours (l'entrée ne change pas). Le panneau de légende ne s'ouvre plus pour se refermer aussitôt sur une case sans indice. Un rechargement de la page ne peut plus laisser le jeu sans région choisie (« Impossible de charger la carte »).",
