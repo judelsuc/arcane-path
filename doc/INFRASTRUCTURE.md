@@ -228,6 +228,18 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Shop purchases around treasures, 0.22.52 (24 November 2026)
+
+Deployed `cb732f6` (`deploy-2026-11-24-0.22.52`): buying equipment placed the
+item using equipment placements only, so a knife landed on a treasure sword
+and the shared-bag check refused the purchase ("Inventory overlaps or exceeds
+the bag"). Buying and the shop pre-check now avoid treasure and artifact
+cells. Client-only, four files, no new files; hashes match, service
+restarted, journal clean, `nginx -t` OK, HTTPS 401, conditional GET 200.
+JavaScript 1920/1921 (dream-wiring baseline). Rollback archive
+`/home/ubuntu/before-0.22.52-cb732f6/runtime.tar.gz`, SHA-256
+`7c522f483d0b0992ee4aba0b6c3ae1f3fe107d9d1c55aaa67eb4ae5baea7b521`.
+
 ## Investigation window guidance, 0.22.51 (24 November 2026)
 
 Deployed `7e85d35` (`deploy-2026-11-24-0.22.51`): when no clue search is
