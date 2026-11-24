@@ -192,7 +192,9 @@ export function advanceEquipment(state, { expectedRevision, elapsedMinutes, walk
 }
 
 export function equipmentAction(state, action, context) {
-  const { expectedRevision, elapsedMinutes, walletCents, atShop = false, dogEncounter = false } = context;
+  const { expectedRevision, elapsedMinutes, walletCents, atShop = false, dogEncounter = false,
+    // Treasures and artifacts share the bag: a new item must avoid them too.
+    obstacles = [], obstacleItems = [] } = context;
   checkRevision(state, expectedRevision);
   if (elapsedMinutes !== state.elapsedMinutes || !integer(walletCents) ||
       typeof atShop !== "boolean" || typeof dogEncounter !== "boolean" ||
@@ -232,7 +234,7 @@ export function equipmentAction(state, action, context) {
     if (action.type === "buy") {
       if (!atShop || owned) fail("Item unavailable.");
       if (weight(state) + item.grams > CAPACITY_GRAMS) fail("Bag capacity exceeded.");
-      const placement = item.slot ? null : firstPlacement(placements, item, ITEMS);
+      const placement = item.slot ? null : firstPlacement([...placements, ...obstacles], item, [...ITEMS, ...obstacleItems]);
       costCents = item.priceCents; timeMinutes = 10;
       update = next => ({ ...next, items: [...next.items, { id: item.id, condition: 100 }],
         placements: placement ? [...placements, placement] : placements });

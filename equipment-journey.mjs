@@ -2,6 +2,13 @@ import { equipmentAction, advanceEquipment, companionName } from "./equipment.mj
 import { restSurvival } from "./survival.mjs";
 import { finishAction } from "./economy.mjs";
 import { validateArtifactInventory } from "./artifact-inventory.mjs";
+import { treasureBag } from "./legend-rewards.mjs";
+
+// Placements of the treasures and artifacts that share the bag with equipment.
+export function bagObstacles(state) {
+  const bag = treasureBag(state), own = new Set(state.equipment.items.map(item => item.id));
+  return { obstacles: bag.placements.filter(p => !own.has(p.id)), obstacleItems: bag.catalogue };
+}
 
 export function equipmentShopAvailable(cell) {
   return Boolean(cell && !cell.unavailable && cell.terrain === "place");
@@ -19,6 +26,7 @@ export function journeyEquipmentAction(state, action, cell, info, survival, econ
     expectedRevision: state.equipment.revision, elapsedMinutes: state.elapsedMinutes,
     walletCents: state.walletCents, atShop: equipmentShopAvailable(cell),
     dogEncounter: state.equipment.dogEncounter === "pending",
+    ...(action.type === "buy" ? bagObstacles(state) : {}),
   });
   validateArtifactInventory({ ...state, equipment: outcome.state });
   if (!outcome.timeMinutes) return { ...state, equipment: outcome.state };

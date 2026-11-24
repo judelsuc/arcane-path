@@ -1,5 +1,5 @@
 import { ITEMS, CAPACITY_GRAMS, equipmentModifiers, equipmentAction, companionCondition } from "./equipment.mjs";
-import { equipmentShopAvailable } from "./equipment-journey.mjs";
+import { equipmentShopAvailable, bagObstacles } from "./equipment-journey.mjs";
 import { publicPlace } from "./towns.mjs";
 import { renderInventory } from "./equipment-inventory-ui.mjs";
 import { itemArt, companionArt } from "./equipment-art.mjs";
@@ -197,7 +197,7 @@ export function setupEquipment(t, { context, act, treasureAction }) {
           try {
             equipmentAction(gear, action, { expectedRevision: revision,
               elapsedMinutes: state.elapsedMinutes, walletCents: state.walletCents,
-              atShop: equipmentShopAvailable(cell) });
+              atShop: equipmentShopAvailable(cell), ...(type === "buy" ? bagObstacles(state) : {}) });
           } catch { available = false; }
           button(row, `${label} · ${money(cents)} · ${minutes} ${w.minutes}`, () => run(action, revision), !available);
         };

@@ -1,6 +1,11 @@
 {
-  "version": "0.22.51",
+  "version": "0.22.52",
   "entries": [
+    {
+      "version": "0.22.52",
+      "fr": "Acheter un objet en boutique fonctionne de nouveau quand votre sac contient un trésor ou un objet trouvé : le nouvel objet est rangé dans une case libre au lieu d'être refusé (« Inventory overlaps or exceeds the bag »).",
+      "en": "Buying an item in a shop works again when your bag holds a treasure or a found object: the new item goes into a free cell instead of being refused (\"Inventory overlaps or exceeds the bag\")."
+    },
     {
       "version": "0.22.51",
       "fr": "La fenêtre « Enquêter ici » explique désormais pourquoi aucune recherche n'est proposée : si vous vous êtes éloigné du point précis de l'étape, elle indique sa distance et sa direction ; si la piste passe par les habitants, elle renvoie vers Dialogue (« Avez-vous croisé mon parent ? »).",

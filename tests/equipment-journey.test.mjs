@@ -243,3 +243,21 @@ test("notebook and PDF statistics include the actual named dog, bag load and gam
     assert.equal(games.rows[1].value, t("practiceLevel", { level: 4, xp: 300 }));
   }
 });
+
+import { LORE_ITEMS } from "../lore-catalogue.mjs";
+import { ITEMS } from "../equipment.mjs";
+import { availablePlacement } from "../equipment-inventory.mjs";
+import { treasureBag } from "../legend-rewards.mjs";
+
+test("buying equipment avoids the cells already used by artifacts and treasures in the shared bag", () => {
+  const s = start(), knife = ITEMS.find(item => item.id === "knife");
+  const naive = availablePlacement(s.equipment.placements, knife, ITEMS);
+  const artifact = LORE_ITEMS.find(item => item.footprint[0] === 1 && item.footprint[1] === 1);
+  const carried = { ...s, lore: { ...(s.lore ?? {}), inventory: [{ id: artifact.id,
+    placement: { id: artifact.id, x: naive.x, y: naive.y, rotated: false } }] } };
+  treasureBag(carried);
+  const bought = buy(carried, "knife");
+  const placed = bought.equipment.placements.find(p => p.id === "knife");
+  assert.ok(placed && (placed.x !== naive.x || placed.y !== naive.y), "the knife is not packed onto the artifact");
+  treasureBag(bought);
+});
