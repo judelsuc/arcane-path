@@ -228,6 +228,19 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Investigation window guidance, 0.22.51 (24 November 2026)
+
+Deployed `7e85d35` (`deploy-2026-11-24-0.22.51`): when no clue search is
+offered after arriving at a trail stop, the investigation window now gives
+the stop's distance and direction (the arrival stays recorded but searching
+needs the exact cell or a neighbour) or points to Dialogue when the remaining
+clue actions are social. Context: a player at Chorley saw no button; the
+0.22.50 restart had also made 19 parent narrative requests fail (502), which
+only affects wording. Client-only, three files, no new files; hashes match,
+service restarted, journal clean, `nginx -t` OK, HTTPS 401, conditional GET
+200. Rollback archive `/home/ubuntu/before-0.22.51-7e85d35/runtime.tar.gz`,
+SHA-256 `9afd9b49909ea1510031e4c39137728f67e38a2bc0654506928f5c6bcfe85466`.
+
 ## Road and rail legend cells, Look panel and region reload, 0.22.50 (24 November 2026)
 
 Deployed `44b8b1d` (`deploy-2026-11-24-0.22.50`): legend search plans now
