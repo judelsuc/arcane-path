@@ -228,6 +228,20 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Culinary decisions shared across neighbouring towns, 0.22.49 (24 November 2026)
+
+Deployed `b8df0af` (`deploy-2026-11-24-0.22.49`): the meal cache was per town
+only, so neighbouring towns (Bootle, Litherland, Liverpool, Sefton; Toulon's
+quarters) each re-ran the Wikipedia search and a 15-20 s model call for the
+same dishes, three of which failed validation. Per-article decisions are now
+stored in `town_documents` under `town-meals-dish-v1:` keys and reused when
+every article of a town is decided and the origin belongs to its own chain.
+Two runtime files changed, no new files, no schema change; hashes match,
+service restarted, journal clean, `nginx -t` OK, HTTPS 401, conditional GET
+200. Town meals tests 25/25. Rollback archive
+`/home/ubuntu/before-0.22.49-b8df0af/runtime.tar.gz`, SHA-256
+`202bb171e3483d3c34dccfd06e2d99b34aab0831701e00f2a76bdd253d476b64`.
+
 ## Meal photos in the journal and legend entrance from Look, 0.22.48 (23 November 2026)
 
 Deployed `c22f5f6` (`deploy-2026-11-23-0.22.48`): taking a documented
