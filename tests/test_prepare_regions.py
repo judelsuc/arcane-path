@@ -66,7 +66,8 @@ class PrepareRegionTests(unittest.TestCase):
                 viewport_bounds(region["referenceBounds"], 518, 360), "Test", root / "test.osm.gz",
                 refresh=True, reference_bounds=region["referenceBounds"],
             )
-            build.assert_called_once_with(root / "test.osm.gz", root / "test.json", "Test", force=True)
+            build.assert_called_once_with(root / "test.osm.gz", root / "test.json", "Test",
+                                          force=True, shoreline=None)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,29 @@
+[Unit]
+Description=Arcane Path regional map mirror: download, index and publish queued Geofabrik extracts
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/etc/arcane-path/shared-storage.json
+
+[Service]
+Type=oneshot
+User=arcane
+Group=arcane
+WorkingDirectory=/opt/arcane-path
+Environment=ARCANE_OSM_MIRROR_DIR=/var/lib/arcane-path/osm
+Environment=ARCANE_OSM_MIRROR_BUCKET=arcane-path-osm
+Environment=ARCANE_ASSET_STORAGE_CONFIG_FILE=/etc/arcane-path/shared-storage.json
+Environment=AWS_SHARED_CREDENTIALS_FILE=/etc/arcane-path/shared-storage-aws.ini
+Environment=AWS_EC2_METADATA_DISABLED=true
+ExecStart=/opt/arcane-path/.venv-shared-storage/bin/python scripts/osm_mirror.py drain
+# Large sub-regions download at a few MB per second from Geofabrik.
+TimeoutStartSec=3h
+# Players keep priority: the worker never takes more than one and a half of the two CPUs.
+Nice=15
+CPUQuota=150%
+IOSchedulingClass=idle
+UMask=0022
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/arcane-path

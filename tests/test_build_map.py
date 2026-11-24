@@ -18,6 +18,58 @@ class BuildMapTests(unittest.TestCase):
     def write_osm(self, content):
         self.source.write_text(content, encoding="utf-8")
 
+    def test_town_documentary_identity_preserves_exact_source_tags_and_coordinates(self):
+        self.write_osm("""<osm version="0.6">
+            <bounds minlat="44.54" minlon="2.30" maxlat="44.55" maxlon="2.31"/>
+            <node id="10" lat="44.545" lon="2.305">
+              <tag k="place" v="town"/><tag k="name" v="Firmi"/>
+              <tag k="wikidata" v="Q123"/><tag k="wikipedia" v="fr:Firmi"/>
+              <tag k="description:en" v="Town description"/>
+              <tag k="wikimedia_commons" v="Category:Firmi"/>
+            </node></osm>""")
+        result = rasterize(self.source, "Test", cell_size_meters=250)
+        settlement = next(cell["settlements"][0] for row in result["rows"] for cell in row
+                          if cell.get("settlements"))
+        self.assertEqual(settlement["osmId"], "node/10")
+        self.assertEqual(settlement["wikidata"], "Q123")
+        self.assertEqual(settlement["wikipedia"], "fr:Firmi")
+        self.assertAlmostEqual(settlement["latitude"], 44.545)
+        self.assertAlmostEqual(settlement["longitude"], 2.305)
+        self.assertEqual(settlement["tags"]["description:en"], "Town description")
+        self.assertEqual(settlement["tags"]["wikimedia_commons"], "Category:Firmi")
+
+    def test_game_venues_preserve_sports_festivals_and_closure_tags(self):
+        self.write_osm("""<osm version="0.6">
+            <bounds minlat="44.54" minlon="2.30" maxlat="44.55" maxlon="2.31"/>
+            <node id="1" lat="44.545" lon="2.305">
+              <tag k="leisure" v="pitch"/><tag k="sport" v="boules"/>
+              <tag k="name" v="Boulodrome"/>
+            </node>
+            <node id="2" lat="44.546" lon="2.306">
+              <tag k="leisure" v="festival_grounds"/><tag k="access" v="public"/>
+            </node>
+            <node id="3" lat="44.547" lon="2.307">
+              <tag k="event" v="festival"/>
+            </node>
+            <node id="4" lat="44.548" lon="2.308">
+              <tag k="amenity" v="arts_centre"/><tag k="closed" v="yes"/>
+              <tag k="disused:amenity" v="theatre"/>
+            </node>
+            <node id="5" lat="44.549" lon="2.309">
+              <tag k="leisure" v="pitch"/><tag k="sport" v="soccer"/>
+            </node></osm>""")
+        result = rasterize(self.source, "Test", cell_size_meters=250)
+        pois = {poi["osmId"]: poi for row in result["rows"] for cell in row
+                for poi in cell.get("pois", [])}
+        self.assertEqual(pois["node/1"]["tags"]["sport"], "boules")
+        self.assertEqual(pois["node/1"]["tags"]["leisure"], "pitch")
+        self.assertEqual(pois["node/1"]["category"], "leisure")
+        self.assertEqual(pois["node/2"]["tags"]["leisure"], "festival_grounds")
+        self.assertEqual(pois["node/3"]["tags"]["event"], "festival")
+        self.assertEqual(pois["node/4"]["tags"]["closed"], "yes")
+        self.assertEqual(pois["node/4"]["tags"]["disused:amenity"], "theatre")
+        self.assertNotIn("node/5", pois)
+
     def test_rasterizes_osm_features_and_respects_water_priority(self):
         self.write_osm(
             """<?xml version="1.0"?>
@@ -53,9 +105,9 @@ class BuildMapTests(unittest.TestCase):
         self.assertGreater(result["rows"][2][2]["waterCoveragePercent"], 0)
         self.assertLess(result["rows"][2][2]["waterCoveragePercent"], 50)
         self.assertEqual(result["rows"][2][0]["terrain"], "rail")
-        self.assertEqual(result["rows"][1][0]["terrain"], "plain")
-        self.assertNotIn("building", terrains)
-        self.assertNotIn("building", {entry["terrain"] for entry in result["legend"]})
+        self.assertEqual(result["rows"][1][0]["terrain"], "building")
+        self.assertIn("building", terrains)
+        self.assertIn("building", {entry["terrain"] for entry in result["legend"]})
         detail = rasterize(self.source, "Test", cell_size_meters=50)
         self.assertIn("water", {cell["terrain"] for row in detail["rows"] for cell in row})
         self.assertIn("building", {cell["terrain"] for row in detail["rows"] for cell in row})

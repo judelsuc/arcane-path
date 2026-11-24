@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Town legend playtest</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./styles.css?v=unobstructed-scene-4">
+    <style>
+      main { max-width: 960px; margin: 1rem auto; padding: 1rem; }
+      h1 { color: #ead9ac; }
+      .legend-intro, .legend-game { padding: 1rem; border: 1px solid #8a7959; border-radius: .6rem; background: #263831; margin: 1rem 0; }
+      .legend-intro li { margin-block: .7rem; }
+      button { min-height: 48px; margin: .25rem; padding: .6rem .9rem; }
+      button[aria-pressed="true"], button[aria-current="location"] { outline: 2px solid #e5c779; background: #526444; }
+      button:focus-visible, canvas:focus-visible, a:focus-visible { outline: 3px solid #f4d18c; outline-offset: 3px; }
+      canvas { display: block; image-rendering: pixelated; box-sizing: border-box; }
+      .legend-game > canvas, .legend-point-scene > canvas { width: 100%; height: auto; border: 1px solid #b19b70; }
+      .legend-actions { display: flex; flex-wrap: wrap; gap: .25rem; }
+      #preview-dungeon-settings { display: flex; flex-wrap: wrap; gap: .75rem; }
+      #preview-dungeon-settings label { display: grid; grid-template-columns: minmax(0, 1fr); gap: .25rem; flex: 1 1 18rem; min-width: 0; max-width: 100%; }
+      #preview-dungeon-settings select { width: 100%; min-width: 0; max-width: 100%; min-height: 48px; }
+      .legend-receipt { border: 2px solid #b9d886; padding: 1rem; color: #e6efc1; }
+      [hidden] { display: none !important; }
+      #preview-error { color: #ffc0a6; }
+      @media (max-width: 480px) { main { padding: .5rem; } .legend-game { padding: .5rem; } button { margin: .2rem; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 id="preview-title">Town legend playtest</h1>
+      <p id="preview-note"></p>
+      <section class="legend-intro">
+        <p id="legend-story"></p>
+        <details open>
+          <summary id="legend-accounts-title"></summary>
+          <ul id="legend-accounts"></ul>
+        </details>
+        <h2 id="treasure-title"></h2>
+        <p id="treasure-name"></p>
+        <p id="treasure-effects"></p>
+      </section>
+      <div id="preview-formats" role="group" aria-label="Adventure format">
+        <button id="format-platform" type="button"></button>
+        <button id="format-investigation" type="button"></button>
+        <button id="format-dungeon" type="button"></button>
+        <button id="preview-reset" type="button"></button>
+      </div>
+      <div id="preview-dungeon-settings" hidden>
+        <label><span id="preview-tier-label"></span><select id="preview-tier"></select></label>
+        <label><span id="preview-weapon-label"></span><select id="preview-weapon"></select></label>
+      </div>
+      <p id="preview-error" role="alert"></p>
+      <p id="preview-art-status" role="status"></p>
+      <p id="preview-art-credit" hidden>
+        <a href="https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/LICENSE.md" target="_blank" rel="noopener noreferrer">SDXL model license</a>
+      </p>
+      <p id="preview-art-error" role="alert"></p>
+      <button id="preview-art-refresh" type="button"></button>
+      <button id="preview-layout" type="button"></button>
+      <div id="legend-board"></div>
+      <p><a href="?lang=en">English</a> / <a href="?lang=fr">Français</a></p>
+    </main>
+    <script type="module" src="./legend-preview.mjs?v=visible-resume-7"></script>
+  </body>
+</html>

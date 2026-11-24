@@ -11,6 +11,19 @@ test("selects a supported browser language with French as default", () => {
   assert.equal(resolveLocale([]), "fr");
 });
 
+test("shelter, survival and town copy stays immersive while retaining gameplay rules", () => {
+  for (const language of ["en", "fr"]) {
+    for (const key of ["buildingSleepNote", "buildingSleepAction", "survivalChoicesFiction", "townFiction"]) {
+      assert.doesNotMatch(translate(language, key, { minutes: 10, hours: 8 }),
+        /fiction|ficti[fnv]|occupancy|occupation réelle|accusation/i);
+    }
+    const note = translate(language, "buildingSleepNote", { minutes: 10, hours: 8 });
+    assert.match(note, /10 min/);
+    assert.match(note, /8 h/);
+    assert.match(note, /\+5 vigilance/);
+  }
+});
+
 test("catalogs contain the same keys and interpolation parameters", () => {
   assert.deepEqual(Object.keys(translations.en).sort(), Object.keys(translations.fr).sort());
   for (const key of Object.keys(translations.fr)) {
@@ -52,6 +65,16 @@ test("reports missing translations and parameters explicitly", () => {
   assert.throws(() => translate("en", "missing"), /Missing translation/);
   assert.throws(() => translate("de", "headline"), /Missing translation/);
   assert.throws(() => translate("en", "scale"), /Missing parameter/);
+});
+
+test("all rasterizer POI categories, including streamed leisure venues, have bilingual labels", () => {
+  for (const locale of ["fr", "en"]) {
+    for (const category of ["amenity", "shop", "tourism", "historic", "leisure", "station", "cable_station", "summit"]) {
+      assert.ok(translate(locale, `poi.${category}`).trim(), `${locale}: ${category}`);
+    }
+  }
+  assert.equal(translate("fr", "poi.leisure"), "Loisirs");
+  assert.equal(translate("en", "poi.leisure"), "Leisure");
 });
 
 test("every starting tarot card has a symbolic reading in both languages", () => {

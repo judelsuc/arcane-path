@@ -38,3 +38,13 @@ test("retains real names without inventing names for unnamed cells", () => {
   assert.deepEqual(cellInfo(map, 0, 0).names, ["Firmi"]);
   assert.deepEqual(cellInfo(map, 0, 1).names, []);
 });
+
+test("inspection retains aggregated building coverage without inventing footprints", () => {
+  const map = {
+    width: 2, height: 1, cellSizeMeters: 250,
+    bounds: { minLatitude: 44.53, maxLatitude: 44.54, minLongitude: 2.3, maxLongitude: 2.32 },
+    rows: [[{ terrain: "building", buildingCoveragePercent: 25 }, { terrain: "plain" }]],
+  };
+  assert.equal(cellInfo(map, 0, 0).buildingCoveragePercent, 25);
+  assert.equal(cellInfo(map, 0, 1).buildingCoveragePercent, 0);
+});

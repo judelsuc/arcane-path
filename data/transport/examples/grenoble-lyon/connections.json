@@ -1,0 +1,519 @@
+{
+  "version": 1,
+  "kind": "real-gtfs-direct-connections",
+  "source": {
+    "id": "tdg-83582",
+    "country": "FR",
+    "provider": "SNCF",
+    "mirrorUrl": "https://files.mobilitydatabase.org/tdg-83582/latest.zip",
+    "licenseUrl": "https://opendatacommons.org/licenses/odbl/1.0/",
+    "licenseReviewed": true,
+    "official": true
+  },
+  "sha256": "6892f10eb62e48e2a6dc6fd0ea6e27cbadcc1163d44b34e64661dae6be701dce",
+  "retrievedAt": "2026-10-19T09:08:29.172738+00:00",
+  "serviceDate": "2026-10-19",
+  "from": {
+    "id": "StopPoint:OCETrain TER-87747006",
+    "name": "Grenoble",
+    "latitude": 45.191491,
+    "longitude": 5.714548
+  },
+  "to": {
+    "id": "StopPoint:OCETrain TER-87723197",
+    "name": "Lyon Part Dieu",
+    "latitude": 45.760596,
+    "longitude": 4.859409
+  },
+  "after": null,
+  "connections": [
+    {
+      "tripId": "OCESN17600F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:644:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17600",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T05:21:00+02:00",
+      "arrival": "2026-10-19T06:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17602F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:715:20261211",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17602",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T05:51:00+02:00",
+      "arrival": "2026-10-19T07:15:00+02:00",
+      "durationMinutes": 84.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17604F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:744:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17604",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T06:21:00+02:00",
+      "arrival": "2026-10-19T07:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17606F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:815:20261211",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17606",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T06:51:00+02:00",
+      "arrival": "2026-10-19T08:15:00+02:00",
+      "durationMinutes": 84.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17608F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:844:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17608",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T07:21:00+02:00",
+      "arrival": "2026-10-19T08:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17610F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:915:20261211",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17610",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T07:51:00+02:00",
+      "arrival": "2026-10-19T09:15:00+02:00",
+      "durationMinutes": 84.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17612F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:945:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17612",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T08:21:00+02:00",
+      "arrival": "2026-10-19T09:45:00+02:00",
+      "durationMinutes": 84.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17684F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1015:20261211",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17684",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T08:51:00+02:00",
+      "arrival": "2026-10-19T10:15:00+02:00",
+      "durationMinutes": 84.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17614F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1044:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17614",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T09:21:00+02:00",
+      "arrival": "2026-10-19T10:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17646F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1115:20261211",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17646",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T09:51:00+02:00",
+      "arrival": "2026-10-19T11:15:00+02:00",
+      "durationMinutes": 84.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17616F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1144:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17616",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T10:21:00+02:00",
+      "arrival": "2026-10-19T11:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17618F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1244:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17618",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T11:21:00+02:00",
+      "arrival": "2026-10-19T12:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17620F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1344:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17620",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T12:21:00+02:00",
+      "arrival": "2026-10-19T13:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17622F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1444:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17622",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T13:21:00+02:00",
+      "arrival": "2026-10-19T14:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17624F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1544:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17624",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T14:21:00+02:00",
+      "arrival": "2026-10-19T15:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17696F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1615:20261211",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17696",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T14:51:00+02:00",
+      "arrival": "2026-10-19T16:15:00+02:00",
+      "durationMinutes": 84.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17626F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1644:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17626",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T15:21:00+02:00",
+      "arrival": "2026-10-19T16:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17648F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1715:20261211",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17648",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T15:51:00+02:00",
+      "arrival": "2026-10-19T17:15:00+02:00",
+      "durationMinutes": 84.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17628F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1744:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17628",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T16:21:00+02:00",
+      "arrival": "2026-10-19T17:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17630F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1815:20261211",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17630",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T16:51:00+02:00",
+      "arrival": "2026-10-19T18:15:00+02:00",
+      "durationMinutes": 84.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17632F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1844:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17632",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T17:21:00+02:00",
+      "arrival": "2026-10-19T18:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17634F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1915:20261211",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17634",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T17:51:00+02:00",
+      "arrival": "2026-10-19T19:15:00+02:00",
+      "durationMinutes": 84.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17636F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:1944:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17636",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T18:21:00+02:00",
+      "arrival": "2026-10-19T19:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17638F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:2015:20261211",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17638",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T18:51:00+02:00",
+      "arrival": "2026-10-19T20:15:00+02:00",
+      "durationMinutes": 84.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17640F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:2044:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17640",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T19:21:00+02:00",
+      "arrival": "2026-10-19T20:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17642F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:2142:20261212",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17642",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T20:21:00+02:00",
+      "arrival": "2026-10-19T21:42:00+02:00",
+      "durationMinutes": 81.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    },
+    {
+      "tripId": "OCESN17644F1187_F:TER:FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E::87747006:87723197:6:2244:20261211",
+      "routeId": "FR:Line::D02BC35E-F58E-45E7-968F-42B8AB630E6E:",
+      "mode": "train",
+      "headsign": "17644",
+      "fromIndex": 0,
+      "toIndex": 5,
+      "departure": "2026-10-19T21:21:00+02:00",
+      "arrival": "2026-10-19T22:44:00+02:00",
+      "durationMinutes": 83.0,
+      "timingQuality": "source-timepoints",
+      "fare": {
+        "kind": "estimated-game",
+        "policy": "fixed-boarding-v1",
+        "currency": "EUR",
+        "cents": 800
+      }
+    }
+  ],
+  "notice": "Real scheduled services, not live operating guarantees. Fares are fictional EUR game prices, not operator tickets. Stop sequences are not track/road geometry. Source-supplied approximate times are marked; no missing times are interpolated. Unsupported services are reported, not invented.",
+  "scopeNotice": "Direct services in this imported snapshot only; no transfers or claim of complete city-to-city coverage."
+}

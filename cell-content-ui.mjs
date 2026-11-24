@@ -1,8 +1,9 @@
 import { cellInfo } from "./cell-info.mjs";
 import { createContentService } from "./cell-content.mjs";
 import { openContentCache } from "./content-cache.mjs";
+import { setFeedback } from "./feedback.mjs";
 
-export function setupCellContent(t) {
+export function setupCellContent(t, { pinPhoto } = {}) {
   const cache = openContentCache();
   let servicePromise;
   function contentService() {
@@ -22,6 +23,10 @@ export function setupCellContent(t) {
     return servicePromise;
   }
   const description = document.querySelector("#cell-description");
+  const inscriptionDescription = document.createElement("section");
+  inscriptionDescription.className = "cell-inscriptions-description";
+  inscriptionDescription.hidden = true;
+  description.after(inscriptionDescription);
   const photo = document.querySelector("#cell-photo");
   const dialog = document.querySelector("#photo-dialog");
   const show = document.querySelector("#show-photo");
@@ -34,7 +39,7 @@ export function setupCellContent(t) {
   const next = document.querySelector("#next-photo");
   let photoIndex = 0;
   let selected, locale, generation = 0, objectUrl, displayedBlob;
-  let descriptionResult, photoResult;
+  let descriptionResult, photoResult, visibleInscriptions = null;
   let photoNeedsRefresh = false;
   const pending = new Set();
 
@@ -94,9 +99,10 @@ export function setupCellContent(t) {
     displayedBlob = undefined;
   }
 
-  function paragraph(container, text) {
+  function paragraph(container, text, outcome = "") {
     const p = document.createElement("p");
     p.textContent = text;
+    setFeedback(p, outcome);
     container.append(p);
   }
 
@@ -115,9 +121,11 @@ export function setupCellContent(t) {
     container.replaceChildren();
     if (!result) return;
     if (result.failed) {
-      paragraph(container, t("contentError"));
+      paragraph(container, t("contentError"), "failure");
       return;
     }
+    const provenance = document.createElement("div");
+    provenance.className = "technical-text";
     const content = result.content;
     if (content) {
       if (content.blob) {
@@ -129,31 +137,63 @@ export function setupCellContent(t) {
         const image = document.createElement("img");
         image.src = objectUrl;
         image.alt = content.title;
-        image.onerror = () => paragraph(container, t("contentError"));
+        image.onerror = () => paragraph(container, t("contentError"), "failure");
         container.append(image);
       } else {
         paragraph(container, content.text);
-        paragraph(container, t("contentLanguage", { language: content.language }));
+        paragraph(provenance, t("contentLanguage", { language: content.language }));
       }
-      paragraph(container, content.nearby
+      paragraph(provenance, content.nearby
         ? t("contentNearby", { distance: content.distance }) : t("contentLocal"));
-      if (content.nature) paragraph(container, t("contentNature", { provider: content.provider }));
-      link(container, content.sourceUrl, t("contentSource", { title: content.title }));
-      paragraph(container, t("contentCredit", content));
-      link(container, content.licenseUrl, t("contentLicense"));
+      if (content.nature) paragraph(provenance, t("contentNature", { provider: content.provider }));
+      if (content.aerial) paragraph(provenance, t("contentAerial", { provider: content.provider }));
+      link(provenance, content.sourceUrl, t("contentSource", { title: content.title }));
+      paragraph(provenance, t("contentCredit", content));
+      link(provenance, content.licenseUrl, t("contentLicense"));
+      if (content.blob) pinPhoto?.(container, content);
     } else {
-      paragraph(container, t(result.errors.length ? "contentError" : "contentMissing"));
+      paragraph(container, t(result.errors.length ? "contentError" : "contentMissing"), "failure");
     }
     if (result.errors.length) {
-      paragraph(container, t("contentWarnings", { errors: result.errors.join("; ") }));
+      if (content) paragraph(container, t("contentPartial"), "failure");
+      paragraph(provenance, t("contentWarnings", { errors: result.errors.join("; ") }), "failure");
     }
     if (result.loading) {
       paragraph(container, t("contentLoading"));
     } else if (content || !result.errors.length) {
-      paragraph(container, t(result.cached ? "contentCached" : "contentStored", {
+      paragraph(provenance, t(result.cached ? "contentCached" : "contentStored", {
         date: new Date(result.retrievedAt).toLocaleString(locale),
-      }));
+      }), "success");
     }
+    container.append(provenance);
+  }
+
+  function renderInscriptions() {
+    inscriptionDescription.replaceChildren();
+    const inscriptions = visibleInscriptions?.inscriptions ?? [];
+    inscriptionDescription.hidden = inscriptions.length === 0;
+    if (!inscriptions.length) return;
+    const heading = document.createElement("h3");
+    heading.textContent = t(`inscriptions.surface.${visibleInscriptions.surface}`);
+    const list = document.createElement("ul");
+    for (const inscription of inscriptions) {
+      const item = document.createElement("li");
+      const text = document.createElement("q");
+      text.textContent = inscription.text;
+      item.append(text);
+      list.append(item);
+    }
+    inscriptionDescription.append(heading, list);
+  }
+
+  function setInscriptions(value) {
+    const next = value && ["tree", "wall"].includes(value.surface) &&
+      Array.isArray(value.inscriptions) && value.inscriptions.every(item =>
+        item && typeof item.text === "string")
+      ? { surface: value.surface, inscriptions: value.inscriptions.map(item => ({ text: item.text })) } : null;
+    if (JSON.stringify(visibleInscriptions) === JSON.stringify(next)) return;
+    visibleInscriptions = next;
+    renderInscriptions();
   }
 
   async function load(kind, force = false) {
@@ -203,6 +243,8 @@ export function setupCellContent(t) {
     dialog.close();
     generation++;
     selected = undefined;
+    visibleInscriptions = null;
+    renderInscriptions();
     document.querySelector("#content-hint").hidden = false;
     pois.open = false;
     renderPois();
@@ -237,6 +279,7 @@ export function setupCellContent(t) {
       if (descriptionResult) render(description, descriptionResult);
       if (photoResult && dialog.open) renderPhoto();
     }
+    renderInscriptions();
   }
 
   function select(map, tile) {
@@ -285,6 +328,7 @@ export function setupCellContent(t) {
   document.querySelector("#clear-content").addEventListener("click", async () => {
     const status = document.querySelector("#cache-status");
     if (pending.size) {
+      setFeedback(status);
       status.textContent = t("contentLoading");
       return;
     }
@@ -292,10 +336,12 @@ export function setupCellContent(t) {
       await cache.clear();
       reset();
       status.textContent = t("cacheCleared");
+      setFeedback(status, "success");
     } catch (error) {
       console.error("Unable to clear content cache:", error);
       status.textContent = t("contentError");
+      setFeedback(status, "failure");
     }
   });
-  return { select, reset, localize };
+  return { select, reset, localize, setInscriptions };
 }

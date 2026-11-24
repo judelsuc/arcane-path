@@ -1,0 +1,435 @@
+{
+  "version": "0.22.50",
+  "entries": [
+    {
+      "version": "0.22.50",
+      "fr": "Les cases de grand-route, de voie ferrée et de gare de téléphérique autour d'une ville à légende ont maintenant leur description quand vous les observez, y compris pour les légendes déjà en cours (l'entrée ne change pas). Le panneau de légende ne s'ouvre plus pour se refermer aussitôt sur une case sans indice. Un rechargement de la page ne peut plus laisser le jeu sans région choisie (« Impossible de charger la carte »).",
+      "en": "Main road, railway and cable-car station cells around a legend town now have a description when you look at them, including for legends already in progress (the entrance does not move). The legend panel no longer opens and closes at once on a cell without a clue. Reloading the page can no longer leave the game without a selected region (\"Unable to load the map\")."
+    },
+    {
+      "version": "0.22.49",
+      "fr": "Les spécialités locales s'affichent bien plus vite dans les villes voisines : le choix des plats fait pour une ville est réutilisé pour les autres villes de la même région au lieu d'être recalculé.",
+      "en": "Local specialities appear much faster in neighbouring towns: the dish choices made for one town are reused for other towns of the same region instead of being worked out again."
+    },
+    {
+      "version": "0.22.48",
+      "fr": "Quand vous prenez une spécialité locale illustrée, sa photo est épinglée automatiquement dans votre journal, avec le nom du plat, sa région, le lieu du repas, la source et la licence. L'entrée d'une aventure de légende se fait de nouveau depuis la carte (Explorer, aussi dans le menu de la case) ou depuis le journal des quêtes, y compris quand vous l'avez trouvée en observant ; le bouton en double du panneau de droite disparaît.",
+      "en": "When you take an illustrated local speciality, its photo is pinned automatically to your journal, with the dish name, its region, where you ate it, the source and the licence. A legend adventure is entered again from the map (Explore, also in the cell menu) or from the quest journal, including when you found it while observing; the duplicate button in the right panel is gone."
+    },
+    {
+      "version": "0.22.47",
+      "fr": "Les noms de personnages célèbres colorent de nouveau vraiment l'introduction : l'enfant est présenté dès les premières phrases à travers des traits reconnaissables de la référence, la culture locale passe au second plan, et une phrase qui citerait le nom est retirée au lieu de faire échouer toute l'histoire. Vous pouvez désormais mener 5 quêtes à la fois et garder 5 propositions en attente (au lieu de 3), et le jeu explique clairement quand la limite est atteinte. Les légendes se racontent enfin : un habitant rencontré dans les environs d'une ville à légende, et pas seulement sur sa case centrale, peut désormais vous la confier. Enfin, une page laissée ouverte signale désormais qu'une nouvelle version est en ligne et propose de recharger (votre partie est sauvegardée).",
+      "en": "Famous character names truly colour the introduction again: the child is introduced in the first sentences through recognizable traits of the reference, local culture takes second place, and a sentence that would print the name is dropped instead of failing the whole story. You can now carry 5 quests at once and keep 5 pending offers (instead of 3), and the game clearly explains when the limit is reached. Legends finally get told: an inhabitant met around a legend town, not only on its central cell, can now share it with you. Finally, a page left open now tells you when a new version is online and offers to reload (your journey is saved)."
+    },
+    {
+      "version": "0.22.46",
+      "fr": "Nouveau combat « Garde haute » : en ville, surtout la nuit, ou en dormant dehors sans abri, des agresseurs peuvent vous tomber dessus (au plus une fois par semaine). Défendez-vous à coups de poussées, balayages et coups de pied, ou fuyez par les rues ; votre couteau et votre chien vous aident. Perdre coûte une partie de votre argent et de la santé, jamais la vie. Et quand le poursuivant vous rattrape, vous pouvez désormais lui tenir tête : gagnez et vous reprenez 30 km d'avance.",
+      "en": "New \"Garde haute\" fights: in town, especially at night, or when sleeping outdoors without shelter, attackers may jump you (at most once a week). Defend yourself with pushes, sweeps and kicks, or run through the streets; your knife and your dog help. Losing costs some of your money and health, never your life. And when the pursuer catches you, you can now stand up to him: win and you regain a 30 km lead."
+    },
+    {
+      "version": "0.22.45",
+      "fr": "Une ville sur quatre abrite désormais une légende, et les villes déjà visitées sans légende ont une nouvelle chance. Les hameaux et les communes voisines d'une grande ville proposent ses spécialités (la bouillabaisse autour de Marseille). La poursuite peut avoir sa propre musique.",
+      "en": "One town in four now hosts a legend, and towns already visited without one get a second chance. Hamlets and towns near a major city offer its specialities (bouillabaisse around Marseille). The pursuit can have its own music."
+    },
+    {
+      "version": "0.22.44",
+      "fr": "Les spécialités locales retrouvent leurs plats emblématiques (la bouillabaisse à Marseille, par exemple), et sur le lieu d'une étape de quête à faire en conversation, la fenêtre Quêtes propose d'ouvrir Dialogue directement.",
+      "en": "Local specialities find their signature dishes again (bouillabaisse in Marseille, for example), and on the site of a conversation quest step the Quests window offers to open Dialogue directly."
+    },
+    {
+      "version": "0.22.43",
+      "fr": "Les personnages proposent des quêtes plus souvent : la recherche de lieux réels parcourt désormais jusqu'à seize villes proches au lieu de trois, et une ville inaccessible n'interrompt plus la recherche.",
+      "en": "Characters offer quests more often: the search for real places now looks through up to sixteen nearby towns instead of three, and an unreachable town no longer ends the search."
+    },
+    {
+      "version": "0.22.42",
+      "fr": "Les nouvelles zones de la carte se chargent plus vite dans les régions installées : la première case d'un secteur d'environ 25 km prépare ce secteur, les suivantes en profitent.",
+      "en": "New map areas load faster in installed regions: the first cell of a roughly 25-km sector prepares that sector, and the following ones reuse it."
+    },
+    {
+      "version": "0.22.41",
+      "fr": "Les points de départ dans les grandes villes denses (comme Marseille) sont de nouveau enregistrés correctement : leur carte dépassait une limite de taille et n'était pas partagée. Une telle erreur ne peut plus empêcher le jeu de redémarrer.",
+      "en": "Starting points in large dense cities (such as Marseille) are saved correctly again: their map exceeded a size limit and was not shared. Such a failure can no longer stop the game from restarting."
+    },
+    {
+      "version": "0.22.40",
+      "fr": "Les personnages proposent de nouveau des quêtes : les serveurs publics de cartes étant saturés, le jeu héberge désormais ses propres données OpenStreetMap par région. Dans une région qui n'est pas encore installée, le personnage vous demande de revenir quelques minutes plus tard, le temps de préparer la carte, plutôt que d'inventer une quête au rabais.",
+      "en": "Characters offer quests again: with the public map servers saturated, the game now hosts its own OpenStreetMap data per region. In a region not installed yet, the character asks you to come back a few minutes later while the map is prepared, rather than inventing a weaker quest."
+    },
+    {
+      "version": "0.22.39",
+      "fr": "Après une réservation de transport, l'avis « Réservation ou trajet en cours » renvoyait vers une fenêtre sans bouton visible pour l'ouvrir : il contient désormais un bouton « Agenda, transports et auto-stop (6) » pour poursuivre l'attente ou annuler avant l'embarquement. Pendant l'attente, la fenêtre explique où vous attendez, l'heure de départ et le temps restant, puis à bord le prochain arrêt et l'heure d'arrivée ; chaque appui sur « Poursuivre » résume ce qui vient de se passer (attente, montée à bord, arrivée).",
+      "en": "After booking a ride, the \"reservation or ride is active\" notice pointed to a window with no visible button to open it: it now carries an \"Agenda, transport and hitchhiking (6)\" button to keep waiting or cancel before boarding. While waiting, the window explains where you wait, the departure time and time left, then on board the next stop and arrival time; each press of Continue sums up what just happened (waiting, boarding, arrival)."
+    },
+    {
+      "version": "0.22.38",
+      "fr": "Carnet de photos : chaque photo épinglée retient l'endroit où vous étiez. Sa page affiche « 📍 Épinglée à : … » et une petite carte de votre route avec une épingle sur ce lieu, et le commentaire commence par le nom du lieu au lieu de rester vide (vous pouvez toujours le réécrire). Les photos-indices ne révèlent aucun lieu.",
+      "en": "Photo journal: each pinned photo remembers where you stood. Its page shows \"📍 Pinned at: …\" and a small map of your route with a pin on that place, and the comment starts with the place name instead of staying empty (you can still rewrite it). Clue photos reveal no place."
+    },
+    {
+      "version": "0.22.37",
+      "fr": "Aventures : les objets ramassés pour une énigme (roue, axe, feuilles…) annonçaient « L'objet rejoint votre sacoche », ce qui laissait croire qu'ils iraient dans le sac de voyage. Le message précise désormais qu'ils ne servent que dans ce lieu ; la récompense de l'aventure reste le trésor annoncé à la fin.",
+      "en": "Adventures: objects picked up for a puzzle (wheel, axle, sheets…) announced \"The object joins your satchel\", suggesting they would reach your travel bag. The message now says they only serve in that place; the adventure's reward remains the treasure announced at the end."
+    },
+    {
+      "version": "0.22.36",
+      "fr": "Aventures de plateforme : maintenir E devant une porte faisait changer de salle à chaque image jusqu'au relâchement — des dizaines d'entrées facturées en temps, fatigue et saleté. Une porte ne s'ouvre plus qu'une fois par appui ; il faut relâcher E pour franchir la suivante (les manivelles se tiennent toujours).",
+      "en": "Platform adventures: holding E at a door changed room on every frame until release — dozens of room entries charged in time, fatigue and dirt. A door now opens once per press; release E to go through the next one (cranks can still be held)."
+    },
+    {
+      "version": "0.22.35",
+      "fr": "Correction : entrer dans une aventure de légende (ou utiliser un objet magique qui déplace) pendant une poursuite provoquait « Invalid saved pursuit » — le poursuivant suit désormais aussi le temps passé dans l'aventure. Explorer rejoint aussi le menu contextuel de la case (même raccourci Z). Les objets trouvés s'enrichissent de quatre nouvelles paires à départager — lunettes, tasses émaillées, lanternes et paniers d'osier — soit douze familles tirées au hasard à chaque partie.",
+      "en": "Fix: entering a legend adventure (or using a magic object that moves you) during a pursuit caused \"Invalid saved pursuit\" — the pursuer now also follows the time spent in the adventure. Explore also joins the cell's context menu (same Z shortcut). Lost & found gains four new lookalike pairs — glasses, enamel mugs, lanterns and wicker baskets — for twelve families drawn at random each game."
+    },
+    {
+      "version": "0.22.34",
+      "fr": "Correction urgente : reporter une fuite au-delà d'un jour rendait la sauvegarde invalide (« Invalid saved pursuit ») — la difficulté épinglée est de nouveau acceptée. Un bouton Explorer (Z) est toujours présent dans la barre d'actions : il inspecte un passage correspondant, entre dans une aventure découverte, et sinon répond simplement « Vous ne trouvez rien d'inhabituel ici. »",
+      "en": "Urgent fix: deferring an escape past a day boundary invalidated the save (\"Invalid saved pursuit\") — the pinned difficulty is accepted again. An Explore button (Z) is always present in the action bar: it inspects a matching passage, enters a discovered adventure, and otherwise simply replies \"You find nothing unusual here.\""
+    },
+    {
+      "version": "0.22.33",
+      "fr": "Le croquis utilise la photo locale à chaque partie, plus seulement la première : « Commencer » attend brièvement (2,5 s maximum) que le modèle photo soit prêt, pour qu'un démarrage rapide ne retombe plus sur les motifs imaginaires.",
+      "en": "The sketch uses the local photo on every game, not only the first: Start briefly waits (2.5 s at most) for the photo model, so a quick start no longer falls back to the imaginary motifs."
+    },
+    {
+      "version": "0.22.32",
+      "fr": "Les légendes se méritent : leurs indices n'apparaissent que lorsqu'un habitant vous a raconté l'histoire — et les habitants d'un bourg à légende l'évoquent spontanément à la première conversation. Les descriptions des cases restent visibles sans l'histoire, et les environs des bourgs sans légende ont désormais aussi leurs détails à observer : rien ne trahit où dorment les trésors.",
+      "en": "Legends must be earned: their clues only appear once an inhabitant has told you the story — and inhabitants of a legend town bring it up spontaneously in the first conversation. Cell descriptions stay visible without the story, and the surroundings of towns without a legend now have observable details too: nothing betrays where treasures sleep."
+    },
+    {
+      "version": "0.22.31",
+      "fr": "Le portrait du poursuivant apparaît désormais dans l'avis de fin de voyage après une capture — l'image était aussi bloquée par le serveur web, c'est corrigé.",
+      "en": "The pursuer's portrait now appears in the journey-ended notice after a capture — the image was also blocked by the web server, which is fixed."
+    },
+    {
+      "version": "0.22.30",
+      "fr": "L'entrée d'une aventure de légende se joue sur la carte : un bouton d'action apparaît à côté de la carte quand vous êtes sur le passage — « Inspecter le passage », puis « Entrer dans l'aventure » — sans passer par les menus de quêtes. Les fenêtres Enquêter ici et Légendes vont à l'essentiel : les explications rejoignent l'Aide.",
+      "en": "Entering a legend adventure happens on the map: an action button appears beside the map when you stand on the passage — Inspect the passage, then Enter the adventure — without going through the quest menus. The Investigate here and Legends windows get to the point: explanations join Help."
+    },
+    {
+      "version": "0.22.29",
+      "fr": "Le croquis révèle sa source : une fois le dessin terminé, la photo locale recadrée qui a servi de modèle s'affiche sous le motif et votre reproduction, avec son crédit.",
+      "en": "The sketch reveals its source: once the drawing is finished, the cropped local photo used as the model appears beneath the motif and your reproduction, with its credit."
+    },
+    {
+      "version": "0.22.28",
+      "fr": "Le poursuivant s'enhardit avec le temps : la difficulté de la fuite augmente désormais avec les jours de traque écoulés, en plus des tentatives et de votre état — les anciennes fuites enregistrées restent inchangées. Objets trouvés double sa collection (écharpe, gourde, chapeau, moufle rejoignent parapluie, carnet, clés et pochette) et tire les familles au hasard : chaque partie change, les paires trompeuses restent ensemble.",
+      "en": "The pursuer grows bolder with time: escape difficulty now rises with the days of chase, on top of attempts and your condition — previously saved escapes stay unchanged. Lost and found doubles its collection (scarf, flask, hat and mitten join umbrella, notebook, keys and pouch) and draws families at random: every game differs, with confusable pairs kept together."
+    },
+    {
+      "version": "0.22.27",
+      "fr": "Le croquis de carte postale trame désormais une vraie photo locale du lieu (avec son crédit) : la photo est découpée en cases selon la difficulté — grille plus fine et couleurs selon le niveau — avec un cadrage aléatoire à chaque partie. Sans photo disponible, les motifs imaginaires reviennent, désormais déclinés en huit orientations aléatoires.",
+      "en": "The postcard sketch now tessellates a real local photo of the place (with its credit): the photo is cut into cells according to difficulty — finer grid and colours by level — with a random framing each game. Without an available photo, the imaginary motifs return, now varied across eight random orientations."
+    },
+    {
+      "version": "0.22.26",
+      "fr": "La fuite se joue comme un jeu : plus de paragraphes ni de bouton — le défi démarre seul après un compte à rebours dessiné dans la scène, avec les consignes courtes (terrain, difficulté, commande de saut) affichées dans l'image. Le contexte et l'ambiance complets restent dans l'Aide, qui met toujours en pause.",
+      "en": "The escape plays like a game: no more paragraphs or button — the challenge starts on its own after a countdown drawn inside the scene, with short directions (terrain, difficulty, jump control) shown in the picture. The full context and atmosphere remain in Help, which still pauses."
+    },
+    {
+      "version": "0.22.25",
+      "fr": "Les rencontres sonnent : signal de départ, touches illuminées, bonnes réponses et résultat ont chacun leur son. Une touche fantôme ne bloque plus le défi (« Relâchez les touches » disparaît seul) et les fenêtres de réaction sont plus généreuses. Les suites de lanternes sont désormais entièrement aléatoires. La direction du rêve est mise en évidence, la boutique affiche l'effet de chaque objet à côté du prix, et « Enquêter ici » propose un raccourci vers les indices du journal.",
+      "en": "Encounters now have sound: start signal, lit keys, correct presses and the outcome each get their own cue. A phantom held key no longer blocks the challenge (the release prompt clears on its own) and reaction windows are more generous. Lantern sequences are now fully random. The dream's direction is highlighted, the shop shows each item's effect next to its price, and Investigate here offers a shortcut to the journal clues."
+    },
+    {
+      "version": "0.22.24",
+      "fr": "Les carnets archivés redeviennent consultables : un ancien voyage enregistré dans un format dépassé est simplement ignoré au lieu de bloquer toute la liste.",
+      "en": "Archived notebooks are readable again: an old journey saved in an outdated format is simply skipped instead of blocking the whole list."
+    },
+    {
+      "version": "0.22.23",
+      "fr": "La fuite va à l'essentiel : une ligne de contexte, l'ambiance, et toutes les règles dans l'Aide (qui met toujours le défi en pause). Le rythme de course n'est plus un choix : un voyageur affaibli court prudemment sur un parcours ralenti, imposé par son état. Le catalogue quotidien de la librairie s'installe correctement sur le serveur.",
+      "en": "The escape gets to the point: one line of context, the atmosphere, and all rules in Help (which still pauses the challenge). Running pace is no longer a choice: a weakened traveller runs carefully on a slower course, imposed by their condition. The bookshop's daily catalogue now installs correctly on the server."
+    },
+    {
+      "version": "0.22.22",
+      "fr": "L'écran de voyage devient une interface de jeu : barre d'état translucide (agenda, jauges à icônes avec infobulles d'effets, menu), carte dominante qui ne bouge plus pendant la marche, détails techniques regroupés dans l'Aide, panneau latéral unique. La librairie propose des centaines de classiques du domaine public (catalogue Open Library actualisé chaque jour) sur huit rayons variés. Les habitants évoquent la poursuite avec leurs propres mots au fil des conversations. Boutique d'équipement compacte avec enseigne locale, erreurs du café signalées par un flash, marché et pétanque tiennent à l'écran, raccourci Hébergement unifié (H).",
+      "en": "The travel screen becomes a game interface: translucent status bar (agenda, icon gauges with effect tooltips, menu), a dominant map that no longer shifts while walking, technical details gathered into Help, a single side panel. The bookshop offers hundreds of public-domain classics (Open Library catalogue refreshed daily) across eight varied shelves. Inhabitants mention the pursuit in their own words in conversations. Compact equipment shop with a local shop name, café mistakes flash the screen, market and pétanque fit the screen, unified Shelter shortcut (H)."
+    },
+    {
+      "version": "0.22.21",
+      "fr": "Les directions des indices de la Piste du parent sont mises en évidence dans les messages. Sommeil et abri affiche directement les deux hébergements les plus proches ; les autres restent dans un volet replié. Pendant une rencontre, les touches du défi s'affichent au centre de l'écran, toujours visibles, puis reprennent leur place avec le résultat.",
+      "en": "Compass directions in Parent-trail clues are now highlighted in messages. Sleep and shelter shows the two nearest accommodations directly; the rest stays in a folded drawer. During an encounter, the challenge keys appear front and centre on screen, always visible, then return inline with the result."
+    },
+    {
+      "version": "0.22.20",
+      "fr": "Après une journée protégée, un poursuivant avance avec le temps du voyage. Surveillez son écart : s'il vous rejoint, fuyez dans un parcours de plateformes adapté au terrain. Dix difficultés progressent avec les tentatives et votre état ; obstacles variés, pièges mobiles aux niveaux experts, pluie, brouillard et nuit rythment la fuite. Réussir redonne 30 km d'avance ; trois trébuchements terminent le voyage. Préparation, aide en pause et rythme accessible sont disponibles. Journaux et habitants évoquent la menace ; les anciens voyages reçoivent une journée de répit à la reprise.",
+      "en": "After a protected day, a pursuer advances as journey time passes. Watch the gap: if he catches up, escape through a terrain-themed platform course. Ten difficulty levels progress with previous attempts and your condition, featuring varied obstacles, expert moving hazards, rain, fog and night. Success restores a 30 km lead; three stumbles end the journey. Preparation, paused Help and accessible pacing are available. Newspapers and inhabitants discuss the threat; resumed legacy journeys receive a protected day."
+    },
+    {
+      "version": "0.22.19",
+      "fr": "Le résultat de la recherche d'abri s'affiche dans une fenêtre de retour dédiée. Une illustration générée et mise en cache remplace le décor ASCII du défi dès qu'elle est prête ; une autre accompagne le sommeil réussi. Le défi et son résultat restent disponibles pendant le chargement ou en cas d'indisponibilité des images.",
+      "en": "Shelter-search results appear in a dedicated feedback popup. A cached generated illustration replaces the challenge's ASCII backdrop once ready; another accompanies successful sheltered sleep. The challenge and its outcome remain available while images load or if illustrations are unavailable."
+    },
+    {
+      "version": "0.22.18",
+      "fr": "Les textes des abris, des actions de survie et des localités vont à l'essentiel : les possibilités, les règles et leurs conséquences, sans interrompre l'immersion.",
+      "en": "Shelter, survival-action and town text focuses on available choices, rules and consequences without breaking immersion."
+    },
+    {
+      "version": "0.22.17",
+      "fr": "Sur les cases bâtiment, cherchez un abri vide : dix minutes de recherche et un QTE, un essai par case et par jour. Réussir permet de dormir gratuitement à l'abri, sans repas ni toilette ; échouer, passer ou abandonner le défi ajoute 5 points de vigilance. Les essais sont conservés à la reprise. Le collecteur est retiré du jeu principal : les informations recueillies auprès des habitants restent dans le journal.",
+      "en": "On building cells, search for an empty shelter: ten minutes of searching and a QTE, once per cell per day. Success grants free sheltered sleep without food or washing; failing, skipping or abandoning the challenge adds 5 vigilance points. Attempts persist on resume. The collector is removed from the main game: information gathered from inhabitants remains in the journal."
+    },
+    {
+      "version": "0.22.16",
+      "fr": "Les rencontres laissent trois secondes pour se préparer et attendent le relâchement des touches avant de lancer les signaux du QTE. Les touches de marche ne peuvent plus faire échouer le défi pendant cette préparation. En difficulté élevée, les nouveaux défis ajoutent les lettres A, F, J, P, V et N aux flèches et à Espace, avec boutons tactiles et compatibilité des anciens résultats.",
+      "en": "Encounters allow three seconds to prepare and wait for held keys to be released before starting QTE cues. Walking keys cannot fail the challenge during preparation. At high difficulty, new challenges add A, F, J, P, V and N alongside arrows and Space, with touch buttons and compatibility for saved results."
+    },
+    {
+      "version": "0.22.15",
+      "fr": "Les localités se distinguent par un fin cadre doré et une légère teinte, en ASCII comme en pixels, même lorsqu'elles partagent une case avec une route. Le terrain, le joueur et les marqueurs de destination restent visibles.",
+      "en": "Settlements stand out with a thin gold frame and subtle tint in both ASCII and pixel views, even when sharing a road cell. Terrain, player and destination markers remain visible."
+    },
+    {
+      "version": "0.22.14",
+      "fr": "Si le modèle texte est indisponible, la découverte culinaire utilise les sources documentaires pour confirmer les spécialités régionales, sans nouvel appel payant. Le menu indique ce mode de secours. Les plats, leurs photos et leurs crédits restent conservés dans le cache serveur.",
+      "en": "If the text model is unavailable, culinary discovery uses documentary sources to confirm regional specialties without another paid call. The menu explains this fallback mode. Dishes, photographs and credits remain cached on the server."
+    },
+    {
+      "version": "0.22.13",
+      "fr": "La découverte culinaire est activée avec le modèle texte autorisé et des quotas serveur partagés : 100 nouvelles recherches par jour et 3 000 par mois. Les villes déjà documentées et leurs photos sont réutilisées depuis le cache. Les tarifs du fournisseur sont vérifiés avant chaque appel ; aucun nouvel essai automatique.",
+      "en": "Culinary discovery is enabled with the approved text model and shared server quotas: 100 new searches per day and 3,000 per month. Documented towns and their photographs are reused from the cache. Provider rates are checked before every call; there are no automatic retries."
+    },
+    {
+      "version": "0.22.12",
+      "fr": "Les repas locaux explorent désormais les spécialités documentées de la ville et de sa région, au-delà du petit catalogue initial. Les sources géographiques et culinaires guident la sélection et les descriptions bilingues. Les plats et leurs photos réutilisables, avec crédits et licences, sont conservés sur le serveur et partagés entre les visites. Les repas habituels restent disponibles pendant la recherche ou en cas d'erreur.",
+      "en": "Local meals now explore documented town and regional specialties beyond the small initial catalogue. Geographic and culinary sources guide selection and bilingual descriptions. Dishes and their reusable photographs, with credits and licenses, are cached on the server across visits. Usual meals remain available while discovery runs or if it fails."
+    },
+    {
+      "version": "0.22.11",
+      "fr": "Une alerte apparaît dès 80/100 de vigilance des adultes : elle rappelle le risque de placement à 100 et explique comment réduire l'attention. Elle attend la fermeture des autres fenêtres, ne se répète qu'après une baisse sous 80 et fonctionne aussi à la reprise d'un voyage.",
+      "en": "A warning appears at 80/100 adult vigilance, explaining the placement risk at 100 and how to reduce attention. It waits for other dialogs to close, only repeats after vigilance drops below 80 and also works when resuming a journey."
+    },
+    {
+      "version": "0.22.10",
+      "fr": "Les rencontres du voyage deviennent interactives : reproduisez les flèches ou Espace qui s'illuminent, sans bouton de départ. La difficulté dépend de l'événement, de la fatigue et de la santé. Le récit et l'illustration de la rencontre accompagnent les gestes ; les échanges sociaux déroulent des répliques. Aide met le défi en pause. Le résultat et les récompenses ou pénalités réelles s'affichent au-dessus du panneau. Les anciens événements gardent leurs effets.",
+      "en": "Journey encounters become interactive: match each illuminated arrow or Space, with no start button. Difficulty depends on the event, fatigue and health. The encounter's story and illustration accompany the actions; social exchanges unfold through dialogue. Help pauses the challenge. The outcome and actual rewards or penalties appear above the panel. Legacy events retain their effects."
+    },
+    {
+      "version": "0.22.9",
+      "fr": "Les nouvelles aventures ajoutent caisses, ponts temporisés, miroirs et mécanismes à assembler. Les enquêtes se jouent directement dans huit décors variés : objets à ramasser, inventaire graphique, menus contextuels et indices à observer sans dévoiler la solution à l'arrivée. Certains leviers réservent une mauvaise surprise. Les pièges ont un retour visuel marqué et temporaire ; les messages ne masquent plus le décor. Dans les donjons, les caisses restent visibles sur les pointes et le bouton Reprendre est accessible près des déplacements. Les essais déjà commencés gardent leurs règles.",
+      "en": "New adventures add crates, timed bridges, mirrors and mechanisms to assemble. Investigations are played directly within eight varied scenes, with collectible objects, a graphical inventory, contextual menus and clues to observe without revealing the solution on arrival. Some levers hold an unpleasant surprise. Traps have prominent, temporary visual feedback, and messages no longer cover the scene. In dungeons, crates remain visible over spikes and Resume is accessible beside the movement controls. Attempts already underway retain their rules."
+    },
+    {
+      "version": "0.22.8",
+      "fr": "Les nouvelles aventures multiplient les situations : seize architectures de plateformes, dalles à flèches, animaux, manivelles, braseros, runes et passages secrets ; donjons à murs variés et chambres cachées ; enquêtes à chiffres, déductions, échanges, cadrans et témoins mobiles. Certaines issues secrètes sont obligatoires et annoncées par des indices dans le décor. Les blessures touchent le voyage ; une erreur d'énigme coûte 2 minutes et 1 fatigue. Les caches rapportent 1 € ou 150 kcal chacune lors de la première récupération réussie du trésor. Les essais déjà commencés gardent leurs anciennes règles.",
+      "en": "New adventures add genuinely different encounters: sixteen platform architectures, triggered arrow traps, animals, cranks, braziers, runes and secret passages; dungeons with varied walls and hidden chambers; investigations with ciphers, deductions, exchanges, dials and roaming witnesses. Some secret exits are required and signposted through in-world clues. Injuries affect the journey; a puzzle mistake costs 2 minutes and 1 fatigue. Stashes grant €1 or 150 kcal each on the first successful treasure recovery. Attempts already underway retain their original rules."
+    },
+    {
+      "version": "0.22.7",
+      "fr": "Les nouvelles aventures de plateformes alternent huit architectures : terrasses, marches brisées, puits décalés, galeries suspendues, voûtes basses, balcons jumeaux, zigzags et ponts hauts. Variantes en miroir, échelles décentrées ou absentes, mécanismes et trésors en hauteur remplacent l'échelle centrale répétitive. Les essais déjà commencés gardent leur géométrie d'origine.",
+      "en": "New platform adventures alternate eight architectures: terraces, broken steps, split shafts, hanging galleries, low vaults, twin balconies, zigzags and high bridges. Mirrored variants, offset or absent ladders, and elevated mechanisms and treasures replace the repetitive central ladder. Attempts already underway retain their original geometry."
+    },
+    {
+      "version": "0.22.6",
+      "fr": "Les aventures de légende occupent tout l'écran, dans une interface de console épurée. Le jeu attribue définitivement l'un des trois modes à chaque nouvelle légende ; les anciennes gardent leur mode. Des inscriptions énigmatiques accompagnent les mécanismes, dont la cloche. Commandes, solutions et détails techniques se trouvent dans Aide, qui suspend le jeu.",
+      "en": "Legend adventures fill the screen with a clean console interface. The game permanently assigns one of three modes to each new legend; existing legends retain theirs. Riddling inscriptions accompany mechanisms, including the bell. Controls, solutions and technical details live in Help, which pauses gameplay."
+    },
+    {
+      "version": "0.22.5",
+      "fr": "Le mode Regarder ne bloque plus les demandes de descriptions de légende dans les cases voisines. Les blocages d'activité restent respectés. La case d'arrivée d'un bourg à légende affiche les indices connus et explique comment examiner les alentours. L'emplacement de l'entrée et les observations restent inchangés.",
+      "en": "Look mode no longer blocks requests for legend descriptions in nearby cells. Activity blockers remain enforced. A legend town's arrival cell shows known clues and explains how to examine the surroundings. Retained entrances and observations are unchanged."
+    },
+    {
+      "version": "0.22.4",
+      "fr": "Les traces des légendes apparaissent avec la description de la case, en complément de Wikipédia, y compris à votre position sans activer Regarder. Une légende nouvellement découverte actualise ces détails. Les erreurs réseau temporaires du chemin de référence sont réessayées deux fois, sans relancer le calcul serveur.",
+      "en": "Legend traces appear alongside cell descriptions, supplementing Wikipedia, including at your current position without enabling Look. Newly discovered legends refresh these details. Transient reference-path network errors retry twice without requesting a new server calculation."
+    },
+    {
+      "version": "0.22.3",
+      "fr": "Les commandes d'objets ne sont plus bloquées par une requête PostgreSQL mal adaptée. Les liens de quêtes déjà attribuées se synchronisent sans dépendre de l'ancien cache de carte. Les huit événements du chien disposent de scènes d'illustration et ne bloquent plus les autres images.",
+      "en": "Artifact commands no longer fail on a doubly adapted PostgreSQL query. Retained quest assignments synchronize without requiring their old map cache. All eight dog events now have illustration scenes and no longer block other event images."
+    },
+    {
+      "version": "0.22.2",
+      "fr": "La carte se complète sur le serveur, même navigateur fermé, dans une couronne limitée autour des morceaux demandés par les joueurs. Les voisins générés ne relancent pas l'expansion, et les échecs de téléchargement redeviennent réessayables après une pause.",
+      "en": "The server fills one bounded map ring around player-requested chunks, even with the browser closed. Generated neighbours do not expand further, and failed downloads become retryable after a cooldown."
+    },
+    {
+      "version": "0.22.1",
+      "fr": "Les lieux de loisirs cartographiés ont désormais leur libellé en français et en anglais. Leur présence ne bloque plus le dessin de la carte avant le rétablissement du repère du personnage.",
+      "en": "Mapped leisure venues now have French and English labels. Their presence no longer interrupts map rendering before the player marker is restored."
+    },
+    {
+      "version": "0.22.0",
+      "fr": "Les villes découvertes peuvent conserver une légende partagée et des indices vers une entrée cachée. Trois aventures de huit salles permettent de retrouver un trésor original, avec coûts de voyage réels et progression locale. Armes, bijoux maudits ou protecteurs, argent, pistes d’artefacts, crochets et apparences sont des objets transportables, déposables et échangeables. Les apparences de carte, d’interface et de personnage se choisissent séparément. Les récits utilisent des souvenirs composés plus variés et le nom exact du trésor. Une console d’administration à mot de passe distinct et des tâches de génération d’icônes et de noms sont disponibles ; leur activation nécessite une configuration serveur séparée.",
+      "en": "Discovered towns can retain a shared legend and clues to a hidden entrance. Three eight-room adventures offer an original treasure, with real journey costs and local gameplay. Weapons, cursed or protective jewellery, money, artifact leads, lockpicks and appearances are physical objects that can be carried, dropped and transferred. Map, interface and character appearances are selected separately. Stories use more varied composed memories and the exact treasure name. A separately password-protected administrator console and icon/name generation jobs are available; activation requires separate server configuration."
+    },
+    {
+      "version": "0.21.20",
+      "fr": "L’auto-stop est disponible sur les routes : choisissez une des dix villes réelles les plus proches. Chaque tentative prend trente minutes ; la propreté, l’heure et le chien influencent les chances. Le trajet est gratuit et fait passer du temps, avec de rares blessures, vols d’argent ou trajets écourtés sur une route. Les arrivées et la reprise après un problème de carte sont enregistrées. Les terrains de pétanque et lieux festifs conservent leurs tags OSM ; la pétanque et les lanternes sont aussi proposées près de lieux publics adaptés déjà chargés, jusqu’à deux kilomètres.",
+      "en": "Hitchhiking is available on roads: choose one of the ten nearest real towns. Each attempt takes thirty minutes; cleanliness, time of day and your dog affect the odds. Rides are free and consume game time, with rare injuries, money theft or shortened rides ending on a road. Arrivals and map-error recovery are saved. Pétanque pitches and festival venues retain their OSM tags; pétanque and lantern games are also offered near suitable loaded public venues, within two kilometres."
+    },
+    {
+      "version": "0.21.19",
+      "fr": "Les activités proposent vingt niveaux plus progressifs : croquis plus accessibles, davantage de temps pour les objets trouvés et commandes du café mélangées aux niveaux supérieurs. Trois échecs consécutifs font perdre un niveau ; une réussite remet le compteur à zéro, une annulation ne compte pas. Les personnages peuvent proposer de nouvelles missions même si un autre propose le même type de service ; leurs indications déjà en cache évitent des attentes inutiles, avec des paroles immersives. Les déplacements vers une case non chargée ne bloquent plus les autres actions. Les objets magiques non portés sont répartis à travers l’Europe. Les signalements privés sont activables avec captures sur le serveur et suppression manuelle après examen.",
+      "en": "Activities offer twenty smoother levels: gentler drawing, more time for lost-and-found and mixed café orders at higher levels. Three consecutive failures drop one level; success resets the streak and cancellation does not count. Characters can offer new quests even when another offers the same service type; cached directions avoid unnecessary waits, with immersive dialogue. Steps toward unloaded cells no longer lock other actions. Uncarried magical objects are distributed across Europe. Private feedback supports server-stored screenshots and manual deletion after review."
+    },
+    {
+      "version": "0.21.18",
+      "fr": "Le lien « journal » dans les résultats de recherche ouvre désormais le relevé des indices du parent dans Quêtes, au lieu du carnet de photos. Les indices actuels sont affichés et mis au premier plan.",
+      "en": "The “journal” link in search results now opens the parent-clue history in Quests instead of the photo notebook. Current clues are shown and brought into focus."
+    },
+    {
+      "version": "0.21.17",
+      "fr": "Huit événements réservés aux voyages avec un chien rejoignent les rencontres du chemin : nourriture découverte, coin de repos, nouvelle amitié, jeux et présence réconfortante, mais aussi longe emmêlée, piste suivie et collation dérobée. Le nom du compagnon et les conséquences réelles sont affichés. Les événements utiles demandent un chien en forme ; aucun de ces événements ne survient sans chien.",
+      "en": "Eight dog-only events join roadside encounters: finding food, a resting spot, making a friend, playing and quiet companionship, but also tangled leads, following scents and stolen snacks. Your companion's name and actual consequences are shown. Helpful events require a ready dog; none of these events occur without a dog."
+    },
+    {
+      "version": "0.21.16",
+      "fr": "Le chien est présent dans les actions et rencontres où il vous accompagne, avec ses bonus et ses besoins explicités. La chasse en forêt est possible avec ou sans lui ; un chien en forme améliore les chances. Une mauvaise hygiène réduit temporairement la réputation, mais favorise les dons lorsque vous faites la manche. La marche salit moins sur route qu’en forêt. Le mot « journal » dans les résultats de recherche d’indice ouvre directement le carnet.",
+      "en": "Your dog is mentioned in the actions and encounters it accompanies, with explicit bonuses and care needs. Forest hunting is available with or without a dog; a ready companion improves the odds. Poor hygiene temporarily lowers reputation but encourages donations when begging. Walking causes less dirt on roads than in forests. The word “journal” in clue-search feedback opens the notebook directly."
+    },
+    {
+      "version": "0.21.15",
+      "fr": "Les pointillés des cartes sont plus épais et plus sombres, avec un contour clair pour rester visibles sur les tuiles à icônes comme sur le terrain classique. Ils indiquent toujours une direction à vol d’oiseau, pas un chemin praticable.",
+      "en": "Dotted map connections are thicker and darker, with a pale outline to remain visible over both icon tiles and classic terrain. They still indicate a straight-line direction, not a walkable route."
+    },
+    {
+      "version": "0.21.14",
+      "fr": "Les cartes de quête affichent le terrain déjà en cache, un repère « Vous » distinct, les destinations numérotées ainsi que leur direction et distance à vol d’oiseau. Les zones sans terrain sont expliquées. Les icônes du site sont accessibles sans mot de passe pour les navigateurs qui les chargent séparément ; le jeu reste protégé.",
+      "en": "Quest maps show cached terrain, a distinct “You” marker, numbered destinations and compass bearings with straight-line distances. Missing terrain is explained. Site icons are available without a password for browsers that fetch them separately; the game remains protected."
+    },
+    {
+      "version": "0.21.13",
+      "fr": "La fenêtre de dialogue reste ouverte pendant l’enregistrement des histoires d’objets magiques, à l’ouverture comme après le choix d’un sujet. La personne et les options dépliées sont conservées ; les actions redeviennent disponibles à la fin de l’enregistrement.",
+      "en": "The conversation window stays open while magical-object stories are saved, both on opening and after choosing a topic. The selected person and expanded options are preserved; actions become available again when saving finishes."
+    },
+    {
+      "version": "0.21.12",
+      "fr": "Les conversations commencent automatiquement avec des phrases adaptées au métier, sans génération de texte. Les propositions de quête et leurs boutons Accepter ou Refuser apparaissent directement dans Dialogue ; les actions facultatives restent repliées. Les nouvelles rencontres proposent 48 métiers, avec des paroles, portraits et missions adaptés, sans doublon de métier dans une même ville tant que des choix restent disponibles. Les personnages existants conservent leur identité.",
+      "en": "Conversations begin automatically with occupation-specific sentences, without text generation. Quest offers and their Accept or Decline buttons appear directly in Dialogue; optional actions stay folded away. New encounters draw from 48 occupations with matching dialogue, portraits and quests, avoiding duplicate jobs within a town while choices remain available. Existing characters keep their identity."
+    },
+    {
+      "version": "0.21.11",
+      "fr": "Le récit d'ouverture dispose de plus de place pour se terminer. Certaines formes neutres, comparaisons au nom et fins incomplètes peuvent être corrigées sans nouvel appel ; le récit d'origine reste disponible si la vérification échoue. Le carnet et son partage conservent les biographies plus longues.",
+      "en": "The opening story has more room to finish. Some neutral forms, comparisons to the name and incomplete endings can be repaired without another call; the authored story remains available if validation fails. The journal and notebook sharing preserve longer biographies."
+    },
+    {
+      "version": "0.21.10",
+      "fr": "Le récit d'ouverture est écrit par un modèle plus grand : davantage de spécialités et de traditions locales, et un nom célèbre transparaît davantage dans le caractère de l'enfant. L'écriture peut prendre environ une minute. Le modèle reçoit la consigne de vouvoyer le joueur, et un texte tronqué ou qui cite le nom du personnage est écarté au profit du récit d'origine.",
+      "en": "The opening story is written by a larger model: more local specialities and traditions, and a famous name shows more clearly in the child's character. Writing can take about a minute. A story that is cut off or prints the character's name is discarded in favour of the authored story."
+    },
+    {
+      "version": "0.21.9",
+      "fr": "Le récit d'ouverture s'ancre davantage dans la ville de départ : plats, marchés, fêtes et traditions locales colorent les souvenirs de famille. Un nom de personnage célèbre façonne nettement la personnalité de l'enfant et ses petites habitudes. Les illustrations des événements du voyage représentent désormais la scène décrite. Les fenêtres de discussion se ferment quand vous quittez la ville, et les flèches déplacent de nouveau le personnage lorsqu'une fenêtre ouverte n'a pas le focus.",
+      "en": "The opening story is more rooted in the starting town: local dishes, markets, festivals and traditions colour family memories. A famous character name now clearly shapes the child's personality and little habits. Journey event illustrations now depict the scene described. Conversation windows close when you leave the town, and arrow keys move the character again when an open window does not have focus."
+    },
+    {
+      "version": "0.21.8",
+      "fr": "La photo reçue en arrivant dans une ville peut toujours être montrée à quelqu'un, même lorsque le témoin n'a donné qu'une direction. Sous la photo, dans Quêtes, « Interroger quelqu'un sur cette photo… » ouvre directement les indices du panneau « Enquêter ici ». Les réponses restent non confirmées.",
+      "en": "The photo received on arriving in a town can always be shown to someone, even when the witness only gave a direction. Below the photo in Quests, “Ask someone about this photo…” opens the clues in the “Investigate here” panel directly. Answers remain unconfirmed."
+    },
+    {
+      "version": "0.21.7",
+      "fr": "Les personnages proposent de nouveau leurs missions de service. Les lieux réels d'une mission sont d'abord lus dans les données de carte OpenStreetMap déjà téléchargées pour le monde du jeu, puis auprès du service en ligne seulement si nécessaire. Quand ce service est saturé et que la carte locale est incomplète, la demande reste réessayable au lieu d'être refusée définitivement. Aucun lieu n'est inventé.",
+      "en": "Characters offer their service quests again. A quest's real places are first read from the OpenStreetMap data already downloaded for the game world, and from the online provider only when needed. When that provider is overloaded and local map data is incomplete, the request remains retryable instead of being permanently refused. No place is invented."
+    },
+    {
+      "version": "0.21.6",
+      "fr": "Demander son chemin ouvre directement les destinations connues dans le panneau d'enquête, y compris celles des missions et des carnets sans piste du parent. Une liste vide est expliquée sans lancer d'action payante. La synchronisation des objets magiques transmet désormais les grosses sauvegardes en entier, au lieu de bloquer les déplacements avec une erreur de création de partie. Une commande en attente peut être réessayée sans perdre la sauvegarde ni payer deux fois.",
+      "en": "Ask for directions opens known destinations directly in the investigation hub, including quest and journal destinations without a parent trail. An empty list is explained without starting a paid action. Magical-object synchronization now sends large saved journeys completely instead of blocking movement with a misleading journey-creation error. Pending commands can be retried without losing the save or paying twice."
+    },
+    {
+      "version": "0.21.5",
+      "fr": "L'action « Enquêter ici » rassemble depuis la carte les recherches du parent, les indices, les missions de service, les carnets et les objets magiques. Les actions sur les objets sont centralisées ; Quêtes conserve le relevé des découvertes. Les échanges avec les personnages restent naturels.",
+      "en": "The map's “Investigate here” action brings together parent-trail searches, clues, service quests, journals and magical objects. Artifact actions now have one home, while Quests keeps their discovery record. Conversations with characters remain natural."
+    },
+    {
+      "version": "0.21.4",
+      "fr": "La carte ne clignote plus à chaque pas : les indications au-dessus de la carte restent stables pendant les déplacements et les synchronisations en arrière-plan.",
+      "en": "The map no longer flickers with each step: guidance above the map stays stable during movement and background syncs."
+    },
+    {
+      "version": "0.21.3",
+      "fr": "Les personnages parlent spontanément des légendes et anciennes pistes approximatives d'objets magiques qu'ils connaissent, conservées dans Quêtes sans révéler la position privée d'un autre joueur. Les nouveaux noms utilisent quarante prénoms et quarante noms par langue, en évitant les doublons. Les nouveaux portraits alternent explicitement femmes et hommes ; les portraits existants sont conservés. Une indication sur le parent apparaît après une heure de jeu, puis toutes les trois heures sans progrès, bien visible au-dessus de la carte. Les scènes d'événement reçoivent une illustration générée en arrière-plan, conservée pour tous les joueurs : elle remplace l'ASCII dès son chargement. À l'arrivée, les gravures approuvées et visibles apparaissent dans la description de la case. Les dialogues abandonnent les avertissements hors récit et les explications de leurs mécanismes. La carte du carnet affiche une barre de progression pendant son chargement, distincte des erreurs réelles.",
+      "en": "Characters spontaneously share legends and approximate old leads about magical objects they know, retained in Quests without revealing another player's private position. New names draw from forty given names and forty surnames per locale, avoiding duplicates. New portraits explicitly alternate women and men; existing portraits are preserved. Parent guidance appears after one game hour, then every three hours without progress, prominently above the map. Event scenes receive a background-generated illustration cached for all players, replacing ASCII as soon as it loads. On arrival, approved, visible engravings appear in the cell description. Conversations no longer show out-of-world disclaimers or explain their underlying mechanisms. The journal journey map shows a loading progress bar, with real errors kept separate."
+    },
+    {
+      "version": "0.21.2",
+      "fr": "Les personnages proposent leur propre mission dès la rencontre : plus de rayon à choisir ni de quête à demander. Leur demande reste la même après un rechargement ; les pannes de recherche peuvent être réessayées sans inventer de destination. Après douze heures de voyage sans progrès sur la piste du parent, une indication revient même loin du chemin et sans dormir. Une ville déjà confirmée garde la priorité ; sinon une intuition donne une direction approximative depuis votre position actuelle pour retrouver la piste, sans révéler la ville cachée ni ses coordonnées. L'aide est conservée dans la sauvegarde, sans inventer de témoignage. Les rêves de secours restent inchangés.",
+      "en": "Characters offer their own quest when you meet: no radius to choose or quest to request. Their offer remains the same after reloading; discovery failures can be retried without inventing destinations. After twelve journey hours without progress on the parent's trail, guidance arrives even off the path and without sleeping. An already confirmed town takes priority; otherwise an intuition gives an approximate direction from your current position to reconnect with the trail, without revealing the hidden town or its coordinates. This help is saved without inventing testimony. Rescue dreams remain unchanged."
+    },
+    {
+      "version": "0.21.1",
+      "fr": "La diffusion audio prend en charge les fragments nécessaires à Safari pour lire les musiques WAV sans télécharger le fichier entier. Un échec de chargement invite à vérifier la connexion et à réessayer, plutôt qu’à télécharger des pistes déjà présentes.",
+      "en": "Audio delivery supports the byte ranges Safari needs to play WAV music without downloading the entire file. Loading failures now suggest checking the connection and retrying, rather than downloading tracks that are already present."
+    },
+    {
+      "version": "0.21.0",
+      "fr": "Dialogue rassemble les échanges avec les habitants ; Quêtes réunit la piste du parent, les services, les carnets perdus et les objets magiques. Quarante-quatre canevas de quêtes répétables conduisent vers des lieux réels, parfois en plusieurs étapes, avec une récompense liée à la distance. Les destinations connues figurent dans les demandes de chemin. La biographie, la lettre de départ et les témoignages suivent désormais l’histoire intime du parent et de la Cartomancienne. Les textes générés enrichissent les indices sans remplacer leurs indications utiles. La toilette se trouve dans le menu de la ville. Si personne n’est présent, vous pouvez choisir de faire une nouvelle rencontre. Les villes éloignées sans code pays sur la carte vérifient désormais leur pays pour permettre les rencontres ; une liste vide n’annonce plus de personnes disponibles. Cette version nécessite une nouvelle partie ; les anciennes sauvegardes ne sont pas converties.",
+      "en": "Dialogue brings together conversations with inhabitants; Quests groups the parent trail, errands, lost notebooks and magical objects. Forty-four repeatable quest templates lead to real places, sometimes in several stages, with distance-based rewards. Known destinations appear when asking for directions. The biography, opening letter and testimony now follow the intimate story of the parent and the Cartomancer. Generated prose enriches clues without replacing their useful guidance. Washing is in the town menu. If no one is around, you can choose to meet someone new. Distant towns without mapped country codes now verify their current country to enable encounters; empty lists no longer announce available people. This version requires a new journey; old saves are not converted."
+    },
+    {
+      "version": "0.20.12",
+      "fr": "La chronique est aussi écrite après une troisième mise en foyer, sans la confondre avec une mort. Elle peut évoquer les lieux conservés dans vos souvenirs et votre chien, si vous en avez un ; ces détails ne bloquent pas le récit. Le carnet n’accumule plus les textes d’événements en guise d’épopée. Des illustrations distinctes accompagnent rencontres, rêves et accueil, préparées la nuit et renouvelées chaque semaine sans remplacer les images déjà gardées dans le carnet.",
+      "en": "A chronicle is also written after a third placement in care, without treating it as death. It can recall recorded places and your dog, if you have one; these details never block the story. The notebook no longer substitutes a concatenated event list for an epic. Individual illustrations accompany encounters, dreams and hospitality, prepared overnight and renewed weekly without replacing pictures already kept in the notebook."
+    },
+    {
+      "version": "0.20.11",
+      "fr": "L’épopée de votre voyage occupe la quatrième de couverture du carnet et termine le PDF. La chronique peut être réécrite après confirmation, sans changer les faits du voyage ni perdre le texte précédent en cas d’échec. La carte XIII apparaît désormais à la mort même si une fenêtre d’action est restée ouverte.",
+      "en": "Your journey’s epic occupies the notebook’s back cover and closes the PDF. You can request a rewrite after confirmation without changing journey facts or losing the previous text on failure. At death, card XIII now appears even if an action window was left open."
+    },
+    {
+      "version": "0.20.10",
+      "fr": "Le récit de fin de voyage apparaît désormais dans votre carnet et son export PDF. Les voyages déjà terminés et les carnets archivés retrouvent un bilan à partir des faits sauvegardés, sans recommencer. Le récit reste lisible pendant l’écriture de la chronique.",
+      "en": "The closing journey account now appears in your notebook and its PDF export. Already-ended journeys and archived notebooks recover an account from saved facts, without restarting. The account remains readable while the chronicle is being written."
+    },
+    {
+      "version": "0.20.9",
+      "fr": "La barre sous la carte est allégée : les sujets accessibles dans « Parler aux habitants » n’y sont plus répétés, y compris J, 9, I et E. Les actions restent disponibles dans leurs fenêtres et leurs raccourcis clavier sont conservés.",
+      "en": "The toolbar below the map is simpler: topics available in Talk to inhabitants are no longer repeated there, including J, 9, I and E. Actions remain available in their windows and their keyboard shortcuts are preserved."
+    },
+    {
+      "version": "0.20.8",
+      "fr": "Une interface recentrée sur le jeu : carte, état du voyageur et petite barre de touches carrées. F ouvre les actions en toutes lettres ; G, les sujets de conversation avec les habitants ; 6, les transports. Les règles détaillées passent dans l’aide, les informations techniques et crédits dans des volets fermés. Les récits et messages sont raccourcis ; les attentes et échecs restent signalés. Sur mobile, la carte et ses commandes viennent en premier. Les coûts et sauvegardes sont inchangés.",
+      "en": "A game-first interface: map, traveller status and a compact square-key toolbar. F opens full-word actions; G, inhabitant conversation topics; 6, transport. Detailed rules move into Help, technical information and credits into closed details. Stories and messages are shorter; waiting and failures remain noticeable. On mobile, the map and its controls come first. Costs and saves are unchanged."
+    },
+    {
+      "version": "0.20.7",
+      "fr": "Le statut du chien apparaît juste sous la jauge Propreté, avant le bouton de toilette et son explication.",
+      "en": "The dog's status now appears immediately below the Cleanliness meter, before the washing button and its explanation."
+    },
+    {
+      "version": "0.20.6",
+      "fr": "La recherche d’hébergements inclut désormais les lieux de culte publics, comme les églises, avec une explication pour chaque hôtel ou lieu de culte : rejoignez sa case à pied, puis ouvrez le sommeil (H) pour dormir ou demander un abri. Choisir une destination ne déplace pas le personnage et ne garantit pas l’accueil. Les lieux déjà cartographiés ne disparaissent plus lorsqu’une réponse en ligne en contient moins. Le statut du chien se trouve directement sous le panneau d’état du joueur.",
+      "en": "Nearby hosting searches now include public places of worship such as churches. Each hotel or place of worship explains the next step: walk to its cell, then open sleep (H) to stay or ask for shelter. Selecting a destination does not move the character or guarantee a welcome. Already mapped places no longer disappear when an online response contains fewer results. The dog's status now sits directly below the player-status panel."
+    },
+    {
+      "version": "0.20.5",
+      "fr": "Les carnets des autres voyageurs ont désormais leur propre fenêtre, comme la piste du parent : une introduction raconte leur histoire, des icônes accompagnent les actions et chaque témoignage se déplie séparément. Une seule entrée récente est affichée par carnet, sans minutes techniques ni coordonnées. Aucun emplacement, indice de proximité ou carnet à recueillir n'est révélé avant qu'un habitant en parle. Les anciennes observations automatiques restent conservées mais ne dévoilent plus de piste.",
+      "en": "Other travellers’ notebooks now have their own window, like the parent trail: an introduction tells their story, icons accompany actions and each witness account unfolds separately. One recent entry is shown per notebook, without technical minute counters or coordinates. No whereabouts, proximity hint or pickup listing is revealed until a local person mentions that notebook. Older automatic observations remain stored but no longer reveal a lead."
+    },
+    {
+      "version": "0.20.4",
+      "fr": "Le récit du départ est écrit automatiquement avec le nom fictif du personnage. Un ancien récit sans cette inspiration est remplacé une seule fois, sans bouton à presser. Un indicateur bien visible demande de patienter avant de commencer ; en cas d'échec, le récit d'origine permet de continuer. Le récit est conservé dans le carnet, qu'il soit généré ou non. Les messages destinés au joueur n'affichent plus le prestataire technique ni de jargon de cache.",
+      "en": "The opening story is written automatically using the character's fictional name. An older story without that inspiration is replaced once, with no button to press. A prominent indicator asks you to wait before beginning; if writing fails, the original story lets you continue. The story is kept in the journal whether generated or not. Player messages no longer name the technical provider or use cache jargon."
+    },
+    {
+      "version": "0.20.3",
+      "fr": "La personnalisation par nom fictif est cochée par défaut pour les nouveaux personnages et reste désactivable. La biographie peut être régénérée après confirmation, sans changer le parent ni la progression ; le texte précédent reste conservé en cas d'échec. Les événements disposent de trois nouvelles formulations par type et jour de jeu, inspirées du contexte enregistré et du nom autorisé. Les références littéraires reconnues peuvent inspirer une voix originale, sans reprendre de passages ni de faits d'autres récits. Un indicateur animé signale les textes en cours de génération, avec respect de la préférence de mouvement réduit. Les biographies générées et les introductions d'événements effectivement affichées sont conservées dans le carnet, le PDF et le carnet partagé.",
+      "en": "Fictional-name personalization is checked by default for new characters and can be disabled. The biography can be regenerated after confirmation without changing the parent or progress; the previous text is preserved if generation fails. Events receive three fresh wordings per type and game day, inspired by bounded recorded context and the permitted name. Recognized literary references may inspire an original voice without copying passages or importing another story's plot. An animated indicator marks text generation in progress and respects reduced-motion preferences. Generated biographies and the event wording actually displayed are retained in the journal, PDF and shared notebook."
+    },
+    {
+      "version": "0.20.2",
+      "fr": "Après une perte des données serveur, un nouveau voyage peut être créé en conservant l'ancienne sauvegarde et son carnet dans ce navigateur. Les carnets archivés restent consultables depuis le carnet. Une ancienne publication devenue impossible ne bloque plus les nouveaux carnets ; les autres erreurs restent signalées.",
+      "en": "After server data loss, a new journey can be created while preserving the old save and notebook in this browser. Archived notebooks remain accessible from the notebook. An old publication whose server journey is missing no longer blocks new notebooks; other failures remain explicit."
+    },
+    {
+      "version": "0.20.1",
+      "fr": "La couverture du carnet reçoit sa propre illustration onirique, distincte de l'image d'accueil. Son sous-titre bilingue est généré à partir du départ, du tarot et de l'histoire enregistrée du parent, sans dévoiler les étapes futures. L'image et le sous-titre sont conservés pour ce voyage et repris dans le PDF.",
+      "en": "The notebook cover receives its own dream illustration, separate from the title-screen image. Its bilingual subtitle is generated from the saved departure setting, tarot and parent backstory, without revealing future stops. The image and subtitle are retained for the journey and included in the PDF."
+    },
+    {
+      "version": "0.20.0",
+      "fr": "Les Options affichent la version du jeu et l'historique des nouveautés. Dans les lieux habités cartographiés, les conversations peuvent révéler des rumeurs de carnets abandonnés ; un signalement apparaît à moins d'un kilomètre et le ramassage reste limité à 200 mètres. Le carnet réunit les indices des pistes du parent et des carnets abandonnés. L'icône du chien adopté, son nom et son état sont visibles dans l'interface.",
+      "en": "Options now show the game version and changelog. Conversations in mapped settlements can reveal rumours about abandoned journals; nearby indications appear within one kilometre and pickup remains limited to 200 metres. The notebook brings together clues from parent trails and abandoned journals. The adopted dog's icon, name and condition are visible in the interface."
+    },
+    {
+      "version": "0.19.0",
+      "fr": "Les histoires de clôture retracent la fin du voyage. Des rêves de secours aident à retrouver la piste du parent. Les événements et transports du monde vivant sont accessibles pendant le voyage.",
+      "en": "Closing stories recount the end of the journey. Rescue dreams help recover the parent's trail. Living-world events and transport are accessible during the journey."
+    }
+  ]
+}

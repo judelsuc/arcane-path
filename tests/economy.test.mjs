@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { startSurvival, walkSurvival } from "../survival.mjs";
-import { validateEconomy, drawTarot, startEconomy, localMeals, marketPrice, shelters,
+import { validateEconomy, drawTarot, startEconomy, localMeals, mealOptions, mealOffers, marketPrice, shelters, restEffect, refreshNightRest,
   nightMinutes, finishAction, buyMeal, sleepEconomy, restEconomy,
-  dailyTarotPending, acknowledgeDailyTarot, refreshPricing } from "../economy.mjs";
+  dailyTarotPending, acknowledgeDailyTarot, refreshPricing, refreshMeals } from "../economy.mjs";
 
 const data = validateEconomy(JSON.parse(readFileSync(new URL("../public/economy.json", import.meta.url))));
 const survival = JSON.parse(readFileSync(new URL("../public/config.json", import.meta.url))).survival;
@@ -57,6 +57,58 @@ test("sourced specialties follow coordinates, not selected region or guessed cou
   assert.deepEqual(localMeals({ latitude: 0, longitude: 0 }, data), []);
 });
 
+test("European dishes cover 15 countries with confirmed country matching and bounded regional coverage", () => {
+  const examples = [
+    ["FR", 49.387, 3.005, "ficelle-picarde"], ["IT", 40.85, 14.27, "pizza-napoletana"],
+    ["ES", 40.42, -3.7, "tortilla"], ["PT", 38.72, -9.14, "bacalhau-bras"],
+    ["CH", 46.95, 7.45, "rosti"], ["AT", 48.21, 16.37, "wiener-schnitzel"],
+    ["DE", 52.52, 13.4, "bratwurst"], ["BE", 50.85, 4.35, "carbonnade"],
+    ["NL", 52.37, 4.9, "stamppot"], ["PL", 50.06, 19.94, "pierogi"],
+    ["HU", 47.5, 19.04, "gulyas"], ["CZ", 50.08, 14.43, "svickova"],
+    ["GR", 37.98, 23.73, "moussaka"], ["IE", 53.35, -6.26, "irish-stew"],
+    ["GB", 55.95, -3.19, "haggis"],
+  ];
+  assert.equal(new Set(examples.map(([code]) => code)).size, 15);
+  for (const [code, latitude, longitude, id] of examples) {
+    const point = { latitude, longitude };
+    assert.ok(localMeals(point, data, [code]).some(m => m.id === id), id);
+    assert.ok(mealOptions({ terrain: "place", countryCodes: [code] }, point, data).some(m => m.id === id));
+    for (const codes of [[], ["US"], [code, "US"]]) {
+      assert.ok(!localMeals(point, data, codes).some(m => m.id === id), `${id}: ${codes}`);
+    }
+    const purchased = buyMeal({ ...start(), reserveKcal: 300, walletCents: 10000 },
+      { terrain: "place", countryCodes: [code] }, point, id, survival, data);
+    assert.equal(purchased.meals, 1);
+    assert.equal(purchased.elapsedMinutes, survival.meal_minutes);
+  }
+  assert.ok(!localMeals({ latitude: 51.5, longitude: -0.12 }, data, ["GB"]).some(m => m.id === "haggis"));
+  assert.ok(!localMeals({ latitude: 45.46, longitude: 9.19 }, data, ["IT"]).some(m => m.id === "pizza-napoletana"));
+  assert.ok(!localMeals({ latitude: 46.2, longitude: 6.14 }, data, ["FR"]).some(m => m.id === "rosti"));
+});
+
+test("new dishes refresh existing saves without replacing pinned meals, rules, prices or tarot", () => {
+  const saved = structuredClone(data);
+  saved.meals = saved.meals.slice(0, 4);
+  saved.meals[0].reserveKcal = 777;
+  const before = structuredClone(saved);
+  const updated = refreshMeals(saved, data);
+  assert.equal(updated.meals.length, 19);
+  assert.deepEqual(updated.meals.slice(0, 4), before.meals);
+  assert.deepEqual({ ...updated, meals: before.meals }, before);
+  assert.deepEqual(saved, before);
+  assert.deepEqual(refreshMeals(updated, data), updated);
+  updated.meals.at(-1).name = "mutated";
+  assert.notEqual(data.meals.at(-1).name, "mutated");
+  for (const invalid of [
+    m => { m.scope = "global"; }, m => { m.countries = []; },
+    m => { m.countries = ["France"]; }, m => { m.area = ""; },
+  ]) {
+    const corrupt = structuredClone(data);
+    invalid(corrupt.meals.at(-1));
+    assert.throws(() => refreshMeals(saved, corrupt), /Invalid economy/);
+  }
+});
+
 test("national prices use comparable dollar values and missing countries use the European mean", () => {
   assert.equal(marketPrice(town, 1, data).cents, 560);
   assert.equal(marketPrice({ countryCodes: ["IT"] }, 1, data).cents, 656);
@@ -73,14 +125,54 @@ test("national prices use comparable dollar values and missing countries use the
 test("paid meal restores reserve once, costs time and money, and cannot be bought outside town or without funds", () => {
   const state = { ...start(), reserveKcal: 300 };
   const next = buyMeal(state, town, info, "aligot", survival, data);
-  assert.equal(next.walletCents, state.walletCents - 560);
+  const offer = mealOffers(state, town, info, data).find(m => m.id === "aligot");
+  assert.equal(next.walletCents, state.walletCents - offer.cents);
   assert.equal(next.meals, 1);
   assert.equal(next.elapsedMinutes, 20);
-  assert.ok(next.reserveKcal > 1100);
+  assert.equal(next.reserveKcal, Math.min(survival.reserve_kcal, 300 + offer.reserveKcal) -
+    survival.basal_kcal_per_hour * survival.meal_minutes / 60);
   assert.equal(state.reserveKcal, 300);
-  assert.throws(() => buyMeal({ ...state, walletCents: 559 }, town, info, "aligot", survival, data), /funds/);
+  assert.throws(() => buyMeal({ ...state, walletCents: offer.cents - 1 }, town, info, "aligot", survival, data), /funds/);
   assert.throws(() => buyMeal(state, { terrain: "forest" }, info, "aligot", survival, data), /settlement/);
   assert.throws(() => buyMeal(state, town, info, "poisson-cru", survival, data), /local meal/);
+});
+
+test("every settlement offers a priced basic meal, including Engins and legacy economies without local specialties", () => {
+  const engins = { latitude: 45.182, longitude: 5.616 };
+  assert.deepEqual(localMeals(engins, data), []);
+  assert.deepEqual(mealOptions(town, engins, data).map(m => m.id), ["basic-meal"]);
+  const state = { ...start(), reserveKcal: 300 };
+  const next = buyMeal(state, town, engins, "basic-meal", survival, data);
+  const offer = mealOffers(state, town, engins, data)[0];
+  assert.equal(next.walletCents, state.walletCents - offer.cents);
+  assert.equal(next.elapsedMinutes - state.elapsedMinutes, survival.meal_minutes);
+  assert.equal(next.meals, 1);
+  assert.equal(next.reserveKcal, Math.min(survival.reserve_kcal, 300 + offer.reserveKcal) -
+    survival.basal_kcal_per_hour * survival.meal_minutes / 60);
+  assert.throws(() => buyMeal({ ...state, walletCents: 0 }, town, engins, "basic-meal", survival, data), /funds/);
+  assert.deepEqual(mealOptions({ terrain: "forest" }, engins, data), []);
+  assert.throws(() => buyMeal(state, { terrain: "forest" }, engins, "basic-meal", survival, data), /settlement/);
+  assert.throws(() => buyMeal({ ...state, ended: "hunger" }, town, engins, "basic-meal", survival, data), /ended/);
+  assert.ok(mealOptions(town, info, data).some(m => m.id === "aligot"));
+});
+
+test("mapped restaurant offers use current-cell public active OSM venues without inventing specialties", () => {
+  const venue = { osmId: "node/32", name: "Test café", tags: { amenity: "cafe" } };
+  const cell = { ...town, pois: [venue, venue,
+    { osmId: "way/33", tags: { amenity: "restaurant", access: "private" } },
+    { osmId: "way/34", tags: { amenity: "restaurant", disused: "yes" } },
+    { osmId: "way/35", tags: { amenity: "restaurant", abandoned: "yes" } },
+    { osmId: "bad-id", tags: { amenity: "restaurant" } },
+    { osmId: "node/36", tags: { amenity: "bar" } },
+  ] };
+  const options = mealOptions(cell, info, data);
+  assert.deepEqual(options.filter(m => m.kind === "restaurant").map(m => m.id), ["basic-meal@node/32"]);
+  const state = { ...start(), reserveKcal: 300 };
+  const offer = mealOffers(state, cell, info, data).find(m => m.id === "basic-meal@node/32");
+  const bought = buyMeal(state, cell, info, offer.id, survival, data);
+  assert.equal(bought.walletCents, state.walletCents - offer.cents);
+  assert.throws(() => buyMeal(state, town, info, "basic-meal@node/32", survival, data), /local meal/);
+  assert.deepEqual(mealOptions({ ...cell, unavailable: true }, info, data), []);
 });
 
 test("European fallback is the national arithmetic mean with stable bounded per-cell variation", () => {
@@ -153,7 +245,7 @@ test("only current-cell mapped accommodation and explicitly free shelters are us
 test("estimated meal quotes and actual charges use exactly the same cell variation", () => {
   const cell = { terrain: "place" };
   const state = start();
-  const quote = marketPrice(cell, 1, data, info);
+  const quote = mealOffers(state, cell, info, data).find(m => m.id === "aligot");
   assert.equal(buyMeal(state, cell, info, "aligot", survival, data).walletCents,
     state.walletCents - quote.cents);
 });
@@ -166,7 +258,7 @@ test("outdoor nights increase fatigue during sleep, walking and rest; daytime ha
   assert.equal(night.walletCents, state.walletCents);
   assert.ok(night.outdoorNightMinutes > 400);
   const rest = restEconomy(state, info, survival, data);
-  assert.ok(rest.fatigue > 40);
+  assert.equal(rest.fatigue, 31);
   const day = restEconomy({ ...start(), fatigue: 40 }, info, survival, data);
   assert.equal(day.fatigue, 20);
   const walk = walkSurvival(state, 1, 0, town, town, survival);
@@ -175,12 +267,78 @@ test("outdoor nights increase fatigue during sleep, walking and rest; daytime ha
   assert.equal(nightMinutes(state, 30, info), 30);
 });
 
-test("exposure can terminate a journey, shelter cannot bypass hunger, and invalid databases fail explicitly", () => {
-  assert.equal(restEconomy({ ...start(22), fatigue: 99.5 }, info, survival, data).ended, "fatigue");
+test("exposure can cause fainting, shelter cannot bypass hunger, and invalid databases fail explicitly", () => {
+  const oldRules = { ...data, rules: { ...data.rules, nightRestRecoveryFactor: 0 } };
+  const fainted = restEconomy({ ...start(22), fatigue: 99.5 }, info, survival, oldRules);
+  assert.equal(fainted.ended, null);
+  assert.equal(fainted.fatigue, 40);
+  assert.equal(fainted.faints, 1);
   assert.equal(sleepEconomy({ ...start(22), reserveKcal: 100 }, { pois: [shelter] },
-    info, shelter.osmId, survival, data).ended, "hunger");
+    info, shelter.osmId, survival, data).ended, null);
   for (const bad of [{}, { ...data, tarot: [] },
     { ...data, pricing: { ...data.pricing, referenceDollarPrice: 0 } }]) {
     assert.throws(() => validateEconomy(bad));
   }
+});
+
+test("paid accommodation includes food and fully relieves hunger, fatigue and sleep pressure", () => {
+  const state = { ...start(22), health: 1, reserveKcal: 1, fatigue: 99, awakeHours: survival.sleep_limit_hours - 0.1 };
+  for (const tourism of ["hotel", "hostel", "guest_house", "motel", "alpine_hut"]) {
+    const cell = { ...town, pois: [{ ...shelter, tags: { tourism } }] };
+    const next = sleepEconomy(state, cell, info, shelter.osmId, survival, data);
+    assert.equal(next.ended, null);
+    assert.equal(next.reserveKcal, survival.reserve_kcal);
+    assert.equal(next.fatigue, 0);
+    assert.equal(next.awakeHours, 0);
+    assert.equal(next.meals, state.meals + 2);
+    assert.equal(next.sleeps, state.sleeps + 1);
+    assert.equal(next.elapsedMinutes, survival.sleep_hours * 60);
+    assert.equal(next.walletCents, state.walletCents -
+      marketPrice(cell, data.rules.lodgingMealUnits, data, info).cents);
+    assert.equal(next.outdoorNightMinutes, 0);
+    assert.ok(next.energyKcal > state.energyKcal);
+  }
+  const free = { ...town, pois: [{ ...shelter, tags: { amenity: "shelter", fee: "no" } }] };
+  assert.equal(sleepEconomy(state, free, info, shelter.osmId, survival, data).ended, "health");
+  assert.equal(sleepEconomy(state, town, info, null, survival, data).ended, "health");
+  assert.throws(() => sleepEconomy({ ...state, ended: "hunger" }, { ...town, pois: [shelter] },
+    info, shelter.osmId, survival, data), /ended/);
+  assert.throws(() => sleepEconomy({ ...state, walletCents: 0 }, { ...town, pois: [shelter] },
+    info, shelter.osmId, survival, data), /funds/);
+});
+
+test("one nighttime rest at 90 fatigue now ends at 81; legacy zero-recovery rule yielded 91", () => {
+  const state = { ...start(22), fatigue: 90, awakeHours: 16 };
+  const next = restEconomy(state, info, survival, data);
+  assert.equal(next.elapsedMinutes - state.elapsedMinutes, 30);
+  assert.equal(next.fatigue, 81);
+  const legacy = { ...data, rules: { ...data.rules, nightRestRecoveryFactor: 0 } };
+  assert.equal(restEconomy(state, info, survival, legacy).fatigue, 91);
+  assert.equal(next.ended, null);
+  assert.equal(next.awakeHours, 17);
+  for (const hour of [0, 5, 6, 12, 17, 18, 22, 23]) {
+    for (const fatigue of [0, 10, 90, 99.5]) {
+      const before = { ...start(hour), fatigue, awakeHours: 16 };
+      assert.equal(restEffect(before, info, survival, data).fatigue,
+        restEconomy(before, info, survival, data).fatigue);
+    }
+  }
+  const sleepy = restEconomy({ ...state, awakeHours: 31.75 }, info, survival, data);
+  assert.equal(sleepy.ended, null);
+  assert.equal(sleepy.lastFaint.reason, "sleep");
+  assert.equal(sleepy.elapsedMinutes, 510);
+});
+
+test("approved nighttime-rest migration changes only the one coefficient, once, on legacy resume", () => {
+  const legacy = structuredClone(data);
+  delete legacy.restRuleVersion;
+  legacy.rules.nightRestRecoveryFactor = 0;
+  legacy.rules.lodgingMealUnits = 3;
+  const snapshot = structuredClone(legacy);
+  const migrated = refreshNightRest(legacy, data);
+  assert.deepEqual(migrated, { ...snapshot, restRuleVersion: 1,
+    rules: { ...snapshot.rules, nightRestRecoveryFactor: 0.5 } });
+  assert.deepEqual(legacy, snapshot);
+  assert.deepEqual(refreshNightRest(migrated, data), migrated);
+  assert.throws(() => validateEconomy({ ...data, restRuleVersion: 2 }), /Invalid economy/);
 });

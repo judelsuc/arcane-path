@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arcane Path - Content workshop</title>
+  <link rel="stylesheet" href="/content-workshop.css">
+</head>
+<body>
+  <main>
+    <h1>Content workshop / Fabrique de contenus</h1>
+    <p>Local writing experiment. Fictional samples only; no access to journeys or saves.
+      All output is a draft, not game evidence. Nothing is published into the game.</p>
+    <p>Essai local sur des exemples fictifs. Les textes sont des brouillons,
+      pas des indices acquis. Aucune publication dans le jeu.</p>
+    <p id="status" role="status">Loading / Chargement…</p>
+    <p id="error" role="alert" hidden></p>
+    <section aria-labelledby="brief-heading">
+      <h2 id="brief-heading">Writing brief / Consigne</h2>
+      <label for="brief">Sample / Exemple</label>
+      <select id="brief"></select>
+      <div id="facts"></div>
+      <p>Plain guidance stays locked / Le conseil clair reste verrouillé.</p>
+      <p>One click sends one request for an English/French rumour and riddle.
+        Failed or interrupted attempts count toward the persistent 20-request trial.
+        No automatic retries. Token counts are not a euro spending limit.</p>
+      <button id="generate" type="button" disabled>Generate live drafts / Générer en direct</button>
+      <button id="refresh" type="button">Refresh status / Actualiser</button>
+    </section>
+    <section aria-labelledby="draft-heading">
+      <h2 id="draft-heading">Drafts and review / Brouillons et relecture</h2>
+      <p>Review both languages for invented facts, uncertainty, playability and information leaks.
+        Format validation cannot establish factual correctness.
+        Acceptance only saves a local review pack; it does not make these playable clues.</p>
+      <a href="/api/export" download="content-workshop-review.json">Download accepted samples / Télécharger les exemples relus</a>
+      <div id="attempts"></div>
+    </section>
+  </main>
+  <script type="module" src="/content-workshop.mjs"></script>
+</body>
+</html>

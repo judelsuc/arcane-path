@@ -1,0 +1,11 @@
+[Unit]
+Description=Arcane Path weekly night illustration renewal
+
+[Timer]
+OnCalendar=Tue *-*-* 23:00:00 Europe/Paris
+AccuracySec=1min
+Persistent=false
+Unit=arcane-encounter-art.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <title>Arcane Path administration</title>
+  <link rel="stylesheet" href="/admin-console.css">
+  <script type="module" src="/admin-console.mjs"></script>
+</head>
+<body>
+  <header><h1>Arcane Path administration</h1><p>Private feedback and cosmetic collection review</p></header>
+  <main>
+    <p id="status" role="status" aria-live="polite"></p>
+    <form id="login">
+      <h2>Administrator login</h2>
+      <label>Username <input name="username" autocomplete="username" required maxlength="48"></label>
+      <label>Password <input name="password" type="password" autocomplete="current-password" required maxlength="256"></label>
+      <button>Log in</button>
+    </form>
+    <section id="console" hidden>
+      <div class="toolbar"><p id="identity"></p><button id="logout" type="button">Log out</button></div>
+      <nav aria-label="Administration sections">
+        <button id="feedback-tab" type="button" aria-pressed="true">Player feedback</button>
+        <button id="collections-tab" type="button" aria-pressed="false">Cosmetic workshop</button>
+      </nav>
+      <section id="feedback">
+        <h2>Player feedback</h2>
+        <p>Comments, screenshots and game context are private diagnostic evidence. Retention remains 90 days.</p>
+        <label>Review status <select id="feedback-filter">
+          <option value="all">All</option><option value="new">New</option>
+          <option value="investigating">Investigating</option><option value="resolved">Resolved</option>
+          <option value="dismissed">Dismissed</option>
+        </select></label>
+        <button id="feedback-refresh" type="button">Refresh feedback</button>
+        <div class="columns"><div id="feedback-list"></div><article id="feedback-detail" aria-label="Selected feedback"></article></div>
+        <div class="toolbar"><button id="feedback-previous" type="button">Previous page</button><button id="feedback-next" type="button">Next page</button></div>
+      </section>
+      <section id="collections" hidden>
+        <h2>Cosmetic workshop</h2>
+        <p>The server prepares six icons daily at 05:30 Europe/Paris from a retained deck of 120 themes.
+          Review each draft before publishing. Failed or interrupted attempts are shown below and never retried automatically.</p>
+        <button id="collections-refresh" type="button">Refresh collections</button>
+        <section id="generation-status" aria-label="Daily generation status"></section>
+        <div id="collection-list"></div>
+        <div class="toolbar"><button id="collections-previous" type="button">Previous page</button><button id="collections-next" type="button">Next page</button></div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

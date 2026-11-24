@@ -29,7 +29,7 @@ variable "ssh_public_key" {
 variable "admin_ipv4_cidr" {
   type        = string
   default     = ""
-  description = "Administrator IPv4 /32; no public application ingress is configured."
+  description = "Legacy input retained for existing tfvars; SSH now accepts any source with public-key authentication only."
 
   validation {
     condition = var.admin_ipv4_cidr == "" || (
@@ -82,10 +82,6 @@ resource "openstack_compute_instance_v2" "preview" {
 
   lifecycle {
     prevent_destroy = true
-    precondition {
-      condition     = var.admin_ipv4_cidr != ""
-      error_message = "Host firewall requires an administrator IPv4 /32."
-    }
     precondition {
       condition     = local.compute_monthly_ttc_eur + local.other_services_reserve <= 100
       error_message = "Estimated monthly TTC cost plus reserve exceeds EUR 100."

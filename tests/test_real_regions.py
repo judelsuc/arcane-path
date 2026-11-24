@@ -20,12 +20,12 @@ REGIONS = {
     "paris": {
         "name": "Paris",
         "size": (14, 10),
-        "minimums": {"major_road": 3, "station": 1},
+        "minimums": {"major_road": 3, "station": 1, "building": 20},
     },
     "alps": {
         "name": "Alpes — Chamonix",
         "size": (28, 20),
-        "minimums": {"mountain": 5, "grass": 10, "cable": 3, "cable_station": 1},
+        "minimums": {"mountain": 5, "grass": 10, "cable": 3, "cable_station": 1, "building": 2},
     },
     "firmi": {
         "name": "Firmi",
@@ -139,6 +139,8 @@ class RealRegionTests(unittest.TestCase):
                     for cell in (cell for row in result["rows"] for cell in row):
                         if cell["terrain"] == "water":
                             self.assertGreaterEqual(cell["waterCoveragePercent"], 50)
+                        if cell_size == 250 and cell["terrain"] == "building":
+                            self.assertGreaterEqual(cell["buildingCoveragePercent"], 15)
                     bounds = result["bounds"]
                     self.assertEqual(
                         [bounds["minLongitude"], bounds["minLatitude"],
@@ -150,9 +152,8 @@ class RealRegionTests(unittest.TestCase):
                         counts = Counter(cell["terrain"] for row in result["rows"] for cell in row)
                         for terrain, minimum in expected["minimums"].items():
                             self.assertGreaterEqual(counts[terrain], minimum, terrain)
-                        self.assertEqual(counts["building"], 0)
                         self.assertEqual(counts["road"], 0)
-                        self.assertNotIn("building", {entry["terrain"] for entry in result["legend"]})
+                        self.assertIn("building", {entry["terrain"] for entry in result["legend"]})
                         self.assertNotIn("road", {entry["terrain"] for entry in result["legend"]})
                         if region == "firmi":
                             self.assertLess(counts["water"] / (result["width"] * result["height"]), 0.1)

@@ -23,6 +23,10 @@ or without numbering) remain accepted; no need to regenerate or rename them.
 Do not keep multiple versions unless you want the first matching one used:
 WAV before MP3 before OGG, canonical before compact/spaced numbered names.
 
+The pursuit escape window plays `music-pursuit.wav` (also accepted as
+`17 - music-pursuit.wav`, MP3 or OGG), from prompt 17. The self-defence fights play `music-fight.wav` (also
+`18 - music-fight.wav`), from prompt 18.
+
 Missing/context-specific tracks fall back to `music-road-day`, then
 `music-title`, then silence. The status explains any fallback; the console
 records file/decode errors. Re-enable music after downloading a missing file
@@ -31,6 +35,11 @@ to retry files marked unavailable in this session.
 Music pauses in hidden tabs and throughout the rhythm-game dialog; generated
 practice audio is not used as a timing source. New context tracks restart
 from the beginning, with no crossfade or custom loop-point editing yet.
+
+Production nginx serves audio files directly with HTTP byte-range support
+(206 responses), including numbered filenames containing spaces. This lets
+browsers such as Safari start WAV playback without fetching the entire file.
+Audio retains the same authentication and private response headers as the game.
 
 The optional English vocal title song uses `music-title-song.wav` (or MP3/
 OGG), also accepted as `16 - music-title-song.wav`. Generate it from the

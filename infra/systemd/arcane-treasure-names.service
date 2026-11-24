@@ -1,0 +1,20 @@
+[Unit]
+Description=Name retained Arcane Path treasures without changing their mechanics
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=arcane
+Group=arcane
+WorkingDirectory=/opt/arcane-path
+Environment=ARCANE_LIVE_TEXT_TOKEN_FILE=/etc/arcane-path/ovh-ai-endpoints-token
+EnvironmentFile=/etc/arcane-path/daily-cosmetics.env
+ExecStart=/usr/bin/python3 scripts/reward_names.py --limit 4
+TimeoutStartSec=15min
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/arcane-path

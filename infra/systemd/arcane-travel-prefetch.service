@@ -1,0 +1,22 @@
+[Unit]
+Description=Arcane Path bounded server-side map completion
+Wants=network-online.target
+After=network-online.target arcane-path.service
+ConditionPathExists=/etc/arcane-path/shared-storage.json
+
+[Service]
+Type=oneshot
+User=arcane
+Group=arcane
+WorkingDirectory=/opt/arcane-path
+Environment=ARCANE_ASSET_STORAGE_CONFIG_FILE=/etc/arcane-path/shared-storage.json
+Environment=AWS_SHARED_CREDENTIALS_FILE=/etc/arcane-path/shared-storage-aws.ini
+Environment=AWS_EC2_METADATA_DISABLED=true
+ExecStart=/opt/arcane-path/.venv-shared-storage/bin/python scripts/travel_prefetch.py --cache /var/lib/arcane-path/cache/travel --limit 2
+TimeoutStartSec=20min
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/arcane-path

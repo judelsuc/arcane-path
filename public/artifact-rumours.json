@@ -1,0 +1,90 @@
+{
+  "hermit": {
+    "fr": "On raconte qu'un dé à coudre ajouré permet d'apercevoir le repère d'un autre objet oublié.",
+    "en": "They say a pierced thimble can reveal the landmark of another forgotten object."
+  },
+  "chariot": {
+    "fr": "J'ai entendu parler d'un lacet rouge qui allonge la foulée, mais pas indéfiniment.",
+    "en": "I have heard of a red shoelace that lengthens your stride, though not forever."
+  },
+  "temperance": {
+    "fr": "Il se raconte qu'un bouchon percé aide à reprendre des forces et à retrouver son équilibre.",
+    "en": "People tell of a pierced stopper that helps restore strength and balance."
+  },
+  "fool": {
+    "fr": "Un ourlet sans fin, paraît-il, ramène vers un lieu que l'on a déjà visité.",
+    "en": "An endless hem, so they say, takes you back to somewhere you have already visited."
+  },
+  "wheel": {
+    "fr": "Une bobine vide pourrait rappeler un objet que l'on a soi-même laissé dans une cache.",
+    "en": "An empty spool might recall an object you left in a cache yourself."
+  },
+  "sun": {
+    "fr": "On parle d'un mouchoir jaune capable de rendre toute sa vigueur à une personne épuisée.",
+    "en": "There is talk of a yellow handkerchief that restores an exhausted traveller's vigour."
+  },
+  "magician": {
+    "fr": "Le dé à sept points revient dans les histoires de petits travaux et d'occasions de gagner sa route.",
+    "en": "The seven-dot die turns up in stories of odd jobs and chances to earn your way."
+  },
+  "priestess": {
+    "fr": "On dit que le buvard bleu éclaire une piste du parent ou d'un carnet et dément les récits que les faits contredisent.",
+    "en": "They say the blue blotter clarifies a parent or notebook lead and refutes stories contradicted by facts."
+  },
+  "empress": {
+    "fr": "J'ai entendu des voyageurs parler d'une cuillère de bois et de la faim qu'elle apaisait.",
+    "en": "I have heard travellers speak of a wooden spoon and the hunger it soothed."
+  },
+  "emperor": {
+    "fr": "Un bouton de cuivre aurait protégé plus d'un voyageur. C'est du moins l'histoire qui circule.",
+    "en": "A copper button is said to have protected more than one traveller. That is the story, anyway."
+  },
+  "hierophant": {
+    "fr": "Il paraît qu'un cahier quadrillé permet de rapprocher des fragments de phrases autrement épars.",
+    "en": "A squared notebook is said to bring together otherwise scattered fragments of words."
+  },
+  "lovers": {
+    "fr": "On raconte qu'une pince à linge fendue aide deux chemins à se rejoindre.",
+    "en": "They tell of a split clothes peg that helps two paths meet."
+  },
+  "justice": {
+    "fr": "La règle ébréchée figure dans des récits de comptes corrigés et de dépenses reconsidérées.",
+    "en": "The chipped ruler appears in tales of corrected accounts and reconsidered expenses."
+  },
+  "strength": {
+    "fr": "On associe la brosse douce au calme retrouvé, même quand la route fait peur.",
+    "en": "People associate the soft brush with finding calm, even when the road is frightening."
+  },
+  "hanged": {
+    "fr": "Une chaussette retournée, dit-on, apprend à attendre autrement plutôt qu'à forcer le passage.",
+    "en": "An inside-out sock, they say, teaches another way to wait instead of forcing a passage."
+  },
+  "nameless": {
+    "fr": "Le taille-crayon émoussé aurait donné une dernière chance de rentrer vivant à des voyageurs près de s'effondrer.",
+    "en": "The blunt sharpener is said to have given travellers near collapse one last chance to return alive."
+  },
+  "devil": {
+    "fr": "Un élastique noir aurait rendu des sacs moins pesants sur la route, sans pour autant les agrandir.",
+    "en": "A black elastic is said to have made packs less burdensome on the road, without making them any larger."
+  },
+  "tower": {
+    "fr": "Une craie cassée, paraît-il, permet de baisser la garde sans se laisser emporter par la vigilance.",
+    "en": "A broken chalk, so they say, lets you lower your guard without vigilance taking over."
+  },
+  "star": {
+    "fr": "Un tamis de poche aiderait à retrouver un vrai chemin vers la piste actuelle du parent.",
+    "en": "A pocket sieve is said to help find a real path towards the parent's current trail."
+  },
+  "moon": {
+    "fr": "Des voyageurs disent qu'un miroir de poche mat ramène des indices dans les rêves.",
+    "en": "Travellers say a clouded pocket mirror brings clues back in dreams."
+  },
+  "judgement": {
+    "fr": "Un réveil sans aiguilles permettrait de choisir l'arcane qui accompagne une journée de voyage.",
+    "en": "A handless alarm clock is said to let you choose the arcana accompanying a day's journey."
+  },
+  "world": {
+    "fr": "Une enveloppe ronde relierait des lieux déjà connus. C'est une vieille histoire de voyageurs.",
+    "en": "A round envelope is said to connect places already known. It is an old travellers' tale."
+  }
+}

@@ -57,7 +57,9 @@ class CellPoiTests(unittest.TestCase):
             {"osmId": "node/2", "category": "shop", "name": "Bakery"},
             {"osmId": "way/10", "category": "amenity", "name": "Cafe"},
         ])
-        self.assertEqual(cell["settlements"], [{"osmId": "node/1", "name": "Town", "wikipedia": "fr:Town"}])
+        self.assertEqual([{key: settlement[key] for key in ("osmId", "name", "wikipedia")}
+                          for settlement in cell["settlements"]],
+                         [{"osmId": "node/1", "name": "Town", "wikipedia": "fr:Town"}])
         self.assertEqual(cell["pois"][0]["tags"], {"shop": "bakery"})
         self.assertEqual(cell["pois"][1]["tags"]["access"], "private")
         self.assertAlmostEqual(cell["pois"][0]["latitude"], 0.004)

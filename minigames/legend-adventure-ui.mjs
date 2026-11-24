@@ -1,0 +1,1473 @@
+import { createInvestigation, investigate, investigationHint, INVESTIGATION_ACTIONS } from "../legend-adventure.mjs";
+import { COPY } from "../legend-adventure-copy.mjs";
+import { createPlatformer, stepPlatformer, platformHazardActive, platformRoomSolved, platformLadders,
+  platformAnimal, platformArrow, platformCrate, platformBridge, PLATFORM_RUNES, ROOMS, WIDTH, HEIGHT, STEP } from "./legend-platformer.mjs";
+import { generatePlatformLevel } from "./legend-layout.mjs";
+import { adventureCosts, encounterCosts } from "../adventure-costs.mjs";
+import { replayInvestigation, replayLegendSession, isDungeonSession,
+  hasDungeonFood, isPlatformSession, isGeneratedInvestigation, isTreasureSession, isExpandedLegendSession,
+  isCatalogueLegendSession, hasDecoyLevers } from "../legend-session.mjs";
+import { createDungeon, generateDungeon, stepDungeon, dungeonCreature, dungeonGateOpen,
+  dungeonSpikesActive, DUNGEON_DIRECTIONS, dungeonMechanisms, dungeonTarget, dungeonArrow, dungeonBeam, DUNGEON_RUNES } from "./legend-dungeon.mjs";
+import { drawPixelSprite, drawPixelDoor, drawStoneTile, pixelSet } from "./legend-pixel-art.mjs";
+import { generateInvestigation, createGeneratedInvestigation, stepInvestigation,
+  investigationCommands, generatedInvestigationHint, investigationWitnessPresent } from "./legend-investigation.mjs";
+import { INVESTIGATION_COPY } from "./legend-investigation-copy.mjs?v=observational-scenes-2";
+import { ENCOUNTER_COPY } from "./legend-encounters-copy.mjs";
+import { MECHANISMS, MECHANISM_COPY, investigationHotspots } from "./legend-mechanisms.mjs";
+import { investigationScene, drawInvestigationScenery } from "./legend-investigation-scenery.mjs";
+import { DECOY_COPY } from "./legend-decoys.mjs";
+
+function rectangle(ctx, color, x, y, width, height) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, width, height);
+}
+
+function person(ctx, x, y, name = "explorer", scale = 2) {
+  drawPixelSprite(ctx, name, x - 5, y + 26 - 15 * scale, scale);
+}
+
+function reel(ctx, x, y) {
+  drawPixelSprite(ctx, "reel", x - 16, y - 16);
+}
+function crack(ctx, x, y) {
+  for (let i = 0; i < 6; i++) rectangle(ctx, "#fff09b", x + (i % 2) * 5, y + i * 5, 3, 6);
+}
+function numberedRune(ctx, x, y, index, active = false) {
+  drawPixelSprite(ctx, "crystal", x, y, 1, { active });
+  ctx.fillStyle = "#fff09b"; ctx.font = "12px monospace"; ctx.fillText(String(index + 1), x + 5, y - 3);
+}
+function projectile(ctx, x, y) {
+  rectangle(ctx, "#e8b65c", x, y, 20, 3);
+  rectangle(ctx, "#f4e4c1", x + 15, y - 3, 4, 9);
+}
+
+function backdrop(ctx, image, set) {
+  rectangle(ctx, "#141827", 0, 0, WIDTH, HEIGHT);
+  for (let y = 0; y < 288; y += 32) for (let x = 0; x < WIDTH; x += 32) {
+    drawStoneTile(ctx, x, y, 32, true, (x + y) % 64 === 0, set);
+  }
+  rectangle(ctx, "rgba(20,24,39,.45)", 0, 32, WIDTH, 256);
+  if (image) {
+    const height = image.naturalWidth * 288 / WIDTH;
+    ctx.drawImage(image, 0, (image.naturalHeight - height) / 2, image.naturalWidth, height, 0, 0, WIDTH, 288);
+    rectangle(ctx, "rgba(20,24,39,.65)", 0, 0, WIDTH, 288);
+  } else {
+    for (let x = 40; x < WIDTH - 40; x += 144) {
+      rectangle(ctx, "#141827", x - 4, 56, 64, 96);
+      rectangle(ctx, "#a4acc2", x, 60, 56, 84);
+      rectangle(ctx, "#326878", x + 4, 64, 48, 76);
+      rectangle(ctx, "#66b8c5", x + 8, 68, 8, 40);
+      rectangle(ctx, "#141827", x + 24, 64, 4, 76);
+      rectangle(ctx, "#141827", x + 4, 100, 48, 4);
+      rectangle(ctx, "#a4acc2", x - 8, 144, 72, 8);
+      drawPixelSprite(ctx, set.prop, x + 72, 100, 2, { set });
+    }
+  }
+  rectangle(ctx, "#a4acc2", 0, 284, WIDTH, 4);
+  for (let x = 0; x < WIDTH; x += 32) drawStoneTile(ctx, x, 288, 32, false, x % 64 === 0, set);
+}
+
+function drawPlatform(ctx, state, images, set) {
+  const room = (state.level?.rooms ?? ROOMS)[state.room];
+  backdrop(ctx, images[room.background ?? "passage"] ?? images.passage ?? images.interior, set);
+  for (const platform of [...room.platforms, ...[platformBridge(state)].filter(Boolean)]) {
+    rectangle(ctx, "#141827", platform.x, platform.y, platform.width, platform.height);
+    rectangle(ctx, "#e8b65c", platform.x, platform.y, platform.width, 3);
+    rectangle(ctx, "#b87848", platform.x, platform.y + 3, platform.width, platform.height - 5);
+    for (let x = platform.x + 16; x < platform.x + platform.width; x += 24) {
+      rectangle(ctx, "#704333", x, platform.y + 4, 2, platform.height - 4);
+    }
+    const crate = platformCrate(state);
+    if (crate) {
+      drawPixelSprite(ctx, "crate", crate.x, crate.y, 2);
+      const recipe = room.recipes[0];
+      rectangle(ctx, "#e8b65c", recipe.rail.min, 286, recipe.rail.max - recipe.rail.min + recipe.width, 2);
+      drawPixelSprite(ctx, "plate", recipe.target, 280, 2);
+    }
+    const bridge = room.recipes?.find(recipe => recipe?.kind === "bridge");
+    if (bridge) {
+      drawPixelSprite(ctx, "receiver", bridge.receiver.x, bridge.receiver.y, 1, { active: platformRoomSolved(state) });
+      const remaining = Math.max(0, state.mechanisms[room.id][0].until - state.ticks) / bridge.duration;
+      rectangle(ctx, "#a4acc2", 112, 142, 32, 6);
+      rectangle(ctx, "#e8b65c", 112, 142, Math.min(1, remaining) * 32, 6);
+      if (!platformBridge(state)) for (let x = bridge.span.x; x < bridge.span.x + bridge.span.width; x += 24) {
+        rectangle(ctx, "#38434b", x, bridge.span.y, 16, 2);
+      }
+    }
+  }
+  for (const ladder of platformLadders(room)) {
+    const { x, top, bottom } = ladder;
+    rectangle(ctx, "#141827", x - 13, top, 6, bottom - top);
+    rectangle(ctx, "#141827", x + 9, top, 6, bottom - top);
+    rectangle(ctx, "#e8b65c", x - 11, top, 3, bottom - top);
+    rectangle(ctx, "#e8b65c", x + 11, top, 3, bottom - top);
+    for (let y = top + 4; y < bottom; y += 14) {
+      rectangle(ctx, "#141827", x - 10, y + 2, 23, 4);
+      rectangle(ctx, "#b87848", x - 10, y, 23, 3);
+    }
+  }
+  for (const hazard of room.hazards) {
+    rectangle(ctx, "#111c1b", hazard.x, 278, hazard.width, 42);
+    if (platformHazardActive(hazard, state.ticks ?? 0)) {
+      for (let offset = 0; offset < hazard.width; offset += 16) {
+        drawPixelSprite(ctx, "spikes", Math.min(hazard.x + offset, hazard.x + hazard.width - 16), 276, 1);
+      }
+    } else {
+      rectangle(ctx, "#a4acc2", hazard.x, 284, hazard.width, 4);
+    }
+    rectangle(ctx, "#141827", hazard.x - 12, 259, 8, 24);
+    rectangle(ctx, "#fff09b", hazard.x - 10, 261, 4, 12);
+    rectangle(ctx, "#db6656", hazard.x - 10, 277, 4, 4);
+  }
+  if (state.level) {
+    for (const door of room.connections) {
+      if (door.secret && !state.secrets.includes(room.id)) {
+        crack(ctx, door.x, door.y - 16); continue;
+      }
+      drawPixelDoor(ctx, door.x - 14, door.y - 22, { direction: door.direction, scale: 3, set,
+        open: door.target < room.id || platformRoomSolved(state, room) });
+    }
+    if (room.challenge && !platformRoomSolved(state, room)) {
+      for (const [index, point] of (room.challenges ?? [room.challenge]).entries()) {
+        if (state.activated?.includes(`${room.id}:${index}`)) continue;
+        const sprite = { switch: "lever", key: "key", jump: "bell", timing: "lever",
+          plate: "plate", crank: "lever", torch: "vase", runes: "crystal", crate: "plate", bridge: "lever" }[point.family];
+        drawPixelSprite(ctx, sprite, point.x - 6, point.y + (point.family === "plate" ? 22 : -4));
+        rectangle(ctx, "#a4acc2", point.x - 28, point.y + 20, 20, 14);
+        for (let line = 0; line < 3; line++) rectangle(ctx, "#38434b", point.x - 25, point.y + 23 + line * 3, 14, 1);
+      }
+      if (room.runeOrder) PLATFORM_RUNES.forEach(({ x }, i) => numberedRune(ctx, x, 266, i, state.runes.includes(i)));
+      if (room.flame && !state.flames.includes(room.id)) drawPixelSprite(ctx, "crystal", room.flame.x, room.flame.y, 1);
+    }
+    if (room.stash && !state.stashes.includes(room.id)) drawPixelSprite(ctx, "supply", room.stash.x, room.stash.y, 1);
+    if (room.arrowTrap) {
+      const trap = room.arrowTrap;
+      rectangle(ctx, state.trapTick !== null && state.ticks - state.trapTick < trap.delay ? "#fff09b" : "#db6656",
+        trap.plate.x, trap.plate.y, trap.plate.width, trap.plate.height);
+      rectangle(ctx, "#141827", trap.x, trap.y - 6, 12, 16);
+    }
+    const arrow = platformArrow(state), animal = platformAnimal(state);
+    if (arrow) projectile(ctx, arrow.x, arrow.y);
+    if (animal) drawPixelSprite(ctx, set[animal.kind], animal.x, animal.y, 1, { set });
+    if (room.decoy) drawPixelSprite(ctx, "lever", room.decoy.x - 6, room.decoy.y - 4, 2,
+      { active: state.spentDecoys.includes(room.id) });
+    if (room.treasure && !state.completed) reel(ctx, room.treasure.x + 9, room.treasure.y + 9);
+    if (room.pickup && state.health !== null && !state.collected.includes(state.room)) {
+      drawPixelSprite(ctx, "supply", room.pickup.x - 6, room.pickup.y - 4);
+    }
+    person(ctx, state.x, state.y);
+    return;
+  }
+  const doorOpen = state.room === 0 ? state.switchOn : state.room === 1 ? state.key : true;
+  drawPixelDoor(ctx, 590, 240, { open: Boolean(doorOpen), scale: 3, set });
+  if (state.room === 0) {
+    drawPixelSprite(ctx, "lever", 140, 156, 2, { active: state.switchOn });
+  } else if (state.room === 1 && !state.key) {
+    drawPixelSprite(ctx, "key", 344, 252);
+  } else if (state.room === 2) {
+    rectangle(ctx, "#a28a62", 500, 280, 50, 8);
+    if (!state.completed) reel(ctx, 528, 266);
+  }
+  person(ctx, state.x, state.y);
+}
+
+function drawInvestigation(ctx, state, images, set) {
+  backdrop(ctx, images[state.location === "foyer" ? "passage" : "interior"] ?? images.passage ?? images.interior, set);
+  if (state.location === "foyer") {
+    rectangle(ctx, "#141827", 104, 144, 88, 76);
+    rectangle(ctx, "#e8b65c", 108, 148, 80, 68);
+    rectangle(ctx, "#704333", 112, 152, 72, 60);
+    rectangle(ctx, "#326878", 116, 156, 64, 52);
+    drawPixelSprite(ctx, "bell", 126, 158, 3);
+    person(ctx, 230, 262, "caretaker", 3);
+    person(ctx, 450, 262, "repairer", 3);
+    drawPixelSprite(ctx, "crate", 382, 240, 3);
+    drawPixelSprite(ctx, "lever", 390, 228, 2);
+    drawPixelDoor(ctx, 530, 192, { set, scale: 6 });
+    rectangle(ctx, "#141827", 38, 224, 112, 40);
+    rectangle(ctx, "#db6656", 42, 228, 104, 8);
+    for (let x = 46; x < 142; x += 20) rectangle(ctx, "#e8b65c", x, 244, 12, 12);
+    rectangle(ctx, "#704333", 38, 264, 8, 24);
+    rectangle(ctx, "#704333", 142, 264, 8, 24);
+  } else if (state.location === "archive") {
+    rectangle(ctx, "#141827", 240, 120, 160, 168);
+    rectangle(ctx, "#b87848", 244, 124, 152, 164);
+    rectangle(ctx, "#323852", 252, 132, 136, 148);
+    for (let y = 160; y < 280; y += 36) {
+      for (let x = 260; x < 380; x += 14) {
+        rectangle(ctx, x % 3 ? "#704333" : "#326878", x, y - 22, 10, 22);
+        rectangle(ctx, "#e8b65c", x + 2, y - 18, 6, 2);
+      }
+      rectangle(ctx, "#e8b65c", 252, y, 136, 4);
+    }
+    if (!state.archiveOpen) {
+      drawPixelDoor(ctx, 272, 152, { open: false, scale: 6, set });
+    }
+    if (state.archiveOpen && !state.inventory.includes("key")) {
+      drawPixelSprite(ctx, "key", 292, 184, 3);
+    }
+    drawPixelSprite(ctx, "crate", 100, 240, 3);
+    drawPixelSprite(ctx, "reel", 108, 216, 2);
+    drawPixelSprite(ctx, "cobweb", 404, 136, 3);
+  } else {
+    rectangle(ctx, "#141827", 302, 260, 146, 28);
+    rectangle(ctx, "#b87848", 306, 260, 138, 8);
+    rectangle(ctx, "#704333", 312, 268, 8, 20);
+    rectangle(ctx, "#704333", 430, 268, 8, 20);
+    if (!state.completed) reel(ctx, 380, 246);
+    rectangle(ctx, "#141827", 78, 208, 84, 60);
+    rectangle(ctx, "#59617c", 82, 212, 76, 48);
+    drawPixelSprite(ctx, "reel", 70, 180, 3);
+    drawPixelSprite(ctx, "reel", 116, 180, 3);
+    rectangle(ctx, "#a4acc2", 156, 226, 20, 16);
+    rectangle(ctx, "#e8b65c", 86, 248, 8, 8);
+    rectangle(ctx, "#323852", 92, 268, 8, 20);
+    rectangle(ctx, "#323852", 144, 268, 8, 20);
+    if (!state.boothOpen) {
+      rectangle(ctx, "#859383", 274, 140, 8, 148);
+      rectangle(ctx, "#859383", 470, 140, 8, 148);
+      rectangle(ctx, "#859383", 274, 140, 204, 8);
+      for (let x = 290; x < 470; x += 25) rectangle(ctx, "#859383", x, 148, 4, 140);
+      drawPixelSprite(ctx, "key", 270, 218, 2);
+    }
+  }
+  person(ctx, 192, 262, "explorer", 3);
+}
+
+export function mount(container, { format, language = "en", seed = 1, backgrounds = {},
+  tier = "modest", weapon = "none", generatedInvestigation = false, paced = false, expanded = false, catalogue = false, decoys = false,
+  previewDungeonActions = [],
+  onFinish = () => {}, onError = () => {}, authoritative, helpText = [], onLeave, leaveLabel } = {}) {
+  if (!["platform", "investigation", "dungeon"].includes(format)) throw new RangeError("Unknown legend adventure format.");
+  if (!Array.isArray(previewDungeonActions) || previewDungeonActions.length > 1024 ||
+      previewDungeonActions.length && (format !== "dungeon" || authoritative)) {
+    throw new RangeError("Dungeon resume inputs are available only in the isolated preview.");
+  }
+  if (generatedInvestigation && (format !== "investigation" || authoritative)) {
+    throw new Error("Generated investigation is available only in the isolated preview.");
+  }
+  const generated = generatedInvestigation || isGeneratedInvestigation(authoritative?.contentVersion);
+  const liveDungeon = isDungeonSession(authoritative?.contentVersion);
+  const local = Boolean(authoritative?.local);
+  const livePlatform = isPlatformSession(authoritative?.contentVersion);
+  if (liveDungeon && (format !== "dungeon" || tier !== "modest" || weapon !== "none")) {
+    throw new Error("Live dungeon requires its canonical modest profile and equipment.");
+  }
+  if (generated && authoritative && (format !== "investigation" || tier !== "modest")) {
+    throw new Error("Live generated investigation requires its fixed modest profile.");
+  }
+  if (!Object.hasOwn(COPY, language)) throw new RangeError("Unknown legend adventure language.");
+  const doc = container.ownerDocument;
+  const win = doc.defaultView;
+  const copy = COPY[language];
+  const art = pixelSet(seed);
+  const root = doc.createElement("section");
+  root.className = "legend-game";
+  root.dataset.format = format;
+  const listeners = [];
+  function listen(target, event, callback) {
+    target.addEventListener(event, callback);
+    listeners.push(() => target.removeEventListener(event, callback));
+  }
+  function transientEvents() {
+    const cleanup = [];
+    const clear = () => cleanup.splice(0).forEach(remove => remove());
+    listeners.push(clear);
+    return { clear, listen(node, type, callback) {
+      node.addEventListener(type, callback);
+      cleanup.push(() => node.removeEventListener(type, callback));
+    } };
+  }
+  function element(tag, text, parent = root) {
+    const node = doc.createElement(tag);
+    if (text) node.textContent = text;
+    parent.append(node);
+    return node;
+  }
+  function button(text, callback, parent = root) {
+    const node = element("button", text, parent);
+    node.type = "button";
+    listen(node, "click", callback);
+    return node;
+  }
+  function graphicalInventory(onItem) {
+    const events = transientEvents();
+    const tray = element("section");
+    tray.className = "legend-inventory";
+    tray.setAttribute("aria-label", copy.inventory);
+    element("h3", copy.inventory, tray);
+    const list = element("ul", undefined, tray);
+    const empty = element("p", copy.empty, tray);
+    empty.className = "legend-inventory-empty";
+    return items => {
+      events.clear();
+      list.replaceChildren();
+      empty.hidden = items.length > 0;
+      list.hidden = items.length === 0;
+      for (const { label, sprite, index } of items) {
+        const slot = element("li", undefined, list);
+        slot.setAttribute("tabindex", "0");
+        slot.setAttribute("aria-label", label);
+        if (onItem) {
+          slot.setAttribute("role", "button");
+          events.listen(slot, "click", () => onItem(index));
+          events.listen(slot, "keydown", event => {
+            if (!["Enter", " "].includes(event.key)) return;
+            event.preventDefault(); event.stopPropagation(); onItem(index);
+          });
+        }
+        const icon = element("canvas", undefined, slot);
+        icon.width = 32; icon.height = 32;
+        icon.setAttribute("style", "width:32px;height:32px;max-width:32px;max-height:32px;flex:0 0 32px");
+        icon.setAttribute("aria-hidden", "true");
+        const context = icon.getContext("2d");
+        if (!context) throw new Error("Inventory rendering is unavailable.");
+        drawPixelSprite(context, sprite, 8, 8, 1, { set: art });
+        const tooltip = element("span", label, slot);
+        tooltip.className = "legend-inventory-tooltip";
+        tooltip.setAttribute("aria-hidden", "true");
+      }
+    };
+  }
+  function shortcut(node, label, key, display = key) {
+    node.textContent = label;
+    node.setAttribute("aria-keyshortcuts", key);
+    const hint = element("kbd", ` (${display})`, node);
+    hint.setAttribute("aria-hidden", "true");
+    node.setAttribute("aria-label", `${label} (${display})`);
+    return node;
+  }
+  function directions(parent, callback) {
+    const pad = element("div", undefined, parent);
+    pad.className = "legend-dpad";
+    pad.setAttribute("role", "group");
+    pad.setAttribute("aria-label", copy.movement);
+    const nodes = new Map();
+    for (const [direction, key, symbol] of [
+      ["up", "ArrowUp", "\u2191"], ["left", "ArrowLeft", "\u2190"],
+      ["down", "ArrowDown", "\u2193"], ["right", "ArrowRight", "\u2192"],
+    ]) {
+      const node = shortcut(button(copy.directions[direction], () => callback(direction), pad),
+        copy.directions[direction], key, symbol);
+      node.className = "legend-control";
+      node.dataset.direction = direction;
+      nodes.set(direction, node);
+    }
+    return nodes;
+  }
+  const heading = element("h2", copy[format]);
+  const help = doc.createElement("dialog");
+  help.className = "legend-help";
+  help.dataset.customHelp = "true";
+  help.setAttribute("aria-label", copy.helpTitle);
+  help.setAttribute("data-native-controls", "");
+  const helpButton = shortcut(button(copy.helpTitle, () => help.showModal()), copy.helpTitle, "H");
+  helpButton.className = "legend-help-button";
+  helpButton.dataset.legendAction = "help";
+  element("h2", copy.helpTitle, help);
+  const closeHelp = shortcut(button(copy.helpClose, () => help.close(), help), copy.helpClose, "Escape");
+  closeHelp.dataset.legendAction = "help-close";
+  listen(help, "keydown", event => event.stopPropagation());
+  listen(help, "keyup", event => event.stopPropagation());
+  listen(help, "close", () => { canvas.focus?.(); });
+  listen(root, "keydown", event => {
+    if (event.key.toLowerCase() !== "h" || event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (!help.open) help.showModal();
+  });
+  element("p", isTreasureSession(authoritative?.contentVersion) ? language === "fr"
+    ? "Retrouvez le souvenir caché au bout des huit salles. Observez les passages, les mécanismes et les indices."
+    : "Recover the hidden memento beyond the eight rooms. Watch the passages, mechanisms and clues."
+    : expanded ? `${language === "fr" ? "Simulation sans effets sur le voyage." : "Simulation without journey effects."} ${copy.treasureHelp[format]}` :
+    livePlatform ? copy.platformLiveHelp : liveDungeon ? copy[local ? "dungeonLocalHelp" : "dungeonLiveHelp"] :
+    generated ? INVESTIGATION_COPY[language][local ? "localHelp" : authoritative ? "liveHelp" : "help"] : copy[`${format}Help`], help);
+  if (isTreasureSession(authoritative?.contentVersion)) element("p", copy.treasureHelp[format], help);
+  const encounter = ENCOUNTER_COPY[language];
+  if (expanded || isExpandedLegendSession(authoritative?.contentVersion)) {
+    element("p", encounter.help, help);
+    element("p", encounter[`${format}Help`], help);
+  }
+  if (catalogue || isCatalogueLegendSession(authoritative?.contentVersion)) {
+    element("p", Object.values(MECHANISMS).filter(definition => definition.formats.includes(format))
+      .map(definition => definition.help[language]).join(" "), help);
+  }
+  if (decoys || hasDecoyLevers(authoritative?.contentVersion)) element("p", DECOY_COPY[language].help, help);
+  for (const paragraph of helpText) element("p", paragraph, help);
+  if (onLeave) {
+    const leave = button(leaveLabel, onLeave, help);
+    leave.dataset.legendAction = "leave";
+    leave.disabled = Boolean(authoritative?.disabled);
+  }
+  if (hasDungeonFood(authoritative?.contentVersion)) element("p", copy.dungeonFoodHelp, help);
+  const pacing = element("p", undefined, help);
+  pacing.className = "legend-pacing";
+  const introduction = generated ? element("p") : null;
+  if (introduction) introduction.className = "legend-site-introduction";
+  const objective = generated ? element("p") : null;
+  if (objective) objective.className = "legend-site-objective";
+  const sceneBubble = generated ? element("p") : null;
+  const stage = generated ? element("div") : null;
+  if (stage) stage.className = "legend-point-scene";
+  const canvas = element("canvas", undefined, stage ?? root);
+  canvas.width = format === "dungeon" ? 360 : WIDTH;
+  canvas.height = format === "dungeon" ? 280 : HEIGHT;
+  canvas.setAttribute("role", "img");
+  canvas.setAttribute("aria-label", copy.scene);
+  canvas.tabIndex = format === "investigation" ? -1 : 0;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas rendering is unavailable.");
+  ctx.imageSmoothingEnabled = false;
+  const inscription = element("aside");
+  inscription.className = "legend-inscription";
+  element("h3", copy.inscription, inscription);
+  const inscriptionText = element("p", undefined, inscription);
+  inscription.hidden = format === "investigation";
+  const status = element("p");
+  status.setAttribute("role", "status");
+  const receipt = element("p");
+  receipt.className = "legend-receipt";
+  receipt.setAttribute("role", "status");
+  receipt.hidden = true;
+  const accounting = element("p", undefined, help);
+  accounting.className = "legend-accounting";
+  const symbols = element("details", undefined, help);
+  symbols.className = "legend-symbols";
+  element("summary", `${copy.symbols} — ${copy.artSets[art.id]}`, symbols);
+  const symbolList = element("div", undefined, symbols);
+  for (const [name, label] of [
+    ["doorOpen", copy.spriteNames.door], ["doorClosed", copy.spriteNames.lockedDoor],
+    ["key", copy.spriteNames.key], ["lever", copy.spriteNames.lever],
+    ...(format === "dungeon" ? [[art.bat, copy.spriteNames.bat], [art.rat, copy.spriteNames.rat],
+      ["crate", copy.spriteNames.block], ["plate", copy.spriteNames.plate]] : []),
+    ...(format === "platform" ? [...(livePlatform ? [] : [["supply", copy.spriteNames.supply]]), ["bell", copy.spriteNames.bell]] : []),
+    ["reel", copy.spriteNames.treasure],
+    ...(format === "investigation" ? [] : [["spikes", copy.spriteNames.spikes]]),
+  ]) {
+    const item = element("span", undefined, symbolList);
+    const icon = element("canvas", undefined, item);
+    icon.width = icon.height = 32;
+    icon.setAttribute("aria-hidden", "true");
+    const iconContext = icon.getContext("2d");
+    if (!iconContext) throw new Error("Sprite key rendering is unavailable.");
+    if (name === "doorOpen" || name === "doorClosed") {
+      drawPixelDoor(iconContext, 0, 0, { set: art, open: name === "doorOpen" });
+    } else drawPixelSprite(iconContext, name, 0, 0, 2, { set: art });
+    element("span", label, item);
+  }
+  let level = format === "platform" ? generatePlatformLevel({ seed, tier, paced, expanded, catalogue, decoys, varied: !authoritative }) :
+    format === "dungeon" ? generateDungeon({ seed, tier, paced, expanded, catalogue }) :
+    generated ? generateInvestigation({ seed, tier, paced, expanded, catalogue, decoys }) : null;
+  if (authoritative && format !== "investigation" && !liveDungeon && !livePlatform) throw new Error("Unsupported live adventure.");
+  let state = format === "platform" ? livePlatform ? replayLegendSession({ ...authoritative, seed }) : createPlatformer({ level }) :
+    format === "dungeon" ? liveDungeon ? replayLegendSession({ ...authoritative, seed }) : createDungeon({ level, weapon }) :
+    generated ? authoritative ? replayLegendSession({ contentVersion: authoritative.contentVersion,
+      seed, actions: authoritative.actions }) : createGeneratedInvestigation({ level }) :
+    authoritative ? replayInvestigation(authoritative.actions) : createInvestigation();
+  if (authoritative && state.level) level = state.level;
+  for (const action of previewDungeonActions) state = stepDungeon(state, action);
+  let shownTrapHits = state.metrics.trapHits;
+  let shownWrongAttempts = state.metrics.wrongAttempts ?? 0;
+  let shownMetrics = state.metrics;
+  const impact = element("div", undefined, stage ?? root);
+  impact.className = "legend-impact";
+  impact.setAttribute("role", "alert");
+  impact.hidden = true;
+  const impactTitle = element("strong", undefined, impact);
+  const impactCosts = element("span", undefined, impact);
+  let trapFlashTimer = null;
+  let impactTimer = null;
+  let trapFlashSerial = 0;
+  listeners.push(() => clearTimeout(trapFlashTimer));
+  listeners.push(() => clearTimeout(impactTimer));
+  let images = backgrounds;
+  let redraw = () => {};
+  let reported = false;
+  let destroyed = false;
+  let frame = null;
+  function localInput(input) {
+    try {
+      const result = authoritative.onAction(input);
+      state = result.progress;
+      authoritative.health = result.state.health;
+      authoritative.foodKcal = result.foodKcal;
+      authoritative.status = result.interrupted ? "interrupted" : state.completed ? "completed" : "active";
+    } catch (error) {
+      authoritative.disabled = true;
+      receipt.hidden = false;
+      receipt.setAttribute("role", "alert");
+      receipt.textContent = `${language === "fr" ? "Erreur" : "Error"}: ${error.message}`;
+      onError(error);
+    }
+  }
+  function showAccounting() {
+    const trapHit = state.metrics.trapHits > shownTrapHits;
+    const jammed = state.message === "decoyMistake" && (state.metrics.wrongAttempts ?? 0) > shownWrongAttempts;
+    if (trapHit || jammed) {
+      const costs = metrics => {
+        const raw = encounterCosts(metrics);
+        return authoritative?.costModifier ? authoritative.costModifier(raw) : raw;
+      };
+      const before = costs(shownMetrics), after = costs(state.metrics);
+      impactTitle.textContent = language === "fr"
+        ? trapHit ? "PIÈGE DÉCLENCHÉ !" : "MÉCANISME BLOQUÉ !"
+        : trapHit ? "TRAP TRIGGERED!" : "MECHANISM JAMMED!";
+      impactCosts.textContent = language === "fr"
+        ? `+${after.minutes - before.minutes} min · +${after.fatigue - before.fatigue} fatigue · −${after.health - before.health} santé`
+        : `+${after.minutes - before.minutes} min · +${after.fatigue - before.fatigue} fatigue · −${after.health - before.health} health`;
+      impact.dataset.kind = trapHit ? "trap" : "mistake";
+      impact.hidden = false;
+      clearTimeout(impactTimer);
+      impactTimer = setTimeout(() => { impact.hidden = true; }, 3000);
+      canvas.dataset.trapFlash = ++trapFlashSerial % 2 ? "a" : "b";
+      clearTimeout(trapFlashTimer);
+      trapFlashTimer = setTimeout(() => { canvas.dataset.trapFlash = ""; }, 1400);
+    }
+    shownTrapHits = state.metrics.trapHits;
+    shownWrongAttempts = state.metrics.wrongAttempts ?? 0;
+    shownMetrics = state.metrics;
+    const beat = state.level?.rooms[state.room]?.pacing;
+    pacing.hidden = !beat;
+    pacing.textContent = beat ? copy.pacing[beat.stage] : "";
+    if (format === "dungeon" && !liveDungeon) {
+      accounting.textContent = copy.dungeonAccounting(state.metrics);
+      return;
+    }
+    const rawCosts = encounterCosts(state.metrics);
+    const costs = authoritative?.costModifier ? authoritative.costModifier(rawCosts) : rawCosts;
+    const label = authoritative
+      ? local ? language === "fr" ? "Coûts locaux à valider (survie incluse)" : "Local costs awaiting settlement (survival included)" :
+        language === "fr" ? "Coûts de l'aventure appliqués (survie en supplément)"
+        : "Adventure charges applied (survival also applies)"
+      : language === "fr" ? "Bilan provisoire, non appliqué" : "Provisional costs, not applied";
+    accounting.textContent = language === "fr"
+      ? `${label} : ${state.metrics.roomEntries} entrées (${state.metrics.roomsVisited.length} salles différentes), ${state.metrics.trapHits} pièges. ${costs.minutes} min, ${costs.fatigue} fatigue, ${costs.health} santé perdue, ${costs.dirt} saleté.`
+      : `${label}: ${state.metrics.roomEntries} entries (${state.metrics.roomsVisited.length} distinct rooms), ${state.metrics.trapHits} traps. ${costs.minutes} min, ${costs.fatigue} fatigue, ${costs.health} health lost, ${costs.dirt} dirt.`;
+    if (state.metrics.creatureHits !== undefined) accounting.textContent += ` ${copy.dungeonHits(state.metrics.creatureHits)}`;
+    if (state.metrics.wrongAttempts !== undefined) accounting.textContent += language === "fr"
+      ? ` Erreurs : ${state.metrics.wrongAttempts}. Caches à rapporter : ${state.stashes.length}.`
+      : ` Mistakes: ${state.metrics.wrongAttempts}. Stashes to carry out: ${state.stashes.length}.`;
+  }
+  function finish() {
+    if ((state.completed || local && authoritative.status === "interrupted") && !reported) {
+      reported = true;
+      receipt.hidden = false;
+      receipt.textContent = local ? language === "fr" ? "Essai arrêté. Validation des effets du voyage…" : "Attempt stopped. Settling journey effects…" :
+        authoritative ? liveDungeon ? copy.dungeonLiveComplete :
+          language === "fr" ? "Enquête terminée. Aucun trésor attribué." : "Investigation complete. No treasure awarded."
+        : copy.completed;
+      if (local) { onFinish({ completed: state.completed }); return; }
+      if (authoritative) return;
+      onFinish({ completed: true, format, legendId: "last-screening", preview: true,
+        metrics: state.metrics, costs: format === "dungeon" ? null : adventureCosts(state.metrics) });
+    }
+  }
+  if (generated) {
+    const original = INVESTIGATION_COPY[language];
+    const expanded = level.version >= 3;
+    const mechanismCopy = MECHANISM_COPY[language];
+    const c = expanded ? { ...original, families: { ...original.families, ...encounter.families },
+      messages: { ...original.messages, ...encounter.messages, complete: language === "fr" ? "Le trésor est retrouvé." : "The treasure is found.",
+        wrong: language === "fr" ? "L'indice ne correspond pas." : "The evidence does not fit." },
+      hints: { ...original.hints, ...encounter.hints } } : original;
+    if (level.version >= 4) {
+      Object.assign(c.families, mechanismCopy.families);
+      Object.assign(c.messages, mechanismCopy.messages);
+      for (const kind of ["tool", "repair", "overlay"]) c.hints[kind] = MECHANISMS[kind].help[language];
+    }
+    const progress = element("p");
+    const navigation = element("nav");
+    navigation.setAttribute("aria-label", c.title);
+    const previous = shortcut(button(c.previous, () => travel(state.room - 1), navigation), c.previous, "[");
+    const next = shortcut(button(c.next, () => travel(state.room + 1), navigation), c.next, "]");
+    previous.dataset.legendAction = "previous";
+    next.dataset.legendAction = "next";
+    const evidence = element("p");
+    const point = mechanismCopy.point;
+    element("p", point.help, help);
+    const hotspots = element("div", undefined, stage);
+    hotspots.className = "legend-hotspots";
+    const bubble = sceneBubble;
+    bubble.className = "legend-scene-bubble";
+    bubble.setAttribute("role", "status");
+    bubble.setAttribute("aria-live", "polite");
+    bubble.hidden = true;
+    function sceneFeedback(text) {
+      status.textContent = text;
+      bubble.textContent = text;
+      bubble.hidden = !text;
+    }
+    const contextMenu = element("div");
+    const sceneEvents = transientEvents(), menuEvents = transientEvents();
+    contextMenu.className = "legend-context";
+    contextMenu.setAttribute("role", "group");
+    contextMenu.hidden = true;
+    const selectionText = element("p");
+    selectionText.className = "legend-selection";
+    selectionText.setAttribute("role", "status");
+    selectionText.hidden = true;
+    let selected = null;
+    let returnFocus = null;
+    const renderInventory = graphicalInventory(inventoryItem);
+    const puzzleProgress = element("p");
+    puzzleProgress.hidden = true;
+    const actions = element("div");
+    actions.className = "legend-actions";
+    const actionButtons = Array.from({ length: 5 }, (_, i) => button("", () => act(i), actions));
+    const hint = element("p", undefined, help);
+    hint.setAttribute("role", "status");
+    const hintButton = shortcut(button(copy.hint, () => {
+      const step = generatedInvestigationHint(state);
+      hint.textContent = c.hints[step];
+      if (["choose", "sequence", "seal"].includes(step)) hint.textContent += ` ${evidence.textContent}`;
+    }, help), copy.hint, "I");
+    hintButton.dataset.legendAction = "hint";
+    const stopped = () => state.completed || help.open ||
+      Boolean(authoritative && (authoritative.disabled || authoritative.status !== "active"));
+    function cancelSelection() {
+      selected = null;
+      selectionText.hidden = true;
+      contextMenu.hidden = true;
+      menuEvents.clear();
+      contextMenu.replaceChildren();
+    }
+    function command(value) {
+      if (stopped() || !investigationCommands(state).includes(value) &&
+          !(value === "decoy:pull" && level.rooms[state.room].decoy)) return;
+      cancelSelection();
+      submit({ type: "act", command: value });
+    }
+    function menu(label, entries) {
+      if (stopped()) return;
+      returnFocus = doc.activeElement;
+      menuEvents.clear();
+      contextMenu.replaceChildren();
+      contextMenu.setAttribute("aria-label", label);
+      element("strong", label, contextMenu);
+      for (const [verb, callback] of [...entries, [point.cancel, () => {
+        cancelSelection(); returnFocus?.focus?.();
+      }]]) {
+        const node = element("button", verb, contextMenu);
+        node.type = "button";
+        menuEvents.listen(node, "click", () => { if (!stopped()) callback(); });
+      }
+      contextMenu.hidden = false;
+      contextMenu.children[1]?.focus?.();
+    }
+    function inventoryItem(index) {
+      const room = level.rooms[state.room], progress = state.progress[state.room];
+      if (stopped() || !room.recipe && room.family !== "assembly") return;
+      const supplies = room.family === "assembly" ? c.parts[room.variant] :
+        room.family === "tool" ? mechanismCopy.tools : mechanismCopy.parts[room.family];
+      const itemLabel = room.family === "repair" && progress.mechanism.assembled ||
+        room.family === "overlay" && progress.mechanism.revealed
+        ? mechanismCopy.combined[room.family] : supplies[index];
+      if (selected) {
+        if (selected.mode === "combine" && selected.index !== index && room.family !== "tool") command("combine");
+        else { cancelSelection(); sceneFeedback(point.noMatch); }
+        return;
+      }
+      const select = mode => {
+        contextMenu.hidden = true;
+        returnFocus?.focus?.();
+        selected = { index, mode };
+        selectionText.hidden = false;
+        selectionText.textContent = mode === "combine" ? point.combineWith(itemLabel) : point.useWith(itemLabel);
+      };
+      menu(itemLabel, [
+        [point.examine, () => {
+          contextMenu.hidden = true;
+          sceneFeedback(room.family === "overlay" && progress.mechanism.revealed
+            ? mechanismCopy.overlayReading(c.symbols[room.variant][room.answer]) : itemLabel);
+          returnFocus?.focus?.();
+        }],
+        ...(progress.solved || progress.resolved || room.family === "overlay" && progress.mechanism.revealed ? [] :
+          room.family === "tool" || room.family === "repair" && progress.mechanism.assembled
+          ? [[point.use, () => select("use")]] : [[point.combine, () => select("combine")]]),
+      ]);
+    }
+    function targetItem() {
+      const room = level.rooms[state.room], current = state.progress[state.room];
+      if (stopped() || current.solved) return;
+      if (selected) {
+        if (selected.mode === "use" && room.family === "tool") command(`use:${selected.index}`);
+        else if (selected.mode === "use" && room.family === "repair") command("install");
+        else if (selected.mode === "combine" && room.family === "assembly") command("combine");
+        else { cancelSelection(); sceneFeedback(point.noMatch); }
+        return;
+      }
+      const entries = current.resolved ? [0, 1, 2].map(i => [
+        `${c.verify}: ${c.symbols[level.rooms[room.reference].variant][i]}`, () => command(`verify:${i}`),
+      ]) : room.family === "overlay" && current.mechanism.revealed ? [
+        [point.examine, () => {
+          contextMenu.hidden = true;
+          sceneFeedback(mechanismCopy.overlayReading(c.symbols[room.variant][room.answer]));
+          returnFocus?.focus?.();
+        }],
+        ...[0, 1, 2].map(i => [
+        `${c.choose}: ${c.symbols[room.variant][i]}`, () => command(`choose:${i}`),
+      ])] : room.family === "assembly" ? [
+        [point.examine, () => {
+          contextMenu.hidden = true; sceneFeedback(c.families.assembly[room.variant]); returnFocus?.focus?.();
+        }],
+        ...(current.parts.length === 2 ? [[point.combine, () => command("combine")]] : []),
+      ] : [
+        [point.examine, () => {
+          if (investigationCommands(state).includes("inspect")) command("inspect");
+          else {
+            contextMenu.hidden = true; sceneFeedback(mechanismCopy.overlayClue); returnFocus?.focus?.();
+          }
+        }],
+        ...(room.family === "repair" && current.mechanism.assembled ? [[mechanismCopy.install, () => command("install")]] : []),
+      ];
+      menu(point.target[room.family] ?? c.families[room.family][room.variant], entries);
+    }
+    function hotspot(id, label, box, callback, disabled = false) {
+      const node = element("button", undefined, hotspots);
+      node.type = "button";
+      node.className = "legend-hotspot";
+      node.dataset.hotspot = id;
+      node.setAttribute("aria-label", label);
+      node.setAttribute("style", `left:${box.x / 6.4}%;top:${box.y / 3.2}%;width:${box.width / 6.4}%;height:${box.height / 3.2}%`);
+      node.disabled = disabled;
+      element("span", label, node);
+      const describe = () => {
+        if (!selected) return;
+        const room = level.rooms[state.room], items = room.family === "assembly" ? c.parts[room.variant] :
+          room.family === "tool" ? mechanismCopy.tools : mechanismCopy.parts[room.family];
+        const selectedLabel = room.family === "repair" && state.progress[state.room].mechanism.assembled
+          ? mechanismCopy.combined.repair : items[selected.index];
+        selectionText.textContent = point.with(selectedLabel, label);
+      };
+      sceneEvents.listen(node, "pointerenter", describe);
+      sceneEvents.listen(node, "focus", describe);
+      sceneEvents.listen(node, "click", () => { if (!stopped() && !node.disabled) callback(); });
+    }
+    listen(canvas, "click", cancelSelection);
+    listen(root, "keydown", event => {
+      if (event.key === "Escape") {
+        cancelSelection(); returnFocus?.focus?.();
+        event.preventDefault(); event.stopPropagation();
+      }
+    });
+    function submit(action) {
+      cancelSelection();
+      impact.hidden = true;
+      returnFocus = canvas;
+      if (authoritative) {
+        if (!authoritative.disabled && authoritative.status === "active") {
+          if (local) { localInput(action); hint.textContent = ""; render(); canvas.focus?.(); }
+          else authoritative.onAction(action);
+        }
+        return;
+      }
+      state = stepInvestigation(state, action);
+      hint.textContent = "";
+      render();
+      canvas.focus?.();
+    }
+    function travel(room) {
+      submit({ type: "travel", room });
+    }
+    function act(index) {
+      const command = investigationCommands(state)[index];
+      if (!command || state.completed) return;
+      submit({ type: "act", command });
+    }
+    function render() {
+      const room = level.rooms[state.room], current = state.progress[state.room];
+      const scene = investigationScene(seed, state.room);
+      const symbols = c.symbols[room.variant], supplies = room.recipe
+        ? room.family === "tool" ? mechanismCopy.tools : mechanismCopy.parts[room.family]
+        : c.parts[room.variant], controls = c.controls[room.variant];
+      introduction.textContent = `${scene[language]}. ${c.introductions[room.family][room.variant]}`;
+      if (room.concealed && !current.revealed) introduction.textContent = `${scene[language]}. ${
+        language === "fr" ? "Trois panneaux de bois recouvrent le mur." : "Three wooden panels cover the wall."}`;
+      const sealPending = current.resolved && !current.solved && room.seal !== undefined;
+      const objectiveKey = state.completed ? "complete" : current.solved ? "next" :
+        sealPending ? "seal" : room.concealed && !current.revealed ? "secret" :
+        room.family === "repair" && !current.inspected ? "repairPlan" :
+        room.family === "repair" && current.mechanism.assembled ? "install" :
+        room.family === "overlay" && current.mechanism.revealed ? "overlay" :
+        ["repair", "overlay", "assembly"].includes(room.family) ? current.parts.length === 2 ? "assemble" : "parts" :
+        room.family === "witnesses" ? current.witnesses.length === 2 ? "answer" : "witnesses" :
+        room.family === "exchange" ? "exchange" :
+        room.family === "tool" && current.inspected ? "tool" :
+        current.inspected && ["sequence", "alignment"].includes(room.family) ? room.family :
+        current.inspected || current.branches?.length === 2 ? "answer" : "inspect";
+      let objectiveText = c.objectives[objectiveKey];
+      if (sealPending) {
+        const reference = level.rooms[room.reference], marks = c.symbols[reference.variant];
+        objectiveText += ` ${c.sealContext(reference.id + 1, marks[reference.answer], marks, room.shift)}`;
+      }
+      objective.textContent = `${c.objectives.label} : ${objectiveText}`;
+      objective.hidden = !sealPending && !current.solved && !state.completed;
+      heading.textContent = `${c.title} — ${c.site} ${state.room + 1}/${level.rooms.length}: ${c.families[room.family][room.variant]}`;
+      progress.textContent = authoritative
+        ? `${c.liveProgress}: ${state.progress.filter(entry => entry.solved).length}/${level.rooms.length}`
+        : `${copy.tiers[tier]}: ${level.rooms.length} ${copy.rooms}, ${copy.rewardBudget} ${level.rewardBudget}/3 | ${state.progress.filter(entry => entry.solved).length}/${level.rooms.length}`;
+      sceneFeedback(state.message.startsWith("decoy") ? DECOY_COPY[language][{
+        decoyTrap: "trap", decoyMistake: "mistake", decoySpent: "spent",
+      }[state.message]] : state.message === "needParts" && room.family === "repair" && current.parts.length === 2
+        ? mechanismCopy.messages[current.inspected ? "assembleRepair" : "inspectRepair"] : c.messages[state.message]);
+      if (state.message === "arrival") sceneFeedback(introduction.textContent);
+      if (["sealReady", "wrongSeal"].includes(state.message)) {
+        sceneFeedback(`${c.messages[state.message]} ${objectiveText}`);
+      }
+      if (state.message === "overlayRevealed") sceneFeedback(mechanismCopy.overlayReading(symbols[room.answer]));
+      const clues = [];
+      if (room.recipe) {
+        clues.push(MECHANISMS[room.family].clue[language]);
+        if (current.inspected && room.family === "tool") clues.push(mechanismCopy.toolClue(mechanismCopy.shapes[room.answer]));
+        if (current.inspected && room.family === "repair") clues.push(mechanismCopy.repairClue);
+        if (room.family === "overlay") clues.push(current.mechanism.revealed
+          ? mechanismCopy.revealed(symbols[room.answer]) : mechanismCopy.overlayClue);
+        if ((current.resolved || current.solved) && room.family !== "overlay") clues.push(mechanismCopy.revealed(symbols[room.answer]));
+      }
+      if (room.concealed && !current.revealed) {
+        if (current.inspected) clues.push(encounter.secretClue(encounter.panel[room.order[0]]));
+      } else if (expanded) {
+        if (current.inspected && room.family === "cipher") clues.push(encounter.cipherClue(symbols, room));
+        if (room.family === "deduction") for (const branch of current.branches) {
+          clues.push(encounter.deductionClue(symbols[(room.answer + 1 + branch) % 3]));
+        }
+        if (current.inspected && room.family === "exchange") clues.push(encounter.exchangeClue(supplies[room.variant], symbols[room.answer]));
+        if (current.inspected && room.family === "alignment") clues.push(encounter.alignmentClue(room.order.map(i => symbols[i])));
+        if (room.family === "witnesses") clues.push(c.witness.map((name, i) =>
+          `${name}: ${investigationWitnessPresent(state, i) ? encounter.present : encounter.away}`).join("; "));
+      }
+      if (current.inspected && room.family === "evidence") clues.push(c.evidence(room.variant, symbols[room.answer]));
+      if (current.inspected && room.family === "sequence") clues.push(c.sequenceClue(room.order.map(index => controls[index])));
+      if (room.family === "witnesses") {
+        for (const witness of current.witnesses) clues.push(c.witnessText(room.variant, witness, symbols[room.answer]));
+      }
+      if (room.seal !== undefined) {
+        const reference = level.rooms[room.reference];
+        const symbols = c.symbols[reference.variant];
+        clues.push(c.sealRule(room.reference + 1, symbols, room.shift));
+      }
+      if (level.version >= 2) {
+        const notes = level.rooms.filter(item => state.progress[item.id].solved)
+          .map(item => c.archiveEntry(item.id + 1, c.symbols[item.variant][item.answer]));
+        if (notes.length) clues.push(`${c.archive}: ${notes.join("; ")}.`);
+      }
+      evidence.textContent = `${c.clues}: ${clues.join(" ") || copy.empty}`;
+      if (state.message === "clue" || state.message.startsWith("witness:")) {
+        sceneFeedback(clues.filter(clue => !clue.startsWith(`${c.archive}:`)).join(" ") || status.textContent);
+      }
+      const sprites = room.family === "tool" ? ["roundKey", "squareKey", "starKey"] :
+        room.family === "repair" ? ["wheel", "axle"] :
+        room.family === "overlay" || room.variant === 1 ? ["document", room.family === "overlay" ? "document" : "paste"] :
+        ["handle", "oil"];
+      const used = ["repair", "assembly"].includes(room.family) && (current.solved || current.resolved);
+      const combined = room.family === "repair" && current.mechanism.assembled ||
+        room.family === "overlay" && current.mechanism.revealed;
+      renderInventory(used ? [] : combined ? [{
+        index: 0, label: mechanismCopy.combined[room.family],
+        sprite: room.family === "repair" ? "wheelAxle" : "document",
+      }] : current.parts.map(index => ({ index, label: supplies[index], sprite: sprites[index] })));
+      puzzleProgress.hidden = !["sequence", "alignment"].includes(room.family);
+      puzzleProgress.textContent = room.family === "sequence" ? `${c.step}: ${current.sequence.length}/${room.order.length}` :
+        room.family === "alignment" ? `${encounter.dials}: ${current.dials.map(i => symbols[i]).join(" · ")}` : "";
+      const disabled = state.completed || Boolean(authoritative && (authoritative.disabled || authoritative.status !== "active"));
+      navigation.hidden = true;
+      const pointEnabled = (!!room.recipe || room.family === "assembly") && (!room.concealed || current.revealed);
+      const spots = !pointEnabled ? [] : room.recipe ? investigationHotspots(room.recipe, current.mechanism, {
+        items: supplies, target: point.target[room.family],
+      }) : [
+        ...supplies.flatMap((label, index) => current.parts.includes(index) ? [] : [{
+          id: `item:${index}`, label, sprite: sprites[index], x: 72 + index * 64, y: 196,
+          width: 48, height: 48, command: `take:${index}`,
+        }]),
+        { id: "target", label: c.families.assembly[room.variant],
+          sprite: room.variant ? "document" : "crate", x: 328, y: 192, width: 48, height: 48 },
+      ];
+      actions.hidden = true;
+      const sceneControls = new Map();
+      const runCommand = command;
+      previous.disabled = disabled || state.room === 0;
+      next.disabled = disabled || state.room === level.rooms.length - 1 || !current.solved;
+      for (let index = 0; index < actionButtons.length; index++) {
+        const node = actionButtons[index], command = investigationCommands(state)[index];
+        node.hidden = command === undefined;
+        node.disabled = disabled || current.solved;
+        node.dataset.legendAction = `act:${command}`;
+        if (!command) continue;
+        const [type, indexText] = command.split(":"), item = Number(indexText);
+        const label = type === "search" ? `${encounter.search}: ${encounter.panel[item]}` :
+          type === "use" ? `${mechanismCopy.use}: ${supplies[item]}` :
+          type === "install" ? mechanismCopy.install :
+          type === "combine" && room.family === "overlay" ? mechanismCopy.align :
+          type === "rotate" ? `${encounter.rotate} ${item + 1} : ${symbols[current.dials[item]]}` :
+          type === "offer" ? `${encounter.offer}: ${symbols[item]}` :
+          type === "wait" ? encounter.wait :
+          type === "combine" && room.family === "alignment" ? encounter.test :
+          type === "inspect" && room.family === "deduction" && indexText !== undefined ? `${c.inspect} ${item + 1}` :
+          type === "verify" ? `${c.verify}: ${c.symbols[level.rooms[room.reference].variant][item]}` :
+          type === "inspect" ? c.inspect : type === "combine" ? c.combine :
+          type === "witness" ? c.witness[item] :
+          `${type === "choose" ? c.choose : type === "press" ? c.press : c.take}: ${type === "choose" ? symbols[item] : type === "press" ? controls[item] : supplies[item]}`;
+        shortcut(node, label, String.fromCharCode(65 + index));
+        if (room.recipe || pointEnabled || room.concealed && !current.revealed) continue;
+        const individual = ["witness", "press", "rotate", "take"].includes(type) ||
+          type === "inspect" && indexText !== undefined;
+        const id = individual ? command : type === "wait" ? "wait" : "puzzle";
+        if (!sceneControls.has(id)) {
+          const x = type === "witness" ? 320 + item * 80 :
+            ["press", "rotate"].includes(type) ? 300 + item * 56 :
+            individual ? 72 + item * 64 : type === "wait" ? 160 : 328;
+          const sprite = type === "witness" ? item ? "repairer" : "caretaker" :
+            type === "press" ? room.variant ? "bell" : "lever" :
+            type === "rotate" || type === "wait" ? "wheel" :
+            type === "take" ? sprites[item] :
+            ({ evidence: "books", exchange: "crate", alignment: "lever" })[room.family] ?? "document";
+          sceneControls.set(id, { id, x, y: individual || type === "wait" ? 196 : 128, width: 48, height: 48, sprite,
+            label: individual || type === "wait" ? label : c.families[room.family][room.variant], entries: [] });
+        }
+        sceneControls.get(id).entries.push([label, () => runCommand(command)]);
+      }
+      if (current.resolved && !current.solved && room.seal !== undefined) {
+        sceneControls.clear();
+        sceneControls.set("seal", { id: "seal", x: 328, y: 128, width: 48, height: 48,
+          sprite: "starKey", label: c.verify, entries: [0, 1, 2].map(index => [
+            `${c.verify}: ${c.symbols[level.rooms[room.reference].variant][index]}`,
+            () => command(`verify:${index}`),
+          ]) });
+      }
+      const sceneArt = drawInvestigationScenery(ctx, scene, {
+        image: images[scene.id] ?? images.interior ?? images.passage, variant: room.variant,
+      });
+      drawPixelDoor(ctx, 534, 192, { set: sceneArt, scale: 6, open: current.solved });
+      if (state.room > 0) drawPixelDoor(ctx, 8, 192, { set: sceneArt, scale: 3, open: true });
+      person(ctx, 220, 262, "explorer", 3);
+      if (room.concealed && !current.revealed) for (let i = 0; i < 3; i++) {
+        rectangle(ctx, "#704333", 290 + i * 66, 142, 52, 126);
+        if (i === room.order[0]) crack(ctx, 310 + i * 66, 186);
+      }
+      const concealed = room.concealed && !current.revealed;
+      if (!concealed) {
+        rectangle(ctx, "#141827", 300, 240, 160, 12);
+        rectangle(ctx, "#b87848", 304, 240, 152, 8);
+        rectangle(ctx, "#704333", 308, 252, 8, 36);
+        rectangle(ctx, "#704333", 440, 252, 8, 36);
+        if (pointEnabled) {
+          for (const spot of spots) drawPixelSprite(ctx, spot.sprite, spot.x, spot.y, 3, { active: current.solved });
+        }
+      }
+      for (const control of sceneControls.values()) {
+        drawPixelSprite(ctx, control.sprite, control.x, control.y, 3, { active: current.solved });
+        if (control.id.startsWith("rotate:")) {
+          const symbol = symbols[current.dials[Number(control.id.split(":")[1])]];
+          rectangle(ctx, "#141827", control.x - 4, control.y - 19, 56, 16);
+          ctx.fillStyle = "#fff09b";
+          ctx.font = "9px monospace";
+          ctx.fillText(symbol, control.x - 2, control.y - 7);
+        }
+      }
+      if (state.room === level.rooms.length - 1 && !state.completed) reel(ctx, 498, 266);
+      const lever = room.decoy ? { x: 472, y: 176 } : null;
+      if (lever) drawPixelSprite(ctx, "lever", lever.x, lever.y, 2,
+        { active: state.spentDecoys.includes(room.id) });
+      sceneEvents.clear();
+      hotspots.replaceChildren();
+      for (const control of sceneControls.values()) hotspot(`scene:${control.id}`, control.label, control, () => {
+        cancelSelection();
+        menu(control.label, control.entries);
+      }, disabled || current.solved);
+      if (room.concealed && !current.revealed) for (let index = 0; index < 3; index++) {
+        const label = `${encounter.search}: ${encounter.panel[index]}`;
+        hotspot(`panel:${index}`, label, { x: 290 + index * 66, y: 142, width: 52, height: 126 }, () => {
+          cancelSelection();
+          menu(encounter.panel[index], [
+            [point.examine, () => command("inspect")],
+            [encounter.search, () => command(`search:${index}`)],
+          ]);
+        }, disabled);
+      }
+      if (room.decoy) hotspot("decoy", DECOY_COPY[language].name,
+        { x: lever.x - 8, y: lever.y - 8, width: 48, height: 48 }, () => {
+          const d = DECOY_COPY[language];
+          cancelSelection();
+          menu(d.name, [
+            [d.examine, () => { contextMenu.hidden = true; sceneFeedback(d.description); returnFocus?.focus?.(); }],
+            [d.operate, () => command("decoy:pull")],
+          ]);
+        }, disabled);
+      if (state.room > 0) hotspot("previous", c.previous, { x: 4, y: 184, width: 52, height: 104 },
+        () => travel(state.room - 1), disabled);
+      if (state.room < level.rooms.length - 1) hotspot("next", c.next, { x: 530, y: 184, width: 104, height: 104 },
+        () => travel(state.room + 1), disabled || !current.solved);
+      if (pointEnabled) for (const spot of spots) hotspot(spot.id, spot.label, spot, spot.command ? () => {
+        if (selected) { cancelSelection(); sceneFeedback(point.noMatch); }
+        else command(spot.command);
+      } : targetItem, disabled || current.solved);
+      canvas.setAttribute("aria-label", `${scene[language]}. ${heading.textContent}. ${evidence.textContent}`);
+      showAccounting();
+      finish();
+    }
+    listen(root, "keydown", event => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
+      const key = event.key.toUpperCase();
+      const node = [...actionButtons, previous, next, hintButton]
+        .find(item => item.getAttribute("aria-keyshortcuts") === key);
+      if (!node || node.hidden || node.disabled) return;
+      if (node === hintButton) { event.preventDefault(); event.stopPropagation(); help.showModal(); node.click(); return; }
+      event.preventDefault();
+      event.stopPropagation();
+      node.click();
+    });
+    redraw = render;
+    render();
+  } else if (format === "investigation") {
+    const navigation = element("nav");
+    navigation.setAttribute("aria-label", copy.investigation);
+    const renderInventory = graphicalInventory();
+    const actions = element("div");
+    actions.className = "legend-actions";
+    const hint = element("p", undefined, help);
+    hint.setAttribute("role", "status");
+    const navButtons = new Map();
+    const actionButtons = new Map();
+    function render() {
+      heading.textContent = `${copy.investigation} - ${copy.locations[state.location]}`;
+      status.textContent = copy.messages[state.message];
+      renderInventory(state.inventory.map(item => ({ label: copy.items[item],
+        sprite: { handle: "handle", oil: "oil", key: "key" }[item] })));
+      for (const [location, node] of navButtons) {
+        node.setAttribute("aria-current", location === state.location ? "location" : "false");
+        node.disabled = state.completed || Boolean(authoritative && (authoritative.disabled || authoritative.status !== "active"));
+      }
+      for (const [target, node] of actionButtons) {
+        node.hidden = !INVESTIGATION_ACTIONS[state.location].includes(target);
+        node.disabled = state.completed || Boolean(authoritative && (authoritative.disabled || authoritative.status !== "active"));
+      }
+      drawInvestigation(ctx, state, images, art);
+      showAccounting();
+      finish();
+    }
+    function act(action) {
+      if (authoritative) { authoritative.onAction(action); return; }
+      state = investigate(state, action);
+      hint.textContent = "";
+      render();
+    }
+    for (const [index, location] of Object.keys(INVESTIGATION_ACTIONS).entries()) {
+      const node = button(copy.locations[location], () => act({ type: "travel", location }), navigation);
+      shortcut(node, copy.locations[location], String(index + 1));
+      node.dataset.legendAction = `travel:${location}`;
+      navButtons.set(location, node);
+    }
+    for (const [index, target] of Object.values(INVESTIGATION_ACTIONS).flat().entries()) {
+      const node = button(copy.actions[target], () => act({ type: "act", target }), actions);
+      shortcut(node, copy.actions[target], String.fromCharCode(65 + index));
+      node.dataset.legendAction = `act:${target}`;
+      actionButtons.set(target, node);
+    }
+    const hintButton = shortcut(button(copy.hint, () => {
+      hint.textContent = copy.hints[investigationHint(state)];
+    }, help), copy.hint, "I");
+    listen(root, "keydown", event => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
+      const key = event.key.toUpperCase();
+      const node = [...navButtons.values(), ...actionButtons.values(), hintButton]
+        .find(item => item.getAttribute("aria-keyshortcuts") === key);
+      if (!node || node.hidden || node.disabled) return;
+      if (node === hintButton) { event.preventDefault(); event.stopPropagation(); help.showModal(); node.click(); return; }
+      event.preventDefault();
+      event.stopPropagation();
+      node.click();
+    });
+    redraw = render;
+    render();
+  } else if (format === "dungeon") {
+    const progress = element("p");
+    const objective = element("p", undefined, help);
+    const controls = element("div");
+    controls.className = "legend-controls";
+    let paused = false;
+    const dungeonWeapon = state.weapon;
+    function act(type) {
+      if (help.open || paused || state.completed || state.failed || type === "attack" && dungeonWeapon === "none" ||
+          authoritative && (authoritative.disabled || authoritative.status !== "active")) return;
+      if (liveDungeon) {
+        if (local) { localInput({ type }); render(); }
+        else authoritative.onAction({ type });
+        return;
+      }
+      state = stepDungeon(state, { type });
+      render();
+    }
+    const pad = directions(controls, act);
+    for (const [direction, node] of pad) node.dataset.legendAction = direction;
+    const actions = element("div", undefined, controls);
+    actions.className = "legend-action-controls";
+    const interact = shortcut(button(copy.interact, () => act("interact"), actions), copy.interact, "E");
+    const attack = shortcut(button(copy.attack, () => act("attack"), actions), copy.attack, "X");
+    const wait = shortcut(button(copy.wait, () => act("wait"), actions), copy.wait, "Space", copy.space);
+    const retry = shortcut(button(copy.retry, () => { help.close(); act("retry"); }, help), copy.retry, "R");
+    for (const [node, action] of [[interact, "interact"], [attack, "attack"], [wait, "wait"], [retry, "retry"]]) {
+      node.dataset.legendAction = action;
+    }
+    const pause = shortcut(button(copy.pause, () => {
+      paused = !paused;
+      render();
+      canvas.focus?.();
+    }, controls), copy.pause, "P");
+    pause.dataset.legendAction = "pause";
+    pause.setAttribute("aria-pressed", "false");
+    const bindings = { ArrowUp: "up", ArrowRight: "right", ArrowDown: "down", ArrowLeft: "left",
+      e: "interact", E: "interact", x: "attack", X: "attack", " ": "wait", r: "retry", R: "retry" };
+    listen(root, "keydown", event => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
+      if (event.key === " " && event.target?.tagName === "BUTTON") return;
+      if (event.key.toLowerCase() === "p") {
+        event.preventDefault(); event.stopPropagation(); pause.click(); return;
+      }
+      if (!bindings[event.key]) return;
+      event.preventDefault();
+      event.stopPropagation();
+      act(bindings[event.key]);
+    });
+    const suspend = () => { if (!state.completed && !state.failed) { paused = true; render(); } };
+    listen(win, "blur", suspend);
+    listen(doc, "visibilitychange", () => { if (doc.hidden) suspend(); });
+    function render() {
+      heading.textContent = `${copy.dungeon} - ${copy.room} ${state.room + 1}/${level.rooms.length}`;
+      const room = level.rooms[state.room];
+      status.textContent = paused ? copy.paused :
+        MECHANISM_COPY[language].messages[state.message] || encounter.messages[state.message] || liveDungeon && copy.dungeonLiveHits[state.message] || copy.dungeonMessages[state.message];
+      if (!paused && state.message === "defeated" && hasDungeonFood(authoritative?.contentVersion)) {
+        status.textContent = copy.dungeonFoodDefeated(authoritative.foodKcal);
+      }
+      const mechanisms = dungeonMechanisms(room);
+      inscriptionText.textContent = mechanisms.map(mechanism =>
+        room.recipes?.[mechanism] ? MECHANISMS[mechanism].clue[language] :
+        (level.version >= 3 && mechanism !== "block" ? encounter.riddles[mechanism] : undefined) ??
+        copy.riddles[mechanism === "block" ? "plate" : mechanism === "spikes" ? "timing" : mechanism] ??
+        copy.riddles.final).join(" ");
+      if (room.runeOrder && mechanisms.includes("runes")) inscriptionText.textContent += ` ${encounter.runeRiddle(room.runeOrder)}`;
+      if (room.connections.some(door => door.secret)) inscriptionText.textContent += ` ${encounter.secretRiddle}`;
+      if (room.trap) inscriptionText.textContent += ` ${encounter.arrowRiddle}`;
+      const patrolling = room.creature && !state.defeated.includes(state.room);
+      objective.textContent = `${mechanisms.map(mechanism => room.mechanisms && ["switch", "key"].includes(mechanism)
+        ? copy.dungeonTarget(mechanism, dungeonTarget(room, mechanism)) :
+        room.recipes?.[mechanism] ? MECHANISMS[mechanism].help[language] :
+        copy.mechanisms[mechanism] ?? encounter.riddles[mechanism]).join(" ")} ${
+        patrolling ? (room.mechanisms ? copy.creatureNames : copy.creatures)[room.creature] : copy.noCreature}${
+        room.mechanisms && patrolling ? `; ${copy.patrols[room.patrol]}` : ""}. ${copy.exits}: ${room.connections.map(door =>
+        copy.directions[door.direction]).join(", ")}. ${copy.gate}: ${dungeonGateOpen(state) ? copy.open : copy.closed}`;
+      progress.textContent = liveDungeon
+        ? `${copy.health}: ${authoritative.health}/100 | ${copy.weapons[dungeonWeapon]} | ${level.rooms.length} ${copy.rooms}`
+        : `${copy.health}: ${state.health}/3 | ${copy.weapons[weapon]} | ${copy.tiers[tier]}: ${level.rooms.length} ${copy.rooms}, ${copy.rewardBudget} ${level.rewardBudget}/3`;
+      rectangle(ctx, "#15221d", 0, 0, WIDTH, HEIGHT);
+      const tile = 40, ox = 0, oy = 0;
+      const square = (color, x, y, inset = 2) =>
+        rectangle(ctx, color, ox + x * tile + inset, oy + y * tile + inset, tile - inset * 2, tile - inset * 2);
+      for (let y = 0; y < 7; y++) for (let x = 0; x < 9; x++) {
+        drawStoneTile(ctx, x * tile, y * tile, tile, x === 0 || x === 8 || y === 0 || y === 6,
+          (x + y + state.room) % 2 === 0, art);
+      }
+      if (images.interior) {
+        ctx.globalAlpha = .15;
+        ctx.drawImage(images.interior, ox + tile, oy + tile, tile * 7, tile * 5);
+        ctx.globalAlpha = 1;
+      }
+      for (const [x, y] of [[1, 0], [7, 0], [0, 5], [8, 1]]) {
+        drawPixelSprite(ctx, art.prop, x * tile + 4, y * tile + 4, 2, { set: art });
+      }
+      for (const door of room.connections) {
+        const [x, y] = DUNGEON_DIRECTIONS[door.direction].door;
+        if (door.secret && !state.secrets.includes(`${room.id}:${door.target}`)) {
+          crack(ctx, x * tile + 12, y * tile + 4); continue;
+        }
+        drawPixelDoor(ctx, x * tile + 4, y * tile + 4, {
+          open: door.target < state.room || dungeonGateOpen(state), direction: door.direction, set: art,
+        });
+      }
+      for (const wall of room.walls ?? []) drawStoneTile(ctx, wall.x * tile, wall.y * tile, tile, true, true, art);
+      if (room.recipes?.mirror) {
+        const recipe = room.recipes.mirror;
+        const beam = dungeonBeam(state);
+        for (let i = 1; i < beam.length; i++) {
+          const a = beam[i - 1], b = beam[i];
+          rectangle(ctx, "#fff09b", Math.min(a.x, b.x) * tile + 18, Math.min(a.y, b.y) * tile + 18,
+            Math.abs(a.x - b.x) * tile + 3, Math.abs(a.y - b.y) * tile + 3);
+        }
+        drawPixelSprite(ctx, "crystal", recipe.source.x * tile + 4, recipe.source.y * tile + 4, 2);
+        drawPixelSprite(ctx, "receiver", recipe.receiver.x * tile + 4, recipe.receiver.y * tile + 4, 2,
+          { active: state.activated.includes(`${room.id}:mirror`) });
+        drawPixelSprite(ctx, "mirror", recipe.mirror.x * tile + 4, recipe.mirror.y * tile + 4, 2);
+        const direction = DUNGEON_DIRECTIONS[["right", "down", "left", "up"][state.mechanisms[room.id].mirror.angle]];
+        rectangle(ctx, "#e8b65c", recipe.mirror.x * tile + 18 + direction.x * 10,
+          recipe.mirror.y * tile + 18 + direction.y * 10, 5, 5);
+      }
+      for (const mechanism of ["torch", "crank", "plate"]) if (mechanisms.includes(mechanism)) {
+        const target = dungeonTarget(room, mechanism);
+        drawPixelSprite(ctx, { torch: "vase", crank: "lever", plate: "plate" }[mechanism],
+          target.x * tile + 4, target.y * tile + 4, 2, { active: state.activated.includes(`${room.id}:${mechanism}`) });
+      }
+      if (mechanisms.includes("runes")) DUNGEON_RUNES.forEach((point, i) =>
+        numberedRune(ctx, point.x * tile + 8, point.y * tile + 10, i, state.runes.includes(i)));
+      if (mechanisms.includes("torch") && !state.flames.includes(room.id)) drawPixelSprite(ctx, "crystal", 44, 204, 2);
+      if (room.stash && !state.stashes.includes(room.id)) drawPixelSprite(ctx, "supply", room.stash.x * tile + 4, room.stash.y * tile + 4);
+      if (room.trap) rectangle(ctx, "#db6656", room.trap.x * tile + 4, room.trap.y * tile + 30, 32, 6);
+      const arrow = dungeonArrow(state);
+      if (arrow) projectile(ctx, arrow.x * tile + 8, arrow.y * tile + 18);
+      if (mechanisms.includes("switch")) {
+        const target = dungeonTarget(room, "switch");
+        drawPixelSprite(ctx, "lever", target.x * tile + 4, target.y * tile + 4, 2,
+          { active: room.mechanisms ? state.activated.includes(`${room.id}:switch`) : state.solved.includes(state.room) });
+      }
+      if (mechanisms.includes("key") && !(room.mechanisms
+        ? state.activated.includes(`${room.id}:key`) : state.solved.includes(state.room))) {
+        const target = dungeonTarget(room, "key");
+        drawPixelSprite(ctx, "key", target.x * tile + 4, target.y * tile + 4);
+      }
+      if (mechanisms.includes("block") || mechanisms.includes("weight")) {
+        drawPixelSprite(ctx, "plate", 204, 124);
+      }
+      if (mechanisms.includes("spikes")) {
+        square("#141827", 4, 3, 4);
+        if (dungeonSpikesActive(state)) drawPixelSprite(ctx, "spikes", 164, 124);
+        else for (const x of [170, 182]) rectangle(ctx, "#a4acc2", x, 146, 6, 4);
+      }
+      if (mechanisms.includes("block") || mechanisms.includes("weight")) {
+        drawPixelSprite(ctx, "crate", state.blocks[state.room].x * tile + 4, 124);
+      }
+      if (state.room === level.treasureRoom && !state.completed) reel(ctx, ox + 6.5 * tile, oy + 3.5 * tile);
+      const creature = dungeonCreature(state);
+      if (creature) {
+        const upcoming = dungeonCreature({ ...state, tick: state.tick + 1 });
+        for (const [dx, dy] of [[4, 4], [28, 4], [4, 28], [28, 28]]) {
+          rectangle(ctx, "#fff09b", upcoming.x * tile + dx, upcoming.y * tile + dy, 6, 6);
+        }
+        rectangle(ctx, "#141827", creature.x * tile + 8, creature.y * tile + 30, 24, 4);
+        drawPixelSprite(ctx, art[creature.kind], creature.x * tile + 4, creature.y * tile + 4, 2, { set: art });
+      }
+      person(ctx, ox + state.x * tile + 9, oy + state.y * tile + 7);
+      const facing = DUNGEON_DIRECTIONS[state.facing];
+      rectangle(ctx, "#f5e1b5", (state.x + .5) * tile + facing.x * 15 - 2,
+        (state.y + .5) * tile + facing.y * 15 - 2, 4, 4);
+      canvas.setAttribute("aria-label", `${copy.scene}. ${copy.room} ${state.room + 1}. ${inscriptionText.textContent}`);
+      const stopped = paused || state.completed || state.failed ||
+        Boolean(authoritative && (authoritative.disabled || authoritative.status !== "active"));
+      for (const node of [...pad.values(), interact, wait, retry]) node.disabled = stopped;
+      attack.disabled = stopped || dungeonWeapon === "none";
+      pause.disabled = state.completed || state.failed ||
+        Boolean(authoritative && (authoritative.disabled || authoritative.status !== "active"));
+      shortcut(pause, paused ? copy.resume : copy.pause, "P");
+      pause.setAttribute("aria-pressed", String(paused));
+      showAccounting();
+      finish();
+    }
+    redraw = render;
+    render();
+  } else {
+    const progress = element("p");
+    const exits = element("p", undefined, help);
+    const map = element("canvas", undefined, help);
+    map.width = WIDTH;
+    map.height = 144;
+    map.className = "legend-map";
+    map.setAttribute("role", "img");
+    map.setAttribute("aria-label", copy.map);
+    const mapContext = map.getContext("2d");
+    if (!mapContext) throw new Error("Adventure map rendering is unavailable.");
+    const controls = element("div");
+    controls.className = "legend-controls";
+    const pad = directions(controls, () => {});
+    const actionControls = element("div", undefined, controls);
+    actionControls.className = "legend-action-controls";
+    const held = new Set();
+    const keyboardHeld = new Set();
+    let doorLatch = false;
+    const taps = new Set();
+    let paused = false;
+    let last = null;
+    let accumulator = 0;
+    const clear = () => { held.clear(); keyboardHeld.clear(); taps.clear(); last = null; accumulator = 0; };
+    const pause = button(copy.pause, () => {
+      paused = !paused;
+      clear();
+      shortcut(pause, paused ? copy.resume : copy.pause, "P");
+      pause.setAttribute("aria-pressed", String(paused));
+      status.textContent = paused ? copy.paused : copy.platformMessages[state.message];
+      render();
+    }, help);
+    shortcut(pause, copy.pause, "P");
+    pause.setAttribute("aria-pressed", "false");
+    const retry = button(copy.retry, () => {
+      if (!paused && !state.completed) { help.close(); taps.add("retry"); }
+    }, help);
+    shortcut(retry, copy.retry, "R");
+    for (const control of ["left", "right", "up", "down", "jump", "interact"]) {
+      const node = pad.get(control) ?? button(copy[control], () => {
+        if (control === "jump" || control === "interact") taps.add(control);
+      }, actionControls);
+      node.className = "legend-control";
+      if (["jump", "interact"].includes(control)) {
+        shortcut(node, copy[control], control === "jump" ? "Space" : "E", control === "jump" ? copy.space : "E");
+        if (control === "interact" && level.version >= 5) {
+          listen(node, "pointerdown", event => { event.preventDefault(); node.setPointerCapture(event.pointerId); held.add(control); });
+          for (const event of ["pointerup", "pointercancel", "lostpointercapture", "blur"]) listen(node, event, () => held.delete(control));
+        }
+        continue;
+      }
+      const release = () => held.delete(control);
+      listen(node, "pointerdown", event => {
+        event.preventDefault();
+        node.setPointerCapture(event.pointerId);
+        held.add(control);
+      });
+      listen(node, "pointerup", release);
+      listen(node, "pointercancel", release);
+      listen(node, "lostpointercapture", release);
+      listen(node, "keydown", event => {
+        if (event.key === " " || event.key === "Enter") {
+          event.preventDefault();
+          event.stopPropagation();
+          held.add(control);
+        }
+      });
+      listen(node, "keyup", event => {
+        if (event.key === " " || event.key === "Enter") release();
+      });
+      listen(node, "blur", release);
+    }
+    const keyMap = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down", " ": "jump", e: "interact", E: "interact" };
+    listen(root, "keydown", event => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.key === " " && event.target?.tagName === "BUTTON") return;
+      if (["p", "P", "r", "R"].includes(event.key)) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!event.repeat) (event.key.toLowerCase() === "p" ? pause : retry).click();
+        return;
+      }
+      const control = keyMap[event.key];
+      if (!control) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (control === "jump" || control === "interact") {
+        if (!event.repeat) taps.add(control);
+        if (control === "interact" && level.version >= 5) keyboardHeld.add(control);
+      } else keyboardHeld.add(control);
+    });
+    listen(win, "keyup", event => { keyboardHeld.delete(keyMap[event.key]); });
+    listen(canvas, "blur", () => { keyboardHeld.clear(); });
+    listen(win, "blur", clear);
+    listen(doc, "visibilitychange", clear);
+    function render() {
+      heading.textContent = `${copy.platformArchitectures[level.rooms[state.room].archetype] ?? copy.platform} - ${copy.room} ${state.room + 1}/${level.rooms.length}`;
+      if (!paused && status.dataset.message !== state.message) {
+        status.textContent = state.message === "decoyTrap" ? DECOY_COPY[language].trap :
+          state.message === "decoyMistake" ? DECOY_COPY[language].mistake :
+          MECHANISM_COPY[language].messages[state.message] ?? encounter.messages[state.message] ?? copy.platformMessages[state.message];
+        status.dataset.message = state.message;
+      }
+      progress.textContent = livePlatform
+        ? `${copy.health}: ${authoritative.health}/100 | ${copy.checkpoint}: ${state.retries} | ${level.mainRooms} ${copy.rooms}`
+        : `${copy.health}: ${state.health}/3 | ${copy.checkpoint}: ${state.retries} | ${copy.seed}: ${seed} | ${copy.tiers[tier]}: ${level.mainRooms} ${copy.rooms}, ${copy.rewardBudget} ${level.rewardBudget}/3`;
+      const room = level.rooms[state.room];
+      status.hidden = ["route", "branch"].includes(state.message) && !paused;
+      inscriptionText.textContent = (room.challenges ?? (room.challenge ? [room.challenge] : []))
+        .map((point, index) => room.recipes?.[index] ? MECHANISMS[point.family].clue[language] :
+          level.version >= 5 && encounter.riddles[point.family] || copy.riddles[point.family]).join(" ") || copy.riddles.final;
+      if (room.runeOrder) inscriptionText.textContent += ` ${encounter.runeRiddle(room.runeOrder)}`;
+      if (room.connections.some(door => door.secret)) inscriptionText.textContent += ` ${encounter.secretRiddle}`;
+      if (room.arrowTrap) inscriptionText.textContent += ` ${encounter.arrowRiddle}`;
+      exits.textContent = `${room.challenge ? (room.challenges ?? [room.challenge])
+        .map((point, index) => `${point.family === "timing" && room.pacing && room.hazards.length
+          ? `${copy.platformTiming(room.hazards[0].activeTicks * STEP, (room.hazards[0].period - room.hazards[0].activeTicks) * STEP)} ${copy.platformLever}`
+          : point.family === "timing" && room.pacing ? copy.platformLever :
+            room.recipes?.[index] ? MECHANISMS[point.family].help[language] :
+            (room.archetype ? copy.variedPlatformChallenges : copy.platformChallenges)[point.family] ?? encounter.riddles[point.family]}${
+          state.activated?.includes(`${room.id}:${index}`) ? ` (${copy.open})` : ""}`).join(" ") + ". " +
+        copy.gate + ": " + (platformRoomSolved(state, room) ? copy.open : copy.closed) + ". " : ""}${copy.exits}: ${room.connections.map(door =>
+        `${copy.directions[door.direction]} (${door.target + 1})`).join(", ")}${room.main ? "" : ` - ${copy.deadEnd}`}`;
+      if (room.pacing && room.hazards.length && room.challenge.family !== "timing") {
+        const hazard = room.hazards[0];
+        exits.textContent += ` ${copy.platformTiming(hazard.activeTicks * STEP, (hazard.period - hazard.activeTicks) * STEP)}`;
+      }
+      map.setAttribute("aria-label", `${copy.map}. ${copy.room} ${state.room + 1}. ${exits.textContent}`);
+      const minCol = Math.min(...level.rooms.map(item => item.col));
+      const minRow = Math.min(...level.rooms.map(item => item.row));
+      const spanCol = Math.max(...level.rooms.map(item => item.col)) - minCol + 1;
+      const spanRow = Math.max(...level.rooms.map(item => item.row)) - minRow + 1;
+      const size = Math.min(42, (WIDTH - 16) / spanCol, 128 / spanRow);
+      const position = item => ({ x: 8 + (item.col - minCol) * size, y: 8 + (item.row - minRow) * size });
+      rectangle(mapContext, "#202e2c", 0, 0, WIDTH, 144);
+      for (const edge of level.edges) {
+        const from = position(level.rooms[edge.from]), to = position(level.rooms[edge.to]);
+        rectangle(mapContext, "#8d7956", Math.min(from.x, to.x) + size / 2,
+          Math.min(from.y, to.y) + size / 2, Math.abs(to.x - from.x) + 2, Math.abs(to.y - from.y) + 2);
+      }
+      for (const item of level.rooms) {
+        const point = position(item);
+        rectangle(mapContext, item.id === state.room ? "#e5c779" : item.main ? "#8ba780" : "#6b7770",
+          point.x + 3, point.y + 3, size - 6, size - 6);
+        if (item.treasure) rectangle(mapContext, "#f5e1b5", point.x + size / 2 - 2, point.y + size / 2 - 2, 4, 4);
+      }
+      drawPlatform(ctx, state, images, art);
+      showAccounting();
+      const stopped = state.completed || Boolean(authoritative && (authoritative.disabled || authoritative.status !== "active"));
+      pause.disabled = stopped;
+      retry.disabled = stopped || paused;
+      for (const node of [...pad.values(), ...actionControls.children]) node.disabled = stopped || paused;
+      finish();
+    }
+    redraw = render;
+    function tick(now) {
+      if (destroyed) return;
+      try {
+        const visible = !help.open && !doc.hidden && (!root.checkVisibility || root.checkVisibility());
+        if (!visible) clear();
+        if (!paused && visible && !(authoritative && (authoritative.disabled || authoritative.status !== "active"))) {
+          if (last !== null) accumulator += Math.min((now - last) / 1000, 0.1);
+          while (accumulator >= STEP) {
+            // A held E (interact is held for cranks since version 5) must not
+            // chain through doors frame after frame: after a room change the
+            // interact control stays ignored until it is released.
+            const pressed = [...held, ...keyboardHeld, ...taps];
+            if (doorLatch && !pressed.includes("interact")) doorLatch = false;
+            const input = Object.fromEntries(pressed.filter(key => !(doorLatch && key === "interact"))
+              .map(key => [key, true]));
+            const room = state.room;
+            if (local) localInput({ controls: input, ticks: 1 });
+            else state = stepPlatformer(state, input);
+            if (state.room !== room && input.interact) doorLatch = true;
+            taps.clear();
+            accumulator -= STEP;
+            if (state.completed || local && (authoritative.disabled || authoritative.status !== "active")) break;
+          }
+          render();
+        }
+        last = now;
+        if (!state.completed) frame = win.requestAnimationFrame(tick);
+      } catch (error) {
+        clear();
+        status.textContent = `${language === "fr" ? "Erreur" : "Error"}: ${error.message}`;
+        status.setAttribute("role", "alert");
+        onError(error);
+      }
+    }
+    render();
+    frame = win.requestAnimationFrame(tick);
+  }
+  root.append(help);
+  container.append(root);
+  return {
+    setBackgrounds(value) {
+      if (destroyed) return;
+      images = value;
+      redraw();
+    },
+    destroy() {
+      destroyed = true;
+      if (frame !== null) win.cancelAnimationFrame(frame);
+      for (const remove of listeners) remove();
+      root.remove();
+    },
+  };
+}

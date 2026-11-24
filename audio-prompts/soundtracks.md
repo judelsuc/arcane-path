@@ -255,3 +255,44 @@ suspended harmony, leaving space for reading choices. A consistent low-
 intensity 8-bar loop, 60 to 90 seconds, no increasing speed, loud alarm,
 violent sound, jump scare, voice, realistic ambience or borrowed melody.
 ```
+
+## 17 - music-pursuit - Someone on the road behind
+
+Use: the pursuit escape window, while the man hunting the child closes in and
+the traveller runs and jumps to stay ahead. Target: 150 BPM, 90 seconds.
+
+```text
+Original instrumental 8-bit horror chase chiptune. A child alone at dusk runs
+from a menacing stranger who is almost close enough to grab them: dread,
+panic, a pounding heart. Very frightening and relentless, but strictly retro
+four-channel NES-style. 150 BPM. Low triangle bass hammering a chromatic
+ostinato, dissonant tritone and minor-second pulse-wave stabs, a shrill
+detuned lead rising in semitone steps like footsteps gaining, fast noise-
+channel hi-hats and heavy noise hits like heartbeat thuds. D minor turned
+diminished, no relief, no major chords. Sudden silent half-beats before the
+loop slams back in. Stable repeating 16-bar loop around 90 seconds, no
+tempo changes, clean bar boundaries, no fade-out. Purely chip timbres: no
+vocals, screams, whispers, sirens, orchestra, realistic drums, cinematic
+impacts, borrowed melodies or artist imitation. Harsh but not ear-piercing.
+```
+
+## 18 - music-fight - Garde haute
+
+Use: the self-defence fights (street, camp and the pursuer's capture).
+Target: 144 BPM, 90 seconds.
+
+```text
+Original instrumental 8-bit fighting-game chiptune for a child standing their
+ground against bullies in a dark street. Tense, defiant and urgent: the small
+hero is outnumbered but refuses to give in. 144 BPM. Punchy triangle bass
+on driving octave eighth notes, a bold square-wave lead with short
+syncopated stabs built on an original D-F-A-E motif, a second pulse
+channel of fast staccato counter-rhythms, and hard noise-channel kicks and
+snares on every beat. D minor with sudden heroic F-major and C-major
+flashes, like a blow landing. Classic four-channel NES-style arrangement,
+same warm retro timbres as the rest of the soundtrack. Two-bar intro, then
+a stable repeating 16-bar loop around 90 seconds, no tempo changes, clean
+bar boundaries, no fade-out. No vocals, shouts, crowd, orchestra,
+realistic drums, cinematic impacts, borrowed melodies or artist imitation.
+Energetic but not piercing.
+```

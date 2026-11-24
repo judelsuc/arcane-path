@@ -1,0 +1,435 @@
+import { hospitalityTown } from "./hospitality.mjs";
+import { skyState } from "./sky.mjs";
+import { journeyDate } from "./travel.mjs";
+import { conversationTopics, CORE_TOPICS } from "./conversation-topics.mjs";
+
+export function setupConversations(t, { context, characters, onCharacter = () => {},
+  onArtifactRumour = () => {},
+  legendTelling = () => ({ text: "", status: "" }),
+  onDirections = () => document.getElementById("open-investigation").click() }) {
+  const $ = id => document.getElementById(id);
+  const dialog = $("conversation-dialog");
+  const selector = $("character-selector-dialog");
+  const trigger = $("open-conversation");
+  const localButtons = new Map();
+  function topicsFor(current) {
+    return conversationTopics(current ?? context());
+  }
+  function localButton(topic) {
+    if (!localButtons.has(topic.id)) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.addEventListener("click", () => {
+        if (button.disabled) return;
+        selected = topic.id;
+        localize();
+      });
+      $("conversation-topic-extras")?.append(button);
+      localButtons.set(topic.id, button);
+    }
+    return localButtons.get(topic.id);
+  }
+  let selected = "services";
+  let currentCharacter;
+  let characterLocation;
+  let available = [];
+  let canCreate = false;
+  let limit = 4;
+  let loaded = false;
+  let busy = false;
+  let returningToSelector = false;
+  let pendingCreate;
+  let exchangeReply;
+  const portraitUrls = new Set();
+  let portraitGeneration = 0;
+
+  function validContext(allowBlocked = false) {
+    const current = context();
+    return current && current.state?.serverJourney?.id && current.state?.journalAccess &&
+      (allowBlocked || !current.blocked) && !current.state.ended && current.cell && !current.cell.unavailable &&
+      current.cell.terrain !== "water"
+      ? current : null;
+  }
+
+  function presence(current) {
+    const date = journeyDate(current.state);
+    if (!Number.isFinite(date.getTime())) return undefined;
+    const { latitude, longitude } = current.info ?? {};
+    let phase;
+    try {
+      phase = skyState(date, latitude, longitude).background;
+    } catch {
+      const hour = date.getUTCHours();
+      phase = hour >= 7 && hour < 20 ? "day" : "night";
+    }
+    return { phase, hour: Math.floor(date.getTime() / 3_600_000) };
+  }
+
+  function locationText(current) {
+    const town = current && hospitalityTown(current.cell);
+    if (current && !town && current.cell.terrain !== "major_road") return t("conversation.countryside");
+    return t(town ? "conversation.inTown" : "conversation.onRoad", { town: town?.name ?? "" });
+  }
+
+  function releasePortraits() {
+    portraitGeneration++;
+    for (const url of portraitUrls) URL.revokeObjectURL?.(url);
+    portraitUrls.clear();
+  }
+
+  function localize() {
+    const current = validContext(true);
+    if (currentCharacter && (!current ||
+        characterLocation?.journey !== current.state.serverJourney.id ||
+        characterLocation.col !== current.state.col || characterLocation.row !== current.state.row)) {
+      currentCharacter = undefined;
+      characterLocation = undefined;
+      exchangeReply = undefined;
+      if (dialog.open) dialog.close();
+    }
+    const enabled = current && !current.blocked;
+    if (!current && (selector.open || dialog.open)) {
+      selector.close();
+      dialog.close();
+    }
+    trigger.disabled = !enabled;
+    $("town-conversation").disabled = !enabled;
+    $("conversation-character-status").textContent = current?.blocked ? t("conversation.wait") : "";
+    $("character-selector-context").textContent = locationText(current);
+    $("conversation-context").textContent = currentCharacter
+      ? t("character.identity", { name: currentCharacter.name,
+        role: t(`character.role.${currentCharacter.role}`) })
+      : locationText(current);
+    $("conversation-intro").textContent = currentCharacter
+      ? [t("character.conversationIntro", { name: currentCharacter.name }),
+        currentCharacter.familiarity?.known && currentCharacter.familiarity.meetings > 1
+          ? t("character.familiar") : ""].filter(Boolean).join(" ")
+      : "";
+    $("conversation-character-reply").hidden = !currentCharacter;
+    $("conversation-reply").hidden = true;
+    $("conversation-reply").textContent = "";
+    const topics = topicsFor(current);
+    for (const topic of topics) {
+      if (topic.kind === "action") {
+        const source = $(topic.target);
+        $(`conversation-${topic.id}`).disabled = !enabled || !source || source.disabled || source.hidden;
+      } else if (topic.kind === "exchange") {
+        const button = $(`conversation-${topic.id}`);
+        button.disabled = !enabled || topic.id === "clues" && $("open-investigation").disabled;
+        button.setAttribute("aria-pressed", String(selected === topic.id));
+      } else {
+        const button = localButton(topic);
+        button.textContent = topic.label?.(t) ?? topic.id;
+        button.hidden = false;
+        button.disabled = !enabled;
+        button.setAttribute("aria-pressed", String(selected === topic.id));
+      }
+    }
+    for (const [id, button] of localButtons) {
+      if (!topics.some(topic => topic.kind === "local" && topic.id === id)) {
+        button.hidden = true;
+        if (selected === id) selected = "services";
+      }
+    }
+    const localTopic = topics.find(topic => topic.kind === "local" && topic.id === selected);
+    if (currentCharacter) {
+      if (localTopic) {
+        $("conversation-character-reply").textContent = localTopic.reply(current, t, currentCharacter);
+      } else if (selected === "legends") {
+        const telling = legendTelling(currentCharacter);
+        $("conversation-character-reply").textContent = telling.text;
+        $("conversation-character-status").textContent = telling.status;
+      } else {
+        const exchange = exchangeReply?.characterId === currentCharacter.id &&
+          exchangeReply.topic === selected ? exchangeReply : null;
+        const response = exchange?.status === "pending"
+          ? t(`character.opening.${currentCharacter.role}`)
+          : exchange?.status === "ready" && exchange.facts.length
+            ? exchange.facts.map(fact => t(`character.fact.${fact}`)).join(" ")
+            : exchange?.status === "failed" ? t("character.exchangeFailed", { error: exchange.error })
+              : selected === "services" ? t(`character.opening.${currentCharacter.role}`)
+                : selected === "parent" ? t("character.noParentKnowledge") : t("character.noKnowledge");
+        const mention = exchange?.status === "ready" && exchange.visitorFacts?.[0]?.type === "met"
+          ? t("character.visitorMention", { name: exchange.visitorFacts[0].name }) : "";
+        $("conversation-character-reply").textContent = [response, mention].filter(Boolean).join(" ");
+      }
+    }
+    $("character-create").disabled = !enabled || !loaded || !canCreate || busy;
+    $("character-selector-close").disabled = busy;
+    $("character-selector-status").classList?.toggle("is-loading", busy);
+    $("conversation-back").disabled = busy;
+  }
+
+  function renderCharacters() {
+    releasePortraits();
+    const generation = portraitGeneration;
+    const list = $("character-choices");
+    list.replaceChildren();
+    for (const character of available) {
+      const item = document.createElement("li");
+      const button = document.createElement("button");
+      const portrait = document.createElement("span");
+      const details = document.createElement("span");
+      const name = document.createElement("strong");
+      const role = document.createElement("span");
+      const status = document.createElement("span");
+      const portraitStatus = character.portrait?.status ?? "failed";
+      button.type = "button";
+      button.className = "character-choice";
+      portrait.className = "character-portrait-placeholder";
+      portrait.setAttribute("role", "img");
+      portrait.setAttribute("aria-label", t(`character.portrait.${portraitStatus}`));
+      portrait.textContent = "◌";
+      details.className = "character-choice-details";
+      name.textContent = character.name;
+      role.textContent = t(`character.role.${character.role}`);
+      status.textContent = t(`character.portrait.${portraitStatus}`);
+      details.append(name, role, status);
+      button.append(portrait, details);
+      button.addEventListener("click", () => choose(character));
+      item.append(button);
+      list.append(item);
+      const current = validContext();
+      if (current && characters.portrait &&
+          character.portrait?.status === "ready" && character.portrait.ref) {
+        const isCurrent = () => generation === portraitGeneration && selector.open &&
+          sameJourney(current) && portrait.isConnected !== false;
+        const showFailure = error => {
+          console.error("Unable to display character portrait:", error);
+          if (!isCurrent()) return;
+          portrait.replaceChildren();
+          portrait.textContent = "◌";
+          portrait.setAttribute("aria-label", t("character.portrait.failed"));
+          status.textContent = t("character.portrait.failed");
+        };
+        void characters.portrait(current.state, character.id).then(blob => {
+          if (!isCurrent()) return;
+          if (typeof URL?.createObjectURL !== "function") {
+            throw new Error("Portrait object URLs are unavailable.");
+          }
+          const image = document.createElement("img");
+          const url = URL.createObjectURL(blob);
+          portraitUrls.add(url);
+          image.src = url;
+          image.alt = t("character.portrait.ready");
+          image.addEventListener("error", () => {
+            URL.revokeObjectURL(url);
+            portraitUrls.delete(url);
+            showFailure(new Error("Character portrait image could not be decoded."));
+          }, { once: true });
+          portrait.replaceChildren(image);
+          portrait.setAttribute("aria-label", t("character.portrait.ready"));
+        }).catch(showFailure);
+      }
+    }
+    $("character-empty").hidden = available.length !== 0;
+    $("character-create").hidden = !canCreate;
+  }
+
+  function sameJourney(current) {
+    const latest = validContext(true);
+    return latest && latest.state.serverJourney.id === current.state.serverJourney.id &&
+      latest.state.col === current.state.col && latest.state.row === current.state.row;
+  }
+
+  async function refresh() {
+    const current = validContext();
+    releasePortraits();
+    available = [];
+    canCreate = false;
+    loaded = false;
+    $("character-selector-status").textContent = t("character.loading");
+    renderCharacters();
+    if (!current) return;
+    const requestContext = current;
+    try {
+      const result = await characters.list(current.state, presence(current));
+      if (!sameJourney(requestContext)) return;
+      if (!Array.isArray(result.characters) || typeof result.canCreate !== "boolean") {
+        throw new Error("Invalid character registry response.");
+      }
+      available = result.characters;
+      canCreate = result.canCreate;
+      if (Number.isInteger(result.limit)) limit = result.limit;
+      loaded = true;
+      const arrived = available.find(character => character.id === result.arrived);
+      $("character-selector-status").textContent = !available.length &&
+        result.unavailableReason === "naming-locale-unavailable" ? t("character.namingUnavailable")
+        : result.absent ? t(canCreate ? "character.absentCanCreate" : "character.absent")
+        : arrived ? t("character.arrived", { name: arrived.name })
+          : !available.length ? t("character.empty")
+            : result.location?.kind === "town" ? t("character.available") : t("character.roadside");
+    } catch (error) {
+      if (!sameJourney(requestContext)) return;
+      $("character-selector-status").textContent = t("character.loadFailed", { error: error.message });
+    }
+    renderCharacters();
+    localize();
+  }
+
+  async function recordTopic(topic) {
+    const current = validContext();
+    if (!current || !currentCharacter) return;
+    const character = currentCharacter;
+    const request = { characterId: character.id, topic, status: "pending" };
+    exchangeReply = request;
+    localize();
+    try {
+      const result = await characters.exchange(current.state, character.id, topic);
+      if (currentCharacter !== character || exchangeReply !== request || !sameJourney(current)) return;
+      if (!Array.isArray(result.factIds) ||
+          result.factIds.some(fact => typeof fact !== "string")) {
+        throw new Error("Invalid character exchange response.");
+      }
+      exchangeReply = { characterId: character.id, topic, status: "ready", facts: result.factIds,
+        visitorFacts: Array.isArray(result.visitorFacts) ? result.visitorFacts.slice(0, 1)
+          .filter(fact => fact?.type === "met" && typeof fact.name === "string") : [] };
+      if (result.artifactRumour) onArtifactRumour(result.artifactRumour, character);
+      localize();
+    } catch (error) {
+      if (currentCharacter === character && exchangeReply === request && sameJourney(current)) {
+        exchangeReply = { characterId: character.id, topic, status: "failed", error: error.message };
+        localize();
+      }
+    }
+  }
+
+  async function choose(character) {
+    const current = validContext();
+    if (!current || busy || !available.some(item => item.id === character.id)) return;
+    busy = true;
+    $("character-selector-status").textContent = t("character.opening");
+    localize();
+    try {
+      const meeting = await characters.meet(current.state, character.id);
+      if (!sameJourney(current)) return;
+      currentCharacter = { ...character, familiarity: meeting?.familiarity ?? character.familiarity };
+      characterLocation = { journey: current.state.serverJourney.id,
+        col: current.state.col, row: current.state.row };
+      selected = "services";
+      exchangeReply = undefined;
+      // Inhabitants of a legend town spontaneously bring up the old story the
+      // first time someone talks with them.
+      if (legendTelling(currentCharacter).untold) {
+        selected = "legends";
+        legendTelling(currentCharacter, true);
+      }
+      $("conversation-options").open = false;
+      $("conversation-character-status").textContent = "";
+      selector.close();
+      dialog.showModal();
+      onCharacter(currentCharacter);
+      if (meeting?.artifactRumour) onArtifactRumour(meeting.artifactRumour, currentCharacter);
+      localize();
+      $("conversation-character-reply").focus();
+      void recordTopic("services");
+    } catch (error) {
+      $("character-selector-status").textContent = t("character.openFailed", { error: error.message });
+    } finally {
+      busy = false;
+      localize();
+    }
+  }
+
+  async function createCharacter() {
+    const current = validContext();
+    if (!current || busy || !loaded || !canCreate) return;
+    const createKey = `${current.state.serverJourney.id}:${current.state.col}:${current.state.row}`;
+    if (pendingCreate?.key !== createKey) {
+      pendingCreate = { key: createKey, requestId: characters.newRequestId() };
+    }
+    busy = true;
+    $("character-selector-status").textContent = t("character.creating");
+    localize();
+    try {
+      const character = await characters.create(current.state, pendingCreate.requestId);
+      if (!sameJourney(current)) return;
+      pendingCreate = undefined;
+      available = [...available.filter(item => item.id !== character.id), character];
+      canCreate = available.length < limit;
+      loaded = true;
+      renderCharacters();
+      busy = false;
+      await choose(character);
+    } catch (error) {
+      $("character-selector-status").textContent = t("character.createFailed", { error: error.message });
+    } finally {
+      busy = false;
+      localize();
+    }
+  }
+
+  async function open() {
+    const current = validContext();
+    localize();
+    if (!current || document.querySelector("dialog[open]")) return;
+    selector.showModal();
+    await refresh();
+  }
+
+  trigger.addEventListener("click", open);
+  $("town-conversation").addEventListener("click", () => {
+    $("town-dialog").close();
+    open();
+  });
+  $("character-create").addEventListener("click", createCharacter);
+  $("character-selector-close").addEventListener("click", () => selector.close());
+  selector.addEventListener("close", () => {
+    releasePortraits();
+    if (!dialog.open) trigger.focus();
+  });
+  $("conversation-back").addEventListener("click", async () => {
+    if (!currentCharacter || busy) return;
+    returningToSelector = true;
+    dialog.close();
+    selector.showModal();
+    returningToSelector = false;
+    await refresh();
+  });
+  for (const topic of CORE_TOPICS.filter(entry => entry.kind === "action")) {
+    $(`conversation-${topic.id}`).addEventListener("click", () => {
+      localize();
+      if ($(`conversation-${topic.id}`).disabled) return;
+      dialog.close();
+      $(topic.target).click();
+    });
+  }
+  for (const { id: topic } of CORE_TOPICS.filter(entry => entry.kind === "exchange")) {
+    $(`conversation-${topic}`).addEventListener("click", () => {
+      if (topic === "clues") {
+        localize();
+        if ($(`conversation-${topic}`).disabled) return;
+        dialog.close();
+        onDirections();
+        return;
+      }
+      if ($(`conversation-${topic}`).disabled) return;
+      selected = topic;
+      if (topic === "legends") legendTelling(currentCharacter, true);
+      else void recordTopic(topic);
+      localize();
+    });
+  }
+  $("conversation-close").addEventListener("click", () => dialog.close());
+  dialog.addEventListener("close", () => {
+    if (!selector.open && !returningToSelector) currentCharacter = undefined;
+    localize();
+    if (!selector.open) trigger.focus();
+  });
+  return {
+    localize, open,
+    reset() {
+      selected = "services";
+      currentCharacter = undefined;
+      characterLocation = undefined;
+      exchangeReply = undefined;
+      releasePortraits();
+      available = [];
+      canCreate = loaded = busy = false;
+      selector.close();
+      dialog.close();
+      localize();
+    },
+    currentCharacter: () => currentCharacter,
+  };
+}

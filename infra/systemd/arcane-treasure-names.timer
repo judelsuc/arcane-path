@@ -1,0 +1,10 @@
+[Unit]
+Description=Process pending Arcane Path treasure names hourly
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+Unit=arcane-treasure-names.service
+
+[Install]
+WantedBy=timers.target

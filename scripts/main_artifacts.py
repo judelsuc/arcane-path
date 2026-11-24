@@ -1,0 +1,454 @@
+"""Artifact custody for the main journey; isolated playtest data is never imported."""
+
+import hashlib
+import json
+import re
+import time
+import copy
+import math
+import opencaches
+from contextlib import contextmanager
+
+from journeys import JourneyRequest, JourneyConflict, JourneyCapacity
+from lore_playtest import LorePlaytest, MAX_RECEIPTS, ARTIFACTS
+from journey_storage import StoreConnection, geographic_position, grid_position
+from town_legends import TOWN_ID
+
+WORLD = "main-artifacts-v1"
+COMMANDS = {"inquire", "claim", "cache", "share", "use", "pack", "interpret-clue"}
+TREASURE_VERSIONS = ("treasure-platform-v1", "treasure-investigation-v1", "treasure-dungeon-v1", "treasure-platform-v2",
+                     "treasure-platform-v3", "treasure-investigation-v2", "treasure-dungeon-v2",
+                     "treasure-platform-v4", "treasure-investigation-v3", "treasure-dungeon-v3",
+                     "treasure-platform-v5", "treasure-investigation-v4")
+TREASURE_ID = re.compile(r"treasure:(?:node|way|relation)/[1-9]\d{0,19}:(0|[1-9]\d{0,9})(?::v[23])?")
+EUROPE_DISTRIBUTION_VERSION = 1
+EUROPE_ANCHORS = (
+    ("Lisbon", "Portugal", 38.7223, -9.1393),
+    ("Madrid", "Spain", 40.4168, -3.7038),
+    ("Dublin", "Ireland", 53.3498, -6.2603),
+    ("Edinburgh", "United Kingdom", 55.9533, -3.1883),
+    ("Paris", "France", 48.8566, 2.3522),
+    ("Brussels", "Belgium", 50.8503, 4.3517),
+    ("Amsterdam", "Netherlands", 52.3676, 4.9041),
+    ("Copenhagen", "Denmark", 55.6761, 12.5683),
+    ("Oslo", "Norway", 59.9139, 10.7522),
+    ("Stockholm", "Sweden", 59.3293, 18.0686),
+    ("Helsinki", "Finland", 60.1699, 24.9384),
+    ("Berlin", "Germany", 52.5200, 13.4050),
+    ("Warsaw", "Poland", 52.2297, 21.0122),
+    ("Prague", "Czechia", 50.0755, 14.4378),
+    ("Vienna", "Austria", 48.2082, 16.3738),
+    ("Budapest", "Hungary", 47.4979, 19.0402),
+    ("Rome", "Italy", 41.9028, 12.4964),
+    ("Zagreb", "Croatia", 45.8150, 15.9819),
+    ("Sarajevo", "Bosnia and Herzegovina", 43.8563, 18.4131),
+    ("Sofia", "Bulgaria", 42.6977, 23.3219),
+    ("Bucharest", "Romania", 44.4268, 26.1025),
+    ("Athens", "Greece", 37.9838, 23.7275),
+)
+
+
+class MainArtifacts(LorePlaytest):
+    @staticmethod
+    def initial_world(base, origin):
+        if len(EUROPE_ANCHORS) != len(ARTIFACTS):
+            raise JourneyRequest("European artifact anchors do not cover the catalogue.")
+        instances = []
+        for artifact, (town, region, latitude, longitude) in zip(ARTIFACTS, EUROPE_ANCHORS):
+            col, row = grid_position(base, latitude, longitude)
+            instances.append({
+                "id": artifact, "col": col, "row": row, "town": town, "region": region,
+                "latitude": latitude, "longitude": longitude,
+                "marker": f"virtual:{artifact}", "owner": None, "placement": None,
+                "generation": 1, "cooldownUntil": 0, "recallJourney": None,
+            })
+        return {"map": base, "instances": instances, "minutes": 0,
+                "distributionVersion": EUROPE_DISTRIBUTION_VERSION}
+
+    @classmethod
+    def redistribute_unowned(cls, world):
+        if world.get("distributionVersion") == EUROPE_DISTRIBUTION_VERSION:
+            return False
+        anchors = {item["id"]: item for item in cls.initial_world(world["map"], None)["instances"]}
+        for instance in world["instances"]:
+            if instance["owner"] is not None:
+                continue
+            anchor = anchors[instance["id"]]
+            instance.update({key: anchor[key] for key in (
+                "col", "row", "town", "region", "latitude", "longitude", "marker")})
+            instance.update(placement=None, recallJourney=None, generation=instance["generation"] + 1)
+        world["distributionVersion"] = EUROPE_DISTRIBUTION_VERSION
+        return True
+
+    def __init__(self, journeys, abandoned, clock=time.time, **kwargs):
+        self.assets = getattr(journeys, "assets", None)
+        if self.assets is None:
+            super().__init__(journeys, abandoned, clock=clock, database="main-artifacts.sqlite3", **kwargs)
+        else:
+            self.journeys, self.abandoned, self.clock = journeys, abandoned, clock
+            self.paths = kwargs.pop("paths", None)
+            self.chunk_jobs = kwargs.pop("chunk_jobs", None)
+            if kwargs:
+                raise TypeError("Unexpected main artifact options: " + ", ".join(kwargs))
+            self.path = journeys.path.parent / "main-artifacts.sqlite3"
+        self.world_table = "main_artifact_world" if self.assets is not None else "world"
+        self.sessions_table = "main_artifact_sessions" if self.assets is not None else "sessions"
+        self.receipts_table = "main_artifact_receipts" if self.assets is not None else "receipts"
+        self.characters = None
+        self.town_legends = None
+
+    def character_knowledge(self, journey, region, location):
+        genesis = self.journeys.read(journey)
+        if genesis is None:
+            raise JourneyConflict("Unknown character knowledge journey.")
+        with self.connect() as db:
+            if self.assets is None:
+                db.execute("BEGIN IMMEDIATE")
+            else:
+                db.begin("main-artifacts")
+            row = db.execute(f"SELECT * FROM {self.world_table} WHERE id=?", (WORLD,)).fetchone()
+            world = self.decode(row) if row else self.initial_world(
+                self.journeys.chunks.bases[genesis["region"]], genesis["state"])
+            redistributed = self.redistribute_unowned(world)
+            if row is None or redistributed:
+                raw, checksum = self.encode(world)
+                db.execute(f"INSERT INTO {self.world_table}(id,region,payload,checksum) VALUES(?,?,?,?) "
+                           "ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,checksum=excluded.checksum",
+                           (WORLD, genesis["region"], raw, checksum))
+        base = self.journeys.chunks.bases[region]
+        result = {}
+        for instance in world["instances"]:
+            if instance["owner"] is not None:
+                continue
+            latitude, longitude = ((instance["latitude"], instance["longitude"]) if "latitude" in instance
+                                   else geographic_position(world["map"], instance["col"], instance["row"]))
+            col, row = grid_position(base, latitude, longitude)
+            meters = math.hypot(location["col"] - col, location["row"] - row) * base["cellSizeMeters"]
+            if meters > 300000:
+                continue
+            facts = {"artifact": instance["id"], "region": instance.get("region", world["map"]["name"])}
+            if meters <= 30000:
+                facts["place"] = instance["town"]
+            result[instance["id"]] = {
+                "targetType": "artifact", "targetId": instance["id"],
+                "targetRevision": str(instance["generation"]), "evidenceKey": "location",
+                "kind": "location", "precision": "town" if "place" in facts else "region",
+                "facts": facts, "channels": ["npc"], "source": "character-artifact-rumour",
+                "availability": "current", "contentVersion": "template-v1",
+            }
+        return result
+
+    @contextmanager
+    def connect(self):
+        if self.assets is None:
+            with super().connect() as db:
+                yield db
+        else:
+            with self.assets.catalogue.connection() as db:
+                yield StoreConnection(db, self.assets.catalogue, mapping=True)
+
+    def request(self, data, token):
+        if (not isinstance(data, dict) or set(data) != {"journey", "requestId", "state", "action"}
+                or not isinstance(data["requestId"], str)
+                or not re.fullmatch(r"[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}", data["requestId"])
+                or not isinstance(data["state"], dict)):
+            raise JourneyRequest("Invalid main artifact request.")
+        journey, action, snapshot = data["journey"], data["action"], data["state"]
+        genesis = self.authorize(journey, token)
+        if isinstance(action, dict) and action.get("type") == "archive":
+            raise JourneyRequest("Collector archives are not part of the main game. "
+                                 "Gather information from inhabitants and keep it in the journal.")
+        prepare_route = action == {"type": "prepare-route"}
+        character_rumour = isinstance(action, dict) and action.get("type") == "character-rumour"
+        cache_open = isinstance(action, dict) and action.get("type") == "cache-open"
+        if cache_open and (set(action) != {"type", "cacheId", "lockpick"} or
+                           not isinstance(action["cacheId"], str) or
+                           not re.fullmatch(r"(?:de|pl|uk):[A-Z]{2}[A-Z0-9]{1,14}", action["cacheId"]) or
+                           not isinstance(action["lockpick"], str) or not TREASURE_ID.fullmatch(action["lockpick"])):
+            raise JourneyRequest("Invalid OpenCaching cache command.")
+        legend_action = isinstance(action, dict) and action.get("type") in (
+            "legend-start", "legend-input", "legend-leave", "legend-finish", "legend-restart")
+        treasure_action = isinstance(action, dict) and action.get("type") in (
+            "treasure-pickup", "treasure-drop", "treasure-equip", "treasure-equip-ui",
+            "treasure-equip-icon", "treasure-equip-gear", "treasure-use", "treasure-pack")
+        if legend_action:
+            self.validate_legend_action(action)
+        if treasure_action:
+            expected = {"type", "id"} | ({"x", "y", "rotated"} if action["type"] == "treasure-pack" else set())
+            if (set(action) != expected or not isinstance(action.get("id"), str)
+                    or not TREASURE_ID.fullmatch(action["id"])
+                    or int(TREASURE_ID.fullmatch(action["id"])[1]) > 0xffffffff
+                    or action["type"] == "treasure-pack" and (
+                        type(action["x"]) is not int or type(action["y"]) is not int
+                        or not 0 <= action["x"] < 6 or not 0 <= action["y"] < 4
+                        or type(action["rotated"]) is not bool)):
+                raise JourneyRequest("Invalid treasure command.")
+        if action is not None and not prepare_route and not character_rumour and not legend_action and not treasure_action and not cache_open:
+            self.validate_action(action)
+            if action["type"] not in COMMANDS:
+                raise JourneyRequest("Use the main journey controls for ordinary travel.")
+        if (not isinstance(snapshot.get("serverJourney"), dict)
+                or snapshot["serverJourney"].get("id") != journey
+                or type(snapshot.get("col")) is not int or type(snapshot.get("row")) is not int
+                or max(abs(snapshot["col"]), abs(snapshot["row"])) > 8000):
+            raise JourneyRequest("Invalid main artifact journey position.")
+        rumour = None
+        if character_rumour:
+            if (set(action) != {"type", "characterId", "eventId"} or
+                    not isinstance(action["characterId"], str) or
+                    not re.fullmatch(r"[a-f0-9]{32}", action["characterId"]) or
+                    not isinstance(action["eventId"], str) or
+                    not re.fullmatch(r"[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}", action["eventId"])):
+                raise JourneyRequest("Invalid character artifact conversation.")
+            if self.characters is None:
+                raise JourneyCapacity("Character artifact conversations are unavailable.")
+            rumour = self.characters.artifact_rumour(
+                journey, action["characterId"], action["eventId"],
+                {"col": snapshot["col"], "row": snapshot["row"]}, token)
+            rumour = {**rumour, "characterId": action["characterId"]}
+        if (not isinstance(snapshot.get("trail"), dict)
+                or type(snapshot["trail"].get("index")) is not int
+                or snapshot["trail"]["index"] < 0
+                or type(snapshot.get("elapsedMinutes")) not in (int, float)
+                or not math.isfinite(snapshot["elapsedMinutes"]) or snapshot["elapsedMinutes"] < 0
+                or not isinstance(snapshot.get("discovery", {"entries": []}), dict)
+                or "discovery" in snapshot and (
+                    not isinstance(snapshot["discovery"].get("entries"), list)
+                    or any(not isinstance(entry, dict) or not isinstance(entry.get("targetType"), str)
+                           or not isinstance(entry.get("targetId"), str)
+                           for entry in snapshot["discovery"]["entries"]))):
+            raise JourneyRequest("Invalid main artifact investigation.")
+        digest = hashlib.sha256(json.dumps(data, sort_keys=True, allow_nan=False).encode()).hexdigest()
+        with self.connect() as db:
+            if self.assets is None:
+                db.execute("BEGIN IMMEDIATE")
+            else:
+                db.begin("main-artifacts")
+            receipt = db.execute(f"SELECT * FROM {self.receipts_table} WHERE journey=? AND request=?",
+                                 (journey, data["requestId"])).fetchone()
+            if receipt:
+                if receipt["digest"] != digest:
+                    raise JourneyConflict("This receipt belongs to a different artifact request.")
+                return json.loads(receipt["payload"])
+            definition = None
+            if legend_action and action["type"] == "legend-start":
+                if self.town_legends is None:
+                    raise JourneyCapacity("Town investigation trials are unavailable.")
+                definition = self.town_legends.trial_definition(
+                    journey, {"col": snapshot["col"], "row": snapshot["row"]}, token,
+                    town_id=action["townId"],
+                    entrance=action["contentVersion"] in ("seeded-platform-v2", "seeded-investigation-v3", "seeded-dungeon-v4") + TREASURE_VERSIONS,
+                    dungeon=action["contentVersion"] in ("seeded-dungeon-v1", "seeded-dungeon-v2"),
+                    local=action["contentVersion"] in ("seeded-platform-v1", "seeded-investigation-v2", "seeded-dungeon-v3",
+                                                      "seeded-platform-v2", "seeded-investigation-v3", "seeded-dungeon-v4") + TREASURE_VERSIONS)
+                if definition["townId"] != action["townId"]:
+                    raise JourneyConflict("This investigation belongs to a different town.")
+                if action["contentVersion"] in TREASURE_VERSIONS:
+                    assigned = {"platform": ("treasure-platform-v1", "treasure-platform-v2", "treasure-platform-v3", "treasure-platform-v4", "treasure-platform-v5"),
+                                "investigation": ("treasure-investigation-v1", "treasure-investigation-v2", "treasure-investigation-v3", "treasure-investigation-v4"),
+                                "dungeon": ("treasure-dungeon-v1", "treasure-dungeon-v2", "treasure-dungeon-v3")}[definition["format"]]
+                    if action["contentVersion"] not in assigned:
+                        raise JourneyConflict("This legend's gameplay was permanently assigned by the game.")
+            row = db.execute(f"SELECT * FROM {self.world_table} WHERE id=?", (WORLD,)).fetchone()
+            if row is None:
+                world = self.initial_world(self.journeys.chunks.bases[genesis["region"]], genesis["state"])
+            else:
+                world = self.decode(row)
+            self.redistribute_unowned(world)
+            world.setdefault("treasures", [])
+            opened = world.setdefault("openedCaches", [])
+            cache_offers = opencaches.offers(db, lambda query: query, self.journeys.chunks.bases[genesis["region"]],
+                                             snapshot, opened, self.clock()) if self.assets is not None else []
+            geocache = None
+            if cache_open:
+                geocache = next((item for item in cache_offers if item["id"] == action["cacheId"]), None)
+                if geocache is None:
+                    raise JourneyConflict("No current unclaimed OpenCaching cache is available on this cell.")
+                if len(opened) >= 100000:
+                    raise JourneyCapacity("Shared cache claim capacity reached.")
+                geocache = {**geocache, "cents": 200 + int(hashlib.sha256(geocache["id"].encode()).hexdigest()[:8], 16) % 401}
+            if legend_action and action["type"] == "legend-start" and action["contentVersion"] in TREASURE_VERSIONS:
+                prefix = "treasure:" + action["townId"] + ":"
+                if any(item["id"].startswith(prefix) for item in world["treasures"]):
+                    raise JourneyConflict("This town's original treasure has already been recovered.")
+            anchor_map = world["map"]
+            for instance in world["instances"]:
+                if "latitude" not in instance:
+                    instance["latitude"], instance["longitude"] = geographic_position(
+                        anchor_map, instance["col"], instance["row"])
+            for stale in db.execute(f"SELECT * FROM {self.sessions_table} WHERE touched<=?",
+                                    (self.clock() - 30 * 86400,)).fetchall():
+                owned = [item for item in world["instances"] if item["owner"] == stale["journey"]]
+                if not owned and not any(item["owner"] == stale["journey"] for item in world["treasures"]):
+                    continue
+                cache = self.decode(stale)["cacheLocation"]
+                for instance in owned:
+                    col, row_index = grid_position(anchor_map, cache["latitude"], cache["longitude"])
+                    instance.update(owner=None, placement=None, col=col, row=row_index,
+                                    latitude=cache["latitude"], longitude=cache["longitude"], town=cache["town"],
+                                    region=cache.get("region", anchor_map["name"]),
+                                    marker=f"cache:{instance['id']}", generation=instance["generation"] + 1,
+                                    recallJourney=stale["journey"])
+                for treasure in world["treasures"]:
+                    if treasure["owner"] == stale["journey"]:
+                        treasure.update(owner=None, placement=None, latitude=cache["latitude"],
+                                        longitude=cache["longitude"], place=cache["town"])
+            local = {"map": {**self.journeys.chunks.bases[genesis["region"]], "loreChunks": {}},
+                     "instances": copy.deepcopy(world["instances"]), "minutes": world["minutes"]}
+            for instance in local["instances"]:
+                instance["col"], instance["row"] = grid_position(local["map"], instance["latitude"], instance["longitude"])
+            original_positions = {item["id"]: (item["col"], item["row"]) for item in local["instances"]}
+            treasures = copy.deepcopy(world["treasures"])
+            if self.town_legends is not None:
+                with self.town_legends.assets.catalogue.connection() as reward_db:
+                    for item in treasures:
+                        if "reward" not in item:
+                            continue
+                        named = reward_db.execute(self.town_legends.assets.catalogue.sql(
+                            "SELECT payload FROM town_legend_rewards WHERE town_id=?"),
+                            (item["id"].split(":")[1],)).fetchone()
+                        if named:
+                            reward = json.loads(named[0])
+                            if "name" in reward:
+                                item["reward"]["name"] = reward["name"]
+            for item in treasures:
+                item["col"], item["row"] = grid_position(local["map"], item["latitude"], item["longitude"])
+            treasure_positions = {item["id"]: (item["col"], item["row"]) for item in treasures}
+            runtime_row = db.execute(f"SELECT * FROM {self.sessions_table} WHERE journey=?", (journey,)).fetchone()
+            runtime = self.decode(runtime_row) if runtime_row else None
+            reward_town = definition["townId"] if definition else (
+                runtime["adventure"]["townId"] if legend_action and runtime and runtime.get("adventure") else None)
+            legend_reward = None
+            if reward_town and self.town_legends is not None:
+                with self.town_legends.assets.catalogue.connection() as reward_db:
+                    reward_row = reward_db.execute(self.town_legends.assets.catalogue.sql(
+                        "SELECT payload FROM town_legend_rewards WHERE town_id=?"), (reward_town,)).fetchone()
+                if reward_row:
+                    legend_reward = json.loads(reward_row[0])
+            if runtime and runtime.get("adventure", {}).get("status") == "active" and (prepare_route or character_rumour):
+                raise JourneyConflict("Finish or leave the active legend adventure first.")
+            if prepare_route:
+                if not runtime or not any(item["owner"] == journey and item["id"] in ("star", "lovers")
+                                          for item in world["instances"]):
+                    raise JourneyRequest("Carry Star or Lovers before preparing a magical route.")
+                if self.paths is None:
+                    raise JourneyCapacity("The route preparation worker is unavailable.")
+                position, stage = (snapshot["col"], snapshot["row"]), snapshot.get("trail", {}).get("index")
+                status, route = self.paths.request_lore(journey, stage, position)
+                if status != 200:
+                    if status in (202, 429):
+                        raise JourneyCapacity("The magical route is being prepared; retry the same request.")
+                    raise JourneyRequest(route.get("error", "The magical route is unavailable."))
+                route = self.paths.decode(self.paths.location(*self.paths.lore_key(journey, stage, position)))
+                route_terrain = self.prepare_chunks(local, genesis["region"], route["points"])
+                if route_terrain["status"] != "ready":
+                    raise JourneyCapacity("The magical route terrain is being prepared; retry the same request.")
+            if "lore" in snapshot and not isinstance(snapshot["lore"], dict):
+                raise JourneyRequest("Invalid main artifact progress.")
+            visits = snapshot.get("lore", {}).get("visitedSettlements", [])
+            if (not isinstance(visits, list) or len(visits) > 256 or
+                    any(not isinstance(visit, dict) or type(visit.get("col")) is not int
+                        or type(visit.get("row")) is not int for visit in visits)):
+                raise JourneyRequest("Invalid personally visited settlements.")
+            prepared = [(int(key.split(",")[0]) * 8, int(key.split(",")[1]) * 8)
+                        for key in (runtime or {}).get("preparedChunks", [])]
+            terrain = self.prepare_chunks(local, genesis["region"], [(snapshot["col"], snapshot["row"])] +
+                                          [(visit["col"], visit["row"]) for visit in visits] + prepared)
+            if terrain["status"] != "ready":
+                raise JourneyCapacity("Artifact terrain is being prepared; retry the same request.")
+            if db.execute(f"SELECT count(*) FROM {self.receipts_table}").fetchone()[0] >= MAX_RECEIPTS:
+                raise JourneyCapacity("Artifact receipt capacity reached.")
+            context = self.journal_context(genesis, {"state": snapshot}, journey) if snapshot.get("discovery") else None
+            result = self.worker("main-artifacts", local, journey, genesis=genesis, runtime=runtime,
+                                 snapshot=snapshot, action=None if prepare_route or character_rumour else action,
+                                 characterRumour=rumour, journalContext=context,
+                                 legendDefinition=definition, requestId=data["requestId"],
+                                 treasureInstances=treasures, legendReward=legend_reward,
+                                 geocache=geocache, geocacheOffers=cache_offers)
+            if geocache is not None:
+                opened.append(geocache["id"])
+            for item in result["treasureInstances"]:
+                if (item["col"], item["row"]) != treasure_positions.get(item["id"]):
+                    item["latitude"], item["longitude"] = geographic_position(local["map"], item["col"], item["row"])
+            world["treasures"] = result["treasureInstances"]
+            for instance in result["instances"]:
+                moved = (instance["col"], instance["row"]) != original_positions[instance["id"]]
+                recached = action is not None and action.get("type") == "cache" and action.get("id") == instance["id"]
+                if moved or recached:
+                    instance["latitude"], instance["longitude"] = geographic_position(
+                        local["map"], instance["col"], instance["row"])
+                    instance["region"] = local["map"]["name"]
+                instance["col"], instance["row"] = grid_position(anchor_map, instance["latitude"], instance["longitude"])
+            world["instances"], world["minutes"] = result["instances"], result["runtime"]["worldMinutes"]
+            result["runtime"]["preparedChunks"] = list(local["map"].get("loreChunks", {}))
+            last = result["runtime"]["state"]["lore"]["lastSettlement"]
+            latitude, longitude = geographic_position(local["map"], last["col"], last["row"])
+            result["runtime"]["cacheLocation"] = {"latitude": latitude, "longitude": longitude,
+                                                 "town": last["town"], "region": local["map"]["name"]}
+            raw, checksum = self.encode(world)
+            db.execute(f"INSERT INTO {self.world_table}(id,region,payload,checksum) VALUES (?,?,?,?) "
+                       "ON CONFLICT(id) DO UPDATE SET region=excluded.region,payload=excluded.payload,"
+                       "checksum=excluded.checksum",
+                       (WORLD, row["region"] if row is not None else genesis["region"], raw, checksum))
+            raw, checksum = self.encode(result["runtime"])
+            db.execute(f"INSERT INTO {self.sessions_table}(journey,payload,checksum,touched) VALUES (?,?,?,?) "
+                       "ON CONFLICT(journey) DO UPDATE SET payload=excluded.payload,checksum=excluded.checksum,"
+                       "touched=excluded.touched", (journey, raw, checksum, self.clock()))
+            db.execute(f"INSERT INTO {self.receipts_table}(journey,request,digest,payload) VALUES (?,?,?,?)",
+                       (journey, data["requestId"], digest, json.dumps(result["view"], allow_nan=False)))
+            return result["view"]
+
+    @staticmethod
+    def validate_legend_action(action):
+        fields = {"legend-start": {"type", "townId", "contentVersion"},
+                  "legend-input": {"type", "runId", "input"},
+                  "legend-leave": {"type", "runId"},
+                  "legend-restart": {"type", "runId"},
+                  "legend-finish": {"type", "runId", "actions"}}
+        if set(action) != fields[action["type"]]:
+            raise JourneyRequest("Invalid legend command fields.")
+        if action["type"] == "legend-start":
+            if (not isinstance(action["townId"], str) or not TOWN_ID.fullmatch(action["townId"])
+                    or action["contentVersion"] not in ("cinema-investigation-v1", "seeded-investigation-v1", "seeded-dungeon-v1", "seeded-dungeon-v2",
+                                                       "seeded-platform-v1", "seeded-investigation-v2", "seeded-dungeon-v3",
+                                                       "seeded-platform-v2", "seeded-investigation-v3", "seeded-dungeon-v4") + TREASURE_VERSIONS):
+                raise JourneyRequest("Invalid investigation trial identity.")
+        else:
+            if not isinstance(action["runId"], str) or not re.fullmatch(
+                    r"[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}", action["runId"]):
+                raise JourneyRequest("Invalid investigation run.")
+            if action["type"] == "legend-finish":
+                moves = action["actions"]
+                if not isinstance(moves, list) or len(moves) > 8192:
+                    raise JourneyRequest("Invalid adventure transcript.")
+                ticks = 0
+                for move in moves:
+                    if isinstance(move, dict) and set(move) == {"controls", "ticks"}:
+                        if (type(move["ticks"]) is not int or not 1 <= move["ticks"] <= 60
+                                or not isinstance(move["controls"], dict)
+                                or any(key not in ("left", "right", "up", "down", "jump", "interact", "retry")
+                                       or value is not True for key, value in move["controls"].items())):
+                            raise JourneyRequest("Invalid platform input packet.")
+                        ticks += move["ticks"]
+                    else:
+                        MainArtifacts.validate_legend_action(
+                            {"type": "legend-input", "runId": action["runId"], "input": move})
+                if ticks > 216000:
+                    raise JourneyRequest("Platform input limit reached.")
+                return
+            if action["type"] == "legend-input":
+                move = action["input"]
+                if isinstance(move, dict) and set(move) == {"type"} and move["type"] in (
+                        "up", "right", "down", "left", "interact", "attack", "wait", "retry"):
+                    return
+                if not isinstance(move, dict) or move.get("type") not in ("travel", "act"):
+                    raise JourneyRequest("Invalid investigation input.")
+                if set(move) == {"type", "room"} and move["type"] == "travel":
+                    valid = type(move["room"]) is int and 0 <= move["room"] < 32
+                else:
+                    field = "location" if move["type"] == "travel" else (
+                        "command" if "command" in move else "target")
+                    valid = (set(move) == {"type", field} and isinstance(move.get(field), str)
+                             and 0 < len(move[field]) <= 32)
+                if not valid:
+                    raise JourneyRequest("Invalid investigation input.")

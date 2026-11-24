@@ -1,0 +1,74 @@
+{
+  "pursuit.news.headline.0": {
+    "kind": "pursuit-news",
+    "facts": "Write only a short newspaper headline about a dangerous pursuer being sought. No additional facts. No names, places, precise positions, victims, accusations against residents or real people, graphic violence, capture or resolution. Do not remind the reader this is fictional.",
+    "en": "Dangerous pursuer sought",
+    "fr": "Un dangereux poursuivant est recherché"
+  },
+  "pursuit.news.headline.1": {
+    "kind": "pursuit-news",
+    "facts": "Write only a short newspaper headline about reports of missing children. Preserve that these are reports. No additional facts. No names, places, precise positions, victims, accusations against residents or real people, graphic violence, capture or resolution. Do not remind the reader this is fictional.",
+    "en": "Missing children reported",
+    "fr": "Des disparitions d'enfants sont signalées"
+  },
+  "pursuit.news.headline.2": {
+    "kind": "pursuit-news",
+    "facts": "Write only a short newspaper headline advising travellers to stay alert. No additional facts. No names, places, precise positions, victims, accusations against residents or real people, graphic violence, capture or resolution. Do not remind the reader this is fictional.",
+    "en": "Travellers advised to stay alert",
+    "fr": "Les voyageurs sont invités à rester vigilants"
+  },
+  "pursuit.news.report": {
+    "kind": "pursuit-news",
+    "facts": "Write a short newspaper report using only these three facts: a dangerous pursuer is sought; missing children are reported; travellers are advised to stay alert. Preserve uncertainty. Do not assert the pursuer caused the disappearances. No names, places, precise positions, victims, accusations against residents or real people, graphic violence, capture or resolution. Do not remind the reader this is fictional.",
+    "en": "A dangerous pursuer is sought. Missing children have been reported. Travellers are advised to stay alert.",
+    "fr": "Un dangereux poursuivant est recherché. Des disparitions d'enfants sont signalées. Les voyageurs sont invités à rester vigilants."
+  },
+  "pursuit.inhabitant.report": {
+    "kind": "pursuit-news",
+    "facts": "Write an inhabitant's spoken public warning: a dangerous pursuer is sought; missing children are reported; travellers are advised to stay alert. Not a personal sighting or evidence. Do not link the disappearances to the pursuer. No names, places, precise positions, victims, accusations against residents or real people, graphic violence, capture or resolution. Do not remind the reader this is fictional.",
+    "en": "“The warning says a dangerous pursuer is sought and children are reported missing. Travellers are advised to stay alert.”",
+    "fr": "« L'avis indique qu'un dangereux poursuivant est recherché et que des enfants sont portés disparus. Les voyageurs sont invités à rester vigilants. »"
+  },
+  "dream.lost-player": {
+    "kind": "dream",
+    "facts": "While asleep, the traveller dreams of a fading thread becoming visible again. Write only a gentle, dreamlike introduction. This is a dream, not a real sighting or evidence. The game appends its own authoritative guidance. No parent, people, places, landmarks, compass directions, routes, distances, promises or instructions."
+  },
+  "event.food": {"kind": "introduction", "facts": "A passer-by shares a snack with the traveller, eaten on the spot."},
+  "event.coins": {"kind": "introduction", "facts": "A passer-by offers the traveller a few coins for the road."},
+  "event.encouragement": {"kind": "introduction", "facts": "A stranger offers the traveller a few encouraging words."},
+  "event.waterBreak": {"kind": "introduction", "facts": "A walker invites the traveller to pause near a fountain. The traveller's shoulders relax."},
+  "event.catNap": {"kind": "introduction", "facts": "A quiet bench invites the traveller to take a twenty-minute nap."},
+  "event.clearHead": {"kind": "introduction", "facts": "A lively conversation briefly clears the traveller's sleepy thoughts."},
+  "event.tailwind": {"kind": "introduction", "facts": "The wind blows behind the traveller, making their steps lighter."},
+  "event.bandage": {"kind": "introduction", "facts": "A traveller notices the traveller's scratches and offers a clean bandage."},
+  "event.picnic": {"kind": "introduction", "facts": "A family invites the traveller to share a small picnic beside the path."},
+  "event.friendlyAdvice": {"kind": "introduction", "facts": "A local offers advice on walking more comfortably. This is walking advice, not directions or a clue."},
+  "event.delay": {"kind": "introduction", "facts": "A stubborn bag strap forces the traveller to stop for a quarter of an hour. This is not restorative rest."},
+  "event.lostCoins": {"kind": "introduction", "facts": "Some coins slip from the traveller's pocket."},
+  "event.strain": {"kind": "introduction", "facts": "An awkward step tires the traveller."},
+  "event.tornBag": {"kind": "introduction", "facts": "A seam in the traveller's bag splits. Some food falls into the mud."},
+  "event.restlessThoughts": {"kind": "introduction", "facts": "Restless thoughts make the traveller feel the previous night was too short. Do not specify what the thoughts concern."},
+  "event.headwind": {"kind": "introduction", "facts": "The wind blows against the traveller."},
+  "event.blisters": {"kind": "introduction", "facts": "A blister makes the traveller's steps more cautious."},
+  "event.forestBoar": {"kind": "introduction", "facts": "A boar suddenly emerges in the undergrowth. The traveller moves aside, but is left hurt and tired."},
+  "event.forestDogs": {"kind": "introduction", "facts": "Stray dogs pursue the traveller between the trees. The traveller escapes with some injuries and fatigue."},
+  "event.chills": {"kind": "introduction", "facts": "A shiver passes through the traveller."},
+  "npc.hospitality.greeting": {
+    "kind": "dialogue",
+    "facts": "A local person asks what brings the traveller here. No hospitality request has been answered. No offer, refusal or promise yet.",
+    "en": "“What brings you here, traveller?”",
+    "fr": "« Qu'est-ce qui vous amène ici, voyageur ? »"
+  },
+  "npc.hospitality.hosted": {
+    "kind": "dialogue",
+    "facts": "A local person has agreed to host the traveller for the night. Do not add meals, possessions, locations, people, clues or future offers.",
+    "en": "“You can stay here tonight.”",
+    "fr": "« Vous pouvez rester ici cette nuit. »"
+  },
+  "npc.hospitality.refused": {
+    "kind": "dialogue",
+    "facts": "A local person cannot host the traveller tonight. No reason or alternative is known. Do not invent one.",
+    "en": "“I'm sorry, I cannot host you tonight.”",
+    "fr": "« Je suis désolé, je ne peux pas vous accueillir cette nuit. »"
+  }
+}

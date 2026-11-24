@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "adventure": "last-screening",
+  "model": "stable-diffusion-xl-base-v10",
+  "license": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/LICENSE.md",
+  "entries": [
+    { "scene": "passage", "status": "not-generated" },
+    { "scene": "interior", "status": "not-generated" }
+  ]
+}

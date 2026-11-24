@@ -48,6 +48,7 @@ test("music context follows map features, solar phase, menus and outcomes, never
     [{ ended: "reunion", dialog: "trail-dialog" }, "music-reunion"],
     [{ ended: "hunger" }, "music-journey-ended"],
     [{ dialog: "music-dialog" }, null],
+    [{ dialog: "cafe-dialog" }, null],
   ]) assert.equal(musicTrack({ ...travel, ...context }), expected);
 });
 
@@ -177,4 +178,16 @@ test("a playback error after starting moves to a different playable file", async
   assert.equal(h.attempts.at(-1), urls[1]);
   assert.equal(h.sounds[0].paused, true);
   assert.equal(h.warnings.length, 1);
+});
+
+test("the pursuit window plays its own numbered track and falls back to the road", () => {
+  assert.equal(musicTrack({ active: true, terrain: "forest", dialog: "pursuit-dialog" }), "music-pursuit");
+  assert.equal(musicTrack({ active: true, night: true, dialog: "pursuit-dialog" }), "music-pursuit");
+  assert.ok(musicCandidates("music-pursuit").includes("./public/audio/music/17%20-%20music-pursuit.wav"));
+  assert.deepEqual(musicFallbacks("music-pursuit"), ["music-pursuit", "music-road-day", "music-title"]);
+});
+
+test("the fight window plays its own numbered track", () => {
+  assert.equal(musicTrack({ active: true, terrain: "place", dialog: "brawl-dialog" }), "music-fight");
+  assert.ok(musicCandidates("music-fight").includes("./public/audio/music/18%20-%20music-fight.wav"));
 });
