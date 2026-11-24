@@ -228,6 +228,22 @@ one source-only recovery under the existing lease, never another paid attempt.
 Documentary failures are retained without retries. Provider failures remain
 logged and reserved calls remain counted even when fallback succeeds.
 
+## Road and rail legend cells, Look panel and region reload, 0.22.50 (24 November 2026)
+
+Deployed `44b8b1d` (`deploy-2026-11-24-0.22.50`): legend search plans now
+describe main roads, railways and cable-car stations; plans stored earlier are
+extended once on the next Look or town visit (`town_legend_searches.payload`
+gains `"terrains": "v2"`; entrance, clues and existing cells unchanged, so a
+rollback keeps working with extended plans). The Look panel opens only with
+content (no flash on cells without detail). The region select no longer
+restores form state and an empty value falls back to the default region
+(a Safari reload had requested `/api/origin-map?region=`, HTTP 400). Six
+runtime files changed, no new files, no schema change; hashes match, service
+restarted, journal clean, `nginx -t` OK, HTTPS 401, conditional GET 200.
+JavaScript 1919/1920 (dream-wiring baseline), Python 5 pre-existing failures.
+Rollback archive `/home/ubuntu/before-0.22.50-44b8b1d/runtime.tar.gz`, SHA-256
+`7253c5c5088bdcda04c5c9dcd10ceb08f34a0bc7eef5dbc5c90824dd268d51db`.
+
 ## Culinary decisions shared across neighbouring towns, 0.22.49 (24 November 2026)
 
 Deployed `b8df0af` (`deploy-2026-11-24-0.22.49`): the meal cache was per town
